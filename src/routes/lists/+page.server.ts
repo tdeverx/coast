@@ -1,8 +1,8 @@
-import { getLists } from '$lib/core/lists/service.server';
+import { getLists } from '#lib/core/lists/service.server.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { listsData, listsOptionsSchema } from '$lib/server/queries/lists';
-import { AppError } from '$lib/server/security/errors';
+import { listsData, listsOptionsSchema } from '#lib/server/queries/lists.js';
+import { AppError } from '#lib/server/security/errors.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({locals, url, depends}) => {

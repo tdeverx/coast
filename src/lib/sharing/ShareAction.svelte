@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Button from '$lib/ui/components/Button.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient, reportFailure } from '$lib/ui/client-context';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Dialog from '#lib/ui/components/Dialog.svelte';
+  import { message } from '#lib/ui/client.js';
+  import { useClient, reportFailure } from '#lib/ui/client-context.js';
   const {api,preview}=useClient();
 
   let { workId, title, open = $bindable(false) }: {

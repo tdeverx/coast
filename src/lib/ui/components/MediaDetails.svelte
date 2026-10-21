@@ -1,6 +1,6 @@
 <script lang="ts">
  import {page} from '$app/state';
- import {workFriendFilters} from '$lib/social/model';
+ import {workFriendFilters} from '#lib/social/model.js';
  import {detailActivity} from '../pages/detail';
  import type {Snippet} from 'svelte';
  import MediaPage from './MediaPage.svelte';
@@ -11,7 +11,7 @@
  import {artworkColour} from '../artwork-colour';
  let {view,model,section,detailHref,before=[],after=[],intro,hierarchy,heroActions:actions,children:content}:{view:DetailPage;model?:DetailRowsModel;section?:string|null;detailHref?:string;before?:DetailRow[];after?:DetailRow[];intro?:Snippet;hierarchy?:Snippet;heroActions?:Snippet;children?:Snippet}=$props();
  const activity=$derived(detailActivity(view.item));
- const destination=$derived(new URL(detailHref??(view.item&&'href' in view.item?view.item.href:`/media/${view.item?.id}`),page.url));
+ const destination=$derived(new URL(detailHref??(view.item&&'href' in view.item?view.item.href:`/media/${view.item?.id}`),page.url.href));
  const selectedSection=$derived(section??destination.searchParams.get('section'));
  const activityHref=$derived.by(()=>{const url=new URL(destination);url.searchParams.set('section','activity');return url.pathname+url.search;});
  const colours=$derived([...new Set([view.item?.backdrop,view.item?.artwork?.backdrop,view.item?.poster,view.item?.artwork?.primary,

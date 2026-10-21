@@ -1,4 +1,4 @@
-import type { ActivityDay } from '$lib/profile/activity';
+import type { ActivityDay } from '#lib/profile/activity.js';
 export interface MediaStatistics {
   days: ActivityDay[];
   today: string;

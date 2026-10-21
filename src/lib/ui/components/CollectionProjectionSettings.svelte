@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { untrack } from 'svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
-  import type { ProjectionConfig,ProjectionPreview } from '$lib/collection/projection.server';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import type { ProjectionConfig,ProjectionPreview } from '#lib/collection/projection.server.js';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
 

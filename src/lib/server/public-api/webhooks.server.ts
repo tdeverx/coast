@@ -1,16 +1,16 @@
-import { requireFeatureInTransaction, getFeatureConfig } from '$lib/server/features';
+import { requireFeatureInTransaction, getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
 import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { and,desc,eq,sql } from 'drizzle-orm';
-import { getDb,getSql,type Database } from '$lib/server/db';
-import { apiWebhooks,apiTokens,users,outboxActions } from '$lib/server/db/schema';
-import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch,validateProviderUrl,isAllowedAddress } from '$lib/server/security/provider-fetch';
-import { randomToken } from '$lib/server/auth';
-import { AppError } from '$lib/server/security/errors';
-import { PermanentActionError,type OutboxAction } from '$lib/server/queue';
-import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
+import { getDb,getSql,type Database } from '#lib/server/db/index.js';
+import { apiWebhooks,apiTokens,users,outboxActions } from '#lib/server/db/schema.js';
+import { encryptCredential,decryptCredential } from '#lib/server/security/credentials.js';
+import { secureProviderFetch,validateProviderUrl,isAllowedAddress } from '#lib/server/security/provider-fetch.js';
+import { randomToken } from '#lib/server/auth/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { PermanentActionError,type OutboxAction } from '#lib/server/queue/index.js';
+import { pagination,PAGE_SIZE } from '#lib/server/queries/pagination.js';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed','reading.changed'] as const;

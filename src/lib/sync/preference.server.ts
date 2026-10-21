@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
-import { type Database } from '$lib/server/db';
-import { users, providerConnections, providerInstances } from '$lib/server/db/schema';
+import { type Database } from '#lib/server/db/index.js';
+import { users, providerConnections, providerInstances } from '#lib/server/db/schema.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 

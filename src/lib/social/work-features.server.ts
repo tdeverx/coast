@@ -1,4 +1,4 @@
-import {getSql} from '$lib/server/db';
+import {getSql} from '#lib/server/db/index.js';
 import {namedFeatures,type TasteFeatures} from './taste-profile';
 /** Read existing metadata in a bounded batch; never fetch providers from a page request. */
 export async function workTasteFeatures(ids:string[]):Promise<Map<string,TasteFeatures>>{

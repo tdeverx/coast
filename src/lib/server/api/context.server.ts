@@ -1,4 +1,4 @@
-import type { SessionUser } from '$lib/server/auth';
+import type { SessionUser } from '#lib/server/auth/index.js';
 import * as v from 'valibot';
 export const uuid = (value: unknown) => v.parse(v.pipe(v.string(), v.uuid()), value);
 export const text = (value: unknown) => v.parse(v.pipe(v.string(), v.maxLength(1000)), value);

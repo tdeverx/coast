@@ -1,10 +1,10 @@
-import { registrationSchema } from '$lib/auth/registration';
+import { registrationSchema } from '#lib/auth/registration.js';
 import * as v from 'valibot';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { createFirstAdmin, checkLoginRate } from '$lib/server/auth';
-import { AppError } from '$lib/server/security/errors';
-import { setSessionCookie } from '$lib/server/auth/cookies';
+import { createFirstAdmin, checkLoginRate } from '#lib/server/auth/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { setSessionCookie } from '#lib/server/auth/cookies.js';
 export const load = (({ locals }) => {
   if (!locals.setup) redirect(303, locals.user ? '/for-you' : '/login');
   return {};

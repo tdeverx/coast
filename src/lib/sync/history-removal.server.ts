@@ -1,15 +1,15 @@
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import * as s from '$lib/server/db/schema';
-import { DomainError } from '$lib/core/errors';
-import { historyScope } from '$lib/core/tracking/history-scope.server';
-import { rebuildHistoryInTransaction } from '$lib/core/tracking/service.server';
+import { getDb } from '#lib/server/db/index.js';
+import * as s from '#lib/server/db/schema.js';
+import { DomainError } from '#lib/core/errors.js';
+import { historyScope } from '#lib/core/tracking/history-scope.server.js';
+import { rebuildHistoryInTransaction } from '#lib/core/tracking/service.server.js';
 import { enqueueInTransaction } from './changes.server';
 import { acknowledgeProviderValue } from './values.server';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { PermanentActionError } from '$lib/server/queue';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
 const uuid = v.pipe(v.string(), v.uuid());
 const inputSchema = v.object({
   eventIds: v.array(uuid),

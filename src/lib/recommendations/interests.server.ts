@@ -1,4 +1,4 @@
-import {getSql} from '$lib/server/db/index';
+import {getSql} from '#lib/server/db/index.js';
 import type {DynamicMedium,DynamicKind} from './model';
 export type InterestWork={id:string;category:DynamicMedium;kind:DynamicKind|'track';title:string;genres:string[];weight:number;consumed:boolean;positive:boolean;updated:Date|string};
 /** Collapse episodes to their show and cap each work's influence; imports are not thousands of votes. */

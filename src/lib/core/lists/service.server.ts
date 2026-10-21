@@ -1,4 +1,4 @@
-import { lockFeaturePolicyInTransaction, requireWorkFeature } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireWorkFeature } from '#lib/server/features.js';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';

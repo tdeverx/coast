@@ -1,20 +1,20 @@
-import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '$lib/server/db/schema';
-import { requireEnabledCategory } from '$lib/server/experimental';
-import { AppError } from '$lib/server/security/errors';
-import { ProviderActionError } from '$lib/providers/contracts';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { bookFormat } from '$lib/providers/jellyfin/reading.server';
-import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
-import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
-import { instanceFetchConfig } from '$lib/providers/instances.server';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { ProviderHttpError, secureProviderFetch } from '$lib/server/security/provider-fetch';
-import { observeReadingFile } from '$lib/catalogue/reading-files.server';
-import { updateReading } from '$lib/core/reading/service.server';
+import { getDb } from '#lib/server/db/index.js';
+import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '#lib/server/db/schema.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { ProviderActionError } from '#lib/providers/contracts.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { bookFormat } from '#lib/providers/jellyfin/reading.server.js';
+import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
+import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
+import { instanceFetchConfig } from '#lib/providers/instances.server.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { ProviderHttpError, secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { observeReadingFile } from '#lib/catalogue/reading-files.server.js';
+import { updateReading } from '#lib/core/reading/service.server.js';
 import { readingCache, readingLease, type ReadingCacheSource } from './cache.server';
 import { comicFormats, readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
 const uuid=v.pipe(v.string(),v.uuid());
@@ -47,7 +47,7 @@ export async function readingSources(userId:string,workId:string,connectionId:st
  const {adapter,connection}=await getJellyfin(userId,connectionId);
  return adapter.readingLibrary(connection.externalUserId!,search,offset,signal);
 }
-export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<typeof import('$lib/providers/jellyfin/reading.server').jellyfinBook>>) {
+export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<typeof import('#lib/providers/jellyfin/reading.server.js').jellyfinBook>>) {
  // Scope versions to the actual server and item. Titles, editions and page counts are not file identities.
  return new Bun.CryptoHasher('sha256').update(JSON.stringify([instanceIdentity,book.Id.replaceAll('-','').toLowerCase(),book.Etag,book.DateModified,book.Size,book.Path])).digest('hex');
 }

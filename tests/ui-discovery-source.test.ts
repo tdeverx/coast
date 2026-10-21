@@ -17,12 +17,12 @@ const routeUrl = moduleUrl(`export const page={data:{user:{id:'viewer'},contentR
 const navigationUrl = moduleUrl('export const replaceState=()=>{}; export const goto=async()=>{};');
 const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
   .replaceAll('from "svelte"', `from ${JSON.stringify(lifecycleUrl)}`)
-  .replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state', routeUrl).replaceAll('$app/navigation', navigationUrl)
-  .replaceAll('$lib/ui/client-context', clientUrl).replaceAll('$lib/ui/resource.svelte', resourceUrl)
-  .replaceAll('$lib/ui/content-revision.svelte', revisionUrl)
-  .replaceAll('$lib/ui/filter-options', import.meta.resolve('../src/lib/ui/filter-options'))
-  .replaceAll('$lib/discovery', import.meta.resolve('../src/lib/discovery'));
+  .replaceAll('#lib/ui/client-context.js', clientUrl).replaceAll('#lib/ui/resource.svelte.js', resourceUrl)
+  .replaceAll('#lib/ui/content-revision.svelte.js', revisionUrl)
+  .replaceAll('#lib/ui/filter-options.js', import.meta.resolve('../src/lib/ui/filter-options'))
+  .replaceAll('#lib/discovery.js', import.meta.resolve('../src/lib/discovery'));
 const { createDiscoverySource }: typeof import('../src/lib/ui/shelves/discovery.svelte') = await import(moduleUrl(code));
 const { invalidateContentRevision } = await import(revisionUrl);
 const watch: DiscoveryContent = { items: [{id:'watch',kind:'movie',title:'Screen',href:'/media/watch',available:true} as any], failure:'' };

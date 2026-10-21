@@ -1,10 +1,10 @@
 import { resolveListConflict, localListValue, projectProviderListInTransaction } from './list-values.server';
-import { lockFeaturePolicyInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { applySyncValue, localSyncValue, valueCategories, decideSync, sameValue, type ValueCategory } from './values.server';
 import { enqueueSyncValueInTransaction, enqueueInTransaction } from './changes.server';
 import * as v from 'valibot';
 import { and, eq, isNull, desc, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   trackingEvents,
   media,
@@ -17,9 +17,9 @@ import {
   syncListValues,
   lists,
   mediaRequests,
-} from '$lib/server/db/schema';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
-import { DomainError } from '$lib/core/errors';
+} from '#lib/server/db/schema.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import { DomainError } from '#lib/core/errors.js';
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export async function getPendingConflicts(userId: string) {

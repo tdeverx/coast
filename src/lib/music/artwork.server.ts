@@ -1,12 +1,12 @@
-import { requireFeature } from '$lib/server/features';
-import { serverArtwork } from '$lib/providers/server-artwork.server';
+import { requireFeature } from '#lib/server/features.js';
+import { serverArtwork } from '#lib/providers/server-artwork.server.js';
 import * as v from 'valibot';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
-import { instanceFetchConfig } from '$lib/providers/instances.server';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
-import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { jellyfinMusicIdSchema } from '#lib/providers/jellyfin/music.server.js';
+import { instanceFetchConfig } from '#lib/providers/instances.server.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
 
 export async function streamMusicArtwork(
   userId: string,

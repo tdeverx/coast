@@ -1,4 +1,4 @@
-import { lifecycle } from '$lib/media/model';
+import { lifecycle } from '#lib/media/model.js';
 export type TrackingAction =
   | 'watch'
   | 'unwatch'

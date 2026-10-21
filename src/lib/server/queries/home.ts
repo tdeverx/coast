@@ -1,4 +1,4 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { eq, desc, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';

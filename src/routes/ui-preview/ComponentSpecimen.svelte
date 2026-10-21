@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
  import {createRawSnippet,untrack,type Component,type Snippet} from 'svelte';
- import Button from '$lib/ui/components/Button.svelte';
- import Avatar from '$lib/ui/components/Avatar.svelte';
- import Field from '$lib/ui/components/Field.svelte';
- import PlaybackTimeline from '$lib/ui/components/PlaybackTimeline.svelte';
- import {usePlayback} from '$lib/playback/context.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
+ import Avatar from '#lib/ui/components/Avatar.svelte';
+ import Field from '#lib/ui/components/Field.svelte';
+ import PlaybackTimeline from '#lib/ui/components/PlaybackTimeline.svelte';
+ import {usePlayback} from '#lib/playback/context.svelte.js';
  import {contracts,defaultSlot,handlerMode,specimenDefaults,type Customisation,type SlotChoice} from './props';
  import {id,movie} from './demo/fixtures';
  let {name,custom,change,onevent}:{name:string;custom:Customisation;change:(key:string,value:unknown)=>void;onevent:(name:string,args:unknown[])=>void}=$props();

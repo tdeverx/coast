@@ -1,14 +1,14 @@
-import { requireFeatureInTransaction } from '$lib/server/features';
+import { requireFeatureInTransaction } from '#lib/server/features.js';
 import { and, eq, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { getDb, type Database } from '$lib/server/db';
-import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListens, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '$lib/server/db/schema';
+import { getDb, type Database } from '#lib/server/db/index.js';
+import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListens, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
 import type { MusicItem } from './model';
-import { DomainError } from '$lib/core/errors';
+import { DomainError } from '#lib/core/errors.js';
 import * as v from 'valibot';
-import { assertJobLease, JobYield } from '$lib/server/queue/execution';
-import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
+import { assertJobLease, JobYield } from '#lib/server/queue/execution.js';
+import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
 import { musicAlbumMembers } from './editions.server';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -166,7 +166,7 @@ export async function observeMusicPageAccess(userId: string, connectionId: strin
 export async function recordMusicListen(tx: Transaction,userId: string,trackId:string,batchId:string,source='coast',occurredAt?:Date,known=true){
   const [event]=await tx.insert(musicListens).values({userId,trackId,batchId,source,occurredAt,occurredAtKnown:known}).onConflictDoNothing().returning();
   if(event) await tx.insert(musicProgress).values({userId,trackId,playCount:1}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:sql`${musicProgress.playCount}+1`,positionSeconds:0,updatedAt:new Date()}});
-  if(event)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'music.listened',{workId:trackId,listenId:event.id,occurredAt:occurredAt?.toISOString()??event.occurredAt?.toISOString()??null,occurredAtKnown:known});
+  if(event)await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'music.listened',{workId:trackId,listenId:event.id,occurredAt:occurredAt?.toISOString()??event.occurredAt?.toISOString()??null,occurredAtKnown:known});
   return event;
 }
 /** Insert exact imported occurrences in batches of at most 100 rows.
@@ -179,7 +179,7 @@ export async function recordImportedMusicListens(tx: Transaction,userId:string,t
     if(!events.length)continue;
     added+=events.length;
     await tx.insert(musicProgress).values({userId,trackId,playCount:events.length}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:sql`${musicProgress.playCount}+${events.length}`,positionSeconds:0,updatedAt:new Date()}});
-    const {emitWebhook}=await import('$lib/server/public-api/webhooks.server');
+    const {emitWebhook}=await import('#lib/server/public-api/webhooks.server.js');
     const byBatch=new Map(events.map(event=>[event.batchId,event]));
     for(const row of rows){
       const event=byBatch.get(row.batchId);
@@ -199,7 +199,7 @@ export async function logMusic(userId:string,workId:string,input:unknown,transac
     const tracks=work.kind==='track'?[{id:workId,entryId:workId}]:await musicAlbumMembers(workId,tx);
     if(!tracks.length)throw new DomainError('No known tracks to log.');
     await tx.insert(musicListenBatches).values({userId,batchId:data.batchId,workId,tracks:tracks.map(t=>t.id)});
-    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('$lib/sync/changes.server');
+    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('#lib/sync/changes.server.js');
     let added = 0;
     for (const track of tracks) {
       const occurrenceBatch=work.kind==='track'?data.batchId:importedListenBatch(data.batchId,track.entryId,0);

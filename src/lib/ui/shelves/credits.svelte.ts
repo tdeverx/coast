@@ -1,16 +1,17 @@
+import type { ReadonlyURL } from '$app/state';
 
   import { page as route } from '$app/state';
   import { onDestroy, untrack } from 'svelte';
-  import { useClient } from '$lib/ui/client-context';
-  import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
-  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
-  import type { MediaView } from '$lib/ui/types';
-  import type { creditRoles } from '$lib/media/credits';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
+  import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
+  import type { MediaView } from '#lib/ui/types.js';
+  import type { creditRoles } from '#lib/media/credits.js';
   import type { ShelfSource, ShelfControl } from './types';
 
 export type CreditsOptions = {
     layout?: 'row' | 'grid';
-    url?:URL;
+    url?:ReadonlyURL;
     personId: number;
     title: string;
     scope?: 'all' | 'library' | 'known';

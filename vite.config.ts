@@ -1,8 +1,17 @@
+import adapter from '@sveltejs/adapter-bun';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
-  server: { fs: { strict: true } },
+  plugins: [
+    tailwindcss(),
+    sveltekit({
+      preprocess: vitePreprocess(),
+      adapter: adapter(),
+      output: { linkHeaderPreload: false }
+    })
+  ],
+  server: { fs: { strict: true } }
 });

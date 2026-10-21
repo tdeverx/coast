@@ -19,17 +19,17 @@ const clientUrl=moduleUrl(`
 `);
 const client=await import(clientUrl);
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))}; export const onDestroy=()=>{};`);
-const navigationUrl=moduleUrl('export const replaceState=()=>{};');
+const navigationUrl=moduleUrl('export const goto=async()=>{};');
 const routeUrl=moduleUrl('export const page={data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},experimentalMusic:false,experimentalGaming:false},state:{}};');
 const code=(await compile('../src/lib/ui/shelves/progress.svelte.ts'))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
- .replaceAll('$lib/experimental',import.meta.resolve('../src/lib/experimental'))
- .replaceAll('$lib/progress',import.meta.resolve('../src/lib/progress'))
- .replaceAll('$lib/ui/client-context',clientUrl)
- .replaceAll('$lib/ui/client',clientUrl)
- .replaceAll('$lib/ui/resource.svelte',resourceUrl)
- .replaceAll('$lib/ui/content-revision.svelte',revisionUrl)
- .replaceAll('$app/navigation',navigationUrl).replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental'))
+ .replaceAll('#lib/progress.js',import.meta.resolve('../src/lib/progress'))
+ .replaceAll('#lib/ui/client-context.js',clientUrl)
+ .replaceAll('#lib/ui/client.js',clientUrl)
+ .replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
+ .replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl)
+ .replaceAll('$app/navigation',navigationUrl).replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state',routeUrl);
 const {createProgressSource}:typeof import('../src/lib/ui/shelves/progress.svelte')=await import(moduleUrl(code));
 const item={id:'work',title:'Visible profile card',kind:'movie'} as MediaView;

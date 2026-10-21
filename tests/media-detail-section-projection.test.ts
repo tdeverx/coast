@@ -105,7 +105,7 @@ test('guest projected detail skips child membership and preserves safe root/pare
 
 test('full route applies the same section demand for signed-in and guest screen reads',async()=>{
  let source=await read('src/routes/media/[id]/+page.server.ts');
- source=source.replace("(await import('$lib/social/public.server')).publicDetails",'publicDetails');
+ source=source.replace("(await import('#lib/social/public.server.js')).publicDetails",'publicDetails');
  const calls:any[]=[],id=crypto.randomUUID(),query:any={from:()=>query,where:()=>Promise.resolve([])};
  const load=compile(source,{v,error:(status:number)=>{throw Object.assign(Error('route'),{status});},eq,getDb:()=>({select:()=>query}),readingWorks:s.readingWorks,screenDetailChildren:target.screenDetailChildren,
   readingDetailLoad:()=>{throw Error('Unexpected reading branch');},loadMediaDetails:async(...args:any[])=>{calls.push(['private',...args]);return{item:{id}};},publicDetails:async(...args:any[])=>{calls.push(['guest',...args]);return{item:{id}};}},'load');

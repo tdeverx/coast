@@ -1,10 +1,10 @@
-import { getFeatureConfig } from '$lib/server/features';
-import {rankSearch, searchWords, normalizeSearch} from '$lib/search';
-import {getSql} from '$lib/server/db';
-import {type CoastConfig} from '$lib/server/config';
-import {AppError} from '$lib/server/security/errors';
-import type {MediaView} from '$lib/ui/types';
-import {tmdbArtworkUrl} from '$lib/providers/tmdb/artwork.server';
+import { getFeatureConfig } from '#lib/server/features.js';
+import {rankSearch, searchWords, normalizeSearch} from '#lib/search.js';
+import {getSql} from '#lib/server/db/index.js';
+import {type CoastConfig} from '#lib/server/config.js';
+import {AppError} from '#lib/server/security/errors.js';
+import type {MediaView} from '#lib/ui/types.js';
+import {tmdbArtworkUrl} from '#lib/providers/tmdb/artwork.server.js';
 export function isPublicReadPath(path:string,access:CoastConfig['siteAccess']) {
  if(access==='private')return false;
  // Profile reads keep their own audience checks; only their safe image dependencies are public.

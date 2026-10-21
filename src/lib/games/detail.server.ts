@@ -1,8 +1,8 @@
-import {gameDetails,playthroughSummary} from '$lib/core/games/service.server';
-import {listProviders} from '$lib/providers/instances.server';
-import {DomainError} from '$lib/core/errors';
-import {requireFeature} from '$lib/server/features';
-import {igdbDetails} from '$lib/providers/igdb/service.server';
+import {gameDetails,playthroughSummary} from '#lib/core/games/service.server.js';
+import {listProviders} from '#lib/providers/instances.server.js';
+import {DomainError} from '#lib/core/errors.js';
+import {requireFeature} from '#lib/server/features.js';
+import {igdbDetails} from '#lib/providers/igdb/service.server.js';
 export async function gameProviderDetailData(userId:string,instanceId:string,id:string){
  await requireFeature(userId,'game');
  return {item:await igdbDetails(instanceId,id),instanceId};

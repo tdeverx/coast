@@ -1,6 +1,6 @@
 import { barModel, distributionModel } from '../charts/insights';
-import type { ActivityDay } from '$lib/profile/activity';
-import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
+import type { ActivityDay } from '#lib/profile/activity.js';
+import { periodLabel, type ProfilePeriod } from '#lib/profile/period.js';
 import { activityChart } from '../charts/activity';
 import type { InsightPanel } from './types';
 export function profileActivityPanels(days: ActivityDay[], today: string, period: ProfilePeriod, profileUrl = '/profile'): InsightPanel[] {

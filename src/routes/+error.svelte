@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
 </script>
 
 <svelte:head><title>{page.status === 404 ? 'Page not found' : 'Error'} · Coast</title></svelte:head>

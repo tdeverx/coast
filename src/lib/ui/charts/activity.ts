@@ -1,5 +1,5 @@
-import { activityBuckets, type ActivityDay } from '$lib/profile/activity';
-import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
+import { activityBuckets, type ActivityDay } from '#lib/profile/activity.js';
+import { periodLabel, type ProfilePeriod } from '#lib/profile/period.js';
 
 /** Adapt watching activity to the shared bar-chart presentation. */
 export function activityChart(

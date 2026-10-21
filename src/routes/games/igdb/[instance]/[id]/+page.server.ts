@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { gameProviderDetailData } from '$lib/games/detail.server';
-import { AppError } from '$lib/server/security/errors';
+import { gameProviderDetailData } from '#lib/games/detail.server.js';
+import { AppError } from '#lib/server/security/errors.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({locals, params, depends}) => {
   depends('coast:tracking');

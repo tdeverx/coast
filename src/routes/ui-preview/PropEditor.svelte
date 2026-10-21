@@ -1,6 +1,6 @@
 <script lang="ts">
- import Button from '$lib/ui/components/Button.svelte';
- import Field from '$lib/ui/components/Field.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
+ import Field from '#lib/ui/components/Field.svelte';
  import {contracts,dataSample,handlerMode,parseData,propLabel,specimenDefaults,type Customisation,type PropContract,type SlotChoice} from './props';
  let {name,custom,change}:{name:string;custom:Customisation;change:(value:Customisation)=>void}=$props();
  let search=$state(''),drafts=$state<Record<string,string>>({}),errors=$state<Record<string,string>>({});

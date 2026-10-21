@@ -1,9 +1,9 @@
 import { and, eq, sql, inArray } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { providerConnections, providerInstances, syncValues, trackingState, users } from '$lib/server/db/schema';
-import type { AvailableItem } from '$lib/providers/contracts';
+import { getDb } from '#lib/server/db/index.js';
+import { providerConnections, providerInstances, syncValues, trackingState, users } from '#lib/server/db/schema.js';
+import type { AvailableItem } from '#lib/providers/contracts.js';
 import { reconcileProviderValue, sameValue } from './values.server';
-import { assertJobLease } from '$lib/server/queue/execution';
+import { assertJobLease } from '#lib/server/queue/execution.js';
 
 export type JellyfinPlaybackObservation = {
   id: string; kind: AvailableItem['kind']; played: boolean; favourite: boolean | null;

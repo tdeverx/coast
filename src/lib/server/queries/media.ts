@@ -1,11 +1,11 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import type { SequenceSource } from '../../media/sequence';
 import { sequenceEntries, sequenceSummaries, nextSequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
-import { lifecycle } from '$lib/media/model';
-import { tmdbArtworkUrl } from '$lib/providers/tmdb/artwork.server';
-import type { CastMember } from '$lib/providers/contracts';
-import { artworkKeys, type ArtworkImages } from '$lib/artwork';
+import { lifecycle } from '#lib/media/model.js';
+import { tmdbArtworkUrl } from '#lib/providers/tmdb/artwork.server.js';
+import type { CastMember } from '#lib/providers/contracts.js';
+import { artworkKeys, type ArtworkImages } from '#lib/artwork.js';
 import { and, asc, desc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
@@ -16,9 +16,9 @@ import { AppError } from '../security/errors';
 import { PAGE_SIZE } from './pagination';
 import type { MediaView, WorkSummary } from '../../ui/types';
 import { searchDocument, searchSql } from './search-ranking';
-import { rankSearch } from '$lib/search';
-import {namedEdition} from '$lib/media/editions';
-import {editionSnapshot} from '$lib/media/edition-metadata';
+import { rankSearch } from '#lib/search.js';
+import {namedEdition} from '#lib/media/editions.js';
+import {editionSnapshot} from '#lib/media/edition-metadata.js';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 const viewOptionsSchema = v.object({
@@ -105,7 +105,7 @@ export async function screenWorkSummaries(userId: string, ids: string[], viewerI
   v.parse(uuidSchema, userId);
   v.parse(v.pipe(v.array(uuidSchema), v.maxLength(PAGE_SIZE)), ids);
   if (!ids.length || !(await getFeatureConfig(viewerId)).features.screen) return [];
-  if (viewerId === null) return (await (await import('$lib/social/public.server')).publicMedia(ids))
+  if (viewerId === null) return (await (await import('#lib/social/public.server.js')).publicMedia(ids))
     .map(item => ({id:item.id, kind:item.kind, title:item.title, year:item.year}));
   const db=getDb();
   const [rows,snapshots,overrides,locks,preferences,userRows,config]=await Promise.all([
@@ -149,7 +149,7 @@ export async function mediaViews(
   const options = v.parse(viewOptionsSchema, rawOptions);
   if (options.ids?.length === 0) return [];
   if(!(await getFeatureConfig(viewerId)).features.screen)return [];
-  if(viewerId===null)return (await (await import('$lib/social/public.server')).publicMedia(options.ids)).filter(item=>!options.kind||item.kind===options.kind).slice(0,options.limit??150);
+  if(viewerId===null)return (await (await import('#lib/social/public.server.js')).publicMedia(options.ids)).filter(item=>!options.kind||item.kind===options.kind).slice(0,options.limit??150);
   const db = getDb();
   const search = options.query ? searchSql(options.query,
     [searchDocument(sql`${s.media.title}`, sql`${s.media.originalTitle}`)],
@@ -549,7 +549,7 @@ export async function mediaViews(
     }
   }
   if(viewerId!==userId){
-    const visibility=await (await import('$lib/social/privacy.server')).profileVisibility(userId,viewerId);
+    const visibility=await (await import('#lib/social/privacy.server.js')).profileVisibility(userId,viewerId);
     for(const item of views){item.queued=false;
       if(!visibility.collection){item.watchlist=false;item.collected=false;}
       if(!visibility.favourites)item.favourite=false;if(!visibility.ratings)item.rating=null;

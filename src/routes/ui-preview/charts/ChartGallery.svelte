@@ -3,18 +3,18 @@
   import type { Snippet } from 'svelte';
   import type { WorkspaceParts } from '../workspace';
   import Browser from '../Browser.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
   let {layout}: {layout:Snippet<[WorkspaceParts]>} = $props();
   import { goto } from '$app/navigation';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import { liquidGlass } from '$lib/ui/materials/glass';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
   import { chartRowContext, chartRowSummary } from './presentation';
-  import ChartView from '$lib/ui/charts/ChartView.svelte';
+  import ChartView from '#lib/ui/charts/ChartView.svelte';
   import ChartThumbnail from './ChartThumbnail.svelte';
   import { styles, fixtures, contextOptions, getDatasetOptions, getChartPeriod, getChartModel, dataRows, supportedMediums } from './data';
   import type { ChartContext, ChartDataset, ChartMedium } from './types';
-  import { formatValue, type ChartRow } from '$lib/ui/charts/model';
+  import { formatValue, type ChartRow } from '#lib/ui/charts/model.js';
 
   const contexts = ['P', 'T', 'S', 'M'];
   const parameters = $derived(Object.fromEntries(page.url.searchParams));
@@ -62,14 +62,14 @@
   $effect(() => { model; selected = 0; tablePage = 0; });
   async function change(values: Record<string, string>) {
     if(navigating)return;
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     const next = { context, chart: style.id, dataset, medium, ...values };
     const nextFixture = fixtures.find(item => item.sourceId === next.chart && item.context === next.context && item.variant === next.dataset)!;
     const nextMedia = supportedMediums(nextFixture);
     next.medium = nextMedia.find(item => item === next.medium) ?? nextMedia[0];
     for (const [key, value] of Object.entries(next)) url.searchParams.set(key, value);
     navigating=true;
-    try {await goto(url,{noScroll:true,keepFocus:true,replaceState:true});}
+    try {await goto(url,{reset: false,replace: true});}
     finally {navigating=false;}
   }
   function changeContext(value: string) {

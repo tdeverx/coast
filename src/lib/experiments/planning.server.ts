@@ -1,12 +1,12 @@
-import { requireFeature, getFeatureConfig } from '$lib/server/features';
-import { categoryEnabled } from '$lib/experimental';
+import { requireFeature, getFeatureConfig } from '#lib/server/features.js';
+import { categoryEnabled } from '#lib/experimental.js';
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { AppError } from '$lib/server/security/errors';
-import { requireFriend, requireFriends } from '$lib/social/service.server';
-import { workCards } from '$lib/collection/query.server';
-import { notify } from '$lib/server/notifications';
-import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
+import { getSql } from '#lib/server/db/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { requireFriend, requireFriends } from '#lib/social/service.server.js';
+import { workCards } from '#lib/collection/query.server.js';
+import { notify } from '#lib/server/notifications/index.js';
+import { pagination,PAGE_SIZE } from '#lib/server/queries/pagination.js';
 const uuid=v.pipe(v.string(),v.uuid());
 async function enabled(userId:string){return requireFeature(userId,'planning');}
 export async function createPlan(userId:string,input:unknown){

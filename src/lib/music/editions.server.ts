@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 export type MusicMember = { id: string; title: string; entryId: string; position: number; discNumber: number | null; trackNumber: number | null };

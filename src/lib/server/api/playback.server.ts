@@ -1,6 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { AppError } from '$lib/server/security/errors';
-import { startPlayback, progressPlayback, recordPlaybackError } from '$lib/playback/service.server';
+
+import { AppError } from '#lib/server/security/errors.js';
+import { startPlayback, progressPlayback, recordPlaybackError } from '#lib/playback/service.server.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handlePlayback(context: ApiContext): Promise<Response | undefined> {
@@ -14,5 +14,5 @@ export async function handlePlayback(context: ApiContext): Promise<Response | un
         result = await recordPlaybackError(uid, uuid(path[1]), body.code);
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

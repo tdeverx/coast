@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 import { and,eq,inArray,sql } from 'drizzle-orm';
-import { getDb,type Database } from '$lib/server/db';
-import { providerConnections,providerInstances,users,collectionProjectionEntries } from '$lib/server/db/schema';
+import { getDb,type Database } from '#lib/server/db/index.js';
+import { providerConnections,providerInstances,users,collectionProjectionEntries } from '#lib/server/db/schema.js';
 import { desiredProjection,projectionConfig } from './projection.server';
-import { DomainError } from '$lib/core/errors';
-import { notify } from '$lib/server/notifications';
+import { DomainError } from '#lib/core/errors.js';
+import { notify } from '#lib/server/notifications/index.js';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 export type SourceImpact={id:string;accounts:{username:string;connectionId:string;removals:{workId:string;title:string}[];unresolved:string[];uncertain:boolean}[]};

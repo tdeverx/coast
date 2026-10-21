@@ -1,4 +1,4 @@
-import { formatValue, type ChartModel, type ChartRow } from '$lib/ui/charts/model';
+import { formatValue, type ChartModel, type ChartRow } from '#lib/ui/charts/model.js';
 
 /** Keep the exact fixture intact; only remove repeated value/evidence copy. */
 export function chartRowDetail(row: ChartRow, unit: string) {

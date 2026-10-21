@@ -1,13 +1,13 @@
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { requireUser,type SessionUser } from '$lib/server/auth';
-import { AppError } from '$lib/server/security/errors';
-import { serviceTasks } from '$lib/providers/tasks';
-import { workCards,workAssessments } from '$lib/collection/query.server';
-import { activityFeed } from '$lib/social/queries.server';
-import { friends } from '$lib/social/service.server';
-import { statusesForUsers } from '$lib/social/status.server';
-import { defaultNotificationFilters,notificationKinds,notificationDestination,type NotificationFilters,type NotificationEntry } from '$lib/notifications/model';
+import { getSql } from '#lib/server/db/index.js';
+import { requireUser,type SessionUser } from '#lib/server/auth/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { serviceTasks } from '#lib/providers/tasks.js';
+import { workCards,workAssessments } from '#lib/collection/query.server.js';
+import { activityFeed } from '#lib/social/queries.server.js';
+import { friends } from '#lib/social/service.server.js';
+import { statusesForUsers } from '#lib/social/status.server.js';
+import { defaultNotificationFilters,notificationKinds,notificationDestination,type NotificationFilters,type NotificationEntry } from '#lib/notifications/model.js';
 const uuid=v.pipe(v.string(),v.uuid());
 const filterSchema=v.object({segment:v.optional(v.picklist(['all','social','requests','system']),'all'),kind:v.optional(v.picklist(notificationKinds.map(k=>k.value)),'all'),unread:v.optional(v.boolean(),false),category:v.optional(v.picklist(['all','screen','game','music','reading']),'all'),period:v.optional(v.picklist(['all','week','month']),'all')});
 export function notificationFilters(input:unknown):NotificationFilters {return v.parse(filterSchema,input);}

@@ -1,6 +1,6 @@
 import { conflictPreference } from './preference.server';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   lists,
   listItems,
@@ -9,10 +9,10 @@ import {
   syncListValues,
   systemSettings,
   media,
-} from '$lib/server/db/schema';
+} from '#lib/server/db/schema.js';
 import { decideSync, sameValue } from './values.server';
 import { enqueueInTransaction } from './changes.server';
-import { assertJobLease } from '$lib/server/queue/execution';
+import { assertJobLease } from '#lib/server/queue/execution.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 export type ListValue = { name: string; description: string; items: string[]; deleted?: boolean };

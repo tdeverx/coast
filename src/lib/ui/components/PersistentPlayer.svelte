@@ -1,22 +1,22 @@
 <script lang="ts">
   import {page} from '$app/state';
-  import {syncedPlayer,isSyncHost,canControlPlayback,syncedCommand,leaveSynced,joinSynced} from '$lib/playback/synced/client.svelte';
+  import {syncedPlayer,isSyncHost,canControlPlayback,syncedCommand,leaveSynced,joinSynced} from '#lib/playback/synced/client.svelte.js';
   import SyncedControls from './SyncedControls.svelte';
-  import { browserDiagnostic } from '$lib/ui/diagnostics';
-  import { sequencePath } from '$lib/media/sequence';
+  import { browserDiagnostic } from '#lib/ui/diagnostics.js';
+  import { sequencePath } from '#lib/media/sequence.js';
   import { onMount, untrack, tick } from 'svelte';
-  import { refreshAfterChange } from '$lib/ui/client';
-  import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted, cancelPlaybackPreparation } from '$lib/playback/client.svelte';
-  import { usePlayback } from '$lib/playback/context.svelte';
-  import { bufferedAhead, streamHasStopped, playbackFailureMessage } from '$lib/playback/failures';
-  import { actualPlayedDelta } from '$lib/playback/listening';
-  import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
-  import { observeVideoCrop } from '$lib/playback/observe-crop';
-  import { message, capturePlaybackApi } from '$lib/ui/client';
-  import { createPlaybackReports } from '$lib/playback/reports';
-  import { useClient, reportFailure, reportImportFailure } from '$lib/ui/client-context';
-  import type { MediaView } from '$lib/ui/types';
-  import { liquidGlass } from '$lib/ui/materials/glass';
+  import { refreshAfterChange } from '#lib/ui/client.js';
+  import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted, cancelPlaybackPreparation } from '#lib/playback/client.svelte.js';
+  import { usePlayback } from '#lib/playback/context.svelte.js';
+  import { bufferedAhead, streamHasStopped, playbackFailureMessage } from '#lib/playback/failures.js';
+  import { actualPlayedDelta } from '#lib/playback/listening.js';
+  import { noCrop, videoFitStyle, type FrameCrop } from '#lib/playback/crop.js';
+  import { observeVideoCrop } from '#lib/playback/observe-crop.js';
+  import { message, capturePlaybackApi } from '#lib/ui/client.js';
+  import { createPlaybackReports } from '#lib/playback/reports.js';
+  import { useClient, reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
+  import type { MediaView } from '#lib/ui/types.js';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
   import Icon from './Icon.svelte';
 
   import Button from './Button.svelte';
@@ -522,7 +522,7 @@
     };
   });
   let lastTiming = 0;
-  function tracePlayback(event: import('$lib/diagnostics').DiagnosticEvent) {
+  function tracePlayback(event: import('#lib/diagnostics.js').DiagnosticEvent) {
     if(preview)return;
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }

@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
-import { AppError } from '$lib/server/security/errors';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { AppError } from '#lib/server/security/errors.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 export const STEAM_BASE_URL = 'https://api.steampowered.com';
 export const steamIdSchema = v.pipe(v.string(), v.regex(/^\d{17}$/), v.check(id => /^\d{17}$/.test(id) && BigInt(id) >= 76561197960265728n && BigInt(id) <= 76561202255233023n));
 const count = v.pipe(v.number(), v.integer(), v.minValue(0));

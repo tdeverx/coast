@@ -19,9 +19,9 @@ test('installed navigation owner passes all eight reviewed commit/callback/fork 
   for (const schedule of schedules) expect({ name: schedule.name, correct: schedule.correct }).toEqual({ name: schedule.name, correct: true });
 });
 
-test('installed invalidation owner passes all thirteen reviewed cancellation/redirect/reentrancy schedules', async () => {
+test('installed invalidation owner passes all ten Kit 3 refresh/shallow/cancellation/reentrancy schedules', async () => {
   const schedules = await runInvalidationSchedules(await installedSource());
-  expect(schedules).toHaveLength(13);
+  expect(schedules).toHaveLength(10);
   for (const schedule of schedules) expect({ name: schedule.name, correct: schedule.correct }).toEqual({ name: schedule.name, correct: true });
 });
 
@@ -38,7 +38,7 @@ test('navigation build admission rejects version, registration, patch and instal
     const manifest = JSON.parse(original.get('package.json')!.toString());
     const packageInfo = JSON.parse(original.get(`${installed}/package.json`)!.toString());
     const faults = [
-      { path: 'package.json', bytes: JSON.stringify({ ...manifest, devDependencies: { ...manifest.devDependencies, '@sveltejs/kit': '^2.70.3' } }), error: 'navigation_runtime_version_pin_changed' },
+      { path: 'package.json', bytes: JSON.stringify({ ...manifest, devDependencies: { ...manifest.devDependencies, '@sveltejs/kit': `^${navigationRuntime.version}` } }), error: 'navigation_runtime_version_pin_changed' },
       { path: 'package.json', bytes: JSON.stringify({ ...manifest, patchedDependencies: {} }), error: 'navigation_runtime_patch_registration_changed' },
       { path: `${installed}/package.json`, bytes: JSON.stringify({ ...packageInfo, version: '0.0.0' }), error: 'navigation_runtime_installed_version_changed' },
       { path: navigationRuntime.patch, bytes: original.get(navigationRuntime.patch)!.toString() + '\n', error: 'navigation_runtime_patch_changed' },

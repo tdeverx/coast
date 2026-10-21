@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient, reportFailure } from '$lib/ui/client-context';
-  import { createResource } from '$lib/ui/resource.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Pagination from '#lib/ui/components/Pagination.svelte';
+  import { message } from '#lib/ui/client.js';
+  import { useClient, reportFailure } from '#lib/ui/client-context.js';
+  import { createResource } from '#lib/ui/resource.svelte.js';
   import type { listBenchmarks } from './service.server';
   const {api,preview}=useClient();
   let {history}:{history:Awaited<ReturnType<typeof listBenchmarks>>}=$props();

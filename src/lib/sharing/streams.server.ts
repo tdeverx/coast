@@ -1,4 +1,4 @@
-import {getSql} from '$lib/server/db';
+import {getSql} from '#lib/server/db/index.js';
 type SharedStreamRow={id:string;share_id:string;owner_id:string;username:string;client:string;first_seen_at:Date;last_seen_at:Date;ended_at:Date|null;provider_device_id:string|null;media_type:string;position_seconds:number;duration_seconds:number|null;max_bitrate:number|null;state:string;external_id:string;instance_id:string;connection_id:string;server:string;title:string;season_number:number|null;episode_number:number|null;viewers:number};
 
 /** Same stable keyset cursor as server session history; no tokens or addresses enter this read model. */

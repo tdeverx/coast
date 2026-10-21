@@ -8,9 +8,9 @@ const playbackUrl = moduleUrl('export const plays=[]; export const playMedia=asy
 const source = await Bun.file(new URL('../src/lib/ui/controls/sequence.svelte.ts', import.meta.url)).text();
 const compiled = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source), {filename:'sequence.svelte.js', generate:'client'}).js.code
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'))
-  .replaceAll('$lib/ui/client', clientUrl)
-  .replaceAll('$lib/playback/client.svelte', playbackUrl)
-  .replaceAll('$lib/media/sequence', import.meta.resolve('../src/lib/media/sequence'));
+  .replaceAll('#lib/ui/client.js', clientUrl)
+  .replaceAll('#lib/playback/client.svelte.js', playbackUrl)
+  .replaceAll('#lib/media/sequence.js', import.meta.resolve('../src/lib/media/sequence'));
 const {createSequencePlayback}: typeof import('../src/lib/ui/controls/sequence.svelte') = await import(moduleUrl(compiled));
 const playback = await import(playbackUrl);
 

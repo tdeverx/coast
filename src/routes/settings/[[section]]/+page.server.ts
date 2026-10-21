@@ -1,29 +1,29 @@
-import { resolveFeatures } from '$lib/features';
-import {listShares} from '$lib/sharing/service.server';
-import {listApiTokens} from '$lib/server/public-api/tokens.server';
-import { collectionPreferences } from '$lib/collection/preferences';
-import {listInvites} from '$lib/server/auth/onboarding';
-import { settingsSections, administratorSettings } from '$lib/settings/sections';
+import { resolveFeatures } from '#lib/features.js';
+import {listShares} from '#lib/sharing/service.server.js';
+import {listApiTokens} from '#lib/server/public-api/tokens.server.js';
+import { collectionPreferences } from '#lib/collection/preferences.js';
+import {listInvites} from '#lib/server/auth/onboarding.js';
+import { settingsSections, administratorSettings } from '#lib/settings/sections.js';
 import type { PageServerLoad } from './$types';
-import { getPendingConflicts } from '$lib/sync/conflicts.server';
+import { getPendingConflicts } from '#lib/sync/conflicts.server.js';
 import { error } from '@sveltejs/kit';
-import { requireAdmin, listUsers } from '$lib/server/auth';
-import { listProviders } from '$lib/providers/instances.server';
-import { getConfig } from '$lib/server/config';
-import { systemHealth, listDiagnostics } from '$lib/server/notifications';
-import { listActions, listTaskActions } from '$lib/server/queue';
-import { getSql, getDb } from '$lib/server/db';
+import { requireAdmin, listUsers } from '#lib/server/auth/index.js';
+import { listProviders } from '#lib/providers/instances.server.js';
+import { getConfig } from '#lib/server/config.js';
+import { systemHealth, listDiagnostics } from '#lib/server/notifications/index.js';
+import { listActions, listTaskActions } from '#lib/server/queue/index.js';
+import { getSql, getDb } from '#lib/server/db/index.js';
 import {
   mediaRequests,
   media,
   providerInstances,
   providerConnections,
   users,
-} from '$lib/server/db/schema';
+} from '#lib/server/db/schema.js';
 import { eq, desc } from 'drizzle-orm';
-import { jobTimings } from '$lib/providers/job-timing.server';
-import { adminDemand } from '$lib/collection/demand.server';
-import { listBenchmarks } from '$lib/benchmarks/service.server';
+import { jobTimings } from '#lib/providers/job-timing.server.js';
+import { adminDemand } from '#lib/collection/demand.server.js';
+import { listBenchmarks } from '#lib/benchmarks/service.server.js';
 export const load = (async ({locals, params, depends, url}) => {
   depends('coast:settings'); depends('coast:providers');
 
@@ -89,7 +89,7 @@ export const load = (async ({locals, params, depends, url}) => {
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     demand: section === 'admin' ? adminDemand(url) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
-    tasteJob:section==='jobs'?await (await import('$lib/social/taste-cache.server')).tasteJob():null,
+    tasteJob:section==='jobs'?await (await import('#lib/social/taste-cache.server.js')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
     actions: section === 'jobs' ? await listTaskActions(locals.user) : section === 'admin' ? await listActions(locals.user) : [],
     loggingAudit:

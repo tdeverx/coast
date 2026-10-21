@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {useClient,reportFailure} from '$lib/ui/client-context';
+  import {useClient,reportFailure} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import { onMount, type Snippet } from 'svelte';
   let { layout, picker }: { layout: Snippet<[{title:string;canvas:Snippet;inspector:Snippet;browser:Snippet<[{heading:Snippet}]>}]>; picker:Snippet<[{options:{value:string;label:string}[];value:string;change:(value:string)=>void;heading?:Snippet}]> } = $props();

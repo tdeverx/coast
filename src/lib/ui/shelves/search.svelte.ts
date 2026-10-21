@@ -1,11 +1,11 @@
 import { untrack } from 'svelte';
 import { page } from '$app/state';
-import { libraryTitles, type LibrarySurface } from '$lib/library';
+import { libraryTitles, type LibrarySurface } from '#lib/library.js';
 import type { ShelfItem, ShelfSource, ShelfControl } from './types';
-import type { MediumFeatures } from '$lib/experimental';
-import { mediaTypeOptions } from '$lib/ui/filter-options';
-import { refreshRouteDependencies } from '$lib/ui/client';
-import { searchRowMatches, type SearchView } from '$lib/search-selection';
+import type { MediumFeatures } from '#lib/experimental.js';
+import { mediaTypeOptions } from '#lib/ui/filter-options.js';
+import { refreshRouteDependencies } from '#lib/ui/client.js';
+import { searchRowMatches, type SearchView } from '#lib/search-selection.js';
 
 export type SearchOptions = {
   surface?: LibrarySurface;

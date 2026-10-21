@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
-import { comicVineIdSchema, openLibraryIdSchema, openLibraryEditionIdSchema, readingFormat } from '$lib/reading/model';
+import { comicVineIdSchema, openLibraryIdSchema, openLibraryEditionIdSchema, readingFormat } from '#lib/reading/model.js';
 import { jellyfinItemKey, validateJellyfinPage } from './paging';
 const id = v.pipe(v.string(), v.regex(/^[a-f0-9-]{32,36}$/i));
 const bookSchema = v.object({

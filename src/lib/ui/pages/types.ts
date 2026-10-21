@@ -1,11 +1,11 @@
 import type { ComponentProps } from 'svelte';
-import type Button from '$lib/ui/components/Button.svelte';
-import type { InsightPanel } from '$lib/ui/insights/types';
-import type { ShelfItem } from '$lib/ui/shelves/types';
-import type { MediaCardShape } from '$lib/ui/types';
+import type Button from '#lib/ui/components/Button.svelte';
+import type { InsightPanel } from '#lib/ui/insights/types.js';
+import type { ShelfItem } from '#lib/ui/shelves/types.js';
+import type { MediaCardShape } from '#lib/ui/types.js';
 export type PageCommand = Pick<ComponentProps<typeof Button>, 'icon' | 'emphasis' | 'disabled' | 'href' | 'size'> & { label: string; run?: () => void | Promise<unknown> };
 export type PageSection = {
-  source?: import('$lib/ui/shelves').ShelfConfig;
+  source?: import('#lib/ui/shelves/index.js').ShelfConfig;
   key: string;
   title: string;
   items?: ShelfItem[];

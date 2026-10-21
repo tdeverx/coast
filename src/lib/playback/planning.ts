@@ -1,4 +1,4 @@
-import type { BrowserCapabilities, PlaybackPolicy, PlaybackSource } from '$lib/providers/contracts';
+import type { BrowserCapabilities, PlaybackPolicy, PlaybackSource } from '#lib/providers/contracts.js';
 export interface PlaybackPlan {
   source: PlaybackSource;
   mode: 'direct' | 'relay' | 'transcode';

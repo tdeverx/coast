@@ -1,10 +1,10 @@
-import { getSql } from '$lib/server/db';
-import { featureValues, type FeatureConfiguration } from '$lib/features';
-import { assertJobLease, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
-import type { OutboxAction } from '$lib/server/queue';
+import { getSql } from '#lib/server/db/index.js';
+import { featureValues, type FeatureConfiguration } from '#lib/features.js';
+import { assertJobLease, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
+import type { OutboxAction } from '#lib/server/queue/index.js';
 
 /** Durable, bounded local withdrawal; no provider I/O in the settings transaction. */
-export async function queueFeatureTransition(db: ReturnType<typeof getSql>, actorId: string, config: FeatureConfiguration, subjectId?: string, choices?:import('$lib/features').FeatureChoices) {
+export async function queueFeatureTransition(db: ReturnType<typeof getSql>, actorId: string, config: FeatureConfiguration, subjectId?: string, choices?:import('#lib/features.js').FeatureChoices) {
   const [work]=await db`select exists(select 1 from playback_sessions where state<>'stopped' and (${subjectId??null}::uuid is null or user_id=${subjectId??null}::uuid))
     or exists(select 1 from reading_sessions where closed_at is null and (${subjectId??null}::uuid is null or user_id=${subjectId??null}::uuid))
     or exists(select 1 from synced_rooms where ended_at is null and (${subjectId??null}::uuid is null or host_id=${subjectId??null}::uuid))
@@ -24,10 +24,10 @@ export async function reconcileFeatures(action: OutboxAction) {
   let after=typeof checkpoint?.after==='string'?checkpoint.after:null, checked=Number(checkpoint?.checked??0);
   while(true){
     const db=getSql();
-    const users=await db<{id:string;settings:{features?:import('$lib/features').FeatureChoices}}[]>`select id,settings from users where (${subjectId}::uuid is null or id=${subjectId}::uuid) and (${after}::uuid is null or id>${after}::uuid) order by id limit 40`;
+    const users=await db<{id:string;settings:{features?:import('#lib/features.js').FeatureChoices}}[]>`select id,settings from users where (${subjectId}::uuid is null or id=${subjectId}::uuid) and (${after}::uuid is null or id>${after}::uuid) order by id limit 40`;
     if(!users.length)return {checked};
     for(const user of users){
-      const features=featureValues(config,subjectId?action.payload.choices as import('$lib/features').FeatureChoices:user.settings.features);
+      const features=featureValues(config,subjectId?action.payload.choices as import('#lib/features.js').FeatureChoices:user.settings.features);
       let more:boolean;do{
       more=await db.begin(async tx=>{
         await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;

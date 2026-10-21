@@ -1,11 +1,11 @@
-import {requireFeature} from '$lib/server/features';
-import { presentationPreferences } from '$lib/catalogue/overrides/presentation.server';
+import {requireFeature} from '#lib/server/features.js';
+import { presentationPreferences } from '#lib/catalogue/overrides/presentation.server.js';
 import { eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { musicWorks } from '$lib/server/db/schema';
-import { DomainError } from '$lib/core/errors';
-import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
+import { getDb } from '#lib/server/db/index.js';
+import { musicWorks } from '#lib/server/db/schema.js';
+import { DomainError } from '#lib/core/errors.js';
+import { PAGE_SIZE, pageNumberSchema, pagination } from '#lib/server/queries/pagination.js';
 import { musicAlbumMembersSql } from './editions.server';
 
 /** Track history, or the selected album edition's tracks, with owner filtering before paging. */

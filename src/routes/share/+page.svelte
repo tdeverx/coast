@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
  import { onMount, untrack } from 'svelte';
  import { page } from '$app/state';
- import Heading from '$lib/ui/components/Heading.svelte';
- import Button from '$lib/ui/components/Button.svelte';
- import { playMedia, player, alignPlayback, stopPlayback } from '$lib/playback/client.svelte';
- import { message, setPlaybackApi } from '$lib/ui/client';
+ import Heading from '#lib/ui/components/Heading.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
+ import { playMedia, player, alignPlayback, stopPlayback } from '#lib/playback/client.svelte.js';
+ import { message, setPlaybackApi } from '#lib/ui/client.js';
  import type { PageData } from './$types';
  let { data }: { data: PageData } = $props();
  let shared = $state<PageData['shared']>(untrack(()=>data.shared)), token = $state(''), busy = $state(false), error = $state('');

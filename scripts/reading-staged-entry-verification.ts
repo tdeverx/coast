@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
-import { getSql, closeDb } from '$lib/server/db';
-import { newSession, logout } from '$lib/server/auth';
+import { getSql, closeDb } from '#lib/server/db/index.js';
+import { newSession, logout } from '#lib/server/auth/index.js';
 import assert from 'node:assert/strict';
 // Opt-in normal-dev acceptance with actual media/admin access; no bookmark callbacks.
 const origin = process.env.COAST_READING_UI_ORIGIN ?? 'http://localhost:5173';

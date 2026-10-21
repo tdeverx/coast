@@ -2,7 +2,7 @@ import type {Snippet} from 'svelte';
 import type {InsightPanel} from '../insights/types';
 import type {MediaCardPresentation} from '../types';
 import type {FilterGroup} from '../controls/filters';
-import type {Review} from '$lib/media/details';
+import type {Review} from '#lib/media/details.js';
 export type DetailFailure={title:string;message:string;retry:()=>unknown};
 export type DetailTab={value:string;label:string;panels?:InsightPanel[];content?:Snippet;filters?:FilterGroup[];busy?:boolean;errors?:DetailFailure[]};
 export type DetailRowsModel={

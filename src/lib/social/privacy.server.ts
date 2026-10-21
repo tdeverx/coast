@@ -1,5 +1,5 @@
-import {getSql} from '$lib/server/db';
-import {AppError} from '$lib/server/security/errors';
+import {getSql} from '#lib/server/db/index.js';
+import {AppError} from '#lib/server/security/errors.js';
 import type {SocialSection} from './model';
 export async function canView(ownerId:string,viewerId:string|null,section:SocialSection,category?:string) {
   const [row]=await getSql()`select social_visible(${ownerId}::uuid,${viewerId}::uuid,${section},${category??null}) as allowed`;

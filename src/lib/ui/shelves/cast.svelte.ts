@@ -1,6 +1,7 @@
+import type { ReadonlyURL } from '$app/state';
 import { page } from '$app/state';
 import { untrack } from 'svelte';
-import type { CastMember } from '$lib/providers/contracts';
+import type { CastMember } from '#lib/providers/contracts.js';
 
 type CastOptions = {
   people: CastMember[];
@@ -8,7 +9,7 @@ type CastOptions = {
   busy?: boolean;
   href?: string;
   layout?: 'row' | 'grid';
-  url?:URL;
+  url?:ReadonlyURL;
 };
 
 /** Credit selection supplies items and controls to the shared Shelf. */

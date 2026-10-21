@@ -7,10 +7,10 @@ const lifecycleUrl=moduleUrl(`export {untrack} from '${import.meta.resolve('svel
 const clientUrl=moduleUrl(`export let delivery;export const set=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});`);
 const client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/social.svelte.ts',import.meta.url)).text())
- .replaceAll('$app/state',routeUrl).replaceAll('$lib/ui/client-context',clientUrl).replaceAll('$lib/ui/resource.svelte',resourceUrl)
- .replaceAll('$lib/ui/content-revision.svelte',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.social;'))
- .replaceAll('$lib/social/model',import.meta.resolve('../src/lib/social/model'))
- .replaceAll('$lib/experimental',import.meta.resolve('../src/lib/experimental')).replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
+ .replaceAll('$app/state',routeUrl).replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
+ .replaceAll('#lib/ui/content-revision.svelte.js',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.social;'))
+ .replaceAll('#lib/social/model.js',import.meta.resolve('../src/lib/social/model'))
+ .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental')).replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
 const {createSocialSource}:typeof import('../src/lib/ui/shelves/social.svelte')=await import(moduleUrl(code));
 const settle=async()=>{for(let i=0;i<8;i++){runtime.flush();await Promise.resolve();}};
 const feed=(id:string,more=false)=>({items:[{id,title:id,kind:'book',entryId:id}],hasMore:more,next:more?{before:'2026-10-01T00:00:00Z',beforeId:'00000000-0000-4000-8000-000000000001',beforeKnown:'true'}:null});

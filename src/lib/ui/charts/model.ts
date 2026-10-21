@@ -1,5 +1,5 @@
-import { chartCategoryColor, chartMediumColor } from '$lib/ui/charts/types';
-export { chartColors, chartCategoryColor, chartFill } from '$lib/ui/charts/types';
+import { chartCategoryColor, chartMediumColor } from '#lib/ui/charts/types.js';
+export { chartColors, chartCategoryColor, chartFill } from '#lib/ui/charts/types.js';
 
 export interface ChartRow {
   label: string;

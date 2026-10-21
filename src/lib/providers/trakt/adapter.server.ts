@@ -211,7 +211,7 @@ export class TraktAdapter {
       })
     );
   }
-  async community(path: string, page = 1): Promise<import('$lib/media/details').MediaInsights> {
+  async community(path: string, page = 1): Promise<import('#lib/media/details.js').MediaInsights> {
     const results = await Promise.allSettled([
       this.call(`${path}/ratings`).then((data) =>
         v.parse(

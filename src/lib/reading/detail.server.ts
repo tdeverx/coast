@@ -1,10 +1,10 @@
-import {requireFeature} from '$lib/server/features';
+import {requireFeature} from '#lib/server/features.js';
 import {and,eq,sql,desc,asc} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb,getSql} from '$lib/server/db';
-import {readingWorks,workIdentifiers} from '$lib/server/db/schema';
-import {pageNumberSchema,pagination,PAGE_SIZE} from '$lib/server/queries/pagination';
-import {readingProviderDetails} from '$lib/providers/reading.server';
+import {getDb,getSql} from '#lib/server/db/index.js';
+import {readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
+import {pageNumberSchema,pagination,PAGE_SIZE} from '#lib/server/queries/pagination.js';
+import {readingProviderDetails} from '#lib/providers/reading.server.js';
 import {readingWork,readingCards} from './query.server';
 import type {ReadingCredit} from './model';
 

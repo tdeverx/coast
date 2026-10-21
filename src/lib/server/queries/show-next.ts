@@ -1,10 +1,10 @@
 import { and, asc, eq, exists, isNull, lte, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { rewatchFields } from '$lib/core/tracking/rewatch.server';
-import { getDb } from '$lib/server/db';
-import * as s from '$lib/server/db/schema';
-import { requireFeature } from '$lib/server/features';
-import { AppError } from '$lib/server/security/errors';
+import { rewatchFields } from '#lib/core/tracking/rewatch.server.js';
+import { getDb } from '#lib/server/db/index.js';
+import * as s from '#lib/server/db/schema.js';
+import { requireFeature } from '#lib/server/features.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { mediaViewsForIds, permittedAvailability } from './media';
 import { PAGE_SIZE, pagination, pageNumberSchema } from './pagination';
 

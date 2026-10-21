@@ -1,6 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { AppError } from '$lib/server/security/errors';
-import { listActions, cancelAction, retryAction, promoteAction, listTaskActions, updateTaskActions } from '$lib/server/queue';
+
+import { AppError } from '#lib/server/security/errors.js';
+import { listActions, cancelAction, retryAction, promoteAction, listTaskActions, updateTaskActions } from '#lib/server/queue/index.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleQueue(context: ApiContext): Promise<Response | undefined> {
@@ -22,5 +22,5 @@ export async function handleQueue(context: ApiContext): Promise<Response | undef
         result = await promoteAction(user, uuid(path[1]));
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import {useRetention} from '$lib/ui/retention';
+  import {useRetention} from '#lib/ui/retention.js';
   import {onDestroy,tick} from 'svelte';
   import Button from './Button.svelte';
   import Toast from './Toast.svelte';
-  import { useClient } from '$lib/ui/client-context';
-  import { liquidGlass } from '$lib/ui/materials/glass';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
   import type { ComponentProps } from 'svelte';
   let {
     open = $bindable(false),

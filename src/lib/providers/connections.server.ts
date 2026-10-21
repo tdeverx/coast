@@ -1,7 +1,7 @@
 import * as v from 'valibot';
-import { AppError } from '$lib/server/security/errors';
+import { AppError } from '#lib/server/security/errors.js';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   providerConnections,
   providerInstances,
@@ -9,10 +9,10 @@ import {
   availability,
   outboxActions,
   syncCheckpoints,
-} from '$lib/server/db/schema';
-import { encryptCredential } from '$lib/server/security/credentials';
-import { getInstance } from '$lib/providers/instances.server';
-import { maintenanceKinds } from '$lib/providers/tasks';
+} from '#lib/server/db/schema.js';
+import { encryptCredential } from '#lib/server/security/credentials.js';
+import { getInstance } from '#lib/providers/instances.server.js';
+import { maintenanceKinds } from '#lib/providers/tasks.js';
 
 export async function connectionFor(userId: string, connectionId: string, provider?: string) {
   const [connection] = await getDb()

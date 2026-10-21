@@ -1,0 +1,1293 @@
+{
+  "scope": "Kit 3 migration correctness/regression acceptance; no new latency improvement claim",
+  "baseRevision": "6ca378e37c1740506d744f9803866e9e27f9afcb",
+  "workingTreeFiles": {
+    "package.json": "6062aec4f4b556a3d3d14fc38b297b5480a566a5e38edcecd765bfe61f0810a1",
+    "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
+    "Dockerfile": "14dc1e3b13c4ed2ca6317b1fd61cefaf9e106654aed575957dea4bb2f0915a8a",
+    "vite.config.ts": "377bfe540ebdecd3114f913e781c9f7e36e3ef39a3627b8960a5455a03b54f41",
+    "tsconfig.json": "3dd85ea17220d7a751e5c1d558c3b6a23bab79565f31af31ba15b5becad92938",
+    "patches/sveltejs-kit-3.1.0.patch": "95f60540b8911c5c92e126ad455cbb01b41103889d7d28ef31db4a2f73e617d3",
+    "patches/sveltejs-adapter-bun-1.0.0.patch": "bbc9bf17ecefa3ecb283907985a5391f3e756c06a3d809661d081a3bf8ba53a0",
+    "scripts/check-navigation-runtime.ts": "41c4842281553c7371ef50a089ed2eef43cddaa909660ef9e9444076239faaf2",
+    "scripts/check-bun-adapter.ts": "50812f06ed2c6717fa0e5648dfdf8e1571cb9eb9114221a5794720ff16d188f2",
+    "src/hooks.server.ts": "e4d049eb47a00050a96709a106cda9f590f86986a7623adcf92440ba34150e68",
+    "src/lib/ui/media-navigation.ts": "897e6f87b702bc181ed1d9e63ce371507bbfbce947eba6701c5d0d7c7fd1015c",
+    "src/lib/ui/client.ts": "45450e86798bc5cc3dc59f1a427d76fe86ae8c3cff42b8b219d2a1d6d2769b07"
+  },
+  "navigation": {
+    "boundary": "Controlled installed-source owners with real Svelte store/tick/settled; not actual browser concurrency",
+    "stock": [
+      {
+        "name": "superseded during onNavigate, older callbacks resolve first",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": false
+          },
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A",
+          "B"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "rejected"
+          },
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": false
+      },
+      {
+        "name": "old render abort cannot delete current registration of same returned function",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          },
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "shared"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "rejected"
+          },
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "newer navigation finishes before old render abort, only current callback dispatches",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          },
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "shared"
+        ],
+        "events": [
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          },
+          {
+            "label": "A",
+            "phase": "rejected"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "superseded owner discards preload fork already removed from load_cache",
+        "discards": 0,
+        "forkCommits": 1,
+        "callbacks": [
+          "A",
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": false
+      },
+      {
+        "name": "additional diagnostic: superseded during pending preload fork await after hook gate",
+        "discards": 0,
+        "forkCommits": 1,
+        "commits": [
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A",
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": false
+      },
+      {
+        "name": "new navigation finishes first, distinct aborted callback never dispatches",
+        "callbacks": [
+          "A",
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": false
+      },
+      {
+        "name": "negative control successful single navigation preserves one commit and returned callback",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A"
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "Kit 3 refresh can finish while navigation is pending without stealing navigation ownership",
+        "commits": [
+          {
+            "label": "I",
+            "currentToken": true
+          },
+          {
+            "label": "A",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "fulfilled"
+          }
+        ],
+        "retainedFlags": {
+          "isNavigating": false,
+          "updating": false,
+          "navigatingStoreActive": false
+        },
+        "correct": true
+      },
+      {
+        "name": "stale refresh and old navigation cannot replace newer B",
+        "correct": false
+      },
+      {
+        "name": "cancelled navigation preserves idle owner and commits nothing",
+        "correct": true
+      },
+      {
+        "name": "refresh-only does not manufacture history or navigation hooks",
+        "correct": true
+      },
+      {
+        "name": "refresh preserves shallow state while deprecated invalidation can reset it",
+        "correct": true
+      },
+      {
+        "name": "explicit state reset remains available",
+        "correct": true
+      },
+      {
+        "name": "superseded shallow callback cannot publish its old panel state",
+        "correct": false
+      },
+      {
+        "name": "real writable subscriber can start B during A completion without A clearing B",
+        "correct": true
+      },
+      {
+        "name": "afterNavigate reentrancy retains the new navigation indicator and flags",
+        "correct": false
+      },
+      {
+        "name": "refresh does not clear an external navigation",
+        "correct": true
+      },
+      {
+        "name": "refresh load failure propagates without inventing a page commit",
+        "correct": true
+      }
+    ],
+    "patched": [
+      {
+        "name": "superseded during onNavigate, older callbacks resolve first",
+        "commits": [
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "B"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "rejected"
+          },
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "old render abort cannot delete current registration of same returned function",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          },
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "shared"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "rejected"
+          },
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "newer navigation finishes before old render abort, only current callback dispatches",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          },
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "shared"
+        ],
+        "events": [
+          {
+            "label": "B",
+            "phase": "fulfilled"
+          },
+          {
+            "label": "A",
+            "phase": "rejected"
+          }
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "superseded owner discards preload fork already removed from load_cache",
+        "discards": 1,
+        "forkCommits": 0,
+        "callbacks": [
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "additional diagnostic: superseded during pending preload fork await after hook gate",
+        "discards": 1,
+        "forkCommits": 0,
+        "commits": [
+          {
+            "label": "B",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "new navigation finishes first, distinct aborted callback never dispatches",
+        "callbacks": [
+          "B"
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "negative control successful single navigation preserves one commit and returned callback",
+        "commits": [
+          {
+            "label": "A",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A"
+        ],
+        "remainingRegistrations": 0,
+        "correct": true
+      },
+      {
+        "name": "Kit 3 refresh can finish while navigation is pending without stealing navigation ownership",
+        "commits": [
+          {
+            "label": "I",
+            "currentToken": true
+          },
+          {
+            "label": "A",
+            "currentToken": true
+          }
+        ],
+        "callbacks": [
+          "A"
+        ],
+        "events": [
+          {
+            "label": "A",
+            "phase": "fulfilled"
+          }
+        ],
+        "retainedFlags": {
+          "isNavigating": false,
+          "updating": false,
+          "navigatingStoreActive": false
+        },
+        "correct": true
+      },
+      {
+        "name": "stale refresh and old navigation cannot replace newer B",
+        "correct": true
+      },
+      {
+        "name": "cancelled navigation preserves idle owner and commits nothing",
+        "correct": true
+      },
+      {
+        "name": "refresh-only does not manufacture history or navigation hooks",
+        "correct": true
+      },
+      {
+        "name": "refresh preserves shallow state while deprecated invalidation can reset it",
+        "correct": true
+      },
+      {
+        "name": "explicit state reset remains available",
+        "correct": true
+      },
+      {
+        "name": "superseded shallow callback cannot publish its old panel state",
+        "correct": true
+      },
+      {
+        "name": "real writable subscriber can start B during A completion without A clearing B",
+        "correct": true
+      },
+      {
+        "name": "afterNavigate reentrancy retains the new navigation indicator and flags",
+        "correct": true
+      },
+      {
+        "name": "refresh does not clear an external navigation",
+        "correct": true
+      },
+      {
+        "name": "refresh load failure propagates without inventing a page commit",
+        "correct": true
+      }
+    ]
+  },
+  "reading": {
+    "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
+    "source": "6ca378e37c1740506d744f9803866e9e27f9afcb",
+    "cases": [
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "actual source rejects disk/metadata capacity pressure and returns both reservations",
+        "status": "passed"
+      },
+      {
+        "name": "actual source concurrent preparations reject combined free-space overcommit",
+        "status": "passed"
+      },
+      {
+        "name": "actual image metadata with controlled latency advances every inspection notification",
+        "status": "passed"
+      },
+      {
+        "name": "actual source admits two personal preparations and close/reopen while preserving another reader",
+        "status": "passed"
+      },
+      {
+        "name": "actual completed pages expire after a controlled idle TTL and reacquire cleanly",
+        "status": "passed"
+      },
+      {
+        "name": "actual idle pages evict under disk or metadata pressure without exceeding either budget",
+        "status": "passed"
+      },
+      {
+        "name": "concurrent actual-source idle eviction cannot over-admit an account or start its rejected job",
+        "status": "passed"
+      },
+      {
+        "name": "actual-source cancellation drains extraction and deletes partial files",
+        "status": "passed"
+      },
+      {
+        "name": "startup orphan cleanup removes its symlink without following its target",
+        "status": "passed"
+      }
+    ],
+    "samples": [
+      {
+        "format": "cbr",
+        "bytes": 73339323,
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "pages": 24,
+        "coldPreparationMs": 472.321083,
+        "resources": {
+          "mainCpuMicros": 196024,
+          "beforeRss": 18334440,
+          "sampledPeakRss": 51250088,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 39372234,
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "pages": 33,
+        "coldPreparationMs": 234.23079100000018,
+        "resources": {
+          "mainCpuMicros": 76655,
+          "beforeRss": 123159800,
+          "sampledPeakRss": 139494648,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 74500125,
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "pages": 24,
+        "coldPreparationMs": 449.28429200000005,
+        "resources": {
+          "mainCpuMicros": 111899,
+          "beforeRss": 89146640,
+          "sampledPeakRss": 89195792,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 41725042,
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "pages": 30,
+        "coldPreparationMs": 294.35366699999986,
+        "resources": {
+          "mainCpuMicros": 104030,
+          "beforeRss": 124618024,
+          "sampledPeakRss": 138659112,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 82635611,
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "pages": 24,
+        "coldPreparationMs": 553.3380830000001,
+        "resources": {
+          "mainCpuMicros": 164865,
+          "beforeRss": 97289536,
+          "sampledPeakRss": 179864896,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbz",
+        "bytes": 401719147,
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "pages": 265,
+        "coldPreparationMs": 1262.4906249999995,
+        "resources": {
+          "mainCpuMicros": 814669,
+          "beforeRss": 143787328,
+          "sampledPeakRss": 337610072,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      }
+    ],
+    "controlledProgress": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      24,
+      24
+    ],
+    "status": "passed"
+  },
+  "actualSql": {
+    "boundary": "Disposable two-table subset of previously approved actual catalogue; selected shipping Bun; no normal/live changes",
+    "probes": {
+      "verify-prepared.ts": {
+        "report": {
+          "bun": "1.4.4",
+          "platform": "linux",
+          "source": "Previously approved actual catalogue checkpoint; media table only",
+          "trials": [
+            {
+              "prepare": true,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 4,
+                "context_bytes": "1667560",
+                "used_bytes": "1217336",
+                "cached_sources": 4,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 50888704
+              },
+              "afterInsert": {
+                "statements": 9,
+                "context_bytes": "6700800",
+                "used_bytes": "5658168",
+                "cached_sources": 9,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 84754432
+              },
+              "afterVaried": {
+                "statements": 310,
+                "context_bytes": "30419984",
+                "used_bytes": "22168352",
+                "cached_sources": 310,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 103374848
+              },
+              "afterFixed": {
+                "statements": 311,
+                "context_bytes": "30436368",
+                "used_bytes": "22178488",
+                "cached_sources": 311,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 123559936
+              },
+              "insertMs": 236.77150000000006,
+              "variedReadsMs": 244.4364579999999,
+              "fixedReadsMs": 124.436958,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "1651800",
+                "used_bytes": "1199936",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 162394112
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5433152",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 151441408
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5437944",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 119762944
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5437944",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 132083712
+              },
+              "insertMs": 346.940333,
+              "variedReadsMs": 303.00241700000015,
+              "fixedReadsMs": 192.49325,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "text-cast",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "1651800",
+                "used_bytes": "1199936",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 157290496
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5436200",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 147582976
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5440992",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 124022784
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5440992",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 136081408
+              },
+              "insertMs": 247.9913749999996,
+              "variedReadsMs": 220.426375,
+              "fixedReadsMs": 165.12241600000016,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": true,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 4,
+                "context_bytes": "1667560",
+                "used_bytes": "1217336",
+                "cached_sources": 4,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 153960448
+              },
+              "afterInsert": {
+                "statements": 9,
+                "context_bytes": "6700800",
+                "used_bytes": "5658120",
+                "cached_sources": 9,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 136491008
+              },
+              "afterVaried": {
+                "statements": 310,
+                "context_bytes": "30419984",
+                "used_bytes": "22185992",
+                "cached_sources": 310,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 109449216
+              },
+              "afterFixed": {
+                "statements": 311,
+                "context_bytes": "30436368",
+                "used_bytes": "22196128",
+                "cached_sources": 311,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 133959680
+              },
+              "insertMs": 188.5915829999999,
+              "variedReadsMs": 452.81816700000036,
+              "fixedReadsMs": 104.64749999999913,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "text-cast",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "1651800",
+                "used_bytes": "1199936",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 179752960
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5436168",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 158650368
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5440960",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 144248832
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6372680",
+                "used_bytes": "5423272",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 135176192
+              },
+              "insertMs": 430.4329170000001,
+              "variedReadsMs": 200.6653750000005,
+              "fixedReadsMs": 149.8125,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            }
+          ],
+          "postgres": "17.11"
+        }
+      },
+      "verify-bulk-strategy.ts": {
+        "bun": "1.4.4",
+        "mode": "default",
+        "cycles": [
+          {
+            "round": 0,
+            "insertMs": 273.8715,
+            "contextBytes": "6716560",
+            "usedBytes": "5664992",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 122314752
+          },
+          {
+            "round": 1,
+            "insertMs": 256.286208,
+            "contextBytes": "10947776",
+            "usedBytes": "9875816",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 157704192
+          },
+          {
+            "round": 2,
+            "insertMs": 209.0813760000001,
+            "contextBytes": "10947776",
+            "usedBytes": "9888152",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 164188160
+          },
+          {
+            "round": 3,
+            "insertMs": 229.82358299999987,
+            "contextBytes": "11082992",
+            "usedBytes": "10007736",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 170881024
+          },
+          {
+            "round": 4,
+            "insertMs": 219.52375000000006,
+            "contextBytes": "11082992",
+            "usedBytes": "10007736",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 174223360
+          },
+          {
+            "round": 5,
+            "insertMs": 207.56720899999982,
+            "contextBytes": "11082992",
+            "usedBytes": "10007736",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 179765248
+          },
+          {
+            "round": 6,
+            "insertMs": 191.30266700000038,
+            "contextBytes": "11082992",
+            "usedBytes": "10007736",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 181055488
+          },
+          {
+            "round": 7,
+            "insertMs": 260.8208340000001,
+            "contextBytes": "11082992",
+            "usedBytes": "10007720",
+            "statements": 9,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 179916800
+          }
+        ],
+        "status": "passed",
+        "before": {
+          "contextBytes": "2542528",
+          "usedBytes": "1551696",
+          "statements": 6,
+          "bulkStatements": 1,
+          "bulkSqlShapes": 1,
+          "clientRssBytes": 55230464
+        },
+        "fixedReadsMs": [
+          110.32937500000025,
+          86.26004199999988,
+          100.76716600000009,
+          103.91845799999965
+        ],
+        "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+        "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+        "after": {
+          "contextBytes": "11105520",
+          "usedBytes": "10027184",
+          "statements": 11,
+          "bulkStatements": 2,
+          "bulkSqlShapes": 2,
+          "clientRssBytes": 141049856
+        }
+      },
+      "verify-cache-bound.ts": {
+        "bun": "1.4.4",
+        "controlledShapes": true,
+        "samples": [
+          {
+            "shapes": 300,
+            "statements": 302,
+            "bytes": "4452840"
+          },
+          {
+            "shapes": 900,
+            "statements": 902,
+            "bytes": "11570928"
+          },
+          {
+            "shapes": 1100,
+            "statements": 1024,
+            "bytes": "13520008"
+          },
+          {
+            "shapes": 1500,
+            "statements": 1024,
+            "bytes": "14256528"
+          },
+          {
+            "shapes": 2200,
+            "statements": 1024,
+            "bytes": "15213688"
+          }
+        ],
+        "status": "passed",
+        "concurrentProjections": 80,
+        "cancelRejected": true,
+        "lockSurvivesCancellation": true,
+        "abortedTransactionRejected": true,
+        "after": {
+          "statements": 1024,
+          "bytes": "15139424"
+        },
+        "rowHash": "02bd93ae8971ddb4bb09ecae182981f5181a2a3e7b5e483d4c7e25f65023111a"
+      },
+      "verify-pool-bound.ts": {
+        "bun": "1.4.4",
+        "sessions": 10,
+        "samples": [
+          {
+            "shapesPerSession": 300,
+            "statements": [
+              302,
+              301,
+              301,
+              301,
+              301,
+              301,
+              301,
+              301,
+              301,
+              301
+            ],
+            "backendContextBytes": 49569072,
+            "backendPssKiB": null,
+            "containerBytes": 115830784,
+            "clientRssBytes": 48750592
+          },
+          {
+            "shapesPerSession": 900,
+            "statements": [
+              902,
+              901,
+              901,
+              901,
+              901,
+              901,
+              901,
+              901,
+              901,
+              901
+            ],
+            "backendContextBytes": 120749952,
+            "backendPssKiB": null,
+            "containerBytes": 121753600,
+            "clientRssBytes": 57524224
+          },
+          {
+            "shapesPerSession": 1200,
+            "statements": [
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024
+            ],
+            "backendContextBytes": 142158208,
+            "backendPssKiB": null,
+            "containerBytes": 122998784,
+            "clientRssBytes": 58347520
+          },
+          {
+            "shapesPerSession": 1600,
+            "statements": [
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024
+            ],
+            "backendContextBytes": 149468288,
+            "backendPssKiB": null,
+            "containerBytes": 125325312,
+            "clientRssBytes": 61153280
+          }
+        ],
+        "status": "passed",
+        "rowHash": "6036122c909ff4cb1bb85a6367c5069bf2013e818c8bdb1b3073d22fc9556c0d"
+      },
+      "verify-lifetime.ts": {
+        "bun": "1.4.4",
+        "postgres": "15.19",
+        "cases": [
+          {
+            "maxLifetime": 0,
+            "stage": "reserved-idle",
+            "sameBackend": true,
+            "lockHeld": true,
+            "status": "passed"
+          },
+          {
+            "maxLifetime": 0,
+            "stage": "after-reservation-release",
+            "retired": false,
+            "status": "passed"
+          },
+          {
+            "maxLifetime": 0,
+            "stage": "active-transaction",
+            "status": "passed"
+          },
+          {
+            "maxLifetime": 1,
+            "stage": "reserved-idle",
+            "sameBackend": true,
+            "lockHeld": true,
+            "status": "passed"
+          },
+          {
+            "maxLifetime": 1,
+            "stage": "after-reservation-release",
+            "retired": true,
+            "status": "passed"
+          },
+          {
+            "maxLifetime": 1,
+            "stage": "active-transaction",
+            "status": "passed"
+          }
+        ]
+      }
+    }
+  },
+  "actualPostgresVersion": "17.11",
+  "baselineActualRowHashEquivalence": true,
+  "nativeContainerOrigin": {
+    "http": {
+      "health": 200,
+      "setup": 200,
+      "matchingOriginUnauthenticatedPost": 401,
+      "crossOriginPost": 403,
+      "forgedForwardingIgnored": true
+    },
+    "https": {
+      "health": 200,
+      "matchingOriginUnauthenticatedPost": 401,
+      "wrongSchemePost": 403
+    },
+    "cleanDatabaseShutdownObserved": true
+  },
+  "localChecks": {
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "unitPass": 901,
+    "guardedDatabaseSkips": 718,
+    "unitFailures": 0,
+    "productionBuild": "passed",
+    "databaseRegression": {
+      "completedSuites": 79,
+      "pass": 657,
+      "fail": 0
+    }
+  },
+  "actualSqlCleanup": "Disposable database, copied dump and isolated process removed; original checkpoint retained",
+  "browser": {
+    "data": "Existing signed-in administrator and real normal dev catalogue",
+    "origin": "http://localhost:5173",
+    "viewport": "1280x720",
+    "development": "Movie/credits/person nested details, native Back/close, Friends",
+    "production": "Real comic details/Read action, native Back, For You, reloadable Friends open/close",
+    "capturedWarningsOrErrors": 0,
+    "normalDevRestored": true,
+    "limits": "Scoped desktop acceptance; not native mobile, real party/codec playback or timing measurements"
+  },
+  "localDbHostObstruction": {
+    "observed": "Postgres backends blocked in write(fd2) to a full stderr pipe",
+    "shippingBunComparisonWithFileLogger": {
+      "providerSyncSuitePass": 6,
+      "fail": 0
+    },
+    "applicationCodeWorkaround": false,
+    "fullFreshDatabaseRun": {
+      "completedSuites": 79,
+      "pass": 657,
+      "fail": 0
+    }
+  },
+  "ciAndReview": "See current pull request commit checks; no merge is certified by this local receipt"
+}

@@ -5,9 +5,9 @@
   import CatalogueActions from '../work-menu/CatalogueActions.svelte';
   import Button from './Button.svelte';
   import type { MediaView, MediaCardPresentation } from '../types';
-  import { isScreenWork } from '$lib/media/model';
-  import type { GameActionState, ReadingActionState } from '$lib/media/work-actions';
-  import type { GameStatus } from '$lib/games/model';
+  import { isScreenWork } from '#lib/media/model.js';
+  import type { GameActionState, ReadingActionState } from '#lib/media/work-actions.js';
+  import type { GameStatus } from '#lib/games/model.js';
   let { item, context = 'details', next = null, requestable = false, hero = false,
     menuOnly = false, showTrigger = false, gameState, readingState,
     editionName,selectedPlaythrough, ongamecreated, onchanged, refreshGame }: {
@@ -29,7 +29,7 @@
   export function isBusy() { return catalogue?.isBusy() ?? false; }
   export function startReading() { return catalogue?.startReading(); }
   export function editReading() { return catalogue?.editReading(); }
-  export function setReading(state: import('$lib/reading/model').ReadingState, restart = false) { return catalogue?.setReading(state, restart); }
+  export function setReading(state: import('#lib/reading/model.js').ReadingState, restart = false) { return catalogue?.setReading(state, restart); }
 </script>
 {#key identity}
   {#if !page.data.user || readOnly()}<Button href={isScreenWork(item) ? `/media/${item.id}` : item.href} size={hero ? 'hero' : undefined}>{isScreenWork(item) ? 'Learn more' : `Open ${item.kind}`}</Button>

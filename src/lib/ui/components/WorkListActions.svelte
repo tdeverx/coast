@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { onDestroy, untrack } from 'svelte';
   import Button from './Button.svelte';
-  import { createMenuResource } from '$lib/ui/controls/menu-resource.svelte';
-  import { workMenuScope } from '$lib/ui/controls/work.svelte';
-  import { listMembershipControls } from '$lib/ui/controls/actions';
-  import { useClient } from '$lib/ui/client-context';
-  import type { WorkList, WorkListPage } from '$lib/media/work-actions';
+  import { createMenuResource } from '#lib/ui/controls/menu-resource.svelte.js';
+  import { workMenuScope } from '#lib/ui/controls/work.svelte.js';
+  import { listMembershipControls } from '#lib/ui/controls/actions.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import type { WorkList, WorkListPage } from '#lib/media/work-actions.js';
   let { workId, reading = false, disabled = false, select, children }: {
     workId: string; reading?: boolean; disabled?: boolean;
     select: (list: WorkList) => Promise<unknown>; children?: import('svelte').Snippet;

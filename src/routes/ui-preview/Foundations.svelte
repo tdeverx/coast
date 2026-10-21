@@ -1,10 +1,10 @@
 <script lang="ts">
-  import {useClient} from '$lib/ui/client-context';
+  import {useClient} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import { onMount, untrack, type Snippet } from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
   import Browser from './Browser.svelte';
   import type { WorkspaceParts } from './workspace';
   let {section,layout}: {section:'typography'|'colors';layout:Snippet<[WorkspaceParts]>} = $props();

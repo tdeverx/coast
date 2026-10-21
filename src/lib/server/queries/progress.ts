@@ -1,7 +1,7 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
-import type { MediaView } from '$lib/ui/types';
+import type { MediaView } from '#lib/ui/types.js';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
@@ -11,16 +11,16 @@ import { continuationIds } from './continuations';
 import { profileProgress } from './profile';
 import { listsData } from './lists';
 import { AppError } from '../security/errors';
-import { requireVisible } from '$lib/social/privacy.server';
-import { workAssessments, workCards } from '$lib/collection/query.server';
+import { requireVisible } from '#lib/social/privacy.server.js';
+import { workAssessments, workCards } from '#lib/collection/query.server.js';
 import { applySequenceEntry, hasPermittedMediaSource, mediaViewsForIds } from './media';
 import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
-import { heroTitleIds } from '$lib/media/hero';
-import { readingCards } from '$lib/reading/query.server';
+import { heroTitleIds } from '#lib/media/hero.js';
+import { readingCards } from '#lib/reading/query.server.js';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
-export function progressData(userId:string, raw?:Partial<import('$lib/progress').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
+export function progressData(userId:string, raw?:Partial<import('#lib/progress.js').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
 export function progressData(userId:string, raw:unknown, viewerId?:string):Promise<ProgressContent>;
 export async function progressData(userId:string, raw:unknown = {}, viewerId=userId):Promise<ProgressContent> {
   const result=await readProgressData(userId,raw,viewerId);
@@ -108,7 +108,7 @@ async function readProgressData(
 }
 
 /** A single local page shares Continue/Next/saved rows without treating pages as playback. */
-async function readingProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+async function readingProgress(userId:string, viewerId:string, options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
   const config=await getFeatureConfig(viewerId);
   requireEnabledCategory(config,'reading');
   if(options.kind!=='all'&&!['book','comic'].includes(options.kind))throw new AppError(400,'Choose Books or Comics.');
@@ -151,7 +151,7 @@ export async function continueHeroId(userId: string) {
   return heroTitleIds(ids.flatMap(id => byId.has(id) ? [byId.get(id)!] : []))[0];
 }
 
-async function screenProgressPlan(userId: string, options: import('$lib/progress').ProgressOptions, viewerId: string) {
+async function screenProgressPlan(userId: string, options: import('#lib/progress.js').ProgressOptions, viewerId: string) {
   const db = getDb();
   const states = await db
     .select({
@@ -267,7 +267,7 @@ async function screenProgressPlan(userId: string, options: import('$lib/progress
 }
 
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */
-async function mediumProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+async function mediumProgress(userId:string, viewerId:string, options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
   requireEnabledCategory(await getFeatureConfig(viewerId),options.category);
   if(['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for this medium.');
   const saved=options.view==='watchlist'||options.view==='favourites';
@@ -300,7 +300,7 @@ async function mediumProgress(userId:string, viewerId:string, options:import('$l
 }
 
 /** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */
-async function recommendationProgress(userId:string,viewerId:string,options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+async function recommendationProgress(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
   if(userId!==viewerId)throw new AppError(403,'Recommendations are private to their recipient.');
   const config=await getFeatureConfig(viewerId);requireEnabledCategory(config,options.category);
   if(options.category==='reading'&&options.kind!=='all'&&!['book','comic'].includes(options.kind)||options.category!=='reading'&&['book','comic'].includes(options.kind))throw new AppError(400,'Choose a type for the selected medium.');

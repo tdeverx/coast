@@ -2,11 +2,11 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile, rename, unlink, opendir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq, inArray, asc, and, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
-import { dataDirectory } from '$lib/server/security/credentials';
-import { AppError } from '$lib/server/security/errors';
-import { requireVisible } from '$lib/social/privacy.server';
+import { getDb } from '#lib/server/db/index.js';
+import { users } from '#lib/server/db/schema.js';
+import { dataDirectory } from '#lib/server/security/credentials.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { requireVisible } from '#lib/social/privacy.server.js';
 
 export const avatarRequestLimit = 7 * 1024 * 1024;
 const directory = () => join(dataDirectory(), 'avatars');

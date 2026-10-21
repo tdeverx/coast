@@ -1,9 +1,9 @@
-import { context } from '$lib/server/diagnostics';
-import { correlationId } from '$lib/diagnostics';
-import { reconcileProviderList, acknowledgeProviderList } from '$lib/sync/list-values.server';
+import { context } from '#lib/server/diagnostics/index.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { reconcileProviderList, acknowledgeProviderList } from '#lib/sync/list-values.server.js';
 import * as v from 'valibot';
 import { and, eq, sql, asc } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   media,
   lists,
@@ -11,19 +11,19 @@ import {
   providerConnections,
   outboxActions,
   syncListValues,
-} from '$lib/server/db/schema';
-import { PermanentActionError } from '$lib/server/queue';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import type { SyncPreferences } from '$lib/providers/contracts';
-import type { TraktAdapter } from '$lib/providers/trakt/adapter.server';
+} from '#lib/server/db/schema.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import type { SyncPreferences } from '#lib/providers/contracts.js';
+import type { TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
 import {
   traktEntry,
   type TraktKind,
   type TraktIds,
   traktPlurals,
   exportIdentities,
-} from '$lib/sync/trakt-identity.server';
-import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
+} from '#lib/sync/trakt-identity.server.js';
+import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { matchTraktList } from './trakt-list-matching';
 
 export async function executeTraktListExport(

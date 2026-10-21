@@ -1,9 +1,9 @@
-import type {NotificationEntry} from '$lib/notifications/model';
-import type { MediaView } from '$lib/ui/types';
-import type { JournalEntry } from '$lib/profile/journal';
-import type { MusicItem } from '$lib/music/model';
-import type { MediaActionData } from '$lib/media/actions';
-import { providerSchedule } from '$lib/providers/schedule';
+import type {NotificationEntry} from '#lib/notifications/model.js';
+import type { MediaView } from '#lib/ui/types.js';
+import type { JournalEntry } from '#lib/profile/journal.js';
+import type { MusicItem } from '#lib/music/model.js';
+import type { MediaActionData } from '#lib/media/actions.js';
+import { providerSchedule } from '#lib/providers/schedule.js';
 export const id='00000000-0000-4000-8000-000000000074';
 export const today='2026-10-01';
 export const movie:MediaView={id,kind:'movie',title:'Preview title',overview:'Demo content for comparing the existing components. Nothing in this preview is saved.',year:2026,genres:['Drama','Adventure'],runtimeMinutes:110,available:false,progress:1800,duration:6600,watched:false,playCount:0,watchlist:true,favourite:false,collected:true,dropped:false,rating:4,poster:'/coast-mark.png',backdrop:'/coast-mark.png'};
@@ -30,7 +30,7 @@ const notificationExamples:NotificationEntry[]=[
  {id:'00000000-0000-4000-8000-000000000005',kind:'reaction',title:'Reacted ❤️ to your activity',body:null,actor:{username:'Taylor',avatar:null,status:'busy'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/for-you?section=activity',requestState:null,sessionState:null,actions:[],subjectId:id}
 ];
 /** Synthetic transport is injected only into preview descendants. */
-export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input, init) => {
+export const fixtureFetch: import('#lib/ui/client.js').ApiTransport = async (input, init) => {
     const url=new URL(input instanceof Request?input.url:String(input),'http://preview.invalid');
     if(!url.pathname.startsWith('/api/'))return new Response('Preview only', {status:409});
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
@@ -67,7 +67,7 @@ export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input,
 };
 
 /** A finite transport per mounted specimen. Nothing falls through to network fetch. */
-export function createPreviewTransport(name: string, scenario: string): import('$lib/ui/client').ApiTransport {
+export function createPreviewTransport(name: string, scenario: string): import('#lib/ui/client.js').ApiTransport {
   let dismissed = new Set<string>();
   let sharingCreated = false;
   let benchmarkQueued = false;

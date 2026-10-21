@@ -2,23 +2,23 @@ import {
   IgdbAdapter,
   IGDB_BASE_URL,
   igdbCredentialsSchema,
-} from '$lib/providers/igdb/adapter.server';
+} from '#lib/providers/igdb/adapter.server.js';
 import { STEAM_BASE_URL } from './steam/adapter.server';
-import { AppError } from '$lib/server/security/errors';
-import { providerSchedule } from '$lib/providers/schedule';
+import { AppError } from '#lib/server/security/errors.js';
+import { providerSchedule } from '#lib/providers/schedule.js';
 import * as v from 'valibot';
 import { and, eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { users, providerInstances, providerConnections } from '$lib/server/db/schema';
+import { getDb } from '#lib/server/db/index.js';
+import { users, providerInstances, providerConnections } from '#lib/server/db/schema.js';
 import {
   createProviderTransport,
   type ProviderFetchConfig,
   validateProviderUrl,
-} from '$lib/server/security/provider-fetch';
-import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
-import { requireExperimentalFeature } from '$lib/server/experimental';
-import { getConfig } from '$lib/server/config';
-import { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
+} from '#lib/server/security/provider-fetch.js';
+import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
+import { requireExperimentalFeature } from '#lib/server/experimental.js';
+import { getConfig } from '#lib/server/config.js';
+import { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
 import { COMIC_VINE_BASE_URL, ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
 
 const uuid = v.pipe(v.string(), v.uuid());

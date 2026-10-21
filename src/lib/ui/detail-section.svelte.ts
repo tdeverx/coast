@@ -6,7 +6,7 @@ const key=Symbol('Detail section');
 /** A section Shelf supplies its real controls to the enclosing panel chrome. */
 export function provideDetailSection(active:()=>boolean,href:()=>string|undefined=()=>undefined){
  let owner=$state.raw<{id:string;read:()=>Presentation}>();
- const host:SectionHost={get active(){return active();},get url(){return new URL(href()??page.url.href,page.url);},owns(id){return owner?.id===id;},attach(id,read){
+ const host:SectionHost={get active(){return active();},get url(){return new URL(href()??page.url.href,page.url.href);},owns(id){return owner?.id===id;},attach(id,read){
   if(owner)return ()=>{};
   const entry={id,read};owner=entry;return ()=>{if(owner===entry)owner=undefined;};
  }};

@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ActivityStatus} from '$lib/social/status';
+ import type {ActivityStatus} from '#lib/social/status.js';
  import Avatar from './Avatar.svelte';
  let {friends=[],total=friends.length,showOverflow=true,size=32,href,label='Friends with a relationship to this media'}:{href?:string;label?:string;size?:number;showOverflow?:boolean;friends:{username:string;avatar?:string|null;status?:ActivityStatus}[];total?:number}=$props();
  const visibleFriends=$derived(friends.slice(0,3));

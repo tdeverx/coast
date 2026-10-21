@@ -1,18 +1,18 @@
 <script lang="ts">
-  import {useClient} from '$lib/ui/client-context';
+  import {useClient} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import { untrack } from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import ActivityHeader from '$lib/ui/components/ActivityHeader.svelte';
-  import PartyCard from '$lib/ui/components/PartyCard.svelte';
-  import PartyMenu from '$lib/ui/components/PartyMenu.svelte';
-  import PlaybackTimeline from '$lib/ui/components/PlaybackTimeline.svelte';
-  import FriendRoster from '$lib/ui/components/FriendRoster.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Toast from '$lib/ui/components/Toast.svelte';
-  import { usePlayback } from '$lib/playback/context.svelte';
-  import type { FriendEntry } from '$lib/social/model';
-  import { defaultPartySettings, type RoomState } from '$lib/playback/synced/model';
+  import Button from '#lib/ui/components/Button.svelte';
+  import ActivityHeader from '#lib/ui/components/ActivityHeader.svelte';
+  import PartyCard from '#lib/ui/components/PartyCard.svelte';
+  import PartyMenu from '#lib/ui/components/PartyMenu.svelte';
+  import PlaybackTimeline from '#lib/ui/components/PlaybackTimeline.svelte';
+  import FriendRoster from '#lib/ui/components/FriendRoster.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Toast from '#lib/ui/components/Toast.svelte';
+  import { usePlayback } from '#lib/playback/context.svelte.js';
+  import type { FriendEntry } from '#lib/social/model.js';
+  import { defaultPartySettings, type RoomState } from '#lib/playback/synced/model.js';
   import { id, movie, today } from './demo/fixtures';
 
   let { name, scenario = 'default' }: { name: string; scenario: string } = $props();
@@ -65,26 +65,26 @@
     readAt: null, toastHiddenAt: null, createdAt: new Date().toISOString(),
   })));
 
-  let FriendsPanel = $state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>();
-  let NotificationInbox = $state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>();
-  let StreamsPanel = $state<typeof import('$lib/ui/components/StreamsPanel.svelte').default>();
-  let NotificationToasts = $state<typeof import('$lib/ui/components/NotificationToasts.svelte').default>();
-  let PersistentPlayer = $state<typeof import('$lib/ui/components/PersistentPlayer.svelte').default>();
+  let FriendsPanel = $state<typeof import('#lib/ui/components/FriendsPanel.svelte').default>();
+  let NotificationInbox = $state<typeof import('#lib/ui/components/NotificationInbox.svelte').default>();
+  let StreamsPanel = $state<typeof import('#lib/ui/components/StreamsPanel.svelte').default>();
+  let NotificationToasts = $state<typeof import('#lib/ui/components/NotificationToasts.svelte').default>();
+  let PersistentPlayer = $state<typeof import('#lib/ui/components/PersistentPlayer.svelte').default>();
   $effect(() => {
     const selected = name;
     scenario;
     let disposed = false;
     untrack(() => { open = false;  position = 945; });
-    if (selected === 'FriendsPanel') void import('$lib/ui/components/FriendsPanel.svelte').then(module => { if (!disposed) FriendsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
-    if (selected === 'NotificationInbox') void import('$lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
-    if (selected === 'StreamsPanel') void import('$lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
-    if (selected === 'NotificationToasts') void import('$lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'FriendsPanel') void import('#lib/ui/components/FriendsPanel.svelte').then(module => { if (!disposed) FriendsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'NotificationInbox') void import('#lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'StreamsPanel') void import('#lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'NotificationToasts') void import('#lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
     if (selected === 'PersistentPlayer' && scenario === 'controller') {
       untrack(()=>{
         player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:movie.poster,url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};
         player.role='playback';player.paused=true;player.controlsVisible=true;
       });
-      void import('$lib/ui/components/PersistentPlayer.svelte').then(module=>{if(!disposed)PersistentPlayer=module.default;}).catch(()=>{if(!disposed)delivery.failure('This example could not be loaded. Reopen it to retry.');});
+      void import('#lib/ui/components/PersistentPlayer.svelte').then(module=>{if(!disposed)PersistentPlayer=module.default;}).catch(()=>{if(!disposed)delivery.failure('This example could not be loaded. Reopen it to retry.');});
     }
     return () => { disposed = true; if(selected==='PersistentPlayer'){player.session=null;player.role='idle';} };
   });

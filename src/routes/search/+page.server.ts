@@ -1,12 +1,12 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { categoryEnabled, surfaceEnabled } from '$lib/experimental';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { categoryEnabled, surfaceEnabled } from '#lib/experimental.js';
 import { error } from '@sveltejs/kit';
-import { publicSearch } from '$lib/social/public.server';
+import { publicSearch } from '#lib/social/public.server.js';
 import * as v from 'valibot';
-import { searchMedia } from '$lib/catalogue/service.server';
-import { mediaViews } from '$lib/server/queries/media';
-import { readingSearch, readingSearchInitial, searchPresentations, type ReadingSearchContent } from '$lib/server/queries/search';
-import { searchSelection, searchDemand, type SearchSelection, type SearchRowSelection } from '$lib/search-selection';
+import { searchMedia } from '#lib/catalogue/service.server.js';
+import { mediaViews } from '#lib/server/queries/media.js';
+import { readingSearch, readingSearchInitial, searchPresentations, type ReadingSearchContent } from '#lib/server/queries/search.js';
+import { searchSelection, searchDemand, type SearchSelection, type SearchRowSelection } from '#lib/search-selection.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({locals, url, depends,request}) => {

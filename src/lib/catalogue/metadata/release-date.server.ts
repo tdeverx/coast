@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import type { CoastConfig } from '$lib/server/config';
+import type { CoastConfig } from '#lib/server/config.js';
 
 /** The same non-personal field precedence as resolveMetadata, usable before paging. */
 export function effectiveReleaseDate(id: SQL, policy: CoastConfig['metadataSource']) {

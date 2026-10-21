@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { getSql, type Database } from '../db';
 import { outboxActions } from '../db/schema';
 import { and, eq, sql } from 'drizzle-orm';
-import { purposePriority, readJobPurpose, type JobPurpose } from '$lib/providers/job-policy';
+import { purposePriority, readJobPurpose, type JobPurpose } from '#lib/providers/job-policy.js';
 import { updateJobRequestPriority } from '../security/request-priority';
 
 type Execution = { userId?: string; kind?: string; payload?: Record<string,unknown>; id: string; attempts: number; purpose: JobPurpose; started: number; checkpoints: number };

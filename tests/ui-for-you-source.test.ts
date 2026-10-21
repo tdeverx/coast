@@ -10,16 +10,16 @@ const revisionUrl=moduleUrl(await compile('../src/lib/ui/content-revision.svelte
 const routeUrl=moduleUrl(compileModule('export const page=$state({data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one",planning:"one"},experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,experiments:{planning:true}},url:new URL("http://fixture/for-you"),state:{}});',{filename:'route.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')));
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};const hooks=[];export const onDestroy=callback=>hooks.push(callback);export const destroy=()=>hooks.splice(0).forEach(callback=>callback());`);
 const clientUrl=moduleUrl('export let delivery;export const setDelivery=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}');
-const navigationUrl=moduleUrl('export const replaceState=()=>{};');
+const navigationUrl=moduleUrl('export const goto=async()=>{};');
 const client=await import(clientUrl),{page}=await import(routeUrl),lifecycle=await import(lifecycleUrl);
 const {createForYouSource}:typeof import('../src/lib/ui/shelves/for-you.svelte')=await import(moduleUrl((await compile('../src/lib/ui/shelves/for-you.svelte.ts'))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
- .replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
- .replaceAll('$lib/ui/client-context',clientUrl).replaceAll('$lib/ui/resource.svelte',resourceUrl)
- .replaceAll('$lib/ui/content-revision.svelte',revisionUrl).replaceAll('$lib/ui/client',clientUrl)
- .replaceAll('$lib/recommendations/row-titles',import.meta.resolve('../src/lib/recommendations/row-titles'))
- .replaceAll('$lib/experimental',import.meta.resolve('../src/lib/experimental'))));
+ .replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
+ .replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl).replaceAll('#lib/ui/client.js',clientUrl)
+ .replaceAll('#lib/recommendations/row-titles.js',import.meta.resolve('../src/lib/recommendations/row-titles'))
+ .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental'))));
 const settle=async()=>{for(let index=0;index<10;index++){runtime.flush();await Promise.resolve();}};
 const content=(id='old')=>({items:[{id,title:id,kind:'album'} as any],total:1,page:1,pages:1,title:undefined});
 function fixture(option:Partial<ForYouOptions>={}){

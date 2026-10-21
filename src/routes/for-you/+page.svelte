@@ -1,20 +1,20 @@
 <script lang="ts">
   import {onDestroy,untrack} from 'svelte';
-  import {createResource} from '$lib/ui/resource.svelte';
-  import {reportImportFailure} from '$lib/ui/client-context';
-  const dynamicImport=createResource<typeof import('$lib/recommendations/DynamicFeed.svelte').default|undefined>(undefined);
+  import {createResource} from '#lib/ui/resource.svelte.js';
+  import {reportImportFailure} from '#lib/ui/client-context.js';
+  const dynamicImport=createResource<typeof import('#lib/recommendations/DynamicFeed.svelte').default|undefined>(undefined);
   const DynamicFeed=$derived(dynamicImport.data);
-  import {dynamicKind,type GenreReason} from '$lib/recommendations/model';
+  import {dynamicKind,type GenreReason} from '#lib/recommendations/model.js';
   import { page } from '$app/state';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import MediaHero from '$lib/ui/components/MediaHero.svelte';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import MediaHero from '#lib/ui/components/MediaHero.svelte';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
   let { data } = $props();
   const section = $derived(page.url.searchParams.get('section'));
   const dynamicWanted=$derived(!!page.data.user&&page.data.capabilities?.personalisation&&!section);
-  function loadDynamic(){if(dynamicWanted&&!dynamicImport.busy)return dynamicImport.load(async()=> (await import('$lib/recommendations/DynamicFeed.svelte')).default);}
+  function loadDynamic(){if(dynamicWanted&&!dynamicImport.busy)return dynamicImport.load(async()=> (await import('#lib/recommendations/DynamicFeed.svelte')).default);}
   $effect(()=>{const viewer=page.data.user?.id;if(!viewer||!dynamicWanted)return;untrack(()=>{if(!dynamicImport.data)void loadDynamic();});return()=>dynamicImport.cancel();});
   onDestroy(()=>dynamicImport.dispose());
   reportImportFailure(()=>dynamicWanted&&dynamicImport.error?'Recommendations could not load. Reload the page to try again.':'');

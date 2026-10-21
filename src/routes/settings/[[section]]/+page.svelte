@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import SettingsRow from '$lib/ui/components/SettingsRow.svelte';
-  import { featureDefinitions, administratorFeatures, type PersonalFeature } from '$lib/features';
-  import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
-  import { collectionCategories, collectionRules } from '$lib/collection/preferences';
-  import { categoryEnabled } from '$lib/experimental';
-  import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
+  import { featureDefinitions, administratorFeatures, type PersonalFeature } from '#lib/features.js';
+  import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
+  import { collectionCategories, collectionRules } from '#lib/collection/preferences.js';
+  import { categoryEnabled } from '#lib/experimental.js';
+  import {audiences,socialSections,socialCategories,type Audience} from '#lib/social/model.js';
   import {
     personalSettings as links,
     administratorSettings as adminLinks,
@@ -16,34 +16,64 @@
     policyGroups,
     experimentalPolicies,
     selectSettings,
-  } from '$lib/settings/sections';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
-  import BenchmarkSettings from '$lib/benchmarks/BenchmarkSettings.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
-  import IntegrationSettings from '$lib/ui/components/IntegrationSettings.svelte';
-  import ConflictList from '$lib/ui/components/ConflictList.svelte';
+  } from '#lib/settings/sections.js';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import JobsSettings from '#lib/ui/components/JobsSettings.svelte';
+  import BenchmarkSettings from '#lib/benchmarks/BenchmarkSettings.svelte';
+  import Pagination from '#lib/ui/components/Pagination.svelte';
+  import IntegrationSettings from '#lib/ui/components/IntegrationSettings.svelte';
+  import ConflictList from '#lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
 
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { api, change, message, refreshRouteDependencies } from '$lib/ui/client';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
-  import ConnectionCard from '$lib/ui/components/ConnectionCard.svelte';
-  import QueueList from '$lib/ui/components/QueueList.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import { api, change, message, refreshRouteDependencies } from '#lib/ui/client.js';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Icon from '#lib/ui/components/Icon.svelte';
+  import Dialog from '#lib/ui/components/Dialog.svelte';
+  import ConnectionCard from '#lib/ui/components/ConnectionCard.svelte';
+  import QueueList from '#lib/ui/components/QueueList.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
   let { data } = $props();
-  let inviteCode=$state(''),inviteConnection=$state(''),inviteFolders=$state<string[]>([]),inviteLibraries=$state<{ItemId:string;Name?:string}[]>([]),inviteLoading=$state(false);
-  $effect(()=>{const id=inviteConnection;inviteFolders=[];inviteLibraries=[];if(!id)return;const controller=new AbortController();inviteLoading=true;void api<typeof inviteLibraries>(`admin/invites/libraries?connectionId=${id}`,undefined,'GET',{signal:controller.signal}).then(value=>inviteLibraries=value).catch(cause=>{if(!controller.signal.aborted)error=message(cause);}).finally(()=>{if(!controller.signal.aborted)inviteLoading=false;});return ()=>controller.abort();});
-  let apiToken=$state(''), apiName=$state(''), apiDays=$state(90), apiGrants=$state<ApiScope[]>(['catalogue:read']);
+
+  let inviteCode = $state(''),
+    inviteConnection = $state(''),
+    inviteFolders = $state<string[]>([]),
+    inviteLibraries = $state<{ ItemId: string; Name?: string }[]>([]),
+    inviteLoading = $state(false);
+
+  $effect(() => {
+    const id = inviteConnection;
+
+    inviteFolders = [];
+    inviteLibraries = [];
+
+    if (!id) return;
+
+    const controller = new AbortController();
+
+    inviteLoading = true;
+
+    void api<typeof inviteLibraries>(`admin/invites/libraries?connectionId=${id}`, undefined, 'GET', { signal: controller.signal }).then((value) => inviteLibraries = value).catch((cause) => {
+      if (!controller.signal.aborted) error = message(cause);
+    }).finally(() => {
+      if (!controller.signal.aborted) inviteLoading = false;
+    });
+
+    return () => controller.abort();
+  });
+
+  let apiToken = $state(''),
+    apiName = $state(''),
+    apiDays = $state(90),
+    apiGrants = $state<ApiScope[]>(['catalogue:read']);
+
   let error = $state(''),
     success = $state(''),
     busy = $state(false),
     prefs = $state(untrack(() => structuredClone({ ...data.defaults, ...page.data.user?.settings }))),
-    policy = $state(untrack(() => (data.config ? structuredClone(data.config) : null))),
+    policy = $state(untrack(() => data.config ? structuredClone(data.config) : null)),
     deleteId = $state(''),
     resetOpen = $state(false),
     subtitleLanguagesText = $state(untrack(() => prefs.subtitleLanguages.join(', '))),
@@ -72,33 +102,22 @@
       ? policyFields
       : data.section === 'activity'
         ? ['diagnosticLevel']
-        : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
-  );
-  let saved = $state(
-    untrack(() =>
-      JSON.stringify(
-        selectSettings(
-          ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
-          fields
-        )
-      )
-    )
-  );
+        : preferenceFields[data.section as keyof typeof preferenceFields] ?? []);
+
+  let saved = $state(untrack(() => JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields))));
+
   const draft = $derived({
-    ...selectSettings(
-      ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
-      fields
-    ),
-    ...(data.section === 'playback'
+    ...selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields),
+    ...data.section === 'playback'
       ? { subtitleLanguages: splitValues(subtitleLanguagesText, ',') }
-      : {}),
-    ...(data.section === 'policies'
+      : {},
+    ...data.section === 'policies'
       ? {
-          subtitleLanguages: splitValues(policyLanguagesText, ','),
-          allowedProviderPorts: splitValues(portsText, ',').map(Number),
+        subtitleLanguages: splitValues(policyLanguagesText, ','),
+        allowedProviderPorts: splitValues(portsText, ',').map(Number),
           serverAllowlist: splitValues(allowlistText, '\n'),
-        }
-      : {}),
+      }
+      : {}
   });
   const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
   function restoreDraft() {
@@ -108,19 +127,16 @@
     policyLanguagesText = policy?.subtitleLanguages.join(', ') ?? '';
     portsText = policy?.allowedProviderPorts.join(', ') ?? '';
     allowlistText = policy?.serverAllowlist.join('\n') ?? '';
-    saved = JSON.stringify(
-      selectSettings(
-        ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
-        fields
-      )
-    );
+    saved = JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields));
     error = '';
     success = '';
     apiToken = '';
   }
-  beforeNavigate(({ cancel, to }) => {
+
+  beforeNavigate(({ cancel, to, shallow }) => {
+    if (shallow) return;
     if (to?.url.pathname === page.url.pathname) return;
-    if (busy || (dirty && !window.confirm('Discard unsaved settings?'))) cancel();
+    if (busy || dirty && !window.confirm('Discard unsaved settings?')) cancel();
   });
   const conflictServices = $derived(
     data.providers.filter(
@@ -221,44 +237,188 @@
       <p class="section-description small">{descriptions[data.section]}</p>
 
       {#if data.section === 'features' || data.section === 'features-policy'}
-        <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
+        <form
+          class="stack form-width"
+          onsubmit={(event) => {
+            event.preventDefault();
+            void saveDraft();
+          }}
+        >
           <fieldset class="panel stack" disabled={busy}>
-          {#each featureDefinitions.filter(([key])=>data.section==='features-policy' ? administratorFeatures.includes(key as typeof administratorFeatures[number]) : key!=='api') as [key,title,description]}
-            {@const reason=(key==='presence'||key==='parties')&&prefs.features?.social===false?'social':key==='sharing'&&prefs.features?.playback===false?'playback':data.featureDecisions[key].reason==='personal'?null:data.featureDecisions[key].reason}
-            <SettingsRow {title} {description} reason={data.section==='features' && reason ? `${reason==='experiment'?'Requires its experiment in Policies.':reason==='social'?'Requires Social.':reason==='playback'?'Requires Playback.':'Unavailable in installation settings.'} Your choice is remembered.` : undefined}>
-              {#snippet details()}{#if key==='requests'}<a class="small" href="/requests">Manage existing requests</a>{/if}{/snippet}
-              <input type="checkbox" aria-label={title}
-                checked={data.section==='features-policy' ? policy?.features[key as typeof administratorFeatures[number]]!==false : prefs.features?.[key as PersonalFeature]!==false}
-                onchange={event=>{if(data.section==='features-policy'&&policy)policy.features={...policy.features,[key]:event.currentTarget.checked};else prefs.features={...prefs.features,[key]:event.currentTarget.checked};}} />
-            </SettingsRow>
-          {/each}
+            {#each featureDefinitions.filter(([key]) => data.section === 'features-policy'
+              ? administratorFeatures.includes(key as typeof administratorFeatures[number])
+              : key !== 'api') as [key, title, description]}
+              {@const reason = (key === 'presence' || key === 'parties') && prefs.features?.social === false
+                ? 'social'
+                : key === 'sharing' && prefs.features?.playback === false
+                  ? 'playback'
+                  : data.featureDecisions[key].reason === 'personal' ? null : data.featureDecisions[key].reason}
+
+              <SettingsRow
+                title={title}
+                description={description}
+                reason={data.section === 'features' && reason
+                  ? `${reason === 'experiment'
+                    ? 'Requires its experiment in Policies.'
+                    : reason === 'social'
+                      ? 'Requires Social.'
+                      : reason === 'playback'
+                        ? 'Requires Playback.'
+                        : 'Unavailable in installation settings.'} Your choice is remembered.`
+                  : undefined}
+              >
+                {#snippet details()}
+                  {#if key === 'requests'}
+                    <a class="small" href="/requests">Manage existing requests</a>
+                  {/if}
+                {/snippet}
+
+                <input
+                  type="checkbox"
+                  aria-label={title}
+                  checked={data.section === 'features-policy'
+                    ? policy?.features[key as typeof administratorFeatures[number]] !== false
+                    : prefs.features?.[key as PersonalFeature] !== false}
+                  onchange={(event) => {
+                    if (data.section === 'features-policy' && policy) policy.features = { ...policy.features, [key]: event.currentTarget.checked }; else prefs.features = { ...prefs.features, [key]: event.currentTarget.checked };
+                  }}
+                />
+              </SettingsRow>
+            {/each}
           </fieldset>
           <p class="small muted">Privacy, connection sync choices, playback limits and sharing permissions remain in their existing settings. Stored history and saved preferences are preserved.</p>
           {@render saveControls('Save features')}
         </form>
       {:else if data.section === 'collection'}
-        <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
-        <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
-        {#each collectionCategories.filter(category=>categoryEnabled({...data,features:page.data.capabilities},category.value)) as category}
-          <fieldset class="panel stack" disabled={busy}>
-            <legend class="sr-only">{category.label}</legend><h3>{category.label}</h3>
-            {#each collectionRules.filter(rule=>!['book','comic'].includes(category.value)||rule.value!=='queue') as rule}
-              <label class="check"><input type="checkbox" bind:checked={prefs.collection[category.value][rule.value]} />{rule.label}</label>
-            {/each}
-          </fieldset>
-        {/each}
-        {@render saveControls('Save Collection preferences')}
+        <form
+          class="stack form-width"
+          onsubmit={(event) => {
+            event.preventDefault();
+            void saveDraft();
+          }}
+        >
+          <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
+          {#each collectionCategories.filter((category) => categoryEnabled({ ...data, features: page.data.capabilities }, category.value)) as category}
+            <fieldset class="panel stack" disabled={busy}>
+              <legend class="sr-only">{category.label}</legend>
+              <h3>{category.label}</h3>
+
+              {#each collectionRules.filter((rule) => !['book', 'comic'].includes(category.value) || rule.value !== 'queue') as rule}
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    bind:checked={prefs.collection[category.value][rule.value]}
+                  />
+
+                  {rule.label}
+                </label>
+              {/each}
+            </fieldset>
+          {/each}
+          {@render saveControls('Save Collection preferences')}
         </form>
-      {:else if data.section==='privacy'}
-  <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}><fieldset class="panel stack" disabled={busy}><legend class="sr-only">Privacy & social</legend>
-  <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
-  <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
-  {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
-  {#each socialCategories.filter(category=>categoryEnabled({...data,features:page.data.capabilities},category)) as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
-  <Heading title="Social notifications" />
-  {#each ['friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
-  <p class="small">Incoming friend requests appear in Friends.</p>
-  {@render saveControls('Save privacy preferences')}
+      {:else if data.section === 'privacy'}
+        <form
+          class="stack form-width"
+          onsubmit={(event) => {
+            event.preventDefault();
+            void saveDraft();
+          }}
+        >
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">Privacy & social</legend>
+
+            <label class="field">
+              Profile audience
+
+              <select bind:value={prefs.social.audience}>
+                {#each audiences as audience}
+                  <option value={audience}>{audience}</option>
+                {/each}
+              </select>
+            </label>
+
+            <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
+
+            {#each socialSections as section}
+              <label class="field">
+                {section}
+
+                <select
+                  value={prefs.social.sections?.[section] ?? 'default'}
+                  onchange={(event) => {
+                    const value = event.currentTarget.value;
+
+                    prefs.social = {
+                      ...prefs.social,
+                      sections: {
+                        ...prefs.social.sections,
+                        [section]: value === 'default' ? undefined : value as Audience
+                      }
+                    };
+                  }}
+                >
+                  <option value="default">Use profile audience</option>
+
+                  {#each audiences as audience}
+                    <option value={audience}>{audience}</option>
+                  {/each}
+                </select>
+              </label>
+            {/each}
+
+            {#each socialCategories.filter((category) => categoryEnabled({ ...data, features: page.data.capabilities }, category)) as category}
+              <label class="field">
+                {category} sharing
+
+                <select
+                  value={prefs.social.categories?.[category] ?? 'public'}
+                  onchange={(event) => {
+                    prefs.social = {
+                      ...prefs.social,
+                      categories: {
+                        ...prefs.social.categories,
+                        [category]: event.currentTarget.value as Audience
+                      }
+                    };
+                  }}
+                >
+                  {#each audiences as audience}
+                    <option value={audience}>{audience === 'public' ? 'Use section audience' : audience}</option>
+                  {/each}
+                </select>
+              </label>
+            {/each}
+
+            <Heading title="Social notifications" />
+
+            {#each [
+              'friend-accepted',
+              'recommendation',
+              'reaction',
+              'synced-invite'
+            ] as const as kind}
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={prefs.social.notifications?.[kind] !== false}
+                  onchange={(event) => {
+                    prefs.social = {
+                      ...prefs.social,
+                      notifications: {
+                        ...prefs.social.notifications,
+                        [kind]: event.currentTarget.checked
+                      }
+                    };
+                  }}
+                />
+
+                {kind === 'synced-invite' ? 'Synced session invitations' : kind}
+              </label>
+            {/each}
+
+            <p class="small">Incoming friend requests appear in Friends.</p>
+            {@render saveControls('Save privacy preferences')}
   </fieldset></form>
 {:else if data.section === 'appearance'}<form
           class="stack form-width"
@@ -270,8 +430,23 @@
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Display</legend>
             <h3>Display</h3>
-            <SettingsRow title="Liquid glass" description="Use glass effects where supported. Turn off to use the blur fallback."><input type="checkbox" aria-label="Liquid glass" bind:checked={prefs.liquidGlass} /></SettingsRow>
-            <SettingsRow title="Full-width content" description="Let your library make the most of the screen. Heroes always stay edge-to-edge."><input
+
+            <SettingsRow
+              title="Liquid glass"
+              description="Use glass effects where supported. Turn off to use the blur fallback."
+            >
+              <input
+                type="checkbox"
+                aria-label="Liquid glass"
+                bind:checked={prefs.liquidGlass}
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              title="Full-width content"
+              description="Let your library make the most of the screen. Heroes always stay edge-to-edge."
+            >
+              <input
                 type="checkbox"
                 aria-label="Full-width content"
                 bind:checked={prefs.fullWidth}
@@ -335,9 +510,16 @@
               >Preferred subtitle languages<input
                 bind:value={subtitleLanguagesText}
                 placeholder="en, fr"
-              /><small>Language codes in preference order, separated by commas.</small></label
+              />
+
+              <small>Language codes in preference order, separated by commas.</small>
+            </label>
+
+            <SettingsRow
+              title="Ask before playback"
+              description="Choose subtitle preferences before starting a title."
             >
-            <SettingsRow title="Ask before playback" description="Choose subtitle preferences before starting a title."><input
+              <input
                 type="checkbox"
                 aria-label="Ask before playback"
                 bind:checked={prefs.subtitlePrompt}
@@ -352,23 +534,172 @@
           </p>
           {@render saveControls('Save playback preferences')}
         </form>
-        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Opened':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await refreshRouteDependencies(['settings']);}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
-      {:else if data.section === 'api'}<div class="stack form-width">
-        <form class="panel stack" onsubmit={async event=>{
-          event.preventDefault();if(busy)return;busy=true;error='';apiToken='';
-          try {const result=await change<{token:string}>('settings/tokens',{name:apiName,scopes:apiGrants,days:apiDays});apiToken=result.token;apiName='';}
-          catch(cause){error=message(cause);}finally{busy=false;}
-        }}>
-          <label class="field">Token name<input required maxlength="60" bind:value={apiName}/></label>
-          <label class="field">Expires in days<input type="number" min="1" max="365" required bind:value={apiDays}/></label>
-          <fieldset class="stack"><legend>Permissions</legend>{#each apiScopes as scope}<label class="check"><input type="checkbox" bind:group={apiGrants} value={scope}/>{apiScopeLabels[scope]}</label>{/each}</fieldset>
-          <Button type="submit" disabled={busy||!apiGrants.length||page.data.capabilities?.api===false}>Create token</Button>
-        </form>
-        {#if apiToken}<div class="panel stack"><p role="status">Copy this token now. It will not be shown again.</p><label class="field">API token<input readonly autocomplete="off" spellcheck={false} value={apiToken} onclick={event=>event.currentTarget.select()}/></label><Button emphasis="subtle" onclick={()=>apiToken=''}>Hide</Button></div>{/if}
-        {#each data.apiTokens as token (token.id)}<div class="panel stack"><div class="spread"><strong>{token.name}</strong><Button emphasis="subtle" danger disabled={busy||!!token.revokedAt} onclick={async()=>{if(busy)return;busy=true;error='';try{await change(`settings/tokens/${token.id}`,undefined,'DELETE');}catch(cause){error=message(cause);}finally{busy=false;}}}>{token.revokedAt?'Revoked':'Revoke'}</Button></div><p class="small muted">{token.scopes.join(', ')} · Expires {new Date(token.expiresAt).toLocaleDateString()}</p></div>{/each}
-        <p class="small muted">Use Bearer authentication at /api/public/v1. <a href="/api/public/v1/openapi.json" target="_blank" rel="noopener">OpenAPI reference</a> covers the endpoints.</p>
-      </div>
-      {:else if data.section === 'account'}<div class="stack form-width">
+
+        {#if data.playbackLinks.length}
+          <div class="stack form-width">
+            <Heading title="Playback invitations" />
+
+            {#each data.playbackLinks as link}
+              <div class="panel spread">
+                <div>
+                  <a href={`/share?id=${link.id}`}>Open invitation</a>
+
+                  <p class="small muted">
+                    {link.revokedAt
+                      ? 'Revoked'
+                      : new Date(link.expiresAt) <= new Date() ? 'Expired' : link.claimedAt ? 'Opened' : 'Available'} · {link.together ? 'Together' : 'Single item'} · {new Date(link.expiresAt).toLocaleString()}
+                  </p>
+                </div>
+
+                <Button
+                  disabled={busy || !!link.revokedAt}
+                  onclick={async () => {
+                    if (busy) return;
+
+                    busy = true;
+
+                    try {
+                      await change(`sharing/${link.id}`, undefined, 'DELETE');
+                      await refreshRouteDependencies(['settings']);
+                    } catch(cause) {
+                      error = message(cause);
+                    } finally {
+                      busy = false;
+                    }
+                  }}
+                >Revoke</Button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      {:else if data.section === 'api'}
+        <div class="stack form-width">
+          <form
+            class="panel stack"
+            onsubmit={async (event) => {
+              event.preventDefault();
+
+              if (busy) return;
+
+              busy = true;
+              error = '';
+              apiToken = '';
+
+              try {
+                const result = await change<{ token: string }>('settings/tokens', { name: apiName, scopes: apiGrants, days: apiDays });
+
+                apiToken = result.token;
+                apiName = '';
+              } catch(cause) {
+                error = message(cause);
+              } finally {
+                busy = false;
+              }
+            }}
+          >
+            <label class="field">
+              Token name
+              <input required maxlength="60" bind:value={apiName} />
+            </label>
+
+            <label class="field">
+              Expires in days
+
+              <input
+                type="number"
+                min="1"
+                max="365"
+                required
+                bind:value={apiDays}
+              />
+            </label>
+
+            <fieldset class="stack">
+              <legend>Permissions</legend>
+
+              {#each apiScopes as scope}
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    bind:group={apiGrants}
+                    value={scope}
+                  />
+
+                  {apiScopeLabels[scope]}
+                </label>
+              {/each}
+            </fieldset>
+
+            <Button
+              type="submit"
+              disabled={busy || !apiGrants.length || page.data.capabilities?.api === false}
+            >Create token</Button>
+          </form>
+
+          {#if apiToken}
+            <div class="panel stack">
+              <p role="status">Copy this token now. It will not be shown again.</p>
+
+              <label class="field">
+                API token
+
+                <input
+                  readonly
+                  autocomplete="off"
+                  spellcheck={false}
+                  value={apiToken}
+                  onclick={(event) => event.currentTarget.select()}
+                />
+              </label>
+
+              <Button emphasis="subtle" onclick={() => apiToken = ''}>Hide</Button>
+            </div>
+          {/if}
+
+          {#each data.apiTokens as token (token.id)}
+            <div class="panel stack">
+              <div class="spread">
+                <strong>{token.name}</strong>
+
+                <Button
+                  emphasis="subtle"
+                  danger
+                  disabled={busy || !!token.revokedAt}
+                  onclick={async () => {
+                    if (busy) return;
+
+                    busy = true;
+                    error = '';
+
+                    try {
+                      await change(`settings/tokens/${token.id}`, undefined, 'DELETE');
+                    } catch(cause) {
+                      error = message(cause);
+                    } finally {
+                      busy = false;
+                    }
+                  }}
+                >{token.revokedAt ? 'Revoked' : 'Revoke'}</Button>
+              </div>
+
+              <p class="small muted">{token.scopes.join(', ')} · Expires {new Date(token.expiresAt).toLocaleDateString()}</p>
+            </div>
+          {/each}
+
+          <p class="small muted">
+            Use Bearer authentication at /api/public/v1.
+
+            <a
+              href="/api/public/v1/openapi.json"
+              target="_blank"
+              rel="noopener"
+            >OpenAPI reference</a>
+
+            covers the endpoints.
+          </p>
+        </div>
+      {:else if data.section === 'account'}
+        <div class="stack form-width">
           <div class="panel">
             <h3>{page.data.user?.username}</h3>
             <p class="small">
@@ -396,7 +727,7 @@
                     form.reset();
                     busy = false;
                     await goto('/login?passwordChanged=1', {
-                      invalidateAll: true,
+                      refreshAll: true,
                     });
                   } catch (e) {
                     error = message(e);
@@ -406,8 +737,9 @@
                 }}
               >
 
-                <label class="field"
-                  >Current password<input
+                <label class="field">
+                  Current password
+                  <input
                     type="password"
                     name="currentPassword"
                     autocomplete="current-password"
@@ -475,16 +807,11 @@
                 <option value="manual">Manual — review every conflict</option>
                 <option value="coast">Coast wins automatically</option>
                 {#each conflictServices as service}
-                  <option value={service.connection!.id}
-                    >{service.name}{service.connection!.username
-                      ? ` · ${service.connection!.username}`
-                      : ''} wins automatically</option
-                  >
+                  <option value={(service.connection!).id}>{service.name}{(service.connection!).username ? ` · ${(service.connection!).username}` : ''} wins automatically</option>
                 {/each}
-                {#if !['manual', 'coast'].includes(prefs.syncConflictWinner) && !conflictServices.some((p) => p.connection!.id === prefs.syncConflictWinner)}
-                  <option value={prefs.syncConflictWinner}
-                    >Preferred account unavailable — manual review</option
-                  >
+
+                {#if !['manual', 'coast'].includes(prefs.syncConflictWinner) && !conflictServices.some((p) => (p.connection!).id === prefs.syncConflictWinner)}
+                  <option value={prefs.syncConflictWinner}>Preferred account unavailable — manual review</option>
                 {/if}
               </select>
             </label>
@@ -497,9 +824,16 @@
           </form>
           {#each data.providers.filter((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider)) as p (p.id)}<ConnectionCard
               provider={p}
-              dynamicCollectionExports={data.providers.filter(source=>source.provider==='trakt'&&source.connection?.status==='connected'&&(source.connection.settings.collectionProjection as {enabled?:boolean;scope?:string;source?:string;availableOnly?:boolean})?.enabled&&(source.connection.settings.collectionProjection as {scope?:string}).scope!=='fixed'&&((source.connection.settings.collectionProjection as {source?:string}).source==='server'||(source.connection.settings.collectionProjection as {availableOnly?:boolean}).availableOnly)).map(source=>source.name)}
-              sources={data.providers.filter(source=>source.provider==='jellyfin'&&source.connection?.status==='connected').map(source=>({id:source.connection!.id,name:source.name}))}
-            />{/each}{#if !data.providers.some((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider))}<EmptyState
+              dynamicCollectionExports={data.providers.filter((source) => source.provider === 'trakt' && source.connection?.status === 'connected' && (source.connection.settings.collectionProjection as {
+                enabled?: boolean;
+                scope?: string;
+                source?: string;
+                availableOnly?: boolean
+               })?.enabled && (source.connection.settings.collectionProjection as { scope?: string }).scope !== 'fixed' && ((source.connection.settings.collectionProjection as { source?: string }).source === 'server' || (source.connection.settings.collectionProjection as { availableOnly?: boolean }).availableOnly)).map((source) => source.name)}
+              sources={data.providers.filter((source) => source.provider === 'jellyfin' && source.connection?.status === 'connected').map((source) => ({ id: (source.connection!).id, name: source.name }))}
+            />
+          {/each}{#if !data.providers.some((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider))}
+            <EmptyState
               title="Connect your world."
               description="An administrator can add Jellyfin, Trakt, and Seerr integrations. Then you can link your own accounts here."
               icon="server"
@@ -559,25 +893,103 @@
             </p>{/if}
           <Heading title="Missing demand" />
           <p class="small">Released next-needed items and saved titles that are missing or uncertain for each account. Users who opt out are excluded.</p>
-          {#await data.demand}<p class="small" role="status">Checking personal demand…</p>{:then demand}
-            {#if demand?.users.length}<div class="overflow"><table class="table"><thead><tr><th>User</th><th>Needed title</th><th>Reason</th><th>Availability</th><th>Source coverage</th><th>Request</th></tr></thead><tbody>
-              {#each demand.users as person}{#each person.items as item}<tr><td><a href={`/library?collection=true&username=${encodeURIComponent(person.username)}`}>{person.username}</a></td><td><a href={item.href}>{item.neededTitle}</a>{#if item.dateUnknown}<small> · Release date unknown</small>{/if}</td><td>{item.reason}</td><td>{item.availability==='unknown'?'Uncertain':'Missing for this user'}</td><td>{item.sources.map((source:{name:string;fresh:boolean})=>`${source.name}: ${source.fresh?'current':'not current'}`).join(', ')||'No applicable sources'}</td><td>{item.requests.map((request:{state:string})=>request.state).join(', ')||'No request'}</td></tr>{/each}{#if person.pages>1}<tr><td colspan="6"><Pagination page={person.page} pages={person.pages} pageUrl={number=>`/settings/admin?userId=${person.userId}&itemsPage=${number}`} label={`${person.username} demand pages`} /></td></tr>{/if}{/each}
-            </tbody></table></div>{:else}<p class="small">No missing demand on this page.</p>{/if}
-            {#if demand}<Pagination page={demand.page} pages={demand.pages} pageUrl={number=>`/settings/admin?page=${number}`} label="Demand pages" />{/if}
-          {:catch}<!-- Failure is delivered by the scoped toast. -->{/await}
+
+          {#await data.demand}
+            <p class="small" role="status">Checking personal demand…</p>
+          {:then demand}
+            {#if demand?.users.length}
+              <div class="overflow">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Needed title</th>
+                      <th>Reason</th>
+                      <th>Availability</th>
+                      <th>Source coverage</th>
+                      <th>Request</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {#each demand.users as person}
+                      {#each person.items as item}
+                        <tr>
+                          <td>
+                            <a
+                              href={`/library?collection=true&username=${encodeURIComponent(person.username)}`}
+                            >{person.username}</a>
+                          </td>
+
+                          <td>
+                            <a href={item.href}>{item.neededTitle}</a>
+
+                            {#if item.dateUnknown}
+                              <small>· Release date unknown</small>
+                            {/if}
+                          </td>
+
+                          <td>{item.reason}</td>
+                          <td>{item.availability === 'unknown' ? 'Uncertain' : 'Missing for this user'}</td>
+                          <td>{item.sources.map((source: { name: string; fresh: boolean }) => `${source.name}: ${source.fresh ? 'current' : 'not current'}`).join(', ') || 'No applicable sources'}</td>
+                          <td>{item.requests.map((request: { state: string }) => request.state).join(', ') || 'No request'}</td>
+                        </tr>
+                      {/each}{#if person.pages > 1}
+                        <tr>
+                          <td colspan="6">
+                            <Pagination
+                              page={person.page}
+                              pages={person.pages}
+                              pageUrl={(number) => `/settings/admin?userId=${person.userId}&itemsPage=${number}`}
+                              label={`${person.username} demand pages`}
+                            />
+                          </td>
+                        </tr>
+                      {/if}
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {:else}
+              <p class="small">No missing demand on this page.</p>
+            {/if}
+
+            {#if demand}
+              <Pagination
+                page={demand.page}
+                pages={demand.pages}
+                pageUrl={(number) => `/settings/admin?page=${number}`}
+                label="Demand pages"
+              />
+            {/if}
+          {:catch}
+            <!-- Failure is delivered by the scoped toast. -->
+          {/await}
+
           <h3>Requests needing attention</h3>
           {#if data.requests.filter((r) => r.request.state === 'pending').length}<div
               class="overflow"
             >
               <table class="table">
-                <thead
-                  ><tr><th>Title</th><th>User</th><th>Destination</th><th>Action</th></tr></thead
-                ><tbody
-                  >{#each data.requests.filter((r) => r.request.state === 'pending') as r}<tr
-                      ><td>{r.title}</td><td>{r.username}</td><td>{r.destination}</td><td
-                        ><div class="row">
-                          <Button
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>User</th>
+                    <th>Destination</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
+                <tbody>
+                  {#each data.requests.filter((r) => r.request.state === 'pending') as r}
+                    <tr>
+                      <td>{r.title}</td>
+                      <td>{r.username}</td>
+                      <td>{r.destination}</td>
+
+                      <td>
+                        <div class="row">
+                          <Button
                             disabled={busy}
                             onclick={() =>
                               save(
@@ -701,16 +1113,134 @@
             </table>
           </div>
           <div class="panel stack form-width">
-            <h3>Invite someone</h3><p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
-            <form class="stack" onsubmit={async(e)=>{e.preventDefault();if(busy)return;busy=true;error='';try{const form=new FormData(e.currentTarget);const result=await change<{code:string}>('admin/invites',{days:Number(form.get('days')),...(inviteConnection?{provisionConnectionId:inviteConnection,folders:inviteFolders}:{})});inviteCode=result.code;}catch(cause){error=message(cause);}finally{busy=false;}}}>
-              <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label>
-              <label class="field">Jellyfin provisioning<select bind:value={inviteConnection}><option value="">Connect an existing account</option>{#each data.providers.filter(provider=>provider.provider==='jellyfin'&&provider.connection?.status==='connected') as provider}<option value={provider.connection!.id}>{provider.name} · {provider.connection!.username}</option>{/each}</select></label>
-              {#if inviteConnection}<fieldset class="stack"><legend>Permitted libraries</legend>{#if inviteLoading}<p role="status">Loading libraries…</p>{/if}{#each inviteLibraries as library}<label class="check"><input type="checkbox" bind:group={inviteFolders} value={library.ItemId}/>{library.Name??library.ItemId}</label>{/each}<small>Only these libraries are granted. An enabled Jellyfin administrator connection is required.</small></fieldset>{/if}
-              <Button type="submit" disabled={busy||inviteLoading||!!inviteConnection&&!inviteFolders.length}>Create invite</Button>
+            <h3>Invite someone</h3>
+            <p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
+
+            <form
+              class="stack"
+              onsubmit={async (e) => {
+                e.preventDefault();
+
+                if (busy) return;
+
+                busy = true;
+                error = '';
+
+                try {
+                  const form = new FormData(e.currentTarget);
+
+                  const result = await change<{ code: string }>('admin/invites', {
+                    days: Number(form.get('days')),
+                    ...inviteConnection
+                      ? {
+                        provisionConnectionId: inviteConnection,
+                        folders: inviteFolders
+                      }
+                      : {}
+                  });
+
+                  inviteCode = result.code;
+                } catch(cause) {
+                  error = message(cause);
+                } finally {
+                  busy = false;
+                }
+              }}
+            >
+              <label class="field">
+                Expires after
+
+                <select name="days">
+                  <option value="1">1 day</option>
+                  <option value="7" selected>7 days</option>
+                  <option value="30">30 days</option>
+                </select>
+              </label>
+
+              <label class="field">
+                Jellyfin provisioning
+
+                <select bind:value={inviteConnection}>
+                  <option value="">Connect an existing account</option>
+
+                  {#each data.providers.filter((provider) => provider.provider === 'jellyfin' && provider.connection?.status === 'connected') as provider}
+                    <option value={(provider.connection!).id}>{provider.name} · {(provider.connection!).username}</option>
+                  {/each}
+                </select>
+              </label>
+
+              {#if inviteConnection}
+                <fieldset class="stack">
+                  <legend>Permitted libraries</legend>
+
+                  {#if inviteLoading}
+                    <p role="status">Loading libraries…</p>
+                  {/if}{#each inviteLibraries as library}
+                    <label class="check">
+                      <input
+                        type="checkbox"
+                        bind:group={inviteFolders}
+                        value={library.ItemId}
+                      />
+
+                      {library.Name ?? library.ItemId}
+                    </label>
+                  {/each}
+
+                  <small>Only these libraries are granted. An enabled Jellyfin administrator connection is required.</small>
+                </fieldset>
+              {/if}
+
+              <Button
+                type="submit"
+                disabled={busy || inviteLoading || !!inviteConnection && !inviteFolders.length}
+              >Create invite</Button>
             </form>
-            {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><label class="field">Invite link<input readonly value={`${page.url.origin}/register#invite=${inviteCode}`} onclick={event=>event.currentTarget.select()}/></label>{/if}
-            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':new Date(invite.expiresAt)<=new Date()?'Expired':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button emphasis="subtle" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
+
+            {#if inviteCode}
+              <label class="field">
+                Copy this code — shown once
+
+                <input
+                  readonly
+                  value={inviteCode}
+                  onclick={(e) => e.currentTarget.select()}
+                />
+              </label>
+
+              <label class="field">
+                Invite link
+
+                <input
+                  readonly
+                  value={`${page.url.origin}/register#invite=${inviteCode}`}
+                  onclick={(event) => event.currentTarget.select()}
+                />
+              </label>
+            {/if}
+
+            {#each data.invites as invite}
+              <div class="spread">
+                <span class="small">
+                  {invite.usedAt
+                    ? `Used by ${invite.username || 'deleted account'}`
+                    : invite.revokedAt
+                      ? 'Revoked'
+                      : new Date(invite.expiresAt) <= new Date()
+                        ? 'Expired'
+                        : `Expires ${new Date(invite.expiresAt).toLocaleString()}`}
+                </span>
+
+                {#if !invite.usedAt && !invite.revokedAt}
+                  <Button
+                    emphasis="subtle"
+                    onclick={() => save(`admin/invites/${invite.id}`, {}, 'Invite revoked.', 'DELETE')}
+                  >Revoke</Button>
+                {/if}
+              </div>
+            {/each}
           </div>
+
           <div class="panel stack form-width">
             <h3>Create a Coast account</h3>
             <p class="small">
@@ -733,11 +1263,21 @@
                   form.reset();
               }}
             >
+              <label class="field">
+                Username
 
-              <label class="field"
-                >Username<input name="username" required minlength="3" maxlength="32" /></label
-              ><label class="field"
-                >Password<input
+                <input
+                  name="username"
+                  required
+                  minlength="3"
+                  maxlength="32"
+                />
+              </label>
+
+              <label class="field">
+                Password
+
+                <input
                   name="password"
                   type="password"
                   required
@@ -782,7 +1322,13 @@
             <h3>Experimental features</h3>
             <p class="small">Enable each feature separately. Turning one off hides its controls and blocks access without deleting saved data.</p>
             {#each experimentalPolicies as [field, title, description]}
-              <SettingsRow {title} {description}><input type="checkbox" aria-label={title} bind:checked={policy[field]}/></SettingsRow>
+              <SettingsRow title={title} description={description}>
+                <input
+                  type="checkbox"
+                  aria-label={title}
+                  bind:checked={policy[field]}
+                />
+              </SettingsRow>
             {/each}
           </fieldset>
           <fieldset class="panel stack" id="sessions" disabled={busy}>
@@ -981,15 +1527,20 @@
             success = 'Personal preferences restored to installation defaults.';
             resetOpen = false;
           }
-        }}>{busy ? 'Restoring…' : 'Restore all preferences'}</Button
-      ><Button  disabled={busy} onclick={() => (resetOpen = false)}
-        >Keep preferences</Button
-      >
+        }}
+      >{busy ? 'Restoring…' : 'Restore all preferences'}</Button>
+
+      <Button disabled={busy} onclick={() => resetOpen = false}>Keep preferences</Button>
     </div>
   </div>
 </Dialog>
-<Dialog onclose={() => (deleteId = '')} open={!!deleteId} title="Delete this Coast account?"
-  ><div class="stack">
+
+<Dialog
+  onclose={() => deleteId = ''}
+  open={!!deleteId}
+  title="Delete this Coast account?"
+>
+  <div class="stack">
     <p>
       This removes the Coast account and its local tracking data. Linked service accounts will
       remain intact.
@@ -1000,10 +1551,10 @@
         danger
         disabled={busy}
         onclick={async () => {
-          if (await save(`admin/users/${deleteId}`, {}, 'Account deleted.', 'DELETE'))
-            deleteId = '';
-        }}>Delete Coast account</Button
-      ><Button  disabled={busy} onclick={() => (deleteId = '')}>Cancel</Button>
+          if (await save(`admin/users/${deleteId}`, {}, 'Account deleted.', 'DELETE')) deleteId = '';
+        }}
+      >Delete Coast account</Button>
+      <Button disabled={busy} onclick={() => deleteId = ''}>Cancel</Button>
     </div>
   </div></Dialog
 >
@@ -1023,18 +1574,28 @@
         const { email, role, disabled, password, id, allowPlaybackSharing, personalBitrateMbps, sharedBitrateMbps } = editing;
         if (
           await save(
-            `admin/users/${id}`,
-            { email, role, disabled, allowPlaybackSharing, personalBitrateMbps, sharedBitrateMbps, ...(password ? { password } : {}) },
-            'Account updated.',
-            'PATCH'
+          `admin/users/${id}`,
+          {
+            email,
+            role,
+            disabled,
+            allowPlaybackSharing,
+            personalBitrateMbps,
+            sharedBitrateMbps,
+            ...password ? { password } : {}
+          },
+          'Account updated.',
+          'PATCH'
           )
         )
           editing = null;
       }}
     >
+      <label class="field">
+        Email
+        <small>Optional</small>
 
-      <label class="field"
-        >Email <small>Optional</small><input
+        <input
           type="email"
           bind:value={editing.email}
           maxlength="254"
@@ -1068,17 +1629,15 @@
             minlength="8"
             maxlength="128"
             disabled={busy}
-          /><small
-            >Leave blank to keep the current sign-in method. This does not change the Jellyfin
-            password.</small
-          ></label
-        >{/if}
-      <div class="row">
-        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button><Button
+          />
 
-          disabled={busy}
-          onclick={() => (editing = null)}>Cancel</Button
-        >
+          <small>Leave blank to keep the current sign-in method. This does not change the Jellyfin password.</small>
+        </label>
+      {/if}
+
+      <div class="row">
+        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button>
+        <Button disabled={busy} onclick={() => editing = null}>Cancel</Button>
       </div>
     </form>{/if}
 </Dialog>

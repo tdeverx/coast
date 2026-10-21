@@ -1,12 +1,12 @@
-import { getFeatureConfig } from '$lib/server/features';
-import {requestPriority} from '$lib/server/security/request-priority';
-import { categoryEnabled } from '$lib/experimental';
+import { getFeatureConfig } from '#lib/server/features.js';
+import {requestPriority} from '#lib/server/security/request-priority.js';
+import { categoryEnabled } from '#lib/experimental.js';
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { AppError } from '$lib/server/security/errors';
-import { hashToken,randomToken,requireUser,type SessionUser } from '$lib/server/auth';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { startPlayback,streamPlayback } from '$lib/playback/service.server';
+import { getSql } from '#lib/server/db/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { hashToken,randomToken,requireUser,type SessionUser } from '#lib/server/auth/index.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { startPlayback,streamPlayback } from '#lib/playback/service.server.js';
 import { withSharedRequest } from './request-leases.server';
 import { reserveViewer, ensureSharedEncoding, releaseViewer, stopViewerPlayback } from './leases.server';
 

@@ -19,8 +19,8 @@ const host=await serverComponent('src/lib/ui/components/NotificationToasts.svelt
 const {default:NotificationToasts}=await import(moduleUrl(host
  .replace(/import \{ openNotifications \} from ['"].*?['"];?/,"const openNotifications=()=>{};")
  .replace(/import \{ useClient \} from ['"].*?['"];?/,"const useClient=()=>({preview:false,api:()=>{throw Error('Server feedback must not persist notifications');},feedback:{activeHost:null,current:null}});")
- .replace(/from (['"])\$lib\/ui\/client\1/,`from ${JSON.stringify(client)}`)
- .replace(/from (['"])\$lib\/ui\/controls\/notification-toasts\1/,`from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))}`)
+ .replace(/from (['"])#lib\/ui\/client\.js\1/,`from ${JSON.stringify(client)}`)
+ .replace(/from (['"])#lib\/ui\/controls\/notification-toasts\.js\1/,`from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))}`)
  .replace(/import Toast from ['"].*?['"];?/,`import Toast from ${JSON.stringify(toast)};`)));
 test('native form failures render the existing toast before hydration without requiring JavaScript',()=>{
  const html=render(NotificationToasts,{props:{notifications:[],initialFailure:'Check your username and password.'}}).body;

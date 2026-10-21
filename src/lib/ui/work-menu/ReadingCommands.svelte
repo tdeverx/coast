@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
-  import FormActions from '$lib/ui/components/FormActions.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import FormActions from '#lib/ui/components/FormActions.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
-  import { readingStates, type ReadingState } from '$lib/reading/model';
-  import type { ReadingActionState } from '$lib/media/work-actions';
+  import { readingStates, type ReadingState } from '#lib/reading/model.js';
+  import type { ReadingActionState } from '#lib/media/work-actions.js';
   import { displayLabel } from '../labels';
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';

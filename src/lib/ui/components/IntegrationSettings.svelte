@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import Field from './Field.svelte';
-  import { displayLabel } from '$lib/ui/labels';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
-  import type {SourceImpact} from '$lib/collection/source-changes.server';
+  import { displayLabel } from '#lib/ui/labels.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import type {SourceImpact} from '#lib/collection/source-changes.server.js';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import Heading from './Heading.svelte';
 
   import ProviderAutomation from './ProviderAutomation.svelte';
-  import type { ProviderSchedule } from '$lib/providers/schedule';
+  import type { ProviderSchedule } from '#lib/providers/schedule.js';
 
   const { api, change, feedback } = useClient();
 

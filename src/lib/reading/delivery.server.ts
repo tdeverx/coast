@@ -1,6 +1,6 @@
 import { readingCache, readingLease } from './cache.server';
 import { readingDeliverySource } from './sessions.server';
-import { AppError } from '$lib/server/security/errors';
+import { AppError } from '#lib/server/security/errors.js';
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" };
 /** One operation streams progress, then its version-bound layout. No progress jobs or polling. */
 export async function readingManifest(userId: string, id: string, request: Request) {

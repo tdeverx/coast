@@ -1,4 +1,4 @@
-import type { ActivityStatus } from '$lib/social/status';
+import type { ActivityStatus } from '#lib/social/status.js';
 
 export type WorkSocial = {
   friends: { username: string; avatar?: string | null; status?: ActivityStatus }[];

@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
-import {gameDetailData} from '$lib/games/detail.server';
-import {AppError} from '$lib/server/security/errors';
-import { DomainError } from '$lib/core/errors';
+import {gameDetailData} from '#lib/games/detail.server.js';
+import {AppError} from '#lib/server/security/errors.js';
+import { DomainError } from '#lib/core/errors.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({locals, params, url, depends}) => {
   depends('coast:tracking');

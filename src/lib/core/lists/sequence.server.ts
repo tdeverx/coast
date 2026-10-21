@@ -1,4 +1,4 @@
-import { requireFeatureInTransaction } from '$lib/server/features';
+import { requireFeatureInTransaction } from '#lib/server/features.js';
 import { sequenceContextSchema, sequenceSourceSchema, type SequenceContext, type SequenceSource } from '../../media/sequence';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb, type Database } from '../../server/db';

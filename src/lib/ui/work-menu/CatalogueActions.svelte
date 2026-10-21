@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { page } from '$app/state';
   import { onDestroy, untrack } from 'svelte';
-  import PlanAction from '$lib/experiments/PlanAction.svelte';
-  import ShareAction from '$lib/sharing/ShareAction.svelte';
+  import PlanAction from '#lib/experiments/PlanAction.svelte';
+  import ShareAction from '#lib/sharing/ShareAction.svelte';
   import MetadataEditor from '../components/MetadataEditor.svelte';
-  import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
+  import ReadingLaunch from '#lib/reading/ReadingLaunch.svelte';
   import MusicCommands from './MusicCommands.svelte';
   import {detailHref} from '../pages/detail-rows';
   import GameCommands from './GameCommands.svelte';
@@ -18,12 +18,12 @@
   import { createWorkActions, workMenuScope } from '../controls/work.svelte';
   import { createMenuResource } from '../controls/menu-resource.svelte';
   import { relationshipControls } from '../controls/actions';
-  import { playMusic } from '$lib/playback/client.svelte';
+  import { playMusic } from '#lib/playback/client.svelte.js';
   import type { MediaCardPresentation } from '../types';
-  import type { MusicItem } from '$lib/music/model';
-  import type { GameStatus } from '$lib/games/model';
-  import type { ReadingState } from '$lib/reading/model';
-  import type { WorkList, GameActionState, ReadingActionState } from '$lib/media/work-actions';
+  import type { MusicItem } from '#lib/music/model.js';
+  import type { GameStatus } from '#lib/games/model.js';
+  import type { ReadingState } from '#lib/reading/model.js';
+  import type { WorkList, GameActionState, ReadingActionState } from '#lib/media/work-actions.js';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
   import { createResource } from '../resource.svelte';

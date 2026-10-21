@@ -1,15 +1,15 @@
-import {personaliseMusicItems,musicDetails} from '$lib/music/service.server';
+import {personaliseMusicItems,musicDetails} from '#lib/music/service.server.js';
 import {error} from '@sveltejs/kit';
 import {eq,and} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb} from '$lib/server/db';
-import {musicWorks,mediaRelationships} from '$lib/server/db/schema';
-import {pageNumberSchema} from '$lib/server/queries/pagination';
-import type {MusicItem} from '$lib/music/model';
+import {getDb} from '#lib/server/db/index.js';
+import {musicWorks,mediaRelationships} from '#lib/server/db/schema.js';
+import {pageNumberSchema} from '#lib/server/queries/pagination.js';
+import type {MusicItem} from '#lib/music/model.js';
 
-import {hydrateMusicItems} from '$lib/music/presentation.server';
-import {requireFeature} from '$lib/server/features';
-import {jellyfinMusicIdSchema} from '$lib/providers/jellyfin/music.server';
+import {hydrateMusicItems} from '#lib/music/presentation.server.js';
+import {requireFeature} from '#lib/server/features.js';
+import {jellyfinMusicIdSchema} from '#lib/providers/jellyfin/music.server.js';
 export async function musicSourceDetailData(userId:string,connectionId:string,id:string,requestedPage=1,signal?:AbortSignal){
  v.parse(v.pipe(v.string(),v.uuid()),connectionId);v.parse(jellyfinMusicIdSchema,id);const page=v.parse(pageNumberSchema,requestedPage);
  const detail=await musicDetails(userId,connectionId,id,signal);

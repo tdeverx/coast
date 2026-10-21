@@ -1,10 +1,10 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { hashToken, randomToken, requireUser, type SessionUser } from '$lib/server/auth';
-import { onboardingPending } from '$lib/server/auth/onboarding';
-import { AppError } from '$lib/server/security/errors';
-import { apiScopes } from '$lib/public-api';
+import { getSql } from '#lib/server/db/index.js';
+import { hashToken, randomToken, requireUser, type SessionUser } from '#lib/server/auth/index.js';
+import { onboardingPending } from '#lib/server/auth/onboarding.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { apiScopes } from '#lib/public-api.js';
 
 const inputSchema = v.object({
   name:v.pipe(v.string(),v.trim(),v.minLength(1),v.maxLength(60)),

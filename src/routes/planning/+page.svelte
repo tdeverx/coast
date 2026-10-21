@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
-  import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import ReadingLaunch from '#lib/reading/ReadingLaunch.svelte';
   import { goto } from '$app/navigation';
-  import { mediumOptions } from '$lib/experimental';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import { mediumOptions } from '#lib/experimental.js';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import { page } from '$app/state';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import { api, change } from '$lib/ui/client';
-  import { createOperation } from '$lib/ui/operation.svelte';
-  import { playMedia } from '$lib/playback/client.svelte';
-  import { startSynced, syncedPlayer } from '$lib/playback/synced/client.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import { api, change } from '#lib/ui/client.js';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
+  import { playMedia } from '#lib/playback/client.svelte.js';
+  import { startSynced, syncedPlayer } from '#lib/playback/synced/client.svelte.js';
   let { data } = $props();
   const operation = createOperation(useRetention());
 
@@ -37,7 +37,7 @@
     });
   }
   function pageUrl(number: number) {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set('page', String(number));
     return url.pathname + url.search;
   }
@@ -48,7 +48,7 @@
 <svelte:head><title>Planning · Coast</title></svelte:head>
 <div class="content page">
   <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
-    {#snippet segments()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
+    {#snippet segments()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url.href);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{reset: false,});}} />{/snippet}
   </Heading>
 
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import Field from './Field.svelte';
-  import { createOperation } from '$lib/ui/operation.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
 

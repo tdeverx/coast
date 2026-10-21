@@ -18,9 +18,9 @@ function imported(file:ts.SourceFile,name:string) {
   for(const node of file.statements)if(ts.isImportDeclaration(node)&&node.importClause?.namedBindings&&ts.isNamedImports(node.importClause.namedBindings)) {
     const item=node.importClause.namedBindings.elements.find(item=>item.name.text===name);if(!item)continue;
     const specifier=(node.moduleSpecifier as ts.StringLiteral).text;
-    if(!specifier.startsWith('.')&&!specifier.startsWith('$lib/'))continue;
-    const base=specifier.startsWith('$lib/')?resolve('src/lib',specifier.slice(5)):resolve(dirname(file.fileName),specifier);
-    const path=[base,`${base}.ts`,`${base}.svelte.ts`,`${base}.svelte`,`${base}/index.ts`].find(path=>existsSync(path)&&statSync(path).isFile());
+    if(!specifier.startsWith('.')&&!specifier.startsWith('#lib/'))continue;
+    const base=specifier.startsWith('#lib/')?resolve('src/lib',specifier.slice(5)):resolve(dirname(file.fileName),specifier);
+    const path=[base,base.replace(/\.js$/,'.ts'),`${base}.ts`,`${base}.svelte.ts`,`${base}.svelte`,`${base}/index.ts`].find(path=>existsSync(path)&&statSync(path).isFile());
     if(path)return {file:source(path),name:(item.propertyName??item.name).text};
   }
 }

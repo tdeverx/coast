@@ -1,4 +1,4 @@
-import {metadataFields,type MetadataValues} from '$lib/catalogue/metadata/resolve';
+import {metadataFields,type MetadataValues} from '#lib/catalogue/metadata/resolve.js';
 /** Saved provider items can omit fields; empty values must not erase shared metadata. */
 export function editionSnapshot(snapshot:Record<string,unknown>,durationSeconds?:number|null):MetadataValues{
  const values:MetadataValues={};

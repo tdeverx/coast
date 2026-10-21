@@ -1,10 +1,10 @@
-import { mediumOptions, categoryEnabled } from '$lib/experimental';
-import {workFriendOptions,type WorkFriendFilter} from '$lib/social/model';
+import { mediumOptions, categoryEnabled } from '#lib/experimental.js';
+import {workFriendOptions,type WorkFriendFilter} from '#lib/social/model.js';
 import {page} from '$app/state';
 import { onDestroy, untrack } from 'svelte';
-import { useClient } from '$lib/ui/client-context';
-import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
-import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
+import { useClient } from '#lib/ui/client-context.js';
+import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
+import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import type { ShelfSource, ShelfItem } from './types';
 type Feed = { emptyAllMedia?:boolean; items: ShelfItem[]; hasMore: boolean; next: { before: string; beforeId: string; beforeKnown?:string;beforeRelationship?:string } | null };
 export type SocialShelfOptions = { type: 'social'; layout?: 'row' | 'grid'; initial?: Feed; category?: string; title?:string; mediums?:boolean; surface?:'activity'|'popular';workId?:string;artistId?:string;readingGroupId?:string;href?:string;relationship?:WorkFriendFilter;relationshipKind?:string };
@@ -51,7 +51,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
  });
  onDestroy(resource.dispose);
  return {
-    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`);if(get().relationship===undefined)return href;const url=new URL(href,page.url);url.searchParams.set('relationship',relationship);return url.pathname+url.search;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;}, get filters(){return get().relationship!==undefined?[{type:'segments' as const,label:'Activity selection',value:relationship,options:workFriendOptions(get().relationshipKind),change:(value:string)=>{relationship=value as WorkFriendFilter;void load();}}]:get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
+    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`);if(get().relationship===undefined)return href;const url=new URL(href,page.url.href);url.searchParams.set('relationship',relationship);return url.pathname+url.search;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;}, get filters(){return get().relationship!==undefined?[{type:'segments' as const,label:'Activity selection',value:relationship,options:workFriendOptions(get().relationshipKind),change:(value:string)=>{relationship=value as WorkFriendFilter;void load();}}]:get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
   get emptyConfirmed(){return !get().mediums || resource.data.emptyAllMedia===true;},
   get items() { if(loadedCategory!==category||loadedWork!==targetKey())return []; return get().layout==='grid'?resource.data.items:resource.data.items.slice(0,20); }, get ready() { return resource.ready; }, get busy() { return resource.busy; },
   get error() { return resource.error; }, get activated() { return resource.activated; },

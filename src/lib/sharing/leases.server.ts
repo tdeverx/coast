@@ -1,8 +1,8 @@
-import { getSql } from '$lib/server/db';
-import { getConfig } from '$lib/server/config';
-import { AppError } from '$lib/server/security/errors';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import {logDiagnostic,classifyFailure} from '$lib/server/diagnostics';
+import { getSql } from '#lib/server/db/index.js';
+import { getConfig } from '#lib/server/config.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import {logDiagnostic,classifyFailure} from '#lib/server/diagnostics/index.js';
 import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
 import { encodingBitrate, playbackLimits, sharedAllocation, viewerIdleSeconds } from './policy';
 

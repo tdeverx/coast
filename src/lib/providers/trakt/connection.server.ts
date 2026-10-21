@@ -1,14 +1,14 @@
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { providerInstances, providerConnections, syncAccounts, users } from '$lib/server/db/schema';
-import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
-import { getConfig } from '$lib/server/config';
-import { TraktAdapter } from '$lib/providers/trakt/adapter.server';
-import { defaultSyncPreferences, type SyncPreferences } from '$lib/providers/contracts';
-import { getInstance, instanceTransport } from '$lib/providers/instances.server';
-import { connectionFor, saveConnection } from '$lib/providers/connections.server';
-import { PermanentActionError } from '$lib/server/queue';
+import { getDb } from '#lib/server/db/index.js';
+import { providerInstances, providerConnections, syncAccounts, users } from '#lib/server/db/schema.js';
+import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
+import { getConfig } from '#lib/server/config.js';
+import { TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
+import { defaultSyncPreferences, type SyncPreferences } from '#lib/providers/contracts.js';
+import { getInstance, instanceTransport } from '#lib/providers/instances.server.js';
+import { connectionFor, saveConnection } from '#lib/providers/connections.server.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
 
 const savedTokenSchema=v.object({access_token:v.string(),refresh_token:v.string(),created_at:v.number(),expires_in:v.number()});
 const tokenNeedsRefresh=(token:v.InferOutput<typeof savedTokenSchema>)=>(token.created_at+token.expires_in)*1000<Date.now()+60000;

@@ -1,9 +1,9 @@
-import type { MediaCategory } from '$lib/media/model';
-import { context } from '$lib/server/diagnostics';
-import { correlationId } from '$lib/diagnostics';
-import { supportsProviderField } from '$lib/providers/capabilities';
+import type { MediaCategory } from '#lib/media/model.js';
+import { context } from '#lib/server/diagnostics/index.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { supportsProviderField } from '#lib/providers/capabilities.js';
 import { and, eq, inArray, asc, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   providerConnections,
   providerInstances,
@@ -17,14 +17,14 @@ import {
   reconciliationIntents,
   works,
   lists,
-} from '$lib/server/db/schema';
+} from '#lib/server/db/schema.js';
 import {
   trackInTransaction,
   bulkTrackInTransaction,
   type TrackingInput,
   bulkTrackingInputSchema,
-} from '$lib/core/tracking/service.server';
-import { rateInTransaction, ratingInputSchema } from '$lib/core/ratings/service.server';
+} from '#lib/core/tracking/service.server.js';
+import { rateInTransaction, ratingInputSchema } from '#lib/core/ratings/service.server.js';
 import * as v from 'valibot';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -215,7 +215,7 @@ async function enqueueJellyfinChange(
   for (const connection of connections) {
     if (connection.id === excludeConnectionId) continue;
     let desired:Record<string,unknown>=field==='progress'?{positionSeconds:Number(value??0),durationSeconds:durationSeconds??0}:{value:action==='unwatch'?false:Boolean(value??true)};
-    if(field==='history'){const {localSyncValue}=await import('$lib/sync/values.server');const local=await localSyncValue(tx,userId,mediaId,'history');if('playCount' in local)desired=local;}
+    if(field==='history'){const {localSyncValue}=await import('#lib/sync/values.server.js');const local=await localSyncValue(tx,userId,mediaId,'history');if('playCount' in local)desired=local;}
     const version=crypto.randomUUID();
     await tx.insert(reconciliationIntents).values({connectionId:connection.id,workId:mediaId,category:field,value:desired,version})
       .onConflictDoUpdate({target:[reconciliationIntents.connectionId,reconciliationIntents.workId,reconciliationIntents.category],set:{value:desired,version,updatedAt:new Date()}});
@@ -361,7 +361,7 @@ export async function bulkTrackWithExports(
     const progressRows=progressIds.length?await tx.select().from(trackingState).where(and(eq(trackingState.userId,userId),inArray(trackingState.mediaId,progressIds))):[];
     const progressById=new Map(progressRows.map(row=>[row.mediaId,row]));
     for (const event of result.events) {
-      await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'tracking.changed',{workId:event.mediaId,action:event.action});
+      await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'tracking.changed',{workId:event.mediaId,action:event.action});
       const state=progressById.get(event.mediaId);
       await enqueueJellyfinChange(tx, userId, event.mediaId, event.action,event.action==='progress'?state?.positionSeconds??0:undefined,undefined,state?.durationSeconds??0);
       if (event.action === 'progress') continue;

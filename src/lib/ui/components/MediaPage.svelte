@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import type { Snippet } from 'svelte';
-  import type { MediaView } from '$lib/ui/types';
-  import type { HeroItem } from '$lib/ui/heroes/presentation.svelte';
-  import type { PageCommand, PageSection } from '$lib/ui/pages/types';
-  import { heroTitleIds } from '$lib/media/hero';
+  import type { MediaView } from '#lib/ui/types.js';
+  import type { HeroItem } from '#lib/ui/heroes/presentation.svelte.js';
+  import type { PageCommand, PageSection } from '#lib/ui/pages/types.js';
+  import { heroTitleIds } from '#lib/media/hero.js';
   import MediaHero from './MediaHero.svelte';
   import Shelf from './Shelf.svelte';
   import Button from './Button.svelte';

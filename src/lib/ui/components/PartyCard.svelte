@@ -1,7 +1,7 @@
 <script lang="ts">
  import type {Snippet} from 'svelte';
  import MediaCard from './MediaCard.svelte';
- import {profilePath} from '$lib/profile/url';
+ import {profilePath} from '#lib/profile/url.js';
  type PartyMember={userId?:string;username:string;avatar?:string|null;joined?:boolean};
  let {background,header,actions,children,footer,label,members=[],inParty=false,embedded=false,memberActions}:{background?:string|null;header?:Snippet;actions?:Snippet;children?:Snippet;footer?:Snippet;label?:string;inParty?:boolean;embedded?:boolean;members?:PartyMember[];memberActions?:Snippet<[PartyMember]>}=$props();
 </script>

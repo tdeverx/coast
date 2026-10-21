@@ -1,5 +1,5 @@
 import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
-import { invalidate, invalidateAll, refreshAll } from '$app/navigation';
+import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
 import { notifyAction } from './action-feedback.svelte';
@@ -136,6 +136,6 @@ export async function refreshRouteDependencies(dependencies: readonly string[] |
   if (dependencies !== 'all' && !dependencies.length) return;
   if (page.state.mediaDetailHref || page.state.friendsPopover || page.state.notificationPopover || page.state.streamsPopover)
     await refreshAll();
-  else if (dependencies === 'all') await invalidateAll();
+  else if (dependencies === 'all') await refreshAll();
   else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
 }

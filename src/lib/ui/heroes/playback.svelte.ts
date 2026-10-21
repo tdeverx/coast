@@ -1,9 +1,9 @@
 import { onMount, untrack } from 'svelte';
 import { page } from '$app/state';
-import { usePlayback } from '$lib/playback/context.svelte';
-import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
-import { heroPlaybackVisible } from '$lib/playback/visibility';
-import { observeVideoCrop } from '$lib/playback/observe-crop';
+import { usePlayback } from '#lib/playback/context.svelte.js';
+import { noCrop, videoFitStyle, type FrameCrop } from '#lib/playback/crop.js';
+import { heroPlaybackVisible } from '#lib/playback/visibility.js';
+import { observeVideoCrop } from '#lib/playback/observe-crop.js';
 /** A single root-owned video surface survives hero and route changes. */
 export function createHeroPlayback() {
   const { heroPlayer, player, preview } = usePlayback();

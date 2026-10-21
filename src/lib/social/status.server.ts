@@ -1,6 +1,6 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
+import { getSql } from '#lib/server/db/index.js';
 import { audiences } from './model';
 import { activityStatus, statusPreferences, type StatusPreference } from './status';
 

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { page } from '$app/state';
   import type { ComponentProps } from 'svelte';
   import Button from './Button.svelte';
-  import { useClient } from '$lib/ui/client-context';
-  import { createMutation } from '$lib/ui/mutation.svelte';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { createMutation } from '#lib/ui/mutation.svelte.js';
   import Rating from './Rating.svelte';
   import RecommendAction from './RecommendAction.svelte';
   import ReactionActions from './ReactionActions.svelte';

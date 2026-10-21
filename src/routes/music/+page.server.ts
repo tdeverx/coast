@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { musicBrowseData } from '$lib/server/queries/music';
+import { musicBrowseData } from '#lib/server/queries/music.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({locals, url, depends,request}) => {
   depends('coast:tracking');

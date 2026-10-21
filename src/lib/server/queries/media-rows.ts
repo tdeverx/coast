@@ -1,17 +1,17 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { personaliseWorkCards } from '#lib/catalogue/overrides/presentation.server.js';
 import { desc, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { requireExperimentalFeature } from '$lib/server/experimental';
-import { mapConcurrent } from '$lib/server/utils/async';
-import { ownedGameAvailable } from '$lib/games/availability.server';
-import { getDb } from '$lib/server/db';
-import { games } from '$lib/server/db/schema';
-import { listProviders } from '$lib/providers/instances.server';
-import { musicLibrary } from '$lib/music/service.server';
-import { musicCard } from '$lib/music/presentation';
-import { gameCard } from '$lib/games/presentation';
-import type { MediaCardPresentation } from '$lib/ui/types';
+import { requireExperimentalFeature } from '#lib/server/experimental.js';
+import { mapConcurrent } from '#lib/server/utils/async.js';
+import { ownedGameAvailable } from '#lib/games/availability.server.js';
+import { getDb } from '#lib/server/db/index.js';
+import { games } from '#lib/server/db/schema.js';
+import { listProviders } from '#lib/providers/instances.server.js';
+import { musicLibrary } from '#lib/music/service.server.js';
+import { musicCard } from '#lib/music/presentation.js';
+import { gameCard } from '#lib/games/presentation.js';
+import type { MediaCardPresentation } from '#lib/ui/types.js';
 
 export type PresentationRow = { items: MediaCardPresentation[]; failure: string };
 const GAME_PREVIEW_LIMIT = 12;
@@ -88,7 +88,7 @@ export async function presentationContent(userId: string, url: URL,signal?:Abort
   const scope = v.parse(v.picklist(['all', 'available']), url.searchParams.get('scope') ?? 'all');
   const state = v.parse(v.picklist(['all', 'planned', 'in-progress', 'completed', 'paused', 'dropped']), url.searchParams.get('selection') ?? 'all');
   if(state !== 'all') {
-    const {listGames} = await import('$lib/core/games/service.server');
+    const {listGames} = await import('#lib/core/games/service.server.js');
     const result = await listGames('',1,{userId,status:state,availableOnly:scope==='available'},GAME_PREVIEW_LIMIT);
     return {items:result.items.map(item=>gameCard(item)),failure:''};
   }

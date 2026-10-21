@@ -1,11 +1,11 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import { eq, sql } from 'drizzle-orm';
-import { getDb,getSql } from '$lib/server/db';
-import { providerConnections,socialLiveState } from '$lib/server/db/schema';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { getSteam } from '$lib/providers/steam/connection.server';
+import { getDb,getSql } from '#lib/server/db/index.js';
+import { providerConnections,socialLiveState } from '#lib/server/db/schema.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { getSteam } from '#lib/providers/steam/connection.server.js';
 import {liveObservationExpiry} from './live-freshness.server';
-import { PermanentActionError } from '$lib/server/queue';
+import { PermanentActionError } from '#lib/server/queue/index.js';
 
 /** Observe current sessions only. Completed plays remain the history importer's responsibility. */
 export async function pollProviderLive(userId:string,connectionId:string,provider:'jellyfin'|'steam') {

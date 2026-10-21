@@ -1,15 +1,15 @@
-import {sharedStreamRows,sharedStreamCount,excludingSharedDevice} from '$lib/sharing/streams.server';
-import {readingStreamRows,readingStreamCount} from '$lib/reading/streams.server';
-import type {ReadingLocation} from '$lib/reading/model';
-import {requireAdmin,type SessionUser} from '$lib/server/auth';
-import {getSql} from '$lib/server/db';
-import {providerSchedule} from '$lib/providers/schedule';
-import {runProviderJob} from '$lib/providers/maintenance.server';
+import {sharedStreamRows,sharedStreamCount,excludingSharedDevice} from '#lib/sharing/streams.server.js';
+import {readingStreamRows,readingStreamCount} from '#lib/reading/streams.server.js';
+import type {ReadingLocation} from '#lib/reading/model.js';
+import {requireAdmin,type SessionUser} from '#lib/server/auth/index.js';
+import {getSql} from '#lib/server/db/index.js';
+import {providerSchedule} from '#lib/providers/schedule.js';
+import {runProviderJob} from '#lib/providers/maintenance.server.js';
 import * as v from 'valibot';
-import type {streamPresentation} from '$lib/providers/jellyfin/streams';
-import {workCards} from '$lib/collection/query.server';
-import {profilePath} from '$lib/profile/url';
-import type {MediaView,MediaCardPresentation,MediaCardDisplay} from '$lib/ui/types';
+import type {streamPresentation} from '#lib/providers/jellyfin/streams.js';
+import {workCards} from '#lib/collection/query.server.js';
+import {profilePath} from '#lib/profile/url.js';
+import type {MediaView,MediaCardPresentation,MediaCardDisplay} from '#lib/ui/types.js';
 type Stream=NonNullable<ReturnType<typeof streamPresentation>>;
 export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
 /** Resolve a whole server's streams in bounded batches; never fetch artwork directly from private server URLs. */

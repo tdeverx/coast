@@ -1,12 +1,12 @@
 import { and, eq, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { readingWorks, readingGroups, readingGroupMembers, workIdentifiers, works, workFeatures } from '$lib/server/db/schema';
-import {namedFeatures} from '$lib/social/taste-profile';
-import { DomainError } from '$lib/core/errors';
-import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata } from '$lib/reading/model';
-import { getConfig } from '$lib/server/config';
-import { requireEnabledCategory } from '$lib/server/experimental';
+import { getDb } from '#lib/server/db/index.js';
+import { readingWorks, readingGroups, readingGroupMembers, workIdentifiers, works, workFeatures } from '#lib/server/db/schema.js';
+import {namedFeatures} from '#lib/social/taste-profile.js';
+import { DomainError } from '#lib/core/errors.js';
+import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata } from '#lib/reading/model.js';
+import { getConfig } from '#lib/server/config.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
 
 const label = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(500));
 const optionalText = v.optional(v.pipe(v.string(), v.maxLength(20000)));

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
-  import type { HeadingSelection } from '$lib/ui/headings';
+  import type { HeadingSelection } from '#lib/ui/headings.js';
   import type { Snippet } from 'svelte';
   let {
     title, variant = 'row', level = 2, description, selection,

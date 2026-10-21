@@ -5,10 +5,10 @@ import { resolve } from 'node:path';
 // Re-review this owner and its schedules before upgrading or removing the patch.
 export const navigationRuntime = {
   package: '@sveltejs/kit',
-  version: '2.70.3',
-  patch: 'patches/sveltejs-kit-2.70.3.patch',
-  patchSha256: '94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f',
-  clientSha256: '8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141',
+  version: '3.1.0',
+  patch: 'patches/sveltejs-kit-3.1.0.patch',
+  patchSha256: '95f60540b8911c5c92e126ad455cbb01b41103889d7d28ef31db4a2f73e617d3',
+  clientSha256: 'ce883da014a5a6c424dd8bccc3e6ef3f4f30f3f409a32f06c1055654d0eeff5c',
 } as const;
 
 const hash = (value: Buffer) => createHash('sha256').update(value).digest('hex');

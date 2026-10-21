@@ -1,7 +1,7 @@
-import { detailsData } from '$lib/server/queries/media';
-import { requestOptions } from '$lib/providers/seerr/requests.server';
-import { ensureDetails } from '$lib/catalogue/service.server';
-import type {MediaView} from '$lib/ui/types';
+import { detailsData } from '#lib/server/queries/media.js';
+import { requestOptions } from '#lib/providers/seerr/requests.server.js';
+import { ensureDetails } from '#lib/catalogue/service.server.js';
+import type {MediaView} from '#lib/ui/types.js';
 export type ScreenDetailView=Omit<Awaited<ReturnType<typeof detailsData>>,'item'>&{item:MediaView;requestable:boolean;refreshUnavailable:boolean};
 export type ScreenDetailData=ScreenDetailView&{enhancement:Promise<ScreenDetailView>};
 

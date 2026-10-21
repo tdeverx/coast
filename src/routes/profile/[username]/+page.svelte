@@ -1,36 +1,36 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { homeShelves } from '$lib/ui/shelves/home';
-  import Avatar from '$lib/ui/components/Avatar.svelte';
-  import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
-  import DetailCard from '$lib/ui/components/DetailCard.svelte';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
-  import { replaceState } from '$app/navigation';
+  import { goto } from '$app/navigation';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { homeShelves } from '#lib/ui/shelves/home.js';
+  import Avatar from '#lib/ui/components/Avatar.svelte';
+  import MetricGrid from '#lib/ui/components/MetricGrid.svelte';
+  import DetailCard from '#lib/ui/components/DetailCard.svelte';
+  import MediaPage from '#lib/ui/components/MediaPage.svelte';
   import { page } from '$app/state';
-  import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
-  import ProfileRecap from '$lib/ui/components/ProfileRecap.svelte';
-  import ProfileFeatureEditor from '$lib/ui/components/ProfileFeatureEditor.svelte';
-  import { mediaTypeOptions } from '$lib/ui/filter-options';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
+  import { periodLabel, type ProfilePeriod } from '#lib/profile/period.js';
+  import ProfileRecap from '#lib/ui/components/ProfileRecap.svelte';
+  import ProfileFeatureEditor from '#lib/ui/components/ProfileFeatureEditor.svelte';
+  import { mediaTypeOptions } from '#lib/ui/filter-options.js';
+  import RowFilter from '#lib/ui/components/RowFilter.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
   import { untrack, setContext, onDestroy } from 'svelte';
-  import { api, change, message } from '$lib/ui/client';
-  import { createResource } from '$lib/ui/resource.svelte';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import { api, change, message } from '#lib/ui/client.js';
+  import { createResource } from '#lib/ui/resource.svelte.js';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
 
-  import MediaCard from '$lib/ui/components/MediaCard.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import { profileActivityPanels, profileBreakdownPanels } from '$lib/ui/insights/profile';
-  import ProfileEditor from '$lib/ui/components/ProfileEditor.svelte';
+  import MediaCard from '#lib/ui/components/MediaCard.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Pagination from '#lib/ui/components/Pagination.svelte';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
+  import { profileActivityPanels, profileBreakdownPanels } from '#lib/ui/insights/profile.js';
+  import ProfileEditor from '#lib/ui/components/ProfileEditor.svelte';
   let { data } = $props();
   const profileUrl = $derived('/profile/' + encodeURIComponent(data.username));
   setContext('profile-read-only', () => !data.isOwner);
-  let activityType = $state<'all' | 'movie' | 'show'>(
-    untrack(() => (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind))
-  );
+
+  let activityType = $state<'all' | 'movie' | 'show'>(untrack(() => data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind));
+
   $effect(() => {
     activityType = data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind;
   });
@@ -97,8 +97,8 @@
   });
   async function chooseFavourites(kind: typeof favouriteKind, number = 1) {
     favouriteKind = kind;
-    if(kind==='book'||kind==='comic')favouriteAvailable=false;
-    await favouriteRead.load(async signal => {
+    if (kind === 'book' || kind === 'comic') favouriteAvailable = false;
+    await favouriteRead.load(async (signal) => {
       const [result] = await Promise.all([
         api<typeof favouriteData>(
           `profile/section?section=favourites&kind=${kind}&scope=${favouriteAvailable ? 'available' : 'all'}&page=${number}&username=${encodeURIComponent(data.username)}`,
@@ -115,7 +115,7 @@
   }
   async function choosePeriod(period: ProfilePeriod) {
     insightPeriod = period;
-    await insight.load(async signal => {
+    await insight.load(async (signal) => {
       const [result] = await Promise.all([
         api<{ totals: typeof data.totals; activity: Awaited<typeof data.activity> }>(
           `profile/section?section=insights&period=${period}&username=${encodeURIComponent(data.username)}`,
@@ -219,7 +219,7 @@
   bind:open={featureOpen}
   mediaId={featureId}
   title={featureTitle}
-  note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
+  note={featureId === data.profile.featuredMediaId ? data.profile.featuredNote ?? '' : ''}
 />
 {#snippet favouriteActions(id: string)}
   {@const item = favouriteData.favourites.find((i) => i.id === id)!}{@const adjacent =
@@ -260,22 +260,51 @@
     title="Favourites"
     items={favouriteData.favourites}
     href={layout === 'row' ? url('favourites') : undefined}
-    {layout}
+    layout={layout}
     busy={favouriteLoading}
     error={favouriteError} retry={()=>void chooseFavourites(favouriteKind)}
     pageNumber={favouriteData.page}
     pages={favouriteData.pages}
     onpage={layout === 'grid' ? (number) => chooseFavourites(favouriteKind, number) : undefined}
     filterGroups={[
-      {label:'Media type', value:favouriteKind, options:mediaTypeOptions({...page.data,features:page.data.capabilities}), change:kind=>void chooseFavourites(kind as typeof favouriteKind)},
-      ...(favouriteKind!=='book'&&favouriteKind!=='comic'?[{label:'Availability',value:favouriteAvailable?'available':'all',options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{favouriteAvailable=value==='available';void chooseFavourites(favouriteKind);}}]:[]),
+      {
+        label: 'Media type',
+        value: favouriteKind,
+        options: mediaTypeOptions({ ...page.data, features: page.data.capabilities }),
+        change: (kind) => void chooseFavourites(kind as typeof favouriteKind)
+      },
+
+      ...favouriteKind !== 'book' && favouriteKind !== 'comic'
+        ? [
+          {
+            label: 'Availability',
+            value: favouriteAvailable ? 'available' : 'all',
+            options: [
+              { value: 'all', label: 'All titles' },
+              { value: 'available', label: 'Available only' }
+            ],
+
+            change: (value: string) => {
+              favouriteAvailable = value === 'available';
+              void chooseFavourites(favouriteKind);
+            }
+          }
+        ]
+        : []
     ]}
   >
-    {#snippet actions()}{#if data.isOwner}<Button item
-          onclick={() => (arranging = !arranging)}>{arranging ? 'Done' : 'Arrange'}</Button
-        >{/if}{/snippet}
-    {#snippet details(item)}{@render favouriteActions(item.id)}{/snippet}
-    {#snippet empty()}<EmptyState
+    {#snippet actions()}
+      {#if data.isOwner}
+        <Button item onclick={() => arranging = !arranging}>{arranging ? 'Done' : 'Arrange'}</Button>
+      {/if}
+    {/snippet}
+
+    {#snippet details(item)}
+      {@render favouriteActions(item.id)}
+    {/snippet}
+
+    {#snippet empty()}
+      <EmptyState
         icon="heart"
         title={data.isOwner ? 'The ones you come back to.' : 'No favourites here yet.'}
         description={data.isOwner
@@ -286,19 +315,61 @@
 {/snippet}
 {#snippet activity(layout: 'row' | 'grid')}
   <section class="section">
-    {#snippet activityFilters()}<RowFilter groups={[{label:"Activity media type", value:activityType, options:mediaTypeOptions(), change:next=>{activityType=next as typeof activityType; if (layout === 'grid') { const url = new URL(page.url); url.searchParams.set('type', activityType === 'show' ? 'episode' : activityType); url.searchParams.delete('page'); replaceState(url, page.state); }}}]} />{/snippet}
-    {#if layout === 'grid'}<Heading title="Activity" controls={activityFilters} />{/if}
-    {#if layout === 'grid' && data.filters.genre}<p class="small">
-        Genre: {data.filters.genre === '__other__' ? 'Other genres' : data.filters.genre} · {periodLabel(
-          data.filters.period
-        )}
-      </p>{/if}
-    {#if layout === 'grid' && (data.filters.from || data.filters.to)}<p class="small">
-        {data.filters.from || 'Beginning'} – {data.filters.to || 'Today'} · UTC
-      </p>{/if}
-    {#if layout === 'grid'}<form class="journal-filters" action={profileUrl} method="GET">
-        {#if data.filters.from}<input type="hidden" name="from" value={data.filters.from} />{/if}
-        {#if data.filters.to}<input type="hidden" name="to" value={data.filters.to} />{/if}
+    {#snippet activityFilters()}
+      <RowFilter
+        groups={[
+          {
+            label: "Activity media type",
+            value: activityType,
+            options: mediaTypeOptions(),
+            change: (next) => {
+              activityType = next as typeof activityType;
+
+              if (layout === 'grid') {
+                const url = new URL(page.url.href);
+
+                url.searchParams.set('type', activityType === 'show' ? 'episode' : activityType);
+                url.searchParams.delete('page');
+                void goto(url, { shallow: true, replace: true, reset: false, state: page.state });
+              }
+            }
+          }
+        ]}
+      />
+    {/snippet}
+
+    {#if layout === 'grid'}
+      <Heading title="Activity" controls={activityFilters} />
+    {/if}
+
+    {#if layout === 'grid' && data.filters.genre}
+      <p class="small">
+        Genre: {data.filters.genre === '__other__' ? 'Other genres' : data.filters.genre} · {periodLabel(data.filters.period)}
+      </p>
+    {/if}
+
+    {#if layout === 'grid' && (data.filters.from || data.filters.to)}
+      <p class="small">{data.filters.from || 'Beginning'} – {data.filters.to || 'Today'} · UTC</p>
+    {/if}
+
+    {#if layout === 'grid'}
+      <form
+        class="journal-filters"
+        action={profileUrl}
+        method="GET"
+      >
+        {#if data.filters.from}
+          <input
+            type="hidden"
+            name="from"
+            value={data.filters.from}
+          />
+        {/if}
+
+        {#if data.filters.to}
+          <input type="hidden" name="to" value={data.filters.to} />
+        {/if}
+
         <input
           type="hidden"
           name="type"
@@ -330,19 +401,18 @@
     <div class="activity-preview">
       {#key data}{#key activityType}
           <Shelf source={{ type: 'journal', preview: layout === 'row'
-              ? { href: url('history'), filters: activityFilters }
-              : undefined, layout: layout, maxDays: layout === 'row' ? 1 : Infinity, items: layout === 'grid' &&
-            activityType ===
-              (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind)
-              ? data.history
-              : [], page: layout === 'grid' &&
-            activityType ===
-              (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind)
-              ? data.page
-              : 0, pages: Math.max(1, data.pages), today: data.today, filters: {
-              ...data.filters,
-              username: data.username,
-              period: layout === 'row' ? 'all' : data.filters.period,
+                ? { href: url('history'), filters: activityFilters }
+                : undefined,
+              layout,
+              maxDays: layout === 'row' ? 1 : Infinity,
+              items: layout === 'grid' && activityType === (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind) ? data.history : [],
+              page: layout === 'grid' && activityType === (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind) ? data.page : 0,
+              pages: Math.max(1, data.pages),
+              today: data.today,
+              filters: {
+                ...data.filters,
+                username: data.username,
+                period: layout === 'row' ? 'all' : data.filters.period,
               activityKind: activityType === 'show' ? 'episode' : activityType,
             } }} />
         {/key}{/key}
@@ -353,8 +423,10 @@
   <Shelf
     title={data.isOwner ? 'Your activity, in perspective' : 'Activity, in perspective'}
     size="panel"
-    {layout}
-    href={layout === 'row' ? `${profileUrl}?section=insights&period=${insights.period}` : undefined}
+    layout={layout}
+    href={layout === 'row'
+      ? `${profileUrl}?section=insights&period=${insights.period}`
+      : undefined}
     busy={insightLoading}
     error={insightError} retry={()=>void choosePeriod(insightPeriod)}
   >
@@ -408,66 +480,94 @@
   {:else if data.view === 'overview'}
     {#if data.visibility.details}<header class="profile-header" class:with-background={!!background}>
       {#if background}<div class="backdrop" aria-hidden="true">
-          <img
-            src={background}
-            alt=""
-            onerror={() => (backgroundIndex += 1)}
-            style:object-position={`50% ${positioning ? position : (data.profile.backgroundPosition ?? 50)}%`}
-          />
-          <div></div>
+            <img
+              src={background}
+              alt=""
+              onerror={() => backgroundIndex += 1}
+              style:object-position={`50% ${positioning ? position : data.profile.backgroundPosition ?? 50}%`}
+            />
+            <div></div>
         </div>{/if}
-      <div class="profile-heading">
-        <div class="avatar">
+        <div class="profile-heading">
+          <div class="avatar">
           <Avatar name={name} src={data.profile.avatar} label={`${name}'s avatar`} class="profile-icon" size={104} />
-        </div>
-        <div class="identity">
-          <p class="eyebrow">{data.isOwner ? 'Your profile' : 'Profile'}</p>
-          <h1>{name}</h1>
-          <p class="handle">@{data.username}</p>
-          <p class="bio">
-            {data.profile.bio || (data.isOwner ? 'Your life in stories.' : 'A life in stories.')}
-          </p>
-          {#if data.isOwner}<div class="row actions">
-              <Button size="hero" onclick={() => (editing = true)}>Edit profile</Button
-              ><Button menu text="Background" label="Profile background">
-                <Button item selection="radio" checked={data.profile.backgroundMode==='activity'} disabled={busy} keepOpen={false} onclick={()=>update({action:'background-mode',mode:'activity'})}>Last activity</Button>
-                <Button item selection="radio" checked={data.profile.backgroundMode!=='activity'} disabled={busy} keepOpen={false} onclick={()=>update({action:'background-mode',mode:'fixed'})}>Selected title</Button>
-              </Button>{#if data.profile.backgroundMediaId||data.profile.backgroundMode==='activity'}<Button
-                  emphasis="subtle"
-                  disabled={busy}
-                  onclick={() => update({ action: 'background', mediaId: null })}
+          </div>
+          <div class="identity">
+            <p class="eyebrow">{data.isOwner ? 'Your profile' : 'Profile'}</p>
+            <h1>{name}</h1>
+            <p class="handle">@{data.username}</p>
+            <p class="bio">{data.profile.bio || (data.isOwner ? 'Your life in stories.' : 'A life in stories.')}</p>
+
+            {#if data.isOwner}
+              <div class="row actions">
+                <Button size="hero" onclick={() => editing = true}>Edit profile</Button>
+
+                <Button menu text="Background" label="Profile background">
+                  <Button
+                    item
+                    selection="radio"
+                    checked={data.profile.backgroundMode === 'activity'}
+                    disabled={busy}
+                    keepOpen={false}
+                    onclick={() => update({ action: 'background-mode', mode: 'activity' })}
+                  >Last activity</Button>
+
+                  <Button
+                    item
+                    selection="radio"
+                    checked={data.profile.backgroundMode !== 'activity'}
+                    disabled={busy}
+                    keepOpen={false}
+                    onclick={() => update({ action: 'background-mode', mode: 'fixed' })}
+                  >Selected title</Button>
+                </Button>
+
+                {#if data.profile.backgroundMediaId || data.profile.backgroundMode === 'activity'}
+                  <Button
+                    emphasis="subtle"
+                    disabled={busy}
+                    onclick={() => update({ action: 'background', mediaId: null })}
                   >Clear background</Button
                 >{/if}
               {#if background}<Button
-                  emphasis="subtle"
-                  onclick={() => {
-                    position = data.profile.backgroundPosition ?? 50;
-                    positioning = !positioning;
+                    emphasis="subtle"
+                    onclick={() => {
+                      position = data.profile.backgroundPosition ?? 50;
+                      positioning = !positioning;
                   }}>Position background</Button
                 >{/if}
-            </div>
-          {/if}
+              </div>
+            {/if}
           {#if positioning}<div class="position-controls">
               <label
                 >Vertical position<input
-                  type="range"
-                  min="0"
-                  max="100"
-                  bind:value={position}
+                    type="range"
+                    min="0"
+                    max="100"
+                    bind:value={position}
                 /></label
               ><Button
-                emphasis="subtle"
-                disabled={busy}
-                onclick={async () => {
-                  await update({ action: 'position', value: position });
-                  if (!error) positioning = false;
-                }}>Save position</Button
-              ><Button emphasis="subtle" onclick={() => (positioning = false)}>Cancel</Button>
-            </div>{/if}
+                  emphasis="subtle"
+                  disabled={busy}
+                  onclick={async () => {
+                    await update({ action: 'position', value: position });
+                    if (!error) positioning = false;
+                  }}
+                >Save position</Button>
+
+                <Button
+                  emphasis="subtle"
+                  onclick={() => positioning = false}
+                >Cancel</Button>
+              </div>
+            {/if}
+          </div>
         </div>
-      </div>
-    </header>{/if}
-    {#if data.featured}<section class="featured section">
+      </header>
+    {/if}
+
+    {#if data.featured}
+      <section class="featured section">
         <div class="featured-art"><MediaCard item={data.featured} /></div>
         <div>
           <p class="small">Featured favourite</p>
@@ -478,8 +578,10 @@
           {#if data.isOwner}<div class="row">
               <Button
                 emphasis="subtle"
-                onclick={() => feature(data.featured!.id, data.featured!.title)}>Edit note</Button
-              ><Button
+                onclick={() => feature((data.featured!).id, (data.featured!).title)}
+              >Edit note</Button>
+
+              <Button
                 emphasis="subtle"
                 disabled={busy}
                 onclick={() => update({ action: 'feature', mediaId: null, note: '' })}
@@ -487,13 +589,46 @@
               >
             </div>{/if}
         </div>
-      </section>{/if}
-    {#if data.visibility.favourites}{@render favourites('row')}{/if}
-    {#if data.visibility.progress && page.data.user}<Shelf source={{ type: 'progress', surface: "profile", username: data.username }} />{/if}
-    {#if data.visibility.collection && page.data.user}<Shelf source={{ type: 'progress', surface: "watchlist", username: data.username }} />{/if}
-    {#if data.mediaRows}{#each homeShelves(data.mediaRows, true) as source}<Shelf {source} />{/each}{/if}
-    {#if data.visibility.activity}{@render activity('row')}{/if}
-    {#if data.visibility.insights}{@render statisticsRow('row')}{/if}
+      </section>
+    {/if}
+
+    {#if data.visibility.favourites}
+      {@render favourites('row')}
+    {/if}
+
+    {#if data.visibility.progress && page.data.user}
+      <Shelf
+        source={{
+          type: 'progress',
+          surface: "profile",
+          username: data.username
+        }}
+      />
+    {/if}
+
+    {#if data.visibility.collection && page.data.user}
+      <Shelf
+        source={{
+          type: 'progress',
+          surface: "watchlist",
+          username: data.username
+        }}
+      />
+    {/if}
+
+    {#if data.mediaRows}
+      {#each homeShelves(data.mediaRows, true) as source}
+        <Shelf source={source} />
+      {/each}
+    {/if}
+
+    {#if data.visibility.activity}
+      {@render activity('row')}
+    {/if}
+
+    {#if data.visibility.insights}
+      {@render statisticsRow('row')}
+    {/if}
   {:else}
     <div class="back">
       <Button href={profileUrl} emphasis="subtle" icon="left">Profile</Button>
@@ -572,7 +707,7 @@
     align-items: center;
     align-self: center;
   }
-  .journal-filters input[type='checkbox'] {
+  .journal-filters input[type="checkbox"] {
     width: auto;
   }
   .rating-filter {

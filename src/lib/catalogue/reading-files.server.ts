@@ -1,12 +1,12 @@
 import {and,eq,sql} from 'drizzle-orm';
-import {getDb} from '$lib/server/db';
-import {availability,providerItems,providerConnections,providerInstances,users,workEditions,readingWorks,workIdentifiers} from '$lib/server/db/schema';
-import {assertJobLease,JobYield} from '$lib/server/queue/execution';
-import {AppError} from '$lib/server/security/errors';
-import {bookFormat,jellyfinComicVineId,jellyfinOpenLibraryId,type JellyfinBook} from '$lib/providers/jellyfin/reading.server';
-import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
-import {readingWorkForEdition} from '$lib/providers/reading.server';
-import type {ReadingIdentity} from '$lib/reading/model';
+import {getDb} from '#lib/server/db/index.js';
+import {availability,providerItems,providerConnections,providerInstances,users,workEditions,readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
+import {assertJobLease,JobYield} from '#lib/server/queue/execution.js';
+import {AppError} from '#lib/server/security/errors.js';
+import {bookFormat,jellyfinComicVineId,jellyfinOpenLibraryId,type JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
+import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
+import {readingWorkForEdition} from '#lib/providers/reading.server.js';
+import type {ReadingIdentity} from '#lib/reading/model.js';
 /** Resolve exact references before opening a transaction; edition lookups use the shared provider cache. */
 export async function readingFileReference(book:JellyfinBook,resolveEdition=true):Promise<ReadingIdentity|null>{
  const ids=Object.fromEntries(Object.entries(book.ProviderIds).map(([key,value])=>[key.toLowerCase(),value]));

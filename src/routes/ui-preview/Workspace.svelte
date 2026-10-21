@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import type { Snippet } from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import type { CanvasSettings, WorkspaceParts } from './workspace';
   let { title, canvas, inspector, browser, categories, canvasSettings, updateCanvas, setBackgroundImage, backgroundError }: WorkspaceParts & {
     categories:Snippet; canvasSettings: CanvasSettings; updateCanvas:(values:Partial<Pick<CanvasSettings,'background'|'color'>>)=>void; setBackgroundImage:(file?:File)=>void; backgroundError:string;

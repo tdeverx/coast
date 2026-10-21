@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { requestList } from '$lib/server/queries/requests';
-import { pageNumberSchema } from '$lib/server/queries/pagination';
+import { requestList } from '#lib/server/queries/requests.js';
+import { pageNumberSchema } from '#lib/server/queries/pagination.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({locals, url, depends}) => {

@@ -1,42 +1,42 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import WorkActions from '../components/WorkActions.svelte';
-  import { relationshipControls } from '$lib/ui/controls/actions';
+  import { relationshipControls } from '#lib/ui/controls/actions.js';
   import { getContext, onDestroy, untrack } from 'svelte';
-  import { createResource } from '$lib/ui/resource.svelte';
-  import { createMenuResource } from '$lib/ui/controls/menu-resource.svelte';
-  import { workMenuScope } from '$lib/ui/controls/work.svelte';
-  import type { WorkList } from '$lib/media/work-actions';
+  import { createResource } from '#lib/ui/resource.svelte.js';
+  import { createMenuResource } from '#lib/ui/controls/menu-resource.svelte.js';
+  import { workMenuScope } from '#lib/ui/controls/work.svelte.js';
+  import type { WorkList } from '#lib/media/work-actions.js';
   import WorkListActions from '../components/WorkListActions.svelte';
   import { page } from '$app/state';
-  import { createMutation } from '$lib/ui/mutation.svelte';
-  import { setRelationship } from '$lib/ui/relationships';
+  import { createMutation } from '#lib/ui/mutation.svelte.js';
+  import { setRelationship } from '#lib/ui/relationships.js';
 
-  import { trackingLanguage } from '$lib/media/model';
-  import { sequencePath } from '$lib/media/sequence';
+  import { trackingLanguage } from '#lib/media/model.js';
+  import { sequencePath } from '#lib/media/sequence.js';
   import {
     isMediaGroup,
     isResumable,
     targetLabel,
     type MediaActionData,
-  } from '$lib/media/actions';
-  import type { RequestDestination } from '$lib/media/requests';
-  import type { MediaView } from '$lib/ui/types';
-  import { message, ApiError } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
-  import { playbackTime } from '$lib/playback/time';
-  import { playMedia } from '$lib/playback/client.svelte';
-  import { usePlayback } from '$lib/playback/context.svelte';
-  import ShareAction from '$lib/sharing/ShareAction.svelte';
-  import PlanAction from '$lib/experiments/PlanAction.svelte';
+  } from '#lib/media/actions.js';
+  import type { RequestDestination } from '#lib/media/requests.js';
+  import type { MediaView } from '#lib/ui/types.js';
+  import { message, ApiError } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { playbackTime } from '#lib/playback/time.js';
+  import { playMedia } from '#lib/playback/client.svelte.js';
+  import { usePlayback } from '#lib/playback/context.svelte.js';
+  import ShareAction from '#lib/sharing/ShareAction.svelte';
+  import PlanAction from '#lib/experiments/PlanAction.svelte';
   import Button from '../components/Button.svelte';
   import Icon from '../components/Icon.svelte';
 
   import Dialog from '../components/Dialog.svelte';
   import RequestDialog from '../components/RequestDialog.svelte';
-  import { createRequestControls } from '$lib/ui/controls/requests.svelte';
-  import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
+  import { createRequestControls } from '#lib/ui/controls/requests.svelte.js';
+  import { createSequencePlayback } from '#lib/ui/controls/sequence.svelte.js';
   import MetadataEditor from '../components/MetadataEditor.svelte';
 
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
@@ -388,7 +388,7 @@
     const target = wholeWork;
     const removing = continuing;
     let result:
-      | { eventId?: string; previous?: import('$lib/core/tracking/continue.server').ContinueSnapshot }
+      | { eventId?: string; previous?: import('#lib/core/tracking/continue.server.js').ContinueSnapshot }
       | undefined;
     await perform(
       async () => {

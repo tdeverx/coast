@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { rankSearch } from '$lib/search';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { rankSearch } from '#lib/search.js';
   import { page } from '$app/state';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
   import { untrack, onDestroy, onMount } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import type { ShelfItem } from '$lib/ui/shelves/types';
-  import { searchSelectionUrl, type SearchBucket, type SearchRowSelection } from '$lib/search-selection';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Icon from '#lib/ui/components/Icon.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import type { ShelfItem } from '#lib/ui/shelves/types.js';
+  import { searchSelectionUrl, type SearchBucket, type SearchRowSelection } from '#lib/search-selection.js';
   let { data } = $props();
   let watch = $state<Awaited<typeof data.watch> | null>(null),
     listen = $state<Awaited<typeof data.listen> | null>(null),
@@ -21,7 +21,17 @@
   const watchResults = $derived(watch ?? data.initial);
   const readingResults = $derived(read ?? data.readingInitial);
   const playItems = $derived(play ? [...play.items, ...play.discover] : []);
-  const searchItems = $derived<ShelfItem[]>(rankSearch([...watchResults.items, ...(listen?.items ?? []), ...playItems, ...readingResults.items], data.query));
+
+  const searchItems = $derived<ShelfItem[]>(rankSearch(
+    [
+      ...watchResults.items,
+      ...listen?.items ?? [],
+      ...playItems,
+      ...readingResults.items
+    ],
+    data.query
+  ));
+
   const failures = $derived([listen?.failure, play?.failure, read?.failure].filter(Boolean).join(' '));
   function rowBusy(row: SearchRowSelection) {
     return !!data.query && ((row.view === 'all' || row.view === 'watch') && data.demand.watch && !watch ||
@@ -85,7 +95,10 @@
     pendingTargets.clear();
     clearTimeout(timer);
   }
-  beforeNavigate(navigation => {
+
+  beforeNavigate((navigation) => {
+    if (navigation.shallow) return;
+
     // Native history owns this boundary even while Kit skips navigation hooks.
     if (navigation.type === 'popstate') return;
     if (navigation.type === 'goto' && navigation.to && [...pendingTargets.values()].includes(navigation.to.url.href)) return;
@@ -109,7 +122,7 @@
   function submit(row?: { bucket: SearchBucket; kind: string }) {
     clearTimeout(timer);
     submitted = query.trim();
-    const target = new URL(searchSelectionUrl(intent ?? page.url, submitted, row), page.url);
+    const target = new URL(searchSelectionUrl(intent ?? page.url, submitted, row), page.url.href);
     const revision = ++intentRevision;
     intent = target;
     pendingTargets.set(revision, target.href);
@@ -121,8 +134,8 @@
       }
     };
     void goto(target.href, {
-      keepFocus: true,
-      noScroll: true,
+      reset: false,
+
       replaceState: !row,
     }).then(() => settled(), () => settled(true));
   }
@@ -176,16 +189,34 @@
       />{/if}
     {#if !noResults || data.filtered}
       {#key data.query}
-        <Shelf hideEmpty={false} availability={false} source={{
-          type: 'search', bucket: 'available', query: data.query, items: searchItems,
-          ...data.rows.available, busy: rowBusy(data.rows.available), mediums: page.data.user ? page.data : {},
-          onKindChange: kind => submit({ bucket: 'available', kind }),
-        }} />
-        <Shelf hideEmpty={false} availability={false} source={{
-          type: 'search', bucket: 'unavailable', query: data.query, items: searchItems,
-          ...data.rows.unavailable, busy: rowBusy(data.rows.unavailable), mediums: page.data.user ? page.data : {},
-          onKindChange: kind => submit({ bucket: 'unavailable', kind }),
-          notice: readingResults.notice,
+        <Shelf
+          hideEmpty={false}
+          availability={false}
+          source={{
+            type: 'search',
+            bucket: 'available',
+            query: data.query,
+            items: searchItems,
+            ...data.rows.available,
+            busy: rowBusy(data.rows.available),
+            mediums: page.data.user ? page.data : {},
+            onKindChange: (kind) => submit({ bucket: 'available', kind })
+          }}
+        />
+
+        <Shelf
+          hideEmpty={false}
+          availability={false}
+          source={{
+            type: 'search',
+            bucket: 'unavailable',
+            query: data.query,
+            items: searchItems,
+            ...data.rows.unavailable,
+            busy: rowBusy(data.rows.unavailable),
+            mediums: page.data.user ? page.data : {},
+            onKindChange: (kind) => submit({ bucket: 'unavailable', kind }),
+            notice: readingResults.notice,
           truncated: watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated,
         }} />
       {/key}

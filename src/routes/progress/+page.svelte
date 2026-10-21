@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { MediaView } from '$lib/ui/types';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import type { MediaView } from '#lib/ui/types.js';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
   import { untrack, setContext } from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import { progressTitles } from '$lib/progress';
-  import { profilePath } from '$lib/profile/url';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import { progressTitles } from '#lib/progress.js';
+  import { profilePath } from '#lib/profile/url.js';
+  import MediaPage from '#lib/ui/components/MediaPage.svelte';
   let { data } = $props();
   setContext('profile-read-only', () => !data.isOwner);
   let items = $state(untrack(() => data.progress.items));

@@ -13,8 +13,8 @@ export type MediaDetailTarget={href:string;section:string|null;page:number;playt
  |{kind:'person';id:string}
 );
 /** Only real detail destinations participate; commands, history and other routes keep navigation. */
-export function mediaDetailTarget(href:string,base:URL):MediaDetailTarget|null{
- let url:URL;try{url=new URL(href,base);}catch{return null;}
+export function mediaDetailTarget(href:string,base:Pick<URL,'href'|'origin'>):MediaDetailTarget|null{
+ let url:URL;try{url=new URL(href,base.href);}catch{return null;}
  if(url.origin!==base.origin||!['http:','https:'].includes(url.protocol)||url.href.includes('#')||url.username||url.password||url.href.length>2048)return null;
  if([...url.searchParams.keys()].some(key=>!queries.has(key)||url.searchParams.getAll(key).length!==1))return null;
  const page=Number(url.searchParams.get('page')??1),playthrough=url.searchParams.get('playthrough');

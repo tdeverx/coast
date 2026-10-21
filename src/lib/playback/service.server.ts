@@ -1,19 +1,19 @@
-import {namedEdition} from '$lib/media/editions';
-import { requireEnabledCategory } from '$lib/server/experimental';
-import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
-import { ProviderQueueBusyError, requestPriority } from '$lib/server/security/request-priority';
-import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '$lib/sharing/policy';
-import {playbackArtwork} from '$lib/media/artwork';
+import {namedEdition} from '#lib/media/editions.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
+import { ProviderQueueBusyError, requestPriority } from '#lib/server/security/request-priority.js';
+import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '#lib/sharing/policy.js';
+import {playbackArtwork} from '#lib/media/artwork.js';
 import { acceptedPlayedTime, listenReached } from './listening';
-import { recordMusicListen } from '$lib/music/persistence.server';
-import { correlationId } from '$lib/diagnostics';
-import { sequenceContextSchema } from '$lib/media/sequence';
-import { sequenceEntries } from '$lib/core/lists/sequence.server';
-import { rewatchBoundary, rewatchFields } from '$lib/core/tracking/rewatch.server';
-import { mediaViews } from '$lib/server/queries/media';
+import { recordMusicListen } from '#lib/music/persistence.server.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { sequenceContextSchema } from '#lib/media/sequence.js';
+import { sequenceEntries } from '#lib/core/lists/sequence.server.js';
+import { rewatchBoundary, rewatchFields } from '#lib/core/tracking/rewatch.server.js';
+import { mediaViews } from '#lib/server/queries/media.js';
 import * as v from 'valibot';
 import { and, eq, gt, inArray, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   availability,
   episodes,
@@ -26,20 +26,20 @@ import {
   users,
   providerConnections,
   providerInstances,
-} from '$lib/server/db/schema';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { instanceFetchConfig, instanceServerUrl } from '$lib/providers/instances.server';
-import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
-import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
-import { logDiagnostic, classifyFailure, context } from '$lib/server/diagnostics';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
+} from '#lib/server/db/schema.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { instanceFetchConfig, instanceServerUrl } from '#lib/providers/instances.server.js';
+import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
+import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
+import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { logDiagnostic, classifyFailure, context } from '#lib/server/diagnostics/index.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import {
   enqueueTraktChangeInTransaction,
   enqueuePlaybackActionsInTransaction,
-} from '$lib/sync/changes.server';
+} from '#lib/sync/changes.server.js';
 import { comparePlaybackPlans, planPlayback, type PlaybackPlan } from './planning';
-import type { PlaybackView } from '$lib/ui/types';
+import type { PlaybackView } from '#lib/ui/types.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 const seconds = v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(2592000));

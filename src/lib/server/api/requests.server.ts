@@ -1,7 +1,7 @@
-import { json } from '@sveltejs/kit';
+
 import * as v from 'valibot';
-import { AppError } from '$lib/server/security/errors';
-import { requestOptions, requestMedia, manageRequest } from '$lib/providers/seerr/requests.server';
+import { AppError } from '#lib/server/security/errors.js';
+import { requestOptions, requestMedia, manageRequest } from '#lib/providers/seerr/requests.server.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleRequests(context: ApiContext): Promise<Response | undefined> {
@@ -30,5 +30,5 @@ export async function handleRequests(context: ApiContext): Promise<Response | un
         );
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

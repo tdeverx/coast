@@ -1,5 +1,5 @@
-import { requestPriority } from '$lib/server/security/request-priority';
-import { getConfig } from '$lib/server/config';
+import { requestPriority } from '#lib/server/security/request-priority.js';
+import { getConfig } from '#lib/server/config.js';
 import * as v from 'valibot';
 import {
   registerActionHandler,
@@ -7,18 +7,18 @@ import {
   PermanentActionError,
   tagDiagnosticStage,
   type ActionHandler,
-} from '$lib/server/queue';
-import { ProviderActionError } from '$lib/providers/contracts';
-import { connectionFor } from '$lib/providers/connections.server';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { refreshRequests, executeSeerrRequest, executeSeerrManagement } from '$lib/providers/seerr/requests.server';
-import { startProviderMaintenance } from '$lib/providers/maintenance.server';
+} from '#lib/server/queue/index.js';
+import { ProviderActionError } from '#lib/providers/contracts.js';
+import { connectionFor } from '#lib/providers/connections.server.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import { refreshRequests, executeSeerrRequest, executeSeerrManagement } from '#lib/providers/seerr/requests.server.js';
+import { startProviderMaintenance } from '#lib/providers/maintenance.server.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
 export function registerProviderActions(options: { maintenance?: boolean } = {}) {
-  registerActionHandler('feature.reconcile', async action => (await import('$lib/application/feature-transition.server')).reconcileFeatures(action));
-  registerActionHandler('benchmark.run', async action => (await import('$lib/benchmarks/service.server')).executeBenchmark(action));
+  registerActionHandler('feature.reconcile', async action => (await import('#lib/application/feature-transition.server.js')).reconcileFeatures(action));
+  registerActionHandler('benchmark.run', async action => (await import('#lib/benchmarks/service.server.js')).executeBenchmark(action));
   const register = (kind: string, handler: ActionHandler) =>
     registerActionHandler(kind, async (action) => {
       try {
@@ -31,31 +31,31 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
         throw error;
       }
     });
-  register('taste.refresh',async()=> (await import('$lib/social/taste-cache.server')).refreshTasteCaches());
-  register('planning.reminder',async action=>(await import('$lib/experiments/planning.server')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
-  register('webhook.deliver', async action => (await import('$lib/server/public-api/webhooks.server')).deliverWebhook(action));
+  register('taste.refresh',async()=> (await import('#lib/social/taste-cache.server.js')).refreshTasteCaches());
+  register('planning.reminder',async action=>(await import('#lib/experiments/planning.server.js')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
+  register('webhook.deliver', async action => (await import('#lib/server/public-api/webhooks.server.js')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
-  register('jellyfin.updates',async action=>(await import('$lib/providers/jellyfin/updates.server')).pollCompanion(action));
-  register('jellyfin.delta',async action=>(await import('$lib/providers/jellyfin/updates.server')).applyCompanionDelta(action));
+  register('jellyfin.updates',async action=>(await import('#lib/providers/jellyfin/updates.server.js')).pollCompanion(action));
+  register('jellyfin.delta',async action=>(await import('#lib/providers/jellyfin/updates.server.js')).applyCompanionDelta(action));
   register('jellyfin.streams',async action=>{
     let scanner;
-    try{scanner=await import('$lib/providers/jellyfin/stream-history.server');}
+    try{scanner=await import('#lib/providers/jellyfin/stream-history.server.js');}
     catch(error){tagDiagnosticStage(error,'streams-module');throw error;}
     return scanner.scanServerStreams(action);
   });
-  register('igdb.steam-metadata', async action => (await import('$lib/providers/steam/sync.server')).syncSteamMetadata(action));
-  register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
-  register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
-  register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
-  for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('$lib/recommendations/providers.server')).refreshProviderRecommendations(action));
+  register('igdb.steam-metadata', async action => (await import('#lib/providers/steam/sync.server.js')).syncSteamMetadata(action));
+  register('steam.sync', async action => (await import('#lib/providers/steam/sync.server.js')).syncSteam(action));
+  register('steam.achievements', async action => (await import('#lib/providers/steam/sync.server.js')).syncSteamAchievements(action));
+  register('catalogue.user-scan', async action => (await import('#lib/catalogue/maintenance.server.js')).scanUserCatalogue(action));
+  for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('#lib/recommendations/providers.server.js')).refreshProviderRecommendations(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);
-    return (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
+    return (await import('#lib/catalogue/maintenance.server.js')).refreshSharedMetadata(action);
   });
-  register('social.checkin-complete',async action=>{await (await import('$lib/social/presence.server')).completeCheckin(action.userId,v.parse(uuid,action.payload.checkinId));});
-  for(const provider of ['jellyfin','steam'] as const)register(`${provider}.live`,async action=>{if(action.connectionId)return (await import('$lib/social/provider-live.server')).pollProviderLive(action.userId,action.connectionId,provider);});
-  register('trakt.live',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).pollLive(action.userId,action.connectionId);});
-  register('trakt.checkin',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).deliverCheckin(action.userId,action.connectionId,v.parse(uuid,action.payload.checkinId));});
+  register('social.checkin-complete',async action=>{await (await import('#lib/social/presence.server.js')).completeCheckin(action.userId,v.parse(uuid,action.payload.checkinId));});
+  for(const provider of ['jellyfin','steam'] as const)register(`${provider}.live`,async action=>{if(action.connectionId)return (await import('#lib/social/provider-live.server.js')).pollProviderLive(action.userId,action.connectionId,provider);});
+  register('trakt.live',async action=>{if(action.connectionId)await (await import('#lib/social/trakt.server.js')).pollLive(action.userId,action.connectionId);});
+  register('trakt.checkin',async action=>{if(action.connectionId)await (await import('#lib/social/trakt.server.js')).deliverCheckin(action.userId,action.connectionId,v.parse(uuid,action.payload.checkinId));});
   register('seerr.manage', executeSeerrManagement);
   register('trakt.list-delete', async (action) => {
     if (!action.connectionId)
@@ -76,7 +76,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.progress', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeProgressExport } = await import('$lib/sync/trakt-export.server');
+    const { executeProgressExport } = await import('#lib/sync/trakt-export.server.js');
     await executeProgressExport(action.userId, action.connectionId, action.payload);
   });
   register('seerr.sync', async (action) => {
@@ -87,45 +87,45 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('history.remove', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The connection is unavailable.');
-    const { executeHistoryRemoval } = await import('$lib/sync/history-removal.server');
+    const { executeHistoryRemoval } = await import('#lib/sync/history-removal.server.js');
     await executeHistoryRemoval(action.userId, action.connectionId, action.payload);
   });
   register('trakt.collection-review',async action=>{
     if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
-    const {executeProjectionReview}=await import('$lib/collection/projection.server');await executeProjectionReview(action.userId,action.connectionId,action.payload);
+    const {executeProjectionReview}=await import('#lib/collection/projection.server.js');await executeProjectionReview(action.userId,action.connectionId,action.payload);
   });
   for(const kind of ['trakt.collection-project','trakt.collection-cleanup'])register(kind,async action=>{
     if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
-    const {executeProjection}=await import('$lib/collection/projection.server');await executeProjection(action.userId,action.connectionId,kind.endsWith('cleanup')?action.payload:undefined);
+    const {executeProjection}=await import('#lib/collection/projection.server.js');await executeProjection(action.userId,action.connectionId,kind.endsWith('cleanup')?action.payload:undefined);
   });
   register('jellyfin.reconcile',async action=>{
     if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
     const {connection}=await connectionFor(action.userId,action.connectionId,'jellyfin');
     if(connection.settings.reconcileTracking!==true)return;
-    const {executeJellyfinUserState}=await import('$lib/sync/jellyfin.server');await executeJellyfinUserState(action.userId,action.connectionId,action.payload);
+    const {executeJellyfinUserState}=await import('#lib/sync/jellyfin.server.js');await executeJellyfinUserState(action.userId,action.connectionId,action.payload);
   });
   register('jellyfin.user-state', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { executeJellyfinUserState } = await import('$lib/sync/jellyfin.server');
+    const { executeJellyfinUserState } = await import('#lib/sync/jellyfin.server.js');
     await executeJellyfinUserState(action.userId, action.connectionId, action.payload);
   });
   register('jellyfin.scrobble', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The playback connection is unavailable.');
-    const { executeJellyfinScrobble } = await import('$lib/sync/jellyfin.server');
+    const { executeJellyfinScrobble } = await import('#lib/sync/jellyfin.server.js');
     await executeJellyfinScrobble(action.userId, action.connectionId, action.payload);
   });
   register('trakt.scrobble', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeLiveScrobble } = await import('$lib/sync/trakt-export.server');
+    const { executeLiveScrobble } = await import('#lib/sync/trakt-export.server.js');
     await executeLiveScrobble(action.userId, action.connectionId, action.payload);
   });
   register('jellyfin.library', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { scanJellyfinLibrary } = await import('$lib/sync/jellyfin.server');
+    const { scanJellyfinLibrary } = await import('#lib/sync/jellyfin.server.js');
     let stage = 'connection';
     try {
       const result = await scanJellyfinLibrary(
@@ -144,7 +144,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('jellyfin.bootstrap', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { bootstrapJellyfinUser } = await import('$lib/sync/jellyfin.server');
+    const { bootstrapJellyfinUser } = await import('#lib/sync/jellyfin.server.js');
     let stage = 'connection';
     try {
       const result = await bootstrapJellyfinUser(action.userId, action.connectionId, next => { stage = next; });
@@ -157,7 +157,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('jellyfin.sync', async action => {
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const {syncJellyfinUser} = await import('$lib/sync/jellyfin.server');
+    const {syncJellyfinUser} = await import('#lib/sync/jellyfin.server.js');
     let stage = 'connection';
     try {
       const result = await requestPriority.run(3, () => syncJellyfinUser(action.userId, action.connectionId!, next => {stage = next;}));
@@ -167,26 +167,26 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.import', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { importTrakt } = await import('$lib/sync/trakt-import.server');
+    const { importTrakt } = await import('#lib/sync/trakt-import.server.js');
     const result=await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
     return {applied:result.imported,review:result.review};
   });
   register('trakt.lists-import', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { importTrakt } = await import('$lib/sync/trakt-import.server');
+    const { importTrakt } = await import('#lib/sync/trakt-import.server.js');
     const result=await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
     return {applied:result.imported,review:result.review};
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeTraktListExport } = await import('$lib/sync/trakt-lists.server');
+    const { executeTraktListExport } = await import('#lib/sync/trakt-lists.server.js');
     await executeTraktListExport(action.userId, action.connectionId, action.payload);
   });
   register('trakt.export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeTraktExport } = await import('$lib/sync/trakt-export.server');
+    const { executeTraktExport } = await import('#lib/sync/trakt-export.server.js');
     await executeTraktExport(action.userId, action.connectionId, action.payload);
   });
   register('seerr.request', executeSeerrRequest);

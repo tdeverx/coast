@@ -1,25 +1,25 @@
-import { json } from '@sveltejs/kit';
+
 import * as v from 'valibot';
-import { requireAdmin } from '$lib/server/auth';
-import { AppError } from '$lib/server/security/errors';
-import { listProviders, configureInstance } from '$lib/providers/instances.server';
-import { setInstanceEnabled, deleteInstance } from '$lib/application/provider-sources.server';
-import { connectJellyfin, updateJellyfinPlaybackImport } from '$lib/providers/jellyfin/connection.server';
-import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '$lib/providers/trakt/connection.server';
-import { disconnectProvider } from '$lib/application/provider-sources.server';
-import { updateProviderSchedule, runProviderJob } from '$lib/providers/maintenance.server';
-import { musicLibrary, musicDetails, setMusicFavourite } from '$lib/music/service.server';
-import { streamMusicArtwork } from '$lib/music/artwork.server';
-import { libraryScanProgress } from '$lib/sync/jellyfin.server';
+import { requireAdmin } from '#lib/server/auth/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { listProviders, configureInstance } from '#lib/providers/instances.server.js';
+import { setInstanceEnabled, deleteInstance } from '#lib/application/provider-sources.server.js';
+import { connectJellyfin, updateJellyfinPlaybackImport } from '#lib/providers/jellyfin/connection.server.js';
+import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '#lib/providers/trakt/connection.server.js';
+import { disconnectProvider } from '#lib/application/provider-sources.server.js';
+import { updateProviderSchedule, runProviderJob } from '#lib/providers/maintenance.server.js';
+import { musicLibrary, musicDetails, setMusicFavourite } from '#lib/music/service.server.js';
+import { streamMusicArtwork } from '#lib/music/artwork.server.js';
+import { libraryScanProgress } from '#lib/sync/jellyfin.server.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleProviders(context: ApiContext): Promise<Response | undefined> {
  const { user, uid, path, method, request, url, body } = context;
  let result: unknown;
  if (path[0] === 'providers') {
-      if(path.length===2&&path[1]==='streams'&&method==='GET')result=await (await import('$lib/application/streams.server')).activeStreams(user,{view:url.searchParams.get('view')??'now',before:url.searchParams.get('before')??undefined});
-      else if(path.length===3&&path[1]==='streams'&&path[2]==='count'&&method==='GET')result=await (await import('$lib/application/streams.server')).streamCount(user);
-      else if(path.length===3&&path[1]==='streams'&&path[2]==='refresh'&&method==='POST')result=await (await import('$lib/application/streams.server')).refreshStreams(user);
+      if(path.length===2&&path[1]==='streams'&&method==='GET')result=await (await import('#lib/application/streams.server.js')).activeStreams(user,{view:url.searchParams.get('view')??'now',before:url.searchParams.get('before')??undefined});
+      else if(path.length===3&&path[1]==='streams'&&path[2]==='count'&&method==='GET')result=await (await import('#lib/application/streams.server.js')).streamCount(user);
+      else if(path.length===3&&path[1]==='streams'&&path[2]==='refresh'&&method==='POST')result=await (await import('#lib/application/streams.server.js')).refreshStreams(user);
       else if (path.length === 1 && method === 'GET') result = await listProviders(uid);
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);
@@ -40,7 +40,7 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
           )
         );
       else if (path[1] === 'steam' && path[2] === 'start' && method === 'POST')
-        result = await (await import('$lib/providers/steam/connection.server')).startSteam(uid,uuid(body.instanceId),url.origin);
+        result = await (await import('#lib/providers/steam/connection.server.js')).startSteam(uid,uuid(body.instanceId),url.origin);
       else if (path[1] === 'trakt' && path[2] === 'start' && method === 'POST')
         result = await startTraktDevice(uid, uuid(body.instanceId));
       else if (path[1] === 'trakt' && path[2] === 'finish' && method === 'POST')
@@ -73,9 +73,9 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'live-read' && method === 'POST')
-        result = await (await import('$lib/providers/connections.server')).updateLiveRead(uid,uuid(path[1]),body);
+        result = await (await import('#lib/providers/connections.server.js')).updateLiveRead(uid,uuid(path[1]),body);
       else if (path[2] === 'steam-imports' && method === 'POST')
-        result = await (await import('$lib/providers/steam/connection.server')).updateSteamImports(uid,uuid(path[1]),body);
+        result = await (await import('#lib/providers/steam/connection.server.js')).updateSteamImports(uid,uuid(path[1]),body);
       else if (path[2] === 'sync' && method === 'POST')
         result = await updateSyncPreferences(uid, uuid(path[1]), body);
       else if (['disable', 'enable'].includes(path[2]) && method === 'POST') {
@@ -83,5 +83,5 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
         result = await setInstanceEnabled(uid,uuid(path[1]),path[2]==='enable',typeof body.previewId==='string'?uuid(body.previewId):undefined);
       } else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

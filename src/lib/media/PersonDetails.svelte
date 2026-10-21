@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
   import { page } from '$app/state';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  let {data,detailHref}:{data:Awaited<ReturnType<typeof import('$lib/catalogue/details.server').personDetailData>>;detailHref?:string}=$props();
-  const detailUrl=$derived(detailHref?new URL(detailHref,page.url):page.url);
+  import Button from '#lib/ui/components/Button.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  let {data,detailHref}:{data:Awaited<ReturnType<typeof import('#lib/catalogue/details.server.js').personDetailData>>;detailHref?:string}=$props();
+  const detailUrl=$derived(detailHref?new URL(detailHref,page.url.href):page.url);
   const section = $derived(
     ['all', 'library', 'known'].includes(detailUrl.searchParams.get('section') ?? '')
       ? detailUrl.searchParams.get('section')!

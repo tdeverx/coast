@@ -1,14 +1,14 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import {
   reconcileProviderValue,
   acknowledgeProviderValue,
   localSyncValue,
   sameValue,
   type ValueCategory,
-} from '$lib/sync/values.server';
+} from '#lib/sync/values.server.js';
 import * as v from 'valibot';
 import { and, eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   externalIds,
   media,
@@ -18,12 +18,12 @@ import {
   syncValues,
   socialScrobbleDeliveries,
   providerConnections,
-} from '$lib/server/db/schema';
-import { PermanentActionError } from '$lib/server/queue';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import type { SyncPreferences } from '$lib/providers/contracts';
-import type { TraktRecord, TraktAdapter } from '$lib/providers/trakt/adapter.server';
-import { traktEntry, traktPlurals, exportIdentity } from '$lib/sync/trakt-identity.server';
+} from '#lib/server/db/schema.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import type { SyncPreferences } from '#lib/providers/contracts.js';
+import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
+import { traktEntry, traktPlurals, exportIdentity } from '#lib/sync/trakt-identity.server.js';
 
 /** Read the provider value before overwriting it; imports alone cannot detect edits made since the last sync. */
 export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {

@@ -118,6 +118,6 @@ export function trackingLanguage(category: MediaCategory) {
 }
 
 /** Capabilities follow the medium, never a navigation URL or presentation shape. */
-export function isScreenWork(item: { kind: string }): item is import('$lib/ui/types').MediaView {
+export function isScreenWork(item: { kind: string }): item is import('#lib/ui/types.js').MediaView {
   return ['movie', 'show', 'season', 'episode', 'collection'].includes(item.kind);
 }

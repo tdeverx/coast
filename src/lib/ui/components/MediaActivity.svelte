@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { onDestroy, untrack } from 'svelte';
-  import type { ProfilePeriod } from '$lib/profile/period';
-  import type { MediaStatistics } from '$lib/media/statistics';
-  import { useClient } from '$lib/ui/client-context';
-  import { createResource } from '$lib/ui/resource.svelte';
-  import { mediaActivityPanels } from '$lib/ui/insights/media';
+  import type { ProfilePeriod } from '#lib/profile/period.js';
+  import type { MediaStatistics } from '#lib/media/statistics.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { createResource } from '#lib/ui/resource.svelte.js';
+  import { mediaActivityPanels } from '#lib/ui/insights/media.js';
   import DetailCard from './DetailCard.svelte';
 
   const { api } = useClient();

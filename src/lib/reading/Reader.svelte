@@ -1,17 +1,17 @@
 <script lang="ts">
  import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, setReadingExit, retryReadingSave } from './client.svelte';
- import { useClient, reportFailure } from '$lib/ui/client-context';
+ import { useClient, reportFailure } from '#lib/ui/client-context.js';
  import { page } from '$app/state';
  import { untrack } from 'svelte';
  import { fade } from 'svelte/transition';
  import type { ReadingLocation, ReadingSessionView } from './model';
  import { readingFraction, readingLocationLabel, sameReadingLocation } from './model';
- import { syncedPlayer, canControlPlayback } from '$lib/playback/synced/client.svelte';
- import Dialog from '$lib/ui/components/Dialog.svelte';
- import Button from '$lib/ui/components/Button.svelte';
- import ProgressBar from '$lib/ui/components/ProgressBar.svelte';
- import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
- import { api, message, isFeatureDisabled, ApiError } from '$lib/ui/client';
+ import { syncedPlayer, canControlPlayback } from '#lib/playback/synced/client.svelte.js';
+ import Dialog from '#lib/ui/components/Dialog.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
+ import ProgressBar from '#lib/ui/components/ProgressBar.svelte';
+ import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
+ import { api, message, isFeatureDisabled, ApiError } from '#lib/ui/client.js';
  import type { ReaderEngine } from './reader/engine';
  import type { ReaderProgress } from './reader/load';
  const { preview } = useClient();

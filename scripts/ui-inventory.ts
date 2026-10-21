@@ -82,7 +82,7 @@ export function renderedComponents(path: string, source: string) {
   for (const node of ast.instance?.content.body ?? []) {
     if (node.type !== 'ImportDeclaration' || !String(node.source.value).endsWith('.svelte')) continue;
     const imported = String(node.source.value);
-    const target = relative(root, resolve(imported.startsWith('$lib/') ? 'src/lib' : dirname(path), imported.startsWith('$lib/') ? imported.slice(5) : imported));
+    const target = relative(root, resolve(imported.startsWith('#lib/') ? 'src/lib' : dirname(path), imported.startsWith('#lib/') ? imported.slice(5) : imported));
     for (const specifier of node.specifiers) imports.set(specifier.local.name, target);
   }
   const rendered = new Set<string>();
@@ -104,7 +104,7 @@ export function renderedComponents(path: string, source: string) {
     const imported = node.source as Record<string, unknown>;
     if (imported?.type !== 'Literal' || typeof imported.value !== 'string' || !imported.value.endsWith('.svelte')) return;
     const value = imported.value;
-    dynamicImports.add(relative(root, resolve(value.startsWith('$lib/') ? 'src/lib' : dirname(path), value.startsWith('$lib/') ? value.slice(5) : value)));
+    dynamicImports.add(relative(root, resolve(value.startsWith('#lib/') ? 'src/lib' : dirname(path), value.startsWith('#lib/') ? value.slice(5) : value)));
   });
   return { rendered: [...rendered].sort(), dynamic, dynamicImports: [...dynamicImports].sort() };
 }

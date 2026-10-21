@@ -1,4 +1,4 @@
-import { shareCookie, sharedState } from '$lib/sharing/service.server';
+import { shareCookie, sharedState } from '#lib/sharing/service.server.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ cookies, setHeaders }) => {
  setHeaders({ 'referrer-policy': 'no-referrer', 'cache-control': 'private, no-store' });

@@ -79,3 +79,14 @@ test('API catch owners trust Kit errors while preserving redaction, provider map
   expect((await invoke('central',new Error(secret),true)).status).toBe(503);
   expect((await invoke('central',known(404),true)).status).toBe(404);
 });
+
+test('Kit 3 error hook preserves expected error defaults and redacts unexpected failures',async()=>{
+  const source=await Bun.file(new URL('../src/hooks.server.ts',import.meta.url)).text();
+  const code=new Bun.Transpiler({loader:'ts'}).transformSync(source.slice(source.indexOf('export const handleError:'))).replace('export ','');
+  const logged:unknown[]=[];
+  const hook=new Function('logDiagnostic','classifyFailure',code+';return handleError;')((...args:unknown[])=>logged.push(args),()=>({kind:'unknown'}));
+  for(const kind of ['app','framework','validation'])expect(hook({kind,error:new Error('Expected safe failure')})).toBeUndefined();
+  expect(logged).toHaveLength(0);
+  expect(hook({kind:'unknown',error:new Error('Private implementation detail')})).toEqual({message:'The application could not complete this request.'});
+  expect(logged).toHaveLength(1);
+});

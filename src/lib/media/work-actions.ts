@@ -1,5 +1,5 @@
-import type { GameStatus } from '$lib/games/model';
-import type { ReadingState } from '$lib/reading/model';
+import type { GameStatus } from '#lib/games/model.js';
+import type { ReadingState } from '#lib/reading/model.js';
 
 export type WorkList = { id: string; name: string; playlist: boolean; entries: { id: string; position: number }[]; count: number };
 export type WorkListPage = { items: WorkList[]; page: number; pages: number; total: number };

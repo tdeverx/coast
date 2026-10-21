@@ -1,10 +1,10 @@
-import { featureValues, hasWithdrawnFeatures } from '$lib/features';
+import { featureValues, hasWithdrawnFeatures } from '#lib/features.js';
 import { queueFeatureTransition } from './feature-transition.server';
 import * as v from 'valibot';
-import { requireAdmin, type SessionUser } from '$lib/server/auth';
-import { getConfig, configSchema, replaceRequestConfig, type CoastConfig } from '$lib/server/config';
-import { getSql } from '$lib/server/db';
-import { diagnosticStore } from '$lib/server/diagnostics';
+import { requireAdmin, type SessionUser } from '#lib/server/auth/index.js';
+import { getConfig, configSchema, replaceRequestConfig, type CoastConfig } from '#lib/server/config.js';
+import { getSql } from '#lib/server/db/index.js';
+import { diagnosticStore } from '#lib/server/diagnostics/index.js';
 
 export async function updateConfig(
   actor: SessionUser | null,

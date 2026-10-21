@@ -2,15 +2,15 @@
   import Button from './Button.svelte';
   import { page } from '$app/state';
   import ProgressBar from './ProgressBar.svelte';
-  import { primaryMediaAction, progressFraction } from '$lib/media/model';
-  import { canPlayMusicCard } from '$lib/music/presentation';
-  import {navigateMedia} from '$lib/ui/media-navigation';
-  import { cardArtwork, overlayArtwork } from '$lib/media/artwork';
-  import type { ArtworkPriority } from '$lib/ui/types';
-  import { artworkTypes } from '$lib/artwork';
-  import { displayLabel } from '$lib/ui/labels';
+  import { primaryMediaAction, progressFraction } from '#lib/media/model.js';
+  import { canPlayMusicCard } from '#lib/music/presentation.js';
+  import {navigateMedia} from '#lib/ui/media-navigation.js';
+  import { cardArtwork, overlayArtwork } from '#lib/media/artwork.js';
+  import type { ArtworkPriority } from '#lib/ui/types.js';
+  import { artworkTypes } from '#lib/artwork.js';
+  import { displayLabel } from '#lib/ui/labels.js';
   import { tick, getContext, onDestroy } from 'svelte';
-  import {provideRetention,type Retain} from '$lib/ui/retention';
+  import {provideRetention,type Retain} from '#lib/ui/retention.js';
   import type { Snippet } from 'svelte';
   import type {
     MediaView,
@@ -19,13 +19,13 @@
     MediaCardShape,
     MediaCardArtwork,
     MediaCardOverlay,
-  } from '$lib/ui/types';
-  import { lazyImage } from '$lib/ui/lazy-image';
-  import { useClient } from '$lib/ui/client-context';
-  import { contextGesture, type MenuPoint } from '$lib/ui/context-gesture';
-  import { liquidGlass } from '$lib/ui/materials/glass';
-  import {useClock} from '$lib/ui/clock.svelte';
-  import {activityDateLabel,unknownActivityDate} from '$lib/social/model';
+  } from '#lib/ui/types.js';
+  import { lazyImage } from '#lib/ui/lazy-image.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { contextGesture, type MenuPoint } from '#lib/ui/context-gesture.js';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
+  import {useClock} from '#lib/ui/clock.svelte.js';
+  import {activityDateLabel,unknownActivityDate} from '#lib/social/model.js';
   import ReactionActions from './ReactionActions.svelte';
   import TextLink from './TextLink.svelte';
   const { preview } = useClient();
@@ -71,7 +71,7 @@
     body?: Snippet;
     footer?: Snippet;
     retain?: Retain;
-    social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
+    social?:{friends:{username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus}[];total:number};
   } = $props();
   const retainCard=provideRetention(()=>retain?.()??(()=>{}));
   let releaseFocus:(()=>void)|undefined;

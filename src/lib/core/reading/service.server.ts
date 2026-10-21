@@ -1,13 +1,13 @@
-import { lockFeaturePolicyInTransaction, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeatureInTransaction } from '#lib/server/features.js';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb, type Database } from '$lib/server/db';
-import { readingProgress, readingWorks, readingSessions, users } from '$lib/server/db/schema';
-import { DomainError } from '$lib/core/errors';
-import { getConfig } from '$lib/server/config';
-import { requireEnabledCategory } from '$lib/server/experimental';
-import { emitWebhook } from '$lib/server/public-api/webhooks.server';
-import { readingStates } from '$lib/reading/model';
+import { getDb, type Database } from '#lib/server/db/index.js';
+import { readingProgress, readingWorks, readingSessions, users } from '#lib/server/db/schema.js';
+import { DomainError } from '#lib/core/errors.js';
+import { getConfig } from '#lib/server/config.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { emitWebhook } from '#lib/server/public-api/webhooks.server.js';
+import { readingStates } from '#lib/reading/model.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 const pages = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1000000));

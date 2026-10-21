@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { setContext } from 'svelte';
   import { formatValue, type ChartModel } from './model';
   import { chartLinks } from './context';

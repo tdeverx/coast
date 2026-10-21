@@ -11,10 +11,10 @@ const code = compileModule(source, { filename: 'search.svelte.js', generate: 'cl
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'))
   .replaceAll('from "svelte"', `from ${JSON.stringify(import.meta.resolve('svelte'))}`)
   .replaceAll('$app/state', moduleUrl('export const page={data:{}};'))
-  .replaceAll('$lib/ui/client', moduleUrl('export const refreshRouteDependencies=async()=>{};'))
-  .replaceAll('$lib/library', import.meta.resolve('../src/lib/library'))
-  .replaceAll('$lib/ui/filter-options', import.meta.resolve('../src/lib/ui/filter-options'));
-const searchCode = code.replaceAll('$lib/search-selection', import.meta.resolve('../src/lib/search-selection'));
+  .replaceAll('#lib/ui/client.js', moduleUrl('export const refreshRouteDependencies=async()=>{};'))
+  .replaceAll('#lib/library.js', import.meta.resolve('../src/lib/library'))
+  .replaceAll('#lib/ui/filter-options.js', import.meta.resolve('../src/lib/ui/filter-options'));
+const searchCode = code.replaceAll('#lib/search-selection.js', import.meta.resolve('../src/lib/search-selection'));
 const { createSearchSource }: typeof import('../src/lib/ui/shelves/search.svelte') = await import(moduleUrl(searchCode));
 
 const items = (['movie', 'show', 'album', 'game', 'book', 'comic'] as const).flatMap(kind =>

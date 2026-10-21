@@ -1,12 +1,12 @@
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { providerConnections } from '$lib/server/db/schema';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { enqueueAction } from '$lib/server/queue';
-import { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
-import { getInstance, instanceTransport } from '$lib/providers/instances.server';
-import { connectionFor, saveConnection } from '$lib/providers/connections.server';
+import { getDb } from '#lib/server/db/index.js';
+import { providerConnections } from '#lib/server/db/schema.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { enqueueAction } from '#lib/server/queue/index.js';
+import { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
+import { getInstance, instanceTransport } from '#lib/providers/instances.server.js';
+import { connectionFor, saveConnection } from '#lib/providers/connections.server.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 

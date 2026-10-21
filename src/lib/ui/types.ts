@@ -1,6 +1,6 @@
-import type { ScreenKind, MediaCategory, Lifecycle, Progress } from '$lib/media/model';
-import type { ArtworkImages } from '$lib/artwork';
-import type { MusicKind } from '$lib/music/model';
+import type { ScreenKind, MediaCategory, Lifecycle, Progress } from '#lib/media/model.js';
+import type { ArtworkImages } from '#lib/artwork.js';
+import type { MusicKind } from '#lib/music/model.js';
 export type MediaCardPresentation = Pick<
   MediaView,
   | 'id'
@@ -60,14 +60,14 @@ export interface MediaView {
   title: string;
   entryId?: string;
   listContext?: { listId: string; entryId: string };
-  sequence?: import('$lib/media/sequence').SequenceContext;
+  sequence?: import('#lib/media/sequence.js').SequenceContext;
   captionTitle?: string;
   captionTitleHref?: string;
   captionSubtitle?: string;
   captionSubtitleHref?: string;
   captionCredits?: {name:string;href?:string}[];
   captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
-  captionActor?: {username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus;profileHref?:string|null};
+  captionActor?: {username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus;profileHref?:string|null};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;
@@ -118,7 +118,7 @@ export interface MediaView {
 export interface PlaybackView {
   shareId?: string;
   mediaType?: 'audio' | 'video';
-  sequence?: import('$lib/media/sequence').SequenceContext;
+  sequence?: import('#lib/media/sequence.js').SequenceContext;
   detail: string;
   id: string;
   mediaId: string;

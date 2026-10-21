@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import {page} from '$app/state';
   import Icon from './Icon.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
   import { getContext, onDestroy, untrack } from 'svelte';
 
-  import { useClient } from '$lib/ui/client-context';
-  import { createResource } from '$lib/ui/resource.svelte';
-  import { createMutation } from '$lib/ui/mutation.svelte';
-  import { emojis } from '$lib/social/model';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { createResource } from '#lib/ui/resource.svelte.js';
+  import { createMutation } from '#lib/ui/mutation.svelte.js';
+  import { emojis } from '#lib/social/model.js';
 
   const { api, change } = useClient();
   const nested=!!getContext('coast-context-menu');

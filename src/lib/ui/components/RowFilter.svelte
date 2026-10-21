@@ -1,7 +1,7 @@
 <script lang="ts">
   import ChoiceGroup from './ChoiceGroup.svelte';
   import Button from './Button.svelte';
-  import type { FilterGroup } from '$lib/ui/controls/filters';
+  import type { FilterGroup } from '#lib/ui/controls/filters.js';
   import type {Snippet} from 'svelte';
   import type {IconName} from './Icon.svelte';
   let { groups, label = 'Filters', selection = false, actions, icon, submenus }: {groups: FilterGroup[]; label?: string; selection?: boolean; actions?:Snippet; icon?:IconName; submenus?:boolean} = $props();

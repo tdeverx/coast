@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { externalIds } from '$lib/server/db/schema';
-import type { TraktRecord } from '$lib/providers/trakt/adapter.server';
+import { getDb } from '#lib/server/db/index.js';
+import { externalIds } from '#lib/server/db/schema.js';
+import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 
 /** A season/episode record also includes its show; the leaf determines identity. */
 export function traktEntry(record: TraktRecord) {

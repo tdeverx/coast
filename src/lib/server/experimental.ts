@@ -1,5 +1,5 @@
-import type { ExperimentalFeatures, ExperimentalFeature, MediumFeatures } from '$lib/experimental';
-import { featureEnabled, categoryEnabled } from '$lib/experimental';
+import type { ExperimentalFeatures, ExperimentalFeature, MediumFeatures } from '#lib/experimental.js';
+import { featureEnabled, categoryEnabled } from '#lib/experimental.js';
 import { sql, type SQL } from 'drizzle-orm';
 import { AppError } from './security/errors';
 

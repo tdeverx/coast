@@ -4,7 +4,7 @@ import { useClient } from '../client-context';
 import { contentRevisionKey } from '../content-revision.svelte';
 import { createMenuResource } from './menu-resource.svelte';
 import { setRelationship, type Relationship } from '../relationships';
-import type { WorkActionState } from '$lib/media/work-actions';
+import type { WorkActionState } from '#lib/media/work-actions.js';
 
 /** Only meaningful scope changes invalidate menu data; session heartbeat replacement does not. */
 export function workMenuScope(target: unknown) {

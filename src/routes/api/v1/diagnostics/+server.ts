@@ -1,9 +1,9 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireAdmin, requireUser } from '$lib/server/auth';
-import { diagnosticStore, logDiagnostic } from '$lib/server/diagnostics';
-import { safeFields, type DiagnosticEvent } from '$lib/diagnostics';
-import { AppError } from '$lib/server/security/errors';
+import { requireAdmin, requireUser } from '#lib/server/auth/index.js';
+import { diagnosticStore, logDiagnostic } from '#lib/server/diagnostics/index.js';
+import { safeFields, type DiagnosticEvent } from '#lib/diagnostics.js';
+import { AppError } from '#lib/server/security/errors.js';
 const events: Record<string, 'error' | 'debug' | 'trace'> = {
   'browser.error': 'error',
   'browser.rejection': 'error',
@@ -19,7 +19,7 @@ const events: Record<string, 'error' | 'debug' | 'trace'> = {
 export const GET: RequestHandler = async ({ locals, url }) => {
   try {
     requireUser(locals.user);
-    if (!url.searchParams.has('download')) return json({ level: diagnosticStore.level });
+    if (!url.searchParams.has('download')) return Response.json({ level: diagnosticStore.level });
     requireAdmin(locals.user);
     const rows = await diagnosticStore.recent();
     return new Response(rows.map((row) => JSON.stringify(row)).join('\n'), {

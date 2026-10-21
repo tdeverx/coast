@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import Field from '$lib/ui/components/Field.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient, reportFailure } from '$lib/ui/client-context';
-  import { createOperation } from '$lib/ui/operation.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import Field from '#lib/ui/components/Field.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Dialog from '#lib/ui/components/Dialog.svelte';
+  import { message } from '#lib/ui/client.js';
+  import { useClient, reportFailure } from '#lib/ui/client-context.js';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
 
   let { workId, title, partyAllowed = false, open = $bindable(false) }: {
     workId: string; title: string; partyAllowed?: boolean; open?: boolean;

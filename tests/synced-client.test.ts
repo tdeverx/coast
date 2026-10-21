@@ -10,7 +10,7 @@ const modelUrl = moduleUrl('export const compatibleSource=(r,p)=>r.mediaId===p.m
 const source = await Bun.file(new URL('../src/lib/playback/synced/client.svelte.ts',import.meta.url)).text();
 const code = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'client.svelte.js',generate:'client'}).js.code
  .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
- .replaceAll('$lib/reading/client.svelte',readingUrl).replaceAll('$lib/ui/client',clientUrl).replaceAll('$lib/playback/client.svelte',playbackUrl).replaceAll('./model',modelUrl);
+ .replaceAll('#lib/reading/client.svelte.js',readingUrl).replaceAll('#lib/ui/client.js',clientUrl).replaceAll('#lib/playback/client.svelte.js',playbackUrl).replaceAll('./model',modelUrl);
 const client = await import(clientUrl);
 const sync:typeof import('../src/lib/playback/synced/client.svelte') = await import(moduleUrl(code));
 const stored = new Map<string,string>();

@@ -1,6 +1,6 @@
-import { requireWorkFeature } from '$lib/server/features';
-import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.server';
-import { getConfig } from '$lib/server/config';
+import { requireWorkFeature } from '#lib/server/features.js';
+import { effectiveReleaseDate } from '#lib/catalogue/metadata/release-date.server.js';
+import { getConfig } from '#lib/server/config.js';
 import { sequenceContextSchema } from '../../media/sequence';
 import { sequenceEntries, sequenceEntry, type SequenceEntry } from '../lists/sequence.server';
 import { rewatchBoundary } from './rewatch.server';
@@ -498,7 +498,7 @@ export async function trackInTransaction(
   if (result.progressChanged && !result.duplicate && !result.reviewRequired)
     await refreshAncestors(tx, userId, [input.mediaId]);
   if (result.changed && !result.reviewRequired && !result.duplicate) {
-    const { emitWebhook } = await import('$lib/server/public-api/webhooks.server');
+    const { emitWebhook } = await import('#lib/server/public-api/webhooks.server.js');
     await emitWebhook(
       tx,
       userId,

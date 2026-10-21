@@ -1,10 +1,10 @@
 import type {ShelfConfig} from './shelves';
-import {dynamicKind} from '$lib/recommendations/model';
-import type {ProgressOptions} from '$lib/progress';
-import {validPageInterval} from '$lib/page-window';
+import {dynamicKind} from '#lib/recommendations/model.js';
+import type {ProgressOptions} from '#lib/progress.js';
+import {validPageInterval} from '#lib/page-window.js';
 /** Only linked row destinations; ordinary navigation to these pages stays unchanged. */
-export function sectionTarget(href:string,base:URL):({href:string;source:ShelfConfig}|{href:string;profile:{username:string;section:'insights'|'favourites';period:'all'|'month'|'year';kind:string;scope:string}})|null{
- let url:URL;try{url=new URL(href,base);}catch{return null;}
+export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href:string;source:ShelfConfig}|{href:string;profile:{username:string;section:'insights'|'favourites';period:'all'|'month'|'year';kind:string;scope:string}})|null{
+ let url:URL;try{url=new URL(href,base.href);}catch{return null;}
  if(url.origin!==base.origin||!['http:','https:'].includes(url.protocol)||url.href.includes('#')||url.username||url.password||url.href.length>2048)return null;
  const p=url.searchParams,get=(key:string,fallback='')=>p.get(key)??fallback;
  if([...p.keys()].some(key=>p.getAll(key).length!==1)||p.has('action'))return null;

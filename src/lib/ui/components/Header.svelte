@@ -1,7 +1,7 @@
 <script lang="ts">
-  import {userStatus,chooseStatus,sharePresence} from '$lib/social/status.svelte';
-  import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '$lib/social/status';
-  import {useClient, reportFailure } from '$lib/ui/client-context';
+  import {userStatus,chooseStatus,sharePresence} from '#lib/social/status.svelte.js';
+  import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '#lib/social/status.js';
+  import {useClient, reportFailure } from '#lib/ui/client-context.js';
   const {preview,api}=useClient();
   const previewId=$props.id();
   // Preview controls share the presentation, but never the signed-in account's state.
@@ -24,22 +24,22 @@
     void readCount();const timer=setInterval(()=>void readCount(),15000);
     return ()=>{clearInterval(timer);controller.abort();};
   });
-  import {openNotifications} from '$lib/ui/panels/notifications.svelte';
-  import {openFriends} from '$lib/ui/panels/friends.svelte';
-  import {openStreams} from '$lib/ui/panels/streams.svelte';
+  import {openNotifications} from '#lib/ui/panels/notifications.svelte.js';
+  import {openFriends} from '#lib/ui/panels/friends.svelte.js';
+  import {openStreams} from '#lib/ui/panels/streams.svelte.js';
   import Avatar from './Avatar.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import { profilePath } from '$lib/profile/url';
+  import Button from '#lib/ui/components/Button.svelte';
+  import { profilePath } from '#lib/profile/url.js';
   import { page } from '$app/state';
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
 
-  import { reader, hideReading } from '$lib/reading/client.svelte';
-  import { usePlayback } from '$lib/playback/context.svelte';
+  import { reader, hideReading } from '#lib/reading/client.svelte.js';
+  import { usePlayback } from '#lib/playback/context.svelte.js';
   const { player } = usePlayback();
-  import { slidingPill } from '$lib/ui/materials/sliding-pill';
-  import { liquidGlass } from '$lib/ui/materials/glass';
-  let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
+  import { slidingPill } from '#lib/ui/materials/sliding-pill.js';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
+  let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
     $props();
   const nav = $derived(user ? [
     { label: 'For You', href: '/for-you', icon:'home' as const },

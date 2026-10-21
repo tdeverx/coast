@@ -1,10 +1,10 @@
 <script lang="ts">
   import ChoiceGroup from './ChoiceGroup.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import type { ArtworkPriority } from '$lib/ui/types';
+  import Button from '#lib/ui/components/Button.svelte';
+  import type { ArtworkPriority } from '#lib/ui/types.js';
 
-  import { artworkTypes } from '$lib/artwork';
-  import type { MediaCardShape, MediaCardArtwork, MediaCardOverlay } from '$lib/ui/types';
+  import { artworkTypes } from '#lib/artwork.js';
+  import type { MediaCardShape, MediaCardArtwork, MediaCardOverlay } from '#lib/ui/types.js';
   let {
     title,
     artworkOptions = true,

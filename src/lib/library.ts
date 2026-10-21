@@ -1,5 +1,5 @@
-import type { PageWindow } from '$lib/page-window';
-import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
+import type { PageWindow } from '#lib/page-window.js';
+import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
 export type LibrarySurface = 'watch' | 'listen' | 'play' | 'read';
 export type LibraryContent = {
   items: (MediaView | MediaCardPresentation)[];

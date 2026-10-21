@@ -1,25 +1,25 @@
-import { pruneUnusedAvatars, stopAvatarSweep } from '$lib/core/profile/avatar-storage.server';
-import { pruneTransientRecords } from '$lib/server/storage/retention.server';
-import {expireSharedViewers} from '$lib/sharing/leases.server';
+import { pruneUnusedAvatars, stopAvatarSweep } from '#lib/core/profile/avatar-storage.server.js';
+import { pruneTransientRecords } from '#lib/server/storage/retention.server.js';
+import {expireSharedViewers} from '#lib/sharing/leases.server.js';
 import { serviceTasks, maintenanceKinds } from './tasks';
 import { jobIdentityScope } from './job-policy';
 import { eligibleTaskAccounts, recurringTask, taskDue, taskSchedulingEnabled } from './task-timing';
-import { providerSchedule, providerScheduleSchema } from '$lib/providers/schedule';
+import { providerSchedule, providerScheduleSchema } from '#lib/providers/schedule.js';
 import * as v from 'valibot';
 import { and, eq, sql, inArray } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   users,
   providerInstances,
   providerConnections,
   outboxActions,
   syncCheckpoints,
-} from '$lib/server/db/schema';
-import { getConfig } from '$lib/server/config';
-import { correlationId } from '$lib/diagnostics';
-import { context, logDiagnostic } from '$lib/server/diagnostics';
-import { runtimeEvidence } from '$lib/server/diagnostics/runtime';
-import { requireProviderAdmin, getInstance } from '$lib/providers/instances.server';
+} from '#lib/server/db/schema.js';
+import { getConfig } from '#lib/server/config.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { context, logDiagnostic } from '#lib/server/diagnostics/index.js';
+import { runtimeEvidence } from '#lib/server/diagnostics/runtime.js';
+import { requireProviderAdmin, getInstance } from '#lib/providers/instances.server.js';
 
 export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {
   await requireProviderAdmin(adminId);
@@ -161,9 +161,9 @@ export async function scheduleProviderMaintenance(
         )
       );
     const [tmdb] = await tx.select({ id: providerInstances.id }).from(providerInstances).where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true), sql`${providerInstances.credentials} is not null`)).limit(1);
-    const taste=options.instanceId?{queued:0,active:0}:await (await import('$lib/social/taste-cache.server')).scheduleTasteRefresh(tx);
-    const metadata = await (await import('$lib/catalogue/maintenance.server')).scheduleMetadataRefresh(tx, options);
-    const recommendations=await (await import('$lib/recommendations/providers.server')).scheduleRecommendationRefresh(tx,options);
+    const taste=options.instanceId?{queued:0,active:0}:await (await import('#lib/social/taste-cache.server.js')).scheduleTasteRefresh(tx);
+    const metadata = await (await import('#lib/catalogue/maintenance.server.js')).scheduleMetadataRefresh(tx, options);
+    const recommendations=await (await import('#lib/recommendations/providers.server.js')).scheduleRecommendationRefresh(tx,options);
     metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances, role:users.role })

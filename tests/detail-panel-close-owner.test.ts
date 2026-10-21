@@ -21,7 +21,7 @@ if(errorStart<0||errorEnd<errorStart)throw Error('Review the actual API error cl
 const errorTypes=new Bun.Transpiler({loader:'ts'}).transformSync(client.slice(errorStart,errorEnd));
 let script=eraseTypeScript(await componentScript('src/lib/media/DetailPanel.svelte'));
 let presenterImports=0;
-script=script.replace(/import\((['"])\$lib\/[^'"]+\.svelte\1\)/g,()=>{presenterImports++;return 'Promise.resolve({default:()=>{}})';});
+script=script.replace(/import\((['"])#lib\/[^'"]+\.svelte\1\)/g,()=>{presenterImports++;return 'Promise.resolve({default:()=>{}})';});
 if(presenterImports!==8)throw Error('Review the actual presenter import seams before updating this fixture.');
 const code=compileRunes(`${errorTypes}
 export function create(boundary){

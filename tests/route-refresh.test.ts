@@ -10,52 +10,28 @@ function functionSource(source:string,name:string){
  return new Bun.Transpiler({loader:'ts'}).transformSync(node.getText(tree).replace(/^export /,''));
 }
 const kit=await read('node_modules/@sveltejs/kit/src/runtime/client/client.js');
-const kitFunctions=['unregister_after_navigate','_invalidate','get_navigation_result_from_branch','clone_page','pushState','replaceState','invalidate','invalidateAll','refreshAll'];
-const installedOwner=kitFunctions.map(name=>functionSource(kit,name)).join('\n');
-const client=await read('src/lib/ui/client.ts'),friends=await read('src/lib/ui/panels/friends.svelte.ts'),layout=await read('src/routes/+layout.svelte');
-const friendsOpen=layout.match(/const friendsOpen=\$derived\(([^\n]+)\);/u)![1];
+const client=await read('src/lib/ui/client.ts');
+const {create,deferred,turn:runtimeTurn}=await import('./fixtures/navigation-runtime');
 
-/** Real installed state owners; diagnostic route data and history/root I/O are controlled.
- * This is not a DOM, actual-data or natural concurrency reproduction. */
+/** Use the installed Kit 3 refresh owner with controlled render/load boundaries. */
 function navigation(){
- return new Function(`
- const BROWSER=true,DEV=false,base='',__SVELTEKIT_EXPERIMENTAL_USE_TRANSFORM_ERROR__=false;
- const data={user:{id:'diagnostic-viewer'},capabilities:{social:true}},location={href:'https://example.invalid/settings/jobs'},window={location};
- const page={state:{},url:new URL(location.href),data:{},error:null,form:null,params:{},route:{id:'/settings/jobs'},status:200};
- let current={url:new URL(location.href),branch:[{data:{revision:0},node:{component:()=>{}}}],nav:{},error:null};
- let token={},pending_invalidate=null,force_invalidation=false,current_history_index=0,current_navigation_index=0,has_navigated=false,held=null,revision=0;
- const query_map=new Map(),live_query_map=new Map(),invalidated=[],HISTORY_INDEX='history',NAVIGATION_INDEX='navigation',PAGE_URL_KEY='page',STATES_KEY='state';
- const on_navigate_registrations=new Set(),after_navigate_callbacks=new Set(),navigating={current:null},stores={navigating:{set:()=>{}}};let is_navigating=false,updating=false;
- const noop=()=>{},discard_load_cache=()=>{},create_remote_key=()=>'',reset_invalidation=()=>{force_invalidation=false;},update_scroll_positions=()=>{},clear_onward_history=()=>{},untrack=fn=>fn();
- const root={$set:()=>{}},update=value=>Object.assign(page,value),compact=values=>values.filter(Boolean),normalize_path=path=>path;
- const history={pushState:(_state,_title,url)=>{location.href=String(url);},replaceState:(_state,_title,url)=>{location.href=String(url);}};
- const resolve_url=url=>new URL(url,location.href),push_invalidated=key=>invalidated.push(key);
- const get_navigation_intent=async url=>({url:new URL(url)});
- const load_route=async intent=>{const wait=held;if(wait){wait.enter();await wait.promise;}return get_navigation_result_from_branch({url:intent.url,params:{},branch:[{data:{revision:++revision},node:current.branch[0].node}],status:200,error:null,route:{id:'/settings/jobs'}});};
- const _goto=()=>{throw Error('Unexpected redirect');};
- ${installedOwner}
- ${functionSource(client,'refreshRouteDependencies')}
- ${functionSource(friends,'openFriends')}
- ${functionSource(friends,'closeFriends')}
- return {page,openFriends,closeFriends,refreshRouteDependencies,invalidate,isOpen:()=>${friendsOpen},get address(){return location.href;},
-  hold(){let release,enter;const promise=new Promise(resolve=>release=resolve),started=new Promise(resolve=>enter=resolve);held={promise,enter};return {started,release};}};
- `)();
+ const h=create(kit).value;
+ const refreshRouteDependencies=new Function('page','refreshAll','invalidate',functionSource(client,'refreshRouteDependencies')+';return refreshRouteDependencies;')(
+  h.page,()=>h.invalidate('refresh'),()=>h.invalidate('invalidate',{resetState:true}));
+ return {...h,refreshRouteDependencies};
 }
 
-test('installed direct invalidation loses shallow demand while the shared open-overlay refresh preserves it',async()=>{
- const before=navigation();before.openFriends();expect(before.isOpen()).toBe(true);await before.invalidate('coast:settings');
- expect(before.isOpen()).toBe(false);expect(new URL(before.address).searchParams.get('friends')).toBe('true');
- before.openFriends();expect(before.isOpen()).toBe(false);
- const current=navigation();current.openFriends();await current.refreshRouteDependencies(['settings']);
- expect(current.isOpen()).toBe(true);expect(new URL(current.address).searchParams.get('friends')).toBe('true');current.closeFriends();expect(current.isOpen()).toBe(false);
+test('shared overlay refresh preserves native shallow state while direct reset remains explicit',async()=>{
+ const h=navigation();await h.shallow('initial',{friendsPopover:true});
+ await h.refreshRouteDependencies(['settings']);expect(h.page.state.friendsPopover).toBe(true);
+ await h.invalidate('reset',{resetState:true});expect(h.page.state.friendsPopover).toBeUndefined();
 });
 
-test('installed open/close during a held refresh remains an explicit unmodified ownership boundary',async()=>{
- const opened=navigation(),opening=opened.hold(),ordinary=opened.refreshRouteDependencies(['settings']);await opening.started;
- opened.openFriends();opening.release();await ordinary;expect(opened.isOpen()).toBe(false);expect(new URL(opened.address).searchParams.get('friends')).toBe('true');
- const closed=navigation();closed.openFriends();const closing=closed.hold(),preserving=closed.refreshRouteDependencies(['settings']);await closing.started;
- closed.closeFriends();closing.release();await preserving;expect(closed.isOpen()).toBe(true);expect(new URL(closed.address).searchParams.has('friends')).toBe(false);
- // These assert known residual schedules, not successful mid-flight recovery.
+test('a shallow close during pending refresh supersedes its captured state',async()=>{
+ const h=navigation();await h.shallow('initial',{friendsPopover:true});
+ const gate=deferred<void>();const refresh=h.invalidate('refresh',{gate});await runtimeTurn();
+ await h.shallow('initial',{friendsPopover:false});gate.resolve();await refresh;
+ expect(h.page.state.friendsPopover).toBe(false);
 });
 
 const paths=['src/lib/ui/components/JobsSettings.svelte','src/routes/settings/[[section]]/+page.svelte','src/routes/onboarding/+page.svelte','src/routes/music/+page.svelte','src/routes/games/+page.svelte'];

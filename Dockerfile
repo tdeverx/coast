@@ -20,7 +20,7 @@ RUN bun install --frozen-lockfile --production
 
 FROM debian:bookworm-slim AS runtime
 ARG COAST_BUILD_ID=unknown
-ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 IDLE_TIMEOUT=60 COAST_READING_EXTRACTOR=/app/build/reading-extractor COAST_BUILD_ID=$COAST_BUILD_ID
+ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 CONNECTION_IDLE_TIMEOUT=60 SHUTDOWN_TIMEOUT=2 COAST_READING_EXTRACTOR=/app/build/reading-extractor COAST_BUILD_ID=$COAST_BUILD_ID
 RUN mkdir -p /etc/postgresql-common && printf 'create_main_cluster = false\n' > /etc/postgresql-common/createcluster.conf \
     && apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client ca-certificates tini gosu libarchive13 \
     && rm -rf /var/lib/apt/lists/* \

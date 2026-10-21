@@ -1,26 +1,33 @@
-import { getFeatureConfig } from '$lib/server/features';
-import {onboardingPending} from '$lib/server/auth/onboarding';
-import {isPublicReadPath} from '$lib/social/public.server';
-import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
-import { correlationId } from '$lib/diagnostics';
-import { featureEnabled } from '$lib/experimental';
-import { experimentalPathFeature } from '$lib/server/experimental';
-import { refreshDiagnosticConfig, withRequestConfig, withoutRequestConfig } from '$lib/server/config';
-import { building } from '$app/environment';
-import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sveltejs/kit';
-import { authenticateSession, setupRequired } from '$lib/server/auth';
-import { SESSION_COOKIE, setSessionCookie } from '$lib/server/auth/cookies';
-import { assertSameOrigin } from '$lib/server/security/csrf';
-import { initializePlatform, platformStopping } from '$lib/server/startup';
-import { registerProviderActions } from '$lib/providers/actions.server';
+import { redirect, error, isRedirect, isHttpError } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { getFeatureConfig } from '#lib/server/features.js';
+import {onboardingPending} from '#lib/server/auth/onboarding.js';
+import {isPublicReadPath} from '#lib/social/public.server.js';
+import { context, logDiagnostic, classifyFailure, diagnosticStore } from '#lib/server/diagnostics/index.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { featureEnabled } from '#lib/experimental.js';
+import { experimentalPathFeature } from '#lib/server/experimental.js';
 
-export const init: import('@sveltejs/kit').ServerInit = async () => {
+import {
+  refreshDiagnosticConfig,
+  withRequestConfig,
+  withoutRequestConfig
+} from '#lib/server/config.js';
+
+import { building } from '$app/env';
+import { authenticateSession, setupRequired } from '#lib/server/auth/index.js';
+import { SESSION_COOKIE, setSessionCookie } from '#lib/server/auth/cookies.js';
+import { assertSameOrigin } from '#lib/server/security/csrf.js';
+import { initializePlatform, platformStopping } from '#lib/server/startup.js';
+import { registerProviderActions } from '#lib/providers/actions.server.js';
+
+export const init: import('@sveltejs/kit/hooks').ServerInit = async () => {
   if (!building) await initializePlatform(registerProviderActions);
 };
 
 const applicationHandle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
-  if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
+  if (platformStopping()) return Response.json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   await withoutRequestConfig(() => initializePlatform(registerProviderActions));
   // Public API handlers authenticate only scoped machine tokens, never browser cookies.
   if (event.url.pathname.startsWith('/api/public/v1/')) return resolve(event);
@@ -28,7 +35,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     try {
       assertSameOrigin(event.request);
     } catch {
-      return json(
+      return Response.json(
         { error: 'This request could not be verified. Reload Coast and try again.' },
         { status: 403 }
       );
@@ -54,30 +61,42 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     return response;
   }
   event.locals.setup = await setupRequired();
-  const config=await getFeatureConfig(event.locals.user?.id??null);
-  const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || (['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname,config.siteAccess));
+  const config = await getFeatureConfig(event.locals.user?.id ?? null);
+  const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
-      return json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });
+      return Response.json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });
     redirect(303, event.locals.setup ? '/setup' : '/login');
   }
-  if (event.locals.setup && !['/setup'].includes(event.url.pathname))
-    redirect(303, '/setup');
-  const onboardingImageRead=event.request.method==='GET' && !!event.locals.user && (
-    /^\/api\/v1\/profile\/avatars(?:\/[0-9a-f-]{36})?$/.test(event.url.pathname) ||
-    event.url.pathname.startsWith(`/api/v1/profile/avatar/${event.locals.user.id}/`)
-  );
-  if (event.locals.user && !['/onboarding','/logout'].includes(event.url.pathname) && !onboardingImageRead && await onboardingPending(event.locals.user.id)) {
-    if (event.url.pathname.startsWith('/api/')) return json({error:'Finish account setup and your initial imports before continuing.',code:'onboarding_required'},{status:403});
-    redirect(303,'/onboarding');
+
+  if (event.locals.setup && !['/setup'].includes(event.url.pathname)) redirect(303, '/setup');
+
+  const onboardingImageRead = event.request.method === 'GET' && !!event.locals.user && ((/^\/api\/v1\/profile\/avatars(?:\/[0-9a-f-]{36})?$/).test(event.url.pathname) || event.url.pathname.startsWith(`/api/v1/profile/avatar/${event.locals.user.id}/`));
+
+  if (event.locals.user && !['/onboarding', '/logout'].includes(event.url.pathname) && !onboardingImageRead && await onboardingPending(event.locals.user.id)) {
+    if (event.url.pathname.startsWith('/api/')) return Response.json(
+      {
+        error: 'Finish account setup and your initial imports before continuing.',
+        code: 'onboarding_required'
+      },
+      { status: 403 }
+    );
+
+    redirect(303, '/onboarding');
   }
   const experimentalFeature = experimentalPathFeature(event.url.pathname);
-  if (experimentalFeature && !(/\/synced\/[^/]+\/(leave|decline)$/.test(event.url.pathname)) && !featureEnabled(config, experimentalFeature)) {
-    if (event.url.pathname.startsWith('/api/'))
-      return json(
-        { error: 'Experimental features are disabled.', code: 'experimental_disabled' },
-        { status: 404, headers: { 'cache-control': 'private, no-store' } }
-      );
+
+  if (experimentalFeature && !(/\/synced\/[^/]+\/(leave|decline)$/).test(event.url.pathname) && !featureEnabled(config, experimentalFeature)) {
+    if (event.url.pathname.startsWith('/api/')) return Response.json(
+      {
+        error: 'Experimental features are disabled.',
+        code: 'experimental_disabled'
+      },
+      {
+        status: 404,
+        headers: { 'cache-control': 'private, no-store' }
+      }
+    );
     event.setHeaders({ 'cache-control': 'private, no-store' });
     error(404, 'Experimental features are disabled.');
   }
@@ -99,7 +118,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
-  if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
+  if (platformStopping()) return Response.json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   const id = correlationId(event.request.headers.get('x-coast-correlation-id'));
   return withRequestConfig(() => context.run(id, async () => {
     const started = performance.now();
@@ -149,22 +168,24 @@ export const handle: Handle = async ({ event, resolve }) => {
       if (isRedirect(error) || isHttpError(error)) {
         if (!diagnosticRequest)
           void logDiagnostic(error.status >= 400 ? 'warn' : 'info', 'request.complete', {
-            operation,
-            status: error.status,
-            method: event.request.method,
+          operation,
+          status: error.status,
+          method: event.request.method,
             durationMs: performance.now() - started,
-          });
+        });
       } else
         void logDiagnostic('error', 'request.failed', {
-          operation,
-          failure: classifyFailure(error),
+        operation,
+        failure: classifyFailure(error),
           durationMs: performance.now() - started,
-        });
+      });
       throw error;
     }
   }));
 };
-export const handleError: import('@sveltejs/kit').HandleServerError = ({ error }) => {
+export const handleError: import('@sveltejs/kit/hooks').HandleServerError = ({ kind, error }) => {
+  // Kit 3 also reports safe application/framework/validation errors here.
+  if (kind !== 'unknown') return;
   void logDiagnostic('error', 'application.failed', { failure: classifyFailure(error) });
   return { message: 'The application could not complete this request.' };
 };

@@ -1,9 +1,9 @@
 import {sql} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb} from '$lib/server/db';
-import {getFeatureConfig} from '$lib/server/features';
-import {workSummaries} from '$lib/collection/query.server';
-import {pagination,PAGE_SIZE} from '$lib/server/queries/pagination';
+import {getDb} from '#lib/server/db/index.js';
+import {getFeatureConfig} from '#lib/server/features.js';
+import {workSummaries} from '#lib/collection/query.server.js';
+import {pagination,PAGE_SIZE} from '#lib/server/queries/pagination.js';
 
 /** Read shared identities from observed user access; never call provider browsing APIs. */
 export async function publicLibrary(userId:string,url:URL) {

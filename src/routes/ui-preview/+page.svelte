@@ -2,14 +2,14 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { onDestroy } from 'svelte';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import { providePreviewClient } from '$lib/ui/client-context';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
+  import { providePreviewClient } from '#lib/ui/client-context.js';
   import { fixtureFetch } from './demo/fixtures';
   import { elements, composedComponents, referenceEntries, referenceSections, referenceSection } from './catalog';
   import { compositions } from './reference';
   import Foundations from './Foundations.svelte';
   import Workspace from './Workspace.svelte';
-  import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
+  import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
   import Browser from './Browser.svelte';
   import { provideCanvas, type WorkspaceParts } from './workspace';
   const client=providePreviewClient(fixtureFetch);
@@ -29,15 +29,15 @@
   const options = $derived(referenceEntries.filter(entry=>inventory.includes(entry.id)).map(entry=>({value:entry.id,label:entry.title})));
   const name = $derived(options.find(option=>option.value===page.url.searchParams.get('component'))?.value ?? (section==='elements'?'Button':options[0]?.value ?? 'Button'));
   let chartGallery: Promise<typeof import('./charts/ChartGallery.svelte')> | undefined;
-  let materialEditor: Promise<typeof import('$lib/ui/materials/MaterialTweaker.svelte')> | undefined;
+  let materialEditor: Promise<typeof import('#lib/ui/materials/MaterialTweaker.svelte')> | undefined;
   let componentEditor: Promise<typeof import('./ComponentPlayground.svelte')> | undefined;
   const loadCharts = () => chartGallery ??= import('./charts/ChartGallery.svelte').catch(cause=>{client.feedback.failure('The chart editor could not load. Reload to retry.');throw cause;});
-  const loadMaterials = () => materialEditor ??= import('$lib/ui/materials/MaterialTweaker.svelte').catch(cause=>{client.feedback.failure('The material editor could not load. Reload to retry.');throw cause;});
+  const loadMaterials = () => materialEditor ??= import('#lib/ui/materials/MaterialTweaker.svelte').catch(cause=>{client.feedback.failure('The material editor could not load. Reload to retry.');throw cause;});
   const loadComponents = () => componentEditor ??= import('./ComponentPlayground.svelte').catch(cause=>{client.feedback.failure('The component editor could not load. Reload to retry.');throw cause;});
   function update(values:Record<string,string|null>) {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     for (const [key,value] of Object.entries(values)) {if(value===null)url.searchParams.delete(key);else url.searchParams.set(key,value);}
-    void goto(url,{noScroll:true,keepFocus:true,replaceState:true});
+    void goto(url,{reset: false,replace: true});
   }
   function changeSection(value:string) {update({section:value,scenario:null});}
 </script>

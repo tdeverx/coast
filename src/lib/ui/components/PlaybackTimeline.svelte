@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { readingFraction, readingLocationLabel } from '$lib/reading/model';
+  import { readingFraction, readingLocationLabel } from '#lib/reading/model.js';
   import Icon from './Icon.svelte';
   import ProgressBar from './ProgressBar.svelte';
-  import { playbackTime as time } from '$lib/playback/time';
+  import { playbackTime as time } from '#lib/playback/time.js';
 
   let { mediaId, href, audio = false, disabled = false, title, detail, artwork, current, duration, onseek, reading = null, readingActive = false, scrubbing = $bindable(false) }: {
     readingActive?: boolean;
-    reading?: import('$lib/reading/model').ReadingLocation | null;
+    reading?: import('#lib/reading/model.js').ReadingLocation | null;
     mediaId?: string;
     href?: string;
     audio?: boolean;

@@ -1,8 +1,8 @@
-import {getSql} from '$lib/server/db';
+import {getSql} from '#lib/server/db/index.js';
 import {getJellyfin} from './connection.server';
-import {PermanentActionError,tagDiagnosticStage,type OutboxAction} from '$lib/server/queue';
-import {ProviderHttpError} from '$lib/server/security/provider-fetch';
-import {ProviderQueueBusyError} from '$lib/server/security/request-priority';
+import {PermanentActionError,tagDiagnosticStage,type OutboxAction} from '#lib/server/queue/index.js';
+import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
+import {ProviderQueueBusyError} from '#lib/server/security/request-priority.js';
 import type {streamPresentation} from './streams';
 export type ServerStream=NonNullable<ReturnType<typeof streamPresentation>>;
 type Capture={connectionId:string;generation:string;checkedAt:Date;action?:Pick<OutboxAction,'id'|'attempts'>};

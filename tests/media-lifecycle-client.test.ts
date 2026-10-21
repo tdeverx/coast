@@ -19,10 +19,10 @@ async function loadClient(kind:'reading'|'playback'){
  const source=await Bun.file(new URL(filename,import.meta.url)).text();
  const code=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:`${kind}.svelte.js`,generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
-  .replaceAll('$lib/ui/client',transportUrl).replaceAll('$lib/ui/diagnostics',moduleUrl('export const browserDiagnostic=()=>{};'))
-  .replaceAll('$lib/ui/action-feedback.svelte',moduleUrl('export const notifyAction=()=>{};'))
-  .replaceAll('$lib/playback/synced/client.svelte',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
-  .replaceAll('$lib/playback/client.svelte',playbackUrl).replaceAll('$lib/reading/client.svelte',readingUrl)
+  .replaceAll('#lib/ui/client.js',transportUrl).replaceAll('#lib/ui/diagnostics.js',moduleUrl('export const browserDiagnostic=()=>{};'))
+  .replaceAll('#lib/ui/action-feedback.svelte.js',moduleUrl('export const notifyAction=()=>{};'))
+  .replaceAll('#lib/playback/synced/client.svelte.js',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
+  .replaceAll('#lib/playback/client.svelte.js',playbackUrl).replaceAll('#lib/reading/client.svelte.js',readingUrl)
   .replaceAll('./model',model);
  return {client:await import(moduleUrl(code)),transport:await import(transportUrl),sync:await import(syncUrl),playback:await import(playbackUrl),reading:await import(readingUrl)};
 }

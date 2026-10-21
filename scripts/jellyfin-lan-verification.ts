@@ -1,16 +1,16 @@
 // Actual connected catalogue only. Playback mutations require an owned DB restore.
 import assert from 'node:assert/strict';
-import { getSql, closeDb } from '$lib/server/db';
-import { configureInstance, getInstance, instanceFetchConfig, instanceServerUrl, listProviders } from '$lib/providers/instances.server';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
-import { prepareReading, closeReading, readingDeliverySource } from '$lib/reading/sessions.server';
-import { startPlayback, streamPlayback } from '$lib/playback/service.server';
-import { planPlayback } from '$lib/playback/planning';
-import { playbackLimits, sharedAllocation } from '$lib/sharing/policy';
-import { getConfig } from '$lib/server/config';
+import { getSql, closeDb } from '#lib/server/db/index.js';
+import { configureInstance, getInstance, instanceFetchConfig, instanceServerUrl, listProviders } from '#lib/providers/instances.server.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { prepareReading, closeReading, readingDeliverySource } from '#lib/reading/sessions.server.js';
+import { startPlayback, streamPlayback } from '#lib/playback/service.server.js';
+import { planPlayback } from '#lib/playback/planning.js';
+import { playbackLimits, sharedAllocation } from '#lib/sharing/policy.js';
+import { getConfig } from '#lib/server/config.js';
 const output = process.env.COAST_READING_AUDIT_OUTPUT, mode = process.env.COAST_JELLYFIN_LAN_MODE ?? 'verify';
 const lanUrl = process.env.COAST_JELLYFIN_LAN_URL;
 assert(output && lanUrl && ['verify', 'configure-dev', 'read-only'].includes(mode));

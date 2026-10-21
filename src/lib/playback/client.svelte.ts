@@ -1,7 +1,7 @@
-import { browserDiagnostic } from '$lib/ui/diagnostics';
-import { api, capturePlaybackApi } from '$lib/ui/client';
-import { notifyAction } from '$lib/ui/action-feedback.svelte';
-import type { PlaybackView } from '$lib/ui/types';
+import { browserDiagnostic } from '#lib/ui/diagnostics.js';
+import { api, capturePlaybackApi } from '#lib/ui/client.js';
+import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+import type { PlaybackView } from '#lib/ui/types.js';
 
 export const player = $state({
   session: null as PlaybackView | null,
@@ -77,7 +77,7 @@ export async function playMedia(
     subtitleIndex?: number;
     maxBitrate?: number;
     continuationId?: string;
-    sequence?: import('$lib/media/sequence').SequenceContext;
+    sequence?: import('#lib/media/sequence.js').SequenceContext;
   } = {}
 ) {
   if (player.loading) return;
@@ -115,7 +115,7 @@ export async function playMedia(
   player.preparationStartedAt = performance.now();
   browserDiagnostic('playback.start');
   try {
-    const {reader,closeReading}=await import('$lib/reading/client.svelte');if(reader.session)await closeReading();
+    const {reader,closeReading}=await import('#lib/reading/client.svelte.js');if(reader.session)await closeReading();
     if(!current())return;
     if (player.session) await controller?.stop(false);
     if(!current())return;

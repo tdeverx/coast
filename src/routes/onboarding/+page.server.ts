@@ -1,10 +1,10 @@
-import { provisioningOffer,provisionOnboarding } from '$lib/providers/jellyfin/provisioning.server';
-import {profileAvatarChoices} from '$lib/core/profile/avatars.server';
-import {updateProfile} from '$lib/core/profile/service.server';
+import { provisioningOffer,provisionOnboarding } from '#lib/providers/jellyfin/provisioning.server.js';
+import {profileAvatarChoices} from '#lib/core/profile/avatars.server.js';
+import {updateProfile} from '#lib/core/profile/service.server.js';
 import {fail,redirect,isRedirect} from '@sveltejs/kit';
-import {requireUser} from '$lib/server/auth';
-import {onboardingPending,onboardingServices,onboardingTraktServices,onboardingStatus,linkOnboarding,retryInitialImports,startOnboardingTrakt,pollOnboardingTrakt,beginOnboardingImports} from '$lib/server/auth/onboarding';
-import {AppError} from '$lib/server/security/errors';
+import {requireUser} from '#lib/server/auth/index.js';
+import {onboardingPending,onboardingServices,onboardingTraktServices,onboardingStatus,linkOnboarding,retryInitialImports,startOnboardingTrakt,pollOnboardingTrakt,beginOnboardingImports} from '#lib/server/auth/onboarding.js';
+import {AppError} from '#lib/server/security/errors.js';
 import type {Actions,PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,depends,url})=>{
  depends('coast:onboarding');const status=await onboardingStatus(requireUser(locals.user).id);

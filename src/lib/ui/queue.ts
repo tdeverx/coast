@@ -1,8 +1,8 @@
-import {taskRetryAttentionAttempts} from '$lib/providers/job-policy';
-import {serviceTasks} from '$lib/providers/tasks';
+import {taskRetryAttentionAttempts} from '#lib/providers/job-policy.js';
+import {serviceTasks} from '#lib/providers/tasks.js';
 import {displayLabel} from './labels';
-import type { JobPurpose } from '$lib/providers/job-policy';
-import { jellyfinImportStage, type JellyfinScanProgress } from '$lib/sync/jellyfin-progress';
+import type { JobPurpose } from '#lib/providers/job-policy.js';
+import { jellyfinImportStage, type JellyfinScanProgress } from '#lib/sync/jellyfin-progress.js';
 
 export type QueueAction = {
     id: string;
@@ -135,7 +135,7 @@ export function jobTaskSections<T extends {jobs:QueueAction[];timing?:{nextAt:st
   };
 }
 
-export function lastJobOutcome(kind:string,run:import('$lib/providers/job-timing.server').LastJobRun) {
+export function lastJobOutcome(kind:string,run:import('#lib/providers/job-timing.server.js').LastJobRun) {
   return run.lastError??jobOutcome({id:run.id,kind,state:run.state,attempts:0,lastError:null,outcome:run.outcome})??(run.state==='cancelled'?'Cancelled':null);
 }
 
@@ -143,7 +143,7 @@ export function lastJobOutcome(kind:string,run:import('$lib/providers/job-timing
 export function taskJobCount(jobs:QueueAction[],state:string) {
   return jobs.filter(job=>job.state===state).reduce((total,job)=>total+(job.taskCount??1),0);
 }
-export function taskLastRun(jobs:QueueAction[]):import('$lib/providers/job-timing.server').LastJobRun|null {
+export function taskLastRun(jobs:QueueAction[]):import('#lib/providers/job-timing.server.js').LastJobRun|null {
   const run=jobs.filter(job=>['succeeded','failed','cancelled'].includes(job.state)&&job.updatedAt)
     .sort((a,b)=>new Date(b.updatedAt!).getTime()-new Date(a.updatedAt!).getTime())[0];
   return run?{id:run.id,state:run.state as 'succeeded'|'failed'|'cancelled',at:new Date(run.updatedAt!).toISOString(),outcome:run.outcome??null,lastError:run.lastError}:null;

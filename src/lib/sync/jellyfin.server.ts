@@ -1,23 +1,23 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { featureValues, type FeatureConfiguration } from '$lib/features';
-import { defaultConfig } from '$lib/server/config';
-import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { featureValues, type FeatureConfiguration } from '#lib/features.js';
+import { defaultConfig } from '#lib/server/config.js';
+import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {importJellyfinReading} from './jellyfin-reading.server';
-import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '$lib/music/persistence.server';
-import { enqueueInTransaction } from '$lib/sync/changes.server';
+import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '#lib/music/persistence.server.js';
+import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import {
   reconcileProviderValue,
   acknowledgeProviderValue,
   localSyncValue,
   sameValue,
-} from '$lib/sync/values.server';
-import { importJellyfinPlayback, seedEmptyJellyfinPlayback, unchangedJellyfinPlayback, type JellyfinPlaybackObservation } from '$lib/sync/jellyfin-playback.server';
+} from '#lib/sync/values.server.js';
+import { importJellyfinPlayback, seedEmptyJellyfinPlayback, unchangedJellyfinPlayback, type JellyfinPlaybackObservation } from '#lib/sync/jellyfin-playback.server.js';
 import { jellyfinScanProgressSchema, type JellyfinScanProgress } from './jellyfin-progress';
-import { jobCheckpoint, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
-import { artworkKeys } from '$lib/artwork';
+import { jobCheckpoint, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
+import { artworkKeys } from '#lib/artwork.js';
 import * as v from 'valibot';
 import { and, eq, isNull, ne, or, sql, desc, inArray, lte } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   availability,
   providerItems,
@@ -30,14 +30,14 @@ import {
   media,
   users,
   works, musicProgress, reconciliationIntents, syncValues,
-} from '$lib/server/db/schema';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
-import { PermanentActionError } from '$lib/server/queue';
-import { notify } from '$lib/server/notifications';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { ingestMetadata } from '$lib/catalogue/service.server';
-import type { AvailableItem } from '$lib/providers/contracts';
-import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '$lib/providers/jellyfin/access-proof.server';
+} from '#lib/server/db/schema.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import { notify } from '#lib/server/notifications/index.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { ingestMetadata } from '#lib/catalogue/service.server.js';
+import type { AvailableItem } from '#lib/providers/contracts.js';
+import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '#lib/providers/jellyfin/access-proof.server.js';
 
 export type JellyfinSyncContext=Awaited<ReturnType<typeof getJellyfin>>;
 async function jellyfinContext(userId:string,connectionId:string,provided?:JellyfinSyncContext){
@@ -591,7 +591,7 @@ async function runJellyfinScan(
         const intents=await tx.select().from(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),inArray(reconciliationIntents.workId,[...changedWorks])));
         for(const intent of intents)await enqueueInTransaction(tx,{userId,connectionId,kind:'jellyfin.reconcile',payload:{mediaId:intent.workId,field:intent.category==='history'?'watched':intent.category,value:intent.category==='progress'?Number(intent.value.positionSeconds):Boolean(intent.value.value),playCount:intent.value.playCount,durationSeconds:intent.value.durationSeconds,intentVersion:intent.version,backfill:true},compactionKey:`jellyfin-reconcile:${intent.workId}:${intent.category}`});
       }
-      await (await import('$lib/sync/changes.server')).enqueueCollectionProjectionInTransaction(tx,userId);
+      await (await import('#lib/sync/changes.server.js')).enqueueCollectionProjectionInTransaction(tx,userId);
     });
     let deferred=0;
     if(featureConfig.experimentalBooks||featureConfig.experimentalComics)for(const id of changes.reading??[]){
@@ -905,7 +905,7 @@ async function runJellyfinScan(
       .update(syncCheckpoints)
       .set({ cursor: null, scanId: null, completedAt: new Date(startedAt), updatedAt: new Date() })
       .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
-    if(userScope){const {enqueueCollectionProjectionInTransaction}=await import('$lib/sync/changes.server');await enqueueCollectionProjectionInTransaction(tx,userId);}
+    if(userScope){const {enqueueCollectionProjectionInTransaction}=await import('#lib/sync/changes.server.js');await enqueueCollectionProjectionInTransaction(tx,userId);}
   });
   onStage?.('complete');
   await report(processed, total, 'complete');
@@ -1025,7 +1025,7 @@ export async function executeJellyfinScrobble(
     }),
     input
   );
-  const { playbackSessions } = await import('$lib/server/db/schema');
+  const { playbackSessions } = await import('#lib/server/db/schema.js');
   const [session] = await getDb()
     .select()
     .from(playbackSessions)

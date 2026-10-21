@@ -12,15 +12,15 @@ const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta
 const routeUrl=moduleUrl(compileModule('export const page=$state({data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},filters:{kind:"all"}},state:{},url:new URL("http://test/library")});',{filename:'route.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')));
 const clientUrl=moduleUrl(`export let delivery;export const setDelivery=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}`);
 const client=await import(clientUrl),{page}=await import(routeUrl),{invalidateContentRevision}=await import(revisionUrl);
-const navigationUrl=moduleUrl('export const replaceState=()=>{};');
+const navigationUrl=moduleUrl('export const goto=async()=>{};');
 async function adapter(path:string){return import(moduleUrl((await compile(path))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
- .replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
- .replaceAll('$lib/ui/client-context',clientUrl).replaceAll('$lib/ui/client',clientUrl)
- .replaceAll('$lib/ui/resource.svelte',resourceUrl).replaceAll('$lib/ui/content-revision.svelte',revisionUrl)
- .replaceAll('$lib/library',import.meta.resolve('../src/lib/library'))
- .replaceAll('$lib/ui/filter-options',import.meta.resolve('../src/lib/ui/filter-options'))));}
+ .replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/client.js',clientUrl)
+ .replaceAll('#lib/ui/resource.svelte.js',resourceUrl).replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl)
+ .replaceAll('#lib/library.js',import.meta.resolve('../src/lib/library'))
+ .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))));}
 const {createLibrarySource}:typeof import('../src/lib/ui/shelves/library.svelte')=await adapter('../src/lib/ui/shelves/library.svelte.ts');
 const {createCreditsSource}:typeof import('../src/lib/ui/shelves/credits.svelte')=await adapter('../src/lib/ui/shelves/credits.svelte.ts');
 const content=(id='work',available=true):LibraryContent=>({items:[{id,kind:'movie',title:id,available,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}],page:1,pages:1,total:1});

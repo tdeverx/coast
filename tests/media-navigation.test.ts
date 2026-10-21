@@ -35,7 +35,8 @@ const boundaryUrl=moduleUrl(`
  export function pushState(url,state){entries=entries.slice(0,position+1);entries.push({url,state});position++;page.state=state;calls.push(['push',url.href,state]);}
  export function replaceState(url,state){entries[position]={url,state};page.state=state;calls.push(['replace',url.href,state]);}
  export const document={querySelectorAll:()=>[]};
- export async function goto(href,options){calls.push(['goto',href,options]);}
+ export const actionFeedback={failure:error=>{throw Error(error);}};export const message=error=>String(error);
+ export async function goto(href,options){if(options?.shallow){const url=new URL(href,page.url);if(options.replace)replaceState(url,options.state);else pushState(url,options.state);}else calls.push(['goto',href,options]);}
  export const history={back(){this.go(-1);},go(delta){position+=delta;page.state=entries[position].state;page.url=entries[position].url;}};
  export class MouseEvent{constructor(path,options={}){this.path=path;this.button=0;this.defaultPrevented=false;Object.assign(this,options);}composedPath(){return this.path;}preventDefault(){this.defaultPrevented=true;}}
  export class HTMLAnchorElement{constructor(href){this.href=new URL(href,page.url).href;this.target='';this.attributes=new Map();this.relList={contains:()=>false};}closest(){return this.reload?this:null;}hasAttribute(key){return this.attributes.has(key);}getAttribute(key){return this.attributes.get(key)??null;}setAttribute(key,value){this.attributes.set(key,value);}removeAttribute(key){this.attributes.delete(key);}}
@@ -43,50 +44,51 @@ const boundaryUrl=moduleUrl(`
 `);
 const source=await Bun.file(new URL('../src/lib/ui/media-navigation.ts',import.meta.url)).text();
 const code=new Bun.Transpiler({loader:'ts'}).transformSync(source)
+ .replaceAll('./action-feedback.svelte',boundaryUrl).replaceAll('./client',boundaryUrl)
  .replaceAll('./shelf-position',new URL('../src/lib/ui/shelf-position.ts',import.meta.url).href)
- .replaceAll('$app/state',boundaryUrl).replaceAll('$app/navigation',boundaryUrl).replaceAll('$lib/playback/client.svelte',boundaryUrl)
- .replaceAll('$lib/ui/section-target',new URL('../src/lib/ui/section-target.ts',import.meta.url).href)
- .replaceAll('$lib/media/detail-target',new URL('../src/lib/media/detail-target.ts',import.meta.url).href);
+ .replaceAll('$app/state',boundaryUrl).replaceAll('$app/navigation',boundaryUrl).replaceAll('#lib/playback/client.svelte.js',boundaryUrl)
+ .replaceAll('#lib/ui/section-target.js',new URL('../src/lib/ui/section-target.ts',import.meta.url).href)
+ .replaceAll('#lib/media/detail-target.js',new URL('../src/lib/media/detail-target.ts',import.meta.url).href);
 const navigation=await import(moduleUrl(`import {history,MouseEvent,HTMLAnchorElement,document} from '${boundaryUrl}';\n${code}`));
 const boundary=await import(boundaryUrl);
-test('nested detail links retain the underlying URL, support Back/Forward history and close the whole trail',()=>{
+test('nested detail links retain the underlying URL, support Back/Forward history and close the whole trail',async()=>{
  boundary.reset();boundary.player.session={mediaType:'video'};
- expect(navigation.openMediaDetails(`/media/${id}`)).toBe(true);
- expect(navigation.openMediaDetails(`/media/${other}?section=credits`)).toBe(true);
+ expect(navigation.openMediaDetails(`/media/${id}`)).toBe(true);await navigation.navigateMedia(`/media/${id}`);
+ await navigation.navigateMedia(`/media/${other}?section=credits`);
  expect(boundary.page.url.href).toBe(base.href);expect(boundary.page.state).toMatchObject({mediaDetailDepth:2,friendsPopover:true});
  expect(boundary.player).toMatchObject({browsing:true,paused:false});
- navigation.backMediaDetails();expect(boundary.page.state.mediaDetailHref).toBe(`/media/${id}`);
+ await navigation.backMediaDetails();expect(boundary.page.state.mediaDetailHref).toBe(`/media/${id}`);
  boundary.history.go(1);expect(boundary.page.state.mediaDetailHref).toBe(`/media/${other}?section=credits`);
- navigation.closeMediaDetails();expect(boundary.page.state).toEqual({friendsPopover:true});
+ await navigation.closeMediaDetails();expect(boundary.page.state).toEqual({friendsPopover:true});
 });
 test('signed-out browsing and isolated references preserve normal navigation',async()=>{
  for(const mode of ['guest','preview']){
   boundary.reset();if(mode==='guest')boundary.page.data.user=null;else boundary.page.url=new URL('https://coast.invalid/ui-preview');
-  await navigation.navigateMedia(`/media/${id}`,{keepFocus:true});
-  expect(boundary.calls).toEqual([['goto',`/media/${id}`,{keepFocus:true}]]);
+  await navigation.navigateMedia(`/media/${id}`,{reset:false});
+  expect(boundary.calls).toEqual([['goto',`/media/${id}`,{reset:false}]]);
  }
 });
-test('delegated links honor modified clicks, custom selection, external targets, downloads and reload intent',()=>{
+test('delegated links honor modified clicks, custom selection, external targets, downloads and reload intent',async()=>{
  for(const mode of ['plain','modified','prevented','new-tab','download','reload']){
   boundary.reset();const root=new boundary.Node(),link=new boundary.HTMLAnchorElement(`/media/${id}`),event=new boundary.MouseEvent([link]);
   if(mode==='modified')event.ctrlKey=true;if(mode==='prevented')event.defaultPrevented=true;if(mode==='new-tab')link.target='_blank';if(mode==='download')link.setAttribute('download','');if(mode==='reload')link.reload=true;
   const controller=navigation.mediaDetailLinks(root);root.send('click',event);
-  expect(boundary.calls.length).toBe(mode==='plain'?1:0);controller.destroy();expect(root.listeners.size).toBe(0);
+  expect(event.defaultPrevented).toBe(mode==='plain'||mode==='prevented');if(mode==='plain')await navigation.navigateMedia(`/media/${id}`);expect(boundary.calls.length).toBe(mode==='plain'?1:0);controller.destroy();expect(root.listeners.size).toBe(0);
  }
 });
 test('eligible taps suppress duplicate full-route preload only for that event, without retaining link nodes',async()=>{
  boundary.reset();const root=new boundary.Node(),link=new boundary.HTMLAnchorElement(`/media/${id}`),event=new boundary.MouseEvent([link]);
  const controller=navigation.mediaDetailLinks(root);root.send('mousedown',event);
- expect(link.getAttribute('data-sveltekit-preload-data')).toBe('off');expect(event.defaultPrevented).toBe(false);
+ expect(link.getAttribute('data-sveltekit-preload-data')).toBe('false');expect(event.defaultPrevented).toBe(false);
  await Promise.resolve();expect(link.hasAttribute('data-sveltekit-preload-data')).toBe(false);expect(boundary.calls).toEqual([]);
  controller.destroy();
 });
 
-test('row title links use the panel without intercepting ordinary main navigation',()=>{
+test('row title links use the panel without intercepting ordinary main navigation',async()=>{
  boundary.reset();const href='/progress?view=watching&category=music';
  expect(navigation.openMediaDetails(href)).toBe(false);
  const root=new boundary.Node(),link=new boundary.HTMLAnchorElement(href);link.setAttribute('data-detail-section','');
  const controller=navigation.mediaDetailLinks(root),event=new boundary.MouseEvent([link]);root.send('click',event);
- expect(event.defaultPrevented).toBe(true);expect(boundary.page.state.mediaDetailHref).toBe(href);expect(boundary.page.url.href).toBe(base.href);
+ expect(event.defaultPrevented).toBe(true);await navigation.navigateMedia(href);expect(boundary.page.state.mediaDetailHref).toBe(href);expect(boundary.page.url.href).toBe(base.href);
  controller.destroy();
 });

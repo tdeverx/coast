@@ -103,7 +103,7 @@ jobs:
           docker run -d --name coast-lifecycle-test --entrypoint /usr/bin/tini coast-pr-smoke -- sleep 600
           bun scripts/test-container-lifecycle.ts --docker coast-lifecycle-test
           bun scripts/test-container-runtime.ts --docker coast-lifecycle-test
-          docker run -d --name coast-pr-smoke coast-pr-smoke
+          docker run -d --name coast-pr-smoke -e ORIGIN=http://localhost:3000 coast-pr-smoke
           for attempt in $(seq 1 60); do
             health=$(docker inspect --format '{{.State.Health.Status}}' coast-pr-smoke)
             if [ "$health" = healthy ]; then break; fi
@@ -111,6 +111,12 @@ jobs:
           done
           test "$health" = healthy
           docker exec coast-pr-smoke bun -e '
+            for (const [origin, expected] of [["http://localhost:3000", 401], ["https://other.invalid", 403]]) {
+              const response = await fetch("http://127.0.0.1:3000/api/v1/session/heartbeat", {
+                method: "POST", headers: { origin, "x-forwarded-proto": "https", "x-forwarded-host": "forged.invalid" }
+              });
+              if (response.status !== expected) throw Error("Runtime ORIGIN/CSRF contract changed");
+            }
             const read = name => Bun.file("/data/runtime/" + name + ".jsonl").text().then(text => text.trim().split("\n").map(JSON.parse));
             const migrations = await read("migrations"), database = await read("database-events");
             if (!migrations.some(row => row.kind === "migration.complete" && row.detail.appliedMigrationCount > 0 && row.detail.postgresVersion !== "unknown")) process.exit(1);

@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
-import { AppError } from '$lib/server/security/errors';
+import { AppError } from '#lib/server/security/errors.js';
 import * as v from 'valibot';
-import { listGames } from '$lib/core/games/service.server';
-import { searchIgdb } from '$lib/providers/igdb/service.server';
-import { listProviders } from '$lib/providers/instances.server';
-import { gameCard } from '$lib/games/presentation';
+import { listGames } from '#lib/core/games/service.server.js';
+import { searchIgdb } from '#lib/providers/igdb/service.server.js';
+import { listProviders } from '#lib/providers/instances.server.js';
+import { gameCard } from '#lib/games/presentation.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({locals, url, depends}) => {
   depends('coast:tracking');

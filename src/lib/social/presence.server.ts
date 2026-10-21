@@ -1,11 +1,11 @@
-import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
-import {getDb,getSql} from '$lib/server/db';
-import {socialCheckins,socialLiveDeliveries,users,providerConnections,providerInstances} from '$lib/server/db/schema';
-import {AppError} from '$lib/server/security/errors';
-import {trackInTransaction} from '$lib/core/tracking/service.server';
-import {enqueueInTransaction,enqueueTraktChangeInTransaction} from '$lib/sync/changes.server';
+import {getDb,getSql} from '#lib/server/db/index.js';
+import {socialCheckins,socialLiveDeliveries,users,providerConnections,providerInstances} from '#lib/server/db/schema.js';
+import {AppError} from '#lib/server/security/errors.js';
+import {trackInTransaction} from '#lib/core/tracking/service.server.js';
+import {enqueueInTransaction,enqueueTraktChangeInTransaction} from '#lib/sync/changes.server.js';
 export async function presence(userId:string) {
  return getSql()`with candidates as (
  select user_id,media_id as work_id,'playback' as source,updated_at as observed_at,expires_at,0 as priority,position_seconds,duration_seconds from playback_sessions where share_id is null and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'

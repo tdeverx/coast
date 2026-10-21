@@ -6,9 +6,9 @@ async function walk(folder:string):Promise<string[]> {return (await Promise.all(
 const files=(await walk('src')).filter(file=>/\.(ts|svelte)$/.test(file));
 const known=new Set(files.map(file=>resolve(file))), graph=new Map<string,string[]>();
 function modulePath(source:string,owner:string) {
- if(!source.startsWith('.')&&!source.startsWith('$lib/'))return;
- const base=source.startsWith('$lib/')?resolve('src/lib',source.slice(5)):resolve(dirname(owner),source);
- return [base,`${base}.ts`,`${base}.svelte`,`${base}/index.ts`,`${base}/index.server.ts`].find(path=>known.has(path));
+ if(!source.startsWith('.')&&!source.startsWith('#lib/'))return;
+ const base=source.startsWith('#lib/')?resolve('src/lib',source.slice(5)):resolve(dirname(owner),source);
+ return [base,base.replace(/\.js$/,'.ts'),`${base}.ts`,`${base}.svelte`,`${base}/index.ts`,`${base}/index.server.ts`].find(path=>known.has(path));
 }
 for(const file of files) {
  const raw=await Bun.file(file).text();

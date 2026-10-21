@@ -1,7 +1,7 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { enabledCategories, selectedCategory } from '../experimental';
-import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
-import { workCards } from '$lib/collection/query.server';
+import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
+import { workCards } from '#lib/collection/query.server.js';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';

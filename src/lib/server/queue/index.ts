@@ -1,7 +1,7 @@
-import type { ProviderActionError } from '$lib/providers/contracts';
+import type { ProviderActionError } from '#lib/providers/contracts.js';
 import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
-import { maintenanceKinds, serviceTraversalKinds } from '$lib/providers/tasks';
-import { taskRetryAttentionAttempts, taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
+import { maintenanceKinds, serviceTraversalKinds } from '#lib/providers/tasks.js';
+import { taskRetryAttentionAttempts, taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '#lib/providers/job-policy.js';
 import { jobExecution, JobYield } from './execution';
 import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';

@@ -1,14 +1,14 @@
 import { PAGE_SIZE, requestedPageInterval } from './pagination';
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
-import { requireExperimentalFeature } from '$lib/server/experimental';
+import { requireExperimentalFeature } from '#lib/server/experimental.js';
 import { libraryData } from './library';
 import { presentationContent } from './media-rows';
-import { listGames } from '$lib/core/games/service.server';
-import { gameCard } from '$lib/games/presentation';
+import { listGames } from '#lib/core/games/service.server.js';
+import { gameCard } from '#lib/games/presentation.js';
 import { musicBrowseData } from './music';
-import type { LibraryContent } from '$lib/library';
-import { readingCatalogue, readingCards } from '$lib/reading/query.server';
+import type { LibraryContent } from '#lib/library.js';
+import { readingCatalogue, readingCards } from '#lib/reading/query.server.js';
 
 export async function libraryContent(userId: string, url: URL,signal?:AbortSignal): Promise<LibraryContent> {
   signal?.throwIfAborted();

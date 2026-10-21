@@ -1,34 +1,34 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
- import {player} from '$lib/playback/client.svelte';
- import {reader} from '$lib/reading/client.svelte';
- import {playbackVisible} from '$lib/playback/visibility';
+  import { reportFailure } from '#lib/ui/client-context.js';
+ import {player} from '#lib/playback/client.svelte.js';
+ import {reader} from '#lib/reading/client.svelte.js';
+ import {playbackVisible} from '#lib/playback/visibility.js';
  import { page } from '$app/state';
- import {backMediaDetails,closeMediaDetails} from '$lib/ui/media-navigation';
- import {sectionTarget} from '$lib/ui/section-target';
- import {mediaDetailTarget} from '$lib/media/detail-target';
- import DetailOverlay from '$lib/ui/components/DetailOverlay.svelte';
- import {editionChoices,namedEdition} from '$lib/media/editions';
- import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
- import { api,message,ApiError,isFeatureDisabled } from '$lib/ui/client';
+ import {backMediaDetails,closeMediaDetails} from '#lib/ui/media-navigation.js';
+ import {sectionTarget} from '#lib/ui/section-target.js';
+ import {mediaDetailTarget} from '#lib/media/detail-target.js';
+ import DetailOverlay from '#lib/ui/components/DetailOverlay.svelte';
+ import {editionChoices,namedEdition} from '#lib/media/editions.js';
+ import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
+ import { api,message,ApiError,isFeatureDisabled } from '#lib/ui/client.js';
  let open=$state(false),error=$state('');
  let loadedViewer:string|undefined;
  let editionName=$state<string>();
- type Detail=Awaited<ReturnType<typeof import('$lib/application/work-details.server').mediaDetailData>>|{kind:'row';data:{href:string}};
- type EnhancedDetails=Awaited<Awaited<ReturnType<typeof import('$lib/application/media-details.server').loadMediaDetails>>['enhancement']>;
+ type Detail=Awaited<ReturnType<typeof import('#lib/application/work-details.server.js').mediaDetailData>>|{kind:'row';data:{href:string}};
+ type EnhancedDetails=Awaited<Awaited<ReturnType<typeof import('#lib/application/media-details.server.js').loadMediaDetails>>['enhancement']>;
  let resolved=$state.raw<{href:string;detail:Detail;enhancement?:Promise<EnhancedDetails>}|null>(null);
  const data=$derived(resolved?.detail);
  const shownHref=$derived(resolved?.href);
  const editions=$derived(data?.kind==='screen'?editionChoices(data.data.availability.map(source=>source.edition),data.data.item.title):[]);
  $effect(()=>{const choices=editions;if(!choices.some(option=>option.value===editionName))editionName=choices.length>1?choices[0].value:undefined;});
- let Details=$state<typeof import('$lib/media/Details.svelte').default>();
- let ReadingDetails=$state<typeof import('$lib/reading/Details.svelte').default>();
- let GameDetails=$state<typeof import('$lib/games/Details.svelte').default>();
- let MusicDetails=$state<typeof import('$lib/music/Details.svelte').default>();
- let GroupDetails=$state<typeof import('$lib/reading/GroupDetails.svelte').default>();
- let RemoteGameDetails=$state<typeof import('$lib/games/RemoteDetails.svelte').default>();
- let RowDetails=$state<typeof import('$lib/ui/pages/SectionDetails.svelte').default>();
- let PersonDetails=$state<typeof import('$lib/media/PersonDetails.svelte').default>();
+ let Details=$state<typeof import('#lib/media/Details.svelte').default>();
+ let ReadingDetails=$state<typeof import('#lib/reading/Details.svelte').default>();
+ let GameDetails=$state<typeof import('#lib/games/Details.svelte').default>();
+ let MusicDetails=$state<typeof import('#lib/music/Details.svelte').default>();
+ let GroupDetails=$state<typeof import('#lib/reading/GroupDetails.svelte').default>();
+ let RemoteGameDetails=$state<typeof import('#lib/games/RemoteDetails.svelte').default>();
+ let RowDetails=$state<typeof import('#lib/ui/pages/SectionDetails.svelte').default>();
+ let PersonDetails=$state<typeof import('#lib/media/PersonDetails.svelte').default>();
  const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['tracking']),page.data.capabilities]));
  function closed(){if(playbackVisible(player)||reader.visible)return;closeMediaDetails();}
  $effect(()=>{
@@ -44,18 +44,18 @@
     if(controller.signal.aborted)return;
     let enhancement:Promise<EnhancedDetails>|undefined;
     if(result.kind==='screen'){
-     Details=(await import('$lib/media/Details.svelte')).default;
+     Details=(await import('#lib/media/Details.svelte')).default;
      if(controller.signal.aborted)return;
      enhancement=api<{kind:string;data:EnhancedDetails}>(`media/details?href=${encodeURIComponent(target.href)}&enhance=true`,undefined,'GET',{signal:controller.signal})
       .then(enhanced=>{if(enhanced.kind!=='screen')throw new Error('This title changed. Open its details again.');return enhanced.data;})
       .catch(()=>({...result.data,requestable:false,refreshUnavailable:true}));
-    }else if(result.kind==='reading')ReadingDetails=(await import('$lib/reading/Details.svelte')).default;
-    else if(result.kind==='game')GameDetails=(await import('$lib/games/Details.svelte')).default;
-    else if(result.kind==='music')MusicDetails=(await import('$lib/music/Details.svelte')).default;
-    else if(result.kind==='reading-group')GroupDetails=(await import('$lib/reading/GroupDetails.svelte')).default;
-    else if(result.kind==='remote-game')RemoteGameDetails=(await import('$lib/games/RemoteDetails.svelte')).default;
-    else if(result.kind==='row')RowDetails=(await import('$lib/ui/pages/SectionDetails.svelte')).default;
-    else PersonDetails=(await import('$lib/media/PersonDetails.svelte')).default;
+    }else if(result.kind==='reading')ReadingDetails=(await import('#lib/reading/Details.svelte')).default;
+    else if(result.kind==='game')GameDetails=(await import('#lib/games/Details.svelte')).default;
+    else if(result.kind==='music')MusicDetails=(await import('#lib/music/Details.svelte')).default;
+    else if(result.kind==='reading-group')GroupDetails=(await import('#lib/reading/GroupDetails.svelte')).default;
+    else if(result.kind==='remote-game')RemoteGameDetails=(await import('#lib/games/RemoteDetails.svelte')).default;
+    else if(result.kind==='row')RowDetails=(await import('#lib/ui/pages/SectionDetails.svelte')).default;
+    else PersonDetails=(await import('#lib/media/PersonDetails.svelte')).default;
     if(!controller.signal.aborted){
      if(shownHref!==href)editionName=result.kind==='screen'&&'edition' in target&&target.edition!==null?namedEdition(target.edition,result.data.item.title).value:undefined;
      resolved={href,detail:result,enhancement};open=true;

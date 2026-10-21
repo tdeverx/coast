@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import type { MusicArtist } from './model';
 import { musicHref } from './presentation';
 

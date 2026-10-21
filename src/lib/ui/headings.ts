@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { surfaceEnabled, type MediumFeatures } from '$lib/experimental';
+import { surfaceEnabled, type MediumFeatures } from '#lib/experimental.js';
 import type { FilterOption } from './filter-options';
 export type HeadingSelection = {
   label: string;
