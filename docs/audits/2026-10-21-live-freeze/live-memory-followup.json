@@ -1,0 +1,108 @@
+{
+  "at": "2026-10-21T12:28:23.639Z",
+  "postgres": [
+    {
+      "pid": 108,
+      "anonKiB": 2300,
+      "pssKiB": 6078
+    },
+    {
+      "pid": 115,
+      "anonKiB": 2644,
+      "pssKiB": 5576
+    },
+    {
+      "pid": 116,
+      "anonKiB": 2388,
+      "pssKiB": 12646
+    },
+    {
+      "pid": 118,
+      "anonKiB": 2332,
+      "pssKiB": 994
+    },
+    {
+      "pid": 119,
+      "anonKiB": 2616,
+      "pssKiB": 1525
+    },
+    {
+      "pid": 120,
+      "anonKiB": 2560,
+      "pssKiB": 1044
+    },
+    {
+      "pid": 195,
+      "anonKiB": 46724,
+      "pssKiB": 58212
+    },
+    {
+      "pid": 196,
+      "anonKiB": 43280,
+      "pssKiB": 54770
+    },
+    {
+      "pid": 197,
+      "anonKiB": 42820,
+      "pssKiB": 54305
+    },
+    {
+      "pid": 198,
+      "anonKiB": 47072,
+      "pssKiB": 58568
+    },
+    {
+      "pid": 199,
+      "anonKiB": 44420,
+      "pssKiB": 55906
+    },
+    {
+      "pid": 200,
+      "anonKiB": 44136,
+      "pssKiB": 55647
+    },
+    {
+      "pid": 201,
+      "anonKiB": 39600,
+      "pssKiB": 51076
+    },
+    {
+      "pid": 202,
+      "anonKiB": 41824,
+      "pssKiB": 53327
+    },
+    {
+      "pid": 203,
+      "anonKiB": 41400,
+      "pssKiB": 52896
+    },
+    {
+      "pid": 204,
+      "anonKiB": 39312,
+      "pssKiB": 50790
+    }
+  ],
+  "bun": [
+    {
+      "pid": 95,
+      "rssKiB": 14700,
+      "anonKiB": 4972
+    },
+    {
+      "pid": 175,
+      "rssKiB": 10132,
+      "anonKiB": 3036
+    },
+    {
+      "pid": 185,
+      "rssKiB": 117248,
+      "anonKiB": 98892
+    },
+    {
+      "pid": 2647,
+      "rssKiB": 17384,
+      "anonKiB": 2640
+    }
+  ],
+  "cgroupBytes": 1881411584
+}

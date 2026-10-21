@@ -2,9 +2,11 @@
 
 Use this guide when changing shared queries, caches, scheduling, rendering or lifecycle ownership. Preserve required behavior and the approved UI; choose the smallest evidenced change in the owner already responsible for the work. Audit reports are evidence at recorded source/data epochs, not production guarantees.
 
+The [21 October stable dependency pass](audits/2026-10-21-stable-dependencies.md) updates the independent stable packages while retaining Bun canary and the reviewed navigation owner. Actual catalogue hashes and original comic-page bytes are verified; the user approved the larger Kit 3/TypeScript migration as a separate follow-up after this verified group merges.
+
 ## Contents
 
-- [Current evidence — 19 October 2026](#current-evidence--19-october-2026)
+- [Current evidence — 21 October 2026](#current-evidence--21-october-2026)
 - [Acceptance and measurement](#acceptance-and-measurement)
 - [Shared-owner map](#shared-owner-map)
 - [Query scope, projection and exact reuse](#query-scope-projection-and-exact-reuse)
@@ -14,7 +16,9 @@ Use this guide when changing shared queries, caches, scheduling, rendering or li
 - [Verification and runtime diagnosis](#verification-and-runtime-diagnosis)
 - [Audit maintenance and deferred work](#audit-maintenance-and-deferred-work)
 
-## Current evidence — 19 October 2026
+## Current evidence — 21 October 2026
+
+The [21 October live-freeze investigation](audits/2026-10-21-live-freeze.md) separates guest memory exhaustion, host-level recovery and the still-old deployed build. Its [further actual-data research](audits/2026-10-21-live-freeze/research-followup.md) selects upstream Bun SQL fixes over the earlier unprepared/codec workaround. The tested official 1.4.4 canary retains native JSON and prepared queries, reduces repeated-batch backend allocation about 92%, and verifies a 1,024-statement cap on all ten pool sessions. Timing tradeoffs, ARM64-only coverage, prerelease status and full current-main acceptance are explicit. The user subsequently selected Bun 1.4.4: [source adoption](audits/2026-10-21-live-freeze/runtime-adoption.md) pins the official `6bb5dc195` canary image across Docker and CI, separately from the newer `963452075` research artifact. Pool/codec settings stay unchanged; the running installation has not been redeployed. The [dependency inventory](audits/2026-10-21-live-freeze/dependency-updates.md) records stable/preview options without adopting them.
 
 The [20 October task follow-up](audits/2026-10-20-task-system/implementation.md) adds shared dependency selection, bounded admin controls and recovery/presentation fixes. Its exact-backlog timing, actual Jellyfin/Seerr acceptance and remaining unverified methods are recorded separately; it is not a live rollout.
 
@@ -52,6 +56,8 @@ For each finding retain its ID, affected shared owner/consumers, severity, confi
 Use stable workloads with an untimed warm-up and alternating/repeated before/after samples. Label cold/warm cache, foreground/background load, concurrency and measurement boundaries. Report median plus samples/spread; small-sample p95 is descriptive, not production tail latency. Build size is not page transfer size: check actual entry imports and demand-loaded modules. Avoid averaging away failed operations, hiding provider errors or loosening assertions to make a timing threshold pass.
 
 Measure one resource-intensive workload at a time. Prefer structural budgets and meaningful operation-count assertions over machine-dependent millisecond limits. Use disposable databases/files/providers; restore test services to their initial state and remove task-owned resources. Real-server tests, migrations, deployment and new production dependencies need the applicable user authorization. Never publish credentials, raw private payloads or diagnostic URLs as evidence.
+
+Database caches belong in the lifetime budget. A small JS heap does not bound PostgreSQL private memory or its retained plans. Compare prepared-statement count with distinct SQL-text count, backend memory-context totals, private/PSS memory and whole-guest anonymous/file memory. Do not sum backend RSS as private memory: PostgreSQL processes also map shared buffers. Varied-length `IN` parameter lists need comparison with a stable typed `ANY` array using the same complete actual membership/order. A prepared/unprepared comparison must preserve native JSON objects/scalars/nulls, arrays, dates, transactions and reserved advisory leases; the pool-wide `prepare: false` switch alone failed actual JSON acceptance on deployed Bun 1.4.3. Do not reinstate idle/maximum connection expiry without proving that active reservations retain their locks. Application shutdown deadlines require a schedulable guest; they do not establish host VM recovery under kernel memory starvation.
 
 ### Shared budgets
 

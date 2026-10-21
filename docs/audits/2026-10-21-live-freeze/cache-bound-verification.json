@@ -1,0 +1,43 @@
+{
+  "bun": "1.4.4",
+  "controlledShapes": true,
+  "samples": [
+    {
+      "shapes": 300,
+      "statements": 302,
+      "bytes": "5433040"
+    },
+    {
+      "shapes": 900,
+      "statements": 902,
+      "bytes": "13665952"
+    },
+    {
+      "shapes": 1100,
+      "statements": 1024,
+      "bytes": "15851472"
+    },
+    {
+      "shapes": 1500,
+      "statements": 1024,
+      "bytes": "16582432"
+    },
+    {
+      "shapes": 2200,
+      "statements": 1024,
+      "bytes": "17380944"
+    }
+  ],
+  "status": "passed",
+  "concurrentProjections": 80,
+  "cancelRejected": true,
+  "lockSurvivesCancellation": true,
+  "abortedTransactionRejected": true,
+  "after": {
+    "statements": 1024,
+    "bytes": "17302784"
+  },
+  "rowHash": "02bd93ae8971ddb4bb09ecae182981f5181a2a3e7b5e483d4c7e25f65023111a",
+  "harnessSha256": "c7713d627c65fd12fa1b46b86fd621df883fefee15a01adf64fe6a9067c88c98",
+  "runtimeRevision": "1.4.4-canary.1+963452075"
+}

@@ -1,0 +1,86 @@
+{
+  "bun": "1.4.4",
+  "sessions": 10,
+  "samples": [
+    {
+      "shapesPerSession": 300,
+      "statements": [
+        302,
+        301,
+        301,
+        301,
+        301,
+        301,
+        301,
+        301,
+        301,
+        301
+      ],
+      "backendContextBytes": 54117672,
+      "backendPssKiB": 69113,
+      "containerBytes": 443764736,
+      "clientRssBytes": 48074752
+    },
+    {
+      "shapesPerSession": 900,
+      "statements": [
+        902,
+        901,
+        901,
+        901,
+        901,
+        901,
+        901,
+        901,
+        901,
+        901
+      ],
+      "backendContextBytes": 136446792,
+      "backendPssKiB": 155593,
+      "containerBytes": 541790208,
+      "clientRssBytes": 59084800
+    },
+    {
+      "shapesPerSession": 1200,
+      "statements": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "backendContextBytes": 160477096,
+      "backendPssKiB": 183297,
+      "containerBytes": 569499648,
+      "clientRssBytes": 58535936
+    },
+    {
+      "shapesPerSession": 1600,
+      "statements": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "backendContextBytes": 167474536,
+      "backendPssKiB": 190333,
+      "containerBytes": 580255744,
+      "clientRssBytes": 62074880
+    }
+  ],
+  "status": "passed",
+  "rowHash": "6036122c909ff4cb1bb85a6367c5069bf2013e818c8bdb1b3073d22fc9556c0d",
+  "harnessSha256": "df40d31ffe0e199d86a954aee12dfe47ec361925fc5f25fb9a6f255d7fbcaf52",
+  "runtimeRevision": "1.4.4-canary.1+963452075"
+}
