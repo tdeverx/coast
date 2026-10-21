@@ -116,6 +116,7 @@ export interface MediaView {
   requestable?: boolean;
 }
 export interface PlaybackView {
+  initialCrop?: import('#lib/playback/crop.js').FrameCrop | null;
   shareId?: string;
   mediaType?: 'audio' | 'video';
   sequence?: import('#lib/media/sequence.js').SequenceContext;

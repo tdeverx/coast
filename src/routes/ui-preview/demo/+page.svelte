@@ -18,6 +18,6 @@
   {#key name}<PreviewExample {name} initialOpen initialScenario={page.url.searchParams.get('scenario')} onchange={changeScenario} />{/key}
 {:else}<p role="alert">This example is not registered.</p>{/if}
 <style>
-  :global([data-coast-glass] > header), :global([data-coast-glass] > .hero-player), :global([data-coast-glass] > .toasts) { display:none; }
+  :global([data-coast-glass] > header), :global([data-coast-glass] > .toasts) { display:none; }
   :global(.page-shell) { padding:0 !important; min-height:0; }
 </style>

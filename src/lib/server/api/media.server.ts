@@ -54,7 +54,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
       else if (path[2] === 'history' && method === 'GET')
         result = await mediaHistory(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
       else if (path[2] === 'trailer' && method === 'GET')
-        result = { url: await getTrailer(uid, uuid(path[1]),context.request.signal) };
+        result = await getTrailer(uid, uuid(path[1]),context.request.signal);
       else if (path[2] === 'refresh' && method === 'POST') {
         await requireFeature(uid,'screen');
         result = await refreshMedia(uuid(path[1]), (user.settings.region as string) || 'GB');

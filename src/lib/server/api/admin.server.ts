@@ -10,7 +10,9 @@ export async function handleAdmin(context: ApiContext): Promise<Response | undef
  let result: unknown;
  if (path[0] === 'admin') {
       requireAdmin(user);
-      if (path[1] === 'users' && path.length === 2 && method === 'POST')
+      if(path[1]==='featured-hero'&&path.length===2&&method==='POST')
+        result=await (await import('#lib/application/featured-hero.server.js')).updateFeaturedHero(user,body);
+      else if (path[1] === 'users' && path.length === 2 && method === 'POST')
         result = await createUser(user, body);
       else if (path[1] === 'users' && path.length === 3 && method === 'DELETE')
         result = await deleteUser(user, uuid(path[2]));

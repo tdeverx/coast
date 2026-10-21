@@ -103,7 +103,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
     },
 
     get items() {
-      return layout === 'row' ? content.items.slice(0, 20) : content.items;
+      return content.items;
     },
 
     get busy() {

@@ -53,3 +53,22 @@ test('the same Activity control uses medium-specific relationship labels',()=>{
   try{expect(source.filters[0].options?.slice(1,4).map(option=>option.label)).toEqual(labels);}finally{lifecycle.destroy();dispose();}
  }
 });
+
+test('horizontal Activity exposes its cursor and appends beyond the old preview without duplicate events',async()=>{
+ const paths:URL[]=[];
+ client.set(async(path:string)=>{paths.push(new URL(path,'http://fixture'));return {...feed('last',paths.length===1),items:Array.from({length:60},(_,index)=>({id:`work-${index}`,entryId:`event-${index+(paths.length===1?0:59)}`,title:'Activity',kind:'book'}))};});
+ let source!:ReturnType<typeof createSocialSource>;const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'reading',layout:'row'})));runtime.flush();
+ try{
+  await source.load();expect(source.items).toHaveLength(60);expect(source.pagination).toEqual({kind:'cursor',hasMore:true});
+  await source.load(2,true);expect(paths[1].searchParams.has('beforeId')).toBe(true);expect(source.items).toHaveLength(119);expect(source.pagination).toEqual({kind:'cursor',hasMore:false});
+ }finally{lifecycle.destroy();dispose();}
+});
+
+test('an exhausted horizontal Activity cursor does not trigger an unrelated all-media probe',async()=>{
+ const paths:string[]=[];client.set(async(path:string)=>{paths.push(path);return paths.length===1?feed('first',true):{...feed('last'),items:[]};});
+ let source!:ReturnType<typeof createSocialSource>;const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'reading',mediums:true,layout:'row'})));runtime.flush();
+ try{
+  await source.load();await source.load(2,true);
+  expect(paths).toHaveLength(2);expect(source.items.map(item=>item.id)).toEqual(['first']);expect(source.pagination).toEqual({kind:'cursor',hasMore:false});
+ }finally{lifecycle.destroy();dispose();}
+});

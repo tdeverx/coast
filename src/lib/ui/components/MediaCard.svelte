@@ -323,7 +323,6 @@
   </div>{/if}
   {#if body}<div class="card-body">{@render body()}</div>{/if}
   {#if footer}<footer class="card-footer">{@render footer()}</footer>{/if}
-  {#if 'attribution' in item && item.attribution}<div class="small quiet media-attribution"><a href={item.attribution.href} target="_blank" rel="noreferrer">{item.attribution.label}</a></div>{/if}
   {#if showActivityContext && item.captionActivity && !item.captionActor}
     <div class="activity-reactions small quiet">
       {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}
@@ -341,7 +340,6 @@
   .card-footer { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:var(--text-sm); color:var(--muted); }
   .card-body:empty, .card-footer:empty, .caption-action:empty { display:none; }
   .caption-row:not(:has(> .caption, > .caption-action:not(:empty))) { display:none; }
-  .media-attribution { font-size:var(--text-sm); }
   .activity-context { min-height:24px; }
   .activity-media { font-size:var(--text-md); }
   .caption .activity-detail { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -352,6 +350,7 @@
   .card-progress{flex:1;min-width:0;height:6px;pointer-events:none;}
 
   .media-card {
+    --text-link-gap:2px;
     display:flex;
     flex-direction:column;
     gap:8px;

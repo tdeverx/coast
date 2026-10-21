@@ -1,5 +1,6 @@
 /** A native-page neighborhood. Page widths belong to each catalogue, not the UI. */
 export const RETAINED_PAGE_LIMIT = 3;
+export const ROW_BATCH_SIZE = 20;
 export type PageWindow = { firstPage: number; lastPage: number; counts: number[] };
 export type PageInterval = Pick<PageWindow, 'firstPage' | 'lastPage'>;
 

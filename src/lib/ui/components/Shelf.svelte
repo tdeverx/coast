@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
+  import { mixedCardStyle, cardAspectRatio } from '#lib/ui/mixed-card.js';
   import type { ReadonlyURL } from '$app/state';
   import { shelfControls } from '#lib/ui/shelves/controls.js';
   import {availabilityControl} from '#lib/ui/controls/actions.js';
@@ -11,6 +12,7 @@
   import type { ShelfControl } from '#lib/ui/shelves/types.js';
   import { createShelfSelection } from '#lib/ui/shelves/local.svelte.js';
   import { createShelfLayout } from '#lib/ui/shelves/layout.svelte.js';
+  import { createShelfContinuation } from '#lib/ui/shelves/continuation.svelte.js';
   import { lazyContent } from '#lib/ui/lazy-content.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   import Pagination from './Pagination.svelte';
@@ -40,7 +42,7 @@
   const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
 
   let {
-    title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
+    title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', mixed = false, overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
     mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
@@ -53,6 +55,7 @@
     before?:Snippet;
     enrichSocial?:boolean;
     size?: MediaCardShape | 'panel';
+    mixed?: boolean;
     overlay?: MediaCardOverlay;
     artworkOptions?: boolean;
     title?: string;
@@ -127,7 +130,20 @@
     items: inputItems, mode: filterMode, layout: displayLayout, busy: displayBusy,
     availability, availableOnly, title: displayTitle, href: adapter?.href ?? href, url,
   }), value => { availableOnly = value; });
-  const displayItems = $derived(selection.items);
+  const pagination = $derived(adapter?.pagination);
+  const sectionCandidate=$derived(!!sectionHost?.active&&displayLayout==='grid');
+  const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
+  const sourceHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? (displayLayout==='row'||pagination.append||sectionCandidate) && pagination.page < pagination.pages : hasMore);
+  const continuation=createShelfContinuation(()=>({
+    items:selection.items,row:displayLayout==='row',
+    progressive:!children&&!panels&&!journal&&!adapter?.loadPrevious&&!adapter?.appendOnly,
+    scope:JSON.stringify([page.data.user?.id,displayResetKey,selection.resetKey,adapter?.filters.map(control=>control.value),adapter?.controls.map(control=>control.value)]),
+    busy:displayBusy,error:displayError,hasMore:sourceHasMore,
+    page:pagination?.kind==='pages'?pagination.page:1,
+    load:async(number,append)=>{if(adapter)return adapter.load(number,append);onend?.();},
+    retry:adapter?.retry,
+  }));
+  const displayItems = $derived(continuation.items);
   const count = $derived(panels?.length ?? itemCount ?? (children ? null : journal ? journal.runs.length : displayItems.length));
   const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
   const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
@@ -159,8 +175,11 @@
     selectControl,
   ));
   const groups = $derived([...headerControls.groups, ...filterGroups.map(group => ({...group, change:(value:string)=>{selected=true;group.change(value);}}))]);
+  const displayMixed = $derived(adapter?.mixed ?? mixed);
+  function itemStyle(item: MediaView | MediaCardPresentation, style: MediaRowStyle): MediaRowStyle {
+    return displayMixed ? mixedCardStyle(item.kind, style, {shape:rail.overrideShape,artworkStyle:rail.overrideArtwork}) : style;
+  }
   const displaySize = $derived(shape ?? adapter?.shape ?? size);
-  const sectionCandidate=$derived(!!sectionHost?.active&&displayLayout==='grid');
   const inDetailSection=$derived(sectionCandidate&&!!sectionHost?.owns(sectionId));
   $effect(()=>{if(sectionCandidate&&!hidden)return untrack(()=>sectionHost!.attach(sectionId,()=>({title:displayTitle,segments:headerControls.segments.length||customSegments?sectionSegments:undefined,controls:sectionControls})));});
   const displayArtworkStyle = $derived(artworkStyle ?? adapter?.artworkStyle ?? 'auto');
@@ -168,11 +187,9 @@
   const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
   const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels && (displayBusy || !!displayItems.length || !!adapter && !adapter.ready)));
   const displayRows = $derived(adapter?.rows ?? rows);
-  const pagination = $derived(adapter?.pagination);
-  const displayHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? (pagination.append||sectionCandidate) && pagination.page < pagination.pages : hasMore);
+  const displayHasMore = $derived(continuation.hasMore);
   const displayHasPrevious = $derived(pagination?.kind === 'pages' && (pagination.firstPage ?? 1) > 1 && !!adapter?.loadPrevious);
-  const displayOnend = $derived(adapter ? () => {if(!adapter.busy) void adapter.load((pagination?.kind === 'pages' ? pagination.page : 1)+1,true);} : onend);
-  const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
+  const displayOnend = ()=>{void continuation.more();};
   const displayPageNumber = $derived(pagination?.kind === 'pages' ? pagination.page : pageNumber ?? 1);
   const displayPages = $derived(pagination?.kind === 'pages' ? pagination.pages : pages ?? 1);
   const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' ? adapter.load : undefined) : onpage);
@@ -193,7 +210,7 @@
     if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
   }
 
-  reportFailure(()=>({text:displayError,retry:adapter ? () => adapter.retry?.()??adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry}));
+  reportFailure(()=>({text:displayError,retry:adapter ? continuation.retry : retry}));
 </script>
 
 {#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
@@ -214,15 +231,15 @@
  {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
  {@render customControls?.()}
 {/snippet}
-<div use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
+<div data-shelf use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
-    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:enrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
+    {#each entries as entry (entry.key)}{@const item = entry.item}{@const cardStyle = itemStyle(item, style)}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} style:--mixed-card-ratio={displayMixed ? cardAspectRatio(cardStyle.shape) : undefined} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:enrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
       {#snippet cardAction()}{@render captionAction?.(item as T)}{/snippet}
       {#snippet cardBody()}{@render body?.(item as T)}{/snippet}
       {#snippet cardFooter()}{@render footer?.(item as T)}{/snippet}
-      <MediaCard {item} {...style} retain={()=>adapter?.retain?.(entry.key)??(()=>{})} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
-        shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape}
+      <MediaCard {item} {...cardStyle} retain={()=>adapter?.retain?.(entry.key)??(()=>{})} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
+        shape={displayMixed ? cardStyle.shape : !journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape}
         captionAction={captionAction ? cardAction : undefined} body={body ? cardBody : undefined} footer={footer ? cardFooter : undefined} />
       {#if entry.run}<details class="journal-run">
         <summary>Show {entry.run.length} episodes</summary>
@@ -297,10 +314,11 @@
   {#if adapter?.notice}<p class="small muted">{adapter.notice}</p>{/if}
   {@render before?.()}
   {#if displayLayout==='grid' && displayHasPrevious}<div class="load-more"><Button emphasis="subtle" disabled={displayBusy} onclick={()=>rail.loadPrevious()}>Load previous titles</Button></div>{/if}
-  <div class="rail-shell">
+  <div class="rail-shell" class:mixed-shell={displayMixed}>
   <div
     class="rail"
     data-shelf-location={adapter?.location}
+    class:mixed={displayMixed}
     class:empty-row={emptyRow}
     class:two-rows={displayRows === 2 && displayLayout === 'row'}
     class:grid-layout={displayLayout === 'grid'}
@@ -320,7 +338,7 @@
   >
     {#if loading || emptyRow}
     {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
-    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
   {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
@@ -354,6 +372,7 @@
   .reaction-placeholder{width:28px;height:28px;border-radius:50%;}
   .content-row[hidden] { display:none; }
   .rail-shell {position:relative;}
+  .mixed-shell {container-type:inline-size;}
   .rail.empty-row {overflow:hidden;scroll-snap-type:none;pointer-events:none;}
   .empty-row :global(.skeleton) {animation:none;opacity:.5;}
   .empty-label {position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
@@ -447,6 +466,16 @@
       --row-card-width: 145px;
     }
   }
+
+  .rail.mixed {
+    --mixed-art-height: min(clamp(180px, 20vw, 260px), calc(100cqw * 9 / 16));
+    --row-card-width: calc(var(--mixed-art-height) * 2 / 3);
+    display:flex;
+  }
+  .rail.mixed :global(> *) {flex:0 0 calc(var(--mixed-art-height) * var(--mixed-card-ratio, 0.6666667));width:calc(var(--mixed-art-height) * var(--mixed-card-ratio, 0.6666667));}
+  .rail.mixed .artwork-placeholder {height:var(--mixed-art-height);aspect-ratio:auto;}
+  .rail.mixed.preserve {min-height:calc(var(--mixed-art-height) + 108px);}
+  .rail.mixed.grid-layout {flex-wrap:wrap;}
 
   .credit-roles { margin-top:6px; font-size:var(--text-sm); color:var(--muted); }
   .credit-roles summary { cursor:pointer; font-weight:var(--weight-semibold); }

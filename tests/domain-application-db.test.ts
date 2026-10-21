@@ -630,14 +630,14 @@ suite('application PostgreSQL read models', () => {
   test('a saved show hero has an actionable regular next episode and advances after completion', async () => {
     await track(a, { mediaId: show, action: 'watchlist' });
     const home = await homeData(a);
-    expect(home.hero?.id).toBe(show);
+    expect(home.heroes[0]?.id).toBe(show);
     expect(home.heroNext?.id).toBe(episodeOne);
     expect(home.heroNext?.seasonNumber).toBe(1);
     await track(a, { mediaId: episodeOne, action: 'watch' });
     expect((await detailsData(a, show)).next?.id).toBe(episodeTwo);
     const continuedHome = await homeData(a);
-    expect(continuedHome.hero?.id).toBe(show);
-    expect(continuedHome.hero?.kind).toBe('show');
+    expect(continuedHome.heroes[0]?.id).toBe(show);
+    expect(continuedHome.heroes[0]?.kind).toBe('show');
     const continuing = (await progressData(a)).items.find((item) => item.id === episodeTwo);
     expect(continuing?.title).toBe('Regular episode 2');
     expect(continuing?.captionTitle).toBe('Available show');

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack, type Snippet } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { blackFadeGradient } from '#lib/ui/materials/black-fade.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { createHeroPresentation, screenItem, type HeroItem } from '#lib/ui/heroes/presentation.svelte.js';
@@ -12,7 +13,6 @@
   const { heroPlayer, preview } = usePlayback();
 
   let {
-    mode = 'content',
     item,
     collection,
     parents = [],
@@ -22,7 +22,7 @@
     requestable = false,
     actions,editionName,alignment='left',
   }: {
-    editionName?:string;alignment?:'left'|'center'|'adaptive';mode?: 'content' | 'player';
+    editionName?:string;alignment?:'left'|'center'|'adaptive';
     item?: HeroItem;
     collection?: { items: HeroItem[]; selection: string; busy?: boolean };
     actions?: Snippet;
@@ -32,30 +32,17 @@
     next?: MediaView | null;
     requestable?: boolean;
   } = $props();
-  // These roles have different lifetimes: the root owns playback, routes own content.
-  const playback = untrack(() => mode === 'player' ? createHeroPlayback() : undefined);
-  const hero = untrack(() => mode === 'content' ? createHeroPresentation(() => ({ item, items, parents, collection })) : undefined);
+  const hero = untrack(() => createHeroPresentation(() => ({ item, items, parents, collection })));
+  const playback = untrack(() => createHeroPlayback(() => ({id:hero.active?.id,active:(hero.phase==='artwork'||hero.phase==='trailer')&&hero.attached,size:hero.size})));
 </script>
 
-{#if playback}
-<div class="hero-player" class:visible={playback.visible} style={playback.surfaceStyle} aria-hidden="true">
-  <video bind:this={playback.video} data-player="hero" muted={heroPlayer.muted} playsinline preload="metadata" tabindex="-1"
-    class:positioned={!!playback.videoStyle} style={playback.videoStyle}
-    onloadedmetadata={playback.loadedMetadata}
-    onresize={playback.loadedMetadata}
-    onplaying={() => (heroPlayer.playing = true)}
-    onpause={() => (heroPlayer.playing = false)}
-    onended={() => { heroPlayer.playing = false; heroPlayer.paused = true; }}
-    onerror={playback.failed}
-  ></video>
-</div>
-
-{:else if hero && hero.active && hero.presentation}<section
+{#if hero.active && hero.presentation}<section
   class="hero"
   data-alignment={alignment}
   class:fading={hero.fading}
   bind:this={hero.host}
   data-hero-id={hero.active.id}
+  data-hero-phase={hero.phase}
   aria-label={hero.active.title}
   onfocusin={() => {
     hero.controlFocused = true;
@@ -69,8 +56,19 @@
   }}
   style:--hero-fade={blackFadeGradient('bottom','var(--detail-background, #000)')}
 >
-  <div class="art" class:video-visible={hero.showingTrailer}>
-    {#key hero.active.id}{#if hero.active.backdrop && !hero.backdropFailed}<img
+  <div class="hero-video" class:visible={playback.visible && heroPlayer.ready} aria-hidden="true">
+    <video bind:this={playback.video} data-player="hero" muted={heroPlayer.muted} playsinline preload="auto" tabindex="-1"
+      class:positioned={!!playback.videoStyle} style={playback.videoStyle}
+      onloadedmetadata={playback.loadedMetadata}
+      onresize={playback.loadedMetadata}
+      onplaying={playback.playing}
+      onpause={playback.paused}
+      onended={playback.ended}
+      onerror={playback.failed}
+    ></video>
+  </div>
+  <div class="art" class:video-visible={hero.showingTrailer && !hero.paused}>
+    {#key hero.active.id}<div class="artwork" transition:fade={{duration:hero.transitionDuration}}>{#if hero.active.backdrop && !hero.backdropFailed}<img
           src={hero.active.backdrop}
           alt=""
           fetchpriority="high"
@@ -80,7 +78,7 @@
           src={hero.active.poster}
           alt=""
           onerror={() => (hero.posterFailed = true)}
-        />{/if}{/key}
+        />{/if}</div>{/key}
   </div>
   <div class="gradient" class:dimmed={hero.chromeDimmed} aria-hidden="true"></div>
   <div class="content hero-inner" class:dimmed={hero.chromeDimmed}>
@@ -112,47 +110,42 @@
       {#if hero.active.overview}<p class="overview">{hero.active.overview}</p>{/if}
     </div>
     <div class="hero-action-row">
-      {#if actions}{@render actions()}
-      {:else if screenItem(hero.active)}<WorkMenu
+      <div class="hero-item-actions">{#if actions}{@render actions()}
+      {:else}{#key hero.active.id}{#if screenItem(hero.active)}<WorkMenu
           item={hero.active}
           {editionName}
           {context}
-          {next}
+          next={hero.active.id===(items[0]?.id??item?.id)?next:null}
           {requestable}
           hero
         />
-      {:else}<WorkMenu item={hero.active} hero showTrigger />{/if}
-      {#if items.length > 1 || hero.hasTrailer}<div class="hero-pagination">
-          {#if hero.hasTrailer}<Button size="icon"
-              class="icon-button"
-              label={heroPlayer.playing ? 'Pause trailer' : 'Play trailer'}
-              onclick={() => (heroPlayer.paused = !heroPlayer.paused)}
-               icon={heroPlayer.playing ? 'pause' : 'play'} iconSize={18} /><Button size="icon"
-              class="icon-button"
+      {:else}<WorkMenu item={hero.active} hero showTrigger />{/if}{/key}{/if}</div>
+      <div class="hero-pagination page-navigation">
+          {#if items.length > 1}<Button size="icon"
+              label="Previous featured title"
+              onclick={() => hero.step(-1)} icon="left" iconSize={20} />{/if}
+          <Button size="icon"
+              label={`${hero.paused ? 'Play' : 'Pause'} ${hero.phase === 'trailer' ? 'trailer' : 'hero'}`}
+              onclick={hero.togglePlayback}
+              icon={hero.paused ? 'play' : 'pause'} iconSize={20} /><Button size="icon"
               label={heroPlayer.muted ? 'Unmute trailer' : 'Mute trailer'}
               onclick={() => preview ? heroPlayer.muted = !heroPlayer.muted : setHeroMuted(!heroPlayer.muted)}
-               icon={heroPlayer.muted ? 'muted' : 'volume'} iconSize={18} />{/if}{#if items.length > 1}<span
-              >{String(hero.current + 1).padStart(2, '0')}<i>/</i>{String(items.length).padStart(
-                2,
-                '0'
-              )}</span
-            ><Button size="icon"
-              class="icon-button"
-              label="Previous featured title"
-              onclick={() => hero.step(-1)} icon="left" iconSize={18} /><Button size="icon"  class="icon-button" label="Next featured title" onclick={() => hero.step(1)}
-               icon="right" iconSize={18} />{/if}
-        </div>{/if}
+              icon={heroPlayer.muted ? 'muted' : 'volume'} iconSize={20} />
+          {#if items.length > 1}<Button size="icon"
+              label="Next featured title"
+              onclick={() => hero.step(1)} icon="right" iconSize={20} />{/if}
+        </div>
     </div>
   </div>
 </section>{/if}
 
 <style>
   .hero-copy,
-  .art {
+  .hero-item-actions {
     transition: opacity var(--fast) var(--ease);
   }
   .fading .hero-copy,
-  .fading .art {
+  .fading .hero-item-actions {
     opacity: 0;
   }
   .title-artwork {
@@ -185,7 +178,7 @@
   .art {
     position: absolute;
     inset: 0;
-    z-index: -3;
+    z-index: -2;
     overflow: hidden;
     background: var(--surface);
     transition: opacity var(--cinematic);
@@ -193,12 +186,14 @@
   .art.video-visible {
     opacity: 0;
   }
+  .artwork {position:absolute;inset:0;}
   .art img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
-    animation: appear var(--cinematic) var(--ease);
   }
   .art img.poster-art {
     object-position: center 35%;
@@ -299,21 +294,9 @@
     width: 100%;
     margin-top: 28px;
   }
+  .hero-item-actions {display:flex;align-items:center;gap:12px;}
   .hero-pagination {
     margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .hero-pagination > span {
-    font-size: var(--text-sm);
-    letter-spacing: var(--tracking-wide);
-    margin-right: 12px;
-  }
-  .hero-pagination i {
-    font-style: normal;
-    padding: 0 12px;
-    color: var(--quiet);
   }
   @media (min-width: 640px) and (max-width: 1023px) {
     .hero-inner {
@@ -322,6 +305,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .hero-copy,
+    .hero-item-actions,
     .hero-inner,
     .gradient::before,
     .art {
@@ -342,9 +326,6 @@
     .hero h1 {
       font-size: var(--text-hero-mobile);
     }
-    .hero-pagination > span {
-      display: none;
-    }
     .gradient::after {
       height: 112px;
     }
@@ -363,8 +344,8 @@
     }
   }
 
-  .hero-player { position: fixed; z-index: 1; overflow: hidden; pointer-events: none; visibility: hidden; }
-  .hero-player.visible { visibility: visible; }
+  .hero-video { position: absolute; inset: 0; z-index: -3; overflow: hidden; pointer-events: none; visibility: hidden; }
+  .hero-video.visible { visibility: visible; }
   video { position: absolute; width: 100%; height: 100%; object-fit: cover; }
   video.positioned { max-width: none; object-fit: fill; }
 

@@ -4,5 +4,5 @@ test('both video owners release disabled crop samplers without reloading retaine
  const child=Bun.spawn([process.execPath,'run','tests/fixtures/video-crop-lifecycle.ts'],{stdout:'pipe',stderr:'pipe'});
  const [status,output,errors]=await Promise.all([child.exited,new Response(child.stdout).text(),new Response(child.stderr).text()]);
  expect({status,errors}).toEqual({status:0,errors:''});
- expect(JSON.parse(output)).toEqual({heroLifetime:true,heroPolicyCases:2,playerDisabledCases:8,pendingTimers:0,retainedSource:true});
+ expect(JSON.parse(output)).toEqual({heroLifetime:true,heroPolicyCases:2,playerDisabledCases:9,pendingTimers:0,retainedSource:true,inlineOwnership:true,resizeWithoutReload:true,artworkPreload:true});
 });

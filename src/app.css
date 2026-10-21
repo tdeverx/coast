@@ -408,6 +408,18 @@ form.stack,
 .icon-button:hover {
   background: color-mix(in srgb, var(--white) calc(21 / 255 * 100%), transparent);
 }
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.page-navigation .icon-button {
+  width: var(--control-compact-height);
+  height: var(--control-compact-height);
+  color: var(--muted);
+}
+.page-navigation .icon-button:disabled { opacity: .25; }
 .icon-button.glass {
   background: var(--coast-glass-fill);
 }
@@ -454,6 +466,10 @@ form.stack,
 }
 .section {
   margin-top: 42px;
+}
+[data-hero-id] + .content > .section:first-child,
+[data-hero-id] + .content > [data-shelf]:first-child > .section {
+  margin-top: 0;
 }
 .panel {
   border: 1px solid var(--line);

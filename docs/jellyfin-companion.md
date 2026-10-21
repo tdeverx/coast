@@ -32,3 +32,7 @@ Artist-only metadata and unknown item types are left to periodic native scans. C
 - In the plugin repo: `dotnet build Coast.slnx --configuration Release` and `dotnet run --project Tests/Coast.Journal.Tests.csproj --configuration Release` verify the exact SDK and bounded journal behavior.
 
 These tests verify contracts and persistence. Activating live updates requires installing the companion and restarting Jellyfin; local tests do not establish live deployment coverage.
+
+## Video cropping
+
+The existing authenticated `POST /Coast/TrailerCrop` endpoint accepts any video item ID, including movies and episodes. The route name does not impose a trailer restriction. Coast requests crop metadata for the selected playable video, normalizes the pixel rectangle against its frame dimensions and applies it before playback. Hero videos render inside their own hero and keep artwork visible until metadata/crop styles are ready. A missing or disabled companion uses the existing playback fallback.

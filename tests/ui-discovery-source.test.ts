@@ -86,3 +86,16 @@ test('revision changes leave never-activated rows lazy',async()=>{
   const {result,dispose}=source(null);
   try {invalidateContentRevision(['tracking']);await settle();expect(requests).toBe(0);expect(result.ready).toBe(false);}finally{dispose();}
 });
+
+test('reading discovery rows append native pages without resetting their scroll scope',async()=>{
+ const paths:URL[]=[];
+ client.setDelivery(async(path:string)=>{const url=new URL(path,'http://fixture');paths.push(url);const page=Number(url.searchParams.get('page'));return {items:[{id:`book-${page}`,kind:'book',title:`Book ${page}`,href:`/book/${page}`}],failure:'',page,pages:3,total:3};});
+ const {result,dispose}=source();
+ try{
+  medium(result,'read');await settle();const key=result.resetKey;
+  expect(result.pagination).toMatchObject({kind:'pages',page:1,pages:3,append:true});
+  await result.load(2,true);expect(result.items.map(item=>item.id)).toEqual(['book-1','book-2']);expect(result.resetKey).toBe(key);
+  expect(paths[1].searchParams.get('page')).toBe('2');expect(result.pagination).toMatchObject({page:2,pages:3});
+  await result.load();expect(paths[2].searchParams.get('page')).toBe('1');expect(result.items).toHaveLength(1);
+ }finally{dispose();}
+});

@@ -21,7 +21,7 @@ const active = (entry: EpisodeEntry) =>
   entry.progress > 0 && (!entry.duration || entry.progress < entry.duration * 0.9);
 const started = (entry: EpisodeEntry) => entry.watched || entry.progress > 0;
 /** Keep untouched seasons separate from continuations within an already-started season. */
-export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly = true) {
+export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly = true, firstEpisode = false) {
   const nextIds = new Set<string>(),
     newSeasonIds = new Set<string>();
   for (const entries of Map.groupBy(episodes, (entry) => entry.groupId).values()) {
@@ -56,12 +56,12 @@ export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly
     const candidate = nextSeason?.find(
       (entry) => (!availableOnly || entry.available) && !entry.dropped && entry.seasonId
     );
-    if (candidate?.seasonId) newSeasonIds.add(candidate.seasonId);
+    if (candidate?.seasonId) newSeasonIds.add(firstEpisode ? candidate.id : candidate.seasonId);
   }
   return { nextIds: [...nextIds], newSeasonIds: [...newSeasonIds] };
 }
 
-export async function continuationIds(userId: string, startedIds: string[], availableOnly = true, includePrivatePlaylists = true) {
+export async function continuationIds(userId: string, startedIds: string[], availableOnly = true, includePrivatePlaylists = true, firstEpisode = false) {
   const db = getDb();
   const available = sql<boolean>`${s.media.id} in (select permitted.media_id from (${permittedMediaSources(userId)}) permitted)`;
   const fields = {
@@ -152,5 +152,5 @@ export async function continuationIds(userId: string, startedIds: string[], avai
     const entry=next.get(`${source.kind}:${source.id}`);
     return entry ? [{entry,source:{id:source.id,kind:source.kind},title:source.title}] : [];
   });
-  return { ...planEpisodeContinuations(episodes, availableOnly), sequenceNext };
+  return { ...planEpisodeContinuations(episodes, availableOnly, firstEpisode), sequenceNext };
 }

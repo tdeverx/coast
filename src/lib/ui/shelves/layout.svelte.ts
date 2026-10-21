@@ -109,7 +109,7 @@ export function createShelfLayout(get: () => LayoutOptions) {
       }
       if (start && bounds && bounds.left <= 300 && config.hasPrevious && !config.busy)
         void prepend();
-      else if (reached && bounds && !config.busy && config.hasMore && bounds.left + bounds.width >= bounds.total - 300)
+      else if (reached && bounds && !config.busy && !config.error && config.hasMore && bounds.left + bounds.width >= bounds.total - 300)
         config.onend?.();
     });
   }
@@ -146,7 +146,7 @@ export function createShelfLayout(get: () => LayoutOptions) {
   function scroll(direction: number) {
     const config = get();
     if (direction < 0 && !previous && config.hasPrevious) { void prepend(); return; }
-    if (direction > 0 && !next && config.hasMore && !config.busy) config.onend?.();
+    if (direction > 0 && !next && config.hasMore && !config.busy && !config.error) config.onend?.();
     scroller?.scrollBy({
       left: direction * scroller.clientWidth * 0.8,
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',

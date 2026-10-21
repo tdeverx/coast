@@ -73,7 +73,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   const busy = $derived(resource.busy);
   const error = $derived(resource.error);
   const ready = $derived(resource.ready);
-  const visible = $derived(layout === 'row' ? content.items.slice(0, 20) : content.items);
+  const visible = $derived(content.items);
 
   const parameters = (number = 1) => new URLSearchParams({
     ...username ? { username } : {},
@@ -96,12 +96,12 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       previousRefreshKey = key;
       previousInitial = next;
       if (!next) {
-        if ((revisionChanged || initialChanged) && resource.activated) void select(content.page);
+        if ((revisionChanged || initialChanged) && resource.activated) void select(layout==='row'?1:content.page);
         return;
       }
       // A session poll can report provider changes without re-running the page's initial load.
       if (revisionChanged && !initialChanged) {
-        void select(content.page);
+        void select(layout==='row'?1:content.page);
         return;
       }
       if (layout === 'grid') {

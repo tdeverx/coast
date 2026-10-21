@@ -10,6 +10,7 @@ export type ReferenceRecipe = {
 };
 
 export const compositions: ReferenceRecipe[] = [
+  { id:'catalogue.progress',title:'Mixed-media Progress experiment',family:'catalogue',example:'progress-experiment',sources:['src/lib/ui/components/Shelf.svelte','src/lib/ui/mixed-card.ts','src/lib/ui/shelves/progress-experiment.svelte.ts','src/routes/progress-experiment/+page.svelte'],scenarios:['settled','loading','empty','refresh'] },
   { id: 'catalogue.cards', title: 'Media card variants', family: 'catalogue', example: 'media-cards', sources: ['src/lib/ui/components/MediaCard.svelte'], scenarios: ['movie', 'show', 'season', 'episode', 'game', 'album', 'track', 'artist', 'book', 'comic', 'person', 'available', 'unavailable', 'missing-art', 'broken-art', 'long-copy'] },
   { id: 'catalogue.rows', title: 'Row loading and feedback', family: 'catalogue', example: 'shelf-states', sources: ['src/lib/ui/components/Shelf.svelte'], scenarios: ['loading', 'empty', 'error', 'refresh', 'settled'] },
   { id: 'catalogue.details', title: 'Media detail compositions', family: 'catalogue', example: 'media-details', sources: ['src/lib/reading/GroupDetails.svelte', 'src/lib/media/Details.svelte', 'src/lib/media/DetailRows.svelte', 'src/lib/reading/Details.svelte', 'src/lib/games/Details.svelte', 'src/lib/games/RemoteDetails.svelte', 'src/lib/music/Details.svelte', 'src/lib/ui/pages/music.svelte.ts'], scenarios: ['movie', 'show', 'season', 'episode', 'collection', 'music', 'game', 'game-remote', 'book', 'comic', 'remote-reading', 'reading-collection'] },
@@ -68,7 +69,7 @@ export function selectedScenario(id: string, value?: string | null) {
   return value && options.includes(value) ? value : options[0];
 }
 export function scenarioLabel(value: string) { return value.replace(/-/g, ' ').replace(/^./, letter => letter.toUpperCase()); }
-const nonApproved = new Set(['Button', 'SocialControls', 'NotificationInbox', 'StreamsPanel']);
+const nonApproved = new Set(['catalogue.progress', 'Button', 'SocialControls', 'NotificationInbox', 'StreamsPanel']);
 export type ApprovalStatus='unknown'|'unapproved'|'approved';
 export function approvalStatus(id:string):ApprovalStatus { return nonApproved.has(id)||id==='experiment'?'unapproved':'unknown'; }
 

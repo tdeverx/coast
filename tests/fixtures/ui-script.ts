@@ -17,7 +17,7 @@ export async function componentScript(path: string) {
   const component = await Bun.file(new URL(`../../${path}`, import.meta.url)).text();
   // Standalone script controls have no enclosing Shelf retention owner.
   const retention=component.includes("import { useRetention }")||component.includes("import {useRetention}")?'const useRetention=()=>()=>()=>{};\n':'';
-  return retention+component.match(/<script lang="ts">([\s\S]*?)<\/script>/)![1]
+  return retention+component.match(/<script lang="ts"[^>]*>([\s\S]*?)<\/script>/)![1]
     .replace(/^\s*import[\s\S]*?from ['"][^'"]+['"];?/gm, '');
 }
 export const resourceUrl = moduleUrl(compileRunes(await Bun.file(new URL('../../src/lib/ui/resource.svelte.ts', import.meta.url)).text()));

@@ -387,6 +387,17 @@ export class JellyfinAdapter {
       }
     );
   }
+  /** The companion's existing endpoint accepts any video item, despite its route name. */
+  async mediaCrop(itemId:string,signal?:AbortSignal){
+    signal?.throwIfAborted();
+    try{
+      const edge=v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(32768));
+      const result=v.parse(v.object({Crop:v.nullable(v.object({Width:edge,Height:edge,X:edge,Y:edge})),Error:v.nullish(v.string())}),
+        await this.call('/Coast/TrailerCrop',{method:'POST',body:JSON.stringify({ItemId:itemId}),signal}));
+      if(result.Error)throw new Error('The companion could not analyze the video crop.');
+      return result.Crop;
+    }catch(error){if(error instanceof ProviderHttpError&&error.status===404)return null;throw error;}
+  }
   async localTrailers(userId: string, itemId: string,signal?:AbortSignal) {
     signal?.throwIfAborted();
     return v

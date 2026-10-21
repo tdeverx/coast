@@ -49,7 +49,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     });
   }
   function pageUrl(number: number) { return `/discover?${parameters(number)}`; }
-  async function load(number=currentPage,append=false) {
+  async function load(number=get().layout==='grid'?currentPage:1,append=false) {
     currentPage=number;
     if(!surfaceAvailable(surface)){
       resource.replace({items:[],failure:''});
@@ -173,10 +173,10 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   onDestroy(resource.dispose);
   return {
     get pagination(): ShelfPagination {
-      return surface === 'read' && get().layout === 'grid'
+      return surface === 'read'
         ? {
             kind: 'pages', page: resource.data.page ?? currentPage,
-            pages: resource.data.pages ?? 1, append: false, controls: 'footer', url: pageUrl,
+            pages: resource.data.pages ?? 1, append: get().layout!=='grid', controls: get().layout==='grid'?'footer':'none', url: pageUrl,
           }
         : { kind: 'local' };
     },
@@ -191,7 +191,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     get href() { return get().layout === 'grid' ? undefined : pageUrl(1); },
     get shape() { return surface === 'listen' ? 'square' : 'poster'; },
     get mediaKind() { return surface === 'read' ? 'reading' : surface === 'listen' ? 'music' : surface === 'play' ? 'game' : 'screen'; },
-    get resetKey() { return `${surface}:${kind}:${available}:${currentPage}`; },
+    get resetKey() { return `${surface}:${kind}:${available}${get().layout==='grid'?':'+currentPage:''}`; },
     get filters(): ShelfControl[] {
       return [
         {

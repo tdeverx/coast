@@ -13,6 +13,7 @@ export const load = (async ({ locals, depends,params,url }) => {
     capabilities:config.features,
     publicRead:config.siteAccess==='public-read-only',
     developerMode:locals.user?.role==='admin'&&config.developerMode,
+    featuredHeroIds:locals.user?.role==='admin'?config.featuredHeroIds:undefined,
     publicProfiles:config.siteAccess==='public-profiles',
     experimentalMusic: config.experimentalMusic,
     experimentalGaming: config.experimentalGaming,

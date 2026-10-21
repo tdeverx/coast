@@ -1,4 +1,5 @@
 <script lang="ts">
+  const dev=import.meta.env.DEV;
   import { goto } from '$app/navigation';
   import { reportFailure } from '#lib/ui/client-context.js';
   import { homeShelves } from '#lib/ui/shelves/home.js';
@@ -596,7 +597,9 @@
       {@render favourites('row')}
     {/if}
 
-    {#if data.visibility.progress && page.data.user}
+    {#if page.data.user && (dev || data.visibility.progress)}
+      {#if dev}<Shelf source={{type:'progress-experiment',username:data.username}} hideEmpty={false} />
+      {:else}
       <Shelf
         source={{
           type: 'progress',
@@ -604,6 +607,7 @@
           username: data.username
         }}
       />
+      {/if}
     {/if}
 
     {#if data.visibility.collection && page.data.user}

@@ -38,6 +38,7 @@ export interface ShelfSource {
   readonly filters: ShelfControl[];
   readonly controls: ShelfControl[];
   readonly shape?: MediaCardShape;
+  readonly mixed?: boolean;
   readonly artworkStyle?: MediaCardArtwork;
   readonly artworkPriority?: ArtworkPriority;
   readonly mediaKind?: 'screen' | 'music' | 'game' | 'reading';

@@ -1,34 +1,35 @@
-import { onMount, untrack } from 'svelte';
+import { onMount, untrack, tick } from 'svelte';
 import { page } from '$app/state';
 import { usePlayback } from '#lib/playback/context.svelte.js';
-import { noCrop, videoFitStyle, type FrameCrop } from '#lib/playback/crop.js';
+import { noCrop, videoFitStyle } from '#lib/playback/crop.js';
 import { heroPlaybackVisible } from '#lib/playback/visibility.js';
-import { observeVideoCrop } from '#lib/playback/observe-crop.js';
-/** A single root-owned video surface survives hero and route changes. */
-export function createHeroPlayback() {
+/** Each hero owns its video element, artwork-time buffering, crop fitting and cleanup. */
+export function createHeroPlayback(get:()=>{id?:string;active:boolean;size:{width:number;height:number}}) {
   const { heroPlayer, player, preview } = usePlayback();
 
   let video = $state<HTMLVideoElement>();
   let foreground = $state(true);
   let frame = $state({ width: 0, height: 0 });
-  let crop = $state<FrameCrop>(noCrop);
+  const crop = $derived(heroPlayer.crop ?? noCrop);
   const permitted = $derived(page.data.capabilities?.playback !== false && page.data.capabilities?.screen !== false);
-  const visible = $derived(permitted && heroPlaybackVisible(heroPlayer.visible,player));
-  const surfaceStyle = $derived(heroPlayer.rect
-    ? `top:${heroPlayer.rect.top}px;left:${heroPlayer.rect.left}px;width:${heroPlayer.rect.width}px;height:${heroPlayer.rect.height}px;` : '');
+  const owner=$derived(get());
+  const claimed=$derived(owner.active&&!!owner.id&&heroPlayer.id===owner.id);
+  const visible = $derived(claimed && permitted && heroPlaybackVisible(heroPlayer.visible,player));
   const videoStyle = $derived(videoFitStyle(frame.width, frame.height,
-    heroPlayer.rect?.width ?? 0, heroPlayer.rect?.height ?? 0, crop, true));
+    owner.size.width,owner.size.height,crop,true));
 
   function failed() {
+    if(!claimed)return;
+    heroPlayer.outcome = 'failed';
     heroPlayer.playing = false;
     heroPlayer.ready = false;
     heroPlayer.paused = true;
   }
   $effect(() => {
-    if (preview || !permitted) return;
+    if (preview || !permitted || !claimed) return;
     const url = heroPlayer.url, id = heroPlayer.id, element = video;
+    heroPlayer.generation;
     if (!element || !url || !id) return;
-    crop = noCrop;
     frame = { width: 0, height: 0 };
     heroPlayer.ready = false;
     element.src = url;
@@ -38,21 +39,18 @@ export function createHeroPlayback() {
       element.load();
     };
   });
-  // Analysis has a shorter lifetime than the retained source and playback position.
-  $effect(() => {
-    const element=video,url=heroPlayer.url;
-    if(preview||!element||!url||!heroPlayer.id||!visible||!foreground||heroPlayer.paused)return;
-    return observeVideoCrop(element, {
-      continuous:true,
-      enabled:()=>visible&&foreground,
-      onCrop:next=>(crop=next),
-      onReady:()=>(heroPlayer.ready=true),
-    });
+  // Metadata and server crop styles must reach the DOM before playback is permitted.
+  $effect(()=>{
+    if(preview||!permitted||!claimed||!foreground||heroPlayer.outcome!=='idle'||heroPlayer.ready||!videoStyle)return;
+    let cancelled=false;
+    void tick().then(()=>{if(!cancelled)heroPlayer.ready=true;});
+    return()=>{cancelled=true;};
   });
   $effect(() => {
     if (preview) return;
     const element = video, url = heroPlayer.url;
-    const shouldPlay = visible && foreground && !heroPlayer.paused;
+    heroPlayer.generation;
+    const shouldPlay = visible && foreground && !heroPlayer.paused && heroPlayer.ready;
     if (!element) return;
     let cancelled = false;
     if (!url || !shouldPlay) element.pause();
@@ -70,9 +68,11 @@ export function createHeroPlayback() {
   return {
     get video() { return video; }, set video(value) { video = value; },
     get visible() { return visible; },
-    get surfaceStyle() { return surfaceStyle; },
     get videoStyle() { return videoStyle; },
     loadedMetadata: () => { if (video) frame = { width: video.videoWidth, height: video.videoHeight }; },
+    playing: () => {if(claimed)heroPlayer.playing=true;},
+    paused: () => {if(claimed)heroPlayer.playing=false;},
+    ended: () => {if(!claimed)return;heroPlayer.playing=false;heroPlayer.paused=true;heroPlayer.outcome='ended';},
     failed,
   };
 }

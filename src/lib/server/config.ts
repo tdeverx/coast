@@ -8,6 +8,7 @@ import type { Database } from './db';
 import { sql } from 'drizzle-orm';
 
 export const configSchema = v.object({
+  featuredHeroIds:v.optional(v.pipe(v.array(v.pipe(v.string(),v.uuid())),v.maxLength(20)),[]),
   features: v.optional(v.partial(v.object(Object.fromEntries(administratorFeatures.map(key => [key, v.boolean()])) as Record<typeof administratorFeatures[number], v.BooleanSchema<undefined>>)), {}),
   developerMode: v.optional(v.boolean(),false),
   siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
@@ -40,6 +41,7 @@ export const configSchema = v.object({
 });
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
+  featuredHeroIds:[],
   features: {},
   developerMode:false,
   siteAccess:'private',

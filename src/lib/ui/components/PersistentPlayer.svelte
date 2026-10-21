@@ -390,7 +390,7 @@
     retryStartup=undefined;
     startupImportError='';
     error = '';
-    bars = noCrop;
+    bars = player.session?.initialCrop ?? noCrop;
     clearStreamFailure();
     let recoveredMedia = false, restartedNetwork = false;
     hls?.destroy();
@@ -447,7 +447,7 @@
   // Analysis has a shorter lifetime than the retained source and playback position.
   $effect(() => {
     const element=video,url=src;
-    if(preview||!element||!url||audioMode||!active||!crop||!foreground||player.browsing||player.paused)return;
+    if(preview||!element||!url||player.session?.initialCrop||audioMode||!active||!crop||!foreground||player.browsing||player.paused)return;
     return observeVideoCrop(element, {
       enabled:()=>crop,
       onCrop:next=>(bars=next),

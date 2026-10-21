@@ -10,11 +10,18 @@ export async function updateConfig(
   actor: SessionUser | null,
   input: unknown
 ): Promise<CoastConfig> {
-  const admin = requireAdmin(actor);
+  requireAdmin(actor);
   const patch = v.parse(v.partial(configSchema), input);
+  return changeConfig(actor, () => patch);
+}
+
+/** Read/modify/write under the common configuration lock. */
+export async function changeConfig(actor: SessionUser | null, patchFor: (previous: CoastConfig) => Partial<CoastConfig>): Promise<CoastConfig> {
+  const admin = requireAdmin(actor);
   const next = await getSql().begin(async (sql) => {
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('coast:configuration', 0))`;
     const previous = await getConfig(sql);
+    const patch = v.parse(v.partial(configSchema), patchFor(previous));
     const next = v.parse(configSchema, { ...previous, ...patch, features: {...previous.features, ...patch.features} });
     await sql`INSERT INTO system_settings (key, value) VALUES ('coast', ${next}::jsonb)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
