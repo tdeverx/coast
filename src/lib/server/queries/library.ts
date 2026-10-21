@@ -1,3 +1,6 @@
+import {librarySegmentCondition} from './library-segments';
+import {librarySortValues,librarySegmentValues} from '#lib/library.js';
+import {libraryOrder} from './library-order';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
@@ -12,6 +15,8 @@ import { pageInterval } from '#lib/page-window.js';
 const uuidSchema = v.pipe(v.string(), v.uuid());
 
 export const libraryOptionsSchema = v.object({
+  segment:v.optional(v.picklist(librarySegmentValues),'all'),
+  sort: v.optional(v.picklist(librarySortValues), 'default'),
   page: v.optional(pageNumberSchema, 1),
   genre: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(100)), ''),
   kind: v.optional(v.picklist(['all', 'movie', 'show']), 'all'),
@@ -22,29 +27,30 @@ export const libraryOptionsSchema = v.object({
 
 export function libraryTrackingCondition(
   userId: string,
-  tracking: v.InferOutput<typeof libraryOptionsSchema>['tracking']
+  tracking: v.InferOutput<typeof libraryOptionsSchema>['tracking'],
+  reference={id:sql`${s.media.id}`,kind:sql`${s.media.kind}`,state:sql`tracking_state`,dropped:sql`${s.trackingState.dropped}`}
 ) {
   const child = rewatchFields(userId, sql`e.media_id`, sql`child`);
-  const current = rewatchFields(userId, sql`${s.media.id}`);
-  const complete = sql`case when ${s.media.kind} = 'show' then
-    exists (select 1 from episodes e where e.show_id=${s.media.id} and not e.is_special)
+  const current = rewatchFields(userId, reference.id, reference.state);
+  const complete = sql`case when ${reference.kind} = 'show' then
+    exists (select 1 from episodes e where e.show_id=${reference.id} and not e.is_special)
     and not exists (select 1 from episodes e left join tracking_state child on child.media_id=e.media_id and child.user_id=${userId}
-      where e.show_id=${s.media.id} and not e.is_special and not (${child.watched}))
+      where e.show_id=${reference.id} and not e.is_special and not (${child.watched}))
     else ${current.watched} end`;
-  const started = sql`case when ${s.media.kind} = 'show' then
+  const started = sql`case when ${reference.kind} = 'show' then
     exists (select 1 from episodes e join tracking_state child on child.media_id=e.media_id and child.user_id=${userId}
-      where e.show_id=${s.media.id} and not e.is_special and (${child.watched} or (${child.progress}>0 and not child.dropped)))
+      where e.show_id=${reference.id} and not e.is_special and (${child.watched} or (${child.progress}>0 and not child.dropped)))
     else ${current.progress}>0 end`;
   return tracking === 'watched'
-    ? sql`(${complete}) and not coalesce(${s.trackingState.dropped},false)`
+    ? sql`(${complete}) and not coalesce(${reference.dropped},false)`
     : tracking === 'unwatched'
       ? sql`not (${complete})`
       : tracking === 'dropped'
-        ? eq(s.trackingState.dropped, true)
+        ? sql`${reference.dropped}=true`
         : tracking === 'progress'
           ? sql`case
-              when coalesce(${s.trackingState.dropped},false) then false
-              when ((${started}) or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null) then not (${complete})
+              when coalesce(${reference.dropped},false) then false
+              when ((${started}) or ${rewatchBoundary(userId, sql`${reference.id}`)} is not null) then not (${complete})
               else false end`
           : undefined;
 }
@@ -68,7 +74,10 @@ export async function libraryData(userId: string, rawOptions: unknown = {}, firs
       order by case provider when 'jellyfin' then 0 when 'tmdb' then 1 else 2 end, updated_at desc limit 1),
     ${s.media.genres})) g where lower(g)=lower(${input.genre}))`
     : undefined;
+  const segment=await librarySegmentCondition(userId,userId,input.segment,s.media.id,'screen');
+  signal?.throwIfAborted();
   const where = and(
+    segment,
     input.kind === 'all' ? inArray(s.media.kind, ['movie', 'show']) : eq(s.media.kind, input.kind),
     permittedSource,
     tracking,
@@ -77,13 +86,14 @@ export async function libraryData(userId: string, rawOptions: unknown = {}, firs
   const join = and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId));
   const db = getDb();
   // Share membership and count/page snapshot; hydrate only the selected titles.
+  const order=libraryOrder(input.sort,{title:sql`title`,added:sql`created_at`,id:sql`id`},sql`updated_at desc,id`);
   const [result] = (await db.execute(sql`
     with eligible as materialized (
-      select ${s.media.id} as id, ${s.media.updatedAt} as updated_at
+      select ${s.media.id} as id, ${s.media.updatedAt} as updated_at, ${s.media.createdAt} as created_at, ${s.media.title} as title
       from ${s.media} left join ${s.trackingState} on ${join} where ${where}
     ), total as (select count(*)::int as total from eligible)
-    select total, coalesce((select jsonb_agg(id order by updated_at desc, id)
-      from (select id, updated_at from eligible order by updated_at desc, id limit ${interval ? sql`(least(${interval.lastPage}, greatest(1, ceil(total::numeric / ${pageSize})::int))
+    select total, coalesce((select jsonb_agg(id order by ${order})
+      from (select * from eligible order by ${order} limit ${interval ? sql`(least(${interval.lastPage}, greatest(1, ceil(total::numeric / ${pageSize})::int))
           - least(${interval.firstPage}, greatest(1, ceil(total::numeric / ${pageSize})::int)) + 1) * ${pageSize}` : sql`${pageSize}`}
         offset (least(${interval?.firstPage ?? input.page}, greatest(1, ceil(total::numeric / ${pageSize})::int)) - 1) * ${pageSize}) page),
       '[]'::jsonb) as ids from total
@@ -108,6 +118,7 @@ export async function libraryData(userId: string, rawOptions: unknown = {}, firs
     pages,
     pageSize,
     filters: {
+      sort: input.sort,
       genre: input.genre,
       kind: input.kind,
       scope: input.scope,

@@ -395,7 +395,6 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
@@ -425,8 +424,10 @@
       "src/lib/ui/components/PlaybackTimeline.svelte",
       "src/lib/ui/components/Rating.svelte",
       "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/components/RowFilter.svelte",
       "src/lib/ui/components/TextLink.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
+      "src/routes/library/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -822,7 +823,8 @@
     "path": "src/lib/ui/components/RowFilter.svelte",
     "elements": [
       "Button",
-      "ChoiceGroup"
+      "ChoiceGroup",
+      "Icon"
     ],
     "usedBy": [
       "src/lib/ui/components/AvatarPicker.svelte",

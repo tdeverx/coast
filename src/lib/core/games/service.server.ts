@@ -1,6 +1,9 @@
+import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
+import {librarySortValues,librarySegmentValues,type LibrarySort,type LibrarySegment} from '#lib/library.js';
+import {libraryOrder} from '#lib/server/queries/library-order.js';
 import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import { presentationPreferences, presentationSearch } from '#lib/catalogue/overrides/presentation.server.js';
-import { and, asc, count, desc, eq, sql, getTableColumns } from 'drizzle-orm';
+import { and, count, desc, eq, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
 import { searchDocument, searchSql } from '../../server/queries/search-ranking';
 import { rankSearch } from '../../search';
@@ -42,7 +45,8 @@ export async function createGame(raw: unknown) {
 }
 
 /** A smaller projection hydrates only the head of the first unsearched 60-item page. */
-export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean }, projectionLimit = PAGE_SIZE, firstPage?: number) {
+export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean;sort?:LibrarySort;segment?:LibrarySegment }, projectionLimit = PAGE_SIZE, firstPage?: number) {
+  const sort=v.parse(v.picklist(librarySortValues),tracking?.sort??'default');
   const interval = requestedPageInterval(requestedPage, firstPage);
   const query = v.parse(v.pipe(v.string(), v.trim(), v.maxLength(250)), search);
   const limit = v.parse(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(PAGE_SIZE)), projectionLimit);
@@ -55,7 +59,8 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   }
   const aliases = presentationSearch(tracking?.userId ?? null, sql`${games.id}`, query);
   const searchQuery = query ? searchSql(query, [searchDocument(sql`${games.title}`)], [sql`${games.title}`]) : null;
-  const buildWhere = (fallback = false) => and(searchQuery ? sql`(${fallback ? searchQuery.fallback : searchQuery.matches} or ${aliases.matches(fallback)})` : undefined,
+  const segment=await librarySegmentCondition(tracking?.userId??'',tracking?.userId??'',v.parse(v.picklist(librarySegmentValues),tracking?.segment??'all'),games.id,'game');
+  const buildWhere = (fallback = false) => and(segment,searchQuery ? sql`(${fallback ? searchQuery.fallback : searchQuery.matches} or ${aliases.matches(fallback)})` : undefined,
     tracking && (tracking.personal !== false || tracking.status) ? (tracking.status
       ? sql`(select status from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} order by created_at desc, id desc limit 1) = ${tracking.status}`
       : sql`(exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId}) or exists(select 1 from tracking_state where media_id=${games.id} and user_id=${tracking.userId} and (collected or watchlist or favourite)))`) : undefined,
@@ -66,7 +71,7 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   if (!totals.total && searchQuery) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(games).where(where); }
   const { page, pages } = pagination(totals.total, requestedPage);
   const bounds = pageInterval(pages, page, interval?.firstPage);
-  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), asc(games.title), asc(games.id))
+  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), libraryOrder(sort,{title:games.title,added:games.createdAt,id:games.id},sql`${games.title} asc, ${games.id} asc`))
     .limit(interval ? (page - bounds.firstPage + 1) * PAGE_SIZE : limit).offset((bounds.firstPage - 1) * PAGE_SIZE);
   // Ranking and preference hydration retain each native page's original semantics.
   const presented = [], counts: number[] = [];

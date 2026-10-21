@@ -2,7 +2,7 @@ import { fallbackArtwork } from '../src/lib/providers/tmdb/fallback.server';
 import { cardArtwork, orderedArtwork, overlayArtwork } from '../src/lib/media/artwork';
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { migrate } from 'drizzle-orm/bun-sql/migrator';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { detailsData, mediaViews } from '../src/lib/server/queries/media';
@@ -12,6 +12,7 @@ import { progressData } from '../src/lib/server/queries/progress';
 import { setUpNext } from '../src/lib/core/lists/up-next.server';
 import { homeData } from '../src/lib/server/queries/home';
 import { libraryData } from '../src/lib/server/queries/library';
+import {recentLibraryData} from '../src/lib/server/queries/recent-library';
 import { listsData, userLists } from '../src/lib/server/queries/lists';
 import { requestList } from '../src/lib/server/queries/requests';
 import { bulkTrack, track } from '../src/lib/core/tracking/service.server';
@@ -896,6 +897,7 @@ suite('application PostgreSQL read models', () => {
       userId: c,
       mediaId: movie,
       instanceId: instance,
+      state:index%2?'approved' as const:'pending' as const,
       createdAt: new Date(1700000000000 + index * 1000),
     }));
     await getDb()
@@ -914,6 +916,56 @@ suite('application PostgreSQL read models', () => {
     expect(last.page).toBe(2);
     expect(last.requests.map((row) => row.id)).toEqual([requests[0].id]);
     expect((await requestList(a)).requests).toEqual([]);
+    const approved=await requestList(c,1,undefined,{state:'approved',kind:'movie',pageSize:20});
+    expect(approved.total).toBe(30);expect(approved.pages).toBe(2);expect(approved.requests).toHaveLength(20);
+    expect(approved.requests.every(request=>request.state==='approved')).toBe(true);
+    expect((await requestList(c,2,undefined,{state:'approved',kind:'movie',pageSize:20})).requests).toHaveLength(10);
+    expect((await requestList(c,1,undefined,{state:'approved',kind:'show'})).total).toBe(0);
+    expect(first.requests.every(row=>row.requester.username)).toBe(true);
+    await expect(requestList(c,1,undefined,{allUsers:true})).rejects.toMatchObject({status:403});
+    await getDb().update(s.users).set({role:'admin'}).where(eq(s.users.id,a));
+    try{
+      const admin=await requestList(a,1,undefined,{allUsers:true});
+      expect(admin.total).toBe(62);
+      expect(admin.requests.some(row=>row.userId===b)).toBe(true);
+      expect(admin.requests.some(row=>row.userId===c)).toBe(true);
+      expect((await requestList(a,1,requests[0].id)).total).toBe(0);
+      expect((await requestList(a,1,requests[0].id,{allUsers:true})).requests[0].requester.username).toBeTruthy();
+    }finally{await getDb().update(s.users).set({role:'user'}).where(eq(s.users.id,a));}
+
+  });
+  test('recent library selects accessible identities before paging and ignores metadata refresh recency',async()=>{
+    const owner=crypto.randomUUID(),connection=crypto.randomUUID();
+    const rows=Array.from({length:62},(_,index)=>({id:crypto.randomUUID(),kind:'movie' as const,title:`Recent fixture ${index}`,createdAt:new Date(1700000000000+index*1000)}));
+    ids.push(...rows.map(row=>row.id));
+    const db=getDb();
+    try{
+      await db.insert(s.users).values({id:owner,username:'recent-'+owner});
+      await db.insert(s.providerConnections).values({id:connection,userId:owner,instanceId:instance,status:'connected'});
+      await db.insert(s.media).values(rows);
+      await db.execute(sql`update works set created_at=media.created_at from media where works.id=media.id and ${inArray(s.works.id,rows.map(row=>row.id))}`);
+      const sources=rows.slice(0,61).map(row=>({id:crypto.randomUUID(),instanceId:instance,mediaId:row.id,externalId:'recent-'+row.id,kind:'movie' as const}));
+      await db.insert(s.providerItems).values(sources);
+      await db.insert(s.availability).values(sources.map(item=>({userId:owner,connectionId:connection,providerItemId:item.id,mediaId:item.mediaId})));
+      await db.update(s.media).set({updatedAt:new Date('2099-01-01')}).where(eq(s.media.id,rows[0].id));
+      const first=await recentLibraryData(owner,{kind:'movie',preview:true});
+      const second=await recentLibraryData(owner,{kind:'movie',preview:true,page:2});
+      expect(first.total).toBe(61);expect(first.items).toHaveLength(20);expect(first.pages).toBe(4);
+      expect(first.items.map(item=>item.id)).toEqual(rows.slice(41,61).reverse().map(row=>row.id));
+      expect(second.items.map(item=>item.id)).toEqual(rows.slice(21,41).reverse().map(row=>row.id));
+      expect(first.items.every(item=>item.available)).toBe(true);
+      const oldest=await libraryData(owner,{kind:'movie',sort:'added-asc'});
+      const newest=await libraryData(owner,{kind:'movie',sort:'added'});
+      expect(oldest.items[0].id).toBe(rows[0].id);
+      expect(newest.items[0].id).toBe(rows[60].id);
+      await db.insert(s.trackingState).values({userId:owner,mediaId:rows[0].id,watchlist:true,favourite:true});
+      expect((await libraryData(owner,{kind:'movie',segment:'later'})).items.map(item=>item.id)).toEqual([rows[0].id]);
+      expect((await libraryData(owner,{kind:'movie',segment:'favourites'})).items.map(item=>item.id)).toEqual([rows[0].id]);
+
+    }finally{
+      await db.delete(s.users).where(eq(s.users.id,owner));
+      await db.delete(s.media).where(inArray(s.media.id,rows.map(row=>row.id)));
+    }
   });
   test('library filters precede pagination, including an available title beyond 500 newer catalogue entries', async () => {
     const oldAvailable = crypto.randomUUID();

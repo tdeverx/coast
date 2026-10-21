@@ -1,3 +1,4 @@
+import {librarySortValues,librarySegmentValues} from '#lib/library.js';
 import { PAGE_SIZE, requestedPageInterval } from './pagination';
 import { getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
@@ -20,11 +21,14 @@ export async function libraryContent(userId: string, url: URL,signal?:AbortSigna
     v.picklist(['watch', 'listen', 'play', 'read']),
     url.searchParams.get('surface') ?? 'watch'
   );
+  const segment=v.parse(v.picklist(librarySegmentValues),url.searchParams.get('segment')??'all');
+  const sort=v.parse(v.picklist(librarySortValues),url.searchParams.get('sort')??'default');
   const selection = url.searchParams.get('selection') ?? 'all';
   const page = Number(url.searchParams.get('page') ?? 1);
   const interval = requestedPageInterval(page, url.searchParams.get('firstPage'));
   if (surface === 'watch')
     return libraryData(userId, {
+      sort,segment,
       kind: url.searchParams.get('kind') ?? 'all',
       scope: url.searchParams.get('scope') ?? 'available',
       tracking: selection,
@@ -33,6 +37,7 @@ export async function libraryContent(userId: string, url: URL,signal?:AbortSigna
     }, interval?.firstPage, signal);
   if (surface === 'read') {
     const result = await readingCatalogue(userId, {
+      sort,segment,
       kind: url.searchParams.get('kind') ?? 'all', state: selection, personal: false, available: v.parse(v.picklist(['all','available']),url.searchParams.get('scope')??'all')==='available',
       page,
     }, interval?.firstPage);
@@ -65,6 +70,6 @@ export async function libraryContent(userId: string, url: URL,signal?:AbortSigna
     selection
   );
   const scope = v.parse(v.picklist(['all', 'available']), url.searchParams.get('scope') ?? 'available');
-  const result = await listGames('', page, {userId,personal:false,availableOnly:scope==='available',...(state==='all'?{}:{status:state})}, PAGE_SIZE, interval?.firstPage);
+  const result = await listGames('', page, {userId,sort,segment,personal:false,availableOnly:scope==='available',...(state==='all'?{}:{status:state})}, PAGE_SIZE, interval?.firstPage);
   return {...result,items:result.items.map(item => gameCard(item))};
 }

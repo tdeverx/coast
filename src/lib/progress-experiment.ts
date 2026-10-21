@@ -4,7 +4,7 @@ import type {ShelfItem} from './ui/shelves/types';
 export const progressExperimentTabs = [
   {value:'continue',label:'Continue'}, {value:'next',label:'Next'}, {value:'watchlist',label:'Later'}, {value:'favourites',label:'Favourites'},
 ];
-export const profileProgressExperimentTabs=[...progressExperimentTabs,{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
+export const profileProgressExperimentTabs=[...progressExperimentTabs.filter(tab=>tab.value==='continue'||tab.value==='next'),{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
 export const progressExperimentSchema = v.object({
   view:v.optional(v.picklist(['continue','next','watchlist','favourites','finished','dropped']),'continue'),
   kind:v.optional(v.picklist(['all','movie','show','game','book','comic']),'all'),

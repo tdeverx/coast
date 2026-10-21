@@ -1,4 +1,5 @@
 import {createProgressExperimentSource,type ProgressExperimentSourceOptions} from './progress-experiment.svelte';
+import {createLibraryFeedSource,type LibraryFeedOptions} from './library-feed.svelte';
 import {createForYouSource,type ForYouOptions} from './for-you.svelte';
 import {createDiscoverySource,type DiscoveryOptions} from './discovery.svelte';
 import {createSocialSource,type SocialShelfOptions} from './social.svelte';
@@ -10,6 +11,7 @@ import { createCreditsSource, type CreditsOptions } from './credits.svelte';
 import { createLibrarySource, type LibrarySourceOptions } from './library.svelte';
 import {createDetailSource,type DetailSourceOptions} from './detail.svelte';
 export type ShelfConfig =
+  | LibraryFeedOptions
   | ProgressExperimentSourceOptions
   | DetailSourceOptions
   | ForYouOptions
@@ -24,6 +26,7 @@ export type ShelfConfig =
 export function createShelfSource(get: () => ShelfConfig) {
   // The source type is fixed for a mounted shelf; changing features mounts a new shelf.
   switch (get().type) {
+    case 'library-feed':return createLibraryFeedSource(()=>get() as LibraryFeedOptions);
     case 'progress-experiment':return createProgressExperimentSource(()=>get() as ProgressExperimentSourceOptions);
     case 'detail':return createDetailSource(()=>get() as DetailSourceOptions);
     case 'for-you':return createForYouSource(()=>get() as ForYouOptions);

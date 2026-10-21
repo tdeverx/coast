@@ -18,7 +18,7 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   const layout=$derived(get().layout??'row');
   let view=$state(untrack(()=>get().filters?.view??initial?.view??'continue'));
   type Filters=Pick<ProgressExperimentOptions,'kind'|'scope'>;
-  let preferences=$state<Record<string,Filters>>(Object.fromEntries(profileProgressExperimentTabs.map(tab=>[tab.value,{kind:'all',scope:'all'}])));
+  let preferences=$state<Record<string,Filters>>(Object.fromEntries([...progressExperimentTabs,...profileProgressExperimentTabs].map(tab=>[tab.value,{kind:'all',scope:'all'}])));
   untrack(()=>{const filters=get().filters??initial;if(filters)preferences[view]={kind:filters.kind,scope:filters.scope};});
   const current=$derived(preferences[view]);
   const resource=createResource<ProgressExperimentContent>(untrack(()=>initial??{view,kind:'all',scope:'all',items:[],total:0,page:1,pages:1}),!!untrack(()=>initial));

@@ -21,8 +21,9 @@ export type ShelfGroup = {
 export type ShelfPagination =
   | { kind: 'local' }
   | { kind: 'cursor'; hasMore: boolean }
-  | { kind: 'pages'; page: number; pages: number; firstPage?: number; append: boolean; controls: 'none' | 'header' | 'footer' | 'both'; url?: (page: number) => string };
+  | { kind: 'pages'; page: number; pages: number; firstPage?: number; append: boolean; infinite?:boolean; automatic?:boolean; controls: 'none' | 'header' | 'footer' | 'both'; url?: (page: number) => string };
 export interface ShelfSource {
+  readonly enrichSocial?:boolean;
   readonly pagination: ShelfPagination;
   readonly groups?: ShelfGroup[];
   readonly appendOnly?: boolean;

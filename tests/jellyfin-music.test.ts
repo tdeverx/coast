@@ -268,3 +268,10 @@ describe('Jellyfin music browsing', () => {
     expect(items[1].artists[0].id).toBe(compact);expect(items[1].albumArtists[0].id).toBe(compact);
   });
 });
+
+test('music ordering is sent to the provider before pagination',async()=>{
+ for(const [sort,by,direction] of [['title-desc','SortName','Descending'],['added','DateCreated,SortName','Descending'],['added-asc','DateCreated,SortName','Ascending']] as const){
+  const adapter=new JellyfinAdapter(async path=>{const params=new URL(path,'https://jellyfin.test').searchParams;expect(params.get('sortBy')).toBe(by);expect(params.get('sortOrder')).toBe(direction);expect(params.get('startIndex')).toBe('50');return {Items:[],TotalRecordCount:0};},'device');
+  await adapter.musicLibrary('user',{kind:'album',offset:50,sort});
+ }
+});

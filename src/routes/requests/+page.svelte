@@ -54,7 +54,7 @@
               : ''}
           </p>
           <p class="small">Requested {new Date(request.createdAt).toLocaleDateString()}</p>
-          {#if ['pending', 'approved'].includes(request.state)}<Button
+          {#if request.userId===data.viewerId && ['pending', 'approved'].includes(request.state)}<Button
               danger
               disabled={busy}
               onclick={() => (cancelId = request.id)}>Cancel request</Button

@@ -18,6 +18,7 @@ export async function musicBrowseData(userId: string, url: URL,signal?:AbortSign
   if (!requestedPage.success) error(400, 'Choose a positive music page number.');
   const interval = requestedPageInterval(requestedPage.output, url.searchParams.get('firstPage'));
   const options = v.safeParse(musicBrowseSchema, {
+    sort:url.searchParams.get('sort')??'default',
     kind: url.searchParams.get('kind') ?? 'all',
     availableOnly: url.searchParams.get('scope') === 'available',
     search: url.searchParams.get('search') ?? undefined,

@@ -16,7 +16,8 @@ import { createResource } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { ApiError } from '#lib/ui/client.js';
 import {
-  libraryBrowsePaths,
+  libraryBrowsePaths,librarySortOptions,libraryGenres,librarySegments,
+  type LibrarySort,type LibrarySegment,
   libraryTitles,
   librarySelections,
   type LibraryContent,
@@ -26,6 +27,10 @@ import type { ShelfSource, ShelfControl } from './types';
 import { readingTypeOptions } from '#lib/ui/filter-options.js';
 
 export type LibrarySourceOptions = {
+  kindControl?:boolean;
+  segments?:boolean;
+  initialSort?:LibrarySort;
+  initialSegment?:LibrarySegment;
   surface: LibrarySurface;
     preview?: { title: string; personal?: boolean; empty: string; refreshKey?: unknown };
   initial?: LibraryContent;
@@ -51,7 +56,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     initial,
     initialPage = 1,
     initialFirstPage,
-    genre = '',
+    genre = '', initialSort='default',initialSegment='all',
     layout = 'row',
     initialSelection = 'all',
     initialKind = 'all',
@@ -64,6 +69,10 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     preview,
   } = $derived(getOptions());
 
+  let sort=$state<LibrarySort>(untrack(()=>initialSort));
+  let segment=$state<LibrarySegment>(untrack(()=>initialSegment));
+  let genreOverride=$state<string>();
+  const selectedGenre=$derived(genreOverride??genre);
   let collection = $state(untrack(() => initialCollection));
   const title = $derived(preview?.title ?? libraryTitles[surface]);
   let selection = $state(untrack(() => initialSelection)),
@@ -97,7 +106,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
       selection,
       kind,
       scope,
-      genre,
+      genre:selectedGenre,sort,segment,
       relationship,
       source,
       availability,
@@ -334,7 +343,9 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         pages: content.pages,
         firstPage: retainedInterval(content).firstPage,
         append: true,
-        controls: layout === 'grid' ? 'footer' as const : 'none' as const
+        infinite:layout==='grid',
+        automatic:layout!=='grid',
+        controls:'none' as const
       };
     },
     retain: retention.retain,
@@ -401,7 +412,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     get resetKey() {
       return preview
         ? `${selection}:${scope}`
-        : `${collection}:${selection}:${kind}:${scope}:${relationship}:${source}:${availability}:${navigation}`;
+        : `${sort}:${segment}:${selectedGenre}:${collection}:${selection}:${kind}:${scope}:${relationship}:${source}:${availability}:${navigation}`;
     },
 
     get filters(): ShelfControl[] {
@@ -409,10 +420,11 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         {
           type: 'segments' as const,
           label: `${title} selection`,
-          value: selection,
-          options: selections,
+          value: getOptions().segments?segment:selection,
+          options: getOptions().segments?librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)):selections,
           change: (value: string) => {
-            selection = value;
+            if(getOptions().segments){segment=value as LibrarySegment;selection=surface==='listen'?selection:'all';if(surface==='listen'&&selection==='artist'&&segment!=='all')selection='all';}
+            else selection = value;
             void load(1);
           }
         },
@@ -441,7 +453,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         ...[
           {
             type: 'availability' as const,
-            label: surface === 'read' ? 'Available to read only' : 'Available to play only',
+            label: `Available to ${surface==='read'?'read':surface==='watch'?'watch':surface==='listen'?'listen':'play'} only`,
             value: scope,
             change: (value: string) => {
               scope = value as typeof scope;
@@ -457,7 +469,12 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
     get controls(): ShelfControl[] {
       return [
-        ...surface === 'watch'
+        ...layout==='grid'&&!preview?[
+          {type:'select' as const,label:'Sort by',value:sort,options:librarySortOptions,change:(value:string)=>{sort=value as LibrarySort;void load(1);}},
+          ...surface==='watch'&&!collection?[{type:'select' as const,label:'Genre',value:selectedGenre,options:[{value:'',label:'All genres'},...[...new Set([...libraryGenres,...(selectedGenre?[selectedGenre]:[])])].sort().map(value=>({value,label:value}))],change:(value:string)=>{genreOverride=value;void load(1);}}]:[],
+          ...surface==='listen'&&getOptions().segments?[{type:'select' as const,label:'Music type',value:selection,options:selections.filter(option=>segment==='all'||option.value!=='artist'),change:(value:string)=>{selection=value;void load(1);}}]:[],
+        ]:[],
+        ...surface === 'watch'&&getOptions().kindControl!==false
           ? [
             {
               type: 'media-type' as const,
@@ -471,7 +488,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           ]
           : [],
 
-        ...surface === 'read'
+        ...surface === 'read'&&getOptions().kindControl!==false
           ? [
             {
               type: 'select' as const,
@@ -495,7 +512,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
               options: [
                 { value: 'all', label: 'All relationships' },
                 { value: 'collected', label: 'Collected' },
-                { value: 'watchlist', label: 'Watchlist' },
+                { value: 'watchlist', label: 'Later' },
                 { value: 'favourite', label: 'Favourites' },
                 { value: 'rating', label: 'Rated' },
                 { value: 'list', label: 'Lists' },

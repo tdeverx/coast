@@ -15,6 +15,8 @@ export type MediaCardPresentation = Pick<
   | 'captionCredits'
   | 'captionActor'
   | 'captionActivity'
+  | 'captionDate'
+  | 'captionStatus'
   | 'year'
   | 'poster'
   | 'backdrop'
@@ -68,6 +70,8 @@ export interface MediaView {
   captionCredits?: {name:string;href?:string}[];
   captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
   captionActor?: {username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus;profileHref?:string|null};
+  captionDate?:string;
+  captionStatus?:{label:string;href:string;icon:'check'|'clock'|'close';tone:'positive'|'pending'|'negative'};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;

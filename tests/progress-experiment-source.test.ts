@@ -120,7 +120,7 @@ test('profile Progress adds Finished/Dropped and preserves the owner in row read
   const paths:string[]=[];client.setDelivery(async(path:string)=>{paths.push(path);return content();});
   const {result,dispose}=source({username:'profile owner'});
   try{
-    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','watchlist','favourites','finished','dropped']);
+    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','finished','dropped']);
     const continueKey=result.resetKey;
     result.filters[0].change('finished');await settle();
     expect(result.resetKey).not.toBe(continueKey);

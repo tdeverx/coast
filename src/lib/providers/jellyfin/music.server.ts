@@ -1,3 +1,4 @@
+import {librarySortValues} from '#lib/library.js';
 import * as v from 'valibot';
 import type { MusicItem, MusicPage } from '#lib/music/model.js';
 import type { ProviderTransport } from '../contracts';
@@ -13,6 +14,7 @@ export const jellyfinMusicIdSchema = v.pipe(
 );
 export const musicBrowseSchema = v.pipe(
   v.object({
+    sort:v.optional(v.picklist(librarySortValues),'default'),
     kind: v.optional(v.picklist(['all', 'artist', 'album', 'track']), 'album'),
     availableOnly: v.optional(v.boolean(), false),
     offset: v.optional(v.pipe(count, v.maxValue(2147483647)), 0),
@@ -118,9 +120,10 @@ export async function browseMusic(
     enableTotalRecordCount: 'true',
     startIndex: String(options.offset),
     limit: String(options.limit),
-    sortOrder: 'Ascending',
+    sortOrder: options.sort==='title-desc'||options.sort==='added'?'Descending':'Ascending',
     sortBy:
-      options.kind === 'track' && options.albumId
+      options.sort==='added'||options.sort==='added-asc'?'DateCreated,SortName':
+      options.sort==='default' && options.kind === 'track' && options.albumId
         ? 'ParentIndexNumber,IndexNumber,SortName'
         : 'SortName',
     includeItemTypes:
