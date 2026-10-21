@@ -119,6 +119,8 @@
   }
 
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
+  const displayEnrichSocial=$derived(enrichSocial&&(adapter?.enrichSocial??true));
+  const activitySkeleton=$derived(source?.type==='social'&&source.surface!=='popular'||source?.type==='library-feed'&&source.feature==='requests'&&page.data.user?.role==='admin');
   $effect(() => { if(adapter && (adapter.ready || adapter.error))untrack(()=>onsettled?.()); });
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
@@ -131,6 +133,8 @@
     availability, availableOnly, title: displayTitle, href: adapter?.href ?? href, url,
   }), value => { availableOnly = value; });
   const pagination = $derived(adapter?.pagination);
+  const infiniteGrid=$derived(displayLayout==='grid'&&pagination?.kind==='pages'&&!!pagination.infinite);
+  const manualGrid=$derived(displayLayout==='grid'&&pagination?.kind==='pages'&&pagination.automatic===false);
   const sectionCandidate=$derived(!!sectionHost?.active&&displayLayout==='grid');
   const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
   const sourceHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? (displayLayout==='row'||pagination.append||sectionCandidate) && pagination.page < pagination.pages : hasMore);
@@ -160,7 +164,7 @@
   $effect(() => {
     const ids = [...new Set(entries.filter(entry=>visibleSocialKeys.has(entry.key)&&!entry.item.captionActor).map(({item}) => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
     const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
-    const active = enrichSocial && socialActive && !!page.data.user && page.data.capabilities?.social!==false;
+    const active = displayEnrichSocial && socialActive && !!page.data.user && page.data.capabilities?.social!==false;
     untrack(() => enrichment.update({ ids, scope, active }));
   });
   onDestroy(()=>{disposed=true;enrichment.cancel();});
@@ -195,7 +199,7 @@
   const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' ? adapter.load : undefined) : onpage);
   const displayPageUrl = $derived((pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl);
   const pagedNavigation = $derived(displayLayout === 'grid' || !adapter && !!onpage);
-  const hasNavigation = $derived(!sectionCandidate&&(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl));
+  const hasNavigation = $derived(!sectionCandidate&&!infiniteGrid&&(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl));
   let styleMenu = $state<RowStyleMenu>();
   const layoutItems=$derived(entries.map(entry=>entry.key));
   const rail = createShelfLayout(() => ({
@@ -204,7 +208,7 @@
     hasMore: displayHasMore, onend: displayOnend, resetKey: displayResetKey,
     hasPrevious: displayHasPrevious, onstart: adapter?.loadPrevious, initialItemId: adapter?.initialItemId, items:layoutItems,
     restoration:page.state.mediaDetailShelf?.href===adapter?.location?page.state.mediaDetailShelf?.position:undefined,
-    autoLoad:sectionCandidate||pagination?.kind==='cursor'||!adapter&&!!onend,error:displayError,
+    autoLoad:!manualGrid&&(sectionCandidate||infiniteGrid||pagination?.kind==='cursor'||!adapter&&!!onend),error:displayError,
   }));
   function styleGesture(node: HTMLElement) {
     if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
@@ -234,7 +238,7 @@
 <div data-shelf use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
-    {#each entries as entry (entry.key)}{@const item = entry.item}{@const cardStyle = itemStyle(item, style)}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} style:--mixed-card-ratio={displayMixed ? cardAspectRatio(cardStyle.shape) : undefined} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:enrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
+    {#each entries as entry (entry.key)}{@const item = entry.item}{@const cardStyle = itemStyle(item, style)}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} style:--mixed-card-ratio={displayMixed ? cardAspectRatio(cardStyle.shape) : undefined} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:displayEnrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
       {#snippet cardAction()}{@render captionAction?.(item as T)}{/snippet}
       {#snippet cardBody()}{@render body?.(item as T)}{/snippet}
       {#snippet cardFooter()}{@render footer?.(item as T)}{/snippet}
@@ -338,7 +342,7 @@
   >
     {#if loading || emptyRow}
     {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
-    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">{#if activitySkeleton}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if activitySkeleton}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
   {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
@@ -346,8 +350,8 @@
 </section>
 
 {/if}
-{#if !adapter?.appendOnly && displayLayout === 'grid' && displayHasMore && (pagination?.kind === 'cursor'||sectionCandidate||!adapter&&!!onend)}
-<div class="load-more" use:lazyContent={{load:()=>{if(!displayBusy)void displayOnend?.();},enabled:()=>!displayBusy&&!displayError,repeat:true}} aria-busy={displayBusy}>
+{#if !adapter?.appendOnly && displayLayout === 'grid' && displayHasMore && (infiniteGrid||pagination?.kind === 'cursor'||sectionCandidate||!adapter&&!!onend)}
+<div class="load-more" use:lazyContent={{load:()=>{if(!displayBusy)void displayOnend?.();},enabled:()=>!manualGrid&&!displayBusy&&!displayError,repeat:true}} aria-busy={displayBusy}>
  <Button emphasis="subtle" disabled={displayBusy} onclick={()=>displayOnend?.()}>{displayBusy?'Loading…':displayError?'Retry':'Load more'}</Button>
 </div>
 {/if}

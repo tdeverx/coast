@@ -1,3 +1,6 @@
+import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
+import {librarySortValues,librarySegmentValues} from '#lib/library.js';
+import {libraryOrder} from '#lib/server/queries/library-order.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { personaliseWorkCards } from '#lib/catalogue/overrides/presentation.server.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '#lib/server/experimental.js';
@@ -29,6 +32,8 @@ function inheritedScreenAccess(source:SQL, scanId:SQL, settings:SQL, generation:
 }
 
 export const collectionOptionsSchema = v.object({
+  segment:v.optional(v.picklist(librarySegmentValues),'all'),
+  sort:v.optional(v.picklist(librarySortValues),'default'),
   page: v.optional(pageNumberSchema, 1),
   level: v.optional(v.picklist(['all', 'root']), 'all'),
   category: v.optional(v.picklist(['all', 'screen', 'music', 'game', 'reading', 'book', 'comic']), 'all'),
@@ -217,7 +222,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
       (case when mp.position_seconds>0 then mp.updated_at end) desc nulls last,
       (l.track_id is not null or coalesce(mp.play_count,0)>0),r.position,child.id
   ), assessments as materialized (
-    select w.id,w.category,w.kind,coalesce(m.title,g.title,mu.title,rw.title,w.kind) as title,
+    select w.id,w.created_at,w.category,w.kind,coalesce(m.title,g.title,mu.title,rw.title,w.kind) as title,
       coalesce(m.release_date,g.release_date,mu.release_date,rw.release_date)::text as release_date,
       coalesce(c.stale,false) as stale,
       case when w.category in ('book','comic') then case when c.available>0 then 'available' else 'unknown' end
@@ -372,7 +377,7 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   for (const card of personal) cards.set(card.workId ?? card.id, card);
   return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);
 }
-export function collectionParameters(url: URL) { return Object.fromEntries(['page','level','category','kind','relationship','activity','availability','source'].flatMap(k=>url.searchParams.has(k)?[[k,k==='page'?Number(url.searchParams.get(k)):url.searchParams.get(k)]]:[])); }
+export function collectionParameters(url: URL) { return Object.fromEntries(['page','level','category','kind','relationship','activity','availability','source','sort','segment'].flatMap(k=>url.searchParams.has(k)?[[k,k==='page'?Number(url.searchParams.get(k)):url.searchParams.get(k)]]:[])); }
 async function collectionPage(viewerId: string, raw: unknown={}, username?: string, interval?: PageInterval) {
   const owner=username?await profileUser(username):null, ownerId=owner?.id??viewerId;
   const input=v.parse(collectionOptionsSchema,raw);
@@ -382,7 +387,9 @@ async function collectionPage(viewerId: string, raw: unknown={}, username?: stri
   }
   if(ownerId!==viewerId && input.category!=='reading')await (await import('#lib/social/privacy.server.js')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
   const config=await getFeatureConfig(viewerId);if(input.category!=='all')requireEnabledCategory(config,input.category);
-  const condition=sql`(select collection_visible from visibility where category=c.category) and ${enabledCategories(sql`c.category`,config)} and ${selectedCategory(sql`c.category`,input.category)} and (${input.kind}='all' or c.kind=${input.kind})
+  const category=input.category==='game'?'game':input.category==='music'?'music':['reading','book','comic'].includes(input.category)?'reading':'screen';
+  const segment=await librarySegmentCondition(ownerId,viewerId,input.segment,sql`c.id`,category);
+  const condition=sql`${segment??sql`true`} and (select collection_visible from visibility where category=c.category) and ${enabledCategories(sql`c.category`,config)} and ${selectedCategory(sql`c.category`,input.category)} and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))
     and (${input.relationship}='all' or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'=${input.relationship}))
     and (${input.activity}='all' or (${input.activity}='active' and c.active and not c.dropped and not c.completed)
@@ -394,9 +401,11 @@ async function collectionPage(viewerId: string, raw: unknown={}, username?: stri
     and (${input.availability}='all' or (${input.availability}='available' and c.availability in ('available','partial')) or c.availability=${input.availability} or
       (${input.availability}='ready' and exists(select 1 from assessments a where a.id=c.next_id and a.availability='available')))
     and (${input.source}='all' or exists(select 1 from descendants d join availability a on a.media_id=d.id where d.root=c.id and a.user_id=${viewerId} and a.connection_id::text=${input.source}))`;
+  const order=libraryOrder(input.sort,{title:sql`title`,added:sql`created_at`,id:sql`id`});
+  const selectedOrder=libraryOrder(input.sort,{title:sql`selected.title`,added:sql`selected.created_at`,id:sql`selected.id`});
   const result=await collectionRead(sql`${collectionCTE(ownerId,viewerId,input.source,'personal',input.category)}, filtered as (select c.* from collection c where ${condition}), totals as (select count(*)::int as total from filtered)
-    select totals.total,coalesce((select jsonb_agg(selected order by lower(selected.title),selected.id) from
-      (select * from filtered order by lower(title),id limit ${interval ? sql`(least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))
+    select totals.total,coalesce((select jsonb_agg(selected order by ${selectedOrder}) from
+      (select * from filtered order by ${order} limit ${interval ? sql`(least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))
           - least(${interval.firstPage},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int)) + 1)*${PAGE_SIZE}` : sql`${PAGE_SIZE}`}
         offset (least(${interval?.firstPage ?? input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}) selected),'[]'::jsonb) as items from totals`);
   const total=Number(result[0]?.total??0), {page,pages}=pagination(total,input.page);

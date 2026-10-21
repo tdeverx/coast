@@ -95,3 +95,21 @@ test('Credits caches selection returns but retries/revisions fetch fresh results
   await settle();staleFinish(content('stale'));await stale;expect(result.items[0].id).toBe('new-viewer');
  }finally{dispose();}
 });
+test('Library sorting and segment changes cancel pending pages and restart one clean native window',async()=>{
+ const calls:{url:URL;signal:AbortSignal;resolve:(value:LibraryContent)=>void}[]=[];
+ client.setDelivery((path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>calls.push({url:new URL(path,'http://test/'),signal:options.signal,resolve})));
+ const {result,dispose,update}=library();update({layout:'grid',segments:true,kindControl:false});
+ try{
+  const first=result.load();calls[0].resolve({...content('first'),pages:5,total:300});await first;
+  const append=result.load(2,true);
+  result.controls.find(control=>control.label==='Sort by')!.change('added');
+  expect(calls[1].signal.aborted).toBe(true);expect(result.items).toEqual([]);
+  expect(calls[2].url.searchParams.get('sort')).toBe('added');expect(calls[2].url.searchParams.get('page')).toBe('1');
+  result.filters[0].change('next');expect(calls[2].signal.aborted).toBe(true);
+  expect(calls[3].url.searchParams.get('segment')).toBe('next');expect(calls[3].url.searchParams.get('sort')).toBe('added');
+  calls[1].resolve({...content('late-page'),page:2,pages:5,total:300});calls[2].resolve(content('late-sort'));calls[3].resolve(content('current'));
+  await append;await settle();expect(result.items.map(item=>item.id)).toEqual(['current']);
+  expect(result.pagination).toMatchObject({page:1,firstPage:1,infinite:true,automatic:false,controls:'none'});
+  expect(calls).toHaveLength(4);
+ }finally{dispose();}
+});

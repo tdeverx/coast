@@ -82,7 +82,7 @@
     }
   }
   onDestroy(()=>releaseFocus?.());
-  const clock=useClock('minute',()=>showActivityContext&&!!item.captionActivity?.dateKnown);
+  const clock=useClock('minute',()=>showActivityContext&&!!(item.captionActivity?.dateKnown||item.captionDate));
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
   const trackedItem = $derived('href' in item ? undefined : item);
@@ -208,7 +208,7 @@
   {#if showActivityContext && item.captionActor}
     <div class="activity-context">
       <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} profileHref={item.captionActor.profileHref} showAvatar={!loading} nonApproved>
-        {#snippet trailing()}{#if activityTrailing}{@render activityTrailing()}{:else if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}{/snippet}
+        {#snippet trailing()}{#if activityTrailing}{@render activityTrailing()}{:else if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{:else if item.captionDate}<time datetime={item.captionDate} title={new Date(item.captionDate).toLocaleString()}>{activityDateLabel(item.captionDate,clock.now)}</time>{/if}{/snippet}
       </ActivityHeader>
     </div>
   {/if}
@@ -317,8 +317,8 @@
   </div>
   {/if}
   {/if}
-  {#if captionAction || (showCaption && showActivityContext && item.captionActor && item.captionActivity)}<div class="caption-action">
-    {#if captionAction}{@render captionAction()}{:else if item.captionActivity}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
+  {#if captionAction || item.captionStatus || (showCaption && showActivityContext && item.captionActor && item.captionActivity)}<div class="caption-action">
+    {#if captionAction}{@render captionAction()}{:else if item.captionStatus}<span class="caption-status" data-tone={item.captionStatus.tone}><Button size="icon" href={item.captionStatus.href} icon={item.captionStatus.icon} label={`${item.captionStatus.label} · ${item.title}`} title={item.captionStatus.label}/></span>{:else if item.captionActivity}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
   </div>{/if}
   </div>{/if}
   {#if body}<div class="card-body">{@render body()}</div>{/if}
@@ -332,6 +332,10 @@
 </article>
 
 <style>
+  .caption-status[data-tone='positive'] {color:var(--success);}
+  .caption-status[data-tone='pending'] {color:var(--rating);}
+  .caption-status[data-tone='negative'] {color:var(--danger);}
+  .caption-status :global(.icon-button) {color:inherit;}
   .caption-row { display:flex; align-items:center; gap:8px; }
   .caption { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; -webkit-touch-callout:none; user-select:none; }
   .caption-action { flex-shrink:0; }

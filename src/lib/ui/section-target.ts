@@ -1,3 +1,4 @@
+import {librarySegmentValues,librarySortValues,type LibrarySegment,type LibrarySort} from '#lib/library.js';
 import {progressExperimentParameters,progressExperimentSchema} from '#lib/progress-experiment.js';
 import * as v from 'valibot';
 import type {ShelfConfig} from './shelves';
@@ -25,13 +26,16 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   if(!['watch','listen','play','read'].includes(surface))return null;
   const lastPage=Number(get('page','1')),firstPage=Number(get('firstPage',String(lastPage)));
   if(!validPageInterval(firstPage,lastPage))return null;
-  const kind=get('kind','all'),activity=get('activity','all');
+  const kind=get('kind','all'),activity=get('activity','all'),segment=get('segment','all'),sort=get('sort','default');
+  if(!librarySegmentValues.includes(segment as LibrarySegment)||!librarySortValues.includes(sort as LibrarySort))return null;
   const selection=get('tracking',surface==='listen'?kind:get('state',surface==='watch'?activity==='completed'?'watched':activity==='active'?'progress':activity:activity));
-  source={type:'library',layout:'grid',surface:surface as 'watch'|'listen'|'play'|'read',initialPage:lastPage,initialFirstPage:p.has('firstPage')?firstPage:undefined,collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,initialKind:(['movie','show','book','comic'].includes(kind)?kind:'all') as 'all'|'movie'|'show'|'book'|'comic',initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
+  source={type:'library',layout:'grid',initialSort:sort as LibrarySort,initialSegment:segment as LibrarySegment,segments:url.pathname==='/library',surface:surface as 'watch'|'listen'|'play'|'read',initialPage:lastPage,initialFirstPage:p.has('firstPage')?firstPage:undefined,collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,initialKind:(['movie','show','book','comic'].includes(kind)?kind:'all') as 'all'|'movie'|'show'|'book'|'comic',initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
  }else if(url.pathname==='/for-you'){
   const section=get('section'),category=get('category','screen');
   if(!['screen','game','music','reading'].includes(category))return null;
-  if(['activity','popular'].includes(section))source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:true,layout:'grid'};
+  if(section==='recent'&&['movie','show','music','game','book','comic'].includes(get('kind','movie')))source={type:'library-feed',feature:'recent',layout:'grid',kind:get('kind','movie')};
+  else if(section==='requests'&&['all','movie','show'].includes(get('kind','all'))&&['all','available','pending','approved','declined','cancelled','failed'].includes(get('state','all')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','all')};
+  else if(['activity','popular'].includes(section))source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:true,layout:'grid'};
   else if(['upcoming','recommendations','dynamic'].includes(section)){
    const kind=dynamicKind(p.get('kind')),reason=get('reason');
    source={type:'for-you',feature:section==='dynamic'?'row':section as 'upcoming'|'recommendations',layout:'grid',category:category as 'screen'|'game'|'music'|'reading',genre:get('genre')||undefined,workId:get('work')||undefined,seed:get('seed')||undefined,...(kind?{kind}:{}),...(['liked','watched','saved','explore'].includes(reason)?{reason:reason as 'liked'|'watched'|'saved'|'explore'}:{})};

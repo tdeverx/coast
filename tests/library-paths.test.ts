@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { libraryBrowseDefaults, libraryBrowsePaths } from '../src/lib/library';
+import { libraryBrowseDefaults, libraryBrowsePaths,librarySegments } from '../src/lib/library';
 
 const base = { surface: 'watch' as const, collection: false, selection: 'all', kind: 'all', scope: 'available', genre: '', relationship: 'all', source: 'all', availability: 'all', username: '', page: 1 };
 const url = (path: string) => new URL(path, 'http://coast/');
@@ -48,4 +48,19 @@ describe('Library browsing paths', () => {
     expect(url(libraryBrowsePaths({ ...base, surface: 'play' }, { personal: true }).href).pathname).toBe('/games');
     expect(url(libraryBrowsePaths({ ...base, surface: 'listen' }, {}).href).pathname).toBe('/music');
   });
+});
+
+test('grid segments and sort stay identical through API, route and retained page windows',()=>{
+ expect(librarySegments.map(option=>option.label)).toEqual(['All','Unwatched','Continue','Next','Finished','Later','Favourites','Dropped']);
+ for(const surface of ['watch','read','play','listen'] as const){
+  for(const collection of [false,true]){
+   const paths=libraryBrowsePaths({...base,surface,collection,segment:'later',sort:'added',page:4,firstPage:2});
+   for(const path of [paths.api,paths.href]){
+    expect(url(path).searchParams.get('segment')).toBe('later');
+    expect(url(path).searchParams.get('sort')).toBe('added');
+    expect(url(path).searchParams.get('firstPage')).toBe('2');
+   }
+   expect(url(paths.href).searchParams.get('collection')).toBe(String(collection));
+  }
+ }
 });

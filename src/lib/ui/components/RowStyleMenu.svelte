@@ -63,18 +63,19 @@
 </script>
 
 <Button menu bind:this={shapeMenu} label={`${title} style`} hideTrigger>
-  <Button menu label="Shape" panel>
+  <div class="menu-label">Row appearance</div>
+  <Button menu label="Shape" icon="crop" panel>
     <ChoiceGroup label="Shape" value={overrideShape} options={shapes.map(value => ({ value, label: value === 'fanart' ? 'Landscape' : value[0].toUpperCase() + value.slice(1) }))} defaultOption change={value => overrideShape = value as typeof overrideShape} />
   </Button>
   {#if artworkOptions}
-    <Button menu label="Artwork" panel>
+    <Button menu label="Artwork" icon="film" panel>
       <ChoiceGroup label="Artwork" value={overrideArtwork} options={artworkStyles} defaultOption change={value => overrideArtwork = value as typeof overrideArtwork} />
     </Button>
     {#if mediaKind === 'screen'}
-      <Button menu label="Prefer artwork from" panel>
+      <Button menu label="Prefer artwork from" icon="list" panel>
         <ChoiceGroup label="Prefer artwork from" value={overridePriority} options={priorities.map(value => ({value, label: value.split('-').map(part => part[0].toUpperCase() + part.slice(1)).join(' → ')}))} defaultOption change={value => overridePriority = value as typeof overridePriority} />
       </Button>
-      <Button menu label="Overlay" panel>
+      <Button menu label="Overlay" icon="library" panel>
         <ChoiceGroup label="Overlay" value={overrideOverlay} options={overlays} defaultOption change={value => overrideOverlay = value as typeof overrideOverlay} />
       </Button>
     {/if}

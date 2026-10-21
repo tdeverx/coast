@@ -31,7 +31,7 @@ describe('reading metadata and page contracts', () => {
       expect(v.safeParse(readingProgressInputSchema, input).success).toBe(false);
   });
   test('catalogue pages and filters have the shared bounded vocabulary', () => {
-    expect(v.parse(readingCatalogueSchema, {})).toEqual({ kind: 'all', search: '', page: 1, state: 'all', available:false, personal: true });
+    expect(v.parse(readingCatalogueSchema, {})).toEqual({segment:'all',sort:'default', kind: 'all', search: '', page: 1, state: 'all', available:false, personal: true });
     expect(v.safeParse(readingCatalogueSchema, { page: 0 }).success).toBe(false);
     expect(v.safeParse(readingCatalogueSchema, { kind: 'game' }).success).toBe(false);
     expect(v.safeParse(readingCatalogueSchema, { state: 'watched' }).success).toBe(false);

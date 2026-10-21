@@ -274,6 +274,14 @@ The existing rail geometry owner coalesces scroll/observer bursts. One continuat
 
 The 21 October checks cover buffered reveal, page/cursor continuation, exact mixed-page coverage, duplicate suppression, failed append retry, scope replacement, disposal, finite exhaustion, cold server initialization and unchanged grid/anchored presentation. Signed-in desktop For You Activity advances 20 → 40 → 60 → 80 unique event cards, crossing its native 60-card cursor boundary without console errors; the 390px viewport advances 20 → 40. These are behavior/work-budget checks, not a production latency claim.
 
+### Library controls and scoped home feeds
+
+The Library grid appends only through its explicit Load more button. It retains the existing three-native-page neighborhood, leased-card backpressure, earlier-page recovery and primitive URL/anchor restoration. Sort and segment predicates run before counts and native page hydration. Continue/Next reuse the established Progress ID planners; default orders remain unchanged for callers that do not select a sort.
+
+Recently added and Requests reuse Shelf viewport admission, horizontal continuation, artwork sequencing and Resource cancellation. Row previews hydrate twenty cards; expanded pages hydrate sixty. These ordinary append feeds retain browsed data rather than adopting Library's neighborhood protocol. Requests skip social-enrichment observers/reads and project only requester username/avatar. Viewer/role/filter scope is published inside the same resource snapshot as the cards; superseded or disposed reads cannot expose an old scope. Abort checkpoints stop further bounded request queries/hydration after withdrawal. Profile Progress omits the duplicate Later/Favourites controls while its dedicated rows retain them.
+
+Verification covers real signed-in Library sorting, genre/segment changes, manual 60→120-card append, the three-page 180-card movie neighborhood, desktop/mobile row menus and stationary menu-frame scrolling. Compiled-owner tests cover stale pages, concurrent append admission, failed refreshes, owner/role/feature withdrawal and disposal. These establish behavior and structural work bounds, not a production latency or heap-plateau claim. PostgreSQL compatibility and full disposable database suites run through PR CI before merge.
+
 ### State, cache and write contracts
 
 Check never-activated, visible, offscreen, document-hidden, context-replaced and disposed states separately. A memoization owner must name its primitive key, viewer/permission scope, revision sources, finite size/lifetime and explicit retry behavior. Equivalent object replacement is not a content change. Waiting work must still be needed when admitted; a previously intersecting image is not necessarily still visible.

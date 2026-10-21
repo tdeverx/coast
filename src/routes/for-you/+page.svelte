@@ -26,7 +26,9 @@
 <div class="content" class:page={!data.heroes.length || !!section} style:padding-bottom={!section ? '0px' : '90px'}>
   {#if section}
     <Button href="/for-you" emphasis="subtle" icon="left">For You</Button>
-    {#if section === 'upcoming' && page.data.experiments.planning}
+    {#if section==='recent'||section==='requests'}
+      <Shelf source={{type:'library-feed',feature:section,layout:'grid',kind:page.url.searchParams.get('kind')??undefined,state:page.url.searchParams.get('state')??undefined}} hideEmpty={false}/>
+    {:else if section === 'upcoming' && page.data.experiments.planning}
       <Shelf source={{type:'for-you',feature:'upcoming',layout:'grid'}} />
     {:else if section === 'recommendations'}
       <Shelf source={{type:'for-you',feature:'recommendations',layout:'grid'}} />
@@ -52,6 +54,8 @@
     {#if dev}<Shelf source={{type:'progress-experiment'}} hideEmpty={false} />
     {:else}<Shelf source={{type:'progress',mediums:true}} />
     <Shelf source={{type:'progress',surface:'next',mediums:true}} />{/if}
+    <Shelf source={{type:'library-feed',feature:'recent'}} hideEmpty={false}/>
+    {#if page.data.capabilities.requests&&page.data.capabilities.screen}<Shelf source={{type:'library-feed',feature:'requests'}} hideEmpty={false}/>{/if}
     {#if page.data.capabilities.social}<Shelf source={{type:'progress',surface:'recommendations',mediums:true}} />{/if}
     {#if !dev}<Shelf source={{type:'progress',surface:'favourites',mediums:true}} />{/if}
     {#if page.data.experiments.planning}<Shelf source={{type:'for-you',feature:'upcoming'}} />{/if}

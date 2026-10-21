@@ -7,7 +7,7 @@ import type {LibraryContent} from '../../src/lib/library';
 import * as runtime from 'svelte/internal/client';
 const read=(path:string)=>Bun.file(new URL('../../'+path,import.meta.url)).text();
 const plain=(text:string)=>new Bun.Transpiler({loader:'ts'}).transformSync(text);
-const pure=async(path:string)=>moduleUrl(plain(await read(path)));
+const pure=async(path:string)=>moduleUrl(plain(await read(path)).replaceAll('#lib/experimental.js',new URL('../../src/lib/experimental.ts',import.meta.url).href));
 const resource=moduleUrl(compileRunes(await read('src/lib/ui/resource.svelte.ts')));
 const revision=moduleUrl(compileRunes(await read('src/lib/ui/content-revision.svelte.ts')));
 const paths=await pure('src/lib/library.ts'),windows=await pure('src/lib/page-window.ts'),features=await pure('src/lib/experimental.ts'),filters=await pure('src/lib/ui/filter-options.ts');
@@ -21,7 +21,7 @@ const fixture=compileRunes(`
  import {createResource as nativeResource} from ${JSON.stringify(resource)};
  import {contentRevisionKey} from ${JSON.stringify(revision)};
  import {ApiError} from ${JSON.stringify(errors)};
- import {libraryBrowsePaths,libraryTitles,librarySelections} from ${JSON.stringify(paths)};
+ import {libraryBrowsePaths,libraryTitles,librarySelections,librarySortOptions,libraryGenres,librarySegments} from ${JSON.stringify(paths)};
  import {createPageRetention,retainPageWindow,retainedInterval} from ${JSON.stringify(windows)};
  import {surfaceEnabled,categoryEnabled} from ${JSON.stringify(features)};
  import {readingTypeOptions} from ${JSON.stringify(filters)};

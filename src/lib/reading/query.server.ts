@@ -1,6 +1,9 @@
+import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
+import {librarySortValues,librarySegmentValues} from '#lib/library.js';
+import {libraryOrder} from '#lib/server/queries/library-order.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { presentationPreferences, personaliseWorkCards, presentationSearch } from '#lib/catalogue/overrides/presentation.server.js';
-import { and, asc, count, desc, eq, or, sql, getTableColumns } from 'drizzle-orm';
+import { and, count, desc, eq, or, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
 import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '#lib/server/db/schema.js';
@@ -31,6 +34,8 @@ export async function readingStoredWorkId(kind: ReadingKind, externalId: string)
   return item?.id;
 }
 export const readingCatalogueSchema = v.object({
+  segment:v.optional(v.picklist(librarySegmentValues),'all'),
+  sort:v.optional(v.picklist(librarySortValues),'default'),
   kind: v.optional(v.picklist(['all', 'book', 'comic']), 'all'),
   search: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(250)), ''),
   page: v.optional(pageNumberSchema, 1),
@@ -79,7 +84,9 @@ export async function readingCatalogue(userId: string, raw: unknown = {}, firstP
     or exists(select 1 from ratings r where r.media_id=${readingWorks.id} and r.user_id=${userId})
     or exists(select 1 from list_items li join lists l on l.id=li.list_id where li.media_id=${readingWorks.id} and l.user_id=${userId})
     or exists(select 1 from up_next n where n.media_id=${readingWorks.id} and n.user_id=${userId})`;
+  const segment=await librarySegmentCondition(userId,userId,input.segment,readingWorks.id,'reading');
   const buildWhere = (fallback = false) => and(
+    segment,
     enabledCategories(sql`${readingWorks.kind}`, config),
     input.available?sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${readingWorks.id} and a.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled)`:undefined,
     input.kind === 'all' ? undefined : eq(readingWorks.kind, input.kind),
@@ -93,7 +100,7 @@ export async function readingCatalogue(userId: string, raw: unknown = {}, firstP
   if (!totals.total && search) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(readingWorks).where(where); }
   const { page, pages } = pagination(totals.total, input.page);
   const bounds = pageInterval(pages, page, interval?.firstPage);
-  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit((page - bounds.firstPage + 1) * PAGE_SIZE).offset((bounds.firstPage - 1) * PAGE_SIZE);
+  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), libraryOrder(input.sort,{title:readingWorks.title,added:readingWorks.createdAt,id:readingWorks.id},sql`${readingWorks.title} asc, ${readingWorks.id} asc`)).limit((page - bounds.firstPage + 1) * PAGE_SIZE).offset((bounds.firstPage - 1) * PAGE_SIZE);
   // SQL has ranked both canonical metadata and the viewer's private aliases
   // before paging. Rescoring raw titles here would demote alias-only matches.
   return { items, total: totals.total, page, pages, ...(interval ? { range: { ...bounds, counts: Array.from({length:page-bounds.firstPage+1}, (_,index)=>items.slice(index*PAGE_SIZE,(index+1)*PAGE_SIZE).length) } } : {}) };

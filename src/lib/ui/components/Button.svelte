@@ -100,8 +100,10 @@
   <div bind:this={surface} id={`${id}-menu`} use:surfaceMaterial={{enabled:controller.open,variant:'glassDark',blur:false}} class="menu-surface glass"
     class:menu-panel={panel} class:drill-hidden={controller.childHidden} role="menu" aria-label={label ?? 'More options'} popover="manual" tabindex="-1"
     onclick={controller.action} onkeydown={controller.menuKey} ontoggle={controller.toggle}>
-    {#if nested && controller.compact}<Button item keepOpen icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}
-    {#if controller.open}{@render children?.()}{/if}
+    <div class="menu-content">
+      {#if nested && controller.compact}<Button item keepOpen icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}
+      {#if controller.open}{@render children?.()}{/if}
+    </div>
   </div>
 </div>{:else}{@render control()}{/if}
 {#if disabled && disabledReason}<span id={`${id}-reason`} class="sr-only">{disabledReason}</span>{/if}
