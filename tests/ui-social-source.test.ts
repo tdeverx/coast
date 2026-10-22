@@ -8,6 +8,9 @@ const clientUrl=moduleUrl(`export let delivery;export const set=next=>delivery=n
 const client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/social.svelte.ts',import.meta.url)).text())
  .replaceAll('$app/state',routeUrl).replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
+ .replaceAll('$app/navigation',moduleUrl('export const goto=async()=>{};'))
+ .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl('export const useShelfLocation=()=>({embedded:true});'))
+ .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))
  .replaceAll('#lib/ui/content-revision.svelte.js',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.social;'))
  .replaceAll('#lib/social/model.js',import.meta.resolve('../src/lib/social/model'))
  .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental')).replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
@@ -70,5 +73,38 @@ test('an exhausted horizontal Activity cursor does not trigger an unrelated all-
  try{
   await source.load();await source.load(2,true);
   expect(paths).toHaveLength(2);expect(source.items.map(item=>item.id)).toEqual(['first']);expect(source.pagination).toEqual({kind:'cursor',hasMore:false});
+ }finally{lifecycle.destroy();dispose();}
+});
+
+test('Activity fences previous viewers immediately, cancels their cursors and retains no cards after a failed replacement',async()=>{
+ const {page}=await import(routeUrl);client.set(async()=>feed('private',true));
+ let source!:ReturnType<typeof createSocialSource>;const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'reading'})));runtime.flush();
+ let finish!:(value:ReturnType<typeof feed>)=>void,signal!:AbortSignal;
+ try{
+  await source.load();expect(source.items[0].id).toBe('private');
+  client.set((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{signal=options.signal;return new Promise(resolve=>finish=resolve);});
+  const old=source.load(2,true);const stale=finish,oldSignal=signal;
+  client.set(async()=>{throw Error('Temporary');});page.data.user={id:'replacement-viewer'};
+  expect(source.items).toEqual([]);await settle();expect(oldSignal.aborted).toBe(true);expect(source.error).toBe('Temporary');
+  stale(feed('late private'));await old;expect(source.items).toEqual([]);
+ }finally{lifecycle.destroy();dispose();page.data.user={id:'viewer'};}
+});
+
+test('Activity audience and menu selections restart the cursor, preserve links and reject late filter delivery',async()=>{
+ const calls:{url:URL;signal:AbortSignal;finish:(value:ReturnType<typeof feed>)=>void}[]=[];
+ client.set((path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>calls.push({url:new URL(path,'http://fixture'),signal:options.signal,finish:resolve})));
+ let source!:ReturnType<typeof createSocialSource>;const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'screen',audience:'friends'})));runtime.flush();
+ try{
+  expect(calls).toHaveLength(0);expect(source.filters).toEqual([]);expect(source.controls.find(control=>control.label==='Audience')?.options?.map(option=>option.label)).toEqual(['All','Friends','Me']);
+  expect(source.controls.map(control=>control.label)).toEqual(['Audience','Media type','Activity type','Time period']);
+  const first=source.load();calls[0].finish(feed('all',true));await first;
+  const more=source.load(2,true);source.controls.find(control=>control.label==='Audience')!.change('you');expect(calls[1].signal.aborted).toBe(true);expect(source.items).toEqual([]);
+  expect(calls[2].url.searchParams.get('audience')).toBe('you');expect(calls[2].url.searchParams.has('before')).toBe(false);
+  source.controls.find(control=>control.label==='Activity type')!.change('ratings');expect(calls[2].signal.aborted).toBe(true);
+  expect(calls[3].url.searchParams.get('activityType')).toBe('ratings');expect(calls[3].url.searchParams.get('category')).toBe('screen');
+  calls[3].finish(feed('ratings',true));await settle();calls[1].finish(feed('late all'));calls[2].finish(feed('late friends'));await more;await settle();
+  expect(source.items.map(item=>item.id)).toEqual(['ratings']);
+  const href=new URL(source.href!,'http://fixture');expect(href.searchParams.get('audience')).toBe('you');expect(href.searchParams.get('activityType')).toBe('ratings');expect(href.searchParams.get('view')).toBe('watch');
+  const next=source.load(2,true);expect(calls[4].url.searchParams.get('audience')).toBe('you');expect(calls[4].url.searchParams.get('activityType')).toBe('ratings');expect(calls[4].url.searchParams.has('before')).toBe(true);calls[4].finish(feed('older'));await next;
  }finally{lifecycle.destroy();dispose();}
 });

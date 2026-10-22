@@ -3,7 +3,8 @@ import type {ShelfItem} from './ui/shelves/types';
 import type {MediaView} from './ui/types';
 
 export const recentLibrarySchema=v.object({
-  kind:v.optional(v.picklist(['movie','show','music','game','book','comic']),'movie'),
+  action:v.optional(v.picklist(['watch','listen','play','read'])),
+  kind:v.optional(v.picklist(['all','movie','show','music','game','book','comic']),'movie'),
   page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1_000_000)),1),
   preview:v.optional(v.boolean(),false),
 });
@@ -12,8 +13,9 @@ export const requestStates=[
   {value:'approved',label:'Accepted'}, {value:'declined',label:'Declined'},
   {value:'cancelled',label:'Cancelled'}, {value:'failed',label:'Failed'},
 ] as const;
+export const requestSegments=requestStates.filter(state=>!['all','cancelled','failed'].includes(state.value));
 export const requestFeedSchema=v.object({
-  state:v.optional(v.picklist(['all','available','pending','approved','declined','cancelled','failed']),'all'),
+  state:v.optional(v.picklist(['available','pending','approved','declined']),'available'),
   kind:v.optional(v.picklist(['all','movie','show']),'all'),
   page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1_000_000)),1),
   preview:v.optional(v.boolean(),false),

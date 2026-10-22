@@ -36,3 +36,11 @@ test('cancelled request reads stop before opening a database projection',async()
  const {requestList}=await import('../src/lib/server/queries/requests');
  await expect(requestList(crypto.randomUUID(),1,undefined,{},AbortSignal.abort())).rejects.toMatchObject({name:'AbortError'});
 });
+
+test('combined Recently added and expanded discovery links preserve their action',()=>{
+ const base=new URL('http://coast/');
+ expect(sectionTarget('/for-you?section=recent&view=read&kind=all',base)).toMatchObject({source:{type:'library-feed',feature:'recent',action:'read',kind:'all'}});
+ expect(sectionTarget('/for-you?section=activity&view=listen',base)).toMatchObject({source:{type:'social',category:'music',mediums:false}});
+ expect(sectionTarget('/discover?section=recent&view=read',base)).toMatchObject({source:{type:'discovery',surface:'read',scoped:true}});
+ expect(sectionTarget('/progress-experiment?category=game&view=next',base)).toMatchObject({source:{type:'progress-experiment',category:'game'}});
+});

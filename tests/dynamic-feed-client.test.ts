@@ -12,7 +12,7 @@ const clientUrl=moduleUrl('export let delivery;export const setDelivery=next=>de
 const {page}=await import(routeUrl),client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 // Compile the actual component script; only browser/context boundaries are
 // injected. The bottom observer still owns calling load in the rendered app.
-const source=(await Bun.file(new URL('../src/lib/recommendations/DynamicFeed.svelte',import.meta.url)).text()).split('<script lang="ts">')[1].split('</script>')[0].replace(/^\s*import .*?;\s*$/gm,'');
+const source=(await Bun.file(new URL('../src/lib/recommendations/DynamicFeed.svelte',import.meta.url)).text()).split('<script lang="ts">')[1].split('</script>')[0].replace(/^\s*import .*?;\s*$/gm,'').replace(/let \{category\}:[^;]+?=\$props\(\);/, 'const category=undefined;');
 const imports=`import {onDestroy,untrack} from ${JSON.stringify(lifecycleUrl)};import {page} from ${JSON.stringify(routeUrl)};import {useClient} from ${JSON.stringify(clientUrl)};import {createResource} from ${JSON.stringify(resourceUrl)};`;
 const {createFeed}=await import(moduleUrl(compile(`${imports}export function createFeed(){const reportFailure=()=>{};${source};return {load,settled,get data(){return {rows};},get complete(){return complete;},get pending(){return pendingKey;},get seed(){return seed;}};}`)));
 type Feed={load:()=>Promise<void>;settled:(key:string)=>void;data:{rows:DynamicRow[]};complete:boolean;pending:string|undefined;seed:string};

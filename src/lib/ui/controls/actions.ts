@@ -12,7 +12,7 @@ export function listMembershipControls<T extends { id: string; name: string; pla
     icon: list.playlist ? playlistIcon : 'list' as const,
     checked: list.playlist ? undefined : member(list), keepOpen: !list.playlist, disabled, onclick: () => onchange(list) }));
 }
-export function availabilityControl(value: boolean, onchange: (value: boolean) => void, label = 'Available to play only') {
+export function availabilityControl(value: boolean, onchange: (value: boolean) => void, label = 'Available only') {
   return { compact: true, icon: 'play' as const, pressed: value, label,
     title: value ? 'Available titles · Show all titles' : 'All titles · Show available only', onclick: () => onchange(!value) };
 }

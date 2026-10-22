@@ -17,7 +17,7 @@ import {pagination, PAGE_SIZE} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
 import {libraryTrackingCondition} from './library';
 
-/** Dev-only caller: select eligible IDs across enabled media before hydrating one page. */
+/** Shared Progress row: select eligible IDs across enabled media before hydrating one page. */
 export async function progressExperimentData(userId:string, raw:unknown, {preview=false,signal,viewerId=userId}:{preview?:boolean;signal?:AbortSignal;viewerId?:string}={}):Promise<ProgressExperimentContent> {
   signal?.throwIfAborted();
   const options=v.parse(progressExperimentSchema,raw),config=await getFeatureConfig(viewerId);
@@ -26,21 +26,21 @@ export async function progressExperimentData(userId:string, raw:unknown, {previe
   const history=options.view==='finished'||options.view==='dropped';
   const view=options.view==='continue'?'watching':'up-next';
   const base=v.parse(progressOptionsSchema,{view,scope:options.scope});
-  const wants=(category:string)=>!saved&&!history&&categoryEnabled(config,category)&&(options.kind==='all'||(category==='screen'?['movie','show'].includes(options.kind):category==='reading'?['book','comic'].includes(options.kind):options.kind==='game'));
+  const wants=(category:string)=>(!options.category||options.category===category)&&!saved&&!history&&categoryEnabled(config,category)&&(options.kind==='all'||(category==='screen'?['movie','show'].includes(options.kind):category==='reading'?['book','comic'].includes(options.kind):options.kind==='game'));
   const [screen,games,reading]=await Promise.all([
     wants('screen')?screenProgressPlan(userId,base,viewerId,{firstEpisode:options.view==='next',sortByActivity:false}):undefined,
     wants('game')?mediumProgressIds(userId,{...base,category:'game'},false,viewerId):[],
     wants('reading')?readingProgressIds(userId,{...base,category:'reading'},false,viewerId):[],
   ]);
   signal?.throwIfAborted();
-  const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal')}
+  const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal',options.category??'all')}
     select a.id from assessments a left join ${s.media} on ${s.media.id}=a.id
     left join ${s.trackingState} on ${s.trackingState.mediaId}=a.id and ${s.trackingState.userId}=${userId}
     where a.category<>'music' and case when a.category='screen' then
       ${options.view==='finished'?sql`a.kind in ('movie','show')`:sql`a.kind in ('movie','show','season','episode','collection')`}
       and ${libraryTrackingCondition(userId,options.view==='finished'?'watched':'dropped')}
       else ${options.view==='finished'?sql`a.completed and not a.dropped`:sql`a.dropped`} end`):[];
-  const candidates=history?historyRows.map(row=>row.id as string):saved?await listCandidateIds(userId,{view:options.view,category:'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId):[...new Set([...(screen?.allIds??[]),...games,...reading])];
+  const candidates=history?historyRows.map(row=>row.id as string):saved?await listCandidateIds(userId,{view:options.view,category:options.category??'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId):[...new Set([...(screen?.allIds??[]),...games,...reading])];
   signal?.throwIfAborted();
   if(!candidates.length)return {...options,items:[],total:0,page:1,pages:1};
   const available=hasPermittedWorkSource(viewerId);
@@ -48,6 +48,7 @@ export async function progressExperimentData(userId:string, raw:unknown, {previe
   const where=and(
     sql`${s.works.id}=any(${`{${candidates.join(',')}}`}::uuid[])`,enabledCategories(sql`${s.works.category}`,config),
     ne(s.works.category,'music'),
+    options.category===undefined?undefined:options.category==='reading'?inArray(s.works.kind,['book','comic']):eq(s.works.category,options.category),
     sql`social_visible(${userId}::uuid,${viewerId}::uuid,${section},${s.works.category})`,
     options.view==='next'?sql`social_visible(${userId}::uuid,${viewerId}::uuid,'collection',${s.works.category})`:undefined,
     options.kind==='all'?undefined:options.kind==='show'?inArray(s.works.kind,['show','season','episode']):eq(s.works.kind,options.kind),

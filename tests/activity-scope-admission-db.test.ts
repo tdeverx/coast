@@ -5,7 +5,7 @@ import {sql,type SQL} from 'drizzle-orm';
 import {PgDialect} from 'drizzle-orm/pg-core';
 import * as v from 'valibot';
 import {activityRelationships,relationshipEventFilter} from '../src/lib/social/relationships.server';
-import {workFriendFilters} from '../src/lib/social/model';
+import {workFriendFilters,activityFiltersSchema,activityTypeEvents} from '../src/lib/social/model';
 
 // Actual persisted rows only. The ordinary authored-fixture DB suite deliberately
 // skips this test; execute this file alone under an approved actual-clone lease.
@@ -24,8 +24,8 @@ function currentAdmission(source:string){
  const body=new Bun.Transpiler({loader:'ts'}).transformSync(source.slice(start,end)).replaceAll('export ','');
  return async(owner:string,scope:Scope,ids?:string[]):Promise<Query>=>{
   const stop=Symbol('captured_activity_primary');let captured:SQL|undefined;
-  const feed=new Function('sql','v','getDb','activityRelationships','relationshipEventFilter','workFriendFilters',body+';return activityFeed;')(
-   sql,v,()=>({execute(query:SQL){check(!captured,'multiple_primary_statements');captured=query;throw stop;}}),activityRelationships,relationshipEventFilter,workFriendFilters);
+  const feed=new Function('sql','v','getDb','activityRelationships','relationshipEventFilter','workFriendFilters','activityFiltersSchema','activityTypeEvents',body+';return activityFeed;')(
+   sql,v,()=>({execute(query:SQL){check(!captured,'multiple_primary_statements');captured=query;throw stop;}}),activityRelationships,relationshipEventFilter,workFriendFilters,activityFiltersSchema,activityTypeEvents);
   try{await feed(owner,scope,ids);throw Error('activity_primary_was_not_intercepted');}catch(error){if(error!==stop)throw error;}
   const full=dialect.sqlToQuery(captured!),marker='activity_policy_keys as materialized (';
   const at=full.sql.indexOf(marker);check(at>=0&&full.sql.indexOf(marker,at+marker.length)<0,'activity_primary_boundary_changed');

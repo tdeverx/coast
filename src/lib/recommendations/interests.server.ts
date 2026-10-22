@@ -2,7 +2,7 @@ import {getSql} from '#lib/server/db/index.js';
 import type {DynamicMedium,DynamicKind} from './model';
 export type InterestWork={id:string;category:DynamicMedium;kind:DynamicKind|'track';title:string;genres:string[];weight:number;consumed:boolean;positive:boolean;updated:Date|string};
 /** Collapse episodes to their show and cap each work's influence; imports are not thousands of votes. */
-export async function interestWorks(userId:string|null){
+export async function interestWorks(userId:string|null,category?:DynamicMedium){
  return getSql()<InterestWork[]>`with signals as (
   select t.user_id,t.media_id as id,t.updated_at as updated,
    case when t.dropped then -6 when t.favourite then 5 when t.watched then 3 else 1 end::float as weight,
@@ -15,7 +15,7 @@ export async function interestWorks(userId:string|null){
   union all select l.user_id,l.track_id,max(l.occurred_at),case when count(*)>=3 then 4 else 3 end,true,false from music_listens l join users u on coast_feature_enabled(u.id,'personalisation') and u.id=l.user_id and not u.disabled where (${userId}::uuid is null or l.user_id=${userId}) group by l.user_id,l.track_id
   union all select r.user_id,r.target_id,r.updated_at,case when r.emoji in ('❤️','🔥') then 4 else 0 end,false,r.emoji in ('❤️','🔥') from social_reactions r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where coast_feature_enabled(r.user_id,'social') and r.target_kind='work' and (${userId}::uuid is null or r.user_id=${userId})
  ), roots as (
-  select coalesce(e.show_id,s.show_id,r.parent_id,p.id) as id,p.updated,p.weight,p.consumed,p.positive from signals p join works admitted on admitted.id=p.id and coast_category_enabled(p.user_id,admitted.category)
+  select coalesce(e.show_id,s.show_id,r.parent_id,p.id) as id,p.updated,p.weight,p.consumed,p.positive from signals p join works admitted on admitted.id=p.id and (${category??'all'}='all' or admitted.category=${category??'all'} or ${category??'all'}='reading' and admitted.kind in ('book','comic')) and coast_category_enabled(p.user_id,admitted.category)
   left join episodes e on e.media_id=p.id left join seasons s on s.media_id=p.id
   left join lateral(select parent_id from media_relationships r join works w on w.id=r.parent_id and w.kind='album' where e.show_id is null and s.show_id is null and r.child_id=p.id and r.kind='contains' order by position,parent_id limit 1) r on true
  ), recent as (

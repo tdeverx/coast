@@ -98,6 +98,11 @@ run('a partly listened album needs its next unlistened track while finished trac
   const assessments=await workAssessments(owner,owner,[parent,first]);const current=assessments.find(a=>a.id===parent)!;
   expect(current.active).toBe(true);expect(current.completed).toBe(false);expect(current.nextId).toBe(next);expect(assessments.find(a=>a.id===first)?.completed).toBe(true);
   const demand=await missingDemand(owner,new URL('http://fixture/missing'));expect(demand.items.find(i=>i.workId===parent)?.neededWorkId).toBe(next);
+  const screen=await missingDemand(owner,new URL('http://fixture/missing?category=screen'));
+  expect(screen.items.some(i=>i.workId===parent)).toBe(false);expect(screen.items.some(i=>i.workId===movie)).toBe(true);
+  const music=await missingDemand(owner,new URL('http://fixture/missing?category=music&page=99'));
+  expect(music.items.some(i=>i.workId===parent)).toBe(true);expect(music.items.some(i=>i.workId===movie)).toBe(false);
+  expect(music.total).toBeLessThan(demand.total);expect(music.page).toBe(music.pages);
  }finally{await db.delete(works).where(inArray(works.id,rows.map(w=>w.id)));await db.update(systemSettings).set({value:config}).where(eq(systemSettings.key,'coast'));}
 });
 run('a game replay uses its current playthrough status while retaining earlier completion history',async()=>{

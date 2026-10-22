@@ -71,3 +71,12 @@ test('the shared screen query forwards each selected bucket to the catalogue own
  for(const section of ['trending','recent'])await module.screenDiscovery('unit-viewer',section);
  expect(module.calls).toEqual([['unit-viewer','trending'],['unit-viewer','recent']]);
 });
+
+test('cancelled discovery does not hydrate cards after shared provider work completes',async()=>{
+ const source=await Bun.file(new URL('../src/lib/server/queries/discovery.ts',import.meta.url)).text();
+ const start=source.indexOf('async function screenDiscovery('),end=source.indexOf('async function gameDiscovery(',start);
+ const module=await import(moduleUrl(`export let finish;export let hydrated=0;const discoverMedia=()=>new Promise(resolve=>finish=resolve);const mediaViews=async()=>{hydrated++;return [];};export ${source.slice(start,end)}`));
+ const controller=new AbortController();const pending=module.screenDiscovery('viewer','trending',controller.signal);
+ controller.abort();module.finish({trending:[],recent:[],providerUnavailable:false});
+ await expect(pending).rejects.toThrow();expect(module.hydrated).toBe(0);
+});

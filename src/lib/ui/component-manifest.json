@@ -280,7 +280,6 @@
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/routes/+error.svelte",
       "src/routes/discover/+page.svelte",
-      "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
@@ -427,7 +426,6 @@
       "src/lib/ui/components/RowFilter.svelte",
       "src/lib/ui/components/TextLink.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
-      "src/routes/library/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -867,7 +865,6 @@
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
       "src/lib/ui/pages/SectionDetails.svelte",
-      "src/routes/discover/+page.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",

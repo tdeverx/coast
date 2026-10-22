@@ -1,7 +1,10 @@
 import * as v from 'valibot';
-import {and,eq,sql} from 'drizzle-orm';
+import {and,eq,inArray,sql} from 'drizzle-orm';
 import {recentLibrarySchema,type LibraryFeedContent} from '#lib/library-feed.js';
 import {workCards} from '#lib/collection/query.server.js';
+import {actionCategories} from '#lib/actions.js';
+import {categoryEnabled} from '#lib/experimental.js';
+import {AppError} from '../security/errors';
 import {getFeatureConfig} from '../features';
 import {requireEnabledCategory} from '../experimental';
 import {getDb} from '../db';
@@ -14,9 +17,15 @@ import {ROW_BATCH_SIZE} from '#lib/page-window.js';
 export async function recentLibraryData(userId:string,raw:unknown,signal?:AbortSignal):Promise<LibraryFeedContent>{
   const options=v.parse(recentLibrarySchema,raw);
   signal?.throwIfAborted();
-  const category=['movie','show'].includes(options.kind)?'screen':options.kind;
-  requireEnabledCategory(await getFeatureConfig(userId),category);
-  const where=and(eq(s.works.kind,options.kind==='music'?'album':options.kind),hasPermittedWorkSource(userId));
+  const config=await getFeatureConfig(userId);
+  if(options.kind==='all'&&!options.action)throw new AppError(400,'Choose an action for recently added.');
+  const category=options.action?actionCategories[options.action]:['movie','show'].includes(options.kind)?'screen':options.kind;
+  requireEnabledCategory(config,category);
+  const kinds=options.kind==='all'?(options.action==='watch'?['movie','show']:options.action==='listen'?['album']:options.action==='play'?['game']:['book','comic'].filter(kind=>categoryEnabled(config,kind))):[options.kind==='music'?'album':options.kind];
+  const allowed=options.action==='watch'?['movie','show']:options.action==='listen'?['album']:options.action==='play'?['game']:options.action==='read'?['book','comic']:kinds;
+  if(kinds.some(kind=>!allowed.includes(kind)))throw new AppError(400,'Choose a media type for this action.');
+  if(options.kind!=='all')requireEnabledCategory(config,['movie','show'].includes(options.kind)?'screen':options.kind);
+  const where=and(inArray(s.works.kind,kinds as typeof s.works.$inferSelect.kind[]),hasPermittedWorkSource(userId));
   const db=getDb();
   const [count]=await db.select({total:sql<number>`count(*)::int`}).from(s.works)
     .leftJoin(s.media,eq(s.media.id,s.works.id)).where(where);

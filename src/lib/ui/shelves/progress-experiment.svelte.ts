@@ -11,10 +11,11 @@ import {categoryEnabled} from '#lib/experimental.js';
 import {mediaTypeOptions} from '#lib/ui/filter-options.js';
 import type {ShelfSource, ShelfControl} from './types';
 
-export type ProgressExperimentSourceOptions={type:'progress-experiment';username?:string;layout?:'row'|'grid';initial?:ProgressExperimentContent;filters?:ProgressExperimentOptions};
+export type ProgressExperimentSourceOptions={category?:'screen'|'game'|'reading';type:'progress-experiment';username?:string;layout?:'row'|'grid';initial?:ProgressExperimentContent;filters?:ProgressExperimentOptions};
 export function createProgressExperimentSource(get:()=>ProgressExperimentSourceOptions):ShelfSource {
   const {api,preview}=useClient(),location=useShelfLocation();
   const initial=$derived(get().initial);
+  const scopedCategory=$derived(get().category??get().filters?.category??initial?.category);
   const layout=$derived(get().layout??'row');
   let view=$state(untrack(()=>get().filters?.view??initial?.view??'continue'));
   type Filters=Pick<ProgressExperimentOptions,'kind'|'scope'>;
@@ -22,10 +23,10 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   untrack(()=>{const filters=get().filters??initial;if(filters)preferences[view]={kind:filters.kind,scope:filters.scope};});
   const current=$derived(preferences[view]);
   const resource=createResource<ProgressExperimentContent>(untrack(()=>initial??{view,kind:'all',scope:'all',items:[],total:0,page:1,pages:1}),!!untrack(()=>initial));
-  const ownerKey=$derived(JSON.stringify([page.data.user?.id,get().username]));
+  const ownerKey=$derived(JSON.stringify([page.data.user?.id,get().username,scopedCategory]));
   let loadedOwner=$state(untrack(()=>ownerKey));
   const empty=():ProgressExperimentContent=>({view,...current,items:[],total:0,page:1,pages:1});
-  const parameters=(number=1)=>new URLSearchParams({view,...current,page:String(number),...(get().username?{username:get().username!}:{})});
+  const parameters=(number=1)=>new URLSearchParams({...(scopedCategory?{category:scopedCategory}:{}),view,...current,page:String(number),...(get().username?{username:get().username!}:{})});
   const href=(number=1)=>'/progress-experiment?'+parameters(number);
   async function load(number=1,append=false) {
     const request=parameters(number);
@@ -70,21 +71,22 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   return {
     get title(){return 'Progress';},
     get items(){
-      if(loadedOwner!==ownerKey)return [];
+      if(loadedOwner!==ownerKey||scopedCategory&&resource.data.category!==scopedCategory||resource.data.view!==view||resource.data.kind!==current.kind||resource.data.scope!==current.scope)return [];
       const items=resource.data.items.filter(item=>!['album','track','artist'].includes(item.kind)&&categoryEnabled({...page.data,features:page.data.capabilities},item.kind==='game'?'game':['book','comic'].includes(item.kind)?item.kind:'screen'));
       return items;
     },
     get busy(){return resource.busy;},get ready(){return resource.ready;},get error(){return resource.error;},
     get activated(){return resource.activated;},
     get href(){return layout==='row'?href():undefined;},
-    get mixed(){return true;},
+    get shape(){return view==='continue'?'fanart' as const:'poster' as const;},
+    get artworkStyle(){return view==='continue'?'thumb' as const:'primary' as const;},
     get resetKey(){return JSON.stringify([ownerKey,view,current.kind,current.scope]);},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:false,controls:layout==='grid'?'both' as const:'none' as const};},
     get filters():ShelfControl[]{return [
       {type:'segments',label:'Progress selection',value:view,options:get().username?profileProgressExperimentTabs:progressExperimentTabs,change:value=>{if(value===view)return;view=value as typeof view;void load();}},
       {type:'availability',label:'Available only',value:current.scope,change:value=>update({scope:value as Filters['scope']})},
     ];},
-    get controls():ShelfControl[]{return [{type:'select',label:'Progress media type',value:current.kind,options:mediaTypeOptions({...page.data,experimentalMusic:false,features:page.data.capabilities}),change:value=>update({kind:value as Filters['kind']})}];},
+    get controls():ShelfControl[]{return scopedCategory==='game'?[]:[{type:'select',label:scopedCategory==='reading'?'Reading type':'Media type',value:current.kind,options:mediaTypeOptions({...page.data,experimentalMusic:false,features:page.data.capabilities}).filter(option=>!scopedCategory||option.value==='all'||(scopedCategory==='screen'?['movie','show'].includes(option.value):['book','comic'].includes(option.value))),change:value=>update({kind:value as Filters['kind']})}];},
     get empty(){return 'No titles in this selection.';},
     load,
   };

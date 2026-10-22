@@ -1,3 +1,4 @@
+import {actionFromCategory} from '#lib/actions.js';
 import { useShelfLocation } from '#lib/ui/detail-section.svelte.js';
 import type { GenreReason, DynamicKind } from '#lib/recommendations/model.js';
 import { genreRowTitle, recommendationRowTitle } from '#lib/recommendations/row-titles.js';
@@ -37,6 +38,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
 
   const resource = createResource(
     {
+      scope: '',
       items: [] as ShelfItem[],
       total: 0,
       page: 1,
@@ -47,6 +49,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
   );
 
   const empty = () => ({
+    scope: '',
     items: [] as ShelfItem[],
     total: 0,
     page: 1,
@@ -61,6 +64,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
   }
 
   async function load(number?: number, append = false) {
+    if (append && resource.busy) return;
     if (!get().category && !categoryEnabled({ ...page.data, features: page.data.capabilities }, category)) category = mediumOptions({ ...page.data, features: page.data.capabilities })[0]?.value ?? category;
 
     if (!enabled()) {
@@ -74,6 +78,8 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
       : 1;
 
     if (append) number = resource.data.page + 1;
+    const requestedScope = selectionKey;
+    if (append && resource.data.scope !== requestedScope) { append = false; number = 1; }
 
     if (!location.embedded && !preview && get().layout === 'grid') {
       const url = new URL(location.url.href);
@@ -98,7 +104,8 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     const result = await resource.load(
       async (signal) => {
         try {
-          return await api<typeof resource.data>(`${get().feature === 'upcoming' ? 'planning' : 'experiments/' + get().feature}?${params}`, undefined, 'GET', { signal });
+          const result = await api<typeof resource.data>(`${get().feature === 'upcoming' ? 'planning' : 'experiments/' + get().feature}?${params}`, undefined, 'GET', { signal });
+          return {...result, scope: requestedScope};
         } catch(cause) {
           if (!signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status)) resource.replace(empty(), cause.message);
 
@@ -135,6 +142,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
   get().feature==='upcoming'&&page.data.experiments.planning,
   get().feature,get().genre,get().kind,get().reason,get().workId,get().category,
   ]));
+ const selectionKey=$derived(JSON.stringify([scopeKey,category,available]));
  let previousScope=untrack(()=>scopeKey);
  $effect(()=>{refreshKey;const scope=scopeKey;untrack(()=>{
   const changed=scope!==previousScope;previousScope=scope;
@@ -148,7 +156,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
   get title(){return get().title??resource.data.title??(get().feature==='upcoming'?'Upcoming':get().feature==='row'&&get().genre?genreRowTitle(category as 'screen'|'game'|'music'|'reading',get().genre!,get().kind,get().reason,orderSeed):recommendationRowTitle(category as 'screen'|'game'|'music'|'reading',orderSeed));},
   get href(){
    if(get().layout==='grid')return undefined;
-   const params=new URLSearchParams({section:get().feature==='row'?'dynamic':get().feature,category});
+   const params=new URLSearchParams({section:get().feature==='row'?'dynamic':get().feature,category,view:actionFromCategory(category)});
    if(get().genre)params.set('genre',get().genre!);
    if(get().workId)params.set('work',get().workId!);
    if(get().kind)params.set('kind',get().kind!);
@@ -163,7 +171,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     },
 
     get items() {
-      return resource.data.items;
+      return enabled() && resource.data.scope === selectionKey ? resource.data.items : [];
     },
 
     get busy() {
@@ -197,13 +205,13 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     },
 
     get shape() {
-      return category === 'reading'
+      return category === 'reading' || category === 'game'
         ? 'poster' as const
         : category === 'music' ? 'square' as const : 'fanart' as const;
     },
 
     get artworkStyle() {
-      return category === 'reading' ? 'primary' as const : 'thumb' as const;
+      return category === 'reading' || category === 'game' || category === 'music' ? 'primary' as const : 'thumb' as const;
     },
 
     get pagination() {
@@ -222,7 +230,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
 
     get filters(): ShelfControl[] {
       return [
-        ...get().feature === 'row' || get().feature === 'recommendations' && get().category !== undefined && get().layout !== 'grid'
+        ...get().category !== undefined || get().feature === 'row'
           ? []
           : [
             {

@@ -1,4 +1,3 @@
-const dev=import.meta.env.DEV;
 import {progressExperimentData} from '#lib/server/queries/progress-experiment.js';
 import {progressExperimentParameters} from '#lib/progress-experiment.js';
 import {recentLibraryData} from '#lib/server/queries/recent-library.js';
@@ -218,12 +217,12 @@ export const handler: RequestHandler = async (event) => {
         ),
       });
     }
-    if(path[0]==='discover' && path.length===1 && method==='GET')return Response.json(await discoveryContent(uid,discoveryParameters(url)));
+    if(path[0]==='discover' && path.length===1 && method==='GET')return Response.json(await discoveryContent(uid,discoveryParameters(url),request.signal));
     if (path[0] === 'library' && path.length === 1 && method === 'GET')
       return Response.json(await libraryContent(uid, url,request.signal));
     if(path[0]==='library'&&path[1]==='recent'&&path.length===2&&method==='GET')
-      return Response.json(await recentLibraryData(uid,{kind:url.searchParams.get('kind')??undefined,page:url.searchParams.has('page')?Number(url.searchParams.get('page')):undefined,preview:url.searchParams.get('preview')==='true'},request.signal));
-    if (dev && path[0] === 'progress' && path[1] === 'experiment' && path.length === 2 && method === 'GET') {
+      return Response.json(await recentLibraryData(uid,{action:url.searchParams.get('action')??undefined,kind:url.searchParams.get('kind')??undefined,page:url.searchParams.has('page')?Number(url.searchParams.get('page')):undefined,preview:url.searchParams.get('preview')==='true'},request.signal));
+    if (path[0] === 'progress' && path[1] === 'experiment' && path.length === 2 && method === 'GET') {
       return Response.json(await progressExperimentData(subjectId,progressExperimentParameters(url),{preview:url.searchParams.get('preview')==='true',signal:request.signal,viewerId:uid}));
     }
     if (path[0] === 'progress' && path.length === 1 && method === 'GET')

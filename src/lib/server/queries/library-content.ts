@@ -1,3 +1,4 @@
+import {libraryContainers} from './library-containers.js';
 import {librarySortValues,librarySegmentValues} from '#lib/library.js';
 import { PAGE_SIZE, requestedPageInterval } from './pagination';
 import { getFeatureConfig } from '#lib/server/features.js';
@@ -26,6 +27,7 @@ export async function libraryContent(userId: string, url: URL,signal?:AbortSigna
   const selection = url.searchParams.get('selection') ?? 'all';
   const page = Number(url.searchParams.get('page') ?? 1);
   const interval = requestedPageInterval(page, url.searchParams.get('firstPage'));
+  if(surface==='listen'&&selection==='playlist'||surface==='read'&&url.searchParams.get('kind')==='series')return libraryContainers(userId,url,signal);
   if (surface === 'watch')
     return libraryData(userId, {
       sort,segment,

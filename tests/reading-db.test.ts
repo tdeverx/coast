@@ -356,7 +356,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
       expect(comics.result.items.map(item => item.kind)).toEqual(['comic']);
       expect(calls).toEqual([{ kind: 'book', page: 2 }, { kind: 'comic', page: 2 }]);
       calls.length = 0;
-      const unified = await route({ q: query, type: 'book' });
+      const unified = await route({ q: query, view:'read' });
       expect(unified.result.items.some(item => item.kind === 'comic')).toBe(true);
       expect(calls).toEqual([{ kind: 'book', page: 1 }, { kind: 'comic', page: 1 }]);
     } finally {
@@ -421,7 +421,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
     const metadata = spyOn(readingProviders, 'searchReading').mockResolvedValue({items:[],total:0,page:1,nextPage:null});
     const discoverMetadata = spyOn(readingProviders, 'discoverReading').mockResolvedValue({items:[comic],total:1,page:1,nextPage:null});
     try {
-      const all = await loadSearchPage(event(`/search?q=${encodeURIComponent('Metadata after completion')}`) as Parameters<typeof loadSearchPage>[0]);
+      const all = await loadSearchPage(event(`/search?view=read&q=${encodeURIComponent('Metadata after completion')}`) as Parameters<typeof loadSearchPage>[0]);
       expect((await all!.read).items.map((item: { id: string }) => item.id)).toEqual([bookId]);
       const noQuery = await loadSearchPage(event('/search?view=read&scope=providers') as Parameters<typeof loadSearchPage>[0]);
       expect((await noQuery!.read).items).toEqual([]);
@@ -438,7 +438,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
       await expect(loadDiscoverPage(event('/discover?surface=read&page=0') as Parameters<typeof loadDiscoverPage>[0])).rejects.toMatchObject({ status: 400 });
       await saveConfig({ ...config, experimentalBooks: true, experimentalComics: false });
       await expect(loadSearchPage(event('/search?view=read&kind=comic') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 404 });
-      await expect(loadSearchPage(event('/search?type=comic') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 404 });
+      await expect(loadSearchPage(event('/search?view=read&type=comic') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 404 });
       await expect(loadDiscoverPage(event('/discover?surface=read&kind=comic&section=recent') as Parameters<typeof loadDiscoverPage>[0])).rejects.toMatchObject({ status: 404 });
       expect(metadata).toHaveBeenCalled(); expect(discoverMetadata).toHaveBeenCalled();
     } finally {
@@ -458,7 +458,8 @@ suite('experimental reading identity, private state and bounded local reads', ()
       await rejectsHttp(loadLibraryPage(event('/library?view=read&kind=movie') as Parameters<typeof loadLibraryPage>[0]), 400);
       await rejectsHttp(loadProgressPage(event('/progress?category=screen&kind=book') as Parameters<typeof loadProgressPage>[0]), 400);
       await saveConfig({ ...config, experimentalBooks: false, experimentalComics: false });
-      await rejectsHttp(loadLibraryPage(event('/library?view=read') as Parameters<typeof loadLibraryPage>[0]), 404);
+      const fallback=await loadLibraryPage(event('/library?view=read') as Parameters<typeof loadLibraryPage>[0]);
+      expect(fallback.view).toBe('watch');
       await rejectsHttp(loadProgressPage(event('/progress?category=reading') as Parameters<typeof loadProgressPage>[0]), 404);
     } finally { await saveConfig({ ...config, experimentalBooks: true, experimentalComics: true }); }
   });

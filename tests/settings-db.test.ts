@@ -85,6 +85,13 @@ describe.skipIf(!enabled)('settings persistence', () => {
       (await getSql()`SELECT count(*)::int AS count FROM diagnostic_setting_audit`)[0].count
     ).toBe(1);
   });
+  test('the selected action persists as a validated partial preference',async()=>{
+    await updateUserSettings(member,{action:'listen'});
+    expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.action).toBe('listen');
+    await expect(updateUserSettings(member,{action:'all'})).rejects.toThrow();
+    expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.profile).toEqual({bio:'Kept'});
+  });
+
   test('odd reading page sanitization persists a false preference and rejects non-booleans', async () => {
     await updateUserSettings(member, { sanitizeOddReadingPages: false });
     expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.sanitizeOddReadingPages).toBe(false);

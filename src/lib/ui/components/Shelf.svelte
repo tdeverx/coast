@@ -224,7 +224,7 @@
   {@render actions?.()}
 {/snippet}
 {#snippet availabilityToggles()}
- {#each headerControls.availability as control (control.label)}<Button {...availabilityControl(control.value==='available',value=>selectControl(control,value?'available':'all'),control.label)} />{/each}
+ {#each headerControls.availability as control (control.label)}<Button {...availabilityControl(control.value==='available',value=>selectControl(control,value?'available':'all'))} />{/each}
 {/snippet}
 {#snippet sectionSegments()}
  {#each headerControls.segments as control (control.label)}<SegmentedControl material="clear" presentation="navigation" label={control.label} value={control.value} options={control.options??[]} onchange={value=>selectControl(control,value)} />{/each}

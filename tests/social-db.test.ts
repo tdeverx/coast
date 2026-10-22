@@ -166,3 +166,25 @@ run('Next recommendations survive notification dismissal and obey recipient, kin
  await respondRecommendation(ids[2],rec.id,{action:'dismiss'});
  expect((await progressData(ids[2],{view:'recommendations'})).total).toBe(0);
 });
+
+run('Activity audience and type filters apply before paging without widening friend privacy',async()=>{
+ const db=getSql(),actors=Array.from({length:4},()=>crypto.randomUUID()),[viewer,friend,privateFriend,stranger]=actors;
+ try{
+  for(const id of actors)await db`insert into users(id,username) values(${id},${'audience-'+id})`;
+  for(const id of [friend,privateFriend])await db`insert into friendships(user_a,user_b,requested_by,state) values(least(${viewer}::uuid,${id}::uuid),greatest(${viewer}::uuid,${id}::uuid),${viewer},'accepted')`;
+  await db`update users set settings=${{social:{audience:'private'}}}::jsonb where id=${privateFriend}`;
+  await db`update users set settings=${{social:{audience:'public'}}}::jsonb where id=${stranger}`;
+  const now=Date.now();
+  for(let index=0;index<65;index++)await db`insert into social_activity(user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${viewer},${work},'watch','activity','coast',${'audience-own-'+index},${new Date(now-index*1000)})`;
+  for(const [index,id] of [friend,privateFriend,stranger].entries())await db`insert into social_activity(user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${id},${work},'watch','activity','coast',${'audience-other-'+id},${new Date(now-100_000-index*1000)})`;
+  await db`insert into social_activity(user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${viewer},${work},'rating','ratings','coast','audience-rating',${new Date(now-200_000)})`;
+  const all=await activityFeed(viewer,{category:'screen'});expect(all.events).toHaveLength(60);expect(all.hasMore).toBe(true);expect(all.events.every(event=>event.userId===viewer)).toBe(true);
+  const friendsOnly=await activityFeed(viewer,{category:'screen',audience:'friends'});expect(friendsOnly.events.map(event=>event.userId)).toEqual([friend]);
+  const mine=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'consumed',mediaKind:'movie'});expect(mine.events).toHaveLength(60);expect(mine.hasMore).toBe(true);expect(mine.events.every(event=>event.userId===viewer)).toBe(true);
+  const next=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'consumed',mediaKind:'movie',...mine.next!});expect(next.events).toHaveLength(5);expect(next.hasMore).toBe(false);
+  const rated=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'ratings'});expect(rated.events).toHaveLength(1);expect(rated.events[0].eventKind).toBe('rating');
+  expect((await activityFeed(viewer,{category:'reading',audience:'friends'})).events).toHaveLength(0);
+  await db`update users set settings=${{social:{audience:'private'}}}::jsonb where id=${friend}`;
+  expect((await activityFeed(viewer,{category:'screen',audience:'friends'})).events).toHaveLength(0);
+ }finally{await db`delete from users where id in ${db(actors)}`;}
+});
