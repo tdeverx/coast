@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
+import {resolveAction,actionUrl} from '../src/lib/actions';
 import { categoryEnabled, surfaceEnabled } from '../src/lib/experimental';
 import { searchSelection, searchDemand } from '../src/lib/search-selection';
 
@@ -11,7 +12,7 @@ function fixture(config: object = enabled) {
   const calls: { owner: string; signal?: AbortSignal }[] = [];
   const empty = { items: [], discover: [], failure: '', truncated: false };
   const reading = { items: [], failure: '', notice: '', truncated: false, page: 1, pages: 1, total: 0 };
-  const dependencies = { v, error, categoryEnabled, surfaceEnabled, searchSelection, searchDemand,
+  const dependencies = { v, error, resolveAction, actionUrl, categoryEnabled, surfaceEnabled, searchSelection, searchDemand,
     getFeatureConfig: async () => config,
     publicSearch: async () => { calls.push({ owner: 'public' }); return []; },
     mediaViews: async () => { calls.push({ owner: 'watchInitial' }); return []; },
@@ -28,11 +29,11 @@ function fixture(config: object = enabled) {
   } };
 }
 
-test('selected search scope starts only its local/provider family while All and independent rows preserve union demand', async () => {
+test('selected action starts only its family, including All subtype and conflicting row parameters', async () => {
   for (const [query, owners] of [
     ['view=watch', ['watchInitial', 'watch']], ['view=listen', ['listen']], ['view=play', ['play']], ['view=read', ['readInitial', 'read']],
-    ['availableType=movie&unavailableType=comic', ['watchInitial', 'readInitial', 'watch', 'read']],
-    ['availableType=movie', ['watchInitial', 'readInitial', 'watch', 'listen', 'play', 'read']],
+    ['availableType=movie&unavailableType=comic', ['watchInitial','watch']],
+    ['availableType=movie', ['watchInitial','watch']],
   ] as const) {
     const f = fixture(); await f.run('q=title&' + query);
     expect(f.calls.map(call => call.owner).sort()).toEqual([...owners].sort());
@@ -40,12 +41,13 @@ test('selected search scope starts only its local/provider family while All and 
   const f = fixture(); await f.run('q='); expect(f.calls).toEqual([]);
 });
 
-test('disabled selected media reject before reads and disabled All branches do not run', async () => {
-  const config = { ...enabled, features: { music: false, book: false, comic: false } };
-  for (const query of ['view=listen', 'type=book', 'availableType=comic']) {
-    const f = fixture(config); await expect(f.run('q=title&' + query)).rejects.toMatchObject({ status: 404 }); expect(f.calls).toEqual([]);
-  }
-  const f = fixture(config); await f.run('q=title'); expect(f.calls.map(call => call.owner).sort()).toEqual(['play', 'watch', 'watchInitial']);
+test('withdrawn actions fall back before reads and conflicting subtypes never admit another family',async()=>{
+ const config={...enabled,features:{music:false,book:false,comic:false}};
+ for(const query of ['view=listen','type=book','availableType=comic']){
+  const f=fixture(config);await f.run('q=title&'+query);
+  expect(f.calls.map(call=>call.owner)).toEqual(['watchInitial','watch']);
+ }
+ const f=fixture(config);await f.run('q=title');expect(f.calls.map(call=>call.owner)).toEqual(['watchInitial','watch']);
 });
 
 test('public search remains public screen-only regardless of private medium row parameters', async () => {

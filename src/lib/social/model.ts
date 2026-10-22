@@ -1,5 +1,25 @@
 import * as v from 'valibot';
 export const audiences = ['friends','public','private'] as const;
+export const activityAudiences = ['all','friends','you'] as const;
+export type ActivityAudience = typeof activityAudiences[number];
+export const activityAudienceOptions = [{value:'all',label:'All'},{value:'friends',label:'Friends'},{value:'you',label:'Me'}];
+export const activityTypes=['all','consumed','progress','saved','favourites','ratings','collected','dropped'] as const;
+export const activityTypeEvents:Record<Exclude<typeof activityTypes[number],'all'>,string[]>={
+ consumed:['watch','listen','play','played','session','game-completed','reading-completed'],
+ progress:['progress','game-in-progress','game-paused','reading-reading','reading-paused','restore'],
+ saved:['watchlist','game-planned','reading-planned'],favourites:['favourite'],ratings:['rating'],collected:['collect','collected'],dropped:['drop','game-dropped','reading-dropped'],
+};
+export function activityTypeOptions(category:string){
+ const labels={all:'All',consumed:category==='screen'?'Watched':category==='game'?'Played':category==='reading'?'Read':category==='music'?'Listened':'Consumed',progress:'In progress',saved:'Saved for later',favourites:'Favourited',ratings:'Rated',collected:'Collected',dropped:'Dropped'};
+ return activityTypes.filter(value=>category!=='music'||value!=='progress'&&value!=='dropped').map(value=>({value,label:labels[value]}));
+}
+export const activityFiltersSchema = v.object({
+ audience:v.optional(v.picklist(activityAudiences),'all'),
+ mediaKind:v.optional(v.picklist(['all','movie','show','album','track','game','book','comic']),'all'),
+ period:v.optional(v.picklist(['all','month','year']),'all'),
+ activityType:v.optional(v.picklist(activityTypes),'all'),
+});
+export type ActivityFilters = v.InferOutput<typeof activityFiltersSchema>;
 export const socialSections = ['details','collection','activity','progress','favourites','ratings','presence','reactions','insights'] as const;
 export const socialCategories = ['screen','music','game','book','comic'] as const;
 export type Audience = typeof audiences[number];

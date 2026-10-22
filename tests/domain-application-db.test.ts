@@ -967,6 +967,17 @@ suite('application PostgreSQL read models', () => {
       await db.delete(s.media).where(inArray(s.media.id,rows.map(row=>row.id)));
     }
   });
+  test('combined Recently added counts both screen types and excludes other actions before pagination',async()=>{
+    const movies=await recentLibraryData(a,{kind:'movie'}),shows=await recentLibraryData(a,{kind:'show'});
+    const combined=await recentLibraryData(a,{kind:'all',action:'watch'});
+    expect(combined.total).toBe(movies.total+shows.total);
+    expect(combined.items.every(item=>item.kind==='movie'||item.kind==='show')).toBe(true);
+    await expect(recentLibraryData(a,{kind:'book',action:'watch'})).rejects.toMatchObject({status:400});
+    await expect(recentLibraryData(a,{kind:'all'})).rejects.toMatchObject({status:400});
+    const collections=await libraryData(a,{kind:'collection',scope:'available'});
+    expect(collections.items.some(item=>item.id===collection)).toBe(true);
+  });
+
   test('library filters precede pagination, including an available title beyond 500 newer catalogue entries', async () => {
     const oldAvailable = crypto.randomUUID();
     const newer = Array.from({ length: 501 }, () => crypto.randomUUID());

@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
       ? await profileUser(url.searchParams.get('username')!)
       : locals.user;
     return {
+      actionScoped: url.searchParams.get('scoped') === 'true',
       profileContext: url.searchParams.has('username'),
       surface: progressSurface(options.output.view, url.searchParams.has('username')),
       progress: await progressData(subject.id, options.output, locals.user.id),

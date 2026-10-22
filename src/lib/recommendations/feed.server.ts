@@ -1,3 +1,4 @@
+import {categoryEnabled} from '#lib/experimental.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
 import {getSql} from '#lib/server/db/index.js';
@@ -11,8 +12,9 @@ export async function dynamicFeed(userId:string,url:URL){
  const config=await getFeatureConfig(userId);
  if(!config.features.personalisation)throw new AppError(403,'Personalisation is turned off.','feature_disabled');
  const seed=url.searchParams.has('seed')?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(64),v.regex(/^[a-zA-Z0-9-]+$/)),url.searchParams.get('seed')):`${userId}:${new Date().toISOString().slice(0,10)}`;
- const enabled=(category:DynamicMedium)=>category==='screen'&&config.features.screen||category==='music'&&config.experimentalMusic||category==='game'&&config.experimentalGaming||category==='reading'&&(config.experimentalBooks||config.experimentalComics);
- const interests=(await interestWorks(userId)).filter(work=>enabled(work.category)&&(work.kind!=='book'||config.experimentalBooks)&&(work.kind!=='comic'||config.experimentalComics));
+ const selected=v.parse(v.optional(v.picklist(['screen','music','game','reading'])),url.searchParams.get('category')??undefined);
+ const enabled=(category:DynamicMedium)=>(!selected||category===selected)&&categoryEnabled(config,category);
+ const interests=(await interestWorks(userId,selected)).filter(work=>enabled(work.category)&&(work.kind!=='book'||config.experimentalBooks)&&(work.kind!=='comic'||config.experimentalComics));
  const genres=new Map<string,{category:DynamicMedium;genre:string;score:number;consumed:number;positive:number}>();
  const definitions:(DynamicRow&{weight:number})[]=[];
  function addDefinition(row:DynamicRow&{weight:number}){

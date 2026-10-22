@@ -69,6 +69,7 @@ export function libraryPath(options: {
   kind?: string;
   scope?: string;
   genre?: string;
+  collection?: boolean;
   page?: number;
   firstPage?: number;
   preview?: boolean;
@@ -92,7 +93,7 @@ export function libraryBrowsePaths(options: {
     api: libraryPath({ preview: true, surface, selection, scope, personal: preview.personal ?? false }),
     href: surface === 'listen' ? '/music?' + new URLSearchParams({kind:selection,scope}) : '/games?' + new URLSearchParams({state: selection, scope, personal: String(preview.personal ?? false)}),
   };
-  if (collection || surface==='listen'&&segment!=='all') {
+  if ((collection || surface==='listen'&&segment!=='all') && !['playlist','series'].includes(surface==='listen'?selection:kind) && selection!=='artist') {
     const parameters = new URLSearchParams({ sort, segment, category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : surface === 'read' ? 'reading' : 'game', level: 'root',
       activity: surface === 'listen' ? 'all' : ['progress','in-progress'].includes(selection) ? 'active' : selection === 'watched' ? 'completed' : selection,
       kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page), ...(firstPage === undefined ? {} : {firstPage:String(firstPage)}) });
@@ -101,8 +102,8 @@ export function libraryBrowsePaths(options: {
     parameters.set('collection', String(collection));
     return { api, href: `/library?${parameters}` };
   }
-  const href = '/library?' + new URLSearchParams({ view: surface, sort, segment, collection: 'false', tracking: selection, kind: surface === 'listen' ? selection : kind, scope, genre, page: String(page), ...(firstPage === undefined ? {} : {firstPage:String(firstPage)}) });
-  return { api: libraryPath({ surface, selection, kind, scope, genre, sort, segment, page, firstPage }), href };
+  const href = '/library?' + new URLSearchParams({ view: surface, sort, segment, collection: String(collection), tracking: selection, kind: surface === 'listen' ? selection : kind, scope, genre, page: String(page), ...(firstPage === undefined ? {} : {firstPage:String(firstPage)}) });
+  return { api: libraryPath({ surface, selection, kind, scope, genre, sort, segment, collection, page, firstPage }), href };
 }
 
 /** Library type choices share the same category gates as their data sources. */
@@ -115,4 +116,18 @@ export function libraryTypeOptions(config:MediumFeatures){
     {value:'book',label:'Books',surface:'read',kind:'book',category:'book'},
     {value:'comic',label:'Comics',surface:'read',kind:'comic',category:'comic'},
   ].filter(option=>categoryEnabled(config,option.category));
+}
+
+export type LibraryKind = 'all'|'movie'|'show'|'collection'|'book'|'comic'|'series';
+/** Entity tabs belong to the action; progress is a filter within that entity. */
+export function libraryEntityOptions(surface:LibrarySurface,config:MediumFeatures) {
+  if(surface==='watch')return [{value:'movie',label:'Movies'},{value:'show',label:'Shows'},{value:'collection',label:'Collections'}];
+  if(surface==='listen')return [{value:'album',label:'Albums'},{value:'artist',label:'Artists'},{value:'track',label:'Tracks'},{value:'playlist',label:'Playlists'}];
+  if(surface==='play')return [{value:'all',label:'All'}];
+  return [{value:'book',label:'Books'},{value:'comic',label:'Comics'},{value:'series',label:'Series'}].filter(option=>categoryEnabled(config,option.value==='series'?'comic':option.value));
+}
+export function libraryCountTitle(total:number|null, surface:LibrarySurface, entity:string) {
+  const nouns:Record<string,[string,string]>={movie:['movie','movies'],show:['show','shows'],collection:['collection','collections'],album:['album','albums'],artist:['artist','artists'],track:['track','tracks'],playlist:['playlist','playlists'],book:['book','books'],comic:['comic','comics'],series:['series','series']};
+  const [one,many]=nouns[entity]??(surface==='play'?['game','games']:['item','items']);
+  return total===null?`… ${many}`:`${total.toLocaleString('en-GB')} ${total===1?one:many}`;
 }

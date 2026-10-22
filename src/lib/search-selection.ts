@@ -22,7 +22,13 @@ export function searchSurface(kind: string): SearchSurface | undefined {
 }
 
 /** Two row selections retain their own scope; shared work serves only their union. */
-export function searchSelection(parameters: URLSearchParams) {
+export function searchSelection(input: Pick<URLSearchParams,'get'>, action?:SearchSurface) {
+  const parameters=new URLSearchParams();
+  for(const key of ['q','view','type','kind','page','availableType','unavailableType']){const value=input.get(key);if(value!==null)parameters.set(key,value);}
+  if(action){
+    parameters.set('view',action);
+    for(const key of ['type','kind','availableType','unavailableType']){const kind=parameters.get(key);if(kind!==null)v.parse(typeSchema,kind);if(kind&&kind!=='all'&&searchSurface(kind)!==action)parameters.delete(key);}
+  }
   const query = (parameters.get('q') ?? '').trim().slice(0, 200);
   const requestedView = v.parse(viewSchema, parameters.get('view') ?? 'all');
   const kind = v.parse(typeSchema, parameters.get('type') ?? (requestedView === 'read' ? parameters.get('kind') ?? 'all' : 'all'));
@@ -30,7 +36,7 @@ export function searchSelection(parameters: URLSearchParams) {
   function row(bucket: SearchBucket): SearchRowSelection {
     const value = parameters.get(rowParameter[bucket]);
     return value === null ? { kind, view } : {
-      kind: v.parse(typeSchema, value), view: value === 'all' ? 'all' : searchSurface(value)!,
+      kind: v.parse(typeSchema, value), view: value === 'all' ? action??'all' : searchSurface(value)!,
     };
   }
   // Keep the established explicit reading page/subtype contract. Row filters

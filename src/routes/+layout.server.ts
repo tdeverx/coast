@@ -1,3 +1,4 @@
+import {resolveAction} from '#lib/actions.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import type { LayoutServerLoad } from './$types';
 import { notificationUnread } from '#lib/server/notifications/inbox.js';
@@ -10,6 +11,7 @@ export const load = (async ({ locals, depends,params,url }) => {
   const viewedUsername=params.username??url.searchParams.get('username');
   const [notifications,unreadNotifications,friendRequestCount,revision]=locals.user?await Promise.all([inbox(locals.user),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername)]):[[],0,0,null];
   return {
+    action:resolveAction(url.searchParams,locals.user?.settings.action,config),
     capabilities:config.features,
     publicRead:config.siteAccess==='public-read-only',
     developerMode:locals.user?.role==='admin'&&config.developerMode,

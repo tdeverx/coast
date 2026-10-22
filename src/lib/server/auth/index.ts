@@ -334,6 +334,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
         features: featureChoicesSchema,
         social: socialSettingsSchema,
         collection: collectionPreferencesSchema,
+        action: v.picklist(['watch','listen','play','read']),
         shareDemand: v.boolean(),
         listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),
@@ -389,7 +390,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
 
 export async function resetUserSettings(actor: SessionUser | null) {
   const user = requireUser(actor);
-  const preferences = ['syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','sanitizeOddReadingPages','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
+  const preferences = ['action','syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','sanitizeOddReadingPages','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
   // Profile, privacy choices and administrator-owned limits/grants are not personal defaults.
   await getSql()`UPDATE users SET settings = settings - ${getSql().array(preferences,'TEXT')}::text[] WHERE id = ${user.id}`;
 }

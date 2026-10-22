@@ -14,6 +14,12 @@ test('linked row targets preserve source identity and selections across media',(
  expect(sectionTarget('/profile/alice?view=favourites&kind=all',base)).toMatchObject({profile:{username:'alice',section:'favourites',kind:'all'}});
  expect(sectionTarget('/profile/alice?section=insights&period=year',base)).toMatchObject({profile:{username:'alice',section:'insights',period:'year'}});
  expect(source('/lists?view=watchlist')).toMatchObject({type:'list',view:'watchlist'});
+ expect(source('/progress?view=watchlist&category=music&scoped=true')).toMatchObject({type:'progress',actionScoped:true,category:'music',mediums:false});
+ expect(source('/for-you?section=requests&view=watch')).toMatchObject({type:'library-feed',feature:'requests'});
+ expect(source('/for-you?section=activity&view=watch&audience=friends&mediaKind=movie&period=month&activityType=ratings')).toMatchObject({type:'social',audience:'friends',mediaKind:'movie',period:'month',activityType:'ratings'});
+ expect(source('/for-you?section=activity&view=watch&audience=public')).toBeUndefined();
+ expect(source('/for-you?section=activity&view=watch&audience=all')).toMatchObject({type:'social',audience:'all'});
+ expect(source('/for-you?section=requests&view=listen')).toBeUndefined();
 });
 test('unrelated, action and unsafe destinations cannot become row views',()=>{
  for(const href of ['/settings','/for-you','/profile/alice','/lists','/discover','/progress?view=invalid','/library?view=invalid','/for-you?section=activity&category=invalid','/progress?action=delete','/progress?view=watching&view=next','/progress#activity','https://elsewhere.invalid/progress','https://user:secret@coast.invalid/progress'])expect(sectionTarget(href,base)).toBeNull();

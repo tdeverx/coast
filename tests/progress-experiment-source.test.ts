@@ -88,7 +88,7 @@ test('an authoritative SSR replacement and its content revision cause no duplica
   }finally{dispose();}
 });
 
-test('superseded segment reads retain cards, fence late data, remember filters, and abort on disposal',async()=>{
+test('superseded segment reads hide prior-filter cards, fence late data, remember filters, and abort on disposal',async()=>{
   const pending:ReturnType<typeof deferred<ProgressExperimentContent>>[]=[],signals:AbortSignal[]=[],paths:string[]=[];
   client.setDelivery((path:string,_body:unknown,_method:unknown,{signal}:{signal:AbortSignal})=>{
     const next=deferred<ProgressExperimentContent>();pending.push(next);signals.push(signal);paths.push(path);return next.promise;
@@ -97,7 +97,7 @@ test('superseded segment reads retain cards, fence late data, remember filters, 
   try{
     result.controls[0].change('movie');
     result.filters[0].change('next');
-    expect(signals[0].aborted).toBe(true);expect(result.items[0].id).toBe('original');expect(result.busy).toBe(true);
+    expect(signals[0].aborted).toBe(true);expect(result.items).toEqual([]);expect(result.busy).toBe(true);
     pending[1].resolve(content('next result','next'));await settle();
     pending[0].resolve(content('stale result'));await settle();
     expect(result.items[0].id).toBe('next result');
@@ -105,7 +105,7 @@ test('superseded segment reads retain cards, fence late data, remember filters, 
     expect(paths[2]).toContain('kind=movie');
     dispose();expect(signals[2].aborted).toBe(true);
     pending[2].resolve(content('after disposal'));await settle();
-    await result.load();expect(paths).toHaveLength(3);expect(result.items[0].id).toBe('next result');
+    await result.load();expect(paths).toHaveLength(3);expect(result.items).toEqual([]);
   }finally{dispose();}
 });
 
@@ -162,4 +162,34 @@ test('Progress hides music from cards and filters and labels its saved selection
     expect(result.controls[0].options?.map(option=>option.value)).not.toContain('track');
     expect(result.filters[0].options?.find(option=>option.value==='watchlist')?.label).toBe('Later');
   }finally{dispose();}
+});
+
+test('action-scoped Progress keeps one segment-driven format and restricts media choices',async()=>{
+ const calls:string[]=[];
+ client.setDelivery(async(path:string)=>{calls.push(path);const view=new URL(path,'http://fixture/').searchParams.get('view') as ProgressExperimentContent['view'];return {...content('book',view),category:'reading',items:[{id:'book',kind:'book',title:'Book',href:'/media/book'}]};});
+ const {result,dispose}=source({category:'reading'});
+ try{
+  await result.load();
+  expect(result.shape).toBe('fanart');expect(result.artworkStyle).toBe('thumb');
+  expect(new URL(calls[0],'http://fixture/').searchParams.get('category')).toBe('reading');
+  expect(result.controls[0].options?.map(option=>option.value)).toEqual(['all','book','comic']);
+  expect(result.items.map(item=>item.id)).toEqual(['book']);
+  for(const view of ['next','watchlist','favourites']){
+   result.filters[0].change(view);await settle();
+   expect(result.shape).toBe('poster');expect(result.artworkStyle).toBe('primary');
+   expect(result.href).toContain('category=reading');
+  }
+ }finally{dispose();}
+});
+
+test('a new Progress segment cannot display the previous segment while its request is pending',async()=>{
+ const pending=deferred<ProgressExperimentContent>();
+ client.setDelivery(()=>pending.promise);
+ const {result,dispose}=source({initial:content()});
+ try{
+  expect(result.items).toHaveLength(1);
+  result.filters[0].change('next');expect(result.items).toEqual([]);
+  pending.resolve(content('next-work','next'));await settle();
+  expect(result.items.map(item=>item.id)).toEqual(['next-work']);
+ }finally{dispose();}
 });

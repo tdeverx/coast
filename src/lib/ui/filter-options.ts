@@ -10,7 +10,7 @@ export function mediaTypeOptions(features: Partial<import('#lib/experimental.js'
     ...(features.experimentalGaming ? [{ value: 'game', label: 'Games' }] : []),
     ...(features.experimentalBooks ? [{ value: 'book', label: 'Books' }] : []),
     ...(features.experimentalComics ? [{ value: 'comic', label: 'Comics' }] : []),
-  ];
+  ].filter(option=>option.value==='all'||features.features?.[(['movie','show'].includes(option.value)?'screen':['album','track'].includes(option.value)?'music':option.value) as keyof import('#lib/features.js').FeatureValues]!==false);
 }
 
 export function readingTypeOptions(features: Partial<import('#lib/experimental.js').MediumFeatures>): FilterOption[] {

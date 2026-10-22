@@ -5,7 +5,7 @@ import type {ProgressExperimentContent} from '../src/lib/progress-experiment';
 // Exercise the real mixed query builder and hydrator boundary with an authored
 // candidate set. Native SQL/metadata equivalence is checked separately on dev data.
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
-const state={count:95,queries:[] as {sql:string;params:unknown[]}[],hydrated:[] as string[][],viewers:[] as string[],mediums:[] as string[],comic:false,abortAtCount:undefined as AbortController|undefined,featureReads:0,historyReads:0};
+const state={allEnabled:false,planners:[] as string[],count:95,queries:[] as {sql:string;params:unknown[]}[],hydrated:[] as string[][],viewers:[] as string[],mediums:[] as string[],comic:false,abortAtCount:undefined as AbortController|undefined,featureReads:0,historyReads:0};
 const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const ids=()=>Array.from({length:state.count},(_,index)=>id(index+1));
 const database=drizzle(async(query,params)=>{
@@ -22,9 +22,9 @@ const database=drizzle(async(query,params)=>{
 const fixtureUrl=moduleUrl(`
   export let fixture;export const install=next=>fixture=next;
   export const getDb=()=>fixture.database;
-  export const getFeatureConfig=async()=>{fixture.state.featureReads++;return {features:{screen:true},experimentalMusic:true,experimentalGaming:false,experimentalBooks:false,experimentalComics:false};};
-  export const screenProgressPlan=async()=>({allIds:fixture.ids(),sequenceById:new Map()});
-  export const mediumProgressIds=async(_user,options)=>{fixture.state.mediums.push(options.category);return [];};export const readingProgressIds=async()=>[];
+  export const getFeatureConfig=async()=>{fixture.state.featureReads++;return {features:{screen:true},experimentalMusic:true,experimentalGaming:fixture.state.allEnabled,experimentalBooks:fixture.state.allEnabled,experimentalComics:fixture.state.allEnabled};};
+  export const screenProgressPlan=async()=>{fixture.state.planners.push('screen');return {allIds:fixture.ids(),sequenceById:new Map()};};
+  export const mediumProgressIds=async(_user,options)=>{fixture.state.mediums.push(options.category);return [];};export const readingProgressIds=async()=>{fixture.state.planners.push('reading');return [];};
   export const listCandidateIds=async()=>fixture.ids();
   export const collectionCTE=()=>'';
   export const collectionRead=async()=>{fixture.state.historyReads++;return fixture.ids().map(id=>({id}));};
@@ -50,7 +50,7 @@ const resolve:Record<string,string>={
 };
 for(const [path,resolved]of Object.entries(resolve))code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(resolved)}`);
 const {progressExperimentData}:typeof import('../src/lib/server/queries/progress-experiment')=await import(moduleUrl(code));
-const reset=()=>{state.count=95;state.queries=[];state.hydrated=[];state.viewers=[];state.mediums=[];state.comic=false;state.abortAtCount=undefined;state.featureReads=0;state.historyReads=0;};
+const reset=()=>{state.allEnabled=false;state.planners=[];state.count=95;state.queries=[];state.hydrated=[];state.viewers=[];state.mediums=[];state.comic=false;state.abortAtCount=undefined;state.featureReads=0;state.historyReads=0;};
 
 test('row demand hydrates twenty cards while expanded pages preserve exact totals and the sixty-card boundary',async()=>{
   reset();
@@ -112,4 +112,14 @@ test('profile Finished/Dropped reuse state assessment and keep viewer privacy be
     expect(count.params).toContain(view==='favourites'?'favourites':view==='watchlist'?'collection':'progress');
     if(view==='next')expect(count.sql).toContain("'collection'");
   }
+});
+
+test('action-scoped Progress only admits its own planner before count and hydration',async()=>{
+ for(const category of ['screen','game','reading'] as const){
+  reset();state.allEnabled=true;
+  await progressExperimentData(id(999),{category},{preview:true});
+  expect([...state.planners,...state.mediums]).toEqual([category]);
+  if(category==='screen')expect(state.queries[0].params).toContain('screen');
+  else expect(state.hydrated).toEqual([]);
+ }
 });

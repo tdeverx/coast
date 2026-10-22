@@ -21,7 +21,7 @@ test('library feeds stay lazy, cancel replaced selections and deduplicate increm
  try{
   expect(calls).toHaveLength(0);
   const initial=source.load();expect(calls[0].url.searchParams.get('preview')).toBe('true');
-  source.filters[0].change('book');expect(calls[0].signal.aborted).toBe(true);
+  source.controls.find(control=>control.label==='Media type')!.change('book');expect(calls[0].signal.aborted).toBe(true);
   calls[0].resolve(result(['stale']));calls[1].resolve(result(['first','second']));await initial;await settle();
   expect(source.items.map(item=>item.id)).toEqual(['first','second']);
   const append=source.load(2,true);await source.load(2,true);expect(calls).toHaveLength(3);
@@ -38,6 +38,7 @@ test('requests keep state/type filters server-side and withdraw stale owner or d
  let source!:ReturnType<typeof createLibraryFeedSource>;
  const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'requests',layout:'grid'})));await settle();
  try{
+  expect(source.filters[0].value).toBe('available');expect(source.filters[0].options?.map(option=>option.value)).toEqual(['available','pending','approved','declined']);
   const first=source.load();calls[0].resolve(result(['old-owner']));await first;await settle();
   expect(source.enrichSocial).toBe(false);expect(source.pagination).toMatchObject({infinite:true,controls:'none'});
   source.filters[0].change('approved');source.controls[0].change('show');expect(calls[1].signal.aborted).toBe(true);
@@ -59,7 +60,7 @@ test('feed scope and replacement cards publish atomically without revealing prio
  try{
   const first=source.load();calls[0].resolve(result(['old-filter']));await first;await settle();
   expect(source.items.map(item=>item.id)).toEqual(['old-filter']);
-  source.filters[0].change('book');expect(source.items).toEqual([]);
+  source.controls.find(control=>control.label==='Media type')!.change('book');expect(source.items).toEqual([]);
   calls[1].resolve(result(['new-filter']));
   for(let turn=0;turn<12;turn++){await Promise.resolve();runtime.flush();expect(source.items.map(item=>item.id)).not.toContain('old-filter');}
   expect(source.items.map(item=>item.id)).toEqual(['new-filter']);
@@ -72,6 +73,7 @@ test('current feed permission denial clears retained cards while transient and s
  let source!:ReturnType<typeof createLibraryFeedSource>;
  const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'requests'})));await settle();
  try{
+  expect(new URL(source.href!,'http://fixture').searchParams.get('view')).toBe('watch');
   const first=source.load();calls[0].resolve(result(['private']));await first;
   const transient=source.load();calls[1].reject(new client.ApiError('Temporary',502));await transient;
   expect(source.items.map(item=>item.id)).toEqual(['private']);
@@ -80,5 +82,23 @@ test('current feed permission denial clears retained cards while transient and s
   expect(source.items.map(item=>item.id)).toEqual(['fresh']);expect(source.error).toBe('');
   const denied=source.load();calls[4].reject(new client.ApiError('Access withdrawn',403));await denied;
   expect(source.items).toEqual([]);expect(source.error).toBe('Access withdrawn');
+ }finally{lifecycle.destroy();dispose();}
+});
+
+test('combined Recently added has no subtype segments and cancels another action before publication',async()=>{
+ const calls:{path:string;signal:AbortSignal;resolve:(data:ReturnType<typeof result>)=>void}[]=[];
+ client.set((path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>calls.push({path,signal:options.signal,resolve})));
+ const action=runtime.state('watch');let source!:ReturnType<typeof createLibraryFeedSource>;
+ const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'recent',action:runtime.get(action) as 'watch'|'read'})));await settle();
+ try{
+  expect(source.filters).toEqual([]);
+  const stale=source.load();
+  expect(new URL(calls[0].path,'http://fixture/').searchParams.get('kind')).toBe('all');
+  runtime.set(action,'read');await settle();
+  expect(calls[0].signal.aborted).toBe(true);
+  expect(new URL(calls[1].path,'http://fixture/').searchParams.get('action')).toBe('read');
+  calls[1].resolve(result(['reading']));await settle();
+  calls[0].resolve(result(['stale-watching']));await stale;
+  expect(source.items.map(item=>item.id)).toEqual(['reading']);
  }finally{lifecycle.destroy();dispose();}
 });

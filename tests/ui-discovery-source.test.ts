@@ -99,3 +99,30 @@ test('reading discovery rows append native pages without resetting their scroll 
   await result.load();expect(paths[2].searchParams.get('page')).toBe('1');expect(result.items).toHaveLength(1);
  }finally{dispose();}
 });
+
+test('scoped Discover responds to capability withdrawal without a fallback provider request',async()=>{
+ let requests=0,signal!:AbortSignal,finish!:(value:DiscoveryContent)=>void;
+ client.setDelivery((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{requests++;signal=options.signal;return new Promise(resolve=>finish=resolve);});
+ const {result,dispose,update}=source(null);
+ try{
+  update({surface:'listen',scoped:true});const pending=result.load();const stale=finish,oldSignal=signal;
+  update({mediums:{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,features:{music:false}}});
+  expect(oldSignal.aborted).toBe(true);expect(result.items).toEqual([]);expect(requests).toBe(1);
+  stale(content('withdrawn'));await pending;expect(result.items).toEqual([]);
+  client.setDelivery(async()=>{requests++;return content('enabled');});
+  update({mediums:{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,features:{music:true}}});await settle();
+  expect(requests).toBe(2);expect(result.items[0].id).toBe('enabled');
+  expect(result.filters.some(control=>control.type==='availability')).toBe(false);
+ }finally{dispose();}
+});
+
+test('provider guidance belongs to empty discovery results, not persistent row subtitles',async()=>{
+ client.setDelivery(async()=>({...content('album'),notice:'Provider ranking explanation.'}));
+ const {result,dispose,update}=source(null);
+ try{
+  update({surface:'listen',scoped:true});await result.load();
+  expect(result.notice).toBeUndefined();expect(result.empty).not.toBe('Provider ranking explanation.');
+  client.setDelivery(async()=>({items:[],failure:'',notice:'Connect a provider in Integrations.'}));await result.load();
+  expect(result.notice).toBeUndefined();expect(result.empty).toBe('Connect a provider in Integrations.');
+ }finally{dispose();}
+});

@@ -84,7 +84,7 @@
   onDestroy(()=>releaseFocus?.());
   const clock=useClock('minute',()=>showActivityContext&&!!(item.captionActivity?.dateKnown||item.captionDate));
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
-  const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
+  const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&(item.href===null||item.kind==='collection'&&!item.workId));
   const trackedItem = $derived('href' in item ? undefined : item);
   const href = $derived('href' in item ? item.href??undefined : `/media/${item.id}`);
   const activityHref=$derived(href ? detailHref(href,{section:'activity',relationship:'all'}) : undefined);

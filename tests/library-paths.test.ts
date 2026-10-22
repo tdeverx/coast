@@ -48,6 +48,18 @@ describe('Library browsing paths', () => {
     expect(url(libraryBrowsePaths({ ...base, surface: 'play' }, { personal: true }).href).pathname).toBe('/games');
     expect(url(libraryBrowsePaths({ ...base, surface: 'listen' }, {}).href).pathname).toBe('/music');
   });
+  test('Series preserves personal scope and retained pages in the query and refresh URL', () => {
+    const paths=libraryBrowsePaths({...base,surface:'read',kind:'series',collection:true,scope:'all',sort:'title',page:3,firstPage:2});
+    expect(url(paths.api).pathname).toBe('/library');
+    for(const path of [paths.api,paths.href]){
+      const parameters=url(path).searchParams;
+      expect(parameters.get('collection')).toBe('true');
+      expect(parameters.get('kind')).toBe('series');
+      expect(parameters.get('scope')).toBe('all');
+      expect(parameters.get('page')).toBe('3');
+      expect(parameters.get('firstPage')).toBe('2');
+    }
+  });
 });
 
 test('grid segments and sort stay identical through API, route and retained page windows',()=>{

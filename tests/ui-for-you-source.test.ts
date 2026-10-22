@@ -68,3 +68,16 @@ test('changed fixed row category refreshes its own current selection',async()=>{
  const paths:string[]=[];client.setDelivery(async(path:string)=>{paths.push(path);return content(path);});const {source,update,dispose}=fixture();
  try{await source.load();update({category:'game'});await settle();expect(paths).toHaveLength(2);expect(new URL(paths[1],'http://fixture/').searchParams.get('category')).toBe('game');}finally{dispose();}
 });
+
+test('availability changes hide prior-filter recommendations and reject superseded delivery',async()=>{
+ client.setDelivery(async()=>content('all'));const {source,dispose}=fixture();
+ let finish!:(value:ReturnType<typeof content>)=>void,signal!:AbortSignal;
+ try{
+  await source.load();client.setDelivery((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{signal=options.signal;return new Promise(resolve=>finish=resolve);});
+  source.filters.find(control=>control.type==='availability')!.change('available');
+  expect(source.items).toEqual([]);const stale=finish,oldSignal=signal;
+  source.filters.find(control=>control.type==='availability')!.change('all');expect(oldSignal.aborted).toBe(true);
+  finish(content('current'));await settle();stale(content('late available'));await settle();
+  expect(source.items.map(item=>item.id)).toEqual(['current']);
+ }finally{dispose();}
+});

@@ -158,6 +158,7 @@
       submit();
     }}
   >
+    <input type="hidden" name="view" value={data.view}/>
     <label class="search-input"
       ><Icon name="search" /><input
         type="search"
@@ -177,7 +178,7 @@
   </form>
   {#if !data.query}<EmptyState
       title="Find your next story"
-      description={`Search movies and shows${data.experimentalMusic ? ', music' : ''}${data.experimentalGaming ? ', games' : ''}${page.data.user && data.experimentalBooks ? ', books' : ''}${page.data.user && data.experimentalComics ? ', comics' : ''} in your library and beyond.`}
+      description={`Search ${data.view==='listen'?'music':data.view==='play'?'games':data.view==='read'?'books and comics':'movies and shows'} in your library and beyond.`}
       icon="search"
     />
   {:else}
@@ -199,7 +200,7 @@
             items: searchItems,
             ...data.rows.available,
             busy: rowBusy(data.rows.available),
-            mediums: page.data.user ? page.data : {},
+            mediums: page.data.user ? {...page.data,features:page.data.capabilities} : {},
             onKindChange: (kind) => submit({ bucket: 'available', kind })
           }}
         />
@@ -214,7 +215,7 @@
             items: searchItems,
             ...data.rows.unavailable,
             busy: rowBusy(data.rows.unavailable),
-            mediums: page.data.user ? page.data : {},
+            mediums: page.data.user ? {...page.data,features:page.data.capabilities} : {},
             onKindChange: (kind) => submit({ bucket: 'unavailable', kind }),
             notice: readingResults.notice,
           truncated: watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated,

@@ -16,7 +16,7 @@ import { createResource } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { ApiError } from '#lib/ui/client.js';
 import {
-  libraryBrowsePaths,librarySortOptions,libraryGenres,librarySegments,
+  libraryBrowsePaths,librarySortOptions,libraryGenres,librarySegments,libraryEntityOptions,libraryCountTitle,
   type LibrarySort,type LibrarySegment,
   libraryTitles,
   librarySelections,
@@ -27,6 +27,10 @@ import type { ShelfSource, ShelfControl } from './types';
 import { readingTypeOptions } from '#lib/ui/filter-options.js';
 
 export type LibrarySourceOptions = {
+  title?:string;
+  rows?:1|2;
+  entitySegments?:boolean;
+  countHeading?:boolean;
   kindControl?:boolean;
   segments?:boolean;
   initialSort?:LibrarySort;
@@ -39,7 +43,7 @@ export type LibrarySourceOptions = {
   genre?: string;
   layout?: 'row' | 'grid';
   initialSelection?: string;
-  initialKind?: 'all' | 'movie' | 'show' | 'book' | 'comic';
+  initialKind?: import('#lib/library.js').LibraryKind;
   initialScope?: 'all' | 'available';
   collection?: boolean;
   username?: string;
@@ -74,10 +78,13 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   let genreOverride=$state<string>();
   const selectedGenre=$derived(genreOverride??genre);
   let collection = $state(untrack(() => initialCollection));
-  const title = $derived(preview?.title ?? libraryTitles[surface]);
+  const title = $derived(getOptions().title ?? preview?.title ?? libraryTitles[surface]);
+  const entities=$derived(libraryEntityOptions(surface,{...route.data,features:route.data.capabilities}));
   let selection = $state(untrack(() => initialSelection)),
     kind = $state(untrack(() => initialKind)),
     scope = $state<'all' | 'available'>(untrack(() => collection ? initialAvailability === 'available' ? 'available' : 'all' : initialScope));
+  const entity=$derived(surface==='listen'?selection:kind);
+  const container=$derived(entity==='playlist'||entity==='series');
   let relationship = $state(untrack(() => initialRelationship)),
     source = $state(untrack(() => initialSource)),
     availability = $state(untrack(() => initialAvailability));
@@ -336,6 +343,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
 
   return {
+    get enrichSocial(){return !container;},
     get pagination() {
       return {
         kind: 'pages' as const,
@@ -368,7 +376,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     },
 
     get title() {
-      return title;
+      return getOptions().countHeading?libraryCountTitle(ready&&!((busy||failure)&&!content.items.length)?content.total:null,surface,entity):title;
     },
 
     get items() {
@@ -406,7 +414,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     },
 
     get rows() {
-      return preview ? 1 : 2;
+      return getOptions().rows ?? (preview ? 1 : 2);
     },
 
     get resetKey() {
@@ -420,16 +428,17 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         {
           type: 'segments' as const,
           label: `${title} selection`,
-          value: getOptions().segments?segment:selection,
-          options: getOptions().segments?librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)):selections,
+          value: getOptions().entitySegments?entity:getOptions().segments?segment:selection,
+          options: getOptions().entitySegments?entities:getOptions().segments?librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)):selections,
           change: (value: string) => {
-            if(getOptions().segments){segment=value as LibrarySegment;selection=surface==='listen'?selection:'all';if(surface==='listen'&&selection==='artist'&&segment!=='all')selection='all';}
+            if(getOptions().entitySegments){if(surface==='listen'){selection=value;if(value==='artist'||value==='playlist')collection=false;}else kind=value as typeof kind;segment='all';genreOverride='';relationship='all';source='all';}
+            else if(getOptions().segments){segment=value as LibrarySegment;selection=surface==='listen'?selection:'all';if(surface==='listen'&&selection==='artist'&&segment!=='all')selection='all';}
             else selection = value;
             void load(1);
           }
         },
 
-        ...!preview
+        ...!preview&&entity!=='playlist'&&entity!=='artist'
           ? [
             {
               type: 'collection' as const,
@@ -469,16 +478,17 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
     get controls(): ShelfControl[] {
       return [
+        ...getOptions().entitySegments&&!container&&entity!=='artist'?[{type:'select' as const,label:'Status',value:segment,options:librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)).map(option=>({...option,label:surface==='read'&&option.value==='unwatched'?'Unread':surface==='play'&&option.value==='unwatched'?'Unplayed':option.label})),change:(value:string)=>{segment=value as LibrarySegment;void load(1);}}]:[],
         ...layout==='grid'&&!preview?[
           {type:'select' as const,label:'Sort by',value:sort,options:librarySortOptions,change:(value:string)=>{sort=value as LibrarySort;void load(1);}},
-          ...surface==='watch'&&!collection?[{type:'select' as const,label:'Genre',value:selectedGenre,options:[{value:'',label:'All genres'},...[...new Set([...libraryGenres,...(selectedGenre?[selectedGenre]:[])])].sort().map(value=>({value,label:value}))],change:(value:string)=>{genreOverride=value;void load(1);}}]:[],
-          ...surface==='listen'&&getOptions().segments?[{type:'select' as const,label:'Music type',value:selection,options:selections.filter(option=>segment==='all'||option.value!=='artist'),change:(value:string)=>{selection=value;void load(1);}}]:[],
+          ...surface==='watch'&&!collection&&kind!=='collection'?[{type:'select' as const,label:'Genre',value:selectedGenre,options:[{value:'',label:'All genres'},...[...new Set([...libraryGenres,...(selectedGenre?[selectedGenre]:[])])].sort().map(value=>({value,label:value}))],change:(value:string)=>{genreOverride=value;void load(1);}}]:[],
+          ...surface==='listen'&&getOptions().segments&&!getOptions().entitySegments?[{type:'select' as const,label:'Music type',value:selection,options:selections.filter(option=>segment==='all'||option.value!=='artist'),change:(value:string)=>{selection=value;void load(1);}}]:[],
         ]:[],
         ...surface === 'watch'&&getOptions().kindControl!==false
           ? [
             {
               type: 'media-type' as const,
-              label: 'Watch type',
+              label: 'Media type',
               value: kind,
               change: (value: string) => {
                 kind = value as typeof kind;
@@ -503,11 +513,11 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           ]
           : [],
 
-        ...collection
+        ...collection&&!container
           ? [
             {
               type: 'select' as const,
-              label: `${title} relationships`,
+              label: 'Relationships',
               value: relationship,
               options: [
                 { value: 'all', label: 'All relationships' },
@@ -528,7 +538,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
             {
               type: 'select' as const,
-              label: `${title} availability`,
+              label: 'Availability',
               value: availability,
               options: [
                 { value: 'all', label: 'All availability' },
@@ -554,7 +564,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
               ? [
                 {
                   type: 'select' as const,
-                  label: `${title} sources`,
+                  label: 'Sources',
                   value: source,
                   options: [
                     { value: 'all', label: 'All sources' },

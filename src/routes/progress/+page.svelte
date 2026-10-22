@@ -17,7 +17,7 @@
   {#if !data.isOwner}<Button href={profilePath(data.username)} emphasis="subtle" icon="left"
       >{data.username}’s profile</Button
     >{/if}
-  <Shelf source={{ type: 'progress', surface: data.surface, mediums: !data.profileContext && data.surface !== 'profile', username: data.profileContext || data.surface === 'profile' || !data.isOwner
+  <Shelf source={{ type: 'progress', surface: data.surface, actionScoped:data.actionScoped,category:data.actionScoped?data.progress.category:undefined, mediums: !data.actionScoped && !data.profileContext && data.surface !== 'profile', username: data.profileContext || data.surface === 'profile' || !data.isOwner
       ? data.username
       : undefined, initial: data.progress, layout: "grid", onitems: (next, key) => {
       items = next;

@@ -36,6 +36,9 @@ run('activity roots retain episode/season precedence and fresh scoped parent fal
   // against an independent selection of the two persisted event identities.
   const [memberOracle]=await db.execute<{members:unknown}>(sql`select array_agg(id order by occurred_at,id) as members from social_activity where id in (${episodeEvent.id}::uuid,${secondEvent.id}::uuid)`);
   expect(group.rootId).toBe(show);expect(group.members).toEqual(memberOracle.members);
+  const showsOnly=await activityFeed(user.id,{workId:show,mediaKind:'show',activityType:'consumed',audience:'you'});
+  expect(showsOnly.events.some(event=>event.id===group.id)).toBe(true);
+  expect((await activityFeed(user.id,{workId:show,mediaKind:'movie',audience:'you'})).events).toHaveLength(0);
   const card=feed.items.find(item=>item.entryId===group.id)!;
   expect(card.captionSubtitle).toBe('Watched 2 episodes');expect(card.captionActivity?.myReaction).toBe('❤️');
  }finally{

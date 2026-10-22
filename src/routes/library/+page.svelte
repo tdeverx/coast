@@ -4,21 +4,12 @@
   import { setContext } from 'svelte';
   import { page } from '$app/state';
   import Shelf from '#lib/ui/components/Shelf.svelte';
-  import Icon from '#lib/ui/components/Icon.svelte';
-  import {libraryTypeOptions} from '#lib/library.js';
   import Button from '#lib/ui/components/Button.svelte';
   import Pagination from '#lib/ui/components/Pagination.svelte';
   import type { LibrarySurface } from '#lib/library.js';
   let { data } = $props();
   setContext('profile-read-only', () => !data.owner);
   const title = $derived(data.username ? `${data.username}’s Collection` : 'Library');
-  const types=$derived(libraryTypeOptions({...page.data,features:page.data.capabilities}));
-  const selectedType=$derived(types.find(type=>type.surface===data.view&&(type.surface!=='watch'&&type.surface!=='read'||type.kind===data.filters.kind)));
-  const typeTitle=$derived(selectedType?.label??(data.view==='watch'?'Movies & Shows':data.view==='read'?'Books & Comics':'Library'));
-  function typeHref(type:typeof types[number]){
-    const params=new URLSearchParams({view:type.surface,kind:type.kind,collection:String(data.collection),scope:data.filters.scope,sort:data.filters.sort,...(data.username?{username:data.username}:{})});
-    return '/library?'+params;
-  }
   const missing = $derived(page.url.searchParams.get('missing') === 'true');
   function missingUrl() { const url = new URL(page.url.href); url.searchParams.set('collection', 'true'); url.searchParams.set('missing', String(!missing)); url.searchParams.delete('missingPage'); return url.pathname + url.search; }
   function missingPageUrl(number: number) { const url = new URL(page.url.href); url.searchParams.set('missingPage', String(number)); return url.pathname + url.search; }
@@ -38,12 +29,8 @@
       <Shelf source={{type:'library',surface:data.view as LibrarySurface,collection:data.collection,
         username:data.username??'',layout:'grid',initial:data.content??undefined,
         genre:data.filters.genre,initialSelection:selection(data.view as LibrarySurface),
-        initialKind:data.filters.kind as 'all'|'movie'|'show'|'book'|'comic',initialScope:data.filters.scope as 'all'|'available',
-        initialSort:data.filters.sort,initialSegment:data.filters.segment,segments:true,initialAvailability:data.filters.availability,initialRelationship:data.filters.relationship,initialSource:data.filters.source,kindControl:false}}>
-        {#snippet heading()}<h1><Button menu align="start" triggerClass="library-type" label="Library type">
-          {#snippet trigger()}<span>{typeTitle}</span><span class="type-chevron"><Icon name="right" /></span>{/snippet}
-          {#each types as type}<Button item href={typeHref(type)} selection="radio" checked={selectedType?.value===type.value}>{type.label}</Button>{/each}
-        </Button></h1>{/snippet}
+        initialKind:data.filters.kind as import('#lib/library.js').LibraryKind,initialScope:data.filters.scope as 'all'|'available',
+        initialSort:data.filters.sort,initialSegment:data.filters.segment,segments:true,initialAvailability:data.filters.availability,initialRelationship:data.filters.relationship,initialSource:data.filters.source,kindControl:false,entitySegments:true,countHeading:true}}>
       </Shelf>
     {/if}
   {/key}
@@ -55,4 +42,3 @@
     {:else}<p class="notice">No missing or uncertain items.</p>{/if}{:catch}<!-- Failure is delivered by the scoped toast. -->{/await}{/if}
   </section>{/if}
 </div>
-<style>h1 {font-size:var(--text-xl);font-weight:var(--weight-bold);margin:0;}h1 :global(.library-type){display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;}.type-chevron{display:inline-flex;transform:rotate(90deg);opacity:.6;}</style>

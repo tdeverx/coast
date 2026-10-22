@@ -1,3 +1,4 @@
+import {actionCategories,actionValues} from '#lib/actions.js';
 import {librarySegmentValues,librarySortValues,type LibrarySegment,type LibrarySort} from '#lib/library.js';
 import {progressExperimentParameters,progressExperimentSchema} from '#lib/progress-experiment.js';
 import * as v from 'valibot';
@@ -5,6 +6,7 @@ import type {ShelfConfig} from './shelves';
 import {dynamicKind} from '#lib/recommendations/model.js';
 import type {ProgressOptions} from '#lib/progress.js';
 import {validPageInterval} from '#lib/page-window.js';
+import {activityFiltersSchema} from '#lib/social/model.js';
 /** Only linked row destinations; ordinary navigation to these pages stays unchanged. */
 export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href:string;source:ShelfConfig}|{href:string;profile:{username:string;section:'insights'|'favourites';period:'all'|'month'|'year';kind:string;scope:string}})|null{
  let url:URL;try{url=new URL(href,base.href);}catch{return null;}
@@ -15,12 +17,12 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
  if(url.pathname==='/progress-experiment'){
   const filters=v.safeParse(progressExperimentSchema,progressExperimentParameters(url));
   if(!filters.success)return null;
-  source={type:'progress-experiment',layout:'grid',filters:filters.output,username:get('username')||undefined};
+  source={type:'progress-experiment',layout:'grid',category:filters.output.category,filters:filters.output,username:get('username')||undefined};
  }else if(url.pathname==='/progress'){
   const view=get('view','watching');if(!['watching','up-next','next','recommendations','watchlist','favourites','finished','dropped'].includes(view))return null;
   const category=get('category','screen'),kind=get('kind','all'),scope=get('scope','all');
   if(!['screen','game','music','reading'].includes(category)||!['all','movie','show','book','comic'].includes(kind)||!['all','available'].includes(scope))return null;
-  source={type:'progress',layout:'grid',surface:['next','recommendations','watchlist','favourites'].includes(view)?view as 'next'|'recommendations'|'watchlist'|'favourites':p.has('username')||['finished','dropped'].includes(view)?'profile':'continue',username:get('username')||undefined,mediums:!p.has('username'),filters:{view,category,kind,scope,page:1} as ProgressOptions};
+  source={type:'progress',layout:'grid',actionScoped:get('scoped')==='true',category:get('scoped')==='true'?category as ProgressOptions['category']:undefined,surface:['next','recommendations','watchlist','favourites'].includes(view)?view as 'next'|'recommendations'|'watchlist'|'favourites':p.has('username')||['finished','dropped'].includes(view)?'profile':'continue',username:get('username')||undefined,mediums:!p.has('username')&&get('scoped')!=='true',filters:{view,category,kind,scope,page:1} as ProgressOptions};
  }else if(['/library','/music','/games'].includes(url.pathname)){
   const surface=url.pathname==='/music'?'listen':url.pathname==='/games'?'play':get('view','watch');
   if(!['watch','listen','play','read'].includes(surface))return null;
@@ -29,20 +31,25 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   const kind=get('kind','all'),activity=get('activity','all'),segment=get('segment','all'),sort=get('sort','default');
   if(!librarySegmentValues.includes(segment as LibrarySegment)||!librarySortValues.includes(sort as LibrarySort))return null;
   const selection=get('tracking',surface==='listen'?kind:get('state',surface==='watch'?activity==='completed'?'watched':activity==='active'?'progress':activity:activity));
-  source={type:'library',layout:'grid',initialSort:sort as LibrarySort,initialSegment:segment as LibrarySegment,segments:url.pathname==='/library',surface:surface as 'watch'|'listen'|'play'|'read',initialPage:lastPage,initialFirstPage:p.has('firstPage')?firstPage:undefined,collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,initialKind:(['movie','show','book','comic'].includes(kind)?kind:'all') as 'all'|'movie'|'show'|'book'|'comic',initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
+  source={type:'library',layout:'grid',initialSort:sort as LibrarySort,initialSegment:segment as LibrarySegment,segments:url.pathname==='/library',surface:surface as 'watch'|'listen'|'play'|'read',initialPage:lastPage,initialFirstPage:p.has('firstPage')?firstPage:undefined,collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,entitySegments:url.pathname==='/library',countHeading:url.pathname==='/library',initialKind:(['movie','show','collection','book','comic','series'].includes(kind)?kind:'all') as import('#lib/library.js').LibraryKind,initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
  }else if(url.pathname==='/for-you'){
-  const section=get('section'),category=get('category','screen');
+  const action=actionValues.find(action=>action===get('view'));
+  if(p.has('view')&&!action)return null;
+  const section=get('section'),category=action?actionCategories[action]:get('category','screen');
   if(!['screen','game','music','reading'].includes(category))return null;
-  if(section==='recent'&&['movie','show','music','game','book','comic'].includes(get('kind','movie')))source={type:'library-feed',feature:'recent',layout:'grid',kind:get('kind','movie')};
-  else if(section==='requests'&&['all','movie','show'].includes(get('kind','all'))&&['all','available','pending','approved','declined','cancelled','failed'].includes(get('state','all')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','all')};
-  else if(['activity','popular'].includes(section))source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:true,layout:'grid'};
+  if(section==='recent'&&['all','movie','show','music','game','book','comic'].includes(get('kind',action?'all':'movie')))source={type:'library-feed',feature:'recent',action,layout:'grid',kind:get('kind',action?'all':'movie')};
+  else if(section==='requests'&&(!action||action==='watch')&&['all','movie','show'].includes(get('kind','all'))&&['available','pending','approved','declined'].includes(get('state','available')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','available')};
+  else if(['activity','popular'].includes(section)){
+   const filters=v.safeParse(activityFiltersSchema,{...Object.fromEntries(p),audience:get('audience','friends')});if(section==='activity'&&!filters.success)return null;
+   source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:!action,layout:'grid',...(section==='activity'&&filters.success?filters.output:{})};
+  }
   else if(['upcoming','recommendations','dynamic'].includes(section)){
    const kind=dynamicKind(p.get('kind')),reason=get('reason');
    source={type:'for-you',feature:section==='dynamic'?'row':section as 'upcoming'|'recommendations',layout:'grid',category:category as 'screen'|'game'|'music'|'reading',genre:get('genre')||undefined,workId:get('work')||undefined,seed:get('seed')||undefined,...(kind?{kind}:{}),...(['liked','watched','saved','explore'].includes(reason)?{reason:reason as 'liked'|'watched'|'saved'|'explore'}:{})};
   }
  }else if(url.pathname==='/discover'&&['trending','recent'].includes(get('section'))){
-  const surface=get('surface','watch'),kind=get('kind','all');if(!['watch','listen','play','read'].includes(surface)||!['all','book','comic'].includes(kind))return null;
-  source={type:'discovery',section:get('section') as 'trending'|'recent',surface:surface as 'watch'|'listen'|'play'|'read',kind:kind as 'all'|'book'|'comic',layout:'grid'};
+  const surface=get('view',get('surface','watch')),kind=get('kind','all');if(!['watch','listen','play','read'].includes(surface)||!['all','book','comic'].includes(kind))return null;
+  source={type:'discovery',scoped:p.has('view'),section:get('section') as 'trending'|'recent',surface:surface as 'watch'|'listen'|'play'|'read',kind:kind as 'all'|'book'|'comic',layout:'grid'};
  }else if(/^\/profile\/[^/]+$/.test(url.pathname)){
   let username:string;try{username=decodeURIComponent(url.pathname.split('/')[2]);}catch{return null;}
   const view=get('section',get('view','overview')),period=get('period','all');

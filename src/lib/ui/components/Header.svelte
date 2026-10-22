@@ -33,7 +33,9 @@
   import { page } from '$app/state';
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
-
+  import {actionOptions,actionLabels,actionHref,resolveAction,actionRoutes} from '#lib/actions.js';
+  import type {LibrarySurface} from '#lib/library.js';
+  import {goto} from '$app/navigation';
   import { reader, hideReading } from '#lib/reading/client.svelte.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   const { player } = usePlayback();
@@ -41,11 +43,35 @@
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
     $props();
+  const actions=$derived(actionOptions({...page.data,features:page.data.capabilities}).filter(option=>!!user||option.value==='watch'));
+  const action=$derived(user?resolveAction(page.url.searchParams,user?.settings?.action,{...page.data,features:page.data.capabilities}):'watch');
+  let changingAction=$state(false);
+  let actionError=$state('');
+  let actionRequest:AbortController|undefined;
+  const actionOwner=$derived(user?.username);
+  $effect(()=>{const owner=actionOwner;return()=>{if(owner!==undefined)actionRequest?.abort();};});
+  $effect(()=>{
+    const selected=page.url.searchParams.get('view')??page.url.searchParams.get('surface');
+    if(!preview&&actions.length&&selected&&selected!==action&&actionRoutes.includes(page.url.pathname))void goto(actionHref(page.url.pathname,action,page.url.searchParams.get('q')??''),{replaceState:true});
+  });
+  async function chooseAction(value:LibrarySurface){
+    if(changingAction||value===action)return;
+    changingAction=true;actionError='';
+    const controller=new AbortController();actionRequest=controller;const owner=user?.username;
+    try {
+      if(!preview&&user)await api('settings',{action:value},'POST',{signal:controller.signal});
+      if(controller.signal.aborted||owner!==user?.username)return;
+      if(!preview){await goto(actionHref(page.url.pathname,value,page.url.searchParams.get('q')??''));}
+    } catch { if(!controller.signal.aborted)actionError='The action could not be changed. Please try again.'; }
+    finally {changingAction=false;}
+  }
+  reportFailure(()=>actionError);
+
   const nav = $derived(user ? [
-    { label: 'For You', href: '/for-you', icon:'home' as const },
-    { label: 'Library', href: '/library',icon:'library' as const },
-    { label: 'Discover', href: '/discover',icon:'discover' as const },
-    { label: 'Search', href: '/search',icon:'search' as const },
+    { label: 'For You', href: actionHref('/for-you',action), icon:'home' as const },
+    { label: 'Library', href: actionHref('/library',action),icon:'library' as const },
+    { label: 'Discover', href: actionHref('/discover',action),icon:'discover' as const },
+    { label: 'Search', href: actionHref('/search',action),icon:'search' as const },
   ] : publicBrowse ? [{label:'Discover',href:'/discover',icon:'discover' as const},{label:'Search',href:'/search',icon:'search' as const}] : []);
   reportFailure(()=>status.error);
 </script>
@@ -55,7 +81,13 @@
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
 >
   <div class="header-inner content">
-    <a class="brand-home" href={user?'/for-you':publicBrowse?'/discover':'/login'} aria-label="Coast home"><Brand compact size={44} /></a>
+    <div class="action-home">
+    <a class="brand-home" href={user?actionHref('/for-you',action):publicBrowse?'/discover?view=watch':'/login'} aria-label="Coast home"><Brand compact size={32} /></a>
+    {#if actions.length&&nav.length}<Button menu align="start" triggerClass="action-trigger" label="Choose action" disabled={changingAction}>
+      {#snippet trigger()}<span>{actionLabels[action]}</span><span class="action-chevron"><Icon name="right"/></span>{/snippet}
+      {#each actions as option}<Button item selection="radio" checked={option.value===action} onclick={()=>chooseAction(option.value)}>{option.label}</Button>{/each}
+    </Button>{/if}
+    </div>
     {#if nav.length}
     <nav
       use:liquidGlass
@@ -65,8 +97,8 @@
     >
       {#each nav as item}<a
           href={item.href}
-          class:active={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games'))}
-          aria-current={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games')) ? 'page' : undefined}
+          class:active={page.url.pathname === item.href.split('?')[0] || (item.href.split('?')[0] === '/library' && page.url.pathname.startsWith('/games'))}
+          aria-current={page.url.pathname === item.href.split('?')[0] || (item.href.split('?')[0] === '/library' && page.url.pathname.startsWith('/games')) ? 'page' : undefined}
           aria-label={item.label}><span class="nav-icon"><Icon name={item.icon} size={24}/></span><span class="nav-label">{item.label}</span></a
         >{/each}
     </nav>
@@ -133,6 +165,9 @@
   .header-inner > * {
     pointer-events: auto;
   }
+  .action-home {display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .action-home :global(.action-trigger) {display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;padding:0;border:0;background:transparent;color:inherit;font-size:var(--text-xl);font-weight:var(--weight-bold);line-height:var(--leading-tight);cursor:pointer;}
+  .action-chevron {display:inline-flex;transform:rotate(90deg);flex-shrink:0;}
   .brand-home {
     display: grid;
     place-items: center;
@@ -184,7 +219,7 @@
     background: var(--accent);
     border-radius: 50%;
   }
-  @media (max-width: 639px) {
+  @media (max-width: 767px) {
     .header-inner {
       padding-inline: 20px;
     }

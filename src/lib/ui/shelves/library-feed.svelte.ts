@@ -2,7 +2,7 @@ import {onDestroy,untrack} from 'svelte';
 import {page} from '$app/state';
 import {goto} from '$app/navigation';
 import {libraryTypeOptions} from '#lib/library.js';
-import {requestStates,type LibraryFeedContent} from '#lib/library-feed.js';
+import {requestSegments,type LibraryFeedContent} from '#lib/library-feed.js';
 import {ApiError} from '#lib/ui/client.js';
 import {useClient} from '#lib/ui/client-context.js';
 import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
@@ -10,21 +10,21 @@ import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
 import {contentRevisionKey} from '#lib/ui/content-revision.svelte.js';
 import type {ShelfSource,ShelfControl} from './types';
 
-export type LibraryFeedOptions={type:'library-feed';feature:'recent'|'requests';layout?:'row'|'grid';kind?:string;state?:string};
+export type LibraryFeedOptions={action?:import('#lib/library.js').LibrarySurface;type:'library-feed';feature:'recent'|'requests';layout?:'row'|'grid';kind?:string;state?:string};
 export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
   const {api,preview}=useClient(),location=useShelfLocation();
-  let kind=$state(untrack(()=>get().kind??(get().feature==='requests'?'all':'movie')));
-  let state=$state(untrack(()=>get().state??'all'));
+  let kind=$state(untrack(()=>get().kind??(get().feature==='requests'||get().action?'all':'movie')));
+  let state=$state(untrack(()=>get().state??'available'));
   type Content=LibraryFeedContent&{scope:string};
   const empty=():Content=>({items:[],page:1,pages:1,total:0,scope:''});
   const resource=createResource<Content>(empty());
-  const types=$derived(libraryTypeOptions({...page.data,features:page.data.capabilities}));
-  const scope=$derived(JSON.stringify([page.data.user?.id,page.data.user?.role,get().feature,kind,state]));
-  const parameters=(number=1)=>new URLSearchParams({kind,...(get().feature==='requests'?{state}:{}),page:String(number)});
-  const href=()=>'/for-you?'+new URLSearchParams({section:get().feature,...Object.fromEntries(parameters())});
-  function enabled(){return !!page.data.user&&(get().feature==='requests'?page.data.capabilities?.requests!==false&&page.data.capabilities?.screen!==false:types.some(type=>type.value===kind));}
+  const types=$derived(libraryTypeOptions({...page.data,features:page.data.capabilities}).filter(option=>!get().action||option.surface===get().action));
+  const scope=$derived(JSON.stringify([page.data.user?.id,page.data.user?.role,get().feature,get().action,kind,state]));
+  const parameters=(number=1)=>new URLSearchParams({kind,...(get().feature==='recent'&&get().action?{action:get().action!}:{}),...(get().feature==='requests'?{state}:{}),page:String(number)});
+  const href=()=>{const params=parameters();params.delete('action');params.set('section',get().feature);if(get().feature==='requests')params.set('view','watch');else if(get().action)params.set('view',get().action!);return '/for-you?'+params;};
+  function enabled(){return !!page.data.user&&(get().feature==='requests'?page.data.capabilities?.requests!==false&&page.data.capabilities?.screen!==false:types.some(type=>kind==='all'||type.value===kind));}
   async function load(number=get().layout==='grid'?Number(location.url.searchParams.get('page')??1):1,append=false){
-    if(get().feature==='recent'&&!types.some(type=>type.value===kind))kind=types[0]?.value??'movie';
+    if(get().feature==='recent'&&!types.some(type=>kind==='all'||type.value===kind))kind=get().action?'all':types[0]?.value??'movie';
     if(!enabled()){resource.replace(empty());return;}
     if(append&&resource.busy)return;
     if(append&&resource.data.scope!==scope){append=false;number=1;}
@@ -44,7 +44,7 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
       void goto(url,{shallow:true,replace:true,reset:false,state:page.state});
     }
   }
-  const refreshKey=$derived(JSON.stringify([page.data.user?.id,page.data.user?.role,get().feature,
+  const refreshKey=$derived(JSON.stringify([page.data.user?.id,page.data.user?.role,get().feature,get().action,
     page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,
     contentRevisionKey(page.data,['tracking'])]));
   let previous=untrack(()=>refreshKey),previousOwner=untrack(()=>page.data.user?.id),suppliedKind=untrack(()=>get().kind),suppliedState=untrack(()=>get().state);
@@ -67,12 +67,13 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
     get busy(){return resource.busy;},get ready(){return resource.ready;},get error(){return resource.error;},get activated(){return resource.activated;},
     get href(){return get().layout==='grid'?undefined:href();},
     get resetKey(){return scope;},
-    get shape(){return get().feature==='requests'?'fanart' as const:kind==='music'?'square' as const:'poster' as const;},
+    get shape(){return get().feature==='requests'?'fanart' as const:kind==='music'||get().action==='listen'?'square' as const:'poster' as const;},
     get artworkStyle(){return get().feature==='requests'?'thumb' as const:'primary' as const;},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:true,infinite:get().layout==='grid',controls:'none' as const};},
-    get filters():ShelfControl[]{return [{type:'segments',label:get().feature==='recent'?'Recently added media':'Request status',value:get().feature==='recent'?kind:state,
-      options:get().feature==='recent'?types:[...requestStates],change:value=>choose(get().feature==='recent'?'kind':'state',value)}];},
-    get controls():ShelfControl[]{return get().feature==='requests'?[{type:'select',label:'Requested media',value:kind,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>choose('kind',value)}]:[];},
+    get filters():ShelfControl[]{return get().feature==='recent'?[]:[{type:'segments',label:'Request status',value:state,options:[...requestSegments],change:value=>choose('state',value)}];},
+    get controls():ShelfControl[]{return get().feature==='requests'?[{type:'select',label:'Media type',value:kind,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>choose('kind',value)}]:[
+      ...(types.length>1?[{type:'select' as const,label:get().action==='read'?'Reading type':'Media type',value:kind,options:[...(get().action?[{value:'all',label:'All'}]:[]),...types],change:(value:string)=>choose('kind',value)}]:[]),
+    ];},
     get empty(){return get().feature==='recent'?'No recently added titles are available in this library.':'No requests in this selection.';},
     load,
   };

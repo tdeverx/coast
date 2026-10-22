@@ -20,6 +20,8 @@ import type { ShelfSource, ShelfControl } from './types';
 import { readingTypeOptions } from '#lib/ui/filter-options.js';
 
 export type ProgressSourceOptions = {
+  category?:ProgressOptions['category'];
+  actionScoped?:boolean;
   initial?: ProgressContent;
     filters?:ProgressOptions;
   mediums?: boolean;
@@ -42,7 +44,6 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   } = $derived(getOptions());
 
   const initialFilters=untrack(()=>getOptions().filters??initial);
-  const title = $derived(progressTitles[surface]);
   const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
   const options = $derived(progressTabs.filter((option) => ['watching', 'up-next'].includes(option.value) || surface === 'profile' && ['finished', 'dropped'].includes(option.value)));
   const defaultView = (): ProgressOptions['view'] => surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
@@ -59,7 +60,8 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     total: 0,
     items: [],
   });
-  let category = $state<ProgressOptions['category']>(untrack(() => initialFilters?.category ?? 'screen'));
+  let category = $state<ProgressOptions['category']>(untrack(() => getOptions().category??initialFilters?.category ?? 'screen'));
+  const title = $derived(surface==='watchlist'?'Later':category==='reading'&&surface==='continue'?'Continue reading':category==='game'&&surface==='continue'?'Playing':progressTitles[surface]);
   let tab = $state<string>(untrack(() => initialFilters?.view ?? defaultView()));
   let preferences = $state<Record<string, Filters>>(
     Object.fromEntries([...progressTabs, {value:'next',label:'Next'}, {value:'recommendations',label:'Recommendations'}].map((option) => [option.value, defaults()]))
@@ -77,6 +79,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
   const parameters = (number = 1) => new URLSearchParams({
     ...username ? { username } : {},
+    ...getOptions().actionScoped ? { scoped: 'true' } : {},
     view: tab,
     category,
     kind: category === 'screen' || category === 'reading' ? current.kind : 'all',
@@ -84,17 +87,32 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       page: String(number),
   });
   const href = (number = 1) => '/progress?' + parameters(number);
+  const ownerKey = $derived(JSON.stringify([route.data.user?.id,username,getOptions().category,route.data.capabilities,route.data.experimentalMusic,route.data.experimentalGaming,route.data.experimentalBooks,route.data.experimentalComics]));
+  let loadedOwner = $state(untrack(() => ownerKey));
   const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics,route.data.capabilities]));
   let previousRefreshKey = untrack(() => refreshKey);
   let previousInitial = untrack(() => initial);
   $effect(() => {
     const next = initial;
     const key = refreshKey;
+    const owner = ownerKey;
     untrack(() => {
       const revisionChanged = key !== previousRefreshKey;
       const initialChanged = next !== previousInitial;
       previousRefreshKey = key;
       previousInitial = next;
+      if (owner !== loadedOwner) {
+        const activated = resource.activated || resource.ready;
+        if (getOptions().category) category = getOptions().category!;
+        if (activated) resource.replace(emptyContent());
+        loadedOwner = owner;
+        if (next && initialChanged) {
+          tab = next.view; category = next.category;
+          preferences[tab] = {kind:next.kind,scope:next.scope};
+          resource.replace(next);
+        } else if (activated) void select();
+        return;
+      }
       if (!next) {
         if ((revisionChanged || initialChanged) && resource.activated) void select(layout==='row'?1:content.page);
         return;
@@ -124,6 +142,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     if(!categoryEnabled(features,category)){
       const next=mediumOptions(features)[0]?.value;
       if(!next){resource.replace(emptyContent());return;}
+      if(getOptions().actionScoped){resource.replace(emptyContent());return;}
       category=next as ProgressOptions['category'];
     }
     if(surface==='recommendations'&&route.data.capabilities?.social===false){resource.replace(emptyContent());return;}
@@ -154,6 +173,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   }
 
   function update(patch: Partial<Filters>) {
+    if (Object.entries(patch).every(([key,value])=>current[key as keyof Filters]===value)) return;
     preferences[tab] = { ...current, ...patch };
     void select();
   }
@@ -176,7 +196,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     },
 
     get items() {
-      return content.category === category ? visible : [];
+      return loadedOwner === ownerKey && content.category === category && content.view === tab && content.kind === (category==='screen'||category==='reading'?current.kind:'all') && content.scope === (surface==='profile'?'all':current.scope) ? visible : [];
     },
 
     get busy() {
@@ -239,7 +259,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           ]
           : [],
 
-        ...!saved && !mediums
+        ...!saved && !mediums&&!getOptions().actionScoped
           ? [
             {
               type: 'segments' as const,
@@ -272,7 +292,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
         ? [
           {
             type: 'media-type',
-            label: `${title} media type`,
+            label: 'Media type',
             value: current.kind,
             change: (value) => update({ kind: value as Filters['kind'] })
           }
@@ -281,7 +301,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           ? [
             {
               type: 'select',
-              label: `${title} reading type`,
+              label: 'Reading type',
               value: current.kind,
               options: readingTypeOptions({ ...route.data, features: route.data.capabilities }),
               change: (value) => update({ kind: value as Filters['kind'] })

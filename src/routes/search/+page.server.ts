@@ -1,3 +1,4 @@
+import {resolveAction,actionUrl} from '#lib/actions.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { categoryEnabled, surfaceEnabled } from '#lib/experimental.js';
 import { error } from '@sveltejs/kit';
@@ -13,8 +14,11 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
   depends('coast:tracking');
   depends('coast:reading');
   depends('coast:providers');
+  const config = await getFeatureConfig(locals.user?.id??null);
+  if(locals.user)url=actionUrl(url,locals.user.settings?.action,config);
+  const action=locals.user?resolveAction(url.searchParams,locals.user.settings?.action,config):'watch';
   let selection: SearchSelection;
-  try { selection = searchSelection(url.searchParams); }
+  try { selection = searchSelection(url.searchParams,action); }
   catch (cause) { if (cause instanceof v.ValiError) error(400, 'Choose valid search filters.'); throw cause; }
   const { query, view: selectedView, kind, readingFilters } = selection;
   const signal = request?.signal;
@@ -29,7 +33,6 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
     return {query,kind:kind==='movie'||kind==='show'?kind:'all',view:'watch',rows:{available:publicRow(selection.rows.available),unavailable:publicRow(selection.rows.unavailable)},filtered:selection.filtered,demand:{watch:true,listen:false,play:false,read:false},initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readingFilters};
   }
 
-  const config = await getFeatureConfig(locals.user?.id??null);
   for (const row of Object.values(selection.rows)) {
     if (row.view !== 'all' && !surfaceEnabled(config,row.view)) error(404, 'This search view is unavailable.');
     if ((row.kind === 'book' || row.kind === 'comic') && !categoryEnabled(config,row.kind)) error(404, 'This reading type is unavailable.');

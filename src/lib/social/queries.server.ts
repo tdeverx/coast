@@ -1,16 +1,17 @@
 import { getFeatureConfig } from '#lib/server/features.js';
 import {statusesForUsers} from './status.server';
-import {activityAction,workFriendFilters,workFriendOptions} from './model';
+import {activityAction,activityFiltersSchema,activityTypeEvents,workFriendFilters,workFriendOptions} from './model';
 import {activityRelationships,relationshipEdges,relationshipReasons,relationshipEventFilter} from './relationships.server';
 import {getDb} from '#lib/server/db/index.js';
-import {sql} from 'drizzle-orm';
+import {sql,type SQL} from 'drizzle-orm';
 import * as v from 'valibot';
 import {workCards} from '#lib/collection/query.server.js';
 const uuid=v.pipe(v.string(),v.uuid());
-export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),period:v.optional(v.picklist(['month','year','all']),'all'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
+export const feedOptionsSchema=v.object({...activityFiltersSchema.entries,category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
 export async function activityFeed(userId:string,raw:unknown={},activityIds?:string[]) {
  if(activityIds)v.parse(v.pipe(v.array(uuid),v.maxLength(60)),activityIds);
  const o=v.parse(feedOptionsSchema,raw);
+ const audienceScope=(actor:SQL)=>o.audience==='you'?sql`${actor}=${userId}::uuid`:o.audience==='friends'?sql`${actor}<>${userId}::uuid`:sql`true`;
  if(o.relationship!==undefined)v.parse(v.literal(true),!!(o.workId||o.artistId||o.readingGroupId));
  const scoped=!!(o.workId||o.artistId||o.readingGroupId)||activityIds!==undefined;
  const activityScope=sql`and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
@@ -38,6 +39,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  with recursive ${admitted}${activityRelationships(userId,o)} activity_policy_keys as materialized (
   select distinct a.user_id,a.section,w.category
   from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id
+  where ${audienceScope(sql`a.user_id`)}
  ), activity_policy as materialized (
   select k.user_id,k.section,k.category from activity_policy_keys k
   where coast_category_enabled(${userId}::uuid,k.category)
@@ -60,6 +62,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
   left join lateral(select parent_id from media_relationships where e.show_id is null and se.show_id is null and child_id=a.work_id and kind='contains' order by case when parent_id=${o.workId??null}::uuid then 0 else 1 end,position,parent_id limit 1) r on true
   where true
    ${relationshipEventFilter(o.relationship)}
+   ${o.activityType==='all'?sql``:sql`and a.event_kind in (${sql.join(activityTypeEvents[o.activityType].map(kind=>sql`${kind}`),sql`,`)})`}
    ${activityScope}
    and (${o.category}='all' or w.category=${o.category} or ${o.category}='reading' and w.category in ('book','comic')) and (${o.kind}='all' or a.event_kind=${o.kind})
    and (${o.friendId??null}::uuid is null or a.user_id=${o.friendId??null}::uuid)
@@ -101,7 +104,9 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  )
  select is_relationship as "isRelationship",relationships,id,user_id as "userId",username,work_id as "workId",event_kind as "eventKind",occurred_at as "occurredAt",count,members,rating,minutes,rewatch,reading_page as "readingPage",reading_total as "readingTotal",track_title as "trackTitle",listen_number as "listenNumber",date_known as "dateKnown",display_work_id as "displayWorkId",root_id as "rootId",episode_codes as "episodeCodes",
  case when social_visible(user_id,${userId}::uuid,'details') then (select settings->'profile'->>'avatar' from users where users.id=combined.user_id) end as avatar from combined
- where (is_relationship or ${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or
+ where ${audienceScope(sql`user_id`)}
+ and ${o.mediaKind==='all'?sql`true`:sql`exists(select 1 from works display_work where display_work.id=combined.display_work_id and (display_work.kind=${o.mediaKind} or ${o.mediaKind}='show' and display_work.kind in ('episode','season')))`}
+ and (is_relationship or ${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or
  (not is_relationship,date_known,occurred_at,id)<(not coalesce(${o.beforeRelationship??null}::boolean,false),coalesce(${o.beforeKnown??null}::boolean,true),${o.before??null}::timestamptz,coalesce(${o.beforeId??null}::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
  order by is_relationship,date_known desc,occurred_at desc,id desc limit 61`);
  const page=Array.from(rows).slice(0,60),cards=await workCards(userId,userId,[...new Set(page.flatMap(r=>[r.displayWorkId,r.rootId]))]);

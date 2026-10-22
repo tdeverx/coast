@@ -7,7 +7,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
-import { mediaViews, hasPermittedMediaSource } from './media';
+import { mediaViews, hasPermittedMediaSource, hasPermittedWorkSource } from './media';
 import { pageNumberSchema, PAGE_SIZE, pagination, requestedPageInterval } from './pagination';
 
 import { pageInterval } from '#lib/page-window.js';
@@ -19,7 +19,7 @@ export const libraryOptionsSchema = v.object({
   sort: v.optional(v.picklist(librarySortValues), 'default'),
   page: v.optional(pageNumberSchema, 1),
   genre: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(100)), ''),
-  kind: v.optional(v.picklist(['all', 'movie', 'show']), 'all'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show','collection']), 'all'),
   scope: v.optional(v.picklist(['available', 'all']), 'available'),
   source: v.optional(v.union([v.literal('all'), uuidSchema]), 'all'),
   tracking: v.optional(v.picklist(['all', 'watched', 'unwatched', 'progress', 'dropped']), 'all'),
@@ -62,7 +62,7 @@ export async function libraryData(userId: string, rawOptions: unknown = {}, firs
   const input = v.parse(libraryOptionsSchema, rawOptions);
   const interval = requestedPageInterval(input.page, firstPage);
   const pageSize = PAGE_SIZE;
-  const permittedSource = hasPermittedMediaSource(userId, input.source);
+  const permittedSource = input.kind==='collection'?hasPermittedWorkSource(userId):hasPermittedMediaSource(userId, input.source);
   const tracking = libraryTrackingCondition(userId, input.tracking);
   const config = await getFeatureConfig(userId);
   // Match the same override/provider precedence used by the cards, before pagination.
@@ -90,7 +90,7 @@ export async function libraryData(userId: string, rawOptions: unknown = {}, firs
   const [result] = (await db.execute(sql`
     with eligible as materialized (
       select ${s.media.id} as id, ${s.media.updatedAt} as updated_at, ${s.media.createdAt} as created_at, ${s.media.title} as title
-      from ${s.media} left join ${s.trackingState} on ${join} where ${where}
+      from ${s.media} join ${s.works} on ${s.works.id}=${s.media.id} left join ${s.trackingState} on ${join} where ${where}
     ), total as (select count(*)::int as total from eligible)
     select total, coalesce((select jsonb_agg(id order by ${order})
       from (select * from eligible order by ${order} limit ${interval ? sql`(least(${interval.lastPage}, greatest(1, ceil(total::numeric / ${pageSize})::int))

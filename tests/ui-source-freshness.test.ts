@@ -26,8 +26,9 @@ const {createCreditsSource}:typeof import('../src/lib/ui/shelves/credits.svelte'
 const content=(id='work',available=true):LibraryContent=>({items:[{id,kind:'movie',title:id,available,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}],page:1,pages:1,total:1});
 const settle=async()=>{for(let i=0;i<10;i++){runtime.flush();await Promise.resolve();}};
 function reset(){page.data.user={id:'viewer'};page.data.contentRevision={tracking:'one',social:'one'};page.data.filters={kind:'all'};}
-function library(initial?:LibraryContent){
- reset();const options=runtime.state({surface:'watch',layout:initial?'grid':'row',initial} as LibrarySourceOptions);
+function library(initial?:LibraryContent,extra:Partial<LibrarySourceOptions>={}){
+ reset();if(extra.surface==='listen')page.data.experimentalMusic=true;
+ const options=runtime.state({surface:'watch',layout:initial?'grid':'row',initial,...extra} as LibrarySourceOptions);
  let result!:ReturnType<typeof createLibrarySource>;
  const dispose=runtime.effect_root(()=>result=createLibrarySource(()=>runtime.get(options)));
  runtime.flush();
@@ -112,4 +113,65 @@ test('Library sorting and segment changes cancel pending pages and restart one c
   expect(result.pagination).toMatchObject({page:1,firstPage:1,infinite:true,automatic:false,controls:'none'});
   expect(calls).toHaveLength(4);
  }finally{dispose();}
+});
+
+test('Library entity changes publish matching totals and cancel stale pages while preserving manual loading',async()=>{
+ const calls:{url:URL;signal:AbortSignal;resolve:(value:LibraryContent)=>void}[]=[];
+ client.setDelivery((path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>calls.push({url:new URL(path,'http://test/'),signal:options.signal,resolve})));
+ const initial={...content('first'),total:500,pages:9};
+ const {result,dispose}=library(initial,{entitySegments:true,countHeading:true,initialKind:'movie'});
+ try{
+  expect(result.title).toBe('500 movies');
+  const pending=result.load(2,true);
+  result.filters[0].change('show');await settle();
+  expect(calls[0].signal.aborted).toBe(true);
+  expect(result.title).toBe('… shows');
+  calls[1].resolve({...content('sorted'),total:700,pages:12});await settle();
+  calls[0].resolve({...content('stale'),total:999,pages:17});await pending;
+  expect(result.items.map(item=>item.id)).toEqual(['sorted']);
+  expect(result.title).toBe('700 shows');
+  expect(result.pagination.kind==='pages'&&result.pagination.automatic).toBe(false);
+ }finally{dispose();}
+});
+
+test('home music uses native Library pages and entity tabs without progress states or preview limits',async()=>{
+ const paths:URL[]=[];client.setDelivery(async(path:string)=>{const url=new URL(path,'http://fixture');paths.push(url);return {...content('music-'+paths.length),page:Number(url.searchParams.get('page')??1),pages:3,total:125};});
+ const {result,dispose}=library(undefined,{surface:'listen',title:'Music library',entitySegments:true,initialSelection:'album',initialScope:'all',kindControl:false});
+ try{
+  page.data.experimentalMusic=true;runtime.flush();
+  expect(result.activated).toBe(false);expect(paths).toHaveLength(0);
+  await result.load();expect(paths[0].searchParams.has('preview')).toBe(false);expect(result.title).toBe('Music library');
+  expect(result.filters[0].options?.map(option=>option.value)).toEqual(['album','artist','track','playlist']);
+  expect(result.controls.find(control=>control.label==='Status')?.options?.map(option=>option.value)).toEqual(['all','later','favourites']);
+  await result.load(2,true);expect(paths[1].searchParams.get('page')).toBe('2');expect(result.items).toHaveLength(2);
+  result.filters[0].change('artist');await settle();
+  expect(result.controls.some(control=>control.label==='Status')).toBe(false);
+  expect(new URL(result.href!,'http://fixture').searchParams.get('kind')).toBe('artist');
+  expect(result.pagination).toMatchObject({kind:'pages',append:true,automatic:true,page:1});
+ }finally{dispose();page.data.experimentalMusic=false;}
+});
+
+test('saved action rows preserve their scope and fence old viewers and filters during replacement',async()=>{
+ const {createProgressSource}:typeof import('../src/lib/ui/shelves/progress.svelte')=await adapter('../src/lib/ui/shelves/progress.svelte.ts');
+ reset();const payload=(id:string,scope='all')=>({...content(id),view:'watchlist',category:'screen',kind:'all',scope});
+ client.setDelivery(async()=>payload('private'));
+ let result!:ReturnType<typeof createProgressSource>;const dispose=runtime.effect_root(()=>result=createProgressSource(()=>({surface:'watchlist',category:'screen',actionScoped:true})));runtime.flush();
+ const pending:{signal:AbortSignal;finish:(value:ReturnType<typeof payload>)=>void}[]=[];
+ try{
+  await result.load();expect(new URL(result.href!,'http://fixture').searchParams.get('scoped')).toBe('true');
+  expect(result.filters.some(control=>control.type==='segments')).toBe(false);
+  client.setDelivery((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>pending.push({signal:options.signal,finish:resolve})));
+  result.filters.find(control=>control.type==='availability')!.change('available');expect(result.items).toEqual([]);
+  page.data.user={id:'other'};runtime.flush();expect(pending[0].signal.aborted).toBe(true);expect(result.items).toEqual([]);
+  pending[1].finish(payload('current','available'));await settle();pending[0].finish(payload('late','available'));await settle();
+  expect(result.items.map(item=>item.id)).toEqual(['current']);
+ }finally{dispose();}
+});
+
+test('unactivated saved rows remain lazy after an account change',async()=>{
+ const {createProgressSource}:typeof import('../src/lib/ui/shelves/progress.svelte')=await adapter('../src/lib/ui/shelves/progress.svelte.ts');
+ reset();let calls=0;client.setDelivery(async()=>{calls++;return {...content(),view:'watchlist',category:'screen',kind:'all',scope:'all'};});
+ let result!:ReturnType<typeof createProgressSource>;const dispose=runtime.effect_root(()=>result=createProgressSource(()=>({surface:'watchlist',category:'screen',actionScoped:true})));runtime.flush();
+ try{page.data.user={id:'next-viewer'};await settle();expect(calls).toBe(0);expect(result.ready).toBe(false);await result.load();expect(calls).toBe(1);}
+ finally{dispose();}
 });

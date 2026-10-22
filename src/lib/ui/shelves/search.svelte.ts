@@ -5,7 +5,7 @@ import type { ShelfItem, ShelfSource, ShelfControl } from './types';
 import type { MediumFeatures } from '#lib/experimental.js';
 import { mediaTypeOptions } from '#lib/ui/filter-options.js';
 import { refreshRouteDependencies } from '#lib/ui/client.js';
-import { searchRowMatches, type SearchView } from '#lib/search-selection.js';
+import { searchRowMatches, searchSurface, type SearchView } from '#lib/search-selection.js';
 
 export type SearchOptions = {
   surface?: LibrarySurface;
@@ -40,6 +40,7 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
         searchRowMatches({ kind, view: options.view }, item.kind) &&
         (!options.bucket || (item.available === true) === (options.bucket === 'available')));
     },
+    get shape(){return options.view==='listen'?'square' as const:'poster' as const;},
     get busy() { return options.busy ?? false; },
     get ready() { return !options.busy; },
     get error() { return options.failure ?? ''; },
@@ -47,7 +48,7 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
     filterBy: 'none',
     get filters(): ShelfControl[] {
       return [{ type: 'segments', label: `${this.title} media type`, value: kind,
-        options: [...mediaTypeOptions(options.mediums ?? page.data), ...((options.mediums ?? page.data).experimentalMusic ? [{ value: 'artist', label: 'Artists' }] : [])], change: selectKind }];
+        options: [...mediaTypeOptions(options.mediums ?? page.data), ...((options.mediums ?? page.data).experimentalMusic ? [{ value: 'artist', label: 'Artists' }] : [])].filter(option=>option.value==='all'||!options.view||options.view==='all'||searchSurface(option.value)===options.view), change: selectKind }];
     },
     controls: [],
     actions: [],
