@@ -105,7 +105,7 @@ jobs:
           }
           trap cleanup EXIT
           # Keep the production init/reaper while the fixture starts supervisors.
-          docker run -d --name coast-lifecycle-test --entrypoint /usr/bin/tini coast-pr-smoke -- sleep 600
+          docker run -d --name coast-lifecycle-test --mount type=volume,destination=/fixture-data/postgres -e COAST_UPGRADE_TEST_DATA=/fixture-data --entrypoint /usr/bin/tini coast-pr-smoke -- sleep 600
           bun scripts/test-container-lifecycle.ts --docker coast-lifecycle-test
           bun scripts/test-container-runtime.ts --docker coast-lifecycle-test
           bun scripts/test-postgres-upgrade.ts --docker coast-lifecycle-test

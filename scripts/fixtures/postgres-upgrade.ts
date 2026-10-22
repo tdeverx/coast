@@ -1,7 +1,7 @@
 // Fresh PostgreSQL clusters only, inside a dedicated Linux fixture container.
-import {mkdirSync, chmodSync, readFileSync, existsSync, rmSync, renameSync, openSync, closeSync} from 'node:fs';
+import {mkdirSync, chmodSync, statSync, readFileSync, existsSync, rmSync, renameSync, openSync, closeSync} from 'node:fs';
 import {dirname} from 'node:path';
-const root = dirname(import.meta.path), data = root + '/data';
+const root = dirname(import.meta.path), data = process.env.COAST_UPGRADE_TEST_DATA || root + '/data';
 const {encryptCredential, decryptCredential} = await import(root + '/credentials.ts');
 const pg15 = '/usr/lib/postgresql/15/bin', pg17 = '/usr/lib/postgresql/17/bin';
 const servers = new Map<string, string>();
@@ -52,20 +52,21 @@ async function upgrade(directory: string, success = true) {
 }
 async function startupRefused(directory: string, reason: string, env:Record<string,string>={}) {
   const result = await run(['/usr/local/bin/coast-entrypoint'], {COAST_DATA_DIR: directory,...env}, false);
-  assert(result.code !== 0 && result.error.includes(reason), 'startup did not refuse ' + reason);
+  assert(result.code !== 0 && result.error.includes(reason), 'startup did not refuse ' + reason + ': ' + result.error);
 }
 async function login(db = 'coast') {
   return (await run([pg17 + '/psql', '-XAt', '-h', '127.0.0.1', '-U', 'coast', '-d', db, '-c', 'SELECT count(*) FROM upgrade_fixture'], {PGPASSWORD: password})).output;
 }
 function key(directory: string) {return readFileSync(directory + '/secrets/credentials.key').toString('hex');}
 try {
-  mkdirSync(data); chmodSync(data, 0o755);
-  mkdirSync(data + '/postgres', {mode: 0o700});
+  mkdirSync(data, {recursive: true});
+  try {chmodSync(data, 0o755);} catch (error) {if ((statSync(data).mode & 0o777) !== 0o755) throw error;}
+  mkdirSync(data + '/postgres', {mode: 0o700, recursive: true});
   // Use actual image identities rather than relying on Debian's allocation order.
   await run(['chown', 'postgres:postgres', data + '/postgres']);
   await run(['mkdir', '-p', '/var/run/postgresql']);
   await run(['chown', 'postgres:postgres', '/var/run/postgresql']);
-  await run(['gosu', 'postgres', pg15 + '/initdb', '-D', data + '/postgres', '--username=postgres', '--encoding=UTF8', '--locale=C.UTF-8', '--auth-local=trust', '--auth-host=scram-sha-256']);
+  await run(['gosu', 'postgres', pg15 + '/initdb', '-D', data + '/postgres', '--data-checksums', '--username=postgres', '--encoding=UTF8', '--locale=C.UTF-8', '--auth-local=trust', '--auth-host=scram-sha-256']);
   mkdirSync(data + '/secrets', {mode: 0o700});
   await Bun.write(data + '/secrets/database-password', password + '\n');
   process.env.COAST_DATA_DIR = data;
@@ -94,7 +95,7 @@ try {
   renameSync(data+'/postgres/saved-version',data+'/postgres/PG_VERSION');
   const tools=root+'/tools';mkdirSync(tools);
   await Bun.write(tools+'/df',"#!/bin/bash\nprintf 'Filesystem 1024-blocks Used Available Capacity Mounted\\nfixture 1 1 0 100%% /\\n'\n");chmodSync(tools+'/df',0o755);
-  await startupRefused(data,'free for the verified backup',{PATH:tools+':'+process.env.PATH});
+  await startupRefused(data,'no data was changed',{PATH:tools+':'+process.env.PATH});
   assert(!existsSync(data+'/postgres-upgrade'),'capacity preflight changed upgrade state');
   assert(key(data) === originalKey, 'setup changed the key');
   // Existing credentials must never be silently replaced, including fresh 17 startup.
@@ -117,13 +118,13 @@ try {
   const config = await Bun.file(failed + '/postgres/postgresql.conf').text();
   await Bun.write(failed + '/postgres/postgresql.conf', config + '\ncoast_invalid_setting = true\n');
   assert((await upgrade(failed, false)).code !== 0, 'invalid configuration accepted');
-  assert(readFileSync(failed + '/postgres/PG_VERSION', 'utf8').trim() === '15', 'failure switched source');
+  assert(readFileSync(failed + '/postgres/15/PG_VERSION', 'utf8').trim() === '15', 'failure switched source');
   assert(existsSync(failed + '/postgres-upgrade/in-progress'), 'failure marker lost');
   await startupRefused(failed, 'upgrade is incomplete');
-  await Bun.write(failed + '/postgres/postgresql.conf', config);
-  await start(failed + '/postgres', pg15);
+  await Bun.write(failed + '/postgres/15/postgresql.conf', config);
+  await start(failed + '/postgres/15', pg15);
   assert(await login() === '2000' && await digest()===before, 'source changed after failure');
-  await stop(failed + '/postgres');
+  await stop(failed + '/postgres/15');
   console.log('PASS real upgrade failure retains restartable PG15 and blocks partial startup');
 
   const interrupted=root+'/interrupted';await run(['cp','-a',data,interrupted]);
@@ -138,12 +139,13 @@ try {
   console.log('PASS actual supervisor interruption retains data and blocks incomplete restart');
 
   await upgrade(data);
-  assert(readFileSync(data + '/postgres/PG_VERSION', 'utf8').trim() === '17', '17 not selected');
-  assert(readFileSync(data + '/postgres-15/PG_VERSION', 'utf8').trim() === '15', '15 rollback missing');
+  assert(readFileSync(data + '/postgres/17/PG_VERSION', 'utf8').trim() === '17', '17 not selected');
+  assert(readFileSync(data + '/postgres/15/PG_VERSION', 'utf8').trim() === '15', '15 rollback missing');
   assert(key(data) === originalKey && readFileSync(data + '/secrets/database-password', 'utf8') === password + '\n', 'secrets changed');
   await upgrade(data);
-  await start(data + '/postgres', pg17);
+  await start(data + '/postgres/17', pg17);
   assert((await sql('SHOW server_version_num')).startsWith('17'), 'server major not 17');
+  assert(await sql('SHOW data_checksums') === 'on', 'upgrade lost source checksums');
   assert(await login() === '2000' && await digest()===before, 'original rows or TCP SCRAM credential changed');
   assert(await usersDigest()===usersBefore&&await archiveDigest()===archiveBefore,'accounts or additional database changed');
   assert(await Bun.password.verify('synthetic-upgrade-password',await sql("SELECT password_hash FROM users WHERE username='upgrade-1'")),'user login hash lost');
@@ -160,14 +162,14 @@ try {
   await run(['gosu', 'postgres', pg17 + '/pg_restore', '-h', '/var/run/postgresql', '-U', 'postgres', '--exit-on-error', '-d', 'coast_restored', dump]);
   assert(await login('coast_restored') === '2001', 'logical restore lost rows');
   assert(await decryptCredential(await sql('SELECT credential FROM upgrade_fixture WHERE id=1', 'coast_restored')) === 'upgrade-fixture-provider-token', 'logical restore credential lost');
-  await stop(data + '/postgres');
+  await stop(data + '/postgres/17');
   await upgrade(data);
-  await start(data + '/postgres', pg17); assert(await login() === '2001', '17 restart lost committed rows'); await stop(data + '/postgres');
+  await start(data + '/postgres/17', pg17); assert(await login() === '2001', '17 restart lost committed rows'); await stop(data + '/postgres/17');
   console.log('PASS automatic 15→17 HTTP readiness, exact rows/schema/role hash/ownership/sequences/provider key, logical restore, migrations and repeated startup');
 
-  await start(data + '/postgres-15', pg15);
+  await start(data + '/postgres/15', pg15);
   assert(await login() === '2000' && await digest()===before, 'rollback copy changed after 17 writes');
-  await stop(data + '/postgres-15');
+  await stop(data + '/postgres/15');
   const restored = root + '/restored'; mkdirSync(restored, {mode: 0o755});
   await run(['bash', '-c', 'cd "$1"; sha256sum -c postgres-15-and-secrets.tar.sha256', '_', data + '/postgres-upgrade']);
   await run(['tar', '-C', restored, '-xpf', data + '/postgres-upgrade/postgres-15-and-secrets.tar']);
@@ -184,6 +186,13 @@ try {
   const fresh=root+'/fresh';mkdirSync(fresh,{mode:0o755});await upgrade(fresh);
   assert(readFileSync(fresh+'/postgres/PG_VERSION','utf8').trim()==='17'&&!existsSync(fresh+'/postgres-upgrade'),'fresh install did not directly initialize 17');
   console.log('PASS fresh PostgreSQL 17 ordinary startup');
+  const unchecked=root+'/unchecked';mkdirSync(unchecked,{mode:0o755});mkdirSync(unchecked+'/postgres',{mode:0o700});
+  await run(['chown','postgres:postgres',unchecked+'/postgres']);
+  await run(['gosu','postgres',pg15+'/initdb','-D',unchecked+'/postgres','--username=postgres','--encoding=UTF8','--locale=C.UTF-8','--auth-local=trust','--auth-host=scram-sha-256']);
+  mkdirSync(unchecked+'/secrets',{mode:0o700});await Bun.write(unchecked+'/secrets/database-password',password+'\n');
+  await start(unchecked+'/postgres',pg15);await sql(`CREATE ROLE coast LOGIN PASSWORD '${password}'`,'postgres',pg15);await sql('CREATE DATABASE coast OWNER coast','postgres',pg15);await stop(unchecked+'/postgres');
+  await upgrade(unchecked);await start(unchecked+'/postgres/17',pg17);assert(await sql('SHOW data_checksums')==='off','upgrade changed disabled checksums');await stop(unchecked+'/postgres/17');
+  console.log('PASS checksum-enabled and checksum-disabled source upgrades');
   console.log('DISPOSABLE_POSTGRES_UPGRADE_PASSED');
 } finally {
   for(const child of apps){child.kill('SIGTERM');await stopped(child).catch(()=>child.kill('SIGKILL'));}

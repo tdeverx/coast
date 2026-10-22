@@ -119,13 +119,24 @@ lock_coast_storage() {
   flock -n 9 || storage_error 'this data directory is already in use by Coast or PostgreSQL maintenance. Stop the other container first.'
 }
 
+bundled_postgres_directory() {
+  # Upgraded installations keep both majors on the original database volume.
+  # A legacy/fresh cluster may still occupy the volume root.
+  if [[ -f "$1/postgres/17/PG_VERSION" && ! -e "$1/postgres/PG_VERSION" ]]; then
+    printf '%s/postgres/17\n' "$1"
+  else
+    printf '%s/postgres\n' "$1"
+  fi
+}
+
 check_bundled_postgres_version() {
-  local data_dir="$1" version
+  local data_dir="$1" version pg_data
   if [[ -e "$data_dir/postgres-upgrade/in-progress" ]]; then
     storage_error 'PostgreSQL upgrade is incomplete. See docs/postgresql-17.md for recovery; startup will not initialise or select a cluster.'
   fi
-  if [[ -f "$data_dir/postgres/PG_VERSION" ]]; then
-    version="$(cat "$data_dir/postgres/PG_VERSION")"
+  pg_data="$(bundled_postgres_directory "$data_dir")"
+  if [[ -f "$pg_data/PG_VERSION" ]]; then
+    version="$(cat "$pg_data/PG_VERSION")"
     case "$version" in
       17) ;;
       15) ;; # The supervisor upgrades this stopped cluster before app startup.
