@@ -22,7 +22,12 @@ FROM debian:bookworm-slim AS runtime
 ARG COAST_BUILD_ID=unknown
 ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 CONNECTION_IDLE_TIMEOUT=60 SHUTDOWN_TIMEOUT=2 COAST_READING_EXTRACTOR=/app/build/reading-extractor COAST_BUILD_ID=$COAST_BUILD_ID
 RUN mkdir -p /etc/postgresql-common && printf 'create_main_cluster = false\n' > /etc/postgresql-common/createcluster.conf \
-    && apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client ca-certificates tini gosu libarchive13 \
+    && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl --fail --show-error --silent https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && printf 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main\n' > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-17 postgresql-client-17 postgresql-15 postgresql-client-15 tini gosu libarchive13 \
+    && apt-get purge -y --auto-remove curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --user-group --create-home --home-dir /home/coast coast
 COPY --from=build /usr/local/bin/bun /usr/local/bin/bun
@@ -41,12 +46,14 @@ COPY --from=build /app/scripts/container-stderr.ts ./scripts/container-stderr.ts
 COPY --from=build /app/scripts/container-shutdown-event.ts ./scripts/container-shutdown-event.ts
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/LICENSE /app/NOTICE.md /app/THIRD_PARTY_NOTICES.md ./
+COPY scripts/container-postgres-upgrade.sh /usr/local/lib/coast-container-postgres-upgrade.sh
 COPY scripts/container-entrypoint.sh /usr/local/bin/coast-entrypoint
 COPY scripts/container-storage.sh /usr/local/lib/coast-container-storage.sh
 COPY scripts/container-wait.sh /usr/local/lib/coast-container-wait.sh
 COPY scripts/container-shutdown.sh /usr/local/lib/coast-container-shutdown.sh
-RUN command -v setsid && command -v timeout \
-    && chmod 755 /usr/local/bin/coast-entrypoint /usr/local/lib/coast-container-storage.sh /usr/local/lib/coast-container-wait.sh /usr/local/lib/coast-container-shutdown.sh
+RUN command -v setsid && command -v timeout && command -v flock \
+    && /usr/lib/postgresql/17/bin/postgres --version | grep -E 'PostgreSQL\) 17\.' \
+    && chmod 755 /usr/local/lib/coast-container-postgres-upgrade.sh /usr/local/bin/coast-entrypoint /usr/local/lib/coast-container-storage.sh /usr/local/lib/coast-container-wait.sh /usr/local/lib/coast-container-shutdown.sh
 VOLUME ["/data"]
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 CMD bun -e 'const response = await fetch("http://127.0.0.1:3000/api/v1/health"); process.exit(response.ok ? 0 : 1)'
