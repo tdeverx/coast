@@ -44,15 +44,27 @@ done
 command -v setsid >/dev/null
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
-  pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
-  if [[ -z "$pg_bin" ]]; then echo 'Bundled PostgreSQL was not found.' >&2; exit 1; fi
+  lock_coast_storage "$data_dir"
+  pg_bin=/usr/lib/postgresql/17/bin
+  if [[ ! -x "$pg_bin/postgres" ]]; then echo 'Bundled PostgreSQL was not found.' >&2; exit 1; fi
   # Metadata only; audit failure must not interfere with startup.
   export COAST_POSTGRES_VERSION="$("$pg_bin/postgres" --version 2>/dev/null || true)"
   pg_data="$data_dir/postgres"
+  check_bundled_postgres_version "$data_dir"
   prepare_postgres_storage "$pg_data"
   postgres_directory="$(readlink -f -- "$pg_data")"
+  if [[ -f "$pg_data/PG_VERSION" && "$(cat "$pg_data/PG_VERSION")" == 15 ]]; then
+    echo 'Existing PostgreSQL 15 data found; preparing a verified backup and automatic upgrade to 17 before starting Coast.'
+    setsid /usr/local/lib/coast-container-postgres-upgrade.sh &
+    migration_pid=$!
+    track_child "$migration_pid"
+    completed_pid="$migration_pid"
+    if wait "$migration_pid"; then migration_pid=""; completed_pid=""; else exit "$?"; fi
+    check_bundled_postgres_version "$data_dir"
+  fi
   password_file="$data_dir/secrets/database-password"
   if [[ ! -s "$password_file" ]]; then
+    if [[ -s "$pg_data/PG_VERSION" ]]; then storage_error 'existing bundled PostgreSQL is missing secrets/database-password; restore the original secrets directory.'; fi
     gosu coast bash -c 'umask 077; bun -e '\''console.log(Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex"))'\'' > "$1"' _ "$password_file"
     chmod 600 "$password_file"
   fi

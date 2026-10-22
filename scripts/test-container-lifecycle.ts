@@ -4,7 +4,7 @@ if(docker)args.shift();
 const name=args[0];
 if(!name||!/^coast-(?:shutdown-fixture|lifecycle-test|pr-smoke)[a-zA-Z0-9_-]*$/.test(name))throw Error('Pass a dedicated disposable lifecycle container name.');
 const read=(file:string)=>Bun.file(new URL(file,import.meta.url)).text();
-const entrypoint=(await read('./container-entrypoint.sh')).replaceAll('/usr/local/lib/coast-container-', '$fixture_dir/container-').replaceAll('/app/scripts/', '$fixture_dir/scripts/').replaceAll('/app/build/index.js', '$fixture_dir/build/index.js');
+const entrypoint=(await read('./container-entrypoint.sh')).replaceAll('/usr/local/lib/coast-container-', '$fixture_dir/container-').replaceAll('/app/scripts/', '$fixture_dir/scripts/').replaceAll('/app/build/index.js', '$fixture_dir/build/index.js').replace('pg_bin=/usr/lib/postgresql/17/bin', 'pg_bin="$fixture_dir/pg-search/version/bin"');
 let script=String.raw`
 set -Eeuo pipefail
 # Background fixtures must not inherit Bash async-list SIGINT suppression.
@@ -32,7 +32,9 @@ file('container-wait.sh',await read('./container-wait.sh'));
 file('container-shutdown.sh',(await read('./container-shutdown.sh')).replaceAll('/app/scripts/', '$fixture_dir/scripts/'));
 file('container-storage.sh',String.raw`
 prepare_coast_storage(){ [[ "$FIXTURE_SCENARIO" != storage-failed ]] || return 4; mkdir -p "$1/secrets" "$1/runtime";printf '%064d\n' 0 > "$1/secrets/database-password"; }
-prepare_postgres_storage(){ mkdir -p "$1";printf '15\n' > "$1/PG_VERSION"; }
+lock_coast_storage(){ :; }
+check_bundled_postgres_version(){ :; }
+prepare_postgres_storage(){ mkdir -p "$1";printf '17\n' > "$1/PG_VERSION"; }
 `);
 for(const name of ['container-application.ts','container-postgres.ts','container-stderr.ts','runtime-audit.ts','container-shutdown-event.ts'])file('scripts/'+name,await read('./'+name));
 file('scripts/container-child-exit.ts',(await read('./container-child-exit.ts')).replace("import { serverBuildIdentity } from '../src/lib/server/build-identity';",'const serverBuildIdentity=async (_path:string)=>"unknown";'));
@@ -67,7 +69,7 @@ if [[ "$FIXTURE_SCENARIO" == writer-stalled && "$1" == bun && ( "$2" == */contai
 exec "$@"
 `);
 file('bin/postgres',String.raw`#!/bin/bash
-if [[ "$1" == --version ]];then printf 'postgres (PostgreSQL) 15.19\n';else exec bun "$fixture_dir/child.ts" database;fi
+if [[ "$1" == --version ]];then printf 'postgres (PostgreSQL) 17.11\n';else exec bun "$fixture_dir/child.ts" database;fi
 `);
 file('bin/pg_isready',String.raw`#!/bin/bash
 [[ "$FIXTURE_SCENARIO" != database-startup && "$FIXTURE_SCENARIO" != startup-term && "$FIXTURE_SCENARIO" != readiness-timeout ]]
@@ -76,7 +78,6 @@ file('bin/psql',"#!/bin/bash\nprintf '1\\n'\n");
 script+=String.raw`
 chmod +x "$fixture_dir/bin/"*
 # Redirect only the fixed bundled PostgreSQL lookup; no installed files change.
-sed -i 's|find /usr/lib/postgresql|find "$fixture_dir/pg-search"|' "$fixture_dir/entrypoint.sh"
 mkdir -p "$fixture_dir/pg-search/version/bin"
 for program in postgres pg_isready psql;do ln -s "$fixture_dir/bin/$program" "$fixture_dir/pg-search/version/bin/$program";done
 source "$fixture_dir/container-shutdown.sh"

@@ -111,3 +111,29 @@ prepare_postgres_storage() {
   fi
   write_probe postgres "$socket_dir" 'PostgreSQL socket directory'
 }
+
+# Hold this descriptor for the entire supervisor/maintenance lifetime. All
+# containers using the installation must mount the same data directory.
+lock_coast_storage() {
+  exec 9> "$1/.postgres-maintenance.lock"
+  flock -n 9 || storage_error 'this data directory is already in use by Coast or PostgreSQL maintenance. Stop the other container first.'
+}
+
+check_bundled_postgres_version() {
+  local data_dir="$1" version
+  if [[ -e "$data_dir/postgres-upgrade/in-progress" ]]; then
+    storage_error 'PostgreSQL upgrade is incomplete. See docs/postgresql-17.md for recovery; startup will not initialise or select a cluster.'
+  fi
+  if [[ -f "$data_dir/postgres/PG_VERSION" ]]; then
+    version="$(cat "$data_dir/postgres/PG_VERSION")"
+    case "$version" in
+      17) ;;
+      15) ;; # The supervisor upgrades this stopped cluster before app startup.
+      *) storage_error "unsupported bundled PostgreSQL major $version; this image runs PostgreSQL 17. Restore the matching image or migrate explicitly.";;
+    esac
+  elif [[ -e "$data_dir/postgres-15" || -e "$data_dir/postgres-upgrade" ]]; then
+    storage_error 'bundled PostgreSQL data is missing during an upgrade. See docs/postgresql-17.md; refusing to initialise an empty database.'
+  elif [[ -d "$data_dir/postgres" && -n "$(find "$data_dir/postgres" -mindepth 1 -print -quit)" ]]; then
+    storage_error 'existing PostgreSQL files have no PG_VERSION; restore the original cluster metadata. Refusing to initialise a replacement database.'
+  fi
+}

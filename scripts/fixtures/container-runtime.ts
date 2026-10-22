@@ -1,7 +1,7 @@
 // Runs only inside a disposable Linux container; all databases/keys are freshly generated.
 import {mkdtempSync,chmodSync,mkdirSync,openSync,closeSync,readFileSync,chownSync} from 'node:fs';
 const directory=mkdtempSync('/tmp/coast-runtime-fixture-');chmodSync(directory,0o755);
-const pg='/usr/lib/postgresql/15/bin', base='http://127.0.0.1:3971';
+const pg='/usr/lib/postgresql/17/bin', base='http://127.0.0.1:3971';
 const children:Bun.Subprocess[]=[];
 const logs=new WeakMap<Bun.Subprocess,string>();
 let frozenPids:number[]=[];
