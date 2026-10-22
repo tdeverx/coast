@@ -34,6 +34,7 @@ file('container-storage.sh',String.raw`
 prepare_coast_storage(){ [[ "$FIXTURE_SCENARIO" != storage-failed ]] || return 4; mkdir -p "$1/secrets" "$1/runtime";printf '%064d\n' 0 > "$1/secrets/database-password"; }
 lock_coast_storage(){ :; }
 check_bundled_postgres_version(){ :; }
+bundled_postgres_directory(){ printf '%s/postgres\n' "$1"; }
 prepare_postgres_storage(){ mkdir -p "$1";printf '17\n' > "$1/PG_VERSION"; }
 `);
 for(const name of ['container-application.ts','container-postgres.ts','container-stderr.ts','runtime-audit.ts','container-shutdown-event.ts'])file('scripts/'+name,await read('./'+name));

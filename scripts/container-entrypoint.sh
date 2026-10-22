@@ -49,8 +49,8 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   if [[ ! -x "$pg_bin/postgres" ]]; then echo 'Bundled PostgreSQL was not found.' >&2; exit 1; fi
   # Metadata only; audit failure must not interfere with startup.
   export COAST_POSTGRES_VERSION="$("$pg_bin/postgres" --version 2>/dev/null || true)"
-  pg_data="$data_dir/postgres"
   check_bundled_postgres_version "$data_dir"
+  pg_data="$(bundled_postgres_directory "$data_dir")"
   prepare_postgres_storage "$pg_data"
   postgres_directory="$(readlink -f -- "$pg_data")"
   if [[ -f "$pg_data/PG_VERSION" && "$(cat "$pg_data/PG_VERSION")" == 15 ]]; then
@@ -61,6 +61,9 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     completed_pid="$migration_pid"
     if wait "$migration_pid"; then migration_pid=""; completed_pid=""; else exit "$?"; fi
     check_bundled_postgres_version "$data_dir"
+    pg_data="$(bundled_postgres_directory "$data_dir")"
+    prepare_postgres_storage "$pg_data"
+    postgres_directory="$(readlink -f -- "$pg_data")"
   fi
   password_file="$data_dir/secrets/database-password"
   if [[ ! -s "$password_file" ]]; then
