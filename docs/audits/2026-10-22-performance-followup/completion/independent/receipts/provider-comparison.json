@@ -1,0 +1,200 @@
+{
+  "status": "passed",
+  "runtime": {
+    "bun": "1.4.4",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54"
+  },
+  "scope": "Fresh marked real-data copy; genuine native provider GETs, baseline/current serial trials; timings include native admission/pacing; not p95. Safe hashes only.",
+  "checks": [
+    {
+      "name": "tmdb-page-1-complete-dto-equality",
+      "pass": true
+    },
+    {
+      "name": "tmdb-page-2-complete-dto-equality",
+      "pass": true
+    },
+    {
+      "name": "tmdb-page2-omits-invariants",
+      "pass": true
+    },
+    {
+      "name": "tmdb-disabled-source-not-served",
+      "pass": true
+    },
+    {
+      "name": "tmdb-credential-rotation-changes-cache-scope",
+      "pass": true
+    },
+    {
+      "name": "tmdb-rotation-refetches-invariants",
+      "pass": true
+    },
+    {
+      "name": "comic-full-page1-exact-dto-equality",
+      "pass": true
+    },
+    {
+      "name": "comic-primary-one-issue-request",
+      "pass": true
+    },
+    {
+      "name": "comic-page2-reuses-volume-read",
+      "pass": true
+    }
+  ],
+  "tmdb": [
+    {
+      "kind": "actual-cohort-search",
+      "identityHash": "51d3fdf6fd2fa5ea1e901e81cda2d68bf53b56fc1c110cde715329f68b0d8bd0",
+      "pages": 3,
+      "reviews": 20
+    },
+    {
+      "kind": "comparison",
+      "page": 1,
+      "pages": 3,
+      "reviews": 20,
+      "baselineMs": 744.832167,
+      "currentMs": 578.8409999999999,
+      "baselineCalls": [
+        {
+          "kind": "invariants",
+          "ms": 375.0206260000001,
+          "hash": "161c3fe9a234629fb304da100ba09256e6809b5e29d4e6c8bf33432687b97136"
+        },
+        {
+          "kind": "reviews",
+          "ms": 360.29654100000016,
+          "hash": "2626ddeecebfd49e6568678d88c861c739bf06fd26485d919a9dc5eef2987c60"
+        }
+      ],
+      "currentCalls": [
+        {
+          "kind": "invariants",
+          "ms": 289.709251,
+          "hash": "161c3fe9a234629fb304da100ba09256e6809b5e29d4e6c8bf33432687b97136"
+        },
+        {
+          "kind": "reviews",
+          "ms": 281.1103340000002,
+          "hash": "2626ddeecebfd49e6568678d88c861c739bf06fd26485d919a9dc5eef2987c60"
+        }
+      ],
+      "completeDtoHash": "ec9badc92b09982a09b086e6f7f7dccc73b2c8592d1a8392f267ba1805cf137f"
+    },
+    {
+      "kind": "comparison",
+      "page": 2,
+      "pages": 3,
+      "reviews": 20,
+      "baselineMs": 652.128459,
+      "currentMs": 279.2855830000003,
+      "baselineCalls": [
+        {
+          "kind": "invariants",
+          "ms": 280.395583,
+          "hash": "161c3fe9a234629fb304da100ba09256e6809b5e29d4e6c8bf33432687b97136"
+        },
+        {
+          "kind": "reviews",
+          "ms": 367.08462499999996,
+          "hash": "60e28aee4921fdce187ff15e7df1babccc41e8df78b2fdf338ece53a11918675"
+        }
+      ],
+      "currentCalls": [
+        {
+          "kind": "reviews",
+          "ms": 278.945792,
+          "hash": "60e28aee4921fdce187ff15e7df1babccc41e8df78b2fdf338ece53a11918675"
+        }
+      ],
+      "completeDtoHash": "d90c26f992cb5c06ccf1ea5a062992c49fd8ccd7d766529274dd85a79145324b"
+    },
+    {
+      "kind": "rotation",
+      "calls": [
+        {
+          "kind": "invariants",
+          "ms": 263.548542,
+          "hash": "161c3fe9a234629fb304da100ba09256e6809b5e29d4e6c8bf33432687b97136"
+        },
+        {
+          "kind": "reviews",
+          "ms": 271.5284999999999,
+          "hash": "60e28aee4921fdce187ff15e7df1babccc41e8df78b2fdf338ece53a11918675"
+        }
+      ]
+    }
+  ],
+  "comic": [
+    {
+      "query": "Batman",
+      "page": 1,
+      "baselineMs": 40683.229144,
+      "baselineCalls": [
+        {
+          "kind": "issue",
+          "ms": 3430.5505850000004,
+          "hash": "8cf0a8bbfb5a004872e291d1675360fa2df6c241d91b4a5a38915705f2cb33c6"
+        },
+        {
+          "kind": "volume",
+          "ms": 18712.325799,
+          "hash": "2f08b7f909c697aebfaf7eed11bebab3900e30abbf0f8c76f25c29bd5a7d3db8"
+        },
+        {
+          "kind": "series",
+          "ms": 18530.314634,
+          "hash": "6d4bbb8e03db37e22c6621d92dd45e0073d49185c0688be685f6eea2f07b9df5"
+        }
+      ],
+      "primaryMs": 18136.722883000002,
+      "primaryCalls": [
+        {
+          "kind": "issue",
+          "ms": 18133.800632,
+          "hash": "8cf0a8bbfb5a004872e291d1675360fa2df6c241d91b4a5a38915705f2cb33c6"
+        }
+      ],
+      "primaryItems": 10,
+      "completionMs": 36278.743433,
+      "completionCalls": [
+        {
+          "kind": "volume",
+          "ms": 18136.46167599999,
+          "hash": "2f08b7f909c697aebfaf7eed11bebab3900e30abbf0f8c76f25c29bd5a7d3db8"
+        },
+        {
+          "kind": "series",
+          "ms": 18137.767590999996,
+          "hash": "6d4bbb8e03db37e22c6621d92dd45e0073d49185c0688be685f6eea2f07b9df5"
+        }
+      ],
+      "total": 14123,
+      "items": 20,
+      "nextPage": 2,
+      "completeDtoHash": "ad6f309067b2692b3d0f7356241ef7863479a74a24306f495133caa85f6a66f0"
+    },
+    {
+      "page": 2,
+      "calls": [
+        {
+          "kind": "issue",
+          "ms": 20668.575134,
+          "hash": "8cf0a8bbfb5a004872e291d1675360fa2df6c241d91b4a5a38915705f2cb33c6"
+        },
+        {
+          "kind": "series",
+          "ms": 18889.286800999995,
+          "hash": "9a0294042c8c71c666e42ba33741aebb490c09221705b4eff508f63d3fb74f65"
+        }
+      ],
+      "items": 20,
+      "total": 14123,
+      "nextPage": 3,
+      "completeDtoHash": "fb683629fc6092ce9713ca4b0da4f2e94734806eb22a647338059919e3dc968d"
+    }
+  ],
+  "failures": []
+}

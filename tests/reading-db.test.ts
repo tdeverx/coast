@@ -315,6 +315,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
       expect(result.items).toEqual(route!.readingInitial.items);
       expect(result.failure).toContain('Open Library');
       expect(result.failure).toContain('Comic Vine');
+      await route!.readComplete;
       metadata.mockClear(); readiness.mockClear();
       const initial = await readingSearchInitial(owner, { query: 'Metadata after completion', kind: 'book' });
       expect(initial.items.map(item => item.id)).toEqual([bookId]);
@@ -334,7 +335,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
     const route = async (parameters: Record<string, string>) => {
       const event = { locals: { user: { id: owner } }, ...requestContext('http://coast/search?' + new URLSearchParams(parameters)), depends: () => {} };
       const data = (await loadSearchPage(event as Parameters<typeof loadSearchPage>[0]))!;
-      const responses = await Promise.all([data.read, data.watch, data.listen, data.play]);
+      const responses = await Promise.all([data.readComplete, data.watch, data.listen, data.play]);
       const result: ReadingSearchContent = responses[0];
       const initial: ReadingSearchContent = data.readingInitial;
       return { initial, result };
@@ -354,11 +355,11 @@ suite('experimental reading identity, private state and bounded local reads', ()
       const comics = await route({ q: query, view: 'read', kind: 'comic', page: '2' });
       expect(comics.result.page).toBe(2);
       expect(comics.result.items.map(item => item.kind)).toEqual(['comic']);
-      expect(calls).toEqual([{ kind: 'book', page: 2 }, { kind: 'comic', page: 2 }]);
+      expect(calls).toEqual([{ kind: 'book', page: 2 }, { kind: 'comic', page: 2 }, { kind: 'book', page: 2 }, { kind: 'comic', page: 2 }]);
       calls.length = 0;
       const unified = await route({ q: query, view:'read' });
       expect(unified.result.items.some(item => item.kind === 'comic')).toBe(true);
-      expect(calls).toEqual([{ kind: 'book', page: 1 }, { kind: 'comic', page: 1 }]);
+      expect(calls).toEqual([{ kind: 'book', page: 1 }, { kind: 'comic', page: 1 }, { kind: 'book', page: 1 }, { kind: 'comic', page: 1 }]);
     } finally {
       readiness.mockRestore();
       metadata.mockRestore();
@@ -422,14 +423,14 @@ suite('experimental reading identity, private state and bounded local reads', ()
     const discoverMetadata = spyOn(readingProviders, 'discoverReading').mockResolvedValue({items:[comic],total:1,page:1,nextPage:null});
     try {
       const all = await loadSearchPage(event(`/search?view=read&q=${encodeURIComponent('Metadata after completion')}`) as Parameters<typeof loadSearchPage>[0]);
-      expect((await all!.read).items.map((item: { id: string }) => item.id)).toEqual([bookId]);
+      expect((await all!.readComplete).items.map((item: { id: string }) => item.id)).toEqual([bookId]);
       const noQuery = await loadSearchPage(event('/search?view=read&scope=providers') as Parameters<typeof loadSearchPage>[0]);
       expect((await noQuery!.read).items).toEqual([]);
       const books = await loadSearchPage(event('/search?q=Metadata%20after%20completion&type=book') as Parameters<typeof loadSearchPage>[0]);
       expect(books).toMatchObject({ kind: 'book', view: 'read' });
-      await Promise.all([books!.watch, books!.listen, books!.play, books!.read]);
-      expect(metadata).toHaveBeenCalledWith('book', 'Metadata after completion', 1);
-      expect(metadata).toHaveBeenCalledWith('comic', 'Metadata after completion', 1);
+      await Promise.all([books!.watch, books!.listen, books!.play, books!.readComplete]);
+      expect(metadata).toHaveBeenCalledWith('book', 'Metadata after completion', 1, 'primary');
+      expect(metadata).toHaveBeenCalledWith('comic', 'Metadata after completion', 1, 'complete');
       await expect(loadSearchPage(event('/search?type=not-a-medium') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 400 });
       const discover = await loadDiscoverPage(event('/discover?surface=read&kind=comic&section=recent') as Parameters<typeof loadDiscoverPage>[0]);
       expect(discover.selected?.items.map(item => item.id)).toEqual([comicId]);
@@ -538,5 +539,21 @@ suite('experimental reading identity, private state and bounded local reads', ()
       await expect(readingCommunity(owner,root.id)).rejects.toMatchObject({status:403});
     }finally{await db.update(users).set({settings:{},disabled:false}).where(inArray(users.id,[owner,other]));}
   });
+
+
+test('withdrawn Comics never downgrade a saved card to a remote preview or survive a stale Search initial page',async()=>{
+ const [actor]=await getDb().select({settings:users.settings}).from(users).where(eq(users.id,owner));
+ const initial:ReadingSearchContent={items:await readingProviderCards(owner,[book,comic]),failure:'',notice:'',truncated:false,page:1,pages:1,total:2};
+ const ready=spyOn(readingProviders,'readingProviderConfigured').mockResolvedValue(true);
+ const metadata=spyOn(readingProviders,'searchReading').mockImplementation(async()=>{
+  await getDb().update(users).set({settings:{...actor.settings,features:{...actor.settings.features,comic:false}}}).where(eq(users.id,owner));
+  return{items:[book,comic],total:2,page:1,nextPage:null};
+ });
+ try{
+  const result=await readingSearch(owner,{query:'title',kind:'all'},initial);
+  expect(result.items.length).toBeGreaterThan(0);expect(result.items.every(item=>item.kind==='book')).toBe(true);
+  expect(await readingProviderCards(owner,[comic])).toEqual([]);
+ }finally{ready.mockRestore();metadata.mockRestore();await getDb().update(users).set({settings:actor.settings}).where(eq(users.id,owner));}
+});
 
 });

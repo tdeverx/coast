@@ -1,0 +1,5 @@
+{
+  "scope": "Process restart to first HTTP200 health; 50ms polling, retained PG/OS caches warm; not cold disk or production startup p95",
+  "elapsedMs": 305.467542,
+  "status": 200
+}

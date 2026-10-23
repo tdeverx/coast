@@ -6,9 +6,12 @@ export type RequestPriority = 0 | 1 | 2 | 3;
 type Entry = { interval: number; priority: RequestPriority; jobId?: string; resource?: string; enqueued: number; run: () => Promise<void>; signal?: AbortSignal; cancel: () => void };
 type Lane = { busy: boolean; active?: boolean; entries: Entry[]; next: number; urgent: number; wake?: () => void };
 type State = { context: AsyncLocalStorage<RequestPriority>; lanes: Map<string,Lane>; cleanup?: ReturnType<typeof setTimeout> };
-export const providerRequestLimits = { perOrigin: 128, overall: 512, urgentPerOrigin: 8, urgentOverall: 32 } as const;
+export const providerRequestLimits = { perOrigin: 128, overall: 512, urgentPerOrigin: 8, urgentOverall: 32, waitMs: 60_000 } as const;
 export class ProviderQueueBusyError extends AppError {
   constructor() { super(503, 'Coast is busy contacting connected services. Try again shortly.', 'provider_queue_busy'); this.name = 'ProviderQueueBusyError'; }
+}
+export class ProviderQueueTimeoutError extends ProviderQueueBusyError {
+  constructor() { super(); this.message = 'Coast waited too long to contact the service. Try again shortly.'; this.code = 'provider_queue_timeout'; this.name = 'ProviderQueueTimeoutError'; }
 }
 const key = Symbol.for('coast.provider-request-lanes');
 const shared = globalThis as typeof globalThis & { [key]?: State };
@@ -70,7 +73,7 @@ const entryPriority = (entry: Entry) => Math.min(entry.priority,
   entry.resource ? resourcePriorities.get(entry.resource) ?? 3 : 3);
 
 /** One request at a time per service origin; priority is reconsidered between requests. */
-export function queueProviderRequest<T>(origin: string, interval: number, operation: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+export function queueProviderRequest<T>(origin: string, interval: number, operation: () => Promise<T>, signal?: AbortSignal, waitMs: number = providerRequestLimits.waitMs): Promise<T> {
   if (signal?.aborted) return Promise.reject(signal.reason);
   const lane = state.lanes.get(origin) ?? {busy:false,active:false,entries:[],next:0,urgent:0};
   const urgent = currentRequestPriority() <= 1;
@@ -80,20 +83,26 @@ export function queueProviderRequest<T>(origin: string, interval: number, operat
   state.lanes.set(origin,lane);
   const resume=AsyncLocalStorage.snapshot();
   return new Promise<T>((resolve,reject) => {
+    let expired = false;
+    let timer: ReturnType<typeof setTimeout>;
     const cancel = () => {
       const index=lane.entries.indexOf(entry);
       if(index<0)return;
       lane.entries.splice(index,1);
+      clearTimeout(timer);
       signal?.removeEventListener('abort',cancel);
-      reject(signal?.reason ?? new Error('Request cancelled.'));
+      reject(expired ? new ProviderQueueTimeoutError() : signal?.reason ?? new Error('Request cancelled.'));
       if(!lane.entries.length)lane.wake?.();
     };
     const entry:Entry = {interval,priority:state.context.getStore()??1,jobId:providerJob.getStore(),resource:providerResource.getStore(),enqueued:Date.now(),signal,cancel,run:async()=>{
+      clearTimeout(timer);
       signal?.removeEventListener('abort',cancel);
       if(signal?.aborted){reject(signal.reason);return;}
       try {resolve(await resume(operation));}catch(error){reject(error);}
     }};
     lane.entries.push(entry);
+    timer = setTimeout(() => { expired = true; cancel(); }, Math.min(2_147_483_647, Math.max(1, waitMs)));
+    timer.unref();
     signal?.addEventListener('abort',cancel,{once:true});
     const drain=async()=>{
       if(lane.busy)return;

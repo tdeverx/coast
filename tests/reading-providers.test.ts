@@ -297,3 +297,21 @@ test('collection and edition payload failures remain provider errors and preserv
  await expect(new ComicVineAdapter('key',async()=>{throw limited;}).groupIssues('4050-456')).rejects.toBe(limited);
  await expect(new OpenLibraryAdapter(async()=>{throw limited;}).editions('OL123W')).rejects.toBe(limited);
 });
+
+test('comic primary matches publish independently and are reused by final series enrichment',async()=>{
+ const calls:URL[]=[];
+ const adapter=new ComicVineAdapter('key',async path=>{
+  const url=new URL(path,'https://comicvine.gamespot.com');calls.push(url);
+  if(url.searchParams.get('resources')==='volume')return{status_code:1,results:[{id:456,name:'A Series'}]};
+  return{status_code:1,number_of_total_results:21,results:[issue]};
+ },undefined,crypto.randomUUID());
+ const primary=await adapter.searchIssues('A Series');
+ expect(calls).toHaveLength(1);expect(primary.items[0].externalId).toBe('4000-123');
+ const final=await adapter.search('A Series',1,primary);
+ expect(calls).toHaveLength(3);expect(final.items).toEqual(primary.items);expect(final.nextPage).toBe(2);
+ await adapter.search('A Series',2);
+ expect(calls).toHaveLength(5);expect(calls.filter(url=>url.searchParams.get('resources')==='volume')).toHaveLength(1);
+ // An integration rotation has a distinct cache namespace, even for the same query.
+ const rotated=new ComicVineAdapter('other',async path=>{calls.push(new URL(path,'https://comicvine.gamespot.com'));return{status_code:1,results:[]};},undefined,crypto.randomUUID());
+ await rotated.search('A Series',2,primary);expect(calls).toHaveLength(6);
+});

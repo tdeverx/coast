@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "status": "implemented-verified-selected-contract",
+  "selectedContract": "Wait for the previous save before starting the next item; close the visible player immediately.",
+  "sourceFiles": {
+    "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
+    "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
+    "src/lib/ui/components/PersistentPlayer.svelte": "345cd2f7dc594d9824208e7e2a56cd55eade13c83c425e06528ca6fea9055925",
+    "src/lib/ui/action-feedback.svelte.ts": "143eb58d887870dfbf76d6ea6cf7bcd3f577193ea8e07dfc7827bcf0827a3b4d",
+    "src/lib/ui/components/NotificationToasts.svelte": "27a7dd0f949c852e341578dde7271d012bf5b6072ea168ec43ffa85414aa6558",
+    "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
+    "tests/player-stop-lifecycle.test.ts": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
+    "tests/playback-reports.test.ts": "a6da9c108e4e83725c94cafe6e9911f707b230885d548804fc57739666bb5fbb",
+    "tests/media-lifecycle-client.test.ts": "7786af4a888183bef0b3b6a046ddc5696f5fc702b0e6c45c8eb13d80fc3c91f1",
+    "tests/ui-feedback.test.ts": "71c0afcf5b92547b954157cad70617bff3a1fe60dfe7746db4cd3434e852ad6d",
+    "scripts/performance-stop-browser.js": "0bf8ae38ccc15b24aba680d9345427d10739f20997c34acb75fa4b95d44e8543",
+    "scripts/performance-stop-mobile-browser.js": "3fe798f0ad1de763eb53248c61deb3f19d1d0f4ab46a50be02ee88bc577a8df9",
+    "scripts/source-style.ts": "a2301db0ce3eca7371cd3167896b63811c15642d096e48e783e0e61f4ceee2e5"
+  },
+  "runtime": {
+    "shippingBunRevision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "supplementaryHostBunRevision": "963452075",
+    "postgres": "17.11",
+    "cpus": 4,
+    "memoryGiB": 2,
+    "browser": "Chromium headless shell 1243, autoplay flag enabled for audit; no physical-device claim",
+    "viewports": [
+      [
+        1440,
+        900
+      ],
+      [
+        390,
+        844
+      ]
+    ]
+  },
+  "actualData": {
+    "archiveSha256": "147185eef8dc24169ac4753695ec3fa4cb9ef8674be7e22200752dafe0d693fd",
+    "archiveMountedReadOnly": true,
+    "scope": "Fresh marked disposable copy; genuine provider metadata/stream reads and exact PlaybackInfo POST only; workers/exports paused. Native tracking mutations limited to the copy.",
+    "browser": "browser-stop-accepted.json",
+    "independentFinalState": "stop-native.json",
+    "mobileLayout": "browser-stop-mobile.json",
+    "expectedFailures": "One request held before server; one authored network abort; no fabricated provider response. Prior unaccepted observations retained.",
+    "networkAndPageScope": "Accepted desktop replay had no pageerror; the aborted request is an intentional network error. Mobile probe reports zero framework overlays and explicit toast/navigation separation."
+  },
+  "gates": {
+    "hostFullSuite": {
+      "pass": 1003,
+      "skip": 729,
+      "fail": 0,
+      "assertions": 35840,
+      "files": 318,
+      "logSha256": "c46e108a01664df09e7e7bc60f5235717b74a6624ca12204ad7215d2ca5a9911"
+    },
+    "focusedOwnerChecks": {
+      "pass": 50,
+      "fail": 0,
+      "files": 5,
+      "logSha256": "ed3e4dd0ac6949173001043f2ff95e6f45ab276df51c1799e7aa91f89d940ec4"
+    },
+    "shippingRuntimeControls": {
+      "pass": 15,
+      "fail": 0,
+      "files": 3,
+      "assertions": 72,
+      "logSha256": "8fc66e1845d0ee2fecca27bb84687df80cbe01de062a09b3835be499a3d72d5e",
+      "note": "Ownership/ordering controls on shipping Bun, supplementary to real-data browser/native evidence."
+    },
+    "svelteCheck": {
+      "errors": 0,
+      "warnings": 0,
+      "logSha256": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a"
+    },
+    "productionBuild": {
+      "status": "passed",
+      "logSha256": "ef125d3bd8e6d11425d11e2900a0213f65e01ad358200d2fb736eff502e72cee",
+      "note": "Existing bundle-size advisory retained."
+    },
+    "codeInventory": {
+      "status": "passed",
+      "unusedModules": 0,
+      "productionModules": 592,
+      "logSha256": "7fdc7b1aa2f6983ccaf484ed8046e33ce4fe9bcafaa42d02f06697edaaec2bc8"
+    },
+    "uiInventory": {
+      "status": "passed",
+      "components": 65,
+      "logSha256": "7acc131f6f29eb1738fd7b4d6a3db0754a7c285d3d6b8763029b99295029775a"
+    },
+    "sourceStyle": {
+      "status": "passed",
+      "adoptedModules": 57,
+      "logSha256": "68d1680d97c7583285bba628877527f55e8382f7f101c5bb22007029ebc014bd"
+    }
+  },
+  "cleanup": {
+    "database": "cleanup.json",
+    "runtime": "runtime-cleanup.json",
+    "unrelatedUserFilesPreserved": {
+      "src/lib/ui/components/Avatar.svelte": "1c163afb7867caf5aeb08d8a5a854624a3cc1303a35c04c9d805ea7e5217e878",
+      "src/routes/ui-preview/prop-manifest.json": "ab31ca9f1c8f63bb1689d6e44fa09053a12f3197d12caa5efbe25786ff077c6c"
+    }
+  },
+  "remaining": [
+    "Actual full-video Stop and hosted shared/party/device matrix beyond compiled-owner controls.",
+    "Account/source/feature withdrawal under wider actual concurrent load.",
+    "No pending-save persistence across document destruction, crash or reload.",
+    "A hanging acknowledgement keeps next playback waiting, by the selected contract."
+  ],
+  "delivery": {
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "newProductionDependencies": false,
+    "serverMutationOrSchemaChange": false
+  }
+}

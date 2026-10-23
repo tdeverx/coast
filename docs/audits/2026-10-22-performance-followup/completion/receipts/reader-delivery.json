@@ -1,0 +1,133 @@
+{
+  "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
+  "source": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401+current-registered-owners; source pin supplied by the outer host",
+  "cases": [
+    {
+      "name": "cbr: independent concurrent leases share one acquisition",
+      "status": "passed"
+    },
+    {
+      "name": "cbr: every naturally ordered original page matches baseline bytes",
+      "status": "passed"
+    },
+    {
+      "name": "cbr: closing one party reader preserves another's files",
+      "status": "passed"
+    },
+    {
+      "name": "cbr: last-reader release retains completed pages within the idle budget",
+      "status": "passed"
+    },
+    {
+      "name": "cbr: shared completed pages reopen without another source download",
+      "status": "passed"
+    },
+    {
+      "name": "cbz: independent concurrent leases share one acquisition",
+      "status": "passed"
+    },
+    {
+      "name": "cbz: every naturally ordered original page matches baseline bytes",
+      "status": "passed"
+    },
+    {
+      "name": "cbz: closing one party reader preserves another's files",
+      "status": "passed"
+    },
+    {
+      "name": "cbz: last-reader release retains completed pages within the idle budget",
+      "status": "passed"
+    },
+    {
+      "name": "cbz: shared completed pages reopen without another source download",
+      "status": "passed"
+    },
+    {
+      "name": "actual source rejects disk/metadata capacity pressure and returns both reservations",
+      "status": "passed"
+    },
+    {
+      "name": "actual source concurrent preparations reject combined free-space overcommit",
+      "status": "passed"
+    },
+    {
+      "name": "actual image metadata with controlled latency advances every inspection notification",
+      "status": "passed"
+    },
+    {
+      "name": "actual source admits two personal preparations and close/reopen while preserving another reader",
+      "status": "passed"
+    },
+    {
+      "name": "actual completed pages expire after a controlled idle TTL and reacquire cleanly",
+      "status": "passed"
+    },
+    {
+      "name": "actual idle pages evict under disk or metadata pressure without exceeding either budget",
+      "status": "passed"
+    },
+    {
+      "name": "concurrent actual-source idle eviction cannot over-admit an account or start its rejected job",
+      "status": "passed"
+    },
+    {
+      "name": "actual-source cancellation drains extraction and deletes partial files",
+      "status": "passed"
+    },
+    {
+      "name": "startup orphan cleanup removes its symlink without following its target",
+      "status": "passed"
+    }
+  ],
+  "samples": [
+    {
+      "format": "cbr",
+      "bytes": 73339323,
+      "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+      "pages": 24,
+      "coldPreparationMs": 529.15975,
+      "resources": {
+        "mainCpuMicros": 254375,
+        "beforeRss": 40054784,
+        "sampledPeakRss": 89845760,
+        "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+      },
+      "actualPageByteEquivalence": true
+    },
+    {
+      "format": "cbz",
+      "bytes": 401719147,
+      "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+      "pages": 265,
+      "coldPreparationMs": 724.910042,
+      "resources": {
+        "mainCpuMicros": 741226,
+        "beforeRss": 165031936,
+        "sampledPeakRss": 263933952,
+        "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+      },
+      "actualPageByteEquivalence": true
+    }
+  ],
+  "controlledProgress": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    24,
+    24
+  ],
+  "status": "passed"
+}

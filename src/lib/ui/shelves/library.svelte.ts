@@ -8,7 +8,7 @@ import {
 import { useShelfLocation } from '#lib/ui/detail-section.svelte.js';
 import { surfaceEnabled, categoryEnabled } from '#lib/experimental.js';
 import { onDestroy, untrack } from 'svelte';
-import { page as route } from '$app/state';
+import { page as route, navigating } from '$app/state';
 import { goto } from '$app/navigation';
 import type { PresentationRow } from '#lib/server/queries/media-rows.js';
 import { useClient } from '#lib/ui/client-context.js';
@@ -201,8 +201,12 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
       revision = refreshKey,
       initialItems = initial?.items,
       version = ++requestVersion;
-
-    const current = () => version === requestVersion && owner === ownerKey && revision === refreshKey && initialItems === initial?.items && selectionKey === paths(1).api;
+    // Navigation can start before either the route URL or server props update.
+    // An old grid read must not replace that navigation with its retained-page URL.
+    const routeScope = `${route.url.pathname}${route.url.search}`;
+    const current = () => version === requestVersion && owner === ownerKey && revision === refreshKey && initialItems === initial?.items && selectionKey === paths(1).api
+      && (location.embedded || layout !== 'grid' || routeScope === `${route.url.pathname}${route.url.search}`
+        && (!navigating.to || routeScope === `${navigating.to.url.pathname}${navigating.to.url.search}`));
 
     if (revalidate) needsRefresh = true;
 
@@ -459,7 +463,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           ]
           : [],
 
-        ...[
+        ...(surface!=='watch'||collection ? [
           {
             type: 'availability' as const,
             label: `Available to ${surface==='read'?'read':surface==='watch'?'watch':surface==='listen'?'listen':'play'} only`,
@@ -472,7 +476,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
               void load(1);
             }
           }
-        ]
+        ] : [])
       ];
     },
 

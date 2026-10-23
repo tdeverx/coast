@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "scope": "Production crop controller linked directly, actual FFmpeg and genuine static-range bytes through a loopback hold proxy. Source authorization context is supplied directly; not hosted Jellyfin middleware acceptance. Timeout and independent/final lease cancellation; no job, encoder or progress mutation. Exact native source selected privately, never fabricated.",
+  "checks": [
+    {
+      "name": "real-ffmpeg-stalled-source-timeout",
+      "pass": true,
+      "status": 502,
+      "ms": 20065.4794,
+      "childrenAfter": 0
+    },
+    {
+      "name": "first-consumer-cancel-keeps-real-child-for-remaining-lease",
+      "pass": true,
+      "sharedChildren": 1,
+      "childrenAfter": 1
+    },
+    {
+      "name": "final-consumer-cancel-drains-real-child",
+      "pass": true,
+      "ms": 62.0662,
+      "childrenAfter": 0
+    }
+  ],
+  "source": {
+    "identitySha256": "bd7d313f3bc658c38c3e1d7b60a9d04694e657b8e1759455de29344999d8c9b5",
+    "metadataCodec": "h264",
+    "metadataHeight": 480,
+    "sdkVersion": "10.0.400",
+    "ffmpegVersion": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers"
+  }
+}

@@ -117,7 +117,8 @@ export class TmdbAdapter implements MetadataProvider {
   constructor(
     private request: ProviderTransport,
     private language = 'en-US',
-    private region = 'GB'
+    private region = 'GB',
+    readonly cacheScope?: string
   ) {}
   private path(path: string, params: Record<string, string | number> = {}) {
     const query = new URLSearchParams({
@@ -314,7 +315,7 @@ export class TmdbAdapter implements MetadataProvider {
     };
   }
   insights(path: string, page = 1) {
-    return tmdbInsights(this.request, path, this.language, page);
+    return tmdbInsights(this.request, path, this.language, page, this.cacheScope);
   }
   person(id: number) {
     return tmdbPerson(this.request, id, this.language);

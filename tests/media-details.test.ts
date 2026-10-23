@@ -224,3 +224,52 @@ test('public Trakt community reads use app credentials without a personal token 
   expect(result.metrics?.map((m) => m.label)).toEqual(['Viewers', 'Plays']);
   expect(requests).toHaveLength(3);
 });
+
+test('TMDB review pages reuse validated invariants across fresh adapters only within the same credential scope', async () => {
+  const calls: string[] = [], scope = crypto.randomUUID();
+  const request = async (path: string) => {
+    calls.push(path);
+    return path.includes('/reviews?') ? {total_pages: 3, results: [{id: path, author: 'Viewer', content: path}]} : {vote_average: 7, vote_count: 10, credits: {crew: [{id: 1, name: 'Director', job: 'Director'}]}};
+  };
+  const first = await new TmdbAdapter(request, 'en-US', 'GB', scope).insights('movie/1', 1);
+  const second = await new TmdbAdapter(request, 'en-US', 'GB', scope).insights('movie/1', 2);
+  expect(calls.filter(path => !path.includes('/reviews?'))).toHaveLength(1);
+  expect(first.facts).toEqual(second.facts); expect(first.crew).toEqual(second.crew);
+  expect(second.page).toBe(2); expect(second.reviews[0].id).not.toBe(first.reviews[0].id);
+  for (const [key, language, path] of [[scope+'-rotated','en-US','movie/1'], [scope,'fr-FR','movie/1'], [scope,'en-US','tv/1']] as const)
+    await new TmdbAdapter(request,language,'GB',key).insights(path);
+  expect(calls.filter(path => !path.includes('/reviews?'))).toHaveLength(4);
+});
+
+test('TMDB invariant failures are retryable and a review outage does not evict valid invariants', async () => {
+  const scope=crypto.randomUUID();let details=0, reviews=0;
+  const request=async(path:string)=>{
+    if(path.includes('/reviews?')){if(++reviews===1)throw Error('offline');return {total_pages:1,results:[]};}
+    if(++details===1)return {vote_average:'invalid'};
+    return {vote_average:7,vote_count:1};
+  };
+  const adapter=new TmdbAdapter(request,'en-US','GB',scope);
+  await expect(adapter.insights('movie/1')).rejects.toThrow();
+  expect((await adapter.insights('movie/1')).incomplete).toBe(true);
+  expect((await adapter.insights('movie/1')).incomplete).toBe(false);
+  expect(details).toBe(2);expect(reviews).toBe(2);
+});
+
+test('TMDB invariant sharing expires with the existing fifteen-minute metadata lifetime', async () => {
+  let calls=0,now=Date.now();const clock=spyOn(Date,'now').mockImplementation(()=>now),scope=crypto.randomUUID();
+  try{
+    const request=async(path:string)=>{if(path.includes('/reviews?'))return{total_pages:0,results:[]};calls++;return{vote_count:1};};
+    const adapter=new TmdbAdapter(request,'en-US','GB',scope);
+    await Promise.all([adapter.insights('movie/1'),adapter.insights('movie/1',2)]);expect(calls).toBe(1);
+    now+=15*60_000;await adapter.insights('movie/1',3);expect(calls).toBe(2);
+  }finally{clock.mockRestore();}
+});
+
+
+test('progressive callers can reuse a complete provider snapshot until its own expiry',async()=>{
+ let now=Date.now();const clock=spyOn(Date,'now').mockImplementation(()=>now);
+ try{const cache=providerCache<{stage:string}>(2,1000);await cache('primary',async()=>({stage:'primary'}));now+=500;await cache('complete',async()=>({stage:'complete'}));
+ now+=500;expect(cache.peek('primary')).toBeUndefined();expect(cache.peek('complete')).toEqual({stage:'complete'});
+ now+=500;expect(cache.peek('complete')).toBeUndefined();let calls=0;await cache('complete',async()=>{calls++;return{stage:'fresh'};});expect(calls).toBe(1);expect(cache.peek('complete')).toEqual({stage:'fresh'});
+ }finally{clock.mockRestore();}
+});

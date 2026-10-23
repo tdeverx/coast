@@ -14,6 +14,7 @@
   import { observeVideoCrop } from '#lib/playback/observe-crop.js';
   import { message, capturePlaybackApi } from '#lib/ui/client.js';
   import { createPlaybackReports } from '#lib/playback/reports.js';
+  import { createPlaybackStop, type PlaybackSave } from '#lib/playback/stop.js';
   import { useClient, reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
@@ -23,7 +24,7 @@
   import Dialog from './Dialog.svelte';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
 
-  const { api, change } = useClient();
+  const { api, change, feedback } = useClient();
 
   const { player, preview } = usePlayback();
 
@@ -50,6 +51,14 @@
     hls: { destroy: () => void } | null = null,
     closed = false;
   const reports = createPlaybackReports();
+  const stopNotice = Symbol('playback final save');
+  const stopSave = createPlaybackStop(state => {
+    if (state === 'saving') feedback.pending('Saving playback progress…', stopNotice);
+    else if (state === 'failed') feedback.failure('Playback progress could not be saved. Retry before starting another item.', () => stopSave.retry(), stopNotice);
+    else feedback.clear(stopNotice);
+  });
+  const stopOwner = $derived(page.data.user?.id);
+  $effect(() => { const viewer = stopOwner; return () => { void viewer; stopSave.clear(); }; });
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let foreground=$state(true);
   let startupAttempt=$state(0),retryStartup:(()=>void)|undefined,startupImportError=$state('');
@@ -140,42 +149,50 @@
     return () => clearTimeout(idleTimer);
   });
   async function report(event = 'progress') {
-    if (preview) return false;
+    const send = captureReport(event);
+    return send ? (await send()).saved : false;
+  }
+  function captureReport(event: string): (() => Promise<PlaybackSave>) | undefined {
+    if (preview) return;
     const session = player.session;
-    if (!session || !active) return false;
+    if (!session || !active) return;
     const started = startedSessionId === session.id;
-    if (event !== 'stop' && (player.subtitlePrompt || !started)) return false;
+    if (event !== 'stop' && (player.subtitlePrompt || !started)) return;
     accountPlayed();
     const payload = {
       positionSeconds: started ? current : session.startSeconds,
       durationSeconds: started && Number.isFinite(duration) ? duration : session.durationSeconds,
       event,
-      paused: event === 'pause' || media.paused,
+      paused: event === 'pause' || event === 'stop' || !!media?.paused,
       ...(audioMode ? { playedSeconds } : {}),
     };
     const request = capturePlaybackApi();
     // Coalesce queued positions without crossing lifecycle or session boundaries.
-    return reports(session.id, event, async () => {
-      try {
-        if (started && event !== 'start' && acknowledgedSessionId !== session.id) {
-          const acknowledgement=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, {
-            ...payload,
-            event: 'start',
-            paused: false,
-          });
-          if(acknowledgement?.disabled){if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
-          acknowledgedSessionId = session.id;
+    let disabled = false;
+    return async () => {
+      const saved = await reports(session.id, event, async () => {
+        try {
+          if (started && event !== 'start' && acknowledgedSessionId !== session.id) {
+            const acknowledgement=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, {
+              ...payload,
+              event: 'start',
+              paused: false,
+            });
+            if(acknowledgement?.disabled){disabled=true;if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
+            acknowledgedSessionId = session.id;
+          }
+          const result=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, payload);
+          if(result?.disabled){disabled=true;if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
+          if (player.session?.id === session.id) trackingNotice = '';
+          if (event === 'start') acknowledgedSessionId = session.id;
+          return true;
+        } catch (e) {
+          if (player.session?.id === session.id) trackingNotice = 'Tracking could not be saved yet. Playback can continue; Coast will retry the next report.';
+          return false;
         }
-        const result=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, payload);
-        if(result?.disabled){if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
-        if (player.session?.id === session.id) trackingNotice = '';
-        if (event === 'start') acknowledgedSessionId = session.id;
-        return true;
-      } catch (e) {
-        if (player.session?.id === session.id) trackingNotice = 'Tracking could not be saved yet. Playback can continue; Coast will retry the next report.';
-        return false;
-      }
-    });
+      });
+      return { saved, disabled };
+    };
   }
   function playing() {
     lastMovement = performance.now();
@@ -204,21 +221,33 @@
   async function close(cancelPreparing: unknown = true, withdrawn=false) {
     if(preview){player.session=null;player.role='idle';player.paused=true;player.subtitlePrompt=false;return;}
     if(cancelPreparing!==false)cancelPlaybackPreparation();
-    if (closed) return;
+    if (closed || !player.session) return;
     closed = true;
-    const closingSession=player.session?.id,shared=sharedMode;
-    if(partyRoom&&!syncedPlayer.changing){if(withdrawn)await leaveSynced(true);else if(partyHost)await syncedCommand('stop');else await leaveSynced();}
+    const shared=sharedMode,room=partyRoom,host=partyHost,changing=syncedPlayer.changing;
     pause(true);
-    if(!withdrawn)await report('stop');
-    if(player.session?.id!==closingSession){closed=false;return;}
+    // Freeze the final payload and API authority before detaching the media.
+    const send = withdrawn ? undefined : captureReport('stop');
     player.role = 'idle';
     player.paused = true;
     player.session = null;
     player.browsing = false;
     player.subtitlePrompt = false;
     error = '';
+    trackingNotice = '';
     closed = false;
-    if(!shared)void refreshAfterChange('tracking');
+    const cleanup = room&&!changing&&syncedPlayer.room?.id===room.id
+      ? host&&!withdrawn ? syncedCommand('stop') : leaveSynced(true)
+      : Promise.resolve();
+    if (send) stopSave.start(async () => {
+      await cleanup;
+      const result = await send();
+      if(result.saved&&!shared)void refreshAfterChange('tracking');
+      return result;
+    });
+    else {
+      stopSave.clear();
+      void cleanup;
+    }
   }
   async function toggle() {
     if(preview){player.paused=!player.paused;return;}
@@ -287,15 +316,19 @@
   }
   async function ended() {
     if(preview)return;
+    const sessionId = player.session?.id;
     if (audioMode) {
       accountPlayed();
       const delivered = await report('ended');
+      if(player.session?.id!==sessionId)return;
       if (!sharedMode && delivered && (!partyRoom||partyHost)) await advanceMusic();
       else player.paused = true;
       return;
     }
     saving = true;
-    saved = await report('ended');
+    const delivered = await report('ended');
+    if(player.session?.id!==sessionId)return;
+    saved = delivered;
     saving = false;
     player.role = 'postplay';
     player.paused = true;
@@ -312,10 +345,12 @@
         undefined,
         'GET'
       );
+      if(player.session?.id!==sessionId)return;
       const continuation =
         details.item.kind === 'episode' && details.item.showId
           ? await api<{ next: MediaView | null }>(`media/${details.item.showId}`, undefined, 'GET')
           : details;
+      if(player.session?.id!==sessionId)return;
       next =
         continuation.next?.available &&
         !continuation.next.watched &&
@@ -327,6 +362,7 @@
     }
   }
   async function loadSequenceNext(after: string) {
+    const sessionId = player.session?.id;
     const source = player.session?.sequence;
     if (!source) return;
     const result = await api<{ next: MediaView | null }>(
@@ -334,7 +370,7 @@
       undefined,
       'GET'
     );
-    next = result.next;
+    if(player.session?.id===sessionId)next = result.next;
   }
   async function switchEdition(edition?: string) {
     if(preview)return;
@@ -467,6 +503,7 @@
         if(element?.currentSrc)void element.play().catch(()=>{/* Preparation may replace the current stream. */});
       },
       stop: close,
+      waitForStop: () => stopSave.wait(),
       pause,
       resume: () => partyRoom ? syncedCommand('play') : media.play(),
       snapshot: () => ({positionSeconds:media?.currentTime||0,buffering:!media||media.readyState<3||!!media.error,unavailable:!!error}),
@@ -518,6 +555,7 @@
       document.removeEventListener('visibilitychange',updateForeground);
       document.removeEventListener('keydown', key);
       unregister();
+      stopSave.clear();
       hls?.destroy();
     };
   });

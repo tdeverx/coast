@@ -93,11 +93,15 @@ export function hasPermittedMediaSource(userId: string, source = 'all') {
 }
 
 /** Mixed work shelves include accessible descendants, such as tracks within albums. */
-export function hasPermittedWorkSource(userId: string) {
-  return or(hasPermittedMediaSource(userId), sql`exists(
+export function hasPermittedWorkSource(userId: string, category?: string) {
+  const descendants = sql`exists(
     with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
     select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${userId} and c.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled
-  )`);
+  )`;
+  // Non-screen roots cannot inherit a show's/season's episode grant. Their
+  // direct source is already included by the recursive seed; avoid expanding
+  // the viewer's entire episode library for music, games and reading shelves.
+  return category && category !== 'screen' ? descendants : or(hasPermittedMediaSource(userId), descendants);
 }
 
 /** Resolve the same title/year policy without constructing private or visual cards. */

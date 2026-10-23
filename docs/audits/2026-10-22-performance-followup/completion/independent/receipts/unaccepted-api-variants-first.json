@@ -1,0 +1,118 @@
+{
+  "scope": "Authenticated HTTP boundary variants on final production build, using existing actual accounts/connection. Deliberately malformed parameters are negative controls, not positive cohorts; GET only, no fabricated upstream bytes.",
+  "cases": [
+    {
+      "name": "health",
+      "error": "TypeError"
+    },
+    {
+      "name": "positive-music",
+      "error": "TypeError"
+    },
+    {
+      "name": "foreign-connection",
+      "error": "TypeError"
+    },
+    {
+      "name": "bad-connection-id",
+      "error": "TypeError"
+    },
+    {
+      "name": "negative-offset",
+      "error": "TypeError"
+    },
+    {
+      "name": "unbounded-limit",
+      "error": "TypeError"
+    },
+    {
+      "name": "zero-limit",
+      "error": "TypeError"
+    },
+    {
+      "name": "invalid-kind",
+      "error": "TypeError"
+    },
+    {
+      "name": "invalid-filter-combination",
+      "error": "TypeError"
+    },
+    {
+      "name": "invalid-provider-item",
+      "error": "TypeError"
+    },
+    {
+      "name": "profile-page-zero",
+      "error": "TypeError"
+    },
+    {
+      "name": "profile-period",
+      "error": "TypeError"
+    },
+    {
+      "name": "profile-activity-kind",
+      "error": "TypeError"
+    },
+    {
+      "name": "profile-section",
+      "error": "TypeError"
+    },
+    {
+      "name": "profile-kind",
+      "error": "TypeError"
+    },
+    {
+      "name": "invalid-detail-href",
+      "error": "TypeError"
+    },
+    {
+      "name": "bad-media-id",
+      "error": "TypeError"
+    },
+    {
+      "name": "bad-playback-id",
+      "error": "TypeError"
+    },
+    {
+      "name": "bad-reading-id",
+      "error": "TypeError"
+    },
+    {
+      "name": "bad-share-sources-id",
+      "error": "TypeError"
+    },
+    {
+      "name": "admin-only-list",
+      "error": "TypeError"
+    },
+    {
+      "name": "invalid-request-state",
+      "error": "TypeError"
+    }
+  ],
+  "failures": [
+    "health",
+    "positive-music",
+    "foreign-connection",
+    "bad-connection-id",
+    "negative-offset",
+    "unbounded-limit",
+    "zero-limit",
+    "invalid-kind",
+    "invalid-filter-combination",
+    "invalid-provider-item",
+    "profile-page-zero",
+    "profile-period",
+    "profile-activity-kind",
+    "profile-section",
+    "profile-kind",
+    "invalid-detail-href",
+    "bad-media-id",
+    "bad-playback-id",
+    "bad-reading-id",
+    "bad-share-sources-id",
+    "admin-only-list",
+    "invalid-request-state"
+  ],
+  "status": "findings"
+}

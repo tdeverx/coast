@@ -25,7 +25,7 @@ export async function connectionFor(userId: string, connectionId: string, provid
         eq(providerConnections.status, 'connected')
       )
     );
-  if (!connection) throw new Error('Connect your account in Settings to continue.');
+  if (!connection) throw new AppError(404, 'Connect your account in Settings to continue.', 'not_found');
   return { connection, instance: await getInstance(connection.instanceId, provider) };
 }
 

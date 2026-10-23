@@ -23,6 +23,7 @@ async function loadClient(kind:'reading'|'playback'){
   .replaceAll('#lib/ui/action-feedback.svelte.js',moduleUrl('export const notifyAction=()=>{};'))
   .replaceAll('#lib/playback/synced/client.svelte.js',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
   .replaceAll('#lib/playback/client.svelte.js',playbackUrl).replaceAll('#lib/reading/client.svelte.js',readingUrl)
+  .replaceAll('#lib/playback/stop.js',import.meta.resolve('../src/lib/playback/stop.ts'))
   .replaceAll('./model',model);
  return {client:await import(moduleUrl(code)),transport:await import(transportUrl),sync:await import(syncUrl),playback:await import(playbackUrl),reading:await import(readingUrl)};
 }
@@ -171,7 +172,7 @@ test('reading party replacement hands over the new source before closing the old
  t.delivery((path:string)=>{if(path==='reading/sessions/old/close')expect(sync.commands).toEqual([['item',{readingSessionId:'new'}]]);return Promise.resolve(path.endsWith('/session')?readingSession('new'):{});});
  await c.openReading('book',input);expect(c.reader.session.id).toBe('new');expect(c.reader.loading).toBe(false);
 });
-function controller(c:any){const stops:boolean[]=[],resumes:string[]=[];c.registerPlaybackController({stop:async(cancel:boolean)=>{stops.push(cancel);c.player.session=null;c.player.role='idle';},resume:async()=>{resumes.push('resume');},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});return {stops,resumes};}
+function controller(c:any){const stops:boolean[]=[],resumes:string[]=[];c.registerPlaybackController({waitForStop:async()=>{},stop:async(cancel:boolean)=>{stops.push(cancel);c.player.session=null;c.player.role='idle';},resume:async()=>{resumes.push('resume');},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});return {stops,resumes};}
 const withDocument=async(run:()=>Promise<void>)=>{const previous=globalThis.document;globalThis.document={createElement:()=>({canPlayType:()=>''})} as unknown as Document;try{await run();}finally{globalThis.document=previous;}};
 test('stopping pending playback rejects late publication and retires through captured share authority',()=>withDocument(async()=>{
  const {client:c,transport:t}=await loadClient('playback'),prepared=deferred();controller(c);t.setMode('share');
@@ -248,4 +249,38 @@ test('hero trailer attachment preserves the mute choice made during artwork and 
  expect(c.heroPlayer.muted).toBe(false);
  c.setHeroMuted(true);c.presentTrailer('third','trailer-c');
  expect(c.heroPlayer.muted).toBe(true);
+});
+
+test('new playback waits for a detached previous save and cancellation prevents later preparation',()=>withDocument(async()=>{
+ for(const cancel of [false,true]){
+  const {client:c,transport:t}=await loadClient('playback'),saved=deferred<void>();
+  c.registerPlaybackController({stop:async()=>{},waitForStop:()=>saved.promise,resume:async()=>{},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});
+  t.delivery(()=>Promise.resolve({id:'new',mediaId:'track',mediaType:'audio',startSeconds:0,durationSeconds:100}));
+  const pending=c.playMedia('track',{fromStart:true});await settle();expect(t.calls).toHaveLength(0);expect(c.player.session).toBeNull();
+  if(cancel)await c.stopPlayback();saved.resolve();await pending;
+  expect(t.calls.filter((call:any)=>call.args[0]==='playback')).toHaveLength(cancel?0:1);expect(c.player.session?.id??null).toBe(cancel?null:'new');
+ }
+}));
+
+test('an unsaved Stop is not treated as an unavailable music track or skipped through the queue',()=>withDocument(async()=>{
+ const {PlaybackSavePending}=await import('../src/lib/playback/stop');
+ const {client:c,transport:t}=await loadClient('playback');let waits=0;
+ c.registerPlaybackController({stop:async()=>{},waitForStop:async()=>{waits++;throw new PlaybackSavePending();},resume:async()=>{},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});
+ await expect(c.playMusicQueue({items:[{id:'first',title:'First',availability:'available'},{id:'second',title:'Second',availability:'available'}],continueId:null})).rejects.toBeInstanceOf(PlaybackSavePending);
+ expect(waits).toBe(1);expect(t.calls).toHaveLength(0);expect(c.player.audioIndex).toBe(0);expect(c.player.audioNotice).toBe('');
+}));
+
+for(const savedQueue of [false,true])test(`Stop fences a late ${savedQueue?'saved queue':'music work'} lookup before it can restart playback`,()=>withDocument(async()=>{
+ const {client:c,transport:t}=await loadClient('playback'),lookup=deferred<any>();controller(c);
+ t.delivery(()=>lookup.promise);
+ const pending=savedQueue?c.playSavedMusicQueue():c.playMusic('track');await settle();expect(t.calls).toHaveLength(1);
+ await c.stopPlayback();lookup.resolve({items:[{id:'track',title:'Track',availability:'available'}],continueId:null});await pending;
+ expect(t.calls).toHaveLength(1);expect(c.player.session).toBeNull();expect(c.player.audioQueue).toEqual([]);
+}));
+
+test('failed Stop blocks the music lookup itself without fetching another provider queue',async()=>{
+ const {PlaybackSavePending}=await import('../src/lib/playback/stop');const {client:c,transport:t}=await loadClient('playback');
+ c.registerPlaybackController({stop:async()=>{},waitForStop:async()=>{throw new PlaybackSavePending();},resume:async()=>{},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});
+ await expect(c.playMusic('track')).rejects.toBeInstanceOf(PlaybackSavePending);
+ await expect(c.playSavedMusicQueue()).rejects.toBeInstanceOf(PlaybackSavePending);expect(t.calls).toHaveLength(0);
 });

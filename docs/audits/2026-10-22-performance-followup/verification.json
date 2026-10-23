@@ -1,0 +1,2884 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "scope": "Local uncommitted audit implementations; isolated actual retained catalogue and real media; no deployment or live database changes. Authored CI/process/DOM fixtures are supplementary, not real-data benchmarks.",
+  "source": {
+    "baseline": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
+    "files": {
+      "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
+      "docs/audits/2026-10-17-app-performance/maintenance.md": "9a3d1c1e2944c032252753e4b8e192eeb5c4b7c7334413cd894dd223b736d9a4",
+      "docs/audits/2026-10-22-performance-followup/README.md": "4873b5eee083018cbcb7f1ea38963499236c52b5cce9571a5c851befa10f85ae",
+      "docs/audits/2026-10-22-performance-followup/register.json": "3ebe15294d8997dad15c41a69e30fa0ba7af512dc27bfb532ba882ba3c0a569c",
+      "docs/performance.md": "6a0c1134a4192db85a09721dd3720536dca0463996ba958db14718c324e766f1",
+      "scripts/performance-finalization.ts": "7fe327d03418375830ad0f066b850e7ab1033cf1e019ca2f1cb276d22e887318",
+      "scripts/performance-followup.ts": "5a265db6f5dafe1dd8687427660b235dcf1808afab1f57e8fd8e05ba3cd74177",
+      "scripts/performance-library-browser.js": "2b3860fba08b892588d2769efb595c74c2641355e324556c033d71b61404d903",
+      "src/lib/collection/query.server.ts": "c280664474fc359e8a0ad272a44ea7444e2d096accd2474cffd74df62465a0d7",
+      "src/lib/core/lists/up-next.server.ts": "a87aa45ddae6d0fd8291779b284bf8b715e521433f3d66908d3a0082b2135cea",
+      "src/lib/core/tracking/continue.server.ts": "578abbae1361d0768e8dc94c613df9a0b78219761ba0621c2462f5ba7b6ecd3d",
+      "src/lib/server/db/index.ts": "be6092501410e2c0b0f0a325af3294853fd27729809fa8a987a8b1344dfdc616",
+      "src/lib/server/db/read-cancellation.ts": "36deac25514f0935352aee0e14aeb217005d3479aa6161b1b6840b849b792c96",
+      "src/lib/server/queries/library.ts": "7b2851d9a66923e61924f643f1e9836e82fdcf95d44c7a189ba3d4d89e0bbba2",
+      "src/lib/server/queries/media.ts": "59cfba66604f912aacb82b57d3a3870bbbb22526919e2534b8320fe7e1637fe8",
+      "src/lib/server/queries/progress-experiment.ts": "81bf0b8691d404bbd98a07dfa358f1a6592370f253e174fcaaca2e330ed9f69c",
+      "src/lib/server/queries/recent-library.ts": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
+      "src/lib/server/queue/index.ts": "a512dbb50c180d63e1c42394180eb94bc8874c3aae69d1c7e21836aad06655ec",
+      "src/lib/server/security/provider-fetch.ts": "042953d7f52e8aa1d0c074d823f6365999fa2831dcd3e079859b63b619ab4007",
+      "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
+      "src/lib/sync/jellyfin-finalization.server.ts": "87af15b0b6c053e5c6d9276315fb8a75c8a274e2619cc85d7c4f5d1116a1cf0d",
+      "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
+      "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
+      "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
+      "src/lib/ui/shelves/library.svelte.ts": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+      "src/routes/ui-preview/Workspace.svelte": "fb9a5ad3793f0c3b1b7eb4031c2fe62c6579a54cf2190c717e783723616765ef",
+      "tests/library-navigation.test.ts": "4a43d6342ada8378341e47c4d41fd904b55ce70e7ee745870f608f8f0faa59ae",
+      "tests/fixtures/library-window.ts": "82a9187280c524d073326a0cb3ff408d21c69bbf522df0efc680be28373f5a4b",
+      "scripts/performance-action-browser.js": "a31b9c38197cf6ab2ef9aafe7246761bc6faeb71e8f2905d720a39c3751f4c5a",
+      "scripts/performance-preview-browser.js": "4a920ab2b98061b2d57ae22c2a8e7fc60b05f6e9d8b9cb30434936980525d0c8",
+      "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
+      "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
+      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "ec29a718ceabfe9728c4e94b3dbb6af968410d71f58fd1b4f53df5d6e9f961a7",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "f26c1889a653bbd50f2429cf10b0563f9a87e35d8bf4a16c2ddb86e12628d122",
+      "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
+      "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
+      "src/lib/ui/components/PersistentPlayer.svelte": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
+      "src/lib/ui/action-feedback.svelte.ts": "143eb58d887870dfbf76d6ea6cf7bcd3f577193ea8e07dfc7827bcf0827a3b4d",
+      "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
+      "tests/player-stop-lifecycle.test.ts": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
+      "tests/media-lifecycle-client.test.ts": "7786af4a888183bef0b3b6a046ddc5696f5fc702b0e6c45c8eb13d80fc3c91f1",
+      "tests/ui-feedback.test.ts": "71c0afcf5b92547b954157cad70617bff3a1fe60dfe7746db4cd3434e852ad6d",
+      "scripts/performance-stop-browser.js": "0bf8ae38ccc15b24aba680d9345427d10739f20997c34acb75fa4b95d44e8543",
+      "scripts/source-style.ts": "a2301db0ce3eca7371cd3167896b63811c15642d096e48e783e0e61f4ceee2e5",
+      "src/lib/ui/components/NotificationToasts.svelte": "27a7dd0f949c852e341578dde7271d012bf5b6072ea168ec43ffa85414aa6558",
+      "scripts/performance-stop-mobile-browser.js": "3fe798f0ad1de763eb53248c61deb3f19d1d0f4ab46a50be02ee88bc577a8df9",
+      "tests/playback-reports.test.ts": "a6da9c108e4e83725c94cafe6e9911f707b230885d548804fc57739666bb5fbb"
+    },
+    "nativeAcceptanceOwnerFingerprint": "c3f281fae63963f87772ba98e059c0e661e46cb640f61a64af092a53af969487",
+    "fingerprintAlgorithm": "Native acceptance owner fingerprint is SHA256 of sorted compact JSON for the 18 files in nativeAcceptanceFiles. Final files additionally include unchanged/rejected owners, dependency lock, browser driver and audit documentation.",
+    "nativeAcceptanceFiles": {
+      "src/lib/core/lists/up-next.server.ts": "a87aa45ddae6d0fd8291779b284bf8b715e521433f3d66908d3a0082b2135cea",
+      "src/lib/core/tracking/continue.server.ts": "578abbae1361d0768e8dc94c613df9a0b78219761ba0621c2462f5ba7b6ecd3d",
+      "src/lib/server/db/index.ts": "be6092501410e2c0b0f0a325af3294853fd27729809fa8a987a8b1344dfdc616",
+      "src/lib/server/db/read-cancellation.ts": "36deac25514f0935352aee0e14aeb217005d3479aa6161b1b6840b849b792c96",
+      "src/lib/collection/query.server.ts": "c280664474fc359e8a0ad272a44ea7444e2d096accd2474cffd74df62465a0d7",
+      "src/lib/server/queries/media.ts": "59cfba66604f912aacb82b57d3a3870bbbb22526919e2534b8320fe7e1637fe8",
+      "src/lib/server/queries/recent-library.ts": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
+      "src/lib/server/queries/progress-experiment.ts": "81bf0b8691d404bbd98a07dfa358f1a6592370f253e174fcaaca2e330ed9f69c",
+      "src/lib/server/queries/library.ts": "7b2851d9a66923e61924f643f1e9836e82fdcf95d44c7a189ba3d4d89e0bbba2",
+      "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
+      "src/lib/server/security/provider-fetch.ts": "042953d7f52e8aa1d0c074d823f6365999fa2831dcd3e079859b63b619ab4007",
+      "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
+      "src/lib/sync/jellyfin-finalization.server.ts": "87af15b0b6c053e5c6d9276315fb8a75c8a274e2619cc85d7c4f5d1116a1cf0d",
+      "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
+      "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
+      "src/lib/ui/shelves/library.svelte.ts": "7fb3e305ce6b12d15e53096a55520d9fb0c27a7b5710845a2bf9cd7162143bd4",
+      "scripts/performance-followup.ts": "5a265db6f5dafe1dd8687427660b235dcf1808afab1f57e8fd8e05ba3cd74177",
+      "scripts/performance-finalization.ts": "7fe327d03418375830ad0f066b850e7ab1033cf1e019ca2f1cb276d22e887318"
+    },
+    "companion": {
+      "baseline": "e5bac3461ea00f9eb783019fd483c28d1fccefc7",
+      "files": {
+        "Coast/Api/TrailerCropController.cs": "46445747bab6173d3490bd7221b027c3a6ba60d40112a2cf37608bbb6ccf56cd",
+        "Tests/TrailerCropChecks.cs": "90270ec7398d12bcbd067dacb4058dfe5fb398700e5ef7378ecfaf5b0ecb67f1",
+        "README.md": "d81939307f79fe2cc6d34804f36a4bbf67445cc3ad71964d5049bfe485dc9fd9"
+      }
+    }
+  },
+  "provenance": {
+    "backupSha256": "147185eef8dc24169ac4753695ec3fa4cb9ef8674be7e22200752dafe0d693fd",
+    "backupBytes": 1833922560,
+    "sourceWasReadOnly": true,
+    "sourceClusterMajor": 15,
+    "isolatedCluster": {
+      "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+      "sharedbuffers": "128MB",
+      "workmem": "4MB",
+      "maxconnections": "100",
+      "trackiotiming": "on"
+    },
+    "limits": {
+      "cpus": 4,
+      "memoryGiB": 2
+    },
+    "nativeBunVersion": "1.4.4",
+    "nativeBunRevision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "supplementaryHostBunRevision": "963452075",
+    "browser": "Chromium headless shell cache build 1243 on macOS arm64",
+    "privateRawRoot": "/tmp/coast-performance-implementation-20261022/private",
+    "privateRetention": "Never commit raw SQL plans/parameters, DOM/heap snapshots, credentials, session cookies, media URLs or request context. Safe aggregates and hashes only. This local scratch path is not a portable archive.",
+    "realWorkCensus": [
+      {
+        "kind": "album",
+        "count": 162
+      },
+      {
+        "kind": "collection",
+        "count": 632
+      },
+      {
+        "kind": "comic",
+        "count": 51
+      },
+      {
+        "kind": "episode",
+        "count": 184062
+      },
+      {
+        "kind": "game",
+        "count": 1204
+      },
+      {
+        "kind": "movie",
+        "count": 5291
+      },
+      {
+        "kind": "season",
+        "count": 8139
+      },
+      {
+        "kind": "show",
+        "count": 2298
+      },
+      {
+        "kind": "track",
+        "count": 851
+      }
+    ],
+    "readEpoch": {
+      "beforeStartedAt": "2026-10-22T10:41:32.023Z",
+      "currentStartedAt": "2026-10-22T10:41:52.237Z",
+      "mutations": "Read-only role; native controlled and browser setup changes occur only in later, explicitly separate copy epochs.",
+      "countProof": [
+        {
+          "name": "retained-range-exactly-equals-independent-single-pages",
+          "passed": true,
+          "cards": 180
+        },
+        {
+          "name": "movie-library-total-independent-authorised-source-count",
+          "passed": true,
+          "count": 1750
+        },
+        {
+          "name": "already-aborted-progress-issues-no-ORM-work",
+          "passed": true,
+          "statements": 0
+        }
+      ]
+    }
+  },
+  "readComparisons": {
+    "method": "One warm-up and five serial calls per owner on the same restored epoch, caches warm; complete DTO hashes match; selected scenarios only. CPU is app-process CPU, not database CPU. RSS samples are not whole-app peak memory. Top-level pg_stat_statements is inclusive; nested calls are separate and must not be added again. Shared reads may be served by OS cache; temp blocks are 8KiB; no production p95 or physical-disk claim.",
+    "scenarios": [
+      {
+        "name": "progress.watch.continue",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "progress.watch.continue",
+          "samples": [
+            {
+              "elapsedMs": 464.68345899999986,
+              "cpuMs": 25.865,
+              "rss": 60194816,
+              "heap": 7073368,
+              "rssDelta": 3125248,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 651.748709,
+                "hits": "514615",
+                "reads": "87642",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 428.7697079999998,
+              "cpuMs": 9.802,
+              "rss": 63303680,
+              "heap": 7073368,
+              "rssDelta": 3563520,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 588.0137500000001,
+                "hits": "514645",
+                "reads": "87612",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 435.60474999999997,
+              "cpuMs": 29.576,
+              "rss": 62947328,
+              "heap": 7523560,
+              "rssDelta": -487424,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 588.9514999999999,
+                "hits": "514639",
+                "reads": "87618",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 431.2850000000003,
+              "cpuMs": 13.302,
+              "rss": 64536576,
+              "heap": 7523560,
+              "rssDelta": 1458176,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 586.8036680000001,
+                "hits": "514645",
+                "reads": "87612",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 423.06008299999985,
+              "cpuMs": 11.063,
+              "rss": 64176128,
+              "heap": 7719925,
+              "rssDelta": -360448,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 579.151835,
+                "hits": "513235",
+                "reads": "87576",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "53ade791739189f584509e0d359d52eee832a1f36d477996149879d91f35f865",
+          "count": 8,
+          "total": 8,
+          "bytes": 26575,
+          "medianMs": 431.2850000000003,
+          "minMs": 423.06008299999985,
+          "maxMs": 464.68345899999986
+        },
+        "current": {
+          "name": "progress.watch.continue",
+          "samples": [
+            {
+              "elapsedMs": 428.943834,
+              "cpuMs": 23.866,
+              "rss": 62009344,
+              "heap": 6749345,
+              "rssDelta": 2805760,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 582.641503,
+                "hits": "514650",
+                "reads": "87602",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 434.559208,
+              "cpuMs": 15.33,
+              "rss": 57282560,
+              "heap": 7494656,
+              "rssDelta": -4988928,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 589.724998,
+                "hits": "514637",
+                "reads": "87615",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 442.1348760000001,
+              "cpuMs": 21.526,
+              "rss": 63627264,
+              "heap": 7494656,
+              "rssDelta": 5820416,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 596.2071259999999,
+                "hits": "514641",
+                "reads": "87611",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 463.9517920000003,
+              "cpuMs": 18.911,
+              "rss": 61353984,
+              "heap": 7998085,
+              "rssDelta": -2404352,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 625.270584,
+                "hits": "514637",
+                "reads": "87615",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 482.11808299999984,
+              "cpuMs": 10.155,
+              "rss": 63451136,
+              "heap": 7998085,
+              "rssDelta": 1966080,
+              "stats": {
+                "calls": 33,
+                "nestedcalls": 49,
+                "rows": "1001",
+                "execms": 637.183369,
+                "hits": "513206",
+                "reads": "87599",
+                "tempread": "446",
+                "tempwritten": "446"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "53ade791739189f584509e0d359d52eee832a1f36d477996149879d91f35f865",
+          "count": 8,
+          "total": 8,
+          "bytes": 26575,
+          "medianMs": 442.1348760000001,
+          "minMs": 428.943834,
+          "maxMs": 482.11808299999984
+        }
+      },
+      {
+        "name": "progress.watch.finished",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "progress.watch.finished",
+          "samples": [
+            {
+              "elapsedMs": 872.4316669999998,
+              "cpuMs": 6.788,
+              "rss": 65462272,
+              "heap": 8628352,
+              "rssDelta": -200704,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 852.4717939999998,
+                "hits": "348450",
+                "reads": "86829",
+                "tempread": "20819",
+                "tempwritten": "15411"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 879.4614179999999,
+              "cpuMs": 13.065,
+              "rss": 66535424,
+              "heap": 8756186,
+              "rssDelta": -2859008,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 858.9830819999997,
+                "hits": "348441",
+                "reads": "86838",
+                "tempread": "20819",
+                "tempwritten": "15411"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 886.58475,
+              "cpuMs": 7.995,
+              "rss": 68259840,
+              "heap": 8844567,
+              "rssDelta": 806912,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 866.8521239999999,
+                "hits": "348453",
+                "reads": "86826",
+                "tempread": "20819",
+                "tempwritten": "15411"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 887.9669169999997,
+              "cpuMs": 7.931,
+              "rss": 69181440,
+              "heap": 9029143,
+              "rssDelta": 397312,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 867.3734170000001,
+                "hits": "348448",
+                "reads": "86831",
+                "tempread": "20819",
+                "tempwritten": "15411"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 864.4300830000002,
+              "cpuMs": 7.733,
+              "rss": 69582848,
+              "heap": 9029143,
+              "rssDelta": -647168,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 843.1015399999997,
+                "hits": "348446",
+                "reads": "86833",
+                "tempread": "20819",
+                "tempwritten": "15411"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "4ec2d9d4d31ba3924c7560388514cb486a422008088df998aab3733b717e51aa",
+          "count": 10,
+          "total": 10,
+          "bytes": 23403,
+          "medianMs": 879.4614179999999,
+          "minMs": 864.4300830000002,
+          "maxMs": 887.9669169999997
+        },
+        "current": {
+          "name": "progress.watch.finished",
+          "samples": [
+            {
+              "elapsedMs": 634.9987919999999,
+              "cpuMs": 7.764,
+              "rss": 65753088,
+              "heap": 8974392,
+              "rssDelta": 1089536,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 616.4967070000001,
+                "hits": "336773",
+                "reads": "61981",
+                "tempread": "11434",
+                "tempwritten": "7804"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 652.1103330000005,
+              "cpuMs": 11.753,
+              "rss": 66879488,
+              "heap": 8974392,
+              "rssDelta": -3067904,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 633.4043339999997,
+                "hits": "336774",
+                "reads": "61980",
+                "tempread": "11434",
+                "tempwritten": "7804"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 631.7864159999999,
+              "cpuMs": 8.842,
+              "rss": 68091904,
+              "heap": 9158286,
+              "rssDelta": 32768,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 613.530831,
+                "hits": "336772",
+                "reads": "61982",
+                "tempread": "11434",
+                "tempwritten": "7804"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 655.8172920000006,
+              "cpuMs": 8.05,
+              "rss": 69300224,
+              "heap": 9239560,
+              "rssDelta": 290816,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 635.684209,
+                "hits": "336771",
+                "reads": "61983",
+                "tempread": "11434",
+                "tempwritten": "7804"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 651.0122919999994,
+              "cpuMs": 7.521,
+              "rss": 69156864,
+              "heap": 9239560,
+              "rssDelta": -798720,
+              "stats": {
+                "calls": 31,
+                "nestedcalls": 120,
+                "rows": "129",
+                "execms": 631.9958759999997,
+                "hits": "336774",
+                "reads": "61980",
+                "tempread": "11434",
+                "tempwritten": "7804"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "4ec2d9d4d31ba3924c7560388514cb486a422008088df998aab3733b717e51aa",
+          "count": 10,
+          "total": 10,
+          "bytes": 23403,
+          "medianMs": 651.0122919999994,
+          "minMs": 631.7864159999999,
+          "maxMs": 655.8172920000006
+        }
+      },
+      {
+        "name": "recent.watch",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "recent.watch",
+          "samples": [
+            {
+              "elapsedMs": 381.9967919999999,
+              "cpuMs": 3.849,
+              "rss": 70365184,
+              "heap": 9385228,
+              "rssDelta": -200704,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 378.905832,
+                "hits": "501937",
+                "reads": "84613",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 368.96187499999905,
+              "cpuMs": 5.282,
+              "rss": 69976064,
+              "heap": 9478247,
+              "rssDelta": -4321280,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 365.82646099999994,
+                "hits": "501934",
+                "reads": "84615",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 364.6926249999997,
+              "cpuMs": 3.899,
+              "rss": 69996544,
+              "heap": 9540822,
+              "rssDelta": -3649536,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 361.26741699999997,
+                "hits": "501920",
+                "reads": "84629",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 399.86112499999945,
+              "cpuMs": 5.899,
+              "rss": 69890048,
+              "heap": 9559496,
+              "rssDelta": -3776512,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 395.919959,
+                "hits": "501924",
+                "reads": "84625",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 372.99312499999905,
+              "cpuMs": 49.41,
+              "rss": 86261760,
+              "heap": 9119848,
+              "rssDelta": 12701696,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 368.301205,
+                "hits": "501910",
+                "reads": "84625",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "3e5425c5d084c4642f38c1ca9cab30ca3f03700e7238b853f6b021cfcea0a9f9",
+          "count": 20,
+          "total": 2685,
+          "bytes": 43525,
+          "medianMs": 372.99312499999905,
+          "minMs": 364.6926249999997,
+          "maxMs": 399.86112499999945
+        },
+        "current": {
+          "name": "recent.watch",
+          "samples": [
+            {
+              "elapsedMs": 364.2437909999999,
+              "cpuMs": 5.294,
+              "rss": 69115904,
+              "heap": 9630584,
+              "rssDelta": -2375680,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 360.83516899999995,
+                "hits": "501938",
+                "reads": "84605",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 373.71387499999946,
+              "cpuMs": 4.338,
+              "rss": 70463488,
+              "heap": 9630584,
+              "rssDelta": -1273856,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 370.421124,
+                "hits": "501934",
+                "reads": "84608",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 379.08545799999956,
+              "cpuMs": 5.142,
+              "rss": 71872512,
+              "heap": 9893622,
+              "rssDelta": -1212416,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 375.42495800000006,
+                "hits": "501923",
+                "reads": "84619",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 374.8752919999988,
+              "cpuMs": 3.804,
+              "rss": 70770688,
+              "heap": 10027669,
+              "rssDelta": -3723264,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 371.46845499999995,
+                "hits": "501918",
+                "reads": "84624",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 365.67691699999887,
+              "cpuMs": 7.58,
+              "rss": 72175616,
+              "heap": 10027669,
+              "rssDelta": -954368,
+              "stats": {
+                "calls": 26,
+                "nestedcalls": null,
+                "rows": "210",
+                "execms": 362.6727510000001,
+                "hits": "501910",
+                "reads": "84614",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "3e5425c5d084c4642f38c1ca9cab30ca3f03700e7238b853f6b021cfcea0a9f9",
+          "count": 20,
+          "total": 2685,
+          "bytes": 43525,
+          "medianMs": 373.71387499999946,
+          "minMs": 364.2437909999999,
+          "maxMs": 379.08545799999956
+        }
+      },
+      {
+        "name": "recent.listen",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "recent.listen",
+          "samples": [
+            {
+              "elapsedMs": 236.503917,
+              "cpuMs": 3.679,
+              "rss": 70352896,
+              "heap": 9327440,
+              "rssDelta": -8192,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 233.44712199999998,
+                "hits": "303094",
+                "reads": "61166",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 238.36362499999996,
+              "cpuMs": 3.533,
+              "rss": 72904704,
+              "heap": 9362671,
+              "rssDelta": -1380352,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 235.43066900000002,
+                "hits": "303097",
+                "reads": "61163",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 238.67824999999903,
+              "cpuMs": 2.645,
+              "rss": 69369856,
+              "heap": 9362671,
+              "rssDelta": -5763072,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 235.63016600000003,
+                "hits": "303026",
+                "reads": "61234",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 235.53204200000073,
+              "cpuMs": 2.788,
+              "rss": 70639616,
+              "heap": 9408697,
+              "rssDelta": -4104192,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 232.474997,
+                "hits": "303031",
+                "reads": "61229",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 235.54858400000012,
+              "cpuMs": 2.177,
+              "rss": 69083136,
+              "heap": 9408697,
+              "rssDelta": -5488640,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 232.204583,
+                "hits": "303077",
+                "reads": "61183",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "ba190c5c9d6bfe6b89ae23014fe80f732ddac9d14d69de60b066f930702224f5",
+          "count": 20,
+          "total": 162,
+          "bytes": 12255,
+          "medianMs": 236.503917,
+          "minMs": 235.53204200000073,
+          "maxMs": 238.67824999999903
+        },
+        "current": {
+          "name": "recent.listen",
+          "samples": [
+            {
+              "elapsedMs": 3.1554590000014286,
+              "cpuMs": 1.135,
+              "rss": 85753856,
+              "heap": 10120796,
+              "rssDelta": 3145728,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 1.2299579999999999,
+                "hits": "1960",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 4.108083000000988,
+              "cpuMs": 10.79,
+              "rss": 96239616,
+              "heap": 10120796,
+              "rssDelta": 3407872,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 1.6256639999999998,
+                "hits": "1960",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 2.937292000000525,
+              "cpuMs": 5.555,
+              "rss": 102400000,
+              "heap": 10120796,
+              "rssDelta": 524288,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 1.186209,
+                "hits": "1960",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 2.8826659999995172,
+              "cpuMs": 4.86,
+              "rss": 105545728,
+              "heap": 10120796,
+              "rssDelta": 131072,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 1.289208,
+                "hits": "1960",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 3.4734580000003916,
+              "cpuMs": 5.603,
+              "rss": 107905024,
+              "heap": 11347306,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "126",
+                "execms": 1.255002,
+                "hits": "1960",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "ba190c5c9d6bfe6b89ae23014fe80f732ddac9d14d69de60b066f930702224f5",
+          "count": 20,
+          "total": 162,
+          "bytes": 12255,
+          "medianMs": 3.1554590000014286,
+          "minMs": 2.8826659999995172,
+          "maxMs": 4.108083000000988
+        }
+      },
+      {
+        "name": "recent.play",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "recent.play",
+          "samples": [
+            {
+              "elapsedMs": 256.9612080000006,
+              "cpuMs": 0.8,
+              "rss": 68722688,
+              "heap": 9486553,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 254.74070799999998,
+                "hits": "313550",
+                "reads": "61233",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 247.07666700000118,
+              "cpuMs": 1.169,
+              "rss": 70127616,
+              "heap": 9486553,
+              "rssDelta": -4231168,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 244.92183500000002,
+                "hits": "313542",
+                "reads": "61241",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 241.10237499999857,
+              "cpuMs": 2.285,
+              "rss": 71741440,
+              "heap": 9520575,
+              "rssDelta": -4022272,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 239.152042,
+                "hits": "313542",
+                "reads": "61241",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 244.5275419999998,
+              "cpuMs": 1.888,
+              "rss": 70848512,
+              "heap": 9520575,
+              "rssDelta": -6529024,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 242.500584,
+                "hits": "313413",
+                "reads": "61370",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 261.9841670000005,
+              "cpuMs": 1.174,
+              "rss": 67346432,
+              "heap": 9526044,
+              "rssDelta": -7041024,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 259.8815,
+                "hits": "313317",
+                "reads": "61466",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+          "count": 0,
+          "total": 0,
+          "bytes": 41,
+          "medianMs": 247.07666700000118,
+          "minMs": 241.10237499999857,
+          "maxMs": 261.9841670000005
+        },
+        "current": {
+          "name": "recent.play",
+          "samples": [
+            {
+              "elapsedMs": 5.2106669999993755,
+              "cpuMs": 0.319,
+              "rss": 108167168,
+              "heap": 11388070,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 4.493458,
+                "hits": "12483",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 5.581000000000131,
+              "cpuMs": 0.302,
+              "rss": 109346816,
+              "heap": 11388070,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 4.826542,
+                "hits": "12483",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 5.733666999998604,
+              "cpuMs": 0.69,
+              "rss": 110526464,
+              "heap": 11388070,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 4.90729,
+                "hits": "12483",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 5.417999999999665,
+              "cpuMs": 0.666,
+              "rss": 111443968,
+              "heap": 11388070,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 4.659293,
+                "hits": "12483",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 4.8643749999992,
+              "cpuMs": 0.219,
+              "rss": 111706112,
+              "heap": 11388070,
+              "rssDelta": 131072,
+              "stats": {
+                "calls": 4,
+                "nestedcalls": null,
+                "rows": "3",
+                "execms": 4.288583,
+                "hits": "12483",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+          "count": 0,
+          "total": 0,
+          "bytes": 41,
+          "medianMs": 5.417999999999665,
+          "minMs": 4.8643749999992,
+          "maxMs": 5.733666999998604
+        }
+      },
+      {
+        "name": "recent.read",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "recent.read",
+          "samples": [
+            {
+              "elapsedMs": 236.00404100000014,
+              "cpuMs": 2.751,
+              "rss": 67710976,
+              "heap": 9573709,
+              "rssDelta": -1343488,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 232.729833,
+                "hits": "302323",
+                "reads": "60991",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 235.75545799999963,
+              "cpuMs": 1.824,
+              "rss": 69206016,
+              "heap": 9573709,
+              "rssDelta": -4403200,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 232.84699799999999,
+                "hits": "302314",
+                "reads": "61000",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 236.90158399999927,
+              "cpuMs": 3.613,
+              "rss": 67137536,
+              "heap": 9637877,
+              "rssDelta": -7966720,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 233.54529,
+                "hits": "302321",
+                "reads": "60993",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 239.15395799999897,
+              "cpuMs": 4.249,
+              "rss": 68767744,
+              "heap": 9668824,
+              "rssDelta": -4399104,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 235.415583,
+                "hits": "302315",
+                "reads": "60999",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 246.67633399999977,
+              "cpuMs": 2.554,
+              "rss": 68661248,
+              "heap": 9668824,
+              "rssDelta": -4300800,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": 153,
+                "rows": "85",
+                "execms": 243.27366800000001,
+                "hits": "302993",
+                "reads": "60993",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "82b8cb39b4674813947751f2c19216078d58a0f072c2600693ff87721e7b4f92",
+          "count": 20,
+          "total": 50,
+          "bytes": 9775,
+          "medianMs": 236.90158399999927,
+          "minMs": 235.75545799999963,
+          "maxMs": 246.67633399999977
+        },
+        "current": {
+          "name": "recent.read",
+          "samples": [
+            {
+              "elapsedMs": 2.6885419999998703,
+              "cpuMs": 1.373,
+              "rss": 102764544,
+              "heap": 12600674,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 0.985792,
+                "hits": "1014",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 2.46862499999952,
+              "cpuMs": 0.755,
+              "rss": 103419904,
+              "heap": 12600674,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 0.9718359999999999,
+                "hits": "1014",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 2.2682500000009895,
+              "cpuMs": 0.909,
+              "rss": 103550976,
+              "heap": 12600674,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 0.8535010000000001,
+                "hits": "1014",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 5.680583999999726,
+              "cpuMs": 7.889,
+              "rss": 103813120,
+              "heap": 9493317,
+              "rssDelta": 131072,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": null,
+                "rows": "85",
+                "execms": 1.1082499999999997,
+                "hits": "1014",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 15.94341600000007,
+              "cpuMs": 1.583,
+              "rss": 104468480,
+              "heap": 9493317,
+              "rssDelta": 0,
+              "stats": {
+                "calls": 11,
+                "nestedcalls": 153,
+                "rows": "85",
+                "execms": 13.596497999999999,
+                "hits": "1686",
+                "reads": "0",
+                "tempread": "0",
+                "tempwritten": "0"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "82b8cb39b4674813947751f2c19216078d58a0f072c2600693ff87721e7b4f92",
+          "count": 20,
+          "total": 50,
+          "bytes": 9775,
+          "medianMs": 2.6885419999998703,
+          "minMs": 2.2682500000009895,
+          "maxMs": 15.94341600000007
+        }
+      },
+      {
+        "name": "tasks.summary",
+        "completeWarmDtoEqual": true,
+        "before": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 118.59358400000201,
+              "cpuMs": 2.921,
+              "rss": 69382144,
+              "heap": 10002983,
+              "rssDelta": -2547712,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 119.26983399999999,
+                "hits": "12557",
+                "reads": "10825",
+                "tempread": "2391",
+                "tempwritten": "2397"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 119.08337499999834,
+              "cpuMs": 1.615,
+              "rss": 72015872,
+              "heap": 10002983,
+              "rssDelta": -1953792,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 121.152417,
+                "hits": "12653",
+                "reads": "10729",
+                "tempread": "2390",
+                "tempwritten": "2396"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 119.8772919999974,
+              "cpuMs": 2.093,
+              "rss": 74027008,
+              "heap": 10077872,
+              "rssDelta": -1527808,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 121.24416599999999,
+                "hits": "12749",
+                "reads": "10633",
+                "tempread": "2392",
+                "tempwritten": "2398"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 121.24674999999843,
+              "cpuMs": 10.69,
+              "rss": 76800000,
+              "heap": 10077872,
+              "rssDelta": -1421312,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 122.283793,
+                "hits": "12845",
+                "reads": "10537",
+                "tempread": "2391",
+                "tempwritten": "2397"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 140.52283399999942,
+              "cpuMs": 2.584,
+              "rss": 74321920,
+              "heap": 10206408,
+              "rssDelta": -6279168,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 141.865085,
+                "hits": "14013",
+                "reads": "20786",
+                "tempread": "2390",
+                "tempwritten": "2396"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "8ba38d04f9f5f349f9f83c65da289ad3a87f3a2d1f65afe701fa593f8d8ba9d6",
+          "count": 24,
+          "total": null,
+          "bytes": 16563,
+          "medianMs": 119.8772919999974,
+          "minMs": 118.59358400000201,
+          "maxMs": 140.52283399999942
+        },
+        "current": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 121.86650000000009,
+              "cpuMs": 2.874,
+              "rss": 79257600,
+              "heap": 9615503,
+              "rssDelta": -13623296,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 122.502835,
+                "hits": "12557",
+                "reads": "10825",
+                "tempread": "2390",
+                "tempwritten": "2396"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 116.54762500000106,
+              "cpuMs": 1.613,
+              "rss": 70017024,
+              "heap": 9615503,
+              "rssDelta": -11993088,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 117.434667,
+                "hits": "12653",
+                "reads": "10729",
+                "tempread": "2391",
+                "tempwritten": "2397"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 117.929666,
+              "cpuMs": 2.434,
+              "rss": 73170944,
+              "heap": 9857824,
+              "rssDelta": -122880,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 118.566541,
+                "hits": "12749",
+                "reads": "10633",
+                "tempread": "2390",
+                "tempwritten": "2395"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 122.13312499999847,
+              "cpuMs": 1.795,
+              "rss": 71217152,
+              "heap": 9857824,
+              "rssDelta": -3919872,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 122.99445899999999,
+                "hits": "12845",
+                "reads": "10537",
+                "tempread": "2390",
+                "tempwritten": "2395"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 141.02483399999983,
+              "cpuMs": 2.424,
+              "rss": 72822784,
+              "heap": 10030893,
+              "rssDelta": -1671168,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "49",
+                "execms": 142.153209,
+                "hits": "14013",
+                "reads": "20786",
+                "tempread": "2390",
+                "tempwritten": "2395"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "8ba38d04f9f5f349f9f83c65da289ad3a87f3a2d1f65afe701fa593f8d8ba9d6",
+          "count": 24,
+          "total": null,
+          "bytes": 16563,
+          "medianMs": 121.86650000000009,
+          "minMs": 116.54762500000106,
+          "maxMs": 141.02483399999983
+        }
+      }
+    ]
+  },
+  "nativeControlledAcceptance": {
+    "status": "passed",
+    "failures": [],
+    "sourceRef": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401+working-owner:c3f281fae63963f87772ba98e059c0e661e46cb640f61a64af092a53af969487",
+    "executableSha256": "5a265db6f5dafe1dd8687427660b235dcf1808afab1f57e8fd8e05ba3cd74177",
+    "boundary": "Controlled existing admin/catalogue state on marked disposable actual-data copy; no fabricated identities or provider responses",
+    "runtime": "1.4.4",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "checks": [
+      {
+        "name": "exact-database-copy-marker",
+        "passed": true
+      },
+      {
+        "name": "existing-admin",
+        "passed": true
+      },
+      {
+        "name": "three-existing-untracked-movies",
+        "passed": true
+      },
+      {
+        "name": "concurrent-native-enqueue-waits-for-removal",
+        "passed": true
+      },
+      {
+        "name": "later-enqueue-survives-removal",
+        "passed": true
+      },
+      {
+        "name": "undo-preserves-later-enqueue-timestamp",
+        "passed": true
+      },
+      {
+        "name": "unrelated-queue-order-and-timestamps-preserved",
+        "passed": true
+      },
+      {
+        "name": "concurrent-native-enqueue-waits-for-removal",
+        "passed": true
+      },
+      {
+        "name": "later-enqueue-survives-removal",
+        "passed": true
+      },
+      {
+        "name": "undo-preserves-later-enqueue-timestamp",
+        "passed": true
+      },
+      {
+        "name": "unrelated-queue-order-and-timestamps-preserved",
+        "passed": true
+      },
+      {
+        "name": "concurrent-native-enqueue-waits-for-removal",
+        "passed": true
+      },
+      {
+        "name": "later-enqueue-survives-removal",
+        "passed": true
+      },
+      {
+        "name": "undo-preserves-later-enqueue-timestamp",
+        "passed": true
+      },
+      {
+        "name": "unrelated-queue-order-and-timestamps-preserved",
+        "passed": true
+      },
+      {
+        "name": "abort-cancels-only-owned-query-handles",
+        "passed": true
+      },
+      {
+        "name": "pool-reusable-after-cancelled-read",
+        "passed": true
+      },
+      {
+        "name": "abort-cancels-only-owned-query-handles",
+        "passed": true
+      },
+      {
+        "name": "pool-reusable-after-cancelled-read",
+        "passed": true
+      },
+      {
+        "name": "abort-cancels-only-owned-query-handles",
+        "passed": true
+      },
+      {
+        "name": "pool-reusable-after-cancelled-read",
+        "passed": true
+      },
+      {
+        "name": "pre-aborted-read-never-admitted",
+        "passed": true
+      },
+      {
+        "name": "existing-jellyfin-account",
+        "passed": true
+      },
+      {
+        "name": "actual-tracking-state-crosses-100-row-boundary",
+        "passed": true
+      },
+      {
+        "name": "rolled-back-batch-publishes-no-intents",
+        "passed": true
+      },
+      {
+        "name": "batch-selection-at-most-100",
+        "passed": true
+      },
+      {
+        "name": "finite-native-finalization",
+        "passed": true
+      },
+      {
+        "name": "batch-selection-at-most-100",
+        "passed": true
+      },
+      {
+        "name": "finite-native-finalization",
+        "passed": true
+      },
+      {
+        "name": "batch-selection-at-most-100",
+        "passed": true
+      },
+      {
+        "name": "finite-native-finalization",
+        "passed": true
+      },
+      {
+        "name": "batch-selection-at-most-100",
+        "passed": true
+      },
+      {
+        "name": "finite-native-finalization",
+        "passed": true
+      },
+      {
+        "name": "batch-selection-at-most-100",
+        "passed": true
+      },
+      {
+        "name": "finite-native-finalization",
+        "passed": true
+      },
+      {
+        "name": "manual-intent-writer-commits-while-finalizer-holds-account-fence",
+        "passed": true
+      },
+      {
+        "name": "complete-actual-intent-values-match-independent-reference",
+        "passed": true
+      },
+      {
+        "name": "exact-mapped-intent-count-enqueued",
+        "passed": true
+      },
+      {
+        "name": "backfills-use-current-intent-versions",
+        "passed": true
+      },
+      {
+        "name": "zero-external-provider-requests",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "catalogueWorks": 202690,
+      "queue": [
+        {
+          "blocked": true,
+          "laterIntentSurvivedUndo": true
+        },
+        {
+          "blocked": true,
+          "laterIntentSurvivedUndo": true
+        },
+        {
+          "blocked": true,
+          "laterIntentSurvivedUndo": true
+        }
+      ],
+      "cancellation": [
+        {
+          "abortToSettleMs": 1.1082499999999982,
+          "unrelatedReadPreserved": true
+        },
+        {
+          "abortToSettleMs": 1.2016250000000355,
+          "unrelatedReadPreserved": true
+        },
+        {
+          "abortToSettleMs": 1.189457999999945,
+          "unrelatedReadPreserved": true
+        }
+      ],
+      "finalization": {
+        "actualScreenRows": 105,
+        "existingPositiveRowsAtStart": 49,
+        "controlledMovieCommands": 56,
+        "existingMusicRows": 20,
+        "intents": 160,
+        "pending": 160,
+        "steps": [
+          {
+            "phase": "screen",
+            "selected": 100
+          },
+          {
+            "phase": "screen",
+            "selected": 5
+          },
+          {
+            "phase": "music",
+            "selected": 20
+          },
+          {
+            "phase": "enqueue",
+            "selected": 100
+          },
+          {
+            "phase": "enqueue",
+            "selected": 60
+          }
+        ]
+      }
+    },
+    "external": 0
+  },
+  "wholeNativeResume": {
+    "boundary": "Real retained admin/account/catalogue; controlled finalization resume on marked copy. Only GETs to its actual Jellyfin origin are permitted, at most eight; no fabricated upstream replies or remote mutations.",
+    "sourceRef": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401+working-owner:c3f281fae63963f87772ba98e059c0e661e46cb640f61a64af092a53af969487",
+    "executableSha256": "7fe327d03418375830ad0f066b850e7ab1033cf1e019ca2f1cb276d22e887318",
+    "runtime": "1.4.4",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "calls": [
+      {
+        "method": "GET",
+        "kind": "identity"
+      },
+      {
+        "method": "GET",
+        "kind": "identity"
+      },
+      {
+        "method": "GET",
+        "kind": "identity"
+      },
+      {
+        "method": "GET",
+        "kind": "identity"
+      }
+    ],
+    "checks": [
+      {
+        "name": "owned-copy",
+        "passed": true
+      },
+      {
+        "name": "existing-native-sync-job",
+        "passed": true
+      },
+      {
+        "name": "bounded-real-read-only-provider-access",
+        "passed": true
+      },
+      {
+        "name": "bounded-real-read-only-provider-access",
+        "passed": true
+      },
+      {
+        "name": "bounded-real-read-only-provider-access",
+        "passed": true
+      },
+      {
+        "name": "bounded-real-read-only-provider-access",
+        "passed": true
+      },
+      {
+        "name": "whole-native-finalization-resumes-to-completion",
+        "passed": true
+      },
+      {
+        "name": "whole-native-checkpoint-completes",
+        "passed": true
+      }
+    ],
+    "yields": 1,
+    "guard": {
+      "method": "GET",
+      "protocolMatches": true,
+      "portMatches": true,
+      "addressMatches": true,
+      "hostMatches": true
+    },
+    "status": "passed"
+  },
+  "browserRetention": {
+    "final": {
+      "boundary": "Independent new browser context and page inside a single CLI invocation, avoiding automatic CLI aria snapshots for the probe page; actual Library/admin and retained artwork, external transport blocked",
+      "samples": [
+        {
+          "page": 3,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 20780,
+            "jsEventListeners": 2462
+          },
+          "heapBytes": 17512856,
+          "images": {
+            "total": 179,
+            "decoded": 1
+          }
+        },
+        {
+          "page": 6,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 19924,
+            "jsEventListeners": 2483
+          },
+          "heapBytes": 18421048,
+          "images": {
+            "total": 180,
+            "decoded": 0
+          }
+        },
+        {
+          "page": 12,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 20111,
+            "jsEventListeners": 2435
+          },
+          "heapBytes": 19060632,
+          "images": {
+            "total": 168,
+            "decoded": 0
+          }
+        },
+        {
+          "page": 18,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 19877,
+            "jsEventListeners": 2423
+          },
+          "heapBytes": 19139968,
+          "images": {
+            "total": 165,
+            "decoded": 0
+          }
+        }
+      ],
+      "detachedCards": 1
+    },
+    "beforeDisposalFix": {
+      "boundary": "Independent new browser context and page inside a single CLI invocation, avoiding automatic CLI aria snapshots for the probe page; actual Library/admin and retained artwork, external transport blocked",
+      "samples": [
+        {
+          "page": 3,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 20811,
+            "jsEventListeners": 2484
+          },
+          "heapBytes": 17491304,
+          "images": {
+            "total": 180,
+            "decoded": 0
+          }
+        },
+        {
+          "page": 6,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 29562,
+            "jsEventListeners": 2786
+          },
+          "heapBytes": 19753624,
+          "images": {
+            "total": 180,
+            "decoded": 0
+          }
+        },
+        {
+          "page": 12,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 46912,
+            "jsEventListeners": 3322
+          },
+          "heapBytes": 22863012,
+          "images": {
+            "total": 178,
+            "decoded": 0
+          }
+        },
+        {
+          "page": 18,
+          "cards": 180,
+          "dom": {
+            "documents": 2,
+            "nodes": 65205,
+            "jsEventListeners": 3840
+          },
+          "heapBytes": 25643168,
+          "images": {
+            "total": 165,
+            "decoded": 0
+          }
+        }
+      ],
+      "detachedCards": 456
+    },
+    "retainer": "Independent-context heap root: Document -> MediaQueryMatcher -> native StrongMember ViewportChangeListener -> detached img -> detached media card. Empty image candidate implicated; valid inline disposal source leaves one detached card.",
+    "rejectedExperiments": [
+      "Removing src alone did not release native listener retention.",
+      "Native eager loading/sizes-only experiment did not fix it; MediaCard changes reverted."
+    ],
+    "layoutControls": [
+      {
+        "width": 1440,
+        "filterKeyboardAndFocus": true,
+        "noRedundantAvailableToggle": true,
+        "noPageOverflow": true
+      },
+      {
+        "width": 390,
+        "filterKeyboardAndFocus": true,
+        "noRedundantAvailableToggle": true,
+        "noPageOverflow": true
+      }
+    ],
+    "limits": "External transport blocked, mostly failed artwork. Short forced-GC headless metadata run; no decoded/GPU/physical-device or long-soak plateau claim."
+  },
+  "realMediaCrop": {
+    "boundary": "Two actual accessible short videos; unchanged native FFmpeg arguments; original serial and current parallel controller calls; authenticated request context linked directly without hosted Jellyfin middleware; 25ms sampled child RSS excludes parent and can miss peaks; not a latency speedup comparison",
+    "results": [
+      {
+        "version": "baseline",
+        "input": "09F16FE4756EE0AEF0C62B78E1A7C8F1B01F1D20FA387EAFBEF4347792DEFB08",
+        "status": 200,
+        "elapsedMs": 1107.374,
+        "payload": "{\"Crop\":{\"Width\":720,\"Height\":480,\"X\":0,\"Y\":0},\"Error\":null}"
+      },
+      {
+        "version": "baseline",
+        "input": "8A76AE73DA9A0B9FF01C714EBCDC959E9945BA2541F35ADEA34FD77DB7F7CF99",
+        "status": 200,
+        "elapsedMs": 552.2435,
+        "payload": "{\"Crop\":{\"Width\":352,\"Height\":240,\"X\":0,\"Y\":0},\"Error\":null}"
+      },
+      {
+        "version": "current",
+        "input": "09F16FE4756EE0AEF0C62B78E1A7C8F1B01F1D20FA387EAFBEF4347792DEFB08",
+        "status": 200,
+        "elapsedMs": 599.7273,
+        "payload": "{\"Crop\":{\"Width\":720,\"Height\":480,\"X\":0,\"Y\":0},\"Error\":null}",
+        "equal": true
+      },
+      {
+        "version": "current",
+        "input": "8A76AE73DA9A0B9FF01C714EBCDC959E9945BA2541F35ADEA34FD77DB7F7CF99",
+        "status": 200,
+        "elapsedMs": 511.8435,
+        "payload": "{\"Crop\":{\"Width\":352,\"Height\":240,\"X\":0,\"Y\":0},\"Error\":null}",
+        "equal": true
+      }
+    ],
+    "peakChildren": 2,
+    "peakChildRssKiB": 76512
+  },
+  "taskCandidate": {
+    "decision": "rejected; original query/index pair retained",
+    "candidate": "Terminal hash/group representative aggregate with max timestamp then UUID-text tie breaking; no index change.",
+    "method": "Two matched alternating original/candidate blocks, five measured calls per block, equal complete output hashes and uncontaminated top-level statement counts. Earlier mismatched epochs are excluded. No claims/write/WAL benefit asserted.",
+    "blocks": [
+      {
+        "block": "tasks-before-1",
+        "startedAt": "2026-10-22T11:17:22.060Z",
+        "finishedAt": "2026-10-22T11:17:24.535Z",
+        "status": "passed",
+        "scenario": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 126.962333,
+              "cpuMs": 3.416,
+              "rss": 50429952,
+              "heap": 11464704,
+              "rssDelta": 1826816,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 121.51800000000001,
+                "hits": "4961",
+                "reads": "7507",
+                "tempread": "2395",
+                "tempwritten": "2401"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 114.568375,
+              "cpuMs": 4.738,
+              "rss": 53575680,
+              "heap": 11923456,
+              "rssDelta": 2883584,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 111.29133399999999,
+                "hits": "5057",
+                "reads": "7411",
+                "tempread": "2395",
+                "tempwritten": "2400"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 114.06870800000002,
+              "cpuMs": 7.607,
+              "rss": 53776384,
+              "heap": 6661909,
+              "rssDelta": 69632,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 108.79350000000001,
+                "hits": "5153",
+                "reads": "7315",
+                "tempread": "2395",
+                "tempwritten": "2401"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 105.31670800000006,
+              "cpuMs": 2.303,
+              "rss": 53100544,
+              "heap": 6661909,
+              "rssDelta": -806912,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 102.75366700000001,
+                "hits": "5249",
+                "reads": "7219",
+                "tempread": "2396",
+                "tempwritten": "2402"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 128.68108399999994,
+              "cpuMs": 2.304,
+              "rss": 52621312,
+              "heap": 6661909,
+              "rssDelta": -479232,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 125.86833099999998,
+                "hits": "9739",
+                "reads": "14150",
+                "tempread": "2393",
+                "tempwritten": "2399"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "6840d64aae0d15b63f1fea5819083e28696a560899f9b808b9c40a20cb06c1f4",
+          "count": 23,
+          "total": null,
+          "bytes": 15778,
+          "medianMs": 114.568375,
+          "minMs": 105.31670800000006,
+          "maxMs": 128.68108399999994
+        }
+      },
+      {
+        "block": "tasks-candidate-1",
+        "startedAt": "2026-10-22T11:17:24.567Z",
+        "finishedAt": "2026-10-22T11:17:26.984Z",
+        "status": "passed",
+        "scenario": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 144.37970800000002,
+              "cpuMs": 2.373,
+              "rss": 50188288,
+              "heap": 11464704,
+              "rssDelta": -200704,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 140.28270700000002,
+                "hits": "22352",
+                "reads": "25035",
+                "tempread": "6871",
+                "tempwritten": "6887"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 142.69708299999996,
+              "cpuMs": 4.301,
+              "rss": 52940800,
+              "heap": 11988992,
+              "rssDelta": 2490368,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 139.305626,
+                "hits": "15483",
+                "reads": "31904",
+                "tempread": "6873",
+                "tempwritten": "6888"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 146.21912599999996,
+              "cpuMs": 6.736,
+              "rss": 54800384,
+              "heap": 6595051,
+              "rssDelta": 1728512,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 141.467041,
+                "hits": "14910",
+                "reads": "32477",
+                "tempread": "6873",
+                "tempwritten": "6888"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 146.31287499999996,
+              "cpuMs": 2.909,
+              "rss": 54157312,
+              "heap": 6595051,
+              "rssDelta": -774144,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 142.23833400000004,
+                "hits": "17656",
+                "reads": "29731",
+                "tempread": "6872",
+                "tempwritten": "6887"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 172.47441700000002,
+              "cpuMs": 2.945,
+              "rss": 53821440,
+              "heap": 6595051,
+              "rssDelta": -335872,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 169.289751,
+                "hits": "22518",
+                "reads": "36290",
+                "tempread": "6873",
+                "tempwritten": "6888"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "6840d64aae0d15b63f1fea5819083e28696a560899f9b808b9c40a20cb06c1f4",
+          "count": 23,
+          "total": null,
+          "bytes": 15778,
+          "medianMs": 146.21912599999996,
+          "minMs": 142.69708299999996,
+          "maxMs": 172.47441700000002
+        }
+      },
+      {
+        "block": "tasks-before-2",
+        "startedAt": "2026-10-22T11:17:27.015Z",
+        "finishedAt": "2026-10-22T11:17:29.229Z",
+        "status": "passed",
+        "scenario": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 101.82749999999999,
+              "cpuMs": 1.998,
+              "rss": 50671616,
+              "heap": 11464704,
+              "rssDelta": 24576,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 98.444292,
+                "hits": "1408",
+                "reads": "11060",
+                "tempread": "2393",
+                "tempwritten": "2399"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 106.53858299999996,
+              "cpuMs": 4.084,
+              "rss": 52883456,
+              "heap": 11988992,
+              "rssDelta": 1949696,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 103.858459,
+                "hits": "1504",
+                "reads": "10964",
+                "tempread": "2393",
+                "tempwritten": "2399"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 105.24783400000001,
+              "cpuMs": 6.896,
+              "rss": 54628352,
+              "heap": 6660674,
+              "rssDelta": 1482752,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 101.143208,
+                "hits": "1600",
+                "reads": "10868",
+                "tempread": "2393",
+                "tempwritten": "2399"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 103.87662499999999,
+              "cpuMs": 2.095,
+              "rss": 54198272,
+              "heap": 6660674,
+              "rssDelta": -561152,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 101.188334,
+                "hits": "1696",
+                "reads": "10772",
+                "tempread": "2392",
+                "tempwritten": "2398"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 126.05149999999992,
+              "cpuMs": 1.992,
+              "rss": 53882880,
+              "heap": 6660674,
+              "rssDelta": -315392,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 123.43379200000001,
+                "hits": "2633",
+                "reads": "21256",
+                "tempread": "2394",
+                "tempwritten": "2400"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "6840d64aae0d15b63f1fea5819083e28696a560899f9b808b9c40a20cb06c1f4",
+          "count": 23,
+          "total": null,
+          "bytes": 15778,
+          "medianMs": 105.24783400000001,
+          "minMs": 101.82749999999999,
+          "maxMs": 126.05149999999992
+        }
+      },
+      {
+        "block": "tasks-candidate-2",
+        "startedAt": "2026-10-22T11:17:29.263Z",
+        "finishedAt": "2026-10-22T11:17:32.276Z",
+        "status": "passed",
+        "scenario": {
+          "name": "tasks.summary",
+          "samples": [
+            {
+              "elapsedMs": 154.49616600000002,
+              "cpuMs": 2.523,
+              "rss": 49975296,
+              "heap": 11464704,
+              "rssDelta": 114688,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 150.272085,
+                "hits": "13430",
+                "reads": "33957",
+                "tempread": "6871",
+                "tempwritten": "6886"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 147.68416699999995,
+              "cpuMs": 4.762,
+              "rss": 52596736,
+              "heap": 11988992,
+              "rssDelta": 2490368,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 143.945042,
+                "hits": "19258",
+                "reads": "28129",
+                "tempread": "6874",
+                "tempwritten": "6889"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 146.328125,
+              "cpuMs": 8.276,
+              "rss": 54575104,
+              "heap": 6669490,
+              "rssDelta": 1847296,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 141.068417,
+                "hits": "20192",
+                "reads": "27195",
+                "tempread": "6873",
+                "tempwritten": "6888"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 141.11041699999998,
+              "cpuMs": 2.687,
+              "rss": 54018048,
+              "heap": 6669490,
+              "rssDelta": -688128,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 137.483876,
+                "hits": "13106",
+                "reads": "34281",
+                "tempread": "6872",
+                "tempwritten": "6888"
+              },
+              "equivalent": true
+            },
+            {
+              "elapsedMs": 166.122791,
+              "cpuMs": 2.709,
+              "rss": 53575680,
+              "heap": 6669490,
+              "rssDelta": -442368,
+              "stats": {
+                "calls": 3,
+                "nestedcalls": null,
+                "rows": "47",
+                "execms": 162.60312399999998,
+                "hits": "18577",
+                "reads": "40231",
+                "tempread": "6874",
+                "tempwritten": "6889"
+              },
+              "equivalent": true
+            }
+          ],
+          "status": "passed",
+          "warmHash": "6840d64aae0d15b63f1fea5819083e28696a560899f9b808b9c40a20cb06c1f4",
+          "count": 23,
+          "total": null,
+          "bytes": 15778,
+          "medianMs": 147.68416699999995,
+          "minMs": 141.11041699999998,
+          "maxMs": 166.122791
+        }
+      }
+    ],
+    "remaining": "A future replacement must win whole coordinated read/write/index/claim/cleanup measurements before adoption."
+  },
+  "gates": {
+    "hostSupplementary": {
+      "unit": {
+        "passed": 983,
+        "skipped": 729,
+        "failed": 0,
+        "assertions": 35308,
+        "files": 315
+      },
+      "check": "0 errors / 0 warnings",
+      "build": "passed",
+      "codeInventory": "591 production modules; no unused modules",
+      "uiInventory": "65 components / 28 explicit compositions / 10 internal renderers / 9 delegated routes",
+      "sourceStyle": "56 adopted modules checked"
+    },
+    "shippingRuntimeDatabase": {
+      "passed": 55,
+      "failed": 0,
+      "suites": [
+        "collection-db.test.ts",
+        "domain-db.test.ts",
+        "jellyfin-finalization-db.test.ts",
+        "jellyfin-reconciliation-db.test.ts",
+        "jellyfin-recovery-db.test.ts"
+      ],
+      "boundary": "Supplementary authored isolated PostgreSQL fixtures; runner creates/drops its own databases, distinct from actual-data performance."
+    },
+    "companion": {
+      "build": "passed, 0 warnings / 0 errors",
+      "cropChecks": 24,
+      "journalChecks": 11,
+      "boundary": "Controlled child-process regression fixtures; actual media evidence recorded separately."
+    },
+    "shippingRuntimeFocused": {
+      "passed": 33,
+      "failed": 0,
+      "assertions": 358,
+      "files": 7,
+      "boundary": "Pinned 6bb5dc195 runtime; same isolated source and actual-data acceptance epoch. Unit fixtures remain supplementary."
+    }
+  },
+  "failedAttemptsRetained": [
+    {
+      "area": "task candidate",
+      "result": "One initial epoch mismatch excluded; two matched blocks rejected the candidate."
+    },
+    {
+      "area": "native controls",
+      "result": "Initial insufficient natural cohort stopped rather than substituting fixtures; explicit controlled Watch commands later used on existing real movies."
+    },
+    {
+      "area": "whole resume guard",
+      "result": "Initial approved-origin/DNS Host guard setup refused before remote access; corrected to actual instance transport with DNS addresses and original Host checks."
+    },
+    {
+      "area": "maintained receipt serialization",
+      "result": "Pinned Bun rejected raw ArrayBuffer hashing after checks. Changed to Uint8Array bytes, recreated marked copy from source and reran both final scripts successfully."
+    },
+    {
+      "area": "local tooling",
+      "result": "Initial host PATH and browser-page guards refused; corrected setup before final checks."
+    },
+    {
+      "area": "isolated focused gate inputs",
+      "result": "Owner-hash guard detected missing bun.lock in the copied test harness. Supplied unchanged repository lockfile and reran all 33 checks successfully; not a product failure."
+    }
+  ],
+  "cleanup": {
+    "ownedCommentVerified": true,
+    "activeClientsBeforeDrop": 0,
+    "ownedCopyDropped": true,
+    "remainingFollowupDatabases": 0,
+    "originalVolumesModified": false,
+    "status": "completed",
+    "auditAppStopped": true,
+    "proxyStopped": true,
+    "postgresStoppedGracefully": true,
+    "auditContainerDeleted": true,
+    "browserSessionClosed": true,
+    "privatePlaintextRequestAndSessionFilesRemoved": true,
+    "unrelatedUserEditsSha256": {
+      "src/lib/ui/components/Avatar.svelte": "1c163afb7867caf5aeb08d8a5a854624a3cc1303a35c04c9d805ea7e5217e878",
+      "src/routes/ui-preview/prop-manifest.json": "ab31ca9f1c8f63bb1689d6e44fa09053a12f3197d12caa5efbe25786ff077c6c"
+    }
+  },
+  "remainingAcceptance": "See register.json: nine FUP streams and 19 historical items retain their precise missing cases. No unsupported empty cohort, rejected design alternative or fixture is promoted to broad acceptance.",
+  "expandedAudit": {
+    "report": "completion/README.md",
+    "coverage": "completion/coverage.json",
+    "source": "completion/source-pins.json",
+    "evidence": "completion/evidence-files.json",
+    "note": "Native acceptance fingerprint above remains the original measured epoch. Final files include later UI-only guard/reset and explicit completion documentation; actual browser regressions repeated on rebuilt final source.",
+    "finalChecks": "completion/final-checks.json"
+  },
+  "approvedStopImplementation": {
+    "report": "completion/stop-save/README.md",
+    "actualBrowser": "completion/stop-save/browser-stop-accepted.json",
+    "nativeFinalState": "completion/stop-save/stop-native.json",
+    "note": "Separate final Stop/source epoch. Earlier query and resource measurements remain unchanged and are not relabelled.",
+    "verification": "completion/stop-save/verification.json"
+  },
+  "continuationMetadataEpochs": [
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/README.md",
+          "previousSha256": "38fc9debb6f4f5f4d76d92ebb575ffaad0dff649d898b613d47a4feb7916f3a8",
+          "currentSha256": "4873b5eee083018cbcb7f1ea38963499236c52b5cce9571a5c851befa10f85ae"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/register.json",
+          "previousSha256": "a2c2e3dd52c94879f56d60fe8745536a7a784e9bb066f968e170c52216392d54",
+          "currentSha256": "5becd0a55ba3dfb18bd9def01375f1bb791b69896611b56d2f75f00f3ec30ec9"
+        },
+        {
+          "path": "docs/performance.md",
+          "previousSha256": "da41d2d4022a0f7ab80b799dad0cebfedb5d9eb1bb7ae7ac277228bb13c2202f",
+          "currentSha256": "6a0c1134a4192db85a09721dd3720536dca0463996ba958db14718c324e766f1"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/coverage.json",
+          "previousSha256": "6fef40a8953711decd1ba36106531b79b492fe65eb5fe7a95f2e75b1fa908666",
+          "currentSha256": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/README.md",
+          "previousSha256": "444318d5492280c7456effcc85029e1c89dd4ed98cb0ae2b7199ab7e1611a260",
+          "currentSha256": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "86be9f3fda604e902ddc54eabe09086c307cd854d0c5b696c1972bf52e21d27e",
+          "currentSha256": "b4c4ed78013c427806ce2ac81af506faaabf3d6b22934536167c043d2d90ec23"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "83b3d0ecb32b47e10efcc91eb94304be32014142325ee9033c7ffa6285bd0d20",
+          "currentSha256": "9ac7f00459ab0013eb84423edecbc2bed28b16a8157f2611d721855786259f8c"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/register.json",
+          "previousSha256": "5becd0a55ba3dfb18bd9def01375f1bb791b69896611b56d2f75f00f3ec30ec9",
+          "currentSha256": "3ebe15294d8997dad15c41a69e30fa0ba7af512dc27bfb532ba882ba3c0a569c"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "9ac7f00459ab0013eb84423edecbc2bed28b16a8157f2611d721855786259f8c",
+          "currentSha256": "6a87a847ab4fdeee20ba45bb6791220e028ac88ec344abc1e3d0b731e58fe906"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "6a87a847ab4fdeee20ba45bb6791220e028ac88ec344abc1e3d0b731e58fe906",
+          "currentSha256": "7d4fbb11be63fe96ec6a62fb64cb832b2c94547a20bc32eac4080d86bacdcebd"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "7d4fbb11be63fe96ec6a62fb64cb832b2c94547a20bc32eac4080d86bacdcebd",
+          "currentSha256": "83b68d626c775e1c4b679cb3dbd868dbd11991cdf12bad24fe590ace50e9c277"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "83b68d626c775e1c4b679cb3dbd868dbd11991cdf12bad24fe590ace50e9c277",
+          "currentSha256": "bc221c39ad2006b7709854e793008e1722624624219041a4a7146420cbcaed16"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "b4c4ed78013c427806ce2ac81af506faaabf3d6b22934536167c043d2d90ec23",
+          "currentSha256": "f4a01adcf8c389e856ba9aec5a3d0b80206337e3cebd9f19aec8e15a14cb3bf5"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "bc221c39ad2006b7709854e793008e1722624624219041a4a7146420cbcaed16",
+          "currentSha256": "e3af67f3c1362157801f40c7aa1e058bc2af4a4e313bf30b9c285e8dd259c950"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "e3af67f3c1362157801f40c7aa1e058bc2af4a4e313bf30b9c285e8dd259c950",
+          "currentSha256": "15c5987cf81138b0b3c4a2f71ce5e001cbafee7f4ae1591a83fa5b2340a3c89f"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "f4a01adcf8c389e856ba9aec5a3d0b80206337e3cebd9f19aec8e15a14cb3bf5",
+          "currentSha256": "60a65884bc1a8a13b9835e77a4137968b638d919b3529a66733fc8deca740785"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "15c5987cf81138b0b3c4a2f71ce5e001cbafee7f4ae1591a83fa5b2340a3c89f",
+          "currentSha256": "0551a3f4e23acb19c6b3099c32438a4725f6e3f96cfc9a285f0a667f2369d702"
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "previousSha256": "345cd2f7dc594d9824208e7e2a56cd55eade13c83c425e06528ca6fea9055925",
+          "currentSha256": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "60a65884bc1a8a13b9835e77a4137968b638d919b3529a66733fc8deca740785",
+          "currentSha256": "ec29a718ceabfe9728c4e94b3dbb6af968410d71f58fd1b4f53df5d6e9f961a7"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "0551a3f4e23acb19c6b3099c32438a4725f6e3f96cfc9a285f0a667f2369d702",
+          "currentSha256": "b85a4db66573e22d5042f88ff47df620cdf6743295f712ccf5f5c103d56cc217"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "b85a4db66573e22d5042f88ff47df620cdf6743295f712ccf5f5c103d56cc217",
+          "currentSha256": "324d65e2f0ec42c467dc209709cc4cbaf16d0d82a277be1b0448fafbb4cf54f5"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "324d65e2f0ec42c467dc209709cc4cbaf16d0d82a277be1b0448fafbb4cf54f5",
+          "currentSha256": "f26c1889a653bbd50f2429cf10b0563f9a87e35d8bf4a16c2ddb86e12628d122"
+        }
+      ],
+      "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
+      "report": "completion/independent/README.md"
+    }
+  ],
+  "deliveryHousekeeping": {
+    "sourceChanges": [
+      "Roadmap-only handoff and explicit blocked IDs; historical area evidence retained.",
+      "PersistentPlayer report closure indentation only; Stop/save semantics unchanged.",
+      "User explicitly requested inclusion of existing Avatar/preview-manifest edits."
+    ]
+  }
+}

@@ -59,3 +59,11 @@ run('personal Presence opt-out stops upstream observation and fences a response 
   expect(calls).toBe(1);
  }finally{await db`update users set settings='{}'::jsonb where id=${user}`;}
 });
+
+run('missing, disconnected and foreign connections return unavailable without a service-outage response',async()=>{
+ await expect(connectionFor(crypto.randomUUID(),connection,'jellyfin')).rejects.toMatchObject({status:404,code:'not_found'});
+ await expect(connectionFor(user,crypto.randomUUID(),'jellyfin')).rejects.toMatchObject({status:404,code:'not_found'});
+ const db=getSql();await db`update provider_connections set status='disconnected' where id=${connection}`;
+ try{await expect(connectionFor(user,connection,'jellyfin')).rejects.toMatchObject({status:404,code:'not_found'});}
+ finally{await db`update provider_connections set status='connected' where id=${connection}`;}
+});

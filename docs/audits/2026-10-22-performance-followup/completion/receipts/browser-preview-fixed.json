@@ -1,0 +1,23 @@
+{
+  "scope": "Actual encoded page copied from retained real CBZ; existing UI image admission, three create/remove cycles; no synthetic bitmap and no decoded/GPU peak claim",
+  "samples": [
+    {
+      "width": 3053,
+      "height": 4320
+    },
+    {
+      "width": 3053,
+      "height": 4320
+    },
+    {
+      "width": 3053,
+      "height": 4320
+    }
+  ],
+  "lifetimes": {
+    "created": 3,
+    "revoked": 3,
+    "active": 0
+  },
+  "noFrameworkOverlay": true
+}

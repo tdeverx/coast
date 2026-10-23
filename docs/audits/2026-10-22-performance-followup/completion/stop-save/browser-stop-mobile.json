@@ -1,0 +1,10 @@
+{
+  "toastAboveNavigation": true,
+  "scope": "Headless Chromium 390x844 with real copied track/stream. Layout and visible player teardown only; not physical-device/audio-policy acceptance.",
+  "status": "passed",
+  "closeHidden": true,
+  "notice": "Saving playback progress\u2026",
+  "pendingDismissDisabled": true,
+  "overflow": false,
+  "frameworkOverlay": 0
+}

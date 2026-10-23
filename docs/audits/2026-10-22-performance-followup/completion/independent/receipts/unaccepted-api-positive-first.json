@@ -1,0 +1,82 @@
+{
+  "scope": "Additional historical API families on final production build with actual stored source/media/artist identities and genuine GETs. Metadata enhancement/credits may import genuine metadata only on the copy. Permission/unsupported/empty results remain separately labelled.",
+  "cases": [
+    {
+      "name": "invite-libraries",
+      "error": "TypeError"
+    },
+    {
+      "name": "experiments-feed",
+      "error": "TypeError"
+    },
+    {
+      "name": "experiments-row",
+      "error": "TypeError"
+    },
+    {
+      "name": "experiments-recommendations",
+      "error": "TypeError"
+    },
+    {
+      "name": "avatar-provider-image",
+      "error": "TypeError"
+    },
+    {
+      "name": "discover-watch",
+      "error": "TypeError"
+    },
+    {
+      "name": "discover-play",
+      "error": "TypeError"
+    },
+    {
+      "name": "discover-read",
+      "error": "TypeError"
+    },
+    {
+      "name": "media-screen-enhance",
+      "error": "TypeError"
+    },
+    {
+      "name": "media-trailer",
+      "error": "TypeError"
+    },
+    {
+      "name": "artwork-fallback",
+      "error": "TypeError"
+    },
+    {
+      "name": "steam-callback-malformed",
+      "error": "TypeError"
+    },
+    {
+      "name": "music-children-provider",
+      "error": "TypeError"
+    },
+    {
+      "name": "person-credits",
+      "error": "TypeError"
+    }
+  ],
+  "gaps": [
+    "No actor-owned natural game playthrough",
+    "Enabled IGDB present; provider metadata/OAuth POST reads need a separate explicit read-transport scope, not GET-only evidence"
+  ],
+  "failures": [
+    "invite-libraries",
+    "experiments-feed",
+    "experiments-row",
+    "experiments-recommendations",
+    "avatar-provider-image",
+    "discover-watch",
+    "discover-play",
+    "discover-read",
+    "media-screen-enhance",
+    "media-trailer",
+    "artwork-fallback",
+    "steam-callback-malformed",
+    "music-children-provider",
+    "person-credits"
+  ],
+  "status": "findings"
+}

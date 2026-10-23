@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
     const initial = {items:items.slice(0,100),providerUnavailable:false,truncated:items.length>100};
     const empty = {items:[],discover:[],failure:'',truncated:false};
     const publicRow = (row: SearchRowSelection) => ({ kind: row.kind === 'movie' || row.kind === 'show' ? row.kind : 'all' as const, view: 'watch' as const });
-    return {query,kind:kind==='movie'||kind==='show'?kind:'all',view:'watch',rows:{available:publicRow(selection.rows.available),unavailable:publicRow(selection.rows.unavailable)},filtered:selection.filtered,demand:{watch:true,listen:false,play:false,read:false},initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readingFilters};
+    return {query,kind:kind==='movie'||kind==='show'?kind:'all',view:'watch',rows:{available:publicRow(selection.rows.available),unavailable:publicRow(selection.rows.unavailable)},filtered:selection.filtered,demand:{watch:true,listen:false,play:false,read:false},initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readComplete:Promise.resolve(readingEmpty),readingFilters};
   }
 
   for (const row of Object.values(selection.rows)) {
@@ -51,6 +51,13 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
     truncated: items.length > 100,
   };
   const empty = { items: [], discover: [], failure: '', truncated: false };
+  const read = query && demand.read && !signal?.aborted
+    ? readingSearch(locals.user.id, readingInput, readingInitial, 'primary', signal).catch(() => ({ ...readingInitial, failure: signal?.aborted ? '' : 'Reading search could not be loaded. Please try again.' }))
+    : Promise.resolve(readingEmpty);
+  // Reuse the primary provider page; only series enrichment remains outstanding.
+  const readComplete = query && demand.read && config.experimentalComics && readingInput.kind !== 'book'
+    ? read.then(primary => signal?.aborted ? primary : readingSearch(locals.user!.id, readingInput, readingInitial, 'complete', signal).catch(() => primary))
+    : read;
   return {
     query,
     view: selectedView,
@@ -82,9 +89,7 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
             failure: signal?.aborted ? '' : 'Game search could not be loaded. Please try again.',
           }))
         : Promise.resolve(empty),
-    read:
-      query && demand.read && !signal?.aborted
-        ? readingSearch(locals.user.id, readingInput, readingInitial).catch(() => ({ ...readingInitial, failure: signal?.aborted ? '' : 'Reading search could not be loaded. Please try again.' }))
-        : Promise.resolve(readingEmpty),
+    read,
+    readComplete,
   };
 };

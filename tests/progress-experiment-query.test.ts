@@ -41,6 +41,7 @@ const resolve:Record<string,string>={
   '#lib/progress.js':import.meta.resolve('../src/lib/progress'),
   '#lib/page-window.js':import.meta.resolve('../src/lib/page-window'),
   '../db/schema':import.meta.resolve('../src/lib/server/db/schema'),
+  '../db/read-cancellation':import.meta.resolve('../src/lib/server/db/read-cancellation'),
   '../experimental':import.meta.resolve('../src/lib/server/experimental'),
   './media':import.meta.resolve('../src/lib/server/queries/media'),
   './viewing-recency':import.meta.resolve('../src/lib/server/queries/viewing-recency'),

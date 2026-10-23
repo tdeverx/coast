@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-23",
+  "scope": "Combined user-authorized delivery: audit fixes, roadmap and housekeeping, plus existing Avatar border option and generated preview manifest. External blocked work remains unexecuted. Historical real-data receipts retain their original source/runtime epochs.",
+  "localGates": {
+    "appSuite": {
+      "pass": 1016,
+      "skip": 731,
+      "fail": 0
+    },
+    "typeCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "productionBuild": "passed",
+    "codeInventory": "passed",
+    "uiInventory": "passed",
+    "sourceStyle": "passed",
+    "companionBuild": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "companionTests": {
+      "journal": 11,
+      "crop": 24,
+      "scope": "Controlled regression fixtures; actual media/process evidence is separate."
+    }
+  },
+  "localLogPins": {
+    "delivery-tests.log": "ca48185d112c7f6efe93a3076fe59c415342889f8e50345a195b8ef21104e8aa",
+    "delivery-check-final.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "delivery-build.log": "cb9f4d85b271d33d75f3ba921d8f5083842cd254dbde2df1bcbd24d4c221ff38",
+    "delivery-code-inventory.log": "7fdc7b1aa2f6983ccaf484ed8046e33ce4fe9bcafaa42d02f06697edaaec2bc8",
+    "delivery-ui-inventory.log": "7acc131f6f29eb1738fd7b4d6a3db0754a7c285d3d6b8763029b99295029775a",
+    "delivery-style.log": "68d1680d97c7583285bba628877527f55e8382f7f101c5bb22007029ebc014bd",
+    "delivery-focused.log": "07931acff3af58c9f5c78152114bf123623e4ce12ea609acbed1102b07a9d29e",
+    "plugin-delivery-build.log": "fe8d4741535e6e234c8b139b69f9881900f4078213a03e74faa36b339c1face8",
+    "plugin-delivery-tests.log": "b5044b00cd2170c0f4851c0eafb6645e41bda91dc211c9d8109b9972d18d4451"
+  },
+  "codeTidy": "Report-closure indentation only; existing playback ownership semantics preserved.",
+  "remoteGate": "Merge only the exact reviewed PR head after all required GitHub checks pass; remote results are recorded on the PR.",
+  "blockedCases": "blockers.json",
+  "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026"
+}

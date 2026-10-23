@@ -1,0 +1,524 @@
+{
+  "boundary": "Actual retained users, provider accounts, games and genuine connected music responses; bounded GET-only approved transport; access observations commit only to marked copy; controlled stale-generation/abort probes labelled.",
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "accounts": [
+    {
+      "userHash": "eb0be839be5018503855d95c61adc7469035e46d99964a96d1530de693770cbc",
+      "connectionHash": "bcc9e955379d07a331cc07fd2e45a4e5c8af56a7d1406edf8c517ebc27bfa25f",
+      "kinds": [
+        {
+          "kind": "album",
+          "pages": [
+            {
+              "page": 1,
+              "items": 50,
+              "total": 162,
+              "identityHash": "e11a96393c2f276d82692b13fcc88085d681a470e1409c00a1edab86dd77bc76"
+            },
+            {
+              "page": 2,
+              "items": 50,
+              "total": 162,
+              "identityHash": "c22ffc37c994be5c68cf8202aedda247adf931e92a9afb25c57d0edaf736c6b6"
+            },
+            {
+              "page": 4,
+              "items": 12,
+              "total": 162,
+              "identityHash": "b2080c196d4268bfe2c39966354a36817a32cd475236cb9e96c340dbe8c333f1"
+            }
+          ],
+          "ms": 1920.529709
+        },
+        {
+          "kind": "track",
+          "pages": [
+            {
+              "page": 1,
+              "items": 50,
+              "total": 797,
+              "identityHash": "cadff667cc4ed2c0a22b06dcc498f22fb7869dbce1c943a12699c76ce9e1a851"
+            },
+            {
+              "page": 8,
+              "items": 50,
+              "total": 797,
+              "identityHash": "59bd295291146126057417a7a52c4f69844cf0e5b23dcc124a5c9a58f3951bb3"
+            },
+            {
+              "page": 16,
+              "items": 47,
+              "total": 797,
+              "identityHash": "37a591e5ea567fb521a98ac9f560c88a3cf102795a16ab1863cad220a2ad15ff"
+            }
+          ],
+          "ms": 505.83370899999954
+        },
+        {
+          "kind": "artist",
+          "pages": [
+            {
+              "page": 1,
+              "items": 26,
+              "total": 26,
+              "identityHash": "c3ecf7c935cd8a57aeffa3429a6298931a77274a89863ba4a1c73c0a3b5d8539"
+            }
+          ],
+          "ms": 103.40458300000046
+        }
+      ],
+      "genuineBookProbe": {
+        "status": 200,
+        "total": 51,
+        "returned": 1,
+        "formats": [
+          "cbr"
+        ]
+      }
+    },
+    {
+      "userHash": "00e645ad20d5a590a8c3243c8141b84cbe88008124aac08a2b739c4a84eb7319",
+      "connectionHash": "15951f5215d13327e543813e1cd6c45abfe5db818b019bbc6c38dae1574be7ab",
+      "kinds": [
+        {
+          "kind": "album",
+          "pages": [
+            {
+              "page": 1,
+              "items": 0,
+              "total": 0,
+              "identityHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ],
+          "ms": 31.454625000000306
+        },
+        {
+          "kind": "track",
+          "pages": [
+            {
+              "page": 1,
+              "items": 0,
+              "total": 0,
+              "identityHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ],
+          "ms": 31.859292000000096
+        },
+        {
+          "kind": "artist",
+          "pages": [
+            {
+              "page": 1,
+              "items": 0,
+              "total": 0,
+              "identityHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ],
+          "ms": 57.768833000000086
+        }
+      ],
+      "genuineBookProbe": {
+        "status": 200,
+        "total": 51,
+        "returned": 1,
+        "formats": [
+          "cbr"
+        ]
+      }
+    },
+    {
+      "userHash": "1d07d4afbbd82ea5fe2779d1d783bbb4286265bb1b8a922b8ecc126b3f1a9bfb",
+      "connectionHash": "966903135e187b26962841dd1fc13ca9f82c46899d19d13539f7b9f2356abe72",
+      "kinds": [
+        {
+          "kind": "album",
+          "pages": [
+            {
+              "page": 1,
+              "items": 50,
+              "total": 162,
+              "identityHash": "e11a96393c2f276d82692b13fcc88085d681a470e1409c00a1edab86dd77bc76"
+            },
+            {
+              "page": 2,
+              "items": 50,
+              "total": 162,
+              "identityHash": "c22ffc37c994be5c68cf8202aedda247adf931e92a9afb25c57d0edaf736c6b6"
+            },
+            {
+              "page": 4,
+              "items": 12,
+              "total": 162,
+              "identityHash": "b2080c196d4268bfe2c39966354a36817a32cd475236cb9e96c340dbe8c333f1"
+            }
+          ],
+          "ms": 532.7203749999999
+        },
+        {
+          "kind": "track",
+          "pages": [
+            {
+              "page": 1,
+              "items": 50,
+              "total": 797,
+              "identityHash": "cadff667cc4ed2c0a22b06dcc498f22fb7869dbce1c943a12699c76ce9e1a851"
+            },
+            {
+              "page": 8,
+              "items": 50,
+              "total": 797,
+              "identityHash": "59bd295291146126057417a7a52c4f69844cf0e5b23dcc124a5c9a58f3951bb3"
+            },
+            {
+              "page": 16,
+              "items": 47,
+              "total": 797,
+              "identityHash": "37a591e5ea567fb521a98ac9f560c88a3cf102795a16ab1863cad220a2ad15ff"
+            }
+          ],
+          "ms": 438.4970830000002
+        },
+        {
+          "kind": "artist",
+          "pages": [
+            {
+              "page": 1,
+              "items": 26,
+              "total": 26,
+              "identityHash": "c3ecf7c935cd8a57aeffa3429a6298931a77274a89863ba4a1c73c0a3b5d8539"
+            }
+          ],
+          "ms": 63.76645800000006
+        }
+      ],
+      "genuineBookProbe": {
+        "status": 200,
+        "total": 51,
+        "returned": 1,
+        "formats": [
+          "cbr"
+        ]
+      }
+    }
+  ],
+  "games": [
+    {
+      "userHash": "1d07d4afbbd82ea5fe2779d1d783bbb4286265bb1b8a922b8ecc126b3f1a9bfb",
+      "ownedTotal": 0,
+      "returnedTotal": 0,
+      "cards": 0,
+      "ms": 31.095041999999978
+    },
+    {
+      "userHash": "99c1e895577737e29281faae7580e6910a49e8cede295e9d4e057149f437de54",
+      "ownedTotal": 1145,
+      "returnedTotal": 1145,
+      "cards": 60,
+      "ms": 37.550749999999994,
+      "recent": {
+        "cards": 20,
+        "total": 1145
+      }
+    },
+    {
+      "userHash": "eb0be839be5018503855d95c61adc7469035e46d99964a96d1530de693770cbc",
+      "ownedTotal": 0,
+      "returnedTotal": 0,
+      "cards": 0,
+      "ms": 3.180082999999968
+    },
+    {
+      "userHash": "b1cedc72fb5ee9b0b043203a3a0c421d31d6f4c13d881a8004214052b86e8886",
+      "ownedTotal": 0,
+      "returnedTotal": 0,
+      "cards": 0,
+      "ms": 2.160250000000019
+    },
+    {
+      "userHash": "00e645ad20d5a590a8c3243c8141b84cbe88008124aac08a2b739c4a84eb7319",
+      "ownedTotal": 0,
+      "returnedTotal": 0,
+      "cards": 0,
+      "ms": 2.4567499999999995
+    },
+    {
+      "userHash": "c6426e6415e043fd8574ebd76f39b6790b6311e16462ccf67af1fedbde362b02",
+      "ownedTotal": 0,
+      "returnedTotal": 0,
+      "cards": 0,
+      "ms": 3.0487919999999917
+    }
+  ],
+  "checks": [
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "positive-owned-game-cohort",
+      "passed": true
+    },
+    {
+      "name": "owned-games-retained-range-exact-DTOs",
+      "passed": true
+    },
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "game-access-total-matches-independent-source-grants",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-listen-range-exact-complete-DTOs",
+      "passed": true
+    },
+    {
+      "name": "stale-generation-rejects-access-publication",
+      "passed": true
+    },
+    {
+      "name": "pre-aborted-genuine-source-read-stops",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-listen-range-exact-complete-DTOs",
+      "passed": true
+    },
+    {
+      "name": "stale-generation-rejects-access-publication",
+      "passed": true
+    },
+    {
+      "name": "pre-aborted-genuine-source-read-stops",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-exact-identities",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-music-page-total",
+      "passed": true
+    },
+    {
+      "name": "genuine-provider-final-page-bound",
+      "passed": true
+    }
+  ],
+  "gaps": [
+    "No genuine same-user multiple-Jellyfin-source cohort; cross-user source comparisons do not prove unequal-source aggregation."
+  ],
+  "failures": [],
+  "naturalCohorts": {
+    "playlists": 0,
+    "pending_recommendations": 0,
+    "trakt": 0
+  },
+  "status": "passed"
+}

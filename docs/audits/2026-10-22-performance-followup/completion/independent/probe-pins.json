@@ -1,0 +1,205 @@
+{
+  "scope": "Frozen source transcripts, placeholders are not directly executable. Follow reproduction guard and private original-data setup.",
+  "files": [
+    {
+      "file": "api-positive.ts.txt",
+      "originalSha256": "29819fb6f87a7dd1681807cdfa69f87302b60a828c11fac3783dd0f3d4369947",
+      "transcriptSha256": "29819fb6f87a7dd1681807cdfa69f87302b60a828c11fac3783dd0f3d4369947"
+    },
+    {
+      "file": "api-variants.ts.txt",
+      "originalSha256": "9733c3407fae446331cc42887fa3f47559b854cca0e6cb536c6b295baa98ce62",
+      "transcriptSha256": "9733c3407fae446331cc42887fa3f47559b854cca0e6cb536c6b295baa98ce62"
+    },
+    {
+      "file": "binary.ts.txt",
+      "originalSha256": "f1c94b840d085caf371ee4ba5b7b19064aa35366c86217c56510d226b764bf1d",
+      "transcriptSha256": "247f7548dc51e3929e328b0054cdeb8e909d564c6dce3f6972146983d54b5513"
+    },
+    {
+      "file": "browser-engines.mjs.txt",
+      "originalSha256": "76377e0dc4d7fc0baa7d36f056b5951af8403346af8e73d1e5983986aeb81cb7",
+      "transcriptSha256": "6c31eef83f6ec5abd89734e38e04e3d834891d24c73b35ed81322800d2545030"
+    },
+    {
+      "file": "browser-play-metadata.mjs.txt",
+      "originalSha256": "2e05e95280a5ace43091f0c31b26e2721a667350d77ae39aafd6a3abcce9af0e",
+      "transcriptSha256": "bef451bc42201e1a8cf3499c40fbeeeed929665d266e64c75d8e3a32166fd9a9"
+    },
+    {
+      "file": "browser-readers.mjs.txt",
+      "originalSha256": "57a36bb06db2eda111d3c5e97ba86759bafcdca76579432a9b3022e55cc74962",
+      "transcriptSha256": "6f5918954a7f3660a0c8e0076baa13ec53e02b7fc3b4e7649e6f114b820732b1"
+    },
+    {
+      "file": "browser-search.mjs.txt",
+      "originalSha256": "8cb4c546e2e5c404be5349006f75c21218917e62194e42dae9618b8a6f667d32",
+      "transcriptSha256": "11c89bdff19aee53ba22ac57a5e1be27cc8f1d357b249e4b2446cfe92eed2aa4"
+    },
+    {
+      "file": "browser-soak-successful.mjs.txt",
+      "originalSha256": "ab61443472045384321051aa4c0961c269823cc998223054b9832bc2772e4a96",
+      "transcriptSha256": "ba08e8678ad61e5f353d748ecd54c4c05ab97fe45071559e657d4a78162230eb"
+    },
+    {
+      "file": "browser-soak.mjs.txt",
+      "originalSha256": "137de00fa857d08dc8048006de04f45ee9a73903cef0b367768dfbf62a962cf8",
+      "transcriptSha256": "7b394dea8be8f90ccba602f4404b9a320bc5517d5b368a44a678757e5a4d7df3"
+    },
+    {
+      "file": "classify-transport.ts.txt",
+      "originalSha256": "5cf3713317cd995663f538faea9b6ab5ce06a1125fd453b5c1c09025165a8a42",
+      "transcriptSha256": "5cf3713317cd995663f538faea9b6ab5ce06a1125fd453b5c1c09025165a8a42"
+    },
+    {
+      "file": "cleanup.ts.txt",
+      "originalSha256": "028aa96cc3a364db94e7febf2eac8410acd6098cf692e9d91dcec3d769796909",
+      "transcriptSha256": "028aa96cc3a364db94e7febf2eac8410acd6098cf692e9d91dcec3d769796909"
+    },
+    {
+      "file": "cohort-readonly.ts.txt",
+      "originalSha256": "444a18950802e4db673d4b83c29134de2c6d578f677b4cf26abb2b0823957634",
+      "transcriptSha256": "444a18950802e4db673d4b83c29134de2c6d578f677b4cf26abb2b0823957634"
+    },
+    {
+      "file": "crop-hang-CropHang.csproj.txt",
+      "originalSha256": "37e076bbcbda3fa5add6427b3332874ede78026dd403f92c78112f874a31e316",
+      "transcriptSha256": "e14c7e1c785ffc2d575c311599d7771fd73d2f14f236aa6d7fd6630c346c84d1"
+    },
+    {
+      "file": "crop-hang-Program.cs.txt",
+      "originalSha256": "ee923f0e40b915ddd79cb0d92da5f8c385f3ea1d43bcdfe2a5c5a1ea652ef248",
+      "transcriptSha256": "dd94202917e631832d86805db45b8983e4ccb654290685952494da7f255bbc59"
+    },
+    {
+      "file": "crop-proxy.ts.txt",
+      "originalSha256": "d2f0f5444dee82352a944ca55d37ffeb9bd2fcce51c72b00b14ef0139d3baddc",
+      "transcriptSha256": "3f971eef0bf73e42bbd65eaf4a5e6d5e2980eef43c312d6729495fd400a5a9b9"
+    },
+    {
+      "file": "crop-source.ts.txt",
+      "originalSha256": "8607fd5a9106d0bce041632e5ef24fb3af638f4e057c3de50253af36cb2c1b71",
+      "transcriptSha256": "8607fd5a9106d0bce041632e5ef24fb3af638f4e057c3de50253af36cb2c1b71"
+    },
+    {
+      "file": "db-tests.ts.txt",
+      "originalSha256": "26bb28badfefcc8c1f7c52e46cdcd34325fdc7bcf4cad46bbdf46ff510e9ee08",
+      "transcriptSha256": "26bb28badfefcc8c1f7c52e46cdcd34325fdc7bcf4cad46bbdf46ff510e9ee08"
+    },
+    {
+      "file": "epub-native.ts.txt",
+      "originalSha256": "2443eded6fd2291c29981ab931fdd0547547fb0896ec3f4157b261a44c1efca4",
+      "transcriptSha256": "e2f916ce394f724295e9699ca74f9d6b95eff3f1f67f3385a420cd53fca84713"
+    },
+    {
+      "file": "final-read-transport.ts.txt",
+      "originalSha256": "6c53caf532ebe5ec5c7f93c64a5d53cf03b6e07aa3e13fda911a4ad1128fdf6a",
+      "transcriptSha256": "6c53caf532ebe5ec5c7f93c64a5d53cf03b6e07aa3e13fda911a4ad1128fdf6a"
+    },
+    {
+      "file": "heartbeat.ts.txt",
+      "originalSha256": "6380a2d9f968cd81e96a76bb42e7a03598a8643c2235b56f92f94eddf1f8b00c",
+      "transcriptSha256": "6380a2d9f968cd81e96a76bb42e7a03598a8643c2235b56f92f94eddf1f8b00c"
+    },
+    {
+      "file": "history.ts.txt",
+      "originalSha256": "25b1f40976121a63817417af2ba9c0d8b32c0b36df17ade4e00470903cb59b35",
+      "transcriptSha256": "3ccd89fc073f292e1625411ef1adaa8ab908247cf32072e3b288f58fee09e063"
+    },
+    {
+      "file": "igdb-http.ts.txt",
+      "originalSha256": "ffee1dc4ebc9e3bca22921e9f3896e768aaf2e0e539cf673dd883575093a12c0",
+      "transcriptSha256": "ffee1dc4ebc9e3bca22921e9f3896e768aaf2e0e539cf673dd883575093a12c0"
+    },
+    {
+      "file": "igdb-popularity.ts.txt",
+      "originalSha256": "87f5564f5e554a6e91eef2228a0979526c4fc52129d99bfcc9fc7706f1f97988",
+      "transcriptSha256": "87f5564f5e554a6e91eef2228a0979526c4fc52129d99bfcc9fc7706f1f97988"
+    },
+    {
+      "file": "membership-comparison.ts.txt",
+      "originalSha256": "66c5d2eaedf8f053d94b2ff1b175b29198ba3a4898e393a13862c116953bb60b",
+      "transcriptSha256": "66c5d2eaedf8f053d94b2ff1b175b29198ba3a4898e393a13862c116953bb60b"
+    },
+    {
+      "file": "metadata-refresh.ts.txt",
+      "originalSha256": "3c53bdcf30a487e441ccb2b724bde1c23683833659c7dbbfbba6bb639a2c797b",
+      "transcriptSha256": "d4de6446877c819ba59efff79a66dbd26586628da6aad9ad66ffd1be624dee9b"
+    },
+    {
+      "file": "monitor.ts.txt",
+      "originalSha256": "5f753139cff6108437ffb2207d4a427f7735ae1b6015a39b9d646499b7a0a9bf",
+      "transcriptSha256": "5f753139cff6108437ffb2207d4a427f7735ae1b6015a39b9d646499b7a0a9bf"
+    },
+    {
+      "file": "openlibrary.ts.txt",
+      "originalSha256": "8715a972abd702a692614ad52f44cdbf39167e13986bcf25073078a730477b6c",
+      "transcriptSha256": "8715a972abd702a692614ad52f44cdbf39167e13986bcf25073078a730477b6c"
+    },
+    {
+      "file": "privacy-expanded.ts.txt",
+      "originalSha256": "565f1575575a460635144daf9414ac89fe6c6112b5e6965401020c3426cd0afd",
+      "transcriptSha256": "565f1575575a460635144daf9414ac89fe6c6112b5e6965401020c3426cd0afd"
+    },
+    {
+      "file": "provider-comparison.ts.txt",
+      "originalSha256": "c61b5e483ee2a929e63a64d4b7a87a1ccade840c8b22ad4795617580a4badc7b",
+      "transcriptSha256": "c61b5e483ee2a929e63a64d4b7a87a1ccade840c8b22ad4795617580a4badc7b"
+    },
+    {
+      "file": "queue-readonly.ts.txt",
+      "originalSha256": "018aeafb68223b94677bfc27c36349949bf76583cc3a6a75fb13efb2ecc9f474",
+      "transcriptSha256": "018aeafb68223b94677bfc27c36349949bf76583cc3a6a75fb13efb2ecc9f474"
+    },
+    {
+      "file": "reader-harness.ts.txt",
+      "originalSha256": "f65212536226217aeb52634165a748da9487dd5a89c512c2de7ae23f453f4289",
+      "transcriptSha256": "573c6247a52e50e0382e2301e9bbc573f4a8889861e6393e9672165de28af068"
+    },
+    {
+      "file": "reader-index.html.txt",
+      "originalSha256": "6a0487b953a0f395e110001f24504b3bbea3e0a3adfd063b39267c0659721796",
+      "transcriptSha256": "6a0487b953a0f395e110001f24504b3bbea3e0a3adfd063b39267c0659721796"
+    },
+    {
+      "file": "reader-vite.config.mjs.txt",
+      "originalSha256": "fd2743da5cee00ec47e05b335b9f09820486846996a0ffe01c4a1493d5a62d63",
+      "transcriptSha256": "854b680b23562468ee28b5dc0ceed33154531caa8a31fc98ee3a8b7e597f987f"
+    },
+    {
+      "file": "reading-cache.ts.txt",
+      "originalSha256": "702237560cc4b2213bbf836e542cfaabffa85afd1d3d93cf9ed8619f37ffebe5",
+      "transcriptSha256": "702237560cc4b2213bbf836e542cfaabffa85afd1d3d93cf9ed8619f37ffebe5"
+    },
+    {
+      "file": "reading-refresh.ts.txt",
+      "originalSha256": "c1d0b447eb3499c474c4db920bcee92bae0498bdf1e1a1c1abc1d3999fa9fe13",
+      "transcriptSha256": "956a6b110497110ac8a4616b23813648c3ec169b9b2b81fcc0efe9d3ea4b9ba1"
+    },
+    {
+      "file": "reading-withdrawal.ts.txt",
+      "originalSha256": "c430ce28d50cc9aad6ac59a6f233054c4e022bc4f9cc18dcbae9ca3a1adf5570",
+      "transcriptSha256": "347d1eafb5cf736005f75099f194861931dca20ba2125f5f3061429737f113d4"
+    },
+    {
+      "file": "source-races.ts.txt",
+      "originalSha256": "dfa4f2934e42f00a7f7bbb6291738959a355e86bea5aa7df21f3ba71c78f3595",
+      "transcriptSha256": "dfa4f2934e42f00a7f7bbb6291738959a355e86bea5aa7df21f3ba71c78f3595"
+    },
+    {
+      "file": "stop-app.ts.txt",
+      "originalSha256": "18d2e37535e1583a01ee230be65601fa61c00a24e77bd47563a4276d1a15c8b5",
+      "transcriptSha256": "18d2e37535e1583a01ee230be65601fa61c00a24e77bd47563a4276d1a15c8b5"
+    },
+    {
+      "file": "targeted-read-transport.ts.txt",
+      "originalSha256": "017c3348f4844a6688e8532bee7d31684b0cd64445f09722d9f419d4b8409fac",
+      "transcriptSha256": "017c3348f4844a6688e8532bee7d31684b0cd64445f09722d9f419d4b8409fac"
+    },
+    {
+      "file": "cleanup-host.py.txt",
+      "originalSha256": "ace39df1a3705409ef540e9e0eca310b23e9e4ece21a1ac4e52bbe15bac88d88",
+      "transcriptSha256": "9ea38911e751c7c6753a24e790f2eb13528f4cd3bb0c05c948428eb865ecdc10"
+    }
+  ]
+}

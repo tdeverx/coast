@@ -1,0 +1,2466 @@
+{
+  "scope": "Ten-minute bounded genuine browsing exercise: six passes through For You/Library/Discover/Search for four actions, followed by idle retained-Library samples. Fresh browser context first pass, revisits thereafter; warmed PG/OS cache. Headless Chromium only, no fabricated network payloads.",
+  "startedAt": "2026-10-22T17:38:44.396Z",
+  "routes": [
+    {
+      "round": 0,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2345,
+      "cards": 28,
+      "mainText": 3362,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1050.8000000715256,
+        "fcp": 1096
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 44.199999928474426
+      }
+    },
+    {
+      "round": 0,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1837,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 571,
+        "fcp": 592
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 0,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2017,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 733.7999999523163,
+        "fcp": 756
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 0,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2281,
+      "cards": 37,
+      "mainText": 2158,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 1023.3999999761581,
+        "fcp": 428
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.299999999999955
+      }
+    },
+    {
+      "round": 0,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1373,
+      "cards": 110,
+      "mainText": 6040,
+      "overlay": false,
+      "overflow": false,
+      "images": 28,
+      "marks": 0,
+      "timing": {
+        "dcl": 90.10000002384186,
+        "fcp": 112
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 0,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1475,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 49,
+      "marks": 0,
+      "timing": {
+        "dcl": 210.20000004768372,
+        "fcp": 228
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 0,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1317,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 59.39999997615814,
+        "fcp": 76
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 0,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1574,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 335.60000002384186,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 0,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1345,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 75.5,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 0,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1356,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 83.80000007152557,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.400000000000006
+      }
+    },
+    {
+      "round": 0,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1311,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 59.300000071525574,
+        "fcp": 76
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 0,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1330,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 78.19999992847443,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 0,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1348,
+      "cards": 40,
+      "mainText": 3577,
+      "overlay": false,
+      "overflow": false,
+      "images": 23,
+      "marks": 0,
+      "timing": {
+        "dcl": 80.80000007152557,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.700000000000045
+      }
+    },
+    {
+      "round": 0,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1323,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 68.20000004768372,
+        "fcp": 80
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 0,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1348,
+      "cards": 0,
+      "mainText": 136,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 78.70000004768372,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1768,
+      "cards": 48,
+      "mainText": 4195,
+      "overlay": false,
+      "overflow": false,
+      "images": 20,
+      "marks": 0,
+      "timing": {
+        "dcl": 487.10000002384186,
+        "fcp": 532
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.400000000000034
+      }
+    },
+    {
+      "round": 1,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1623,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 358.8000000715256,
+        "fcp": 376
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 1,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1833,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 549.5,
+        "fcp": 600
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.299999999999955
+      }
+    },
+    {
+      "round": 1,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2076,
+      "cards": 37,
+      "mainText": 2164,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 809.3000000715256,
+        "fcp": 388
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1364,
+      "cards": 110,
+      "mainText": 6017,
+      "overlay": false,
+      "overflow": false,
+      "images": 28,
+      "marks": 0,
+      "timing": {
+        "dcl": 79.5,
+        "fcp": 100
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 1,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1468,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 49,
+      "marks": 0,
+      "timing": {
+        "dcl": 200.90000009536743,
+        "fcp": 220
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1295,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 54.89999997615814,
+        "fcp": 68
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 1,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1471,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 232,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.400000000000006
+      }
+    },
+    {
+      "round": 1,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1365,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 96.80000007152557,
+        "fcp": 112
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 1,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1362,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 92.39999997615814,
+        "fcp": 112
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1360,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 108,
+        "fcp": 124
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 1,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1329,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 75.60000002384186,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 1,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1342,
+      "cards": 40,
+      "mainText": 3592,
+      "overlay": false,
+      "overflow": false,
+      "images": 23,
+      "marks": 0,
+      "timing": {
+        "dcl": 77.09999990463257,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 1,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1322,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 69.89999997615814,
+        "fcp": 80
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1325,
+      "cards": 10,
+      "mainText": 660,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 67,
+        "fcp": 80
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 1,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 4199,
+      "cards": 26,
+      "mainText": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 7,
+      "marks": 0,
+      "timing": {
+        "dcl": 2946.899999976158,
+        "fcp": 88
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 2,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1793,
+      "cards": 48,
+      "mainText": 4195,
+      "overlay": false,
+      "overflow": false,
+      "images": 20,
+      "marks": 0,
+      "timing": {
+        "dcl": 527.5,
+        "fcp": 556
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.30000000000007
+      }
+    },
+    {
+      "round": 2,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1734,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 470,
+        "fcp": 488
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 2,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1796,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 510.59999990463257,
+        "fcp": 564
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.299999999999955
+      }
+    },
+    {
+      "round": 2,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2306,
+      "cards": 37,
+      "mainText": 2164,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1055.3999999761581,
+        "fcp": 404
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 2,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1398,
+      "cards": 110,
+      "mainText": 5886,
+      "overlay": false,
+      "overflow": false,
+      "images": 28,
+      "marks": 0,
+      "timing": {
+        "dcl": 148.29999995231628,
+        "fcp": 176
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1670,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 49,
+      "marks": 0,
+      "timing": {
+        "dcl": 388.8000000715256,
+        "fcp": 416
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1339,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 96.89999997615814,
+        "fcp": 116
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1749,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 509.60000002384186,
+        "fcp": 128
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1346,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 79.10000002384186,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.299999999999955
+      }
+    },
+    {
+      "round": 2,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1386,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 116.90000009536743,
+        "fcp": 136
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1336,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 80.60000002384186,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 2,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1364,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 91.79999995231628,
+        "fcp": 108
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 2,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1350,
+      "cards": 40,
+      "mainText": 3582,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 81.29999995231628,
+        "fcp": 100
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 2,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1373,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 104.80000007152557,
+        "fcp": 120
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 2,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1338,
+      "cards": 10,
+      "mainText": 660,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 66.29999995231628,
+        "fcp": 84
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 2,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 2409,
+      "cards": 26,
+      "mainText": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1162.2999999523163,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 3,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2016,
+      "cards": 28,
+      "mainText": 3362,
+      "overlay": false,
+      "overflow": false,
+      "images": 9,
+      "marks": 0,
+      "timing": {
+        "dcl": 732.6999999284744,
+        "fcp": 760
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.30000000000007
+      }
+    },
+    {
+      "round": 3,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 2155,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 890.2999999523163,
+        "fcp": 912
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 3,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2059,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 710.2000000476837,
+        "fcp": 788
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 66.60000000000002
+      }
+    },
+    {
+      "round": 3,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2584,
+      "cards": 37,
+      "mainText": 2164,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1336.7000000476837,
+        "fcp": 584
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 3,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1390,
+      "cards": 110,
+      "mainText": 5970,
+      "overlay": false,
+      "overflow": false,
+      "images": 14,
+      "marks": 0,
+      "timing": {
+        "dcl": 105,
+        "fcp": 128
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.299999999999955
+      }
+    },
+    {
+      "round": 3,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1919,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 44,
+      "marks": 0,
+      "timing": {
+        "dcl": 635.1000000238419,
+        "fcp": 660
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 3,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1414,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 156.5,
+        "fcp": 176
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 3,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1886,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 661.2000000476837,
+        "fcp": 184
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 3,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1365,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 102.10000002384186,
+        "fcp": 120
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.399999999999864
+      }
+    },
+    {
+      "round": 3,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1383,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 105.20000004768372,
+        "fcp": 128
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 3,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1348,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 79.89999997615814,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 3,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1345,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 92.60000002384186,
+        "fcp": 108
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 3,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1368,
+      "cards": 40,
+      "mainText": 3592,
+      "overlay": false,
+      "overflow": false,
+      "images": 23,
+      "marks": 0,
+      "timing": {
+        "dcl": 83.70000004768372,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 3,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1336,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 83.30000007152557,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 3,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1314,
+      "cards": 10,
+      "mainText": 639,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 80.80000007152557,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 3,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 2283,
+      "cards": 26,
+      "mainText": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1033.8000000715256,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999997
+      }
+    },
+    {
+      "round": 4,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2064,
+      "cards": 28,
+      "mainText": 3362,
+      "overlay": false,
+      "overflow": false,
+      "images": 9,
+      "marks": 0,
+      "timing": {
+        "dcl": 756.5,
+        "fcp": 828
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 4,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1851,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 586.9000000953674,
+        "fcp": 608
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 4,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2158,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 865.3999999761581,
+        "fcp": 920
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 4,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2466,
+      "cards": 37,
+      "mainText": 2164,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1208.8000000715256,
+        "fcp": 568
+      },
+      "performance": {
+        "longTasks": [
+          58
+        ],
+        "frameGap": 50
+      }
+    },
+    {
+      "round": 4,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1369,
+      "cards": 110,
+      "mainText": 6149,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 101.40000009536743,
+        "fcp": 128
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 4,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 2099,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 830.8999999761581,
+        "fcp": 852
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.700000000000045
+      }
+    },
+    {
+      "round": 4,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1382,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 124.79999995231628,
+        "fcp": 140
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.3
+      }
+    },
+    {
+      "round": 4,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1616,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 381.8000000715256,
+        "fcp": 140
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 4,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1351,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 89,
+        "fcp": 108
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.30000000000007
+      }
+    },
+    {
+      "round": 4,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1351,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 83.29999995231628,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 4,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1335,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 81.89999997615814,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 4,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1371,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 88.59999990463257,
+        "fcp": 108
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 4,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1370,
+      "cards": 40,
+      "mainText": 3514,
+      "overlay": false,
+      "overflow": false,
+      "images": 23,
+      "marks": 0,
+      "timing": {
+        "dcl": 85.60000002384186,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 4,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1337,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 77.60000002384186,
+        "fcp": 92
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 4,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1381,
+      "cards": 10,
+      "mainText": 639,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 127.10000002384186,
+        "fcp": 144
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 4,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 2316,
+      "cards": 26,
+      "mainText": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1041.6999999284744,
+        "fcp": 112
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 5,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2021,
+      "cards": 28,
+      "mainText": 3362,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 738.8999999761581,
+        "fcp": 776
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.30000000000007
+      }
+    },
+    {
+      "round": 5,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1914,
+      "cards": 60,
+      "mainText": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 42,
+      "marks": 0,
+      "timing": {
+        "dcl": 648.6000000238419,
+        "fcp": 668
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 5,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1966,
+      "cards": 40,
+      "mainText": 3135,
+      "overlay": false,
+      "overflow": false,
+      "images": 16,
+      "marks": 0,
+      "timing": {
+        "dcl": 684,
+        "fcp": 712
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 50
+      }
+    },
+    {
+      "round": 5,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2623,
+      "cards": 37,
+      "mainText": 2164,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1364.7000000476837,
+        "fcp": 496
+      },
+      "performance": {
+        "longTasks": [
+          50
+        ],
+        "frameGap": 33.30000000000001
+      }
+    },
+    {
+      "round": 5,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1412,
+      "cards": 110,
+      "mainText": 6146,
+      "overlay": false,
+      "overflow": false,
+      "images": 28,
+      "marks": 0,
+      "timing": {
+        "dcl": 141.69999992847443,
+        "fcp": 164
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 5,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1546,
+      "cards": 50,
+      "mainText": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 49,
+      "marks": 0,
+      "timing": {
+        "dcl": 280.10000002384186,
+        "fcp": 300
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999955
+      }
+    },
+    {
+      "round": 5,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1325,
+      "cards": 20,
+      "mainText": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 85,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 5,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1586,
+      "cards": 0,
+      "mainText": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 351.1999999284744,
+        "fcp": 124
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 5,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1350,
+      "cards": 0,
+      "mainText": 289,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 86.69999992847443,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 33.39999999999998
+      }
+    },
+    {
+      "round": 5,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1355,
+      "cards": 60,
+      "mainText": 6025,
+      "overlay": false,
+      "overflow": false,
+      "images": 38,
+      "marks": 0,
+      "timing": {
+        "dcl": 84,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999983
+      }
+    },
+    {
+      "round": 5,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1337,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 83.39999997615814,
+        "fcp": 100
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.799999999999997
+      }
+    },
+    {
+      "round": 5,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1339,
+      "cards": 12,
+      "mainText": 1518,
+      "overlay": false,
+      "overflow": false,
+      "images": 5,
+      "marks": 0,
+      "timing": {
+        "dcl": 85.19999992847443,
+        "fcp": 100
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 5,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1375,
+      "cards": 40,
+      "mainText": 3589,
+      "overlay": false,
+      "overflow": false,
+      "images": 23,
+      "marks": 0,
+      "timing": {
+        "dcl": 89.10000002384186,
+        "fcp": 108
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000068
+      }
+    },
+    {
+      "round": 5,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1343,
+      "cards": 0,
+      "mainText": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0,
+      "marks": 0,
+      "timing": {
+        "dcl": 88.80000007152557,
+        "fcp": 100
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    },
+    {
+      "round": 5,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1358,
+      "cards": 10,
+      "mainText": 639,
+      "overlay": false,
+      "overflow": false,
+      "images": 6,
+      "marks": 0,
+      "timing": {
+        "dcl": 86.89999997615814,
+        "fcp": 104
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.80000000000001
+      }
+    },
+    {
+      "round": 5,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 2288,
+      "cards": 26,
+      "mainText": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 13,
+      "marks": 0,
+      "timing": {
+        "dcl": 1010.2000000476837,
+        "fcp": 96
+      },
+      "performance": {
+        "longTasks": [],
+        "frameGap": 16.800000000000182
+      }
+    }
+  ],
+  "samples": [
+    {
+      "label": "round-0",
+      "elapsedMs": 53628,
+      "dom": {
+        "documents": 2,
+        "nodes": 2463,
+        "jsEventListeners": 211
+      },
+      "heapBytes": 5142856,
+      "cards": 6
+    },
+    {
+      "label": "round-1",
+      "elapsedMs": 90191,
+      "dom": {
+        "documents": 2,
+        "nodes": 4563,
+        "jsEventListeners": 485
+      },
+      "heapBytes": 7456088,
+      "cards": 26
+    },
+    {
+      "label": "round-2",
+      "elapsedMs": 125927,
+      "dom": {
+        "documents": 2,
+        "nodes": 4537,
+        "jsEventListeners": 485
+      },
+      "heapBytes": 7309288,
+      "cards": 26
+    },
+    {
+      "label": "round-3",
+      "elapsedMs": 163147,
+      "dom": {
+        "documents": 2,
+        "nodes": 4537,
+        "jsEventListeners": 485
+      },
+      "heapBytes": 7311744,
+      "cards": 26
+    },
+    {
+      "label": "round-4",
+      "elapsedMs": 200023,
+      "dom": {
+        "documents": 2,
+        "nodes": 4537,
+        "jsEventListeners": 485
+      },
+      "heapBytes": 7311636,
+      "cards": 26
+    },
+    {
+      "label": "round-5",
+      "elapsedMs": 236219,
+      "dom": {
+        "documents": 2,
+        "nodes": 4537,
+        "jsEventListeners": 485
+      },
+      "heapBytes": 7316760,
+      "cards": 26
+    },
+    {
+      "label": "retained-idle-start",
+      "elapsedMs": 247384,
+      "dom": {
+        "documents": 2,
+        "nodes": 23290,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18358032,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 262428,
+      "dom": {
+        "documents": 2,
+        "nodes": 23274,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17016648,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 277468,
+      "dom": {
+        "documents": 2,
+        "nodes": 23274,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17018796,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 292512,
+      "dom": {
+        "documents": 2,
+        "nodes": 23274,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17040496,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 307541,
+      "dom": {
+        "documents": 2,
+        "nodes": 23274,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17428596,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 322577,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17616100,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 337611,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17616452,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 352644,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17616820,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 367678,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17871236,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 382711,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17766444,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 397739,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17770472,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 412776,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17770440,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 427812,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17837376,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 442847,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17837392,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 457880,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17837416,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 472910,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17837928,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 487939,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17555280,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 502973,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17544204,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 518007,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17544428,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 533036,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17544364,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 548075,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17692728,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 563113,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17598104,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 578151,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17598164,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 593178,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17596248,
+      "cards": 180
+    },
+    {
+      "label": "retained-idle",
+      "elapsedMs": 608216,
+      "dom": {
+        "documents": 2,
+        "nodes": 23275,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17593944,
+      "cards": 180
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    }
+  ],
+  "failures": [
+    {
+      "kind": "navigation",
+      "round": 0,
+      "action": "read",
+      "path": "/search",
+      "error": "TimeoutError"
+    }
+  ],
+  "finishedAt": "2026-10-22T17:48:52.617Z",
+  "durationMs": 608224,
+  "status": "findings"
+}

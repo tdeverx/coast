@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-23",
+  "blanketAcceptance": false,
+  "status": "completed-with-explicit-blockers",
+  "sourcePins": "source-pins.json",
+  "probePins": "probe-pins.json",
+  "gates": "gates.json",
+  "acceptedReceipts": [
+    "receipts/api-positive.json",
+    "receipts/api-variants.json",
+    "receipts/binary.json",
+    "receipts/browser-engines.json",
+    "receipts/browser-play-discover.json",
+    "receipts/browser-readers.json",
+    "receipts/browser-search.json",
+    "receipts/browser-soak-successful.json",
+    "receipts/cleanup-host.json",
+    "receipts/cleanup.json",
+    "receipts/cohort-readonly.json",
+    "receipts/crop-hang.json",
+    "receipts/crop-proxy.json",
+    "receipts/epub-native.json",
+    "receipts/heartbeat.json",
+    "receipts/history.json",
+    "receipts/igdb-http.json",
+    "receipts/igdb-popularity.json",
+    "receipts/membership-comparison.json",
+    "receipts/metadata-refresh.json",
+    "receipts/openlibrary.json",
+    "receipts/privacy-expanded.json",
+    "receipts/provider-comparison.json",
+    "receipts/queue-readonly.json",
+    "receipts/reading-cache.json",
+    "receipts/reading-refresh.json",
+    "receipts/reading-withdrawal.json",
+    "receipts/resource-soak-successful.json",
+    "receipts/source-races.json",
+    "receipts/transport-soak.json",
+    "receipts/transport-targeted.json"
+  ],
+  "diagnosticReceipts": [
+    "receipts/browser-soak.json",
+    "receipts/resource-soak.json"
+  ],
+  "failedAttempts": "failed-attempts.json",
+  "remaining": "blockers.json",
+  "realData": {
+    "archiveSha256": "147185eef8dc24169ac4753695ec3fa4cb9ef8674be7e22200752dafe0d693fd",
+    "restore": "original read-only PG15 archive into owned disposable copy, upgraded independently to PostgreSQL 17.11",
+    "runtime": "Shipping Linux Bun 6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "resources": "4 CPUs / 2 GiB",
+    "guard": "Exact database name/comment checks; real GET/HEAD plus precise admitted metadata POSTs. No external progress/exports; paused workers."
+  },
+  "boundaries": [
+    "Authored regressions are not actual-data benchmarks.",
+    "Restricted-provider and metadata-enabled epochs remain separate; finite successful route visits are not successful acceptance of every endpoint.",
+    "Rejected candidate SQL retained without applying it.",
+    "No commit, push, PR, production migration or deployment."
+  ],
+  "cleanup": [
+    "receipts/cleanup.json",
+    "receipts/cleanup-host.json"
+  ],
+  "finiteSoak": "receipts/browser-soak-successful.json",
+  "processSamples": "receipts/resource-soak-successful.json",
+  "sourceEpochNotes": "Historical metadata pins are refreshed as an index only. Earlier native fingerprints and observations remain unchanged.",
+  "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026",
+  "delivery": "delivery.json"
+}

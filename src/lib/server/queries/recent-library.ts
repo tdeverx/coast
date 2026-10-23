@@ -12,9 +12,13 @@ import * as s from '../db/schema';
 import {hasPermittedWorkSource} from './media';
 import {PAGE_SIZE,pagination} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
+import {withReadCancellation} from '../db/read-cancellation';
 
 /** Newly indexed, accessible library identities; metadata refresh never changes their order. */
 export async function recentLibraryData(userId:string,raw:unknown,signal?:AbortSignal):Promise<LibraryFeedContent>{
+  return withReadCancellation(signal,()=>recentLibraryRead(userId,raw,signal));
+}
+async function recentLibraryRead(userId:string,raw:unknown,signal?:AbortSignal):Promise<LibraryFeedContent>{
   const options=v.parse(recentLibrarySchema,raw);
   signal?.throwIfAborted();
   const config=await getFeatureConfig(userId);
@@ -25,7 +29,7 @@ export async function recentLibraryData(userId:string,raw:unknown,signal?:AbortS
   const allowed=options.action==='watch'?['movie','show']:options.action==='listen'?['album']:options.action==='play'?['game']:options.action==='read'?['book','comic']:kinds;
   if(kinds.some(kind=>!allowed.includes(kind)))throw new AppError(400,'Choose a media type for this action.');
   if(options.kind!=='all')requireEnabledCategory(config,['movie','show'].includes(options.kind)?'screen':options.kind);
-  const where=and(inArray(s.works.kind,kinds as typeof s.works.$inferSelect.kind[]),hasPermittedWorkSource(userId));
+  const where=and(inArray(s.works.kind,kinds as typeof s.works.$inferSelect.kind[]),hasPermittedWorkSource(userId,category));
   const db=getDb();
   const [count]=await db.select({total:sql<number>`count(*)::int`}).from(s.works)
     .leftJoin(s.media,eq(s.media.id,s.works.id)).where(where);

@@ -1,6 +1,6 @@
 # Next investigation checklist
 
-19 October 2026. **Future work: start only when the user resumes investigation.** The safe prescribed-method execution pass is closed; this checklist is not a claim that all findings are complete. [Current handoff](implementation-handoff.md), [roadmap](follow-up-roadmap.md), [machine checklist](next-investigation-checklist.json).
+19 October historical checklist. The user resumed investigation and implementation on 22 October: use the [current register](../2026-10-22-performance-followup/README.md) to reconcile changed owners and acceptance before repeating these tasks. The safe prescribed-method execution pass is closed; this checklist is not a claim that all findings are complete. [Current handoff](implementation-handoff.md), [roadmap](follow-up-roadmap.md), [machine checklist](next-investigation-checklist.json).
 
 ## Before each batch
 

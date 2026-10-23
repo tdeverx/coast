@@ -1,0 +1,692 @@
+{
+  "scope": "Unmodified production EPUB and physical-PDF page engines in a dedicated Vite harness. Real published EPUB (Gutenberg 2600) and PostgreSQL 17 PDF; separate from connected-library, admission/party/physical-device acceptance. Three open/read/close cycles and pre-abort per format/engine. Heap is browser JS only.",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "cycles": [
+        {
+          "n": 0,
+          "format": "epub",
+          "ms": 454.39999997615814,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 8,
+            "revoked": 0,
+            "active": 8
+          },
+          "closed": {
+            "made": 8,
+            "revoked": 8,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 18,
+              "jsEventListeners": 21
+            },
+            "heapBytes": 9634504
+          },
+          "pass": false
+        },
+        {
+          "n": 1,
+          "format": "epub",
+          "ms": 454.3000000715256,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 16,
+            "revoked": 8,
+            "active": 8
+          },
+          "closed": {
+            "made": 16,
+            "revoked": 16,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 19,
+              "jsEventListeners": 23
+            },
+            "heapBytes": 9838072
+          },
+          "pass": false
+        },
+        {
+          "n": 2,
+          "format": "epub",
+          "ms": 437.2000000476837,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 16,
+            "active": 8
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 20,
+              "jsEventListeners": 25
+            },
+            "heapBytes": 9993980
+          },
+          "pass": false
+        },
+        {
+          "n": 0,
+          "format": "pdf",
+          "ms": 262.89999997615814,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 22915,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32247,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 77776,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 20,
+              "jsEventListeners": 25
+            },
+            "heapBytes": 10252200
+          },
+          "pass": true
+        },
+        {
+          "n": 1,
+          "format": "pdf",
+          "ms": 192.39999997615814,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 22915,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32247,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 77776,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 20,
+              "jsEventListeners": 25
+            },
+            "heapBytes": 10278256
+          },
+          "pass": true
+        },
+        {
+          "n": 2,
+          "format": "pdf",
+          "ms": 220.20000004768372,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 22915,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32247,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 77776,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "resources": {
+            "dom": {
+              "documents": 1,
+              "nodes": 20,
+              "jsEventListeners": 25
+            },
+            "heapBytes": 10401484
+          },
+          "pass": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "AbortError",
+          "pass": true,
+          "denied": true,
+          "active": 0
+        },
+        {
+          "name": "AbortError",
+          "pass": true,
+          "denied": true,
+          "active": 0
+        },
+        {
+          "name": "all-pdf-workers-closed",
+          "pass": true
+        },
+        {
+          "name": "no-runtime-errors",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "workers": {
+        "created": 3,
+        "closed": 3
+      },
+      "status": "findings"
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "cycles": [
+        {
+          "n": 0,
+          "format": "epub",
+          "ms": 584,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 8,
+            "revoked": 0,
+            "active": 8
+          },
+          "closed": {
+            "made": 8,
+            "revoked": 8,
+            "active": 0
+          },
+          "pass": false
+        },
+        {
+          "n": 1,
+          "format": "epub",
+          "ms": 386,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 16,
+            "revoked": 8,
+            "active": 8
+          },
+          "closed": {
+            "made": 16,
+            "revoked": 16,
+            "active": 0
+          },
+          "pass": false
+        },
+        {
+          "n": 2,
+          "format": "epub",
+          "ms": 364,
+          "changes": [
+            {
+              "format": "epub",
+              "fraction": 0
+            },
+            {
+              "format": "epub",
+              "fraction": 0.002717391304347826
+            }
+          ],
+          "resumeExact": true,
+          "frames": 1,
+          "characters": 0,
+          "progress": [
+            "download",
+            "download",
+            "download",
+            "prepare",
+            "render"
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 16,
+            "active": 8
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "pass": false
+        },
+        {
+          "n": 0,
+          "format": "pdf",
+          "ms": 315,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 23129,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32814,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 79709,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "pass": true
+        },
+        {
+          "n": 1,
+          "format": "pdf",
+          "ms": 203,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 23129,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32814,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 79709,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "pass": true
+        },
+        {
+          "n": 2,
+          "format": "pdf",
+          "ms": 193,
+          "total": 3100,
+          "boundFaces": 3100,
+          "rendered": [
+            {
+              "index": 0,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 23129,
+              "location": {
+                "format": "pdf",
+                "page": 1,
+                "total": 3100
+              }
+            },
+            {
+              "index": 1550,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 32814,
+              "location": {
+                "format": "pdf",
+                "page": 1551,
+                "total": 3100
+              }
+            },
+            {
+              "index": 3099,
+              "width": 1191,
+              "height": 1684,
+              "darkPixels": 79709,
+              "location": {
+                "format": "pdf",
+                "page": 3100,
+                "total": 3100
+              }
+            }
+          ],
+          "urls": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "closed": {
+            "made": 24,
+            "revoked": 24,
+            "active": 0
+          },
+          "pass": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "AbortError",
+          "pass": true,
+          "denied": true,
+          "active": 0
+        },
+        {
+          "name": "AbortError",
+          "pass": true,
+          "denied": true,
+          "active": 0
+        },
+        {
+          "name": "all-pdf-workers-closed",
+          "pass": true
+        },
+        {
+          "name": "no-runtime-errors",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "workers": {
+        "created": 3,
+        "closed": 3
+      },
+      "status": "findings"
+    }
+  ],
+  "failures": [
+    "chromium-epub-0",
+    "chromium-epub-1",
+    "chromium-epub-2",
+    "webkit-epub-0",
+    "webkit-epub-1",
+    "webkit-epub-2"
+  ],
+  "status": "findings"
+}

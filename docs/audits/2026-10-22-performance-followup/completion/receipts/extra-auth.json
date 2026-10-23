@@ -1,0 +1,145 @@
+{
+  "boundary": "Real actors/media and native scoped-token/share services; controlled token quota/expiry/account-disable and sharing enablement in marked copy only. No encoder/playback/external mutation launched.",
+  "checks": [
+    {
+      "name": "durable-quota-admits-exactly-one-concurrent-request",
+      "passed": true
+    },
+    {
+      "name": "rejected-request-does-not-overrun-durable-quota",
+      "passed": true
+    },
+    {
+      "name": "quota-window-recovers",
+      "passed": true
+    },
+    {
+      "name": "disabled-real-user-invalidates-live-bearer",
+      "passed": true
+    },
+    {
+      "name": "expired-scoped-token-denied",
+      "passed": true
+    },
+    {
+      "name": "valid-share-head-metadata-only",
+      "passed": true
+    },
+    {
+      "name": "valid-share-html-lands-without-encoder",
+      "passed": true
+    },
+    {
+      "name": "HEAD-and-HTML-probes-create-no-viewer-or-playback",
+      "passed": true
+    },
+    {
+      "name": "genuine-share-guest-session",
+      "passed": true
+    },
+    {
+      "name": "guest-state-from-scoped-cookie",
+      "passed": true
+    },
+    {
+      "name": "expired-share-head-denied",
+      "passed": true
+    },
+    {
+      "name": "revoked-share-session-denied",
+      "passed": true
+    },
+    {
+      "name": "share-responses-no-store",
+      "passed": true
+    }
+  ],
+  "responses": [
+    {
+      "name": "quota-a",
+      "status": 200,
+      "bodyBytes": 95,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "quota-b",
+      "status": 429,
+      "bodyBytes": 88,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "quota-reset",
+      "status": 200,
+      "bodyBytes": 95,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "account-disabled",
+      "status": 401,
+      "bodyBytes": 80,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "token-expired",
+      "status": 401,
+      "bodyBytes": 80,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-head",
+      "status": 200,
+      "bodyBytes": 0,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-html",
+      "status": 302,
+      "bodyBytes": 0,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-guest-claim",
+      "status": 200,
+      "bodyBytes": 11,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-state",
+      "status": 200,
+      "bodyBytes": 322,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-expired",
+      "status": 410,
+      "bodyBytes": 0,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "share-revoked",
+      "status": 410,
+      "bodyBytes": 64,
+      "cache": "private, no-store",
+      "referrer": "no-referrer"
+    },
+    {
+      "name": "restore-sharing-policy",
+      "status": 200,
+      "bodyBytes": 821,
+      "cache": "private, no-store",
+      "referrer": "same-origin"
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

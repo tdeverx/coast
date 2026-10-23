@@ -1,0 +1,31 @@
+{
+  "scope": "Independent native SQL on the exact marked actual-data copy after the accepted browser replay. Three latest real admin audio sessions, reverse preparation order; no IDs/titles exported.",
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "checks": [
+    {
+      "state": "stopped",
+      "positionSeconds": 0.242937,
+      "durationSeconds": 13.578367,
+      "listenRecorded": false,
+      "exactFinalPosition": true
+    },
+    {
+      "state": "stopped",
+      "positionSeconds": 0.589526,
+      "durationSeconds": 179.01578,
+      "listenRecorded": false,
+      "exactFinalPosition": true
+    },
+    {
+      "state": "stopped",
+      "positionSeconds": 0.246161,
+      "durationSeconds": 13.578367,
+      "listenRecorded": false,
+      "exactFinalPosition": true
+    }
+  ],
+  "lastTrackPositionExact": true,
+  "copyIdentityHash": "6655d592d8ded59e38e2087449e3244fd30d2a39fcbaf77c20837cc23ae27223",
+  "outboxObservedRunning": 0,
+  "status": "passed"
+}

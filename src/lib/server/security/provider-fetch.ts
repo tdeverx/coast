@@ -12,6 +12,8 @@ export interface ProviderFetchConfig {
   allowPrivateNetwork?: boolean;
   allowedPorts?: number[];
   timeoutMs?: number;
+  /** Queue admission has its own bound; provider pacing does not consume I/O time. */
+  queueTimeoutMs?: number;
   maxResponseBytes?: number;
 }
 
@@ -333,7 +335,7 @@ export async function secureProviderFetch(
     // Reading discovery is human-driven. Conservative Comic Vine pacing stays
     // below its 200-per-resource hourly budget without a second hidden queue.
     const interval = config.provider === 'openlibrary' ? 1100 : config.provider === 'comic-vine' ? 18_100 : config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
-    const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined);
+    const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined,config.queueTimeoutMs);
     void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
       provider: config.provider,
       method: init.method || 'GET',

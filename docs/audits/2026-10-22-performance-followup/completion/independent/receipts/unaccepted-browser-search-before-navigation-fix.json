@@ -1,0 +1,3668 @@
+{
+  "scope": "Final production build, actual copied admin and genuine Search provider responses. UI form submission, primary/enriched publication and action navigation while a later query is loading. No intercepted/fabricated body. Shared public metadata cache reads may finish; obsolete caller hydration/publication is cancelled/fenced.",
+  "samples": [
+    {
+      "ms": 105,
+      "query": "Batman",
+      "view": "read",
+      "busy": false,
+      "cards": 0,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 222,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 324,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 425,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 526,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 627,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 730,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 834,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 937,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1041,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1144,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1248,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1350,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 1535,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 1638,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 1741,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 1845,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 1950,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2054,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2158,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2262,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2366,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2470,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2574,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2678,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2782,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2884,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2989,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3093,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3196,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3298,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3402,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3506,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3608,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3712,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3815,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3919,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4022,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4126,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4229,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4334,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4438,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4541,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4645,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4749,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4853,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4957,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5060,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5164,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5269,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5373,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5476,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5579,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5682,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5787,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5891,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5995,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6097,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6201,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6306,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6409,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6512,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6615,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6718,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6822,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6926,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7027,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7130,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7234,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7337,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7441,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7543,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7646,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7750,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7854,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7959,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8063,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8167,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8270,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8375,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8479,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8581,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8684,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8788,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8893,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8996,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9100,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9203,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9307,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9411,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9515,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9618,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9721,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9825,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9929,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10032,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10137,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10240,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10343,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10447,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10551,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10655,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10758,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10863,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10968,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11071,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11173,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11276,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11379,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11482,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11585,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11688,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11792,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11896,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12000,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12104,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12207,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12311,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12414,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12518,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12621,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12724,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12827,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12932,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13036,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13140,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13243,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13346,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13451,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13553,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13657,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13761,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13865,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13969,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14073,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14177,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14280,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14385,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14489,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14592,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14696,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14800,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14903,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15007,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15109,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15212,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15315,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15419,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15522,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15626,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15729,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15833,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15937,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16041,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16144,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16248,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16351,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16453,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16556,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16657,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16761,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16864,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16968,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17072,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17175,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17279,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17381,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17485,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17589,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17692,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17796,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17900,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18003,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18106,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18210,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18314,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18419,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18522,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18625,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18729,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18833,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18937,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19041,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19144,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19247,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19350,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19454,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19557,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19660,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19764,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19866,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19970,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20074,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20177,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20281,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20384,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20487,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20591,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20694,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20798,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20903,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21006,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21110,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21213,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21318,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21423,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21526,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21630,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21734,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21837,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21939,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22042,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22145,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22249,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22353,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22456,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22559,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22662,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22766,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22870,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22974,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23076,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23178,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23282,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23385,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23488,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23592,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23693,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23797,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23901,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24005,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24109,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24212,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24316,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24419,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24522,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24626,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24730,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24832,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24936,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25039,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25142,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25245,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25348,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25453,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25555,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25658,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25762,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25866,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25969,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26073,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26176,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26277,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26382,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26485,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26589,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26693,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26796,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26900,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27004,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27106,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27209,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27313,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27417,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27521,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27624,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27728,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27832,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27935,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28038,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28141,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28245,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28349,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28453,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28556,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28660,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28763,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28865,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28969,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29074,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29176,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29280,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29383,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29488,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29591,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29694,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29798,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29908,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30010,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30113,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30215,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30317,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30421,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30523,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30626,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30729,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30833,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30937,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31041,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31143,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31246,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31349,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31453,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31557,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31659,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31763,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31865,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31969,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32073,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32176,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32281,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32384,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32489,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32592,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32693,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32797,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32901,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33004,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33107,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33212,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33315,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33419,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33522,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33625,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33729,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33833,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33936,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34040,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34142,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34246,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34349,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34452,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34556,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34660,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34763,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34867,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34971,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35075,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35179,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35281,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35384,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35488,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35592,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35695,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35800,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35903,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36007,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36112,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36216,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36320,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36424,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36529,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36634,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36738,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36841,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36947,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37053,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37158,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37261,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37365,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37470,
+      "query": "Batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37587,
+      "query": "Batman",
+      "view": "read",
+      "busy": false,
+      "cards": 26,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 40
+    }
+  ],
+  "checks": [
+    {
+      "name": "primary-comic-cards-visible-while-enrichment-remains-busy",
+      "pass": true
+    },
+    {
+      "name": "complete-stage-publishes-and-settles-loading",
+      "pass": true
+    },
+    {
+      "name": "no-final-empty-state-during-loading",
+      "pass": true
+    },
+    {
+      "name": "late-reading-work-cannot-repopulate-listen-search",
+      "pass": false
+    },
+    {
+      "name": "no-page-errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "status": "findings",
+  "completed": {
+    "query": "Batman",
+    "view": "read",
+    "busy": false,
+    "cards": 26,
+    "overlay": false,
+    "noResults": false,
+    "remoteComic": 40,
+    "ms": 37692
+  },
+  "afterNavigation": {
+    "query": "Batman",
+    "view": "listen",
+    "busy": false,
+    "cards": 0,
+    "overlay": false,
+    "noResults": false,
+    "remoteComic": 0
+  }
+}

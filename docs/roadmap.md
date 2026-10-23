@@ -1,12 +1,29 @@
 # App follow-up roadmap
 
-Reviewed 16 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
+Reviewed 23 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
 
 ## Performance and stability — deferred audit coverage
 
 Books/comics delivery has a separate [reading investigation roadmap](audits/2026-10-19-reading-performance/investigation-roadmap.md): session input reuse, versioned manifests, ZIP/TAR ranges, solid RAR/7z costs and companion-side page delivery. These are research/benchmark candidates, not implementation authorization. Loading feedback and the default-on odd-face sanitization preference do not adopt those delivery designs.
 
 The prescribed-method implementation pass and later authorized Activity investigation closed on **19 October 2026**. See the [current handoff](audits/2026-10-17-app-performance/implementation-handoff.md) for applied repairs and exact limits. Resume future work with the [investigation checklist](audits/2026-10-17-app-performance/next-investigation-checklist.md) and [area roadmap](audits/2026-10-17-app-performance/follow-up-roadmap.md): unchecked areas/new observations first, failed methods afterward. Wider acceptance and explicit design deferrals remain; this does not authorize automatic continuation or a new architecture.
+
+## Performance follow-up — remaining acceptance, 23 October 2026
+
+The [current report](audits/2026-10-22-performance-followup/completion/independent/README.md) records implemented repairs, real-data comparisons, the three-account thirty-minute observation, rejected candidates and cleanup. Local acceptance is complete with explicit blockers; full deployment/device acceptance remains open. The identifiers below are shared with the [blocker register](audits/2026-10-22-performance-followup/completion/independent/blockers.json). Resume only the selected item when its input/decision is available; preserve the existing source/runtime/evidence epochs and rerun its relevant regression guard.
+
+| ID | Remaining work | Required input and acceptance |
+|---|---|---|
+| BLOCK-AUTO-REVIEW-JOBS | Repeated native Jellyfin job load | Explicit authorization for the thirty-job exercise or an isolated provider; verify claim/lease/retry/cancel, throughput and cleanup. |
+| BLOCK-DEVICE | Physical-device and assistive-technology checks | Connected device/browser session; touch, keyboard/screen reader, decoder/GPU release and synchronized playback. |
+| BLOCK-HOSTED | Hosted companion and encoder acceptance | Disposable Jellyfin host with current companion and permission to revoke access; test cached crop authorization, HLS/transcode and shared-session teardown. |
+| BLOCK-COHORT | Missing natural accounts and relationships | Connected Trakt, pending received recommendations, natural playlists, unequal same-user sources, active game playthrough and party sessions; exact paging/privacy/export results. |
+| BLOCK-FORMAT | Additional reading formats and linked documents | Actual CB7/CBT/solid archives and provider-linked EPUB/PDF; verify identity/access, decompression peaks and party locations. |
+| BLOCK-BULK | Durable bulk-task recovery | Choose target membership, receipt lifetime, response-loss/resume and incomplete-result UX before persisted recovery implementation. |
+| BLOCK-POLICY | Input limits and retention policy | Choose supported preview JSON/image limits and rejection UX, plus evidence/history retention and preservation requirements before imposing caps/deletion. |
+| BOUND-CAPACITY | Deployment capacity and cold/tail measurements | Define target hardware, workload/concurrency and duration; collect attributable startup, tail latency and decoder/GPU evidence. Finite local results already recorded. |
+
+Playback Stop semantics are selected and implemented: close immediately, wait for the previous save before starting a successor, and offer Retry after failure. The older PR-02 undecided wording is superseded. Task-history and membership SQL candidates were rejected on measured results; retain the current production query/index pairs unless a new matched comparison wins. This roadmap entry does not authorize provider side effects, retention deletion, a new architecture or automatic recurring audit work.
 
 ## Highest priority — recovery, reliable backups and data ownership
 

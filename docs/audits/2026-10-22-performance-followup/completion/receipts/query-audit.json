@@ -1,0 +1,189 @@
+{
+  "scope": "Current actual history, membership update and profile/chart input work on marked copy during concurrent browsing; no synthetic model rows, no new query/index adoption; EXPLAIN ANALYZE membership writes roll back.",
+  "profiles": [
+    {
+      "userHash": "1d07d4afbbd82ea5fe2779d1d783bbb4286265bb1b8a922b8ecc126b3f1a9bfb",
+      "ms": 74.505417,
+      "days": 4,
+      "modelRows": [
+        1,
+        13
+      ],
+      "genreRows": 6,
+      "adapterCalls": 200,
+      "adapterMs": 0.7880830000000003,
+      "dataBytes": 691
+    },
+    {
+      "userHash": "99c1e895577737e29281faae7580e6910a49e8cede295e9d4e057149f437de54",
+      "ms": 415.53304099999997,
+      "days": 4366,
+      "modelRows": [
+        90,
+        13
+      ],
+      "genreRows": 7,
+      "adapterCalls": 200,
+      "adapterMs": 0.9162079999999833,
+      "dataBytes": 201536
+    },
+    {
+      "userHash": "eb0be839be5018503855d95c61adc7469035e46d99964a96d1530de693770cbc",
+      "ms": 147.8899590000001,
+      "days": 15,
+      "modelRows": [
+        4,
+        13
+      ],
+      "genreRows": 7,
+      "adapterCalls": 200,
+      "adapterMs": 0.5544160000000602,
+      "dataBytes": 1247
+    },
+    {
+      "userHash": "b1cedc72fb5ee9b0b043203a3a0c421d31d6f4c13d881a8004214052b86e8886",
+      "ms": 28.44804099999999,
+      "days": 0,
+      "modelRows": [
+        1,
+        13
+      ],
+      "genreRows": 0,
+      "adapterCalls": 200,
+      "adapterMs": 0.1876670000000331,
+      "dataBytes": 195
+    },
+    {
+      "userHash": "00e645ad20d5a590a8c3243c8141b84cbe88008124aac08a2b739c4a84eb7319",
+      "ms": 139.34391599999992,
+      "days": 91,
+      "modelRows": [
+        7,
+        13
+      ],
+      "genreRows": 7,
+      "adapterCalls": 200,
+      "adapterMs": 0.7346670000000586,
+      "dataBytes": 4790
+    },
+    {
+      "userHash": "c6426e6415e043fd8574ebd76f39b6790b6311e16462ccf67af1fedbde362b02",
+      "ms": 102.24145900000008,
+      "days": 743,
+      "modelRows": [
+        11,
+        13
+      ],
+      "genreRows": 7,
+      "adapterCalls": 200,
+      "adapterMs": 0.22391700000002857,
+      "dataBytes": 34928
+    }
+  ],
+  "membership": [
+    {
+      "trial": 0,
+      "executionMs": 954.035,
+      "planningMs": 6.113,
+      "rowsVisited": 31,
+      "resources": {
+        "Shared Hit Blocks": 36326,
+        "Shared Read Blocks": 7905,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 228,
+        "WAL FPI": 174,
+        "WAL Bytes": 1250915
+      },
+      "rolledBack": true
+    },
+    {
+      "trial": 1,
+      "executionMs": 106.848,
+      "planningMs": 0.22,
+      "rowsVisited": 31,
+      "resources": {
+        "Shared Hit Blocks": 44104,
+        "Shared Read Blocks": 14,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 96,
+        "WAL FPI": 5,
+        "WAL Bytes": 57314
+      },
+      "rolledBack": true
+    }
+  ],
+  "census": [
+    {
+      "relname": "availability",
+      "n_live_tup": "0",
+      "bytes": "433692672",
+      "n_dead_tup": "1742"
+    },
+    {
+      "relname": "music_listens",
+      "n_live_tup": "0",
+      "bytes": "65536",
+      "n_dead_tup": "0"
+    },
+    {
+      "relname": "outbox_actions",
+      "n_live_tup": "0",
+      "bytes": "206249984",
+      "n_dead_tup": "320"
+    },
+    {
+      "relname": "playback_sessions",
+      "n_live_tup": "0",
+      "bytes": "172032",
+      "n_dead_tup": "0"
+    },
+    {
+      "relname": "provider_items",
+      "n_live_tup": "0",
+      "bytes": "65232896",
+      "n_dead_tup": "35"
+    },
+    {
+      "relname": "reading_sessions",
+      "n_live_tup": "0",
+      "bytes": "139264",
+      "n_dead_tup": "0"
+    },
+    {
+      "relname": "tracking_events",
+      "n_live_tup": "0",
+      "bytes": "40689664",
+      "n_dead_tup": "0"
+    }
+  ],
+  "checks": [
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    },
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    },
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    },
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    },
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    },
+    {
+      "name": "actual-chart-values-preserved",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

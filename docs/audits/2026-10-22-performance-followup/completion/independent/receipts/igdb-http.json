@@ -1,0 +1,23 @@
+{
+  "scope": "Actual configured IGDB application credentials, native OAuth client-credentials token and read-only IGDB query POST through the final transport. Returned token and raw DTOs never exported; no game import or external user/account mutation.",
+  "cases": [
+    {
+      "kind": "search",
+      "status": 200,
+      "bytes": 158355,
+      "sha256": "7288867e398242cf0ed128edbe747c6e735514fa7bf4e2971d20a1384b213986",
+      "items": 60,
+      "ms": 506.1733760000001
+    },
+    {
+      "kind": "detail",
+      "status": 200,
+      "bytes": 4514,
+      "sha256": "d6fc80bee0761791c3683045dd82ff0866426f71088f6a1b72738a885d7d133a",
+      "ms": 696.1877079999999
+    }
+  ],
+  "failures": [],
+  "gaps": [],
+  "status": "passed"
+}

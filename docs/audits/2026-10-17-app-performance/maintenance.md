@@ -1,13 +1,13 @@
 # Maintaining this audit and preventing drift
 
-The [implementation ledger](implementation-ledger.md) is the exact disposition of all 94 canonical records (33 implemented /39 partial /19 open /3 other;74 source-applied), with 15 additional observations separate. Start with the [current handoff](implementation-handoff.md) and [future checklist](next-investigation-checklist.md). The implementation pass and authorized Activity follow-up are closed; no ready untried method remains, and broader auditing is deferred. The [latest application gates](evidence/activity-policy-keys/gates.json) and [housekeeping integrity](evidence/housekeeping-integrity.json) have different scopes: documentation/source reconciliation does not rerun runtime measurements.
+The [implementation ledger](implementation-ledger.md) and its 94-record counts describe the historical 19 October epoch. Later task, reader and browsing changes supersede some open descriptions. Start with the [22 October follow-up register](../2026-10-22-performance-followup/README.md) and its exact acceptance/rejected-trial records, then the [future checklist](next-investigation-checklist.md). Historical receipts are immutable evidence, not a current completion scoreboard.
 
 ## Checks for an implementation change
 
-Use the repository's selected Bun 1.4.3 runtime. Put its directory on `PATH` before invoking package scripts; a global Bun installation is not assumed.
+Use the exact runtime selected by `package.json`, Dockerfile and CI: **Bun 1.4.4-canary.1+6bb5dc195**. Put that runtime on `PATH` and verify its revision. CI extracts it from the immutable image pinned in Dockerfile. A newer research canary, a system Bun and an older 1.4.3 runtime are different measurement environments; label supplementary runs accordingly.
 
 ```sh
-export PATH="$PWD/.tools/bun-1.4.3/bun-darwin-aarch64:$PATH"
+test "$(bun --revision)" = "1.4.4-canary.1+6bb5dc195"
 bun test tests
 bun run check
 bun run build

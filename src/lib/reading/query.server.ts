@@ -1,6 +1,7 @@
 import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
 import {librarySortValues,librarySegmentValues} from '#lib/library.js';
 import {libraryOrder} from '#lib/server/queries/library-order.js';
+import { categoryEnabled } from '#lib/experimental.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { presentationPreferences, personaliseWorkCards, presentationSearch } from '#lib/catalogue/overrides/presentation.server.js';
 import { and, count, desc, eq, or, sql, getTableColumns } from 'drizzle-orm';
@@ -125,6 +126,8 @@ export async function readingProviderCards(userId: string, metadata: ReadingMeta
   if (!metadata.length) return [];
   if (metadata.length > PAGE_SIZE) throw new DomainError('Too many reading results.', 400, 'invalid_input');
   const config = await getFeatureConfig(userId);
+  metadata = metadata.filter(item => categoryEnabled(config, item.kind));
+  if (!metadata.length) return [];
   const identities = metadata.flatMap(item => [{ provider: item.provider, externalId: item.externalId, kind: item.kind },
     ...(item.identities ?? []).map(identity => ({ ...identity, kind: item.kind }))]);
   const registered = await getDb().select({ identity: workIdentifiers, work: readingWorks }).from(workIdentifiers)

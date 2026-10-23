@@ -1,0 +1,15 @@
+{
+  "scope": "Two genuine failed public TMDB artwork inputs, existing native transport with no outer audit DNS allowlist",
+  "rows": [
+    {
+      "size": "w780",
+      "status": 200,
+      "bytes": 174314
+    },
+    {
+      "size": "original",
+      "status": 200,
+      "bytes": 312212
+    }
+  ]
+}

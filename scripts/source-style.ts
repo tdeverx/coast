@@ -3,6 +3,14 @@ import ts from 'typescript';
 // Adopt modules as they are edited; legacy code is deliberately not reformatted in bulk.
 export const styleFiles = [
   'scripts/source-style.ts',
+  'scripts/performance-followup.ts',
+  'scripts/performance-finalization.ts',
+  'src/lib/server/db/read-cancellation.ts',
+  'src/lib/playback/stop.ts',
+  'src/lib/sync/jellyfin-finalization.server.ts',
+  'tests/performance-copy-guards.test.ts',
+  'tests/performance-audit-register.test.ts',
+  'tests/jellyfin-finalization-db.test.ts',
   'scripts/build-reading-extractor.ts',
   'scripts/reading-delivery-verification.ts',
   'scripts/reading-delivery-integration.ts',

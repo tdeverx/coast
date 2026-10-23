@@ -30,12 +30,12 @@
   import Avatar from './Avatar.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import { profilePath } from '#lib/profile/url.js';
-  import { page } from '$app/state';
+  import { page, navigating } from '$app/state';
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
   import {actionOptions,actionLabels,actionHref,resolveAction,actionRoutes} from '#lib/actions.js';
   import type {LibrarySurface} from '#lib/library.js';
-  import {goto} from '$app/navigation';
+  import {goto,beforeNavigate} from '$app/navigation';
   import { reader, hideReading } from '#lib/reading/client.svelte.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   const { player } = usePlayback();
@@ -54,14 +54,21 @@
     const selected=page.url.searchParams.get('view')??page.url.searchParams.get('surface');
     if(!preview&&actions.length&&selected&&selected!==action&&actionRoutes.includes(page.url.pathname))void goto(actionHref(page.url.pathname,action,page.url.searchParams.get('q')??''),{replaceState:true});
   });
+  let actionNavigation = 0;
+  beforeNavigate(navigation => { if (!navigation.shallow) actionNavigation++; });
   async function chooseAction(value:LibrarySurface){
     if(changingAction||value===action)return;
     changingAction=true;actionError='';
     const controller=new AbortController();actionRequest=controller;const owner=user?.username;
+    // Saving settings can refresh old route data while a new Search is entering.
+    const intended = navigating.to?.url ?? page.url, navigation = actionNavigation;
     try {
       if(!preview&&user)await api('settings',{action:value},'POST',{signal:controller.signal});
       if(controller.signal.aborted||owner!==user?.username)return;
-      if(!preview){await goto(actionHref(page.url.pathname,value,page.url.searchParams.get('q')??''));}
+      if(!preview){
+        const target = navigation === actionNavigation ? intended : navigating.to?.url ?? page.url;
+        await goto(actionHref(target.pathname,value,target.searchParams.get('q')??''));
+      }
     } catch { if(!controller.signal.aborted)actionError='The action could not be changed. Please try again.'; }
     finally {changingAction=false;}
   }

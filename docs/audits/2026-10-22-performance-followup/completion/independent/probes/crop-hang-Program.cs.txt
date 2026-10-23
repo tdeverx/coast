@@ -1,0 +1,19 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Jellyfin.Plugin.Coast;
+using Jellyfin.Plugin.Coast.Api;
+using MediaBrowser.Controller.MediaEncoding;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+var input=JsonDocument.Parse(File.ReadAllText("<PRIVATE_RUN_ROOT>/private/crop-source.json")).RootElement;
+var id=input.GetProperty("id").GetString()!;var authorization=input.GetProperty("authorization").GetString()!;
+Plugin.Instance=new Plugin();Plugin.Instance.Configuration.FfmpegPath="/opt/homebrew/bin/ffmpeg";
+int Children(){using var ps=Process.Start(new ProcessStartInfo("/bin/ps"){ArgumentList={"-axo","pid,ppid,comm"},RedirectStandardOutput=true,UseShellExecute=false})!;var text=ps.StandardOutput.ReadToEnd();ps.WaitForExit();return text.Split('\n').Select(x=>x.Split(' ',StringSplitOptions.RemoveEmptyEntries)).Count(x=>x.Length>=3&&int.TryParse(x[1],out var parent)&&parent==Environment.ProcessId&&x[2].EndsWith("ffmpeg",StringComparison.Ordinal));}
+TrailerCropController Controller(int port,CancellationToken token=default){var context=new DefaultHttpContext();context.Request.Scheme="http";context.Request.Host=new HostString("127.0.0.1",port);context.Request.Headers.Authorization=authorization;context.RequestAborted=token;return new(new Encoder(),NullLogger<TrailerCropController>.Instance){ControllerContext=new(){HttpContext=context}};}
+var checks=new List<object>();var start=Stopwatch.StartNew();var timeout=await Controller(5197).DetectCrop(new(id)).WaitAsync(TimeSpan.FromSeconds(30));var timeoutMs=start.Elapsed.TotalMilliseconds;checks.Add(new{name="real-ffmpeg-stalled-source-timeout",pass=(timeout.Result as ObjectResult)?.StatusCode==502&&Children()==0,status=(timeout.Result as ObjectResult)?.StatusCode,ms=timeoutMs,childrenAfter=Children()});
+using var firstCancel=new CancellationTokenSource();using var secondCancel=new CancellationTokenSource();var first=Controller(5198,firstCancel.Token).DetectCrop(new(id));var second=Controller(5198,secondCancel.Token).DetectCrop(new(id));for(int n=0;n<100&&Children()==0;n++)await Task.Delay(25);var shared=Children();firstCancel.Cancel();var firstAborted=false;try{await first;}catch(OperationCanceledException){firstAborted=true;}checks.Add(new{name="first-consumer-cancel-keeps-real-child-for-remaining-lease",pass=firstAborted&&shared==1&&Children()==1,sharedChildren=shared,childrenAfter=Children()});
+start.Restart();secondCancel.Cancel();var secondAborted=false;try{await second;}catch(OperationCanceledException){secondAborted=true;}for(int n=0;n<100&&Children()>0;n++)await Task.Delay(25);checks.Add(new{name="final-consumer-cancel-drains-real-child",pass=secondAborted&&Children()==0,ms=start.Elapsed.TotalMilliseconds,childrenAfter=Children()});
+var passed=checks.All(x=>(bool)x.GetType().GetProperty("pass")!.GetValue(x)!);
+File.WriteAllText("<PRIVATE_RUN_ROOT>/private/crop-hang.json",JsonSerializer.Serialize(new{status=passed?"passed":"findings",scope="Production crop controller linked directly, actual FFmpeg and genuine static-range bytes through a loopback hold proxy. Source authorization context is supplied directly; not hosted Jellyfin middleware acceptance. Timeout and independent/final lease cancellation; no job, encoder or progress mutation. Exact native source selected privately, never fabricated.",checks},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine(JsonSerializer.Serialize(new{status=passed?"passed":"findings",checks}));
+sealed class Encoder:IMediaEncoder{public string EncoderPath=>"/opt/homebrew/bin/ffmpeg";}

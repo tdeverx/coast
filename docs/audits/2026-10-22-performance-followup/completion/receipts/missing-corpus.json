@@ -1,0 +1,136 @@
+{
+  "boundary": "Current actual authenticated metadata GETs for all six accounts, without ingesting fabricated catalogue rows or changing provider configuration.",
+  "accounts": [
+    {
+      "status": 200,
+      "total": 51,
+      "inspected": 51,
+      "complete": true,
+      "formats": {
+        "cbr": 46,
+        "cbz": 5
+      }
+    },
+    {
+      "status": 200,
+      "total": 51,
+      "inspected": 51,
+      "complete": true,
+      "formats": {
+        "cbr": 46,
+        "cbz": 5
+      }
+    },
+    {
+      "status": 200,
+      "total": 51,
+      "inspected": 51,
+      "complete": true,
+      "formats": {
+        "cbr": 46,
+        "cbz": 5
+      }
+    },
+    {
+      "status": 200,
+      "total": 51,
+      "inspected": 51,
+      "complete": true,
+      "formats": {
+        "cbr": 46,
+        "cbz": 5
+      }
+    },
+    {
+      "status": 200,
+      "total": 51,
+      "inspected": 51,
+      "complete": true,
+      "formats": {
+        "cbr": 46,
+        "cbz": 5
+      }
+    },
+    {
+      "status": 200,
+      "total": 0,
+      "inspected": 0,
+      "complete": true,
+      "formats": {}
+    }
+  ],
+  "videoHints": [
+    {
+      "codec": "av1",
+      "resolution": "1080",
+      "titles": 151
+    },
+    {
+      "codec": "av1",
+      "resolution": "below1080",
+      "titles": 28
+    },
+    {
+      "codec": "h264",
+      "resolution": "1080",
+      "titles": 4479
+    },
+    {
+      "codec": "h264",
+      "resolution": "below1080",
+      "titles": 1392
+    },
+    {
+      "codec": "hevc",
+      "resolution": "1080",
+      "titles": 12647
+    },
+    {
+      "codec": "hevc",
+      "resolution": "2160+",
+      "titles": 7
+    },
+    {
+      "codec": "hevc",
+      "resolution": "below1080",
+      "titles": 5320
+    },
+    {
+      "codec": "mpeg4",
+      "resolution": "below1080",
+      "titles": 427
+    },
+    {
+      "codec": "msmpeg4v2",
+      "resolution": "below1080",
+      "titles": 13
+    },
+    {
+      "codec": "msmpeg4v3",
+      "resolution": "below1080",
+      "titles": 2
+    },
+    {
+      "codec": "vc1",
+      "resolution": "1080",
+      "titles": 1
+    },
+    {
+      "codec": "vp9",
+      "resolution": "below1080",
+      "titles": 2
+    },
+    {
+      "codec": "wmv2",
+      "resolution": "below1080",
+      "titles": 6
+    },
+    {
+      "codec": "wmv3",
+      "resolution": "below1080",
+      "titles": 5
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

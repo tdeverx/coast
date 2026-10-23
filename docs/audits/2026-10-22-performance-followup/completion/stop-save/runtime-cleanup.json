@@ -1,0 +1,12 @@
+{
+  "ownedContainerDeleted": true,
+  "ownedPostgresStoppedGracefully": true,
+  "ownedProxyStopped": true,
+  "auditBrowserClosed": true,
+  "plaintextCredentialInputsRemoved": [
+    "browser-session.json",
+    "browser-state.json",
+    "browser.config.json"
+  ],
+  "userInAppBrowserUntouched": true
+}

@@ -1,0 +1,3848 @@
+{
+  "scope": "Final production build, actual copied admin and genuine Search provider responses. UI form submission, primary/enriched publication and action navigation while a later query is loading. No intercepted/fabricated body. Shared public metadata cache reads may finish; obsolete caller hydration/publication is cancelled/fenced.",
+  "samples": [
+    {
+      "ms": 103,
+      "query": "batman",
+      "view": "read",
+      "busy": false,
+      "cards": 0,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 222,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 325,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 426,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 527,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 629,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 732,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 835,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 938,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1042,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1145,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1248,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1352,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1455,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1559,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1661,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1765,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1868,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 1971,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 2074,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 2178,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 2281,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 2385,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 6,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 0
+    },
+    {
+      "ms": 2489,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2696,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2799,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 2903,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3006,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3110,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3213,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3317,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3421,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3524,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3627,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3730,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3833,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 3937,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4041,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4144,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4249,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4352,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4455,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4558,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4662,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4767,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4871,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 4974,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5077,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5181,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5285,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5389,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5493,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5597,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5700,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5804,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 5906,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6010,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6113,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6217,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6322,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6425,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6528,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6632,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6736,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6840,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 6943,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7046,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7149,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7253,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7356,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7459,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7562,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7665,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7769,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7872,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 7976,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8079,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8183,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8287,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8391,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8494,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8598,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8701,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8805,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 8907,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9010,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9113,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9216,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9320,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9423,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9527,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9628,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9732,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9836,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 9939,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10042,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10145,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10249,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10354,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10457,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10560,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10662,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10765,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10869,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 10972,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11075,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11178,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11281,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11382,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11485,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11588,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11692,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11795,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 11898,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12002,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12105,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12207,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12312,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12416,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12520,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12623,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12725,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12828,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 12931,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13034,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13138,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13241,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13345,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13448,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13551,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13654,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13758,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13862,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 13965,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14068,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14172,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14276,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14379,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14482,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14585,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14689,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14791,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14893,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 14997,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15100,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15204,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15308,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15412,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15515,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15617,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15721,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15825,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 15928,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16032,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16135,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16239,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16342,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16445,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16547,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16651,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16755,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16859,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 16962,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17065,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17168,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17272,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17375,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17478,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17582,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17684,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17788,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17890,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 17993,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18097,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18201,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18305,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18408,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18511,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18614,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18718,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18822,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 18926,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19028,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19132,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19234,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19338,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19442,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19545,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19648,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19752,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19854,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 19958,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20061,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20165,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20269,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20373,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20476,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20579,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20683,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20786,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20890,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 20993,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21098,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21201,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21303,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21406,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21509,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21612,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21716,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21819,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 21922,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22024,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22128,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22230,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22334,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22437,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22540,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22645,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22748,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22851,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 22954,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23057,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23160,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23261,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23365,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23469,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23573,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23676,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23779,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23882,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 23986,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24090,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24194,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24297,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24400,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24505,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24609,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24712,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24815,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 24919,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25022,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25124,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25228,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25332,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25436,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25540,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25643,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25747,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25851,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 25955,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26058,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26161,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26265,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26369,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26472,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26576,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26678,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26783,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26887,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 26990,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27094,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27197,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27301,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27403,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27506,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27610,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27714,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27818,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 27922,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28024,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28126,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28230,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28334,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28438,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28541,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28645,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28749,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28853,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 28957,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29059,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29163,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29265,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29369,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29472,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29575,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29679,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29783,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29886,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 29989,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30093,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30194,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30299,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30403,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30506,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30609,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30714,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30817,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 30920,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31022,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31126,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31230,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31333,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31436,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31540,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31643,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31747,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31850,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 31954,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32057,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32160,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32264,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32369,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32472,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32576,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32680,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32784,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32887,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 32990,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33094,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33196,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33300,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33404,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33506,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33609,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33712,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33817,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 33921,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34025,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34127,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34231,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34335,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34438,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34542,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34644,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34749,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34851,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 34955,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35058,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35161,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35264,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35367,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35471,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35573,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35677,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35781,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35884,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 35988,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36089,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36193,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36297,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36401,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36503,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36607,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36710,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36814,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 36918,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37022,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37125,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37229,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37333,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37436,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37540,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37641,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37745,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37849,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 37953,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38056,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38159,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38263,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38367,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38471,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38575,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38679,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38782,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38885,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 38989,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 39093,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 39195,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 39300,
+      "query": "batman",
+      "view": "read",
+      "busy": true,
+      "cards": 16,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 20
+    },
+    {
+      "ms": 39415,
+      "query": "batman",
+      "view": "read",
+      "busy": false,
+      "cards": 26,
+      "overlay": false,
+      "noResults": false,
+      "remoteComic": 40
+    }
+  ],
+  "checks": [
+    {
+      "name": "primary-comic-cards-visible-while-enrichment-remains-busy",
+      "pass": true
+    },
+    {
+      "name": "complete-stage-publishes-and-settles-loading",
+      "pass": true
+    },
+    {
+      "name": "no-final-empty-state-during-loading",
+      "pass": true
+    },
+    {
+      "name": "late-reading-work-cannot-repopulate-listen-search",
+      "pass": true
+    },
+    {
+      "name": "no-page-errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "status": "passed",
+  "completed": {
+    "query": "batman",
+    "view": "read",
+    "busy": false,
+    "cards": 26,
+    "overlay": false,
+    "noResults": false,
+    "remoteComic": 40,
+    "ms": 39524
+  },
+  "afterNavigation": {
+    "query": "Superman",
+    "view": "listen",
+    "busy": false,
+    "cards": 3,
+    "overlay": false,
+    "noResults": false,
+    "remoteComic": 0
+  }
+}

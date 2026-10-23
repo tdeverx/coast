@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
 import { mapConcurrent } from '#lib/server/utils/async.js';
 import { searchFallback, searchScore } from '#lib/search.js';
@@ -58,7 +59,8 @@ export async function getTmdb(language = 'en-US', region = 'GB', instanceId?:str
         }
       ),
     language,
-    region
+    region,
+    `${instance.id}:${createHash('sha256').update(instance.credentials).digest('hex')}`
   );
 }
 function snapshotValues(metadata: Metadata) {

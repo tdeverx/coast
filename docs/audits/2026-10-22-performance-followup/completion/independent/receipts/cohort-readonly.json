@@ -1,0 +1,21 @@
+{
+  "scope": "Read-only census of all existing users/containers on the exact copy; no authored positive catalogue or relationships.",
+  "counts": {
+    "gamePlaythroughs": 0,
+    "traktConnected": 0,
+    "sameUserMultipleJellyfin": 0
+  },
+  "failures": [],
+  "liveRooms": 0,
+  "currentFormats": [
+    {
+      "format": "cbr",
+      "n": 52
+    },
+    {
+      "format": "cbz",
+      "n": 11
+    }
+  ],
+  "status": "passed-read-only"
+}

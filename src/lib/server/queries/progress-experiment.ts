@@ -15,10 +15,14 @@ import {viewingRecency} from './viewing-recency';
 import {rewatchBoundary} from '#lib/core/tracking/rewatch.server.js';
 import {pagination, PAGE_SIZE} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
+import {withReadCancellation} from '../db/read-cancellation';
 import {libraryTrackingCondition} from './library';
 
 /** Shared Progress row: select eligible IDs across enabled media before hydrating one page. */
 export async function progressExperimentData(userId:string, raw:unknown, {preview=false,signal,viewerId=userId}:{preview?:boolean;signal?:AbortSignal;viewerId?:string}={}):Promise<ProgressExperimentContent> {
+  return withReadCancellation(signal,()=>progressExperimentRead(userId,raw,{preview,signal,viewerId}));
+}
+async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,viewerId}:{preview:boolean;signal?:AbortSignal;viewerId:string}):Promise<ProgressExperimentContent>{
   signal?.throwIfAborted();
   const options=v.parse(progressExperimentSchema,raw),config=await getFeatureConfig(viewerId);
   signal?.throwIfAborted();
@@ -33,7 +37,7 @@ export async function progressExperimentData(userId:string, raw:unknown, {previe
     wants('reading')?readingProgressIds(userId,{...base,category:'reading'},false,viewerId):[],
   ]);
   signal?.throwIfAborted();
-  const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal',options.category??'all')}
+  const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal',options.category??'all','status')}
     select a.id from assessments a left join ${s.media} on ${s.media.id}=a.id
     left join ${s.trackingState} on ${s.trackingState.mediaId}=a.id and ${s.trackingState.userId}=${userId}
     where a.category<>'music' and case when a.category='screen' then
@@ -43,7 +47,7 @@ export async function progressExperimentData(userId:string, raw:unknown, {previe
   const candidates=history?historyRows.map(row=>row.id as string):saved?await listCandidateIds(userId,{view:options.view,category:options.category??'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId):[...new Set([...(screen?.allIds??[]),...games,...reading])];
   signal?.throwIfAborted();
   if(!candidates.length)return {...options,items:[],total:0,page:1,pages:1};
-  const available=hasPermittedWorkSource(viewerId);
+  const available=hasPermittedWorkSource(viewerId,options.category);
   const section=saved?options.view==='favourites'?'favourites':'collection':'progress';
   const where=and(
     sql`${s.works.id}=any(${`{${candidates.join(',')}}`}::uuid[])`,enabledCategories(sql`${s.works.category}`,config),

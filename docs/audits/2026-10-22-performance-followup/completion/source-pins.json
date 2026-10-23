@@ -1,0 +1,143 @@
+{
+  "baseline": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
+  "shippingBunRevision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "files": {
+    "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
+    "scripts/performance-finalization.ts": "7fe327d03418375830ad0f066b850e7ab1033cf1e019ca2f1cb276d22e887318",
+    "scripts/performance-followup.ts": "5a265db6f5dafe1dd8687427660b235dcf1808afab1f57e8fd8e05ba3cd74177",
+    "src/lib/collection/query.server.ts": "c280664474fc359e8a0ad272a44ea7444e2d096accd2474cffd74df62465a0d7",
+    "src/lib/core/lists/up-next.server.ts": "a87aa45ddae6d0fd8291779b284bf8b715e521433f3d66908d3a0082b2135cea",
+    "src/lib/core/tracking/continue.server.ts": "578abbae1361d0768e8dc94c613df9a0b78219761ba0621c2462f5ba7b6ecd3d",
+    "src/lib/server/db/index.ts": "be6092501410e2c0b0f0a325af3294853fd27729809fa8a987a8b1344dfdc616",
+    "src/lib/server/db/read-cancellation.ts": "36deac25514f0935352aee0e14aeb217005d3479aa6161b1b6840b849b792c96",
+    "src/lib/server/queries/library.ts": "7b2851d9a66923e61924f643f1e9836e82fdcf95d44c7a189ba3d4d89e0bbba2",
+    "src/lib/server/queries/media.ts": "59cfba66604f912aacb82b57d3a3870bbbb22526919e2534b8320fe7e1637fe8",
+    "src/lib/server/queries/progress-experiment.ts": "81bf0b8691d404bbd98a07dfa358f1a6592370f253e174fcaaca2e330ed9f69c",
+    "src/lib/server/queries/recent-library.ts": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
+    "src/lib/server/queue/index.ts": "a512dbb50c180d63e1c42394180eb94bc8874c3aae69d1c7e21836aad06655ec",
+    "src/lib/server/security/provider-fetch.ts": "042953d7f52e8aa1d0c074d823f6365999fa2831dcd3e079859b63b619ab4007",
+    "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
+    "src/lib/sync/jellyfin-finalization.server.ts": "87af15b0b6c053e5c6d9276315fb8a75c8a274e2619cc85d7c4f5d1116a1cf0d",
+    "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
+    "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
+    "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
+    "src/lib/ui/shelves/library.svelte.ts": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+    "src/routes/ui-preview/Workspace.svelte": "fb9a5ad3793f0c3b1b7eb4031c2fe62c6579a54cf2190c717e783723616765ef",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
+    "src/lib/providers/tmdb/details.server.ts": "0da75fccbefe61153c78028dfe6b3d840d3188a934b36a14c8abbad9e95ec5eb",
+    "src/lib/providers/comic-vine/adapter.server.ts": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d",
+    "src/lib/ui/components/PersistentPlayer.svelte": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
+    "src/lib/server/queries/library-containers.ts": "7758601bb65bf19e63f6c280a6fdf95ad21ca277278744ed3765deb3a70013ab",
+    "tests/library-navigation.test.ts": "4a43d6342ada8378341e47c4d41fd904b55ce70e7ee745870f608f8f0faa59ae",
+    "tests/fixtures/library-window.ts": "82a9187280c524d073326a0cb3ff408d21c69bbf522df0efc680be28373f5a4b",
+    "scripts/performance-action-browser.js": "a31b9c38197cf6ab2ef9aafe7246761bc6faeb71e8f2905d720a39c3751f4c5a",
+    "scripts/performance-preview-browser.js": "4a920ab2b98061b2d57ae22c2a8e7fc60b05f6e9d8b9cb30434936980525d0c8",
+    "scripts/performance-library-browser.js": "2b3860fba08b892588d2769efb595c74c2641355e324556c033d71b61404d903",
+    "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
+    "Dockerfile": "303cffb25274c4d3d388da33d0b8966eb404e2a6ef041f090659801bfeb60f8d",
+    "tests/ui-source-freshness.test.ts": "6970421b6d1689c7e1b5ae28529b62bc545e6e6450fd44cb2763fa62d8fdcaf7",
+    "tests/performance-audit-register.test.ts": "6b11f0435e41e2d2fb0da797944f3bd4d791daeb6a85bae8b3a749e37a5bc86d",
+    "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
+    "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
+    "src/lib/playback/service.server.ts": "cdaf9eed30d5b919af4ef5f895d4b0c43b20dfa378fc2d43ecb728cd27c19f4e",
+    "src/lib/playback/synced/client.svelte.ts": "b3a4155bd66d3590fd45f5e74fc9c33c2dbf00de8b6f4f2a77cb7162ce98d515",
+    "src/lib/ui/client.ts": "45450e86798bc5cc3dc59f1a427d76fe86ae8c3cff42b8b219d2a1d6d2769b07",
+    "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
+    "src/lib/ui/action-feedback.svelte.ts": "143eb58d887870dfbf76d6ea6cf7bcd3f577193ea8e07dfc7827bcf0827a3b4d",
+    "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
+    "tests/player-stop-lifecycle.test.ts": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
+    "tests/media-lifecycle-client.test.ts": "7786af4a888183bef0b3b6a046ddc5696f5fc702b0e6c45c8eb13d80fc3c91f1",
+    "tests/ui-feedback.test.ts": "71c0afcf5b92547b954157cad70617bff3a1fe60dfe7746db4cd3434e852ad6d",
+    "scripts/performance-stop-browser.js": "0bf8ae38ccc15b24aba680d9345427d10739f20997c34acb75fa4b95d44e8543",
+    "scripts/source-style.ts": "a2301db0ce3eca7371cd3167896b63811c15642d096e48e783e0e61f4ceee2e5",
+    "src/lib/ui/components/NotificationToasts.svelte": "27a7dd0f949c852e341578dde7271d012bf5b6072ea168ec43ffa85414aa6558",
+    "scripts/performance-stop-mobile-browser.js": "3fe798f0ad1de763eb53248c61deb3f19d1d0f4ab46a50be02ee88bc577a8df9",
+    "tests/playback-reports.test.ts": "a6da9c108e4e83725c94cafe6e9911f707b230885d548804fc57739666bb5fbb"
+  },
+  "companion": {
+    "baseline": "e5bac3461ea00f9eb783019fd483c28d1fccefc7",
+    "files": {
+      "Coast/Api/TrailerCropController.cs": "46445747bab6173d3490bd7221b027c3a6ba60d40112a2cf37608bbb6ccf56cd",
+      "Tests/TrailerCropChecks.cs": "90270ec7398d12bcbd067dacb4058dfe5fb398700e5ef7378ecfaf5b0ecb67f1",
+      "README.md": "d81939307f79fe2cc6d34804f36a4bbf67445cc3ad71964d5049bfe485dc9fd9"
+    }
+  },
+  "epochs": {
+    "earlierNativeAcceptance": "c3f281fae63963f87772ba98e059c0e661e46cb640f61a64af092a53af969487",
+    "completionNative": "Same database/provider/crop owners; later UI navigation guard and preview input reset are separate browser epochs. Probe sources and safe receipts retain method/controlled-state boundaries.",
+    "finalBrowser": "Rebuilt production app includes pending-navigation guard and preview reset; final action/retention/Back/preview receipts correspond to these final owner hashes.",
+    "continuedReview": "Source-only PR-02 lifecycle analysis plus unrestricted device discovery (zero devices); no new runtime or real-media acceptance and no product-source changes.",
+    "approvedStopImplementation": "User approved waiting for previous save before successor. Final product build replayed with actual copied music/source streams; matching native positions independently verified. Pending SPA navigation, one authored network abort/retry, cancelled music lookups, typed non-availability barrier, owner controls and shipping-runtime tests are separate from earlier audit receipts. No server tracking semantics or schema changed. The final CSS-only feedback clearance was replayed at 390x844 with explicit toast/navigation rectangle separation and settled screenshot; prior same-function audio/native-position replay remains separately recorded."
+  },
+  "continuationEpochs": [
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "supersededOwners": [
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "previousSha256": "de6f7b1b2da191fbc667800509dab60fb53fc3b224591595738c26f85f7b535f",
+          "currentSha256": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7"
+        },
+        {
+          "path": "src/lib/providers/tmdb/details.server.ts",
+          "previousSha256": "eabc6d0afa80ba67e8a1b34eb03803db628a123b455930dded01cc614382706e",
+          "currentSha256": "0da75fccbefe61153c78028dfe6b3d840d3188a934b36a14c8abbad9e95ec5eb"
+        },
+        {
+          "path": "src/lib/providers/comic-vine/adapter.server.ts",
+          "previousSha256": "c57a10d2bb65c99c3a46e19366cc5cdd6bb09a0a858cd39bb594fff40d8f359a",
+          "currentSha256": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "dbf2684b973f9c23b2873c86a78dcb6a228965bf0acc4289d5ffe591709e9b42",
+          "currentSha256": "397ae8201f1483001176f40b2a432c4bc5c6ffe6b49fc0b3b11320dda1f26952"
+        }
+      ],
+      "evidence": "independent/verification.json",
+      "note": "Earlier receipts remain historical. Replayed actual-data/browser and focused regressions bind current continuation owners."
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "supersededOwners": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "397ae8201f1483001176f40b2a432c4bc5c6ffe6b49fc0b3b11320dda1f26952",
+          "currentSha256": "cd9b234fc73b8591bd91edd80d770285682b28eb32c9f304002928098223b8f2"
+        }
+      ],
+      "evidence": "independent/verification.json",
+      "note": "Earlier receipts remain historical. Replayed actual-data/browser and focused regressions bind current continuation owners."
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "supersededOwners": [
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "previousSha256": "345cd2f7dc594d9824208e7e2a56cd55eade13c83c425e06528ca6fea9055925",
+          "currentSha256": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "cd9b234fc73b8591bd91edd80d770285682b28eb32c9f304002928098223b8f2",
+          "currentSha256": "dbbbde007f762645f3288bf61e1024669df64e221b8ef066725bb4286ec02ecd"
+        }
+      ],
+      "evidence": "independent/verification.json",
+      "note": "Earlier receipts remain historical. Replayed actual-data/browser and focused regressions bind current continuation owners."
+    },
+    {
+      "epoch": "independent-continuation-2026-10-23",
+      "supersededOwners": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "dbbbde007f762645f3288bf61e1024669df64e221b8ef066725bb4286ec02ecd",
+          "currentSha256": "6b11f0435e41e2d2fb0da797944f3bd4d791daeb6a85bae8b3a749e37a5bc86d"
+        }
+      ],
+      "evidence": "independent/verification.json",
+      "note": "Earlier receipts remain historical. Replayed actual-data/browser and focused regressions bind current continuation owners."
+    }
+  ]
+}

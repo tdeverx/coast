@@ -1,0 +1,22 @@
+import subprocess,os,signal,time,json,pathlib
+root=pathlib.Path('<PRIVATE_RUN_ROOT>/private');services=[]
+for port,needle in [(5175,'<PRIVATE_RUN_ROOT>/proxy.ts'),(5196,'<PRIVATE_RUN_ROOT>/reader-harness/vite.config.mjs')]:
+ pids=subprocess.run(['lsof','-nP','-iTCP:'+str(port),'-sTCP:LISTEN','-t'],capture_output=True,text=True).stdout.split()
+ for raw in set(pids):
+  pid=int(raw);cmd=subprocess.check_output(['ps','-p',raw,'-o','command='],text=True)
+  if needle not in cmd:raise RuntimeError('Unexpected listener owner on '+str(port))
+  os.kill(pid,signal.SIGTERM)
+ for n in range(50):
+  listeners=subprocess.run(['lsof','-nP','-iTCP:'+str(port),'-sTCP:LISTEN','-t'],capture_output=True,text=True).stdout.strip()
+  if not listeners:break
+  time.sleep(.1)
+ if listeners:raise RuntimeError('Listener still active '+str(port))
+ services.append({'port':port,'ownedCommandVerified':bool(pids),'closed':True})
+for port in [5197,5198]:
+ if subprocess.run(['lsof','-nP','-iTCP:'+str(port),'-sTCP:LISTEN','-t'],capture_output=True,text=True).stdout.strip():raise RuntimeError('Crop listener remains '+str(port))
+ services.append({'port':port,'closed':True,'alreadyStopped':True})
+removed=[]
+for name in ['sessions.json','browser-session.json','crop-source.json']:
+ p=root/name
+ if p.exists():p.unlink();removed.append(name)
+d={'scope':'Exact owned loopback listeners only; original live/development services untouched. Plaintext scratch session/crop-source descriptors removed; safe receipts and public corpus retained.','services':services,'privateDescriptorsRemoved':removed};(root/'cleanup-host.json').write_text(json.dumps(d,indent=2)+'\n');print(json.dumps(d))

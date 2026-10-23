@@ -109,3 +109,21 @@ test('reserved urgent admission keeps oldest background work progressing between
  expect(order.slice(0,8)).toEqual(Array.from({length:8},(_,index)=>`urgent-${index}`));
  expect(order[8]).toBe('background');
 });
+
+test('queue wait expires independently of provider I/O and releases admission',async()=>{
+ const {ProviderQueueTimeoutError,providerRequestMetrics}=await import('../src/lib/server/security/request-priority');
+ const origin=crypto.randomUUID();let release!:()=>void,called=false;
+ const running=queueProviderRequest(origin,0,()=>new Promise<void>(r=>release=r));
+ try{
+  const queued=queueProviderRequest(origin,0,async()=>{called=true;},undefined,20);
+  await expect(queued).rejects.toBeInstanceOf(ProviderQueueTimeoutError);
+  expect(called).toBe(false);expect(providerRequestMetrics().providerWaiting).toBe(0);
+ }finally{release();await running;}
+ await queueProviderRequest(origin,0,async()=>{called=true;});expect(called).toBe(true);
+});
+
+test('queue deadline is cleared on admission and does not time out active work',async()=>{
+ let release!:()=>void;const origin=crypto.randomUUID();
+ const request=queueProviderRequest(origin,0,()=>new Promise<string>(r=>release=()=>r('completed')),undefined,10);
+ await Bun.sleep(25);release();expect(await request).toBe('completed');
+});

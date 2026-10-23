@@ -6,6 +6,7 @@ import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.serv
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
+import { withReadCancellation } from '../db/read-cancellation';
 import * as s from '../db/schema';
 import { mediaViews, hasPermittedMediaSource, hasPermittedWorkSource } from './media';
 import { pageNumberSchema, PAGE_SIZE, pagination, requestedPageInterval } from './pagination';
@@ -57,6 +58,9 @@ export function libraryTrackingCondition(
 
 /** Share eligibility/count across a bounded range; preserve native 60-title hydration pages. */
 export async function libraryData(userId: string, rawOptions: unknown = {}, firstPage?: number, signal?: AbortSignal) {
+  return withReadCancellation(signal,()=>libraryRead(userId,rawOptions,firstPage,signal));
+}
+async function libraryRead(userId:string,rawOptions:unknown,firstPage?:number,signal?:AbortSignal){
   signal?.throwIfAborted();
   v.parse(uuidSchema, userId);
   const input = v.parse(libraryOptionsSchema, rawOptions);

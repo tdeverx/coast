@@ -1,0 +1,62 @@
+{
+  "scope": "Actual retained permitted Jellyfin live job, real native handler/provider read. Instrumented hold after handler effect, before queue completion, for 330 seconds; no synthetic accounts/media/job kinds or provider replies. Tests queue heartbeat/claim reservation, not natural task throughput.",
+  "samples": [
+    {
+      "elapsedMs": 55026.84315,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 15.051371,
+      "duplicateClaim": false,
+      "pass": true
+    },
+    {
+      "elapsedMs": 110057.293634,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 10.07672,
+      "duplicateClaim": false,
+      "pass": true
+    },
+    {
+      "elapsedMs": 165097.762994,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 5.097664,
+      "duplicateClaim": false,
+      "pass": true
+    },
+    {
+      "elapsedMs": 220131.474769,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 0.108704,
+      "duplicateClaim": false,
+      "pass": true
+    },
+    {
+      "elapsedMs": 275166.874503,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 15.123378,
+      "duplicateClaim": false,
+      "pass": true
+    },
+    {
+      "elapsedMs": 330200.210402,
+      "state": "running",
+      "attempts": 1,
+      "lockAgeSeconds": 10.135677,
+      "duplicateClaim": false,
+      "pass": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "genuine-handler-completes-once-after-five-minute-reclaim-window",
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "status": "passed"
+}

@@ -4,6 +4,10 @@
 
 Current counts: **33 implemented / 39 partial / 19 open / 3 other**, 94 canonical records; 74 source-applied and 15 additional observations. Broader auditing is incomplete.
 
+## Current handoff — 23 October 2026
+
+The [application roadmap](../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026) now carries all eight remaining blocker/boundary IDs from the [current register](../2026-10-22-performance-followup/completion/independent/blockers.json), including the exact missing input and acceptance condition. The [continuation report](../2026-10-22-performance-followup/completion/independent/README.md) records completed real-data, multi-engine, reader, resource and lease checks. The per-area descriptions below retain their 19 October evidence epoch; consult the current handoff before repeating a now-completed check. Historical counts are not updated to imply universal acceptance.
+
 ## Resume order
 
 Unchecked areas and newly observed issues first; failed methods afterward. Reconcile existing evidence before testing. Each batch names one shared owner, actual cohort, behavior/resource question and stopping condition. Actual admin controlled state is permitted on isolated actual-data copies; it is labeled separately from natural provider/production behavior.
@@ -118,9 +122,9 @@ Evidence: [ui-preview-platform.md](ui-preview-platform.md), [ui-second-pass.md](
 
 ## Explicitly deferred or rejected
 
-- PR-02 durable playback recovery and PJ-15 bulk-task receipts: [user-deferred designs](candidates/recovery-bulk-contracts/README.md). No storage/retry/continuation contract adopted.
+- PJ-15 durable bulk-task receipts remain a product decision (`BLOCK-BULK`). PR-02 Stop behavior was subsequently selected and implemented; see the [Stop/save record](../2026-10-22-performance-followup/completion/stop-save/README.md). No durable bulk-recovery storage contract is adopted.
 - Failed, mixed or contract-incompatible methods: [backlog](failed-method-backlog.md). Retain defaults; a keep-current outcome is valid.
-- Newly observed interest ordering, Continue Undo race and Jellyfin finalization deadlock: [ordered checklist](next-investigation-checklist.md). They remain separate from implemented optimization portions.
+- The later Continue/Undo ordering and Jellyfin finalization repairs are implemented in the [22–23 October register](../2026-10-22-performance-followup/register.json). Hosted/multi-account acceptance remains mapped to the current blockers.
 - Comic Lab remains read-only; budget, policy, visible ordering or source behavior changes need a concrete reviewed choice when they materially change the contract.
 
 ## Evidence and drift

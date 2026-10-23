@@ -1,0 +1,30 @@
+{
+  "scope": "Exact owned loopback listeners only; original live/development services untouched. Plaintext scratch session/crop-source descriptors removed; safe receipts and public corpus retained.",
+  "services": [
+    {
+      "port": 5175,
+      "ownedCommandVerified": true,
+      "closed": true
+    },
+    {
+      "port": 5196,
+      "ownedCommandVerified": true,
+      "closed": true
+    },
+    {
+      "port": 5197,
+      "closed": true,
+      "alreadyStopped": true
+    },
+    {
+      "port": 5198,
+      "closed": true,
+      "alreadyStopped": true
+    }
+  ],
+  "privateDescriptorsRemoved": [
+    "sessions.json",
+    "browser-session.json",
+    "crop-source.json"
+  ]
+}

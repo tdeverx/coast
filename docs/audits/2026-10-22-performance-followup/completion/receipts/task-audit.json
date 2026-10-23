@@ -1,0 +1,75 @@
+{
+  "boundary": "Actual existing finite job records on marked real-data copy; controlled reactivation/expiry/cancelled-lease schedules labelled. Native claim/run with genuine read-only providers; no new fake handlers or fabricated responses. Not natural production queue throughput.",
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "checks": [
+    {
+      "name": "three-existing-permitted-read-jobs",
+      "passed": true
+    },
+    {
+      "name": "concurrent-native-claims-exactly-once",
+      "passed": true
+    },
+    {
+      "name": "native-control-refuses-to-cancel-running-job",
+      "passed": true
+    },
+    {
+      "name": "cancelled-native-lease-fences-publication",
+      "passed": true
+    },
+    {
+      "name": "expired-real-job-lease-reclaimed",
+      "passed": true
+    },
+    {
+      "name": "native-read-handler-finishes-or-records-provider-failure",
+      "passed": true
+    },
+    {
+      "name": "native-read-handler-finishes-or-records-provider-failure",
+      "passed": true
+    },
+    {
+      "name": "native-read-handler-finishes-or-records-provider-failure",
+      "passed": true
+    }
+  ],
+  "runs": [
+    {
+      "kind": "jellyfin.live",
+      "connectionHash": "bcc9e955379d07a331cc07fd2e45a4e5c8af56a7d1406edf8c517ebc27bfa25f",
+      "worked": true,
+      "state": "succeeded",
+      "attempts": 1,
+      "ms": 92.81720899999982,
+      "failureCode": null
+    },
+    {
+      "kind": "jellyfin.live",
+      "connectionHash": "15951f5215d13327e543813e1cd6c45abfe5db818b019bbc6c38dae1574be7ab",
+      "worked": true,
+      "state": "succeeded",
+      "attempts": 1,
+      "ms": 32.504875000000084,
+      "failureCode": null
+    },
+    {
+      "kind": "jellyfin.live",
+      "connectionHash": "966903135e187b26962841dd1fc13ca9f82c46899d19d13539f7b9f2356abe72",
+      "worked": true,
+      "state": "succeeded",
+      "attempts": 1,
+      "ms": 27.966417000000092,
+      "failureCode": null
+    }
+  ],
+  "failures": [],
+  "claims": {
+    "calls": 6,
+    "claimed": 3,
+    "ms": 64.81304199999977
+  },
+  "gap": "No permitted actor-owned failed reconcile job",
+  "status": "passed"
+}

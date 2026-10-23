@@ -1,0 +1,9 @@
+{
+  "status": "failed",
+  "stage": "listen-ready",
+  "error": "Stale action response publication",
+  "intercepted": 1,
+  "delivery": "genuine-response-delivered",
+  "url": "http://127.0.0.1:5175/library?view=watch",
+  "note": "Original genuine response delivered while Listen navigation was entering; old Watch read restored Watch URL. Titles omitted."
+}

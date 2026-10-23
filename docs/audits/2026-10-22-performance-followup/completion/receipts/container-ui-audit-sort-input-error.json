@@ -1,0 +1,14 @@
+{
+  "scope": "Controlled native containers and idle party on actual retained identities/media; no natural playlist or multi-device claim. Actual largest profile JSON input, unchanged parser. All writes limited to marked copy.",
+  "checks": [],
+  "failures": [
+    "probe-exception"
+  ],
+  "party": [],
+  "preview": [],
+  "failure": {
+    "name": "ValiError",
+    "message": "Invalid type: Expected (\"default\" | \"title\" | \"title-desc\" | \"added\" | \"added-asc\") but received \"title-asc\""
+  },
+  "status": "findings"
+}

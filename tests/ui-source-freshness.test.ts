@@ -9,7 +9,7 @@ const compile=async(path:string)=>compileModule(new Bun.Transpiler({loader:'ts'}
 const resourceUrl=moduleUrl(await compile('../src/lib/ui/resource.svelte.ts'));
 const revisionUrl=moduleUrl(await compile('../src/lib/ui/content-revision.svelte.ts'));
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))};export const onDestroy=()=>{};`);
-const routeUrl=moduleUrl(compileModule('export const page=$state({data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},filters:{kind:"all"}},state:{},url:new URL("http://test/library")});',{filename:'route.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')));
+const routeUrl=moduleUrl(compileModule('export const navigating={to:null};export const page=$state({data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},filters:{kind:"all"}},state:{},url:new URL("http://test/library")});',{filename:'route.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')));
 const clientUrl=moduleUrl(`export let delivery;export const setDelivery=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}`);
 const client=await import(clientUrl),{page}=await import(routeUrl),{invalidateContentRevision}=await import(revisionUrl);
 const navigationUrl=moduleUrl('export const goto=async()=>{};');

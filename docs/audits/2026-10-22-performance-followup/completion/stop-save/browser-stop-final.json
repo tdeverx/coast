@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "stage": "play-after-retry",
+  "error": "Save retry contract failed; preparations=4"
+}

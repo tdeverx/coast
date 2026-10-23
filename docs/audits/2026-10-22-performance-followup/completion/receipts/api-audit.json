@@ -1,0 +1,3537 @@
+{
+  "scope": "Genuine HTTP against marked actual-data copy; genuine users/catalogue, newly issued audit-only credentials; no fabricated provider responses",
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "cases": [
+    {
+      "name": "unauth:health",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.2932500000000005,
+      "bytes": 20,
+      "dtoHash": "b808daea0f225957b3cddad9d5e33cb8dd4da1dbfc1d764e291f8d2e9fa4f857",
+      "total": null,
+      "items": null,
+      "cache": "no-store",
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:anonymous-profile-activity",
+      "method": "GET",
+      "status": 404,
+      "ms": 5.765542000000011,
+      "bytes": 75,
+      "dtoHash": "eada2066cf44fae3cd0d1dc67ac597e6c299696be2e50ac9c3ad793fd2a5044d",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "request_failed"
+    },
+    {
+      "name": "unauth:anonymous-profile-favourites",
+      "method": "GET",
+      "status": 404,
+      "ms": 7.265208999999999,
+      "bytes": 54,
+      "dtoHash": "aeb90c969ac587e11d3c931380fe9c6ccc9c9fd6cf76adcbceab9529429ca4c1",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "request_failed"
+    },
+    {
+      "name": "unauth:anonymous-profile-insights",
+      "method": "GET",
+      "status": 404,
+      "ms": 0.98275000000001,
+      "bytes": 75,
+      "dtoHash": "eada2066cf44fae3cd0d1dc67ac597e6c299696be2e50ac9c3ad793fd2a5044d",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "request_failed"
+    },
+    {
+      "name": "unauth:invite-libraries",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.28258300000000247,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:invites",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25704199999999844,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:sharing-list",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2338749999999976,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:sharing-sources",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.248833999999988,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:planning-plans",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24399999999999977,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:planning-releases",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22449999999999193,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:experiments-feed",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22325000000000728,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:experiments-row",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24458400000000324,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:experiments-recommendations",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22579100000000096,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:synced-list",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.26087499999999864,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:synced-state",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2627920000000046,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:synced-state-media",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2504169999999988,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:avatar-choices",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2681249999999977,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:avatar-provider-image",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24620799999999576,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-friends",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.16724999999999568,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-feed",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2011669999999981,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-popular",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19216699999999776,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-reactions",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23241600000000062,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-works",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23354199999999992,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-recommendations",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22470899999999006,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-insights",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2322499999999934,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:social-checkins",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19575000000000387,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-children-local",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2249169999999907,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-children-provider",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23383399999998744,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-history",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25199999999999534,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-work-queue",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23150000000001114,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-queue-picker",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21562500000000284,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:music-saved-queue",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21837499999999466,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:collection-page",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25216600000000255,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:collection-work-lists",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2284169999999932,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:collection-work-actions",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22987500000000693,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:missing-demand",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21087500000000148,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:admin-demand",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2131249999999909,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:source-preview-connection",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2174580000000077,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:source-preview-instance",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24687500000000284,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:heroes",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23066699999999685,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:sequence-next",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23912500000000136,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:discover-watch",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23212499999999636,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:discover-play",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2082500000000067,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:discover-listen",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21970799999999713,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:discover-read",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21495899999999324,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-watch",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20070800000000588,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-read",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21983300000000838,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-play",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22850000000001103,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-listen",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2224999999999966,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-preview-play",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2627910000000071,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:library-preview-listen",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22545799999998906,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:progress",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.18958299999999895,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:lists-content",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22808299999999804,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:playback-stream",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21604200000000162,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:trailer-stream",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2304590000000104,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:artwork-tmdb",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2605840000000086,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:artwork-fallback",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19291599999999676,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:artwork-private",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20895799999999554,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:games-igdb-search",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19079099999999016,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:games-igdb-detail",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20600000000000307,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:games-list",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2320840000000004,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:games-detail",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.1747919999999965,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:game-playthrough-detail",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22762499999998909,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-collection-page",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22862499999999386,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-session-file",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23070800000000702,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-detail",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21420899999999676,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-credits",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22587500000000205,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-community",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21066699999998661,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-related",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22445900000001018,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-connections",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2103749999999991,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-linked",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22654099999999744,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-issues",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.18949999999999534,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-editions",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25595899999999006,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-sources",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2106250000000216,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:reading-history",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2308749999999975,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:session",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2169580000000053,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:profile-history",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.34512500000002433,
+      "bytes": 83,
+      "dtoHash": "a886e9cb975d9c1e80a9b8ad1a50d26db64f31b3234a0e8fca9f631cebc21a0e",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "session_expired"
+    },
+    {
+      "name": "unauth:profile-favourites",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.435292000000004,
+      "bytes": 83,
+      "dtoHash": "a886e9cb975d9c1e80a9b8ad1a50d26db64f31b3234a0e8fca9f631cebc21a0e",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "session_expired"
+    },
+    {
+      "name": "unauth:profile-insights",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25783400000000256,
+      "bytes": 83,
+      "dtoHash": "a886e9cb975d9c1e80a9b8ad1a50d26db64f31b3234a0e8fca9f631cebc21a0e",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "session_expired"
+    },
+    {
+      "name": "unauth:media-detail-dispatch",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22979200000000333,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-edition",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21283400000001507,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-reading-polymorphic",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24720800000000054,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-screen-local",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23841699999999832,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-screen-enhance",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20754199999998946,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-playable",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25245899999998755,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-next",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20216700000000287,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-actions",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24904200000000287,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-activity",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21108300000000213,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-history",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20954100000000153,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-trailer",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20112499999999045,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-metadata",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21137499999997544,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:media-presentation",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2774580000000242,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:list-choice",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2540830000000085,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:list-summaries",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22324999999997885,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:streams-now",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21616699999998445,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:streams-history",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2128330000000176,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:streams-count",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.209541999999999,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:providers",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20208400000001348,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:provider-music-artwork",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21916699999999878,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:provider-music-library",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19720799999998917,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:provider-music-details",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2508749999999793,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:provider-scan-progress",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.42858300000000327,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:request-options",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.27345900000000256,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:notifications",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.19700000000000273,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:conflicts",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24208299999997962,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:task-groups",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.22791699999999082,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:queue-actions",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23662500000000364,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:token-metadata",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2532500000000084,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:admin-health",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2773329999999987,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:admin-benchmarks",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.2207080000000019,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:diagnostic-level",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.21504199999998264,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:diagnostic-download",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.26704200000000355,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:title-insights",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.25979200000000446,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:title-statistics",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24037500000000023,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "unauth:person-credits",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.23858400000000302,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "admin:session",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.8629999999999995,
+      "bytes": 14921,
+      "dtoHash": "d338b2aee9bb7bbf2d313aacaef67a3c7302792c9624ec91e8b7fcf7b43526d7",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:invites",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.330874999999992,
+      "bytes": 386,
+      "dtoHash": "6517bbd7a74a5bc8e4d99ee3ecbd692cf0d1c7e6086c0f039eea52ab2bbe9c51",
+      "total": null,
+      "items": 2,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:sharing",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.9904170000000079,
+      "bytes": 435,
+      "dtoHash": "33ab00fbab2fd9c475cf91daa74d791d02cd4b81218fb0d145b4e79468d40cbe",
+      "total": null,
+      "items": 2,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:sharing-sources",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.5210830000000044,
+      "bytes": 61,
+      "dtoHash": "16a0723889b2ac21a3597264c612fe8f4cdc96698f24e5f646aa66a33ca313c3",
+      "total": null,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:synced-list",
+      "method": "GET",
+      "status": 200,
+      "ms": 4.245833000000005,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:avatars",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.1055000000000064,
+      "bytes": 83,
+      "dtoHash": "0684d4595c0a184157c21cdaba2d67b5ec684c993da66791fc783dbcc5dd8283",
+      "total": null,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:social-friends",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.2982500000000243,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:social-feed",
+      "method": "GET",
+      "status": 200,
+      "ms": 214.8445,
+      "bytes": 376486,
+      "dtoHash": "028605decd683c8248923958119b60ca49038b164e8de2ae8ca7adfa40418a31",
+      "total": null,
+      "items": 12,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:social-popular",
+      "method": "GET",
+      "status": 200,
+      "ms": 8.785375000000045,
+      "bytes": 40,
+      "dtoHash": "4ded7b0803a0828ae92223b317ced3c3a039f54e203010fa5259619afaa75db2",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:social-recommendations",
+      "method": "GET",
+      "status": 200,
+      "ms": 21.82166699999999,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:social-checkins",
+      "method": "GET",
+      "status": 200,
+      "ms": 4.693375000000003,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:music-children",
+      "method": "GET",
+      "status": 200,
+      "ms": 3.9624999999999773,
+      "bytes": 681,
+      "dtoHash": "0879cab626409496983f76cf85cd22b66b185a920ebd9558764936b20a976e46",
+      "total": 1,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:music-history",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.002999999999986,
+      "bytes": 41,
+      "dtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:music-work-queue",
+      "method": "GET",
+      "status": 200,
+      "ms": 537.170417,
+      "bytes": 171,
+      "dtoHash": "be2ef3a896688c76155c99c472c05c8e3e6891236a599c79ea36c6ebaed4f9c6",
+      "total": null,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:music-picker",
+      "method": "GET",
+      "status": 200,
+      "ms": 3.181291999999985,
+      "bytes": 41,
+      "dtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:music-saved",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.312041000000022,
+      "bytes": 30,
+      "dtoHash": "c7c42693a0b5a2c3447071dede06001d0ff297f9b521960817a07c312f05d96f",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:collection",
+      "method": "GET",
+      "status": 200,
+      "ms": 814.3165829999999,
+      "bytes": 206574,
+      "dtoHash": "cec321dce905bc08f6873a3900b4fe2773b4bdd7eb89e1480a2966a7c945fd86",
+      "total": 71,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:collection-lists",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.678042000000005,
+      "bytes": 41,
+      "dtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:collection-actions",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.1841249999999945,
+      "bytes": 70,
+      "dtoHash": "f5366b7a43f133121bf7161b0cc66617a4baf74ed27761e933c7fb90fa35567e",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:missing",
+      "method": "GET",
+      "status": 200,
+      "ms": 535.3202500000002,
+      "bytes": 3639,
+      "dtoHash": "393ff4248c6db916dd5753c90bf14a76f4f229299a390799c4123990a8a23eea",
+      "total": 7,
+      "items": 7,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:admin-demand",
+      "method": "GET",
+      "status": 200,
+      "ms": 4159.913585,
+      "bytes": 69537,
+      "dtoHash": "623dd0487b3d0bef3908106301d208b199c764917ff778195349c8d7c84d2746",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:heroes",
+      "method": "GET",
+      "status": 200,
+      "ms": 86.47804199999973,
+      "bytes": 1866,
+      "dtoHash": "d8c6ba138651f3f4f88bd7a9123f0aa3e589e8273667f8c813fe45dab6a7b50f",
+      "total": null,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:sequence",
+      "method": "GET",
+      "status": 200,
+      "ms": 88.58024999999998,
+      "bytes": 1747,
+      "dtoHash": "70bc36c99802665e80dc1e0073b527596f0509010b5f21c138ed095cff6be6f1",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:discover-listen",
+      "method": "GET",
+      "status": 200,
+      "ms": 56.05554200000006,
+      "bytes": 134,
+      "dtoHash": "49cb1741db5fa1d0e9bd94d08dd48627df842c5173616b4cec099c57b2049a86",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:library-watch",
+      "method": "GET",
+      "status": 200,
+      "ms": 241.21937499999967,
+      "bytes": 131349,
+      "dtoHash": "98ff2328c9edf93d8aaa13e74c1901408fb7459b0d81e9f72ff614352f30cd00",
+      "total": 1750,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:library-read",
+      "method": "GET",
+      "status": 200,
+      "ms": 3.6334999999999127,
+      "bytes": 25346,
+      "dtoHash": "43e2c5271e063b7bbd12776f75cfc3383f43eb5992eb7f1f919a041f4b10c8cd",
+      "total": 51,
+      "items": 51,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:library-play",
+      "method": "GET",
+      "status": 200,
+      "ms": 4.270666999999776,
+      "bytes": 26677,
+      "dtoHash": "688eee9b9e65d7eec8d8f203deac2dfda2e1778e87f992c57984c6b316ed32c4",
+      "total": 1204,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:library-series",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.598750000000109,
+      "bytes": 3001,
+      "dtoHash": "1129415b4986bd5c81c560e725491df583366d22f11d5ca8926c58de0ddc8c49",
+      "total": 10,
+      "items": 10,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:library-playlists",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.883665999999721,
+      "bytes": 41,
+      "dtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:progress",
+      "method": "GET",
+      "status": 200,
+      "ms": 291.38395799999944,
+      "bytes": 26597,
+      "dtoHash": "632170ae47379f9a31b641a78a65128c6a19d4a6e799d02f29fd042df3974c5b",
+      "total": 8,
+      "items": 8,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:progress-experiment",
+      "method": "GET",
+      "status": 200,
+      "ms": 372.0702089999995,
+      "bytes": 26575,
+      "dtoHash": "53ade791739189f584509e0d359d52eee832a1f36d477996149879d91f35f865",
+      "total": 8,
+      "items": 8,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:recent",
+      "method": "GET",
+      "status": 200,
+      "ms": 328.8158749999993,
+      "bytes": 131228,
+      "dtoHash": "c27abd0e28ac04778c778f3649ff76c335131c4ac98b6e3ea1315ae108fd8993",
+      "total": 1750,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:lists-content",
+      "method": "GET",
+      "status": 200,
+      "ms": 89.19970899999953,
+      "bytes": 3212,
+      "dtoHash": "784952d7e03bb47f1d8f57ec56cb398d6f2bd72192d8e9dcb5eb6af453d76be1",
+      "total": 2,
+      "items": 2,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:games-list",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.3161250000002838,
+      "bytes": 69249,
+      "dtoHash": "3e1b845e7eabe29d8395d35f1b3d4eef99f76727e223599d785fdec29d946ef6",
+      "total": 1204,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:game-detail",
+      "method": "GET",
+      "status": 200,
+      "ms": 5.532042000000729,
+      "bytes": 1094,
+      "dtoHash": "17fc72a39764b080886f375091f26b86c108371ee9d2abb97570128002e25624",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.374667000000045,
+      "bytes": 1076,
+      "dtoHash": "2b00d2f158e4dad3a3d2d674caa603b2c10c2ed27d04e62dabfbe7465b6cfb69",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading/community",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.3146249999999782,
+      "bytes": 51,
+      "dtoHash": "f9e52a9ab20c75c9a95df101176dec98e06bb7c68b10e8a0b7e8426e07a89bf2",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading/related",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.7455840000002354,
+      "bytes": 6034,
+      "dtoHash": "67d0d3131a4fa1a53a749242549c1dc9db3eaff4c4a16bb71a296bea3ac9c339",
+      "total": 12,
+      "items": 12,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading/connections",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.9372919999996157,
+      "bytes": 61,
+      "dtoHash": "16a0723889b2ac21a3597264c612fe8f4cdc96698f24e5f646aa66a33ca313c3",
+      "total": null,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading/linked",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.0524580000001151,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:reading/history",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.8911669999997684,
+      "bytes": 41,
+      "dtoHash": "af3f34519c1919833f2c207c937d0cadb462a5f587c522bea56a2ab68a4e33c2",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:profile-history",
+      "method": "GET",
+      "status": 200,
+      "ms": 116.48887500000001,
+      "bytes": 141287,
+      "dtoHash": "dbf37e5bc1db5dcdb7aaaa63a39f55460596aa5d99a342e23cc274e66ef5b0bd",
+      "total": 40,
+      "items": 40,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:profile-favourites",
+      "method": "GET",
+      "status": 200,
+      "ms": 115.09141700000055,
+      "bytes": 2834,
+      "dtoHash": "5a381eca900c16222b411187fe4defc47514acd8a5634f79ad15c523b56f09da",
+      "total": 1,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:profile-insights",
+      "method": "GET",
+      "status": 200,
+      "ms": 54.573875000000044,
+      "bytes": 1247,
+      "dtoHash": "10a81e79eaf9a21a1fa86638990cc976d05fe4650b7def93aa8b6caa00e7f85b",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media",
+      "method": "GET",
+      "status": 200,
+      "ms": 84.41933299999982,
+      "bytes": 8840,
+      "dtoHash": "7ec761c97055eea4781b13290dd6fda6e1cbc549befcce9d6ae2fbf4be92f1f6",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/playable",
+      "method": "GET",
+      "status": 200,
+      "ms": 77.7804159999996,
+      "bytes": 1873,
+      "dtoHash": "62e68a592b1ce8354de9883e7410dc488577601501a4e1ea39322eecc85bb281",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/next",
+      "method": "GET",
+      "status": 200,
+      "ms": 92.28099999999904,
+      "bytes": 33978,
+      "dtoHash": "e017f370186e509cc1bfb281031e8b571410daf3058b61dab8d8ec39d3795418",
+      "total": 10,
+      "items": 10,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/actions",
+      "method": "GET",
+      "status": 200,
+      "ms": 87.29941700000018,
+      "bytes": 11542,
+      "dtoHash": "6f8509f5391b49ab1b7dc31c1354a3d1a0f3491bad3a91fb4abf4fbf16c8b3da",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/activity",
+      "method": "GET",
+      "status": 200,
+      "ms": 90.48566700000083,
+      "bytes": 2104,
+      "dtoHash": "86c2ae420be967e8d8d843a077f0596c5e66de611c1bd157bc9a5fe91a5d04b8",
+      "total": 1,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/history",
+      "method": "GET",
+      "status": 200,
+      "ms": 9.978667000001224,
+      "bytes": 317,
+      "dtoHash": "89d895eab1175a12c3fa01b4d141c8dcf8be15283563f2493482cbf16499cfac",
+      "total": 1,
+      "items": 1,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/metadata",
+      "method": "GET",
+      "status": 200,
+      "ms": 3.0553749999999127,
+      "bytes": 3735,
+      "dtoHash": "1767915bc412fdf510d99b7d95384c4995d25be4ea06f73c061a6b3e4351e5ee",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/presentation",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.5372079999997368,
+      "bytes": 30,
+      "dtoHash": "32d834f1531222b9379d1236442195f4549ea02397bf75eb953c52171f5debc9",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:media/statistics",
+      "method": "GET",
+      "status": 200,
+      "ms": 9.913124999999127,
+      "bytes": 92,
+      "dtoHash": "a04d26c44bf02b37a9e0a27e53be82c95a8057b8f9b34be1c6fc2790c02988b2",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:list-choice",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.5954170000004524,
+      "bytes": 12,
+      "dtoHash": "87f0efbb06261813433a4c480d5be2d8bc193bcef6744fbf72b8a4aabb04de75",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:list-summaries",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.8400419999998121,
+      "bytes": 12,
+      "dtoHash": "87f0efbb06261813433a4c480d5be2d8bc193bcef6744fbf72b8a4aabb04de75",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:streams-now",
+      "method": "GET",
+      "status": 200,
+      "ms": 98.03299999999945,
+      "bytes": 4456,
+      "dtoHash": "a2e0ce17268aa0fc87fa045f09fd713a010f3016b08041fbbcff56a0dcf69053",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:streams-history",
+      "method": "GET",
+      "status": 200,
+      "ms": 184.09691699999894,
+      "bytes": 60344,
+      "dtoHash": "6452c3e0876be95e2cf681e3442e24d6dae4693681012d0d80c2bae79f5ebd50",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:streams-count",
+      "method": "GET",
+      "status": 200,
+      "ms": 6.289249999999811,
+      "bytes": 15,
+      "dtoHash": "40aab2ecb61e6c52150f365af8e2ce87905836058f74e5a230d3eb307f01cd3d",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:providers",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.1334999999999127,
+      "bytes": 6967,
+      "dtoHash": "5ebbc7725d5f4395d9e8d703d431bea7d7d0cdc9f9139e6867d593b1e598f305",
+      "total": null,
+      "items": 8,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:scan",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.782583000000159,
+      "bytes": 169,
+      "dtoHash": "c72027a56ea52f15f5d08a960c8ceddca42c551c72384a5c17c078a91b60a683",
+      "total": 38230,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:notifications",
+      "method": "GET",
+      "status": 200,
+      "ms": 492.5080420000013,
+      "bytes": 19680,
+      "dtoHash": "19c77c677b16c61fe5f4e1e5f6c4f9f8a83eb81d6e7bac8494b4869d859e5247",
+      "total": null,
+      "items": 7,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:conflicts",
+      "method": "GET",
+      "status": 200,
+      "ms": 39.285250000000815,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:task-groups",
+      "method": "GET",
+      "status": 200,
+      "ms": 117.4827920000007,
+      "bytes": 15778,
+      "dtoHash": "6840d64aae0d15b63f1fea5819083e28696a560899f9b808b9c40a20cb06c1f4",
+      "total": null,
+      "items": 23,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:queue",
+      "method": "GET",
+      "status": 200,
+      "ms": 44.53579200000058,
+      "bytes": 53692,
+      "dtoHash": "d64db1d8389a211c69d7e34506b9c4ba6a46b0f12d755eb481c7ce95006361e6",
+      "total": null,
+      "items": 80,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:tokens",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.4991249999984575,
+      "bytes": 2,
+      "dtoHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "total": null,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:admin-health",
+      "method": "GET",
+      "status": 200,
+      "ms": 13.565625000001091,
+      "bytes": 250,
+      "dtoHash": "ffb2e8ee1d4db968ff8569ee84609bce509c3153ca6853c9152a19b3ab8b5cdd",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "admin:diagnostics",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.4184580000001006,
+      "bytes": 17,
+      "dtoHash": "c56bc0bff0476b56cd3ebd9105722375f5cd95597ce16a3d1df147c2efc247fc",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "role:ordinary-admin-health",
+      "method": "GET",
+      "status": 403,
+      "ms": 0.45841700000164565,
+      "bytes": 69,
+      "dtoHash": "e26d27524795cd3ab13ee88fa060b3463866f95bd62edbe26c965594af85d656",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "request_failed"
+    },
+    {
+      "name": "role:ordinary-admin-tasks",
+      "method": "GET",
+      "status": 403,
+      "ms": 0.41208299999925657,
+      "bytes": 69,
+      "dtoHash": "e26d27524795cd3ab13ee88fa060b3463866f95bd62edbe26c965594af85d656",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "request_failed"
+    },
+    {
+      "name": "csrf:foreign-origin",
+      "method": "POST",
+      "status": 403,
+      "ms": 0.2160409999996773,
+      "bytes": 75,
+      "dtoHash": "5e9b0f5f90d23149a3b63dbefe08b06e42eabf6fdffc99ea59abeb586a8c29ff",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "csrf:missing-origin",
+      "method": "POST",
+      "status": 403,
+      "ms": 0.12266599999929895,
+      "bytes": 46,
+      "dtoHash": "e7a1cf8caefa016c03b08dc5bfaee63e826c80541b03c55af9d1d7f99175489f",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "auth:invalid-cookie",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.20545800000036252,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "auth:expired-session",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.3135000000002037,
+      "bytes": 58,
+      "dtoHash": "bb6597b513e70c3f1aa599e49297d41dcdaaed11e6072d71c8d9c92590fecab3",
+      "total": null,
+      "items": null,
+      "cache": null,
+      "nosniff": null,
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:disabled-creation-policy",
+      "method": "POST",
+      "status": 403,
+      "ms": 1.6515830000007554,
+      "bytes": 63,
+      "dtoHash": "3f77104e2663929d548c7df52e10bfffc75fbeb401396c3baa9094e924553d61",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": "feature_disabled"
+    },
+    {
+      "name": "controlled:enable-api-only",
+      "method": "POST",
+      "status": 200,
+      "ms": 6.100915999999415,
+      "bytes": 821,
+      "dtoHash": "fac5bdc1c89ccbf3a3166b493b41dd2b4aebfd0196830a536fa3ee5d1e2986e3",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "bearer:me",
+      "method": "GET",
+      "status": 200,
+      "ms": 4.579208000001017,
+      "bytes": 159,
+      "dtoHash": "34ecaeeac9f290c9e1f369cbb6d93eeddebba410c4f827e88b6c902a5813a413",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:webhooks",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.2015830000000278,
+      "bytes": 98,
+      "dtoHash": "f995ae9685f6cf91f1c7d4d0751df1dd9d1adf4ff0fe5f00d5066dc12099d565",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:catalogue",
+      "method": "GET",
+      "status": 200,
+      "ms": 25.560458999998446,
+      "bytes": 6358,
+      "dtoHash": "81b79bacfba14adf4b7e8dce43f9497cf4bc957b061fa493c18b6d61c9808ef2",
+      "total": 5291,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:collection",
+      "method": "GET",
+      "status": 200,
+      "ms": 548.9303340000006,
+      "bytes": 22592,
+      "dtoHash": "ace31d7ed71978baf6860bf44ca8241e898b4f9d7cfc221f1faedec961d34398",
+      "total": 71,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:library",
+      "method": "GET",
+      "status": 200,
+      "ms": 255.50475000000006,
+      "bytes": 6248,
+      "dtoHash": "15ca6c29637bfb532d7595a12f7a32d8f34a31bf0a320a53f114556ed9ec8b49",
+      "total": 1750,
+      "items": 60,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:progress",
+      "method": "GET",
+      "status": 200,
+      "ms": 312.68512499999997,
+      "bytes": 2348,
+      "dtoHash": "d5db69f69b5088af331ca5311fae12dfe1905e8011ad5ae0ade26fdc68d7731d",
+      "total": 8,
+      "items": 8,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:catalogue-one",
+      "method": "GET",
+      "status": 200,
+      "ms": 1.6023330000007263,
+      "bytes": 99,
+      "dtoHash": "ace30d72728ee54bc952e630f98285185c63b4cc1a84e69f65308a8bbecaba24",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:reading-history",
+      "method": "GET",
+      "status": 200,
+      "ms": 2.279916999999841,
+      "bytes": 98,
+      "dtoHash": "f995ae9685f6cf91f1c7d4d0751df1dd9d1adf4ff0fe5f00d5066dc12099d565",
+      "total": 0,
+      "items": 0,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:head",
+      "method": "HEAD",
+      "status": 200,
+      "ms": 1.3974589999997988,
+      "bytes": 0,
+      "dtoHash": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    },
+    {
+      "name": "bearer:scope-denied",
+      "method": "GET",
+      "status": 403,
+      "ms": 0.5921660000003612,
+      "bytes": 89,
+      "dtoHash": "fefb719096fbf022478630d6632596287f7a3d7b19f43cb79ad35340770403bb",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": "insufficient_scope"
+    },
+    {
+      "name": "bearer:cookie-not-token",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.17391700000007404,
+      "bytes": 75,
+      "dtoHash": "0ea450de42dfb40cf41df152b6b6213feeaad61b2db427362385b81422466112",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": "invalid_token"
+    },
+    {
+      "name": "bearer:revoked",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.24404200000026322,
+      "bytes": 80,
+      "dtoHash": "5049e988de7040a796d16f5af1caa78f71008ba1e4f7687d29e5a6ece7351d8f",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": "invalid_token"
+    },
+    {
+      "name": "anonymous:/api/public/v1/me",
+      "method": "GET",
+      "status": 401,
+      "ms": 0.18004199999995762,
+      "bytes": 75,
+      "dtoHash": "0ea450de42dfb40cf41df152b6b6213feeaad61b2db427362385b81422466112",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": "invalid_token"
+    },
+    {
+      "name": "anonymous:/api/share/state",
+      "method": "GET",
+      "status": 401,
+      "ms": 1.999082999998791,
+      "bytes": 45,
+      "dtoHash": "eda31838c0dfdc4438e3a6d9d8ba4634cadb1fe8f9575032def309e5fa7545fc",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "code": null
+    },
+    {
+      "name": "openapi",
+      "method": "GET",
+      "status": 200,
+      "ms": 0.3736670000016602,
+      "bytes": 22095,
+      "dtoHash": "9366c45b2a78786be35b2710b092b6ab0ffd3be3d4ec98247e688dc2ac16ff43",
+      "total": null,
+      "items": null,
+      "cache": "private, no-store",
+      "nosniff": "nosniff",
+      "frame": null,
+      "code": null
+    }
+  ],
+  "checks": [
+    {
+      "name": "unauth:health:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:anonymous-profile-activity:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:anonymous-profile-favourites:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:anonymous-profile-insights:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:invite-libraries:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:invites:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:sharing-list:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:sharing-sources:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:planning-plans:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:planning-releases:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:experiments-feed:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:experiments-row:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:experiments-recommendations:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:synced-list:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:synced-state:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:synced-state-media:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:avatar-choices:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:avatar-provider-image:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-friends:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-feed:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-popular:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-reactions:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-works:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-recommendations:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-insights:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:social-checkins:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-children-local:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-children-provider:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-work-queue:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-queue-picker:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:music-saved-queue:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:collection-page:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:collection-work-lists:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:collection-work-actions:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:missing-demand:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:admin-demand:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:source-preview-connection:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:source-preview-instance:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:heroes:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:sequence-next:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:discover-watch:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:discover-play:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:discover-listen:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:discover-read:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-watch:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-read:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-play:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-listen:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-preview-play:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:library-preview-listen:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:progress:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:lists-content:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:playback-stream:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:trailer-stream:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:artwork-tmdb:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:artwork-fallback:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:artwork-private:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:games-igdb-search:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:games-igdb-detail:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:games-list:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:games-detail:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:game-playthrough-detail:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-collection-page:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-session-file:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-detail:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-credits:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-community:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-related:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-connections:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-linked:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-issues:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-editions:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-sources:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:reading-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:session:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:profile-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:profile-favourites:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:profile-insights:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-detail-dispatch:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-edition:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-reading-polymorphic:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-screen-local:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-screen-enhance:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-playable:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-next:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-actions:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-activity:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-trailer:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-metadata:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:media-presentation:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:list-choice:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:list-summaries:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:streams-now:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:streams-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:streams-count:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:providers:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:provider-music-artwork:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:provider-music-library:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:provider-music-details:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:provider-scan-progress:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:request-options:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:notifications:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:conflicts:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:task-groups:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:queue-actions:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:token-metadata:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:admin-health:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:admin-benchmarks:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:diagnostic-level:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:diagnostic-download:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:title-insights:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:title-statistics:expected-status",
+      "passed": true
+    },
+    {
+      "name": "unauth:person-credits:expected-status",
+      "passed": true
+    },
+    {
+      "name": "role:ordinary-admin-health:expected-status",
+      "passed": true
+    },
+    {
+      "name": "role:ordinary-admin-tasks:expected-status",
+      "passed": true
+    },
+    {
+      "name": "csrf:foreign-origin:expected-status",
+      "passed": true
+    },
+    {
+      "name": "csrf:missing-origin:expected-status",
+      "passed": true
+    },
+    {
+      "name": "auth:invalid-cookie:expected-status",
+      "passed": true
+    },
+    {
+      "name": "auth:expired-session:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:disabled-creation-policy:expected-status",
+      "passed": true
+    },
+    {
+      "name": "controlled:enable-api-only:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:me:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:webhooks:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:catalogue:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:collection:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:library:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:progress:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:catalogue-one:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:reading-history:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:head:expected-status",
+      "passed": true
+    },
+    {
+      "name": "HEAD-has-no-body",
+      "passed": true
+    },
+    {
+      "name": "HEAD-authentication-consumes-exactly-one-quota",
+      "passed": true
+    },
+    {
+      "name": "bearer:scope-denied:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:cookie-not-token:expected-status",
+      "passed": true
+    },
+    {
+      "name": "bearer:revoked:expected-status",
+      "passed": true
+    },
+    {
+      "name": "anonymous:/api/public/v1/me:expected-status",
+      "passed": true
+    },
+    {
+      "name": "anonymous:/api/share/state:expected-status",
+      "passed": true
+    },
+    {
+      "name": "openapi:expected-status",
+      "passed": true
+    },
+    {
+      "name": "private-local-responses-no-store",
+      "passed": true
+    },
+    {
+      "name": "private-local-responses-nosniff",
+      "passed": true
+    }
+  ],
+  "unresolved": [
+    {
+      "family": "gif-avatar",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "anonymous-tmdb-artwork",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "steam-callback",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "share-state",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "share-playback-stream",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "share-external-stream",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "share-public-token",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-openapi",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-me",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-webhooks",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-reading-history",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-catalogue-one",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-catalogue-page",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-collection",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-library",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    },
+    {
+      "family": "public-progress",
+      "reason": "Requires dedicated binary/share/public/command case; not counted by auth-envelope sweep"
+    }
+  ],
+  "failures": [],
+  "controlledFeatureChange": "API enabled only on disposable copy after proving the existing disabled policy; all other settings preserved.",
+  "boundaries": {
+    "sourceFamilies": 131,
+    "authEnvelopeOnly": 115,
+    "authenticatedCases": 67,
+    "configFeatures": {
+      "screen": true,
+      "music": true,
+      "game": true,
+      "book": true,
+      "comic": true,
+      "personalisation": true,
+      "social": true,
+      "presence": true,
+      "playback": true,
+      "reader": true,
+      "parties": true,
+      "planning": false,
+      "sharing": true,
+      "requests": true,
+      "api": false
+    }
+  },
+  "status": "passed"
+}

@@ -1,0 +1,271 @@
+{
+  "scope": "Authenticated HTTP boundary variants on final production build, using existing actual accounts/connection. Deliberately malformed parameters are negative controls, not positive cohorts; GET only, no fabricated upstream bytes.",
+  "cases": [
+    {
+      "name": "health",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 20,
+      "sha256": "b808daea0f225957b3cddad9d5e33cb8dd4da1dbfc1d764e291f8d2e9fa4f857",
+      "ms": 1.2870419999999996,
+      "pass": true
+    },
+    {
+      "name": "positive-music",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 13787,
+      "sha256": "9042937167c5f2222404e87970d5b75af7c9c1dd13e4fb1d356b5356e572f092",
+      "items": 10,
+      "ms": 209.58808299999998,
+      "pass": true
+    },
+    {
+      "name": "foreign-connection",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "bytes": 76,
+      "sha256": "e4692fd2394ecfc856d34e505bd9d67e616457c2a5fb3e82285f5efb2231916f",
+      "code": "not_found",
+      "ms": 1.8322500000000161,
+      "pass": true
+    },
+    {
+      "name": "bad-connection-id",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 72,
+      "sha256": "92d59823163ae023580adee9b980e1530c54ff1e3788716c8b5538fb7cc91df9",
+      "code": "invalid_input",
+      "ms": 0.8814579999999808,
+      "pass": true
+    },
+    {
+      "name": "negative-offset",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 78,
+      "sha256": "7be369bcfcd36a59924471ad7ba386bd4bcc79e90b47c1acf20c1ef0bbc2b3e3",
+      "code": "invalid_input",
+      "ms": 0.6676250000000152,
+      "pass": true
+    },
+    {
+      "name": "unbounded-limit",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 81,
+      "sha256": "ca327a57351f7f17da6b07dfc6cee161b953f9d070bcd2453a6a88bd835416cf",
+      "code": "invalid_input",
+      "ms": 0.8632080000000144,
+      "pass": true
+    },
+    {
+      "name": "zero-limit",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 77,
+      "sha256": "77e1e0fd8dbd2b2a625e5322b7149d0c97a8f9addf6527e60631891fdd778c9c",
+      "code": "invalid_input",
+      "ms": 0.7370000000000232,
+      "pass": true
+    },
+    {
+      "name": "invalid-kind",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 129,
+      "sha256": "2769054e0663740dcced320e841ec172c13a49ae82a6250f6dfcfeaf4156d20f",
+      "code": "invalid_input",
+      "ms": 0.7061250000000143,
+      "pass": true
+    },
+    {
+      "name": "invalid-filter-combination",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 84,
+      "sha256": "de4b91e00ad01592deabb475e447fed474ef707e8a71e15188e8b208e042efe4",
+      "code": "invalid_input",
+      "ms": 0.6336669999999742,
+      "pass": true
+    },
+    {
+      "name": "invalid-provider-item",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 154,
+      "sha256": "a604266b98873a89d15ee4044a932c13d6ff615456809befa7e6ffdd6cb16c6c",
+      "code": "invalid_input",
+      "ms": 0.6002500000000168,
+      "pass": true
+    },
+    {
+      "name": "profile-page-zero",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 77,
+      "sha256": "77e1e0fd8dbd2b2a625e5322b7149d0c97a8f9addf6527e60631891fdd778c9c",
+      "code": "invalid_input",
+      "ms": 0.747667000000007,
+      "pass": true
+    },
+    {
+      "name": "profile-period",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 114,
+      "sha256": "7f2afb2b60907329d246c18e9c2b1d734a128e1f58817b1f80902e8e9f5048ac",
+      "code": "invalid_input",
+      "ms": 0.4445419999999842,
+      "pass": true
+    },
+    {
+      "name": "profile-activity-kind",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 116,
+      "sha256": "e8d9b3d094f60db1812b98ad0a4d8b14344c43cecd8e4f417b62f53acf6ad3d5",
+      "code": "invalid_input",
+      "ms": 0.45795799999999076,
+      "pass": true
+    },
+    {
+      "name": "profile-section",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 119,
+      "sha256": "ade6ea16b959846fe796f7618a8310a519d4e5f40d8118c43fbd470eeb592da2",
+      "code": "invalid_input",
+      "ms": 0.4944160000000011,
+      "pass": true
+    },
+    {
+      "name": "profile-kind",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 172,
+      "sha256": "9babc1be0cebed48c7c1d3e328219a2503ef8f27c5f41c379a638fb85506da81",
+      "code": "invalid_input",
+      "ms": 0.5505830000000174,
+      "pass": true
+    },
+    {
+      "name": "invalid-detail-href",
+      "status": 400,
+      "expected": [
+        400,
+        404
+      ],
+      "bytes": 74,
+      "sha256": "0eddc1f60f1e363fa0858b7ae75a140cb58640409ea5f4453d9b7c533d07bce2",
+      "code": "invalid_request",
+      "ms": 0.8270420000000058,
+      "pass": true
+    },
+    {
+      "name": "bad-media-id",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 72,
+      "sha256": "92d59823163ae023580adee9b980e1530c54ff1e3788716c8b5538fb7cc91df9",
+      "code": "invalid_input",
+      "ms": 0.479582999999991,
+      "pass": true
+    },
+    {
+      "name": "bad-playback-id",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 72,
+      "sha256": "92d59823163ae023580adee9b980e1530c54ff1e3788716c8b5538fb7cc91df9",
+      "code": "invalid_input",
+      "ms": 0.45033300000000054,
+      "pass": true
+    },
+    {
+      "name": "bad-reading-id",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 72,
+      "sha256": "92d59823163ae023580adee9b980e1530c54ff1e3788716c8b5538fb7cc91df9",
+      "code": "invalid_input",
+      "ms": 0.4318749999999909,
+      "pass": true
+    },
+    {
+      "name": "bad-share-sources-id",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 65,
+      "sha256": "0d4b86aafe8f5fe9dee54085d6bb5c995484e1e0ae77aad398e8879f9e1d5b40",
+      "code": "invalid_input",
+      "ms": 0.573332999999991,
+      "pass": true
+    },
+    {
+      "name": "admin-only-list",
+      "status": 403,
+      "expected": [
+        403
+      ],
+      "bytes": 69,
+      "sha256": "e26d27524795cd3ab13ee88fa060b3463866f95bd62edbe26c965594af85d656",
+      "code": "request_failed",
+      "ms": 0.4410829999999919,
+      "pass": true
+    },
+    {
+      "name": "invalid-request-state",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "bytes": 147,
+      "sha256": "674056e475dd1c89c01c8293939445059b50203d26d4f0bd1834e88df0d87aae",
+      "code": "invalid_input",
+      "ms": 0.7737079999999992,
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

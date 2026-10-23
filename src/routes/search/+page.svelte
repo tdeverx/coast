@@ -16,6 +16,7 @@
     listen = $state<Awaited<typeof data.listen> | null>(null),
     play = $state<Awaited<typeof data.play> | null>(null),
     read = $state<Awaited<typeof data.read> | null>(null);
+  let readSettled = $state(false);
   let query = $state(untrack(() => data.query)),
     submitted = untrack(() => data.query);
   const watchResults = $derived(watch ?? data.initial);
@@ -37,7 +38,7 @@
     return !!data.query && ((row.view === 'all' || row.view === 'watch') && data.demand.watch && !watch ||
       (row.view === 'all' || row.view === 'listen') && data.demand.listen && !listen ||
       (row.view === 'all' || row.view === 'play') && data.demand.play && !play ||
-      (row.view === 'all' || row.view === 'read') && data.demand.read && !read);
+      (row.view === 'all' || row.view === 'read') && data.demand.read && !readSettled);
   }
   const busy = $derived(rowBusy(data.rows.available) || rowBusy(data.rows.unavailable));
   const noResults = $derived(
@@ -55,12 +56,14 @@
     const watchPending = data.watch,
       listenPending = data.listen,
       playPending = data.play,
-      readPending = data.read;
+      readPending = data.read,
+      readComplete = data.readComplete;
     watch = null;
     listen = null;
     play = null;
     read = null;
-    let current = true;
+    readSettled = false;
+    let current = true, complete = false;
     void watchPending.then((result) => {
       if (current) watch = result;
     });
@@ -71,7 +74,10 @@
       if (current) play = result;
     });
     void readPending.then((result) => {
-      if (current) read = result;
+      if (current && !complete) read = result;
+    });
+    void readComplete.then((result) => {
+      if (current) { complete = true; read = result; readSettled = true; }
     });
     return () => {
       current = false;

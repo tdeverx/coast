@@ -1,0 +1,23 @@
+{
+  "scope": "Headless Chromium 1243 mobile-sized viewport, keyboard only; no touch device, screen reader or full WCAG acceptance claim",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "preview": {
+    "title": "UI playground \u00b7 Coast",
+    "main": 1,
+    "overlay": 0,
+    "overflow": false
+  },
+  "menu": {
+    "choices": [
+      "Watch",
+      "Listen",
+      "Play",
+      "Read"
+    ],
+    "escapeRestoresFocus": true
+  },
+  "errors": []
+}

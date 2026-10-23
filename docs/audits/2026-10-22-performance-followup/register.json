@@ -1,0 +1,471 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "baseline": {
+    "applicationRef": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
+    "companionRef": "e5bac3461ea00f9eb783019fd483c28d1fccefc7",
+    "scope": "Real retained data on marked disposable copies; unit/CI fixtures remain supplementary."
+  },
+  "runtime": {
+    "bun": "1.4.4-canary.1+6bb5dc195",
+    "bunImage": "oven/bun:canary-debian@sha256:8902bf25498a9ac3c75ce0d5c8f87771d113ea5a1bd75084bdaa82bf70ab7ab1",
+    "postgresMajor": 17,
+    "browser": "Chromium headless shell build 1243; record the actual engine for every future browser run."
+  },
+  "findings": [
+    {
+      "id": "AUD-01",
+      "title": "Continue/Undo ordering",
+      "status": "implemented-native-verified",
+      "owners": [
+        "src/lib/core/lists/up-next.server.ts",
+        "src/lib/core/tracking/continue.server.ts"
+      ],
+      "tests": [
+        "scripts/performance-followup.ts"
+      ],
+      "remaining": [],
+      "contract": "Queue edits take the existing feature-policy and user advisory locks in the same order as Continue/tracking. Later committed queue intent survives Undo."
+    },
+    {
+      "id": "AUD-02",
+      "title": "Jellyfin finalization locking and bounds",
+      "status": "implemented-native-verified",
+      "owners": [
+        "src/lib/sync/jellyfin.server.ts",
+        "src/lib/sync/jellyfin-finalization.server.ts",
+        "src/lib/sync/jellyfin-progress.ts"
+      ],
+      "tests": [
+        "scripts/performance-followup.ts",
+        "scripts/performance-finalization.ts",
+        "tests/jellyfin-finalization-db.test.ts"
+      ],
+      "remaining": [
+        "Further real reconnect/reset/feature-withdrawal schedules and larger multi-account load remain in FUP-02/08."
+      ],
+      "contract": "Account fences use NO KEY UPDATE; at most 100 source rows/intents per batch. Effects and checkpoint commit together, with ordinary job yielding/resume."
+    },
+    {
+      "id": "AUD-03",
+      "title": "Companion crop resource owner",
+      "status": "implemented-partial-acceptance",
+      "owners": [],
+      "tests": [
+        "tests/provider-crop.test.ts",
+        "tests/crop.test.ts"
+      ],
+      "remaining": [
+        "Actual hosted Jellyfin authorization revocation, long-session decoder/GPU bounds and multi-user device acceptance; five real codec/resolution cohorts including 4K HEVC now pass direct controller comparison."
+      ],
+      "contract": "Companion: two process slots; at most 64 cached/queued/running entries; 15-minute opportunistic expiry; credential/source keys; final-consumer cancellation and drained process shutdown.",
+      "externalOwner": {
+        "repository": "tdeverx/coast-plugin",
+        "path": "Coast/Api/TrailerCropController.cs",
+        "tests": "Tests/TrailerCropChecks.cs"
+      }
+    },
+    {
+      "id": "AUD-04",
+      "title": "Library DOM/image retention",
+      "status": "implemented-partial-acceptance",
+      "owners": [
+        "src/lib/ui/lazy-image.ts"
+      ],
+      "tests": [
+        "tests/lazy-image.test.ts",
+        "scripts/performance-library-browser.js"
+      ],
+      "remaining": [
+        "Successful actual-artwork 18-page retention now passes. Long-soak decoded/GPU memory, other engines/devices and wider source/policy races remain."
+      ],
+      "contract": "Destroy clears the image source set and uses a valid inline disposal source. Empty candidates had retained native viewport listeners, including never-intersected images. Row ordering/visibility stays unchanged."
+    },
+    {
+      "id": "AUD-05",
+      "title": "Action-scoped eligibility",
+      "status": "implemented-partial-acceptance",
+      "owners": [
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/recent-library.ts",
+        "src/lib/server/queries/progress-experiment.ts"
+      ],
+      "tests": [
+        "scripts/performance-followup.ts",
+        "tests/progress-experiment-query.test.ts",
+        "tests/progress-state-admission-db.test.ts"
+      ],
+      "remaining": [
+        "Positive actual 1,145-game availability and exact retained DTO range now pass; wider provider/feature-generation/reconnect races remain."
+      ],
+      "contract": "Non-screen work eligibility omits the unrelated screen episode-grant expansion; direct roots and descendants retain their current account/source predicates."
+    },
+    {
+      "id": "AUD-06",
+      "title": "Finished Progress assessment projection",
+      "status": "implemented-native-verified",
+      "owners": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/server/queries/progress-experiment.ts"
+      ],
+      "tests": [
+        "tests/progress-experiment-query.test.ts",
+        "tests/collection-db.test.ts"
+      ],
+      "remaining": [
+        "More actual profile/privacy cohorts and concurrent planner pressure."
+      ],
+      "contract": "Status-only assessment permits PostgreSQL to prune unused materialized availability/card work; complete Collection projections retain their existing default."
+    },
+    {
+      "id": "AUD-07",
+      "title": "Obsolete SQL and provider queue waits",
+      "status": "implemented-partial-acceptance",
+      "owners": [
+        "src/lib/server/db/read-cancellation.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/security/request-priority.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "tests": [
+        "scripts/performance-followup.ts",
+        "tests/request-priority.test.ts",
+        "tests/provider-read-cancellation.test.ts"
+      ],
+      "remaining": [
+        "Natural saturated provider lanes and account/feature withdrawal under concurrent requests."
+      ],
+      "contract": "Explicit read-only owners cancel native query handles, not pooled backend PIDs. Queue admission has a separate 60-second wait budget; upstream timeouts and media streaming retain their existing policies."
+    },
+    {
+      "id": "AUD-08",
+      "title": "Task terminal-history reads",
+      "status": "trial-rejected",
+      "owners": [
+        "src/lib/server/queue/index.ts"
+      ],
+      "tests": [
+        "tests/queue-diagnostics.test.ts"
+      ],
+      "remaining": [
+        "Current query/index pair retained. Future alternatives must include matched actual read/write/WAL/claim/terminal-write costs."
+      ],
+      "contract": "No new task-history query or index adopted: two alternating real-data blocks preserved complete outputs but the aggregation candidate used more temporary work and was slower."
+    },
+    {
+      "id": "AUD-09",
+      "title": "Watch Library availability control",
+      "status": "implemented-native-verified",
+      "owners": [
+        "src/lib/ui/shelves/library.svelte.ts",
+        "src/lib/server/queries/library.ts"
+      ],
+      "tests": [
+        "tests/library-paths.test.ts",
+        "scripts/performance-library-browser.js"
+      ],
+      "remaining": [],
+      "contract": "Hide the redundant availability toggle for ordinary Watch Library; retain it for Collection and actions where it changes membership. URLs/count/access behavior are preserved."
+    },
+    {
+      "id": "AUD-10",
+      "title": "Audit/runtime/backlog maintenance",
+      "status": "implemented",
+      "owners": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/maintenance.md",
+        "docs/audits/2026-10-22-performance-followup/register.json"
+      ],
+      "tests": [
+        "tests/performance-audit-register.test.ts",
+        "tests/performance-copy-guards.test.ts",
+        "tests/benchmarks.test.ts"
+      ],
+      "remaining": [
+        "Future evidence and remaining actual cohorts must be refreshed at their new source/data epochs."
+      ],
+      "contract": "Current-source register, immutable runtime pins, exact method/remaining-work boundaries and fail-closed real-copy probes prevent stale descriptions being promoted to completion."
+    }
+  ],
+  "workstreams": [
+    {
+      "id": "FUP-01",
+      "remaining": "BLOCK-HOSTED/BLOCK-COHORT: shared encoder capabilities and provider-specific natural cohorts; actual OAuth/OpenID success requires a genuine authenticated external account session. Missing retained avatar asset remains actual-input gap. Finite negative/API reads are in independent receipts.",
+      "title": "Authenticated APIs and database paths",
+      "acceptance": "Exact status/response/order/privacy/effects, source fingerprint and per-owner SQL costs. Identify stateful GETs before execution.",
+      "status": "audited-partial-acceptance",
+      "completed": "205 initial HTTP cases/142 checks, 24 additional GET cases, 84 privacy reads, 13 scoped-token/share checks; family evidence levels retained.",
+      "evidence": "completion/coverage.json#FUP-01",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-02",
+      "remaining": "BLOCK-AUTO-REVIEW-JOBS/BLOCK-BULK/BOUND-CAPACITY: repeated real-account execution was rejected by automatic approval review; read-only selector/eligibility inspection completed. Durable prefix contract and defined natural sustained deployment load remain. The separately approved single-job heartbeat passes.",
+      "title": "Tasks and scheduler under active load",
+      "acceptance": "Native outputs/checkpoints/attempts/locks/order plus sustained throughput/CPU/RSS; distinguish selection from full claim costs.",
+      "status": "audited-partial-acceptance",
+      "completed": "Three genuine Jellyfin live jobs completed; six concurrent claims selected three distinct jobs; native lease reclaim, retry/cancel and lost-lease yielding passed eight checks. Prior complete finalization resume remains valid at its earlier source epoch.",
+      "evidence": "completion/coverage.json#FUP-02",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-03",
+      "remaining": "BLOCK-COHORT/BLOCK-HOSTED: unequal same-user sources, Trakt and natural short-page inputs; full real decoder/shared queue continuity. Current generation/disconnect/user/source/abort and restored-album schedules pass.",
+      "title": "Listen and connected provider paging",
+      "acceptance": "Exact source-scoped identities/order/total and observation writes; no skipped intervals or cross-generation publication.",
+      "status": "audited-partial-acceptance",
+      "completed": "65 checks: three actual accounts, album/artist/track first/middle/last exact source IDs/totals, complete retained DTO ranges, stale generation and abort denial.",
+      "evidence": "completion/coverage.json#FUP-03",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-04",
+      "remaining": "BLOCK-FORMAT/BLOCK-HOSTED/BLOCK-DEVICE: linked EPUB/PDF, real CB7/CBT/solid archives, hosted companion permissions, physical decoder/GPU/party acceptance. Actual real-FFmpeg stalled-source timeout/shared-lease/final-drain checks now pass without hosted authorization. Published actual EPUB/PDF engines and native binary relay/capability checks now pass.",
+      "title": "Reader, playback, helpers and devices",
+      "acceptance": "Content/progress/location equality; first usable reader timing, parent/child/browser/decoded/GPU peaks and teardown.",
+      "status": "audited-partial-acceptance",
+      "completed": "Actual CBR/CBZ every-page equality and 19 delivery checks; genuine HTTP manifest/page plus seven policy/cleanup checks. Five crop codec/resolution inputs baseline/current exact, including AV1 and 4K HEVC; two-child cap observed.",
+      "evidence": "completion/coverage.json#FUP-04",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-05",
+      "remaining": "BOUND-CAPACITY/BLOCK-DEVICE: deployment-specific tails/cold-disk and decoder/GPU/process-tree capacity. Finite thirty-minute three-account local browsing scope is recorded, not extrapolated.",
+      "title": "Whole-app loading and sustained resources",
+      "acceptance": "Keep median/tails, peak/retained and CPU/RSS/heap/external/GPU scopes separate. No production p95 inferred from five serial calls.",
+      "status": "audited-partial-acceptance",
+      "completed": "Ten-minute six-round four-action/four-page journey; 95/96 navigation observations, one deferred Read Search DCL timeout retained. All 16 routes repeated with commit/main readiness return 200. 1,227 app/cgroup samples; finite process restart health timing.",
+      "evidence": "completion/coverage.json#FUP-05",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-06",
+      "remaining": "BLOCK-COHORT/BLOCK-DEVICE/BOUND-CAPACITY: natural unequal sources and physical decoded/GPU capacity. Desktop WebKit/Firefox grid bounds, manual loading, Back and keyboard focus now pass.",
+      "title": "Library retained ranges and refresh",
+      "acceptance": "Stable attributable retained resources plus exact composed DTOs, atomic publication and source-specific paging. Existing bounded owner retained.",
+      "status": "audited-partial-acceptance",
+      "completed": "Actual successful artwork retained-page run and Back/focus; pending real Watch page-2 response exposed navigation race, fixed and replayed. Two compiled-owner unit controls protect pending-navigation/committed-URL boundaries.",
+      "evidence": "completion/coverage.json#FUP-06",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-07",
+      "remaining": "BLOCK-POLICY/BOUND-CAPACITY: preservation/retention choice and deployment load. Current query candidate measured with matched native predicates/outputs/WAL, rejected; no unimplemented winning SQL candidate remains.",
+      "title": "Queries, history, locking and writes",
+      "acceptance": "Complete outputs/privacy/effects and repeatable CPU/buffer/temp/WAL/lock costs. Do not adopt rejected index/query halves.",
+      "status": "audited-partial-acceptance",
+      "completed": "Current parent membership rewrite measured on 31 real parents with EXPLAIN ANALYZE BUFFERS WAL in rolled-back transactions; six real profile cohorts. Prior task query alternative remains rejected.",
+      "evidence": "completion/coverage.json#FUP-07",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-08",
+      "remaining": "BLOCK-COHORT/BLOCK-HOSTED: missing natural Trakt/recommendation/playlist/unequal-source cohorts and hosted credential revocation. Available real source-withdrawal schedules and three-section privacy matrix now pass.",
+      "title": "Actual-data policy and failure acceptance",
+      "acceptance": "Exact membership/totals/order and policy outcomes. An empty response or guarded test skip does not satisfy positive acceptance.",
+      "status": "audited-partial-acceptance",
+      "completed": "Six users: exact owned-game access totals, one actual 1,145-game positive cohort and 180-card exact retained range. 84 permitted/denied profile reads. Controlled native three-track playlist validates ownership/count/order/availability and abort.",
+      "evidence": "completion/coverage.json#FUP-08",
+      "independentContinuation": "completion/independent/README.md"
+    },
+    {
+      "id": "FUP-09",
+      "remaining": "BLOCK-POLICY/BLOCK-HOSTED/BLOCK-DEVICE: supported custom-input/rejection limits, hosted companion and actual accessibility/touch/party sessions. Actual published-document engine lifecycle, desktop engines and queue heartbeat now pass.",
+      "title": "UI experiments, charts, preview and companion",
+      "acceptance": "Preserve approved appearance. Input/mark/image/process/retention policy decisions precede implementation; Comic Lab remains read-only.",
+      "status": "audited-partial-acceptance",
+      "completed": "Largest actual profile has 4,366 activity days/90 generated model rows/201,536-byte JSON; six exact-value chart checks, 100 native parser calls. Same real 3,053\u00d74,320 image selected/removed three times after fix. Idle room server heartbeat/expiry and keyboard/mobile-sized browser checks.",
+      "evidence": "completion/coverage.json#FUP-09",
+      "independentContinuation": "completion/independent/README.md"
+    }
+  ],
+  "historicalItems": [
+    {
+      "id": "DATA-06",
+      "title": "received-recommendation progress fetches all candidates and assesses all candidates before paging",
+      "disposition": "Natural-cohort/contract gap",
+      "remaining": "Naturally pending received recommendations needed. Preserve grouping, senders and privacy; prior smaller-transfer candidate was slower and rejected."
+    },
+    {
+      "id": "PLAN-09",
+      "title": "Deep numbered pages",
+      "disposition": "Measured; no new architecture justified",
+      "remaining": "Current authorized Watch Library first/last page medians ~282/~279 ms. Request 80 clamps to last page 30; not an 80-page stress test. Preserve numbered pages unless larger actual cohorts establish a problem."
+    },
+    {
+      "id": "PLAN-10",
+      "title": "Presence/read freshness",
+      "disposition": "Acceptance remains",
+      "remaining": "Twenty genuine native idle-room heartbeat reads, existing freshness, expiry and uninvited-viewer denial passed. Multi-participant/media/device clock/drift and access withdrawal acceptance remain."
+    },
+    {
+      "id": "PJ-03",
+      "title": "crop processes and retained results lack aggregate bounds",
+      "disposition": "See AUD-03: aggregate limits adopted; wider real-media/hosted authorization acceptance remains.",
+      "remaining": "See AUD-03: aggregate limits adopted; wider real-media/hosted authorization acceptance remains."
+    },
+    {
+      "id": "PJ-04",
+      "title": "Comic Vine search waits on optional enrichment",
+      "disposition": "Implemented; genuine final DTO preserved",
+      "remaining": "Primary issue publication, cached volume reuse and final combined page verified. Wider actual provider/rate-limit cohorts remain an evidence boundary; no enrichment semantics decision remains."
+    },
+    {
+      "id": "PJ-05",
+      "title": "one Trakt value can require a full account walk",
+      "disposition": "Natural connected Trakt gap",
+      "remaining": "Current lookup remains a paged account walk. Actual Trakt value/export continuation and receipt design need a real connected cohort."
+    },
+    {
+      "id": "PJ-07",
+      "title": "Jellyfin final reconciliation escapes page/transaction budgets",
+      "disposition": "See AUD-02: account lock and bounded finalization adopted; wider active-job acceptance remains.",
+      "remaining": "See AUD-02: account lock and bounded finalization adopted; wider active-job acceptance remains."
+    },
+    {
+      "id": "PJ-09",
+      "title": "final shared-library membership update rewrites matching parents and correlates child counts",
+      "disposition": "Current-predicate matched candidate rejected",
+      "remaining": "Current connection/generation/distinct-count query measured after genuine native metadata refresh; five measured trials per arm. Candidate slower with more WAL; selected query/index unchanged. Production capacity remains outside local acceptance."
+    },
+    {
+      "id": "PJ-10",
+      "title": "Jobs terminal representatives scan and spill permanent history",
+      "disposition": "See AUD-08: fresh candidate rejected; selected query/index unchanged.",
+      "remaining": "See AUD-08: fresh candidate rejected; selected query/index unchanged."
+    },
+    {
+      "id": "PJ-13",
+      "title": "review pagination refetches invariant TMDB detail and credits",
+      "disposition": "Implemented; genuine multi-page cohort verified",
+      "remaining": "Three-page actual movie, exact page-1/2 DTO equality, one review-only request on warm page two, source disable and credential rotation passed."
+    },
+    {
+      "id": "PJ-14",
+      "title": "queued provider time has no caller deadline",
+      "disposition": "See AUD-07: separate queue-wait budget adopted; saturated natural lane acceptance remains.",
+      "remaining": "See AUD-07: separate queue-wait budget adopted; saturated natural lane acceptance remains."
+    },
+    {
+      "id": "PJ-15",
+      "title": "bulk task controls select all matching jobs and execute serial transactions",
+      "disposition": "Unlimited-selection wording superseded by TA-06: commands already bound to 100. Durable prefix receipts remain an explicit deferred design.",
+      "remaining": "Unlimited-selection wording superseded by TA-06: commands already bound to 100. Durable prefix receipts remain an explicit deferred design."
+    },
+    {
+      "id": "PR-02",
+      "title": "Hung control report blocks Stop and queues lifecycle events",
+      "disposition": "Implemented selected save barrier; real audio/native positions and owner controls verified",
+      "remaining": "Stop closes visually; next preparation waits for prior acknowledgement; failed saves require explicit Retry. Actual copied-data music/SPA navigation and native final positions pass. Full real-video/shared-party/device and wider withdrawal schedules remain; no crash/reload persistence is claimed.",
+      "evidence": "completion/stop-save/README.md"
+    },
+    {
+      "id": "PR-06",
+      "title": "EPUB preflight and assets scale with full expanded archive",
+      "disposition": "Actual published EPUB measured; linked-source cohort remains",
+      "remaining": "All 377 source entries byte-equal after production preflight; three Linux trials, browser rendering/resume/URL cleanup on actual EPUB. Linked source/party and larger/solid cohorts remain BLOCK-FORMAT/BLOCK-HOSTED."
+    },
+    {
+      "id": "PR-08",
+      "title": "Room wide reconciliation per participant heartbeat",
+      "disposition": "Actual party/device gap",
+      "remaining": "Twenty genuine native idle-room heartbeat reads, existing freshness, expiry and uninvited-viewer denial passed. Multi-participant/media/device clock/drift and access withdrawal acceptance remain."
+    },
+    {
+      "id": "PR-13",
+      "title": "Post-decode comic dimension guard cannot bound peak allocation",
+      "disposition": "Original browser-only wording partly superseded by server manifest/dimension and Three.js work; actual formats/device/peak acceptance remains.",
+      "remaining": "Original browser-only wording partly superseded by server manifest/dimension and Three.js work; actual formats/device/peak acceptance remains."
+    },
+    {
+      "id": "PR-14",
+      "title": "Evidence/session growth and history late page plans",
+      "disposition": "Actual history/growth census measured; preservation decision remains",
+      "remaining": "Six users first/middle/last pages and task DTOs repeat exactly; actual retained-table sizes/time spans recorded. Retention/deletion policy remains BLOCK-POLICY."
+    },
+    {
+      "id": "UPP-01",
+      "title": "shared chart model lacks family work and generated-mark budgets",
+      "disposition": "Real cohorts measured; no new worker/budget justified",
+      "remaining": "No generated oversized input substituted. Target-device/capacity and supported input limits remain BLOCK-DEVICE/BLOCK-POLICY."
+    },
+    {
+      "id": "UPP-02",
+      "title": "custom preview JSON and image imports bypass finite fixture bounds",
+      "disposition": "Real import/lifetime verified; supported limit decision remains",
+      "remaining": "Existing same-file reselection fix and finite real imports remain verified. Input admission/rejection contract remains BLOCK-POLICY."
+    }
+  ],
+  "continuation": {
+    "report": "completion/independent/README.md",
+    "sourcePins": "completion/independent/source-pins.json",
+    "blockers": "completion/independent/blockers.json",
+    "findings": [
+      {
+        "id": "AUD-11",
+        "title": "Progressive reading metadata",
+        "status": "implemented-real-data-verified",
+        "owners": [
+          "src/lib/providers/comic-vine/adapter.server.ts",
+          "src/lib/providers/reading.server.ts",
+          "src/lib/server/utils/provider-cache.ts",
+          "src/lib/server/queries/search.ts",
+          "src/routes/search/+page.server.ts",
+          "src/routes/search/+page.svelte"
+        ],
+        "tests": [
+          "tests/reading-providers.test.ts",
+          "tests/search-demand.test.ts",
+          "tests/reading-db.test.ts",
+          "tests/media-details.test.ts",
+          "tests/search-page-lifetime.test.ts"
+        ],
+        "contract": "Publish primary matches before optional series enrichment, retain final exact DTO/paging, bounded credential-scoped caches and current-view/loading ownership; cancel obsolete caller hydration while shared metadata cache work can settle."
+      },
+      {
+        "id": "AUD-12",
+        "title": "Review invariant metadata",
+        "status": "implemented-real-data-verified",
+        "owners": [
+          "src/lib/providers/tmdb/details.server.ts",
+          "src/lib/providers/tmdb/adapter.server.ts",
+          "src/lib/catalogue/details.server.ts",
+          "src/lib/catalogue/service.server.ts"
+        ],
+        "tests": [
+          "tests/media-details.test.ts"
+        ],
+        "contract": "Share only validated facts/credits across review pages, bounded by existing lifetime/capacity and source/credential/language/path identity. Validate source before cache access; failed reviews remain retryable."
+      },
+      {
+        "id": "AUD-13",
+        "title": "Access-change publication and errors",
+        "status": "implemented-real-data-verified",
+        "owners": [
+          "src/lib/providers/connections.server.ts",
+          "src/lib/music/persistence.server.ts",
+          "src/lib/reading/query.server.ts",
+          "src/lib/server/queries/search.ts"
+        ],
+        "tests": [
+          "tests/provider-live-db.test.ts",
+          "tests/jellyfin-music-persistence-db.test.ts",
+          "tests/reading-db.test.ts"
+        ],
+        "contract": "Missing/foreign/disconnected connections return 404, stale music source observations return 409 without publication, and withdrawn reading media cannot downgrade to remote previews or persist from a stale Search initial page."
+      },
+      {
+        "id": "AUD-14",
+        "title": "Action intent across pending Search/settings refresh",
+        "status": "implemented-real-data-verified",
+        "owners": [
+          "src/lib/ui/components/Header.svelte"
+        ],
+        "tests": [
+          "tests/action-navigation.test.ts"
+        ],
+        "contract": "Capture the entering route/query before asynchronous settings persistence refreshes old data, honor newer ordinary navigation while saving, and fence actor changes. Preserve the approved selector UI."
+      }
+    ]
+  }
+}

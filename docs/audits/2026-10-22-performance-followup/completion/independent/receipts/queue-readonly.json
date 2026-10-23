@@ -1,0 +1,106 @@
+{
+  "scope": "Read-only transactions over actual retained outbox/account rows. Exact production non-locking queue selector and stored policy predicates; no claims, reactivation, handlers or remote provider requests. Empty pending cohort is not positive active-load execution.",
+  "trials": [
+    {
+      "n": 0,
+      "readOnly": "on",
+      "warmup": true,
+      "executionMs": 0.334,
+      "planningMs": 1.918,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    },
+    {
+      "n": 1,
+      "readOnly": "on",
+      "warmup": false,
+      "executionMs": 0.179,
+      "planningMs": 1.084,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    },
+    {
+      "n": 2,
+      "readOnly": "on",
+      "warmup": false,
+      "executionMs": 0.269,
+      "planningMs": 1.205,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    },
+    {
+      "n": 3,
+      "readOnly": "on",
+      "warmup": false,
+      "executionMs": 0.157,
+      "planningMs": 0.981,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    },
+    {
+      "n": 4,
+      "readOnly": "on",
+      "warmup": false,
+      "executionMs": 0.22,
+      "planningMs": 1.132,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    },
+    {
+      "n": 5,
+      "readOnly": "on",
+      "warmup": false,
+      "executionMs": 0.141,
+      "planningMs": 0.821,
+      "rows": 0,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "resources": {
+        "Shared Hit Blocks": 76,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    }
+  ],
+  "policyCohorts": [
+    {
+      "kind": "jellyfin.live",
+      "stored_jobs": 19581,
+      "accounts": 6,
+      "policy_allowed": 19581
+    }
+  ],
+  "failures": [],
+  "pending": [],
+  "status": "passed-read-only"
+}
