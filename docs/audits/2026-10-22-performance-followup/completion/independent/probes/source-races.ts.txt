@@ -1,0 +1,25 @@
+import{SQL}from'bun';import{createHash}from'node:crypto';
+const copy=await Bun.file('/audit/copy.private.json').json();if(!/^coast_audit_independent_[a-f0-9]{32}$/.test(copy.name))throw Error('Wrong copy');const verify=new SQL(copy.url),[g]=await verify`select shobj_description(oid,'pg_database') marker from pg_database where datname=current_database()`;if(g.marker!==copy.marker)throw Error('Wrong marker');await verify.close();process.env.DATABASE_URL=copy.url;process.env.COAST_DATA_DIR='/audit/data';await import('/audit/read-only-transport.ts');
+const{getSql,closeDb}=await import('/audit/source/src/lib/server/db');const{musicLibrary}=await import('/audit/source/src/lib/music/service.server');const sql=getSql(),report:any={scope:'Controlled withdrawal after genuine authenticated provider response, before publication; same actual account/source and original bytes, no fabricated provider responses. Copy-local status/generation/user/source changes restored each case.',cases:[],failures:[]};
+const hash=(x:any)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
+try{const candidates=await sql`select c.*,i.enabled from provider_connections c join provider_instances i on i.id=c.instance_id join users u on u.id=c.user_id where i.provider='jellyfin' and i.enabled and c.status='connected' and not u.disabled order by (u.username='admin') desc,c.id`;
+let c:any,initial:any;report.cohorts=[];
+for(const candidate of candidates){const page=await musicLibrary(candidate.user_id,candidate.id,{kind:'album',limit:10});report.cohorts.push({items:page.items.length,total:page.total});if(page.items.length){c=candidate;initial=page;break;}}
+if(!c)throw Error('Actual positive album cohort required');report.initial={items:initial.items.length,total:initial.total};const actualFetch=globalThis.fetch;
+for(const kind of ['generation','disconnect','disabled-user','disabled-instance','caller-abort']){
+ let received!:()=>void,release!:()=>void;const admitted=new Promise<void>(r=>received=r),gate=new Promise<void>(r=>release=r);let held=false,timeout:any;const abort=new AbortController();
+ globalThis.fetch=(async(input:any,init:any)=>{const url=new URL(input instanceof Request?input.url:String(input));const response=await actualFetch(input,init);if(!held&&url.searchParams.get('includeItemTypes')==='MusicAlbum'){held=true;received();await gate;}return response;})as typeof fetch;
+ const pending=musicLibrary(c.user_id,c.id,{kind:'album',limit:10},abort.signal).then(x=>({ok:true,value:x}),e=>({ok:false,name:e.name,status:e.status}));
+ try{
+  await Promise.race([admitted,new Promise((_,reject)=>timeout=setTimeout(()=>reject(Error('No real provider response intercepted')),30000))]);clearTimeout(timeout);
+  if(kind==='generation')await sql`update provider_connections set account_generation=${crypto.randomUUID()} where id=${c.id}`;
+  if(kind==='disconnect')await sql`update provider_connections set status='disconnected' where id=${c.id}`;
+  if(kind==='disabled-user')await sql`update users set disabled=true where id=${c.user_id}`;
+  if(kind==='disabled-instance')await sql`update provider_instances set enabled=false where id=${c.instance_id}`;
+  if(kind==='caller-abort')abort.abort();
+  release();const outcome=await pending;const pass=held&&!outcome.ok;report.cases.push({kind,held,accepted:outcome.ok,name:outcome.name,status:outcome.status,pass});if(!pass)report.failures.push(kind);
+ }finally{clearTimeout(timeout);release();globalThis.fetch=actualFetch;await pending;await sql`update provider_connections set account_generation=${c.account_generation},status=${c.status} where id=${c.id}`;await sql`update users set disabled=false where id=${c.user_id}`;await sql`update provider_instances set enabled=${c.enabled} where id=${c.instance_id}`;}
+ const recovered=await musicLibrary(c.user_id,c.id,{kind:'album',limit:10});const pass=hash(recovered.items.map(x=>x.id))===hash(initial.items.map(x=>x.id))&&recovered.total===initial.total;report.cases.push({kind:kind+'-recovered',pass,items:recovered.items.length,total:recovered.total});if(!pass)report.failures.push(kind+'-recovery');
+}
+ const[other]=await sql`select id from users where id<>${c.user_id} and not disabled order by id limit 1`;let denied=false;try{await musicLibrary(other.id,c.id,{kind:'album',limit:10});}catch(e:any){denied=[403,404,409].includes(e.status);}report.cases.push({kind:'foreign-connection-owner',pass:denied});if(!denied)report.failures.push('foreign-connection-owner');
+}catch(e:any){report.failures.push('exception');report.error={name:e.name,code:e.code,message:String(e.message).split('query:')[0].slice(0,120)};}finally{await closeDb();report.status=report.failures.length?'findings':'passed';await Bun.write('/audit/source-races.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

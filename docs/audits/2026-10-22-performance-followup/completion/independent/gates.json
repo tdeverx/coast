@@ -1,0 +1,59 @@
+{
+  "hostFullSuite": {
+    "pass": 1016,
+    "skip": 731,
+    "fail": 0,
+    "files": 319,
+    "assertions": 36137,
+    "runtime": "Bun 963452075 host supplementary"
+  },
+  "shippingFocused": {
+    "pass": 48,
+    "fail": 0,
+    "files": 4,
+    "runtime": "Bun 6bb5dc1956505dd1113455f58d4757c924f3ad54 Linux"
+  },
+  "shippingDatabase": {
+    "pass": 39,
+    "fail": 0,
+    "files": 3,
+    "scope": "Fresh authored databases, distinct from real-data benchmarks"
+  },
+  "svelteCheck": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "build": {
+    "status": "passed",
+    "artifactSha256": "1944f8b57d35e95f34eb2c6faf7fc4f51c41ec41429b1f0aef9577f475570f44",
+    "note": "Final product source; subsequent edits are tests/documentation only."
+  },
+  "codeInventory": {
+    "status": "passed",
+    "productionModules": 592,
+    "unusedModules": 0
+  },
+  "uiInventory": {
+    "status": "passed",
+    "components": 65,
+    "compositions": 28,
+    "internalRenderers": 10,
+    "delegatedRoutes": 9
+  },
+  "sourceStyle": {
+    "status": "passed",
+    "adoptedModules": 57
+  },
+  "privateLogPins": {
+    "full-tests-corrected.log": "5adf2d59c498d0527f19abac60540e6ee21336668a70f1a36bdb38d9979b60e3",
+    "shipping-focused-final.log": "c9b7b7894b9f6aeb44720548d0b497e76463676273587bc68a21d2025b411caf",
+    "db-tests-complete.log": "f6dbf98b5c04caa695cd2159cc0b109095fb1fa867737737d8093dcfc3fdf8f4",
+    "check-final.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "build-navigation.log": "fd976f688a15f07c99c109f4b6b0efcae2b4f795ed920fbda1240f3005d97d08",
+    "code-inventory.log": "7fdc7b1aa2f6983ccaf484ed8046e33ce4fe9bcafaa42d02f06697edaaec2bc8",
+    "ui-inventory.log": "7acc131f6f29eb1738fd7b4d6a3db0754a7c285d3d6b8763029b99295029775a",
+    "style-final.log": "68d1680d97c7583285bba628877527f55e8382f7f101c5bb22007029ebc014bd",
+    "search-lifetime-final.log": "941503e935bd627f90a8d30db75caa627632abce031f743e13e37ce241f73f9b",
+    "full-tests-release-final.log": "d34c00d712fd0e34addb0db492bbd74534b1e2f42be08eeb9375eaa553025dce"
+  }
+}

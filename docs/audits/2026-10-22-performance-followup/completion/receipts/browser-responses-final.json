@@ -1,0 +1,155 @@
+{
+  "responses": [
+    {
+      "path": "/api/v1/profile/avatar/[UUID]/[ID][ID]",
+      "status": 404,
+      "resource": "image"
+    }
+  ],
+  "routes": [
+    {
+      "path": "/for-you",
+      "action": "watch",
+      "status": 200,
+      "mainShellMs": 436,
+      "settledObservationMs": 1439,
+      "visibleCards": 28,
+      "overlay": 0
+    },
+    {
+      "path": "/library",
+      "action": "watch",
+      "status": 200,
+      "mainShellMs": 383,
+      "settledObservationMs": 1386,
+      "visibleCards": 60,
+      "overlay": 0
+    },
+    {
+      "path": "/discover",
+      "action": "watch",
+      "status": 200,
+      "mainShellMs": 722,
+      "settledObservationMs": 1725,
+      "visibleCards": 40,
+      "overlay": 0
+    },
+    {
+      "path": "/search",
+      "action": "watch",
+      "status": 200,
+      "mainShellMs": 404,
+      "settledObservationMs": 1406,
+      "visibleCards": 37,
+      "overlay": 0
+    },
+    {
+      "path": "/for-you",
+      "action": "listen",
+      "status": 200,
+      "mainShellMs": 133,
+      "settledObservationMs": 1134,
+      "visibleCards": 70,
+      "overlay": 0
+    },
+    {
+      "path": "/library",
+      "action": "listen",
+      "status": 200,
+      "mainShellMs": 234,
+      "settledObservationMs": 1235,
+      "visibleCards": 50,
+      "overlay": 0
+    },
+    {
+      "path": "/discover",
+      "action": "listen",
+      "status": 200,
+      "mainShellMs": 142,
+      "settledObservationMs": 1144,
+      "visibleCards": 20,
+      "overlay": 0
+    },
+    {
+      "path": "/search",
+      "action": "listen",
+      "status": 200,
+      "mainShellMs": 117,
+      "settledObservationMs": 1120,
+      "visibleCards": 0,
+      "overlay": 0
+    },
+    {
+      "path": "/for-you",
+      "action": "play",
+      "status": 200,
+      "mainShellMs": 129,
+      "settledObservationMs": 1132,
+      "visibleCards": 0,
+      "overlay": 0
+    },
+    {
+      "path": "/library",
+      "action": "play",
+      "status": 200,
+      "mainShellMs": 137,
+      "settledObservationMs": 1139,
+      "visibleCards": 60,
+      "overlay": 0
+    },
+    {
+      "path": "/discover",
+      "action": "play",
+      "status": 200,
+      "mainShellMs": 134,
+      "settledObservationMs": 1135,
+      "visibleCards": 0,
+      "overlay": 0
+    },
+    {
+      "path": "/search",
+      "action": "play",
+      "status": 200,
+      "mainShellMs": 121,
+      "settledObservationMs": 1123,
+      "visibleCards": 12,
+      "overlay": 0
+    },
+    {
+      "path": "/for-you",
+      "action": "read",
+      "status": 200,
+      "mainShellMs": 133,
+      "settledObservationMs": 1133,
+      "visibleCards": 22,
+      "overlay": 0
+    },
+    {
+      "path": "/library",
+      "action": "read",
+      "status": 200,
+      "mainShellMs": 98,
+      "settledObservationMs": 1101,
+      "visibleCards": 0,
+      "overlay": 0
+    },
+    {
+      "path": "/discover",
+      "action": "read",
+      "status": 200,
+      "mainShellMs": 97,
+      "settledObservationMs": 1099,
+      "visibleCards": 10,
+      "overlay": 0
+    },
+    {
+      "path": "/search",
+      "action": "read",
+      "status": 200,
+      "mainShellMs": 127,
+      "settledObservationMs": 1132,
+      "visibleCards": 6,
+      "overlay": 0
+    }
+  ]
+}

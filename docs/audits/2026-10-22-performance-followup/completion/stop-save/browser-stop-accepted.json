@@ -1,0 +1,53 @@
+{
+  "scope": "Genuine copied track library, real Jellyfin metadata/stream reads and copy-local native playback progress. First Stop request held before server; one authored network abort; no fabricated provider response. Browser autoplay flag enabled; not physical-device autoplay acceptance.",
+  "status": "passed",
+  "blockedBeforeAck": true,
+  "blockedAfterFailure": true,
+  "navigationPreservedSave": true,
+  "retrySameSnapshot": true,
+  "preparations": 3,
+  "stopRequests": 4,
+  "events": [
+    "prepare-1",
+    "stop-request",
+    "stop-response-200",
+    "prepare-2",
+    "stop-request",
+    "stop-request",
+    "stop-response-200",
+    "prepare-3",
+    "stop-request",
+    "stop-response-200"
+  ],
+  "snapshots": [
+    {
+      "positionSeconds": 0.246161,
+      "durationSeconds": 13.578367,
+      "event": "stop",
+      "paused": true,
+      "playedSeconds": 0.246161
+    },
+    {
+      "positionSeconds": 0.589526,
+      "durationSeconds": 179.015782,
+      "event": "stop",
+      "paused": true,
+      "playedSeconds": 0.589526
+    },
+    {
+      "positionSeconds": 0.589526,
+      "durationSeconds": 179.015782,
+      "event": "stop",
+      "paused": true,
+      "playedSeconds": 0.589526
+    },
+    {
+      "positionSeconds": 0.242937,
+      "durationSeconds": 13.578367,
+      "event": "stop",
+      "paused": true,
+      "playedSeconds": 0.242937
+    }
+  ],
+  "errors": []
+}

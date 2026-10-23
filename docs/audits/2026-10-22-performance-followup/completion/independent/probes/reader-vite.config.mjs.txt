@@ -1,0 +1,2 @@
+import {defineConfig} from '<APP_ROOT>/node_modules/vite/dist/node/index.js';
+export default defineConfig({root:'<PRIVATE_RUN_ROOT>/reader-harness',server:{host:'127.0.0.1',port:5196,strictPort:true,fs:{strict:true,allow:['<PRIVATE_RUN_ROOT>/reader-harness','<APP_ROOT>']}},resolve:{alias:{'#lib':'<APP_ROOT>/src/lib'}},optimizeDeps:{include:['epubjs','pdfjs-dist','@zip.js/zip.js']}});

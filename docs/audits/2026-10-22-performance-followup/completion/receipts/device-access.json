@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-10-22T20:26:27.231091+00:00",
+  "method": "Unrestricted xcrun devicectl list devices --json-output; no authentication or device state changed.",
+  "outcome": "success",
+  "connectedDevices": 0,
+  "acceptance": "not-exercised",
+  "remaining": "User has offered device access; actual hardware checks await a connected device/browser session. This result supersedes the historical service-timeout explanation, not hardware acceptance."
+}

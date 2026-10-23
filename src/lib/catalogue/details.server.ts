@@ -64,12 +64,12 @@ export async function titleInsights(userId: string, id: string, source: string, 
     adapter = await getTmdb('en-US', region);
   if (!adapter) return null;
   const path = `${media.kind === 'movie' ? 'movie' : 'tv'}/${encodeURIComponent(identity.externalId)}${child ? `/season/${child.seasonNumber}` : ''}${episode ? `/episode/${episode.episodeNumber}` : ''}`;
-  return insightsCache(`tmdb:${region}:${path}:${page}`, () => adapter.insights(path, page));
+  return insightsCache(`tmdb:${adapter.cacheScope}:${region}:${path}:${page}`, () => adapter.insights(path, page));
 }
 export async function personDetails(id: number) {
   const adapter = await getTmdb();
   if (!adapter) error(503, 'Configure TMDB to view people and their credits.');
-  return peopleCache(String(id), () => adapter.person(id));
+  return peopleCache(`${adapter.cacheScope}:${id}`, () => adapter.person(id));
 }
 export async function personCredits(
   userId: string,

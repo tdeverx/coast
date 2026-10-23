@@ -3,6 +3,7 @@ import type { ProviderTransport } from '../contracts';
 import { AppError } from '../../server/security/errors';
 import { ProviderHttpError } from '../../server/security/provider-fetch';
 import { comicVineIdSchema, READING_PROVIDER_PAGE_LIMIT, readingPlainText, type ReadingMetadata, type ReadingPage } from '../../reading/model';
+import { providerCache } from '../../server/utils/provider-cache';
 import { rankSearch, searchScore, searchFallback } from '../../search';
 
 export const COMIC_VINE_BASE_URL = 'https://comicvine.gamespot.com';
@@ -42,6 +43,7 @@ const volumesSchema = v.object({ status_code: v.literal(1), results: v.pipe(v.ar
 })), v.maxLength(COMIC_VINE_PAGE_SIZE)) });
 const querySchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(250), v.check(value => !/[\u0000-\u001f]/.test(value)));
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(READING_PROVIDER_PAGE_LIMIT));
+const volumeSearches = providerCache<v.InferOutput<typeof volumesSchema>>(100, 15 * 60_000);
 const fields = 'id,name,issue_number,deck,description,cover_date,store_date,image,volume,person_credits,resource_type,site_detail_url';
 
 function coverUrl(raw: string | null | undefined): string | undefined {
@@ -88,7 +90,7 @@ function providerError(error: unknown): never {
 
 export class ComicVineAdapter {
   private apiKey: string;
-  constructor(key: string, private request: ProviderTransport, private userAgent = 'Coast experimental comic discovery') {
+  constructor(key: string, private request: ProviderTransport, private userAgent = 'Coast experimental comic discovery', private scope?: string) {
     this.apiKey = v.parse(apiKey, key);
   }
   private async read(path: string, params: URLSearchParams, requestedFields = fields) {
@@ -102,24 +104,38 @@ export class ComicVineAdapter {
     if (response.status_code !== 1) throw new AppError(502, 'Comic Vine could not complete this metadata request.', 'comic_vine_unavailable');
     return raw;
   }
-  async search(query: string, page = 1): Promise<ReadingPage> {
+  /** The primary issue page can publish before optional series enrichment. */
+  async searchIssues(query: string, page = 1): Promise<ReadingPage> {
     const search = v.parse(querySchema, query);
     v.parse(pageSchema, page);
     try {
       const params = new URLSearchParams({ query: search, resources: 'issue', limit: String(COMIC_VINE_PAGE_SIZE), offset: String((page - 1) * COMIC_VINE_PAGE_SIZE) });
-      // Preserve ordinary issue paging. Each bounded page also resolves series names,
-      // so unnamed/story-named issues can be found without one request per card.
       const result = v.parse(searchSchema, await this.read('/api/search/', params));
+      return { items: result.results.map(mapIssue), total: result.number_of_total_results, page,
+        nextPage: page < READING_PROVIDER_PAGE_LIMIT && page * COMIC_VINE_PAGE_SIZE < result.number_of_total_results && result.results.length > 0 ? page + 1 : null };
+    } catch (error) { providerError(error); }
+  }
+  async search(query: string, page = 1, primary?: ReadingPage): Promise<ReadingPage> {
+    const search = v.parse(querySchema, query);
+    v.parse(pageSchema, page);
+    try {
+      const result = primary ?? await this.searchIssues(search, page);
       let seriesIssues: v.InferOutput<typeof issueSchema>[] = [];
       let seriesTotal = 0;
       {
         try {
-          let volumes = v.parse(volumesSchema, await this.read('/api/search/', new URLSearchParams({
-            query: search, resources: 'volume', limit: String(COMIC_VINE_PAGE_SIZE), offset: '0',
-          }), 'id,name,resource_type'));
-          const fallback = searchFallback(search);
-          if (page === 1 && !result.results.length && !volumes.results.length && fallback)
-            volumes = v.parse(volumesSchema, await this.read('/api/search/', new URLSearchParams({ query: fallback, resources: 'volume', limit: String(COMIC_VINE_PAGE_SIZE), offset: '0' }), 'id,name,resource_type'));
+          const readVolumes = async () => {
+            let volumes = v.parse(volumesSchema, await this.read('/api/search/', new URLSearchParams({
+              query: search, resources: 'volume', limit: String(COMIC_VINE_PAGE_SIZE), offset: '0',
+            }), 'id,name,resource_type'));
+            const fallback = searchFallback(search);
+            if (page === 1 && !result.items.length && !volumes.results.length && fallback)
+              volumes = v.parse(volumesSchema, await this.read('/api/search/', new URLSearchParams({ query: fallback, resources: 'volume', limit: String(COMIC_VINE_PAGE_SIZE), offset: '0' }), 'id,name,resource_type'));
+            return volumes;
+          };
+          const volumes = await (this.scope
+            ? volumeSearches(JSON.stringify([this.scope, search, page === 1 && !result.items.length]), readVolumes)
+            : readVolumes());
           const selected = rankSearch(volumes.results.map(volume => ({ ...volume, title: volume.name })), search)
             .filter(volume => searchScore(search, volume) >= 550).slice(0, 2);
           if (selected.length) {
@@ -135,11 +151,11 @@ export class ComicVineAdapter {
         } catch (cause) {
           // Optional series enrichment cannot discard successful issue results.
           // Do not retry or bypass transport cooldowns on an upstream failure.
-          if (!result.results.length) throw cause;
+          if (!result.items.length) throw cause;
         }
       }
-      const items = rankSearch([...new Map([...result.results, ...seriesIssues].map(issue => [issue.id, mapIssue(issue)])).values()], search);
-      return { items, total: Math.max(result.number_of_total_results, seriesTotal, items.length), page, nextPage: page < READING_PROVIDER_PAGE_LIMIT && page * COMIC_VINE_PAGE_SIZE < Math.max(result.number_of_total_results, seriesTotal) && items.length > 0 ? page + 1 : null };
+      const items = rankSearch([...new Map([...result.items, ...seriesIssues.map(mapIssue)].map(issue => [issue.externalId, issue])).values()], search);
+      return { items, total: Math.max(result.total, seriesTotal, items.length), page, nextPage: page < READING_PROVIDER_PAGE_LIMIT && page * COMIC_VINE_PAGE_SIZE < Math.max(result.total, seriesTotal) && items.length > 0 ? page + 1 : null };
     } catch (error) { providerError(error); }
   }
   /** Comic Vine lists expose release dates, not a popularity ranking. */

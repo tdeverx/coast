@@ -1,0 +1,8 @@
+{
+  "scope": "Actual HTTP body, authored response delivery order; Watch pagination cannot replace a Listen navigation.",
+  "intercepted": 1,
+  "delivery": "genuine-response-delivered",
+  "action": "listen",
+  "cards": 50,
+  "stable": true
+}

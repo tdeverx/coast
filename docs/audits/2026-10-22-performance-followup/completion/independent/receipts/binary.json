@@ -1,0 +1,80 @@
+{
+  "scope": "Actual accessible movie, genuine Jellyfin PlaybackInfo metadata POST and bounded native binary GET/range/HEAD. No playback progress exports or encoder session requested; HLS/transcoding is refused as a cohort gap. Controlled session expiry/source generation checks only on copy.",
+  "checks": [
+    {
+      "name": "native-HEAD-metadata",
+      "pass": true
+    },
+    {
+      "name": "native-GET-bytes=0-65535",
+      "pass": true
+    },
+    {
+      "name": "native-GET-bytes=65536-131071",
+      "pass": true
+    },
+    {
+      "name": "invalid-capability-denied-before-upstream",
+      "pass": true
+    },
+    {
+      "name": "signed-wrong-session-capability-denied",
+      "pass": true
+    },
+    {
+      "name": "foreign-viewer-stream-denied",
+      "pass": true
+    },
+    {
+      "name": "changed-account-generation-stream-denied",
+      "pass": true
+    },
+    {
+      "name": "expired-session-stream-denied",
+      "pass": true
+    },
+    {
+      "name": "genuine-trailer-binary",
+      "pass": true
+    }
+  ],
+  "binary": [
+    {
+      "method": "HEAD",
+      "status": 200,
+      "bytes": 0,
+      "contentType": "video/x-matroska",
+      "contentRange": null,
+      "cache": "private, no-store"
+    },
+    {
+      "method": "GET",
+      "range": "bytes=0-65535",
+      "status": 206,
+      "bytes": 65536,
+      "sha256": "2c92e65c308522eb975b1ed7ff17c12e1d37a95b88af7d1d1ba2e6c7c01b7d0f",
+      "contentType": "video/x-matroska",
+      "contentRange": "bytes 0-65535/136567422",
+      "cache": "private, no-store"
+    },
+    {
+      "method": "GET",
+      "range": "bytes=65536-131071",
+      "status": 206,
+      "bytes": 65536,
+      "sha256": "5facdf09969484ab86ac3c25297c4c6537a6393b3cbcb6af9f3040e803fcc47b",
+      "contentType": "video/x-matroska",
+      "contentRange": "bytes 65536-131071/136567422",
+      "cache": "private, no-store"
+    },
+    {
+      "kind": "trailer",
+      "status": 206,
+      "bytes": 65536,
+      "sha256": "f993c6a6af13b4d351b9f30f6026a01e8b77bf9ada1b0c23e9c2224c09e56872"
+    }
+  ],
+  "gaps": [],
+  "failures": [],
+  "status": "passed"
+}

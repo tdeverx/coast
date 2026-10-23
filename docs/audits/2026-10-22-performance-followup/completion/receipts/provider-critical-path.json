@@ -1,0 +1,73 @@
+{
+  "scope": "Finite genuine metadata GETs, native adapters/transport and provider pacing unchanged; wrapper records adapter-call elapsed including queue and validation, not pure provider CPU. No fabricated responses or metadata imports.",
+  "tmdb": [
+    {
+      "page": 1,
+      "ms": 568.476959,
+      "calls": [
+        {
+          "kind": "detail-with-credits",
+          "ms": 196.87254199999998,
+          "resultHash": "70cc86bced516d86775178d1220b8d6b5156b8fae3b88927e2dca56efcf291d0"
+        },
+        {
+          "kind": "reviews",
+          "ms": 363.91841700000003,
+          "resultHash": "0204e0331796856c6b19c73cf13864aa3a7be6f5d854777783c2f1edcfd503f7"
+        }
+      ],
+      "reviews": 16,
+      "pages": 1,
+      "incomplete": false,
+      "invariantHash": "8e5e187d19c105fd78963b88361c571168178e66a3a5a84d57887ab42de76bfc"
+    },
+    {
+      "page": 2,
+      "ms": 813.665833,
+      "calls": [
+        {
+          "kind": "detail-with-credits",
+          "ms": 437.484833,
+          "resultHash": "70cc86bced516d86775178d1220b8d6b5156b8fae3b88927e2dca56efcf291d0"
+        },
+        {
+          "kind": "reviews",
+          "ms": 373.810792,
+          "resultHash": "b4746592a54f57136e1bc33a250005fb637da9901031813d87fd9b79944032ad"
+        }
+      ],
+      "reviews": 0,
+      "pages": 1,
+      "incomplete": false,
+      "invariantHash": "8e5e187d19c105fd78963b88361c571168178e66a3a5a84d57887ab42de76bfc"
+    }
+  ],
+  "comic": [
+    {
+      "ms": 36426.544642,
+      "calls": [
+        {
+          "kind": "issue-search",
+          "ms": 106.07224999999994,
+          "successful": true
+        },
+        {
+          "kind": "optional-volume-search",
+          "ms": 18152.8033,
+          "successful": true
+        },
+        {
+          "kind": "series-issues",
+          "ms": 18157.215009,
+          "successful": true
+        }
+      ],
+      "items": 20,
+      "total": 14123,
+      "nextPage": 2,
+      "identityHash": "3b12427cd03ed19df62bdf24800c547fa72dd62f2c5190dc70ee73e3b5056746"
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

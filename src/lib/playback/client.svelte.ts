@@ -1,3 +1,4 @@
+import { PlaybackSavePending } from '#lib/playback/stop.js';
 import { browserDiagnostic } from '#lib/ui/diagnostics.js';
 import { api, capturePlaybackApi } from '#lib/ui/client.js';
 import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
@@ -35,6 +36,7 @@ export const heroPlayer = $state({
 type PlaybackController = {
   beginPlaybackGesture: (type:'audio'|'video') => void;
   stop: (cancelPreparing?: boolean) => Promise<void>;
+  waitForStop: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
   snapshot: () => {positionSeconds:number;buffering:boolean;unavailable?:boolean};
@@ -121,6 +123,8 @@ export async function playMedia(
     if(!current())return;
     if (player.session) await controller?.stop(false);
     if(!current())return;
+    await controller?.waitForStop();
+    if(!current())return;
     const video = document.createElement('video');
     const videoCodecs = ['h264'];
     if (video.canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"')) videoCodecs.push('hevc');
@@ -175,19 +179,34 @@ export function presentTrailer(
 }
 
 export async function playMusic(workId:string,continuing=false){
+  const intent=preparationRevision;
+  await controller?.waitForStop();
+  if(intent!==preparationRevision)return;
   const result=await api<{items:{id:string;title:string;availability:string}[];continueId:string|null}>(`music/${workId}/queue`,undefined,'GET');
+  if(intent!==preparationRevision)return;
   return playMusicQueue(result,continuing);
 }
 export async function playMusicQueue(result:{items:{id:string;title:string;availability:string}[];continueId:string|null},continuing=false){
+  const intent=preparationRevision;
   const {syncedPlayer,canControlPlayback,canEditPartyQueue}=await import('./synced/client.svelte');
+  if(intent!==preparationRevision)return;
   if(syncedPlayer.room&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   if(syncedPlayer.room&&!canEditPartyQueue()){syncedPlayer.notice='Only the host can replace this queue.';return;}
   player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;player.audioNotice='';
   return advanceMusic(1,continuing,true);
 }
-export async function playSavedMusicQueue(){return playMusicQueue(await api('music/queue',undefined,'GET'));}
+export async function playSavedMusicQueue(){
+  const intent=preparationRevision;
+  await controller?.waitForStop();
+  if(intent!==preparationRevision)return;
+  const result=await api<Parameters<typeof playMusicQueue>[0]>('music/queue',undefined,'GET');
+  if(intent!==preparationRevision)return;
+  return playMusicQueue(result);
+}
 export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQueue=false){
+  const intent=preparationRevision;
   const {syncedPlayer,canControlPlayback}=await import('./synced/client.svelte');
+  if(intent!==preparationRevision)return;
   if(syncedPlayer.room&&!canControlPlayback())return;
   if(syncedPlayer.room&&!replacingQueue)player.audioQueue=syncedPlayer.room.queueItems;
   let index=player.audioIndex+direction;
@@ -195,7 +214,7 @@ export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQu
   while(index>=0&&index<player.audioQueue.length){
     const entry=player.audioQueue[index];player.audioIndex=index;
     if(entry.availability==='available'){
-      try{await playMedia(entry.id,{mediaType:'audio',fromStart:!continuing});player.audioNotice=skipped.length?`Skipped unavailable tracks: ${skipped.join(', ')}`:'';if(player.audioNotice)notifyAction(player.audioNotice);return;}catch{skipped.push(entry.title);}
+      try{await playMedia(entry.id,{mediaType:'audio',fromStart:!continuing});player.audioNotice=skipped.length?`Skipped unavailable tracks: ${skipped.join(', ')}`:'';if(player.audioNotice)notifyAction(player.audioNotice);return;}catch(cause){if(cause instanceof PlaybackSavePending)throw cause;skipped.push(entry.title);}
     }else skipped.push(entry.title);
     index+=direction;
   }

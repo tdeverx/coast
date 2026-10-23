@@ -1,0 +1,8 @@
+{
+  "scope": "Only exact name/comment-matched disposable copy; original backup and source/live/development databases untouched.",
+  "ownedApplicationStopped": true,
+  "databaseIdentityHash": "6655d592d8ded59e38e2087449e3244fd30d2a39fcbaf77c20837cc23ae27223",
+  "markerVerified": true,
+  "activeClientsBeforeDrop": 0,
+  "ownedDatabaseDropped": true
+}

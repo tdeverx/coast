@@ -9,6 +9,11 @@
   let { title, canvas, inspector, browser, categories, canvasSettings, updateCanvas, setBackgroundImage, backgroundError }: WorkspaceParts & {
     categories:Snippet; canvasSettings: CanvasSettings; updateCanvas:(values:Partial<Pick<CanvasSettings,'background'|'color'>>)=>void; setBackgroundImage:(file?:File)=>void; backgroundError:string;
   } = $props();
+  let backgroundImageInput = $state<HTMLInputElement>();
+  function removeBackgroundImage() {
+    setBackgroundImage();
+    if (backgroundImageInput) backgroundImageInput.value = '';
+  }
   reportFailure(()=>backgroundError);
 </script>
 
@@ -37,8 +42,8 @@
       <Field label="Preview background color"><input type="color" value={canvasSettings.color} oninput={event=>updateCanvas({color:event.currentTarget.value})} /></Field>
       <div class="row"><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#ffffff'})}>White</Button><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#000000'})}>Black</Button></div>
     {:else if canvasSettings.background === 'image'}
-      <Field label="Preview background image"><input type="file" accept="image/*" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
-      {#if canvasSettings.image}<Button emphasis="subtle" onclick={()=>setBackgroundImage()}>Remove image</Button>{/if}
+      <Field label="Preview background image"><input bind:this={backgroundImageInput} type="file" accept="image/*" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
+      {#if canvasSettings.image}<Button emphasis="subtle" onclick={removeBackgroundImage}>Remove image</Button>{/if}
     {/if}
 
     <p class="small quiet">Preview only. Images stay in this browser.</p>

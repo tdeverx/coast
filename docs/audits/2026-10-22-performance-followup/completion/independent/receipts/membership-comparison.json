@@ -1,0 +1,242 @@
+{
+  "scope": "Current production membership predicate, count(distinct), connection and account-generation evidence; actual native-refreshed screen cohort. Twelve serial rolled-back EXPLAIN ANALYZE BUFFERS WAL trials, one warmup per arm then alternating order; no index/config change, no adoption based on two unmatched observations. Overlaps browser idle/read resource exercise, not isolated hardware.",
+  "trials": [
+    {
+      "n": 0,
+      "arm": "baseline",
+      "warmup": true,
+      "executionMs": 125.949,
+      "planningMs": 0.175,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 59619,
+        "Shared Read Blocks": 1065,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 448,
+        "WAL FPI": 153,
+        "WAL Bytes": 1094438
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 1,
+      "arm": "candidate",
+      "warmup": true,
+      "executionMs": 155.475,
+      "planningMs": 0.341,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61192,
+        "Shared Read Blocks": 20,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 435,
+        "WAL FPI": 88,
+        "WAL Bytes": 679888
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 2,
+      "arm": "baseline",
+      "warmup": false,
+      "executionMs": 127.43,
+      "planningMs": 0.171,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61166,
+        "Shared Read Blocks": 8,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 485,
+        "WAL FPI": 64,
+        "WAL Bytes": 518563
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 3,
+      "arm": "candidate",
+      "warmup": false,
+      "executionMs": 136.68,
+      "planningMs": 0.235,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61577,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 473,
+        "WAL FPI": 56,
+        "WAL Bytes": 472180
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 4,
+      "arm": "candidate",
+      "warmup": false,
+      "executionMs": 243.946,
+      "planningMs": 0.196,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61810,
+        "Shared Read Blocks": 13,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 512,
+        "WAL FPI": 52,
+        "WAL Bytes": 490614
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 5,
+      "arm": "baseline",
+      "warmup": false,
+      "executionMs": 142.846,
+      "planningMs": 0.207,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 60229,
+        "Shared Read Blocks": 508,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 361,
+        "WAL FPI": 12,
+        "WAL Bytes": 213234
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 6,
+      "arm": "baseline",
+      "warmup": false,
+      "executionMs": 124.366,
+      "planningMs": 0.168,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 56401,
+        "Shared Read Blocks": 4663,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 428,
+        "WAL FPI": 18,
+        "WAL Bytes": 272056
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 7,
+      "arm": "candidate",
+      "warmup": false,
+      "executionMs": 132.548,
+      "planningMs": 0.227,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 59656,
+        "Shared Read Blocks": 1423,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 379,
+        "WAL FPI": 10,
+        "WAL Bytes": 209351
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 8,
+      "arm": "candidate",
+      "warmup": false,
+      "executionMs": 123.795,
+      "planningMs": 0.469,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61153,
+        "Shared Read Blocks": 12,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 400,
+        "WAL FPI": 11,
+        "WAL Bytes": 215762
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 9,
+      "arm": "baseline",
+      "warmup": false,
+      "executionMs": 102.775,
+      "planningMs": 0.221,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 60764,
+        "Shared Read Blocks": 1,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 354,
+        "WAL FPI": 2,
+        "WAL Bytes": 155149
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 10,
+      "arm": "baseline",
+      "warmup": false,
+      "executionMs": 103.966,
+      "planningMs": 0.176,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61050,
+        "Shared Read Blocks": 2,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 425,
+        "WAL FPI": 9,
+        "WAL Bytes": 198400
+      },
+      "rolledBack": true
+    },
+    {
+      "n": 11,
+      "arm": "candidate",
+      "warmup": false,
+      "executionMs": 117.373,
+      "planningMs": 0.205,
+      "resultHash": "fc03b9244c31daedf110cae5aa47b7c45914a09008ea7a3dce9e219583a18c1b",
+      "resources": {
+        "Shared Hit Blocks": 61105,
+        "Shared Read Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "WAL Records": 348,
+        "WAL FPI": 6,
+        "WAL Bytes": 179410
+      },
+      "rolledBack": true
+    }
+  ],
+  "failures": [],
+  "cohortParents": 101,
+  "affectedCandidates": 80,
+  "baselineSqlHash": "8440f2f68d576cc789c3b6ad17feab5464fe21d6ef645d854bd34c5e08fcdd7a",
+  "candidateSqlHash": "c3ba7c1190a317c8960f8f27335a6a32c7352d4a45ed56964de5a6fa7d82f39a",
+  "summary": {
+    "baseline": {
+      "trials": 5,
+      "medianMs": 124.366,
+      "medianWalBytes": 213234,
+      "medianHits": 60764
+    },
+    "candidate": {
+      "trials": 5,
+      "medianMs": 132.548,
+      "medianWalBytes": 215762,
+      "medianHits": 61153
+    }
+  },
+  "disposition": "Measurement only: candidate snapshots precompute values and require concurrent metadata-write/EPQ review before adoption; prior rejected alternatives remain historical.",
+  "status": "passed"
+}

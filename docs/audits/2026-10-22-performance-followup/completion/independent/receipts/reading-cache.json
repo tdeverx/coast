@@ -1,0 +1,40 @@
+{
+  "scope": "Genuine native credential-checked reading service and provider GETs; complete snapshot reuse before primary publication, source disable and real-credential rotation on marked copy. No provider replies fabricated.",
+  "checks": [
+    {
+      "name": "complete-snapshot-reused-before-primary",
+      "pass": true
+    },
+    {
+      "name": "disabled-comic-sources-denied-before-cache",
+      "pass": true
+    },
+    {
+      "name": "rotated-comic-source-refetches-primary",
+      "pass": true
+    }
+  ],
+  "observations": [
+    {
+      "kind": "warm-primary",
+      "ms": 9.819875000001048,
+      "providerReads": 0,
+      "items": 20,
+      "completeDtoHash": "62d1b1ca46476229759b904249370b41b6aaeb14bdade75bbb8be583d33a030d"
+    },
+    {
+      "kind": "all-comic-sources-disabled",
+      "count": 2,
+      "providerReads": 0,
+      "status": 409,
+      "code": "comic_vine_not_configured"
+    },
+    {
+      "kind": "rotated-primary",
+      "providerReads": 1,
+      "items": 10
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

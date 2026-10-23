@@ -115,3 +115,11 @@ test('module recovery reloads only on explicit action while the current error re
   expect(feedback.current).toBeNull();await feedback.act();expect(owner.reloads).toBe(preview?0:1);
  }
 });
+
+test('owned pending feedback stays busy, becomes retryable, and restores unrelated feedback on completion',async()=>{
+ const feedback=createFeedback(),owner=Symbol('final playback save');let attempts=0;
+ feedback.notify('Unrelated message');feedback.pending('Saving playback progress…',owner);
+ expect(feedback.current?.kind).toBe('info');expect(feedback.current?.busy).toBe(true);
+ feedback.failure('Save failed',()=>{attempts++;feedback.clear(owner);},owner);
+ expect(feedback.current?.busy).toBe(false);await feedback.act();expect(attempts).toBe(1);expect(feedback.current?.text).toBe('Unrelated message');
+});

@@ -1,0 +1,52 @@
+{
+  "boundary": "Actual linked comic, genuine download-permitted reader user and real source GETs. HTTP manifest/page and fresh authorization checks; controlled user feature and generation withdrawal only in marked copy. No fabricated files/provider replies.",
+  "checks": [
+    {
+      "name": "genuine-manifest-response",
+      "passed": true
+    },
+    {
+      "name": "actual-page-delivered",
+      "passed": true
+    },
+    {
+      "name": "native-reader-feature-withdrawal-command",
+      "passed": true
+    },
+    {
+      "name": "cached-page-denied-after-personal-feature-withdrawal",
+      "passed": true
+    },
+    {
+      "name": "native-reader-feature-restored",
+      "passed": true
+    },
+    {
+      "name": "cached-page-denied-after-generation-withdrawal",
+      "passed": true
+    },
+    {
+      "name": "read-only-navigation-preserves-actual-bookmarks",
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "name": "actual-manifest",
+      "status": 200,
+      "format": "cbz",
+      "pages": 296,
+      "ms": 3383.3984179999998,
+      "bytes": 35294
+    },
+    {
+      "name": "actual-page",
+      "status": 200,
+      "bytes": 1875347,
+      "sha256": "db2c9efb22f2ced04871ce977d9486b9f09cec37424ebcd5ad8cc5152f7014bf"
+    }
+  ],
+  "failures": [],
+  "cleanupStatus": 200,
+  "status": "passed"
+}

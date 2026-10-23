@@ -51,22 +51,31 @@ async function source(kind: ReadingKind, provider = kind === 'book' ? 'openlibra
   if (!instance?.credentials)
     throw new AppError(409, 'An administrator can add a Comic Vine API key in Integrations to enable comic discovery.', 'comic_vine_not_configured');
   const credentials = v.parse(comicVineCredentialsSchema, JSON.parse(await decryptCredential(instance.credentials)));
+  // Rotation/disable checks happen before every cache lookup.
+  const version = createHash('sha256').update(instance.credentials).digest('hex');
+  const key = `${instance.id}:${version}`;
   const adapter = new ComicVineAdapter(credentials.apiKey, createProviderTransport({
     ...await instanceFetchConfig(instance), maxResponseBytes: 2 * 1024 ** 2,
-  }));
-  // Rotation/disable checks happen before cache lookup. A previous key cannot
-  // keep serving provider results after the integration changes.
-  const version = createHash('sha256').update(instance.credentials).digest('hex');
-  return { key: `${instance.id}:${version}`, adapter };
+  }), undefined, key);
+  return { key, adapter };
 }
 
-export async function searchReading(kind: ReadingKind, query: string, page = 1) {
+export async function searchReading(kind: ReadingKind, query: string, page = 1, stage: 'primary' | 'complete' = 'complete') {
   v.parse(kindSchema, kind);
   const search = v.parse(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(250)), query);
   v.parse(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(READING_PROVIDER_PAGE_LIMIT)), page);
   const { key, adapter } = await source(kind);
   const identity = JSON.stringify([key, search, page]);
-  return searchFlight(identity, () => searches(identity, () => adapter.search(search, page)));
+  if (!(adapter instanceof ComicVineAdapter))
+    return searchFlight(identity, () => searches(identity, () => adapter.search(search, page)));
+  // Full results expire after their earlier issue page. Never refresh the issue
+  // stage and then replace it with an older complete snapshot that is still cached.
+  const complete = searches.peek(identity);
+  if (complete) return complete;
+  const primaryKey = `${identity}:primary`;
+  const primary = () => searchFlight(primaryKey, () => searches(primaryKey, () => adapter.searchIssues(search, page)));
+  if (stage === 'primary') return primary();
+  return searchFlight(identity, () => searches(identity, async () => adapter.search(search, page, await primary())));
 }
 
 /** Bounded metadata-only discovery; no catalogue ingestion or per-card requests. */

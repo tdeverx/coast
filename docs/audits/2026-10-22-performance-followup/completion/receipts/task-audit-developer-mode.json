@@ -1,0 +1,29 @@
+{
+  "boundary": "Actual existing finite job records on marked real-data copy; controlled reactivation/expiry/cancelled-lease schedules labelled. Native claim/run with genuine read-only providers; no new fake handlers or fabricated responses. Not natural production queue throughput.",
+  "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "checks": [
+    {
+      "name": "three-existing-permitted-read-jobs",
+      "passed": true
+    },
+    {
+      "name": "concurrent-native-claims-exactly-once",
+      "passed": false
+    }
+  ],
+  "runs": [],
+  "failures": [
+    "concurrent-native-claims-exactly-once",
+    "probe-exception"
+  ],
+  "claims": {
+    "calls": 6,
+    "claimed": 0,
+    "ms": 81.94466700000021
+  },
+  "failure": {
+    "name": "TypeError",
+    "message": "undefined is not an object (evaluating 'lease.id')"
+  },
+  "status": "findings"
+}

@@ -1,0 +1,22 @@
+import { chromium } from '<APP_ROOT>/node_modules/playwright/index.mjs';
+import fs from 'node:fs/promises';
+const root='<PRIVATE_RUN_ROOT>/private',users=JSON.parse(await fs.readFile(root+'/sessions.json','utf8'));
+const actors=[users.find(u=>u.role==='admin'),...users.filter(u=>u.role==='user').slice(0,2)];if(actors.some(x=>!x))throw Error('Actual users required');
+const browser=await chromium.launch({headless:true});const start=Date.now(),report={scope:'Thirty-minute concurrent browsing/idle exercise on three actual copied accounts; all four actions/pages, genuine network, no response substitutes; Chromium 1248. Browser heap/DOM are distinct from decoder/GPU/whole-process memory.',runtime:browser.version(),durationMs:0,routes:[],samples:[],errors:[],checks:[],status:'running'};
+const save=()=>fs.writeFile(root+'/browser-soak.json',JSON.stringify(report,null,2));
+const contexts=[];
+try{
+ for(const [n,u]of actors.entries()){const c=await browser.newContext({viewport:{width:1440,height:900}});await c.addCookies([{name:'coast_session',value:u.token,url:'http://127.0.0.1:5175',httpOnly:true,sameSite:'Lax'}]);const p=await c.newPage();p.on('pageerror',e=>report.errors.push({actor:n,name:e.name,message:e.message.replace(/https?:\/\/\S+/g,'[URL]').replace(/[a-f0-9]{8}-[a-f0-9-]{27,}/gi,'[ID]').slice(0,180)}));const cdp=await c.newCDPSession(p);await cdp.send('Performance.enable');contexts.push({c,p,cdp,n});}
+ async function sample(label){for(const{x,p,cdp,n}of contexts){await cdp.send('Runtime.discardConsoleEntries');await cdp.send('HeapProfiler.collectGarbage');const m=await cdp.send('Performance.getMetrics');report.samples.push({label,actor:n,elapsedMs:Date.now()-start,dom:await cdp.send('Memory.getDOMCounters'),heapBytes:m.metrics.find(m=>m.name==='JSHeapUsedSize')?.value,cards:await p.locator('main article').count()});}await save();}
+ for(let round=0;round<4;round++){
+  await Promise.all(contexts.map(async({p,n})=>{
+   for(const action of ['watch','listen','play','read'])for(const path of ['/for-you','/library','/discover','/search']){
+    const at=Date.now();try{const r=await p.goto('http://127.0.0.1:5175'+path+'?view='+action+(path==='/search'?'&q=Batman':''),{waitUntil:'commit',timeout:60000});await p.locator('main').waitFor({timeout:60000});await p.waitForTimeout(path==='/search'&&action==='read'?25000:600);const state=await p.evaluate(()=>({content:document.querySelector('main')?.textContent?.trim().length??0,overlay:!!document.querySelector('vite-error-overlay'),overflow:document.documentElement.scrollWidth>innerWidth+1,images:[...document.querySelectorAll('main img')].filter(i=>i.complete&&i.naturalWidth>0).length}));report.routes.push({actor:n,round,action,path,status:r?.status(),ms:Date.now()-at,...state});}catch(e){report.routes.push({actor:n,round,action,path,error:e.name,ms:Date.now()-at});}
+   }
+   await p.goto('http://127.0.0.1:5175/library?view=watch&page=4&firstPage=2',{waitUntil:'domcontentloaded',timeout:60000});
+  }));
+  await sample('round-'+round);
+  const until=start+(round+1)*450000;while(Date.now()<until){await new Promise(r=>setTimeout(r,15000));await sample('idle-'+round);}
+ }
+ report.durationMs=Date.now()-start;report.checks.push({name:'all-observed-route-responses-meaningful-and-no-overlay',pass:report.routes.every(r=>r.status===200&&r.content>0&&!r.overlay)},{name:'no-page-errors',pass:report.errors.length===0},{name:'thirty-minute-observation',pass:report.durationMs>=1800000});report.status=report.checks.every(x=>x.pass)?'passed':'findings';await save();console.log(JSON.stringify({status:report.status,routes:report.routes.length,samples:report.samples.length,errors:report.errors.length,durationMs:report.durationMs}));
+}finally{await Promise.all(contexts.map(x=>x.c.close()));await browser.close();}

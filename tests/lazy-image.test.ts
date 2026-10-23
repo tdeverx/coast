@@ -12,7 +12,7 @@ test('fallbacks and artwork changes keep the horizontal rail request slot', asyn
   const rail = {} as Element;
   function image(index: number) {
     const target = new EventTarget();
-    Object.assign(target, { style: { visibility: '' }, index, closest: () => rail, compareDocumentPosition: (other: { index: number }) => index < other.index ? 4 : 2 });
+    Object.assign(target, { removeAttribute: () => {}, style: { visibility: '' }, index, closest: () => rail, compareDocumentPosition: (other: { index: number }) => index < other.index ? 4 : 2 });
     Object.defineProperty(target, 'src', { set(value: string) { started.push(value); } });
     return target as HTMLImageElement;
   }
@@ -64,7 +64,7 @@ test('waiting artwork leaves the rail queue until it intersects again, without d
   const rail = {} as Element;
   function image(index: number) {
     const target = new EventTarget();
-    Object.assign(target, { style: {visibility:''}, index, closest:()=>rail, compareDocumentPosition:(other:{index:number})=>index<other.index?4:2 });
+    Object.assign(target, { removeAttribute: () => {}, style: {visibility:''}, index, closest:()=>rail, compareDocumentPosition:(other:{index:number})=>index<other.index?4:2 });
     Object.defineProperty(target, 'src', {set(value:string){started.push(value);}});
     return target as HTMLImageElement;
   }
@@ -88,7 +88,7 @@ test('waiting artwork leaves the rail queue until it intersects again, without d
     expect(started).toEqual(['a','c','b']);
     delivery([{target:a,isIntersecting:true}]);
     actions[0].destroy();await Promise.resolve();
-    expect(started).toEqual(['a','c','b']);
+    expect(started.slice(0,-1)).toEqual(['a','c','b']);expect(started.at(-1)).toStartWith('data:image/gif');
   } finally {
     actions.forEach(action=>action.destroy());
     globalThis.IntersectionObserver=original;
@@ -107,7 +107,7 @@ test('horizontal artwork starts left to right and failures/removal release the r
   const rail = {} as Element;
   function image(index: number, row = rail) {
     const target = new EventTarget() as EventTarget & { src: string; loading: string; closest: () => Element; compareDocumentPosition: (other: { index: number }) => number; index: number };
-    Object.assign(target, { style: {visibility:''}, index, closest: () => row, compareDocumentPosition: (other: { index: number }) => index < other.index ? 4 : 2 });
+    Object.assign(target, { removeAttribute: () => {}, style: {visibility:''}, index, closest: () => row, compareDocumentPosition: (other: { index: number }) => index < other.index ? 4 : 2 });
     Object.defineProperty(target, 'src', { set(value: string) { started.push(value); } });
     return target as unknown as HTMLImageElement;
   }
@@ -126,11 +126,20 @@ test('horizontal artwork starts left to right and failures/removal release the r
     expect(started).toEqual(['left', 'other-row', 'middle']);
     actions[2].destroy();
     await Promise.resolve();
-    expect(started).toEqual(['left', 'other-row', 'middle', 'right']);
+    expect(started).toEqual(['left', 'other-row', 'middle', expect.stringContaining('data:image/gif'), 'right']);
     actions[0].update('right-fallback');
     expect(started.at(-1)).toBe('right-fallback');
   } finally {
     actions.forEach(action => action.destroy());
     globalThis.IntersectionObserver = original;
   }
+});
+
+test('destroy releases the owned image request exactly once',()=>{
+ const original=globalThis.IntersectionObserver;const removed:string[]=[];const assigned:string[]=[];
+ globalThis.IntersectionObserver=undefined as unknown as typeof IntersectionObserver;
+ const node=new EventTarget();Object.assign(node,{style:{visibility:''},closest:()=>null,removeAttribute:(name:string)=>{removed.push(name);}});
+ Object.defineProperty(node,'src',{set(value:string){assigned.push(value);}});
+ try{const owner=lazyImage(node as HTMLImageElement,'/actual-artwork');expect(assigned).toEqual(['/actual-artwork']);owner.destroy();owner.destroy();expect(removed).toEqual(['srcset']);expect(assigned).toHaveLength(2);expect(assigned[1]).toStartWith('data:image/gif');}
+ finally{globalThis.IntersectionObserver=original;}
 });

@@ -7,6 +7,7 @@ import { enabledCategories, requireEnabledCategory, selectedCategory } from '#li
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { works, musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '#lib/server/db/schema.js';
 import { mediaViews, screenWorkSummaries } from '#lib/server/queries/media.js';
@@ -60,7 +61,7 @@ export async function collectionRead(statement:SQL){
 }
 
 /** All personal predicates and access assessment happen before the 60-item card query. */
-export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all') {
+export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all', projection: 'complete' | 'status' = 'complete') {
   // Personal shelves only traverse their relationships and ancestors. Full inventory
   // remains an explicit scope for server projections; item menus scope to requested IDs.
   // Personal roots depend on evidence; explicit-ID closures are independent.
@@ -221,7 +222,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     order by r.parent_id,(coalesce(mp.position_seconds,0)>0) desc,
       (case when mp.position_seconds>0 then mp.updated_at end) desc nulls last,
       (l.track_id is not null or coalesce(mp.play_count,0)>0),r.position,child.id
-  ), assessments as materialized (
+  ), assessments as ${projection === 'status' ? sql`not materialized` : sql`materialized`} (
     select w.id,w.created_at,w.category,w.kind,coalesce(m.title,g.title,mu.title,rw.title,w.kind) as title,
       coalesce(m.release_date,g.release_date,mu.release_date,rw.release_date)::text as release_date,
       coalesce(c.stale,false) as stale,
@@ -420,6 +421,9 @@ export async function collectionSummaries(viewerId: string, raw: unknown={}) {
 }
 
 export async function collectionData(viewerId: string, raw: unknown={}, username?: string, interval?: PageInterval, signal?: AbortSignal) {
+  return withReadCancellation(signal,()=>collectionDataRead(viewerId,raw,username,interval,signal));
+}
+async function collectionDataRead(viewerId:string,raw:unknown,username?:string,interval?:PageInterval,signal?:AbortSignal){
   signal?.throwIfAborted();
   const {ownerId,assessments,total,page,pages,interval:bounds,...presentation}=await collectionPage(viewerId,raw,username,interval);
   const hydrationStarted = performance.now();

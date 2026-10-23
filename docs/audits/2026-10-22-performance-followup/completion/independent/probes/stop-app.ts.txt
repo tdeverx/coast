@@ -1,0 +1,1 @@
+const pid=Number((await Bun.file('/audit/app.pid').text()).trim());if(!(await Bun.file(`/proc/${pid}/cmdline`).text()).includes('/audit/build/index.js'))throw Error('Wrong process');process.kill(pid,'SIGTERM');for(let n=0;n<100;n++){if(!await Bun.file(`/proc/${pid}/cmdline`).exists()){console.log('Owned app stopped');break;}await Bun.sleep(100);}

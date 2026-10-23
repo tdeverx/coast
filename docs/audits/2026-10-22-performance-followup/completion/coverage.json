@@ -1,0 +1,3068 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "audited-with-explicit-open-acceptance",
+  "scope": "No blanket completion claim; actual-data runtime evidence, controlled real-state schedules, supplementary fixtures and unavailable cohorts are distinct.",
+  "historicalFamilyCount": 131,
+  "families": [
+    {
+      "id": "health",
+      "canonicalPath": "/api/v1/health",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:health",
+          "level": "auth-envelope-only",
+          "status": 200
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:health",
+          "status": 200,
+          "level": "public-health"
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "public-health-read",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "gif-avatar",
+      "canonicalPath": "/api/v1/profile/avatar/{userId}/{hash}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [],
+      "positiveCohortAccepted": false,
+      "status": "not-runtime-exercised",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "anonymous-tmdb-artwork",
+      "canonicalPath": "/api/v1/artwork/tmdb/{size}/{filename}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/artwork-probe.json",
+          "level": "actual-image-delivery",
+          "note": "Successful genuine artwork cohort; no exhaustive capability/cache matrix."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "anonymous-profile-activity",
+      "canonicalPath": "/api/v1/profile/activity?username={username}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:anonymous-profile-activity",
+          "level": "auth-envelope-only",
+          "status": 404
+        },
+        {
+          "receipt": "receipts/privacy-audit.json",
+          "level": "full-six-owner-seven-viewer-activity-insights-matrix",
+          "note": "Exact stored social_visible policy: 24 permitted and 60 denied reads across activity/insights."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "anonymous-profile-favourites",
+      "canonicalPath": "/api/v1/profile/section?section=favourites&username={username}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:anonymous-profile-favourites",
+          "level": "auth-envelope-only",
+          "status": 404
+        },
+        {
+          "receipt": "receipts/privacy-audit.json",
+          "level": "not-in-privacy-matrix",
+          "note": "Favourites only covered by local authenticated result/auth envelope; do not extend activity/insights privacy acceptance to it."
+        },
+        {
+          "receipt": "independent/receipts/privacy-expanded.json",
+          "level": "six-owner-seven-viewer-three-section-privacy-matrix"
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "anonymous-profile-insights",
+      "canonicalPath": "/api/v1/profile/section?section=insights&username={username}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:anonymous-profile-insights",
+          "level": "auth-envelope-only",
+          "status": 404
+        },
+        {
+          "receipt": "receipts/privacy-audit.json",
+          "level": "full-six-owner-seven-viewer-activity-insights-matrix",
+          "note": "Exact stored social_visible policy: 24 permitted and 60 denied reads across activity/insights."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "invite-libraries",
+      "canonicalPath": "/api/v1/admin/invites/libraries?connectionId={id}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:invite-libraries",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "invite-libraries",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 5
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "invites",
+      "canonicalPath": "/api/v1/admin/invites",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:invites",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:invites",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 2,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "sharing-list",
+      "canonicalPath": "/api/v1/sharing",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:sharing-list",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:sharing",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 2,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "sharing-sources",
+      "canonicalPath": "/api/v1/sharing/sources?workId={id}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:sharing-sources",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:sharing-sources",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "planning-plans",
+      "canonicalPath": "/api/v1/planning?view=plans&category={screen|game|music|reading}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:planning-plans",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "planning-plans",
+          "level": "policy-denial",
+          "status": 403,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "planning-releases",
+      "canonicalPath": "/api/v1/planning?view=releases&category={screen|game|music|reading}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:planning-releases",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "planning-releases",
+          "level": "policy-denial",
+          "status": 403,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "experiments-feed",
+      "canonicalPath": "/api/v1/experiments/feed",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:experiments-feed",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "experiments-feed",
+          "level": "authenticated-final-build-result",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "experiments-row",
+      "canonicalPath": "/api/v1/experiments/row?category={category}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:experiments-row",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "experiments-row",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "experiments-recommendations",
+      "canonicalPath": "/api/v1/experiments/recommendations?category={category}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:experiments-recommendations",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "experiments-recommendations",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 60,
+          "total": 2000
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "synced-list",
+      "canonicalPath": "/api/v1/synced",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:synced-list",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:synced-list",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "synced-state",
+      "canonicalPath": "/api/v1/synced/{roomId}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:synced-state",
+          "level": "auth-envelope-only",
+          "status": 401
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "auth-envelope-only",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "synced-state-media",
+      "canonicalPath": "/api/v1/synced/{roomId}/media",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:synced-state-media",
+          "level": "auth-envelope-only",
+          "status": 401
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "auth-envelope-only",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "avatar-choices",
+      "canonicalPath": "/api/v1/profile/avatars",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:avatar-choices",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:avatars",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "avatar-provider-image",
+      "canonicalPath": "/api/v1/profile/avatars/{connectionId}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:avatar-provider-image",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "avatar-provider-image",
+          "level": "authenticated-final-build-result",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-friends",
+      "canonicalPath": "/api/v1/social/friends",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-friends",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:social-friends",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-feed",
+      "canonicalPath": "/api/v1/social/feed",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-feed",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:social-feed",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 12,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-popular",
+      "canonicalPath": "/api/v1/social/popular",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-popular",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:social-popular",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-reactions",
+      "canonicalPath": "/api/v1/social/reactions",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-reactions",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "social-reactions",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-works",
+      "canonicalPath": "/api/v1/social/works",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-works",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "social-works",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-recommendations",
+      "canonicalPath": "/api/v1/social/recommendations",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-recommendations",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:social-recommendations",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-insights",
+      "canonicalPath": "/api/v1/social/insights",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-insights",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "social-insights",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "social-checkins",
+      "canonicalPath": "/api/v1/social/checkins",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:social-checkins",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:social-checkins",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-children-local",
+      "canonicalPath": "/api/v1/music/{workId}/children?page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-children-local",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:music-children",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": 1
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-children-provider",
+      "canonicalPath": "/api/v1/music/source/children?connectionId={id}&externalId={id}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-children-provider",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "music-children-provider",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 15,
+          "total": 15
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-history",
+      "canonicalPath": "/api/v1/music/{workId}/history?page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-history",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:music-history",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-work-queue",
+      "canonicalPath": "/api/v1/music/{workId}/queue",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-work-queue",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:music-work-queue",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-queue-picker",
+      "canonicalPath": "/api/v1/music/queue/picker?page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-queue-picker",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:music-picker",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "music-saved-queue",
+      "canonicalPath": "/api/v1/music/queue?listId={optionalActualId}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:music-saved-queue",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:music-saved",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "collection-page",
+      "canonicalPath": "/api/v1/collection?page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:collection-page",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:collection",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 60,
+          "total": 71
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "collection-work-lists",
+      "canonicalPath": "/api/v1/collection/{workId}/lists?page=1&reading=false",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:collection-work-lists",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:collection-lists",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "collection-work-actions",
+      "canonicalPath": "/api/v1/collection/{workId}?playthrough={optionalActualId}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:collection-work-actions",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:collection-actions",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "missing-demand",
+      "canonicalPath": "/api/v1/missing",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:missing-demand",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:missing",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 7,
+          "total": 7
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "admin-demand",
+      "canonicalPath": "/api/v1/admin/demand",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:admin-demand",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:admin-demand",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "source-preview-connection",
+      "canonicalPath": "/api/v1/providers/{id}/source-preview",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:source-preview-connection",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "source-preview-connection",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "source-preview-instance",
+      "canonicalPath": "/api/v1/providers/{id}/instance-source-preview",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:source-preview-instance",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "source-preview-instance",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "heroes",
+      "canonicalPath": "/api/v1/heroes?ids={actualIds}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:heroes",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:heroes",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "sequence-next",
+      "canonicalPath": "/api/v1/sequence?kind={kind}&id={actualId}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:sequence-next",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:sequence",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "discover-watch",
+      "canonicalPath": "/api/v1/discover?surface=watch&section={trending|recent}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:discover-watch",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "discover-watch",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 20
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "discover-play",
+      "canonicalPath": "/api/v1/discover?surface=play&section={trending|recent}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:discover-play",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "discover-play",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "discover-listen",
+      "canonicalPath": "/api/v1/discover?surface=listen&section={trending|recent}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:discover-listen",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:discover-listen",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "discover-read",
+      "canonicalPath": "/api/v1/discover?surface=read&section={trending|recent}&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:discover-read",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "discover-read",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 10,
+          "total": 374454
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-watch",
+      "canonicalPath": "/api/v1/library?surface=watch&page=1",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-watch",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:library-watch",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 60,
+          "total": 1750
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-read",
+      "canonicalPath": "/api/v1/library?surface=read&page=1",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-read",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:library-read",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 51,
+          "total": 51
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-play",
+      "canonicalPath": "/api/v1/library?surface=play&page=1",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-play",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:library-play",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 60,
+          "total": 1204
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-listen",
+      "canonicalPath": "/api/v1/library?surface=listen&page=1",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-listen",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "library-listen",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 50,
+          "total": 162
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-preview-play",
+      "canonicalPath": "/api/v1/library?preview=true&surface=play",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-preview-play",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "library-preview-play",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 12,
+          "total": 12
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "library-preview-listen",
+      "canonicalPath": "/api/v1/library?preview=true&surface=listen",
+      "source": "src/lib/server/queries/library-content.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:library-preview-listen",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "library-preview-listen",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 12,
+          "total": 12
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "progress",
+      "canonicalPath": "/api/v1/progress",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:progress",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:progress",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 8,
+          "total": 8
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "lists-content",
+      "canonicalPath": "/api/v1/lists/content?view=watchlist&filter=to-watch&page=1",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:lists-content",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:lists-content",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 2,
+          "total": 2
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "playback-stream",
+      "canonicalPath": "/api/v1/playback/{sessionId}/stream",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:playback-stream",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/binary.json",
+          "level": "actual-native-range-capability-boundaries",
+          "note": "Genuine source bytes; native handler, not an HTTP API route-equivalence claim."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "native-positive-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "trailer-stream",
+      "canonicalPath": "/api/v1/trailer/{mediaId}?resource={capability}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:trailer-stream",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/binary.json",
+          "level": "actual-native-range-capability-boundaries",
+          "note": "Genuine source bytes; native handler, not an HTTP API route-equivalence claim."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "native-positive-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "artwork-tmdb",
+      "canonicalPath": "/api/v1/artwork/tmdb/{size}/{filename}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:artwork-tmdb",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/artwork-probe.json",
+          "level": "actual-image-delivery",
+          "note": "Successful genuine artwork cohort; no exhaustive capability/cache matrix."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "artwork-fallback",
+      "canonicalPath": "/api/v1/artwork/fallback/{mediaId}/{type}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:artwork-fallback",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "artwork-fallback",
+          "level": "authenticated-final-build-result",
+          "status": 404
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "artwork-private",
+      "canonicalPath": "/api/v1/artwork/{instanceId}/{itemId}/{type}",
+      "source": "src/lib/server/api/index.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:artwork-private",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/browser-responses-final.json",
+          "level": "actual-image-delivery",
+          "note": "Successful genuine artwork cohort; no exhaustive capability/cache matrix."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "games-igdb-search",
+      "canonicalPath": "/api/v1/games/igdb/search?instanceId={id}&q={actualQuery}&page=1",
+      "source": "src/lib/server/api/games.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:games-igdb-search",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/igdb-http.json",
+          "level": "genuine-final-HTTP-IGDB-metadata-and-native-application-token"
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "games-igdb-detail",
+      "canonicalPath": "/api/v1/games/igdb/{externalId}?instanceId={id}",
+      "source": "src/lib/server/api/games.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:games-igdb-detail",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/igdb-http.json",
+          "level": "genuine-final-HTTP-IGDB-metadata-and-native-application-token"
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "games-list",
+      "canonicalPath": "/api/v1/games?q={optionalActualQuery}&page=1",
+      "source": "src/lib/server/api/games.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:games-list",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:games-list",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 60,
+          "total": 1204
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "games-detail",
+      "canonicalPath": "/api/v1/games/{gameId}",
+      "source": "src/lib/server/api/games.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:games-detail",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:game-detail",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "game-playthrough-detail",
+      "canonicalPath": "/api/v1/game-playthroughs/{id}?page=1",
+      "source": "src/lib/server/api/game-playthroughs.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:game-playthrough-detail",
+          "level": "auth-envelope-only",
+          "status": 401
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "auth-envelope-only",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-collection-page",
+      "canonicalPath": "/api/v1/reading/collections/{groupId}?page=1",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-collection-page",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "reading-collection-page",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 10,
+          "total": 15
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-session-file",
+      "canonicalPath": "/api/v1/reading/sessions/{sessionId}/file",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-session-file",
+          "level": "auth-envelope-only",
+          "status": 401
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "auth-envelope-only",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-detail",
+      "canonicalPath": "/api/v1/reading/{workId}",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-detail",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-credits",
+      "canonicalPath": "/api/v1/reading/{workId}/credits",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-credits",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "reading-credits",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 13,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-community",
+      "canonicalPath": "/api/v1/reading/{workId}/community",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-community",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading/community",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-related",
+      "canonicalPath": "/api/v1/reading/{workId}/related",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-related",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading/related",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 12,
+          "total": 12
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-connections",
+      "canonicalPath": "/api/v1/reading/{workId}/connections",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-connections",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading/connections",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-linked",
+      "canonicalPath": "/api/v1/reading/{workId}/linked",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-linked",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading/linked",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-issues",
+      "canonicalPath": "/api/v1/reading/{workId}/issues",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-issues",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "reading-issues",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 2,
+          "total": 2
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-editions",
+      "canonicalPath": "/api/v1/reading/{workId}/editions",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-editions",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "reading-editions",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-sources",
+      "canonicalPath": "/api/v1/reading/{workId}/sources",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-sources",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "reading-sources",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 51,
+          "total": 51
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "reading-history",
+      "canonicalPath": "/api/v1/reading/{workId}/history",
+      "source": "src/lib/server/api/reading.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:reading-history",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:reading/history",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": 0
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "session",
+      "canonicalPath": "/api/v1/session",
+      "source": "src/lib/server/api/session.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:session",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:session",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "profile-history",
+      "canonicalPath": "/api/v1/profile/activity",
+      "source": "src/lib/server/api/profile.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:profile-history",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:profile-history",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 40,
+          "total": 40
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "profile-favourites",
+      "canonicalPath": "/api/v1/profile/section?section=favourites",
+      "source": "src/lib/server/api/profile.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:profile-favourites",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:profile-favourites",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": 1
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "profile-insights",
+      "canonicalPath": "/api/v1/profile/section?section=insights",
+      "source": "src/lib/server/api/profile.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:profile-insights",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:profile-insights",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-detail-dispatch",
+      "canonicalPath": "/api/v1/media/details?href={actualHref}&enhance=false",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-detail-dispatch",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "media-detail-dispatch",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-edition",
+      "canonicalPath": "/api/v1/media/{mediaId}/edition?name={actualEdition}",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-edition",
+          "level": "auth-envelope-only",
+          "status": 401
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "auth-envelope-only",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-reading-polymorphic",
+      "canonicalPath": "/api/v1/media/{workId}",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-reading-polymorphic",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "media-reading-polymorphic",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-screen-local",
+      "canonicalPath": "/api/v1/media/{mediaId}?enhance=false",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-screen-local",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-screen-enhance",
+      "canonicalPath": "/api/v1/media/{mediaId}?enhance=true",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-screen-enhance",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "media-screen-enhance",
+          "level": "authenticated-final-build-result",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-playable",
+      "canonicalPath": "/api/v1/media/{mediaId}/playable",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-playable",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/playable",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-next",
+      "canonicalPath": "/api/v1/media/{mediaId}/next",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-next",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/next",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 10,
+          "total": 10
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-actions",
+      "canonicalPath": "/api/v1/media/{mediaId}/actions",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-actions",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/actions",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-activity",
+      "canonicalPath": "/api/v1/media/{mediaId}/activity",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-activity",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/activity",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": 1
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-history",
+      "canonicalPath": "/api/v1/media/{mediaId}/history",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-history",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/history",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 1,
+          "total": 1
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-trailer",
+      "canonicalPath": "/api/v1/media/{mediaId}/trailer",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-trailer",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "media-trailer",
+          "level": "authenticated-final-build-result",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-metadata",
+      "canonicalPath": "/api/v1/media/{mediaId}/metadata",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-metadata",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/metadata",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "media-presentation",
+      "canonicalPath": "/api/v1/media/{mediaId}/presentation",
+      "source": "src/lib/server/api/media.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:media-presentation",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/presentation",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "list-choice",
+      "canonicalPath": "/api/v1/lists",
+      "source": "src/lib/server/api/lists.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:list-choice",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:list-choice",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "list-summaries",
+      "canonicalPath": "/api/v1/lists/summaries",
+      "source": "src/lib/server/api/lists.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:list-summaries",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:list-summaries",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "streams-now",
+      "canonicalPath": "/api/v1/providers/streams?view=now",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:streams-now",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:streams-now",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "streams-history",
+      "canonicalPath": "/api/v1/providers/streams?view=history",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:streams-history",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:streams-history",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "streams-count",
+      "canonicalPath": "/api/v1/providers/streams/count",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:streams-count",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:streams-count",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "providers",
+      "canonicalPath": "/api/v1/providers",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:providers",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:providers",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 8,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "provider-music-artwork",
+      "canonicalPath": "/api/v1/providers/{connectionId}/music/{externalId}/artwork",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:provider-music-artwork",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "provider-music-artwork",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "provider-music-library",
+      "canonicalPath": "/api/v1/providers/{connectionId}/music",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:provider-music-library",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "provider-music-library",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 50,
+          "total": 162
+        },
+        {
+          "receipt": "receipts/provider-audit.json",
+          "level": "native-service-and-provider-page-equality",
+          "note": "Three actual accounts and album/artist/track first/middle/last pages; HTTP first page separately exercised."
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "provider-music-details",
+      "canonicalPath": "/api/v1/providers/{connectionId}/music/{externalId}",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:provider-music-details",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "provider-music-details",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "provider-scan-progress",
+      "canonicalPath": "/api/v1/providers/{connectionId}/scan",
+      "source": "src/lib/server/api/providers.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:provider-scan-progress",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:scan",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": 38230
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "request-options",
+      "canonicalPath": "/api/v1/requests/options?mediaId={id}",
+      "source": "src/lib/server/api/requests.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:request-options",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "request-options",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "notifications",
+      "canonicalPath": "/api/v1/notifications",
+      "source": "src/lib/server/api/notifications.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:notifications",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:notifications",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 7,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "conflicts",
+      "canonicalPath": "/api/v1/conflicts",
+      "source": "src/lib/server/api/conflicts.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:conflicts",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:conflicts",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "task-groups",
+      "canonicalPath": "/api/v1/queue/tasks",
+      "source": "src/lib/server/api/queue.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:task-groups",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:task-groups",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 23,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "queue-actions",
+      "canonicalPath": "/api/v1/queue",
+      "source": "src/lib/server/api/queue.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:queue-actions",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:queue",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 80,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "token-metadata",
+      "canonicalPath": "/api/v1/settings/tokens",
+      "source": "src/lib/server/api/settings.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:token-metadata",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:tokens",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": 0,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "admin-health",
+      "canonicalPath": "/api/v1/admin/health",
+      "source": "src/lib/server/api/admin.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:admin-health",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:admin-health",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "admin-benchmarks",
+      "canonicalPath": "/api/v1/admin/benchmarks?page=1",
+      "source": "src/lib/server/api/admin.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:admin-benchmarks",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "admin-benchmarks",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": 3
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "diagnostic-level",
+      "canonicalPath": "/api/v1/diagnostics",
+      "source": "src/routes/api/v1/diagnostics/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:diagnostic-level",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:diagnostics",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "diagnostic-download",
+      "canonicalPath": "/api/v1/diagnostics?download",
+      "source": "src/routes/api/v1/diagnostics/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:diagnostic-download",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-remaining.json",
+          "case": "diagnostic-download",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "title-insights",
+      "canonicalPath": "/api/v1/media/{id}/insights?source={tmdb|trakt}&page=1",
+      "source": "src/routes/api/v1/media/[id]/insights/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:title-insights",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/provider-critical-path.json",
+          "level": "native-adapter-only",
+          "note": "Actual movie has one review page; authored page 2 is empty. Exact duplicate detail/credits confirmed; no positive multi-page review cohort claim."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "title-statistics",
+      "canonicalPath": "/api/v1/media/{id}/statistics?period={month|year|all}",
+      "source": "src/routes/api/v1/media/[id]/statistics/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:title-statistics",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "admin:media/statistics",
+          "level": "authenticated-result",
+          "status": 200,
+          "items": null,
+          "total": null
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "person-credits",
+      "canonicalPath": "/api/v1/people/{tmdbPersonId}/credits?page=1",
+      "source": "src/routes/api/v1/people/[id]/credits/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "unauth:person-credits",
+          "level": "auth-envelope-only",
+          "status": 401
+        },
+        {
+          "receipt": "independent/receipts/api-positive.json",
+          "case": "person-credits",
+          "level": "authenticated-final-build-result",
+          "status": 200,
+          "items": 24,
+          "total": 148
+        }
+      ],
+      "positiveCohortAccepted": true,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "steam-callback",
+      "canonicalPath": "/connections/steam/callback",
+      "source": "src/routes/connections/steam/callback/+server.ts",
+      "evidence": [],
+      "positiveCohortAccepted": false,
+      "status": "not-runtime-exercised",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "share-state",
+      "canonicalPath": "/api/share/state",
+      "source": "src/routes/api/share/[...path]/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/extra-auth.json",
+          "level": "actual-share-native-service-and-HTTP",
+          "note": "HEAD/HTML no viewer allocation, scoped guest, expiry/revocation; no encoder/stream claim."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "share-playback-stream",
+      "canonicalPath": "/api/share/playback/{id}/stream",
+      "source": "src/routes/api/share/[...path]/+server.ts",
+      "evidence": [],
+      "positiveCohortAccepted": false,
+      "status": "not-runtime-exercised",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "share-external-stream",
+      "canonicalPath": "/api/share/external/{id}/stream?access={capability}",
+      "source": "src/routes/api/share/[...path]/+server.ts",
+      "evidence": [],
+      "positiveCohortAccepted": false,
+      "status": "not-runtime-exercised",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "share-public-token",
+      "canonicalPath": "/share/{token}",
+      "source": "src/routes/share/[token]/+server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/extra-auth.json",
+          "level": "actual-share-native-service-and-HTTP",
+          "note": "HEAD/HTML no viewer allocation, scoped guest, expiry/revocation; no encoder/stream claim."
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-openapi",
+      "canonicalPath": "/api/public/v1/openapi.json",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "openapi",
+          "level": "public-document",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-me",
+      "canonicalPath": "/api/public/v1/me",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:me",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-webhooks",
+      "canonicalPath": "/api/public/v1/webhooks",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:webhooks",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-reading-history",
+      "canonicalPath": "/api/public/v1/reading/{workId}/history",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:reading-history",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-catalogue-one",
+      "canonicalPath": "/api/public/v1/catalogue/{workId}",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:catalogue-one",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-catalogue-page",
+      "canonicalPath": "/api/public/v1/catalogue",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:catalogue",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-collection",
+      "canonicalPath": "/api/public/v1/collection",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:collection",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-library",
+      "canonicalPath": "/api/public/v1/library",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:library",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    },
+    {
+      "id": "public-progress",
+      "canonicalPath": "/api/public/v1/progress",
+      "source": "src/lib/server/public-api/handler.server.ts",
+      "evidence": [
+        {
+          "receipt": "receipts/api-audit.json",
+          "case": "bearer:progress",
+          "level": "scoped-bearer",
+          "status": 200
+        }
+      ],
+      "positiveCohortAccepted": false,
+      "status": "authenticated-subset",
+      "remaining": "All parameter, permission, malformed input, disconnect and source-change combinations are not certified by this row. A successful empty or object-shaped response is not automatically marked a positive cohort."
+    }
+  ],
+  "currentAdditions": [
+    {
+      "id": "progress-experiment",
+      "receipt": "receipts/api-audit.json",
+      "case": "admin:progress-experiment"
+    },
+    {
+      "id": "recently-added",
+      "receipt": "receipts/api-audit.json",
+      "case": "admin:recent"
+    },
+    {
+      "id": "requests-row",
+      "receipt": "receipts/api-remaining.json",
+      "case": "requests-row"
+    },
+    {
+      "id": "reader-manifest-pages",
+      "receipt": "receipts/reading-http.json",
+      "note": "Genuine linked reader HTTP manifest and first encoded page."
+    },
+    {
+      "id": "playback-stop-save",
+      "receipt": "stop-save/browser-stop-accepted.json",
+      "note": "Native copy-local mutation and genuine source bytes; held request and authored network failure, plus independent native state verification. Not an expansion of the historical 131 GET families."
+    }
+  ],
+  "workstreams": [
+    {
+      "id": "FUP-01",
+      "title": "API/policy",
+      "status": "audited-partial-acceptance",
+      "completed": "205 initial HTTP cases/142 checks, 24 additional GET cases, 84 privacy reads, 13 scoped-token/share checks; family evidence levels retained.",
+      "remaining": "BLOCK-HOSTED/BLOCK-COHORT: shared encoder capabilities and provider-specific natural cohorts; actual OAuth/OpenID success requires a genuine authenticated external account session. Missing retained avatar asset remains actual-input gap. Finite negative/API reads are in independent receipts.",
+      "receipts": [
+        "receipts/api-audit.json",
+        "receipts/api-remaining.json",
+        "receipts/privacy-audit.json",
+        "receipts/extra-auth.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-02",
+      "title": "Active tasks",
+      "status": "audited-partial-acceptance",
+      "completed": "Three genuine Jellyfin live jobs completed; six concurrent claims selected three distinct jobs; native lease reclaim, retry/cancel and lost-lease yielding passed eight checks. Prior complete finalization resume remains valid at its earlier source epoch.",
+      "remaining": "BLOCK-AUTO-REVIEW-JOBS/BLOCK-BULK/BOUND-CAPACITY: repeated real-account execution was rejected by automatic approval review; read-only selector/eligibility inspection completed. Durable prefix contract and defined natural sustained deployment load remain. The separately approved single-job heartbeat passes.",
+      "receipts": [
+        "receipts/task-audit.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-03",
+      "title": "Listen/providers",
+      "status": "audited-partial-acceptance",
+      "completed": "65 checks: three actual accounts, album/artist/track first/middle/last exact source IDs/totals, complete retained DTO ranges, stale generation and abort denial.",
+      "remaining": "BLOCK-COHORT/BLOCK-HOSTED: unequal same-user sources, Trakt and natural short-page inputs; full real decoder/shared queue continuity. Current generation/disconnect/user/source/abort and restored-album schedules pass.",
+      "receipts": [
+        "receipts/provider-audit.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-04",
+      "title": "Reading/playback/devices",
+      "status": "audited-partial-acceptance",
+      "completed": "Actual CBR/CBZ every-page equality and 19 delivery checks; genuine HTTP manifest/page plus seven policy/cleanup checks. Five crop codec/resolution inputs baseline/current exact, including AV1 and 4K HEVC; two-child cap observed. Approved PR-02 now detaches visible playback, retains the acknowledgement barrier before successor preparation and exposes explicit Retry; see stop-save/README.md for actual audio/native-position acceptance.",
+      "remaining": "BLOCK-FORMAT/BLOCK-HOSTED/BLOCK-DEVICE: linked EPUB/PDF, real CB7/CBT/solid archives, hosted companion permissions, physical decoder/GPU/party acceptance. Actual real-FFmpeg stalled-source timeout/shared-lease/final-drain checks now pass without hosted authorization. Published actual EPUB/PDF engines and native binary relay/capability checks now pass.",
+      "receipts": [
+        "receipts/reader-delivery.json",
+        "receipts/reading-http.json",
+        "receipts/missing-corpus.json",
+        "receipts/real-crop-codecs.json",
+        "stop-save/browser-stop-accepted.json",
+        "stop-save/stop-native.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-05",
+      "title": "Whole app/resources",
+      "status": "audited-partial-acceptance",
+      "completed": "Ten-minute six-round four-action/four-page journey; 95/96 navigation observations, one deferred Read Search DCL timeout retained. All 16 routes repeated with commit/main readiness return 200. 1,227 app/cgroup samples; finite process restart health timing.",
+      "remaining": "BOUND-CAPACITY/BLOCK-DEVICE: deployment-specific tails/cold-disk and decoder/GPU/process-tree capacity. Finite thirty-minute three-account local browsing scope is recorded, not extrapolated.",
+      "receipts": [
+        "receipts/browser-journeys.json",
+        "receipts/browser-responses-final.json",
+        "receipts/resource-monitor.json",
+        "receipts/process-startup.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-06",
+      "title": "Library/navigation",
+      "status": "audited-partial-acceptance",
+      "completed": "Actual successful artwork retained-page run and Back/focus; pending real Watch page-2 response exposed navigation race, fixed and replayed. Two compiled-owner unit controls protect pending-navigation/committed-URL boundaries.",
+      "remaining": "BLOCK-COHORT/BLOCK-DEVICE/BOUND-CAPACITY: natural unequal sources and physical decoded/GPU capacity. Desktop WebKit/Firefox grid bounds, manual loading, Back and keyboard focus now pass.",
+      "receipts": [
+        "receipts/browser-action-before.json",
+        "receipts/browser-action-after.json",
+        "receipts/browser-retention-final.json",
+        "receipts/browser-final-interactions.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-07",
+      "title": "SQL/history/writes",
+      "status": "audited-partial-acceptance",
+      "completed": "Current parent membership rewrite measured on 31 real parents with EXPLAIN ANALYZE BUFFERS WAL in rolled-back transactions; six real profile cohorts. Prior task query alternative remains rejected.",
+      "remaining": "BLOCK-POLICY/BOUND-CAPACITY: preservation/retention choice and deployment load. Current query candidate measured with matched native predicates/outputs/WAL, rejected; no unimplemented winning SQL candidate remains.",
+      "receipts": [
+        "receipts/query-audit.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-08",
+      "title": "Positive cohorts/failures",
+      "status": "audited-partial-acceptance",
+      "completed": "Six users: exact owned-game access totals, one actual 1,145-game positive cohort and 180-card exact retained range. 84 permitted/denied profile reads. Controlled native three-track playlist validates ownership/count/order/availability and abort.",
+      "remaining": "BLOCK-COHORT/BLOCK-HOSTED: missing natural Trakt/recommendation/playlist/unequal-source cohorts and hosted credential revocation. Available real source-withdrawal schedules and three-section privacy matrix now pass.",
+      "receipts": [
+        "receipts/provider-audit.json",
+        "receipts/privacy-audit.json",
+        "receipts/container-ui-audit.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    },
+    {
+      "id": "FUP-09",
+      "title": "Charts/preview/companion",
+      "status": "audited-partial-acceptance",
+      "completed": "Largest actual profile has 4,366 activity days/90 generated model rows/201,536-byte JSON; six exact-value chart checks, 100 native parser calls. Same real 3,053\u00d74,320 image selected/removed three times after fix. Idle room server heartbeat/expiry and keyboard/mobile-sized browser checks. Approved PR-02 now detaches visible playback, retains the acknowledgement barrier before successor preparation and exposes explicit Retry; see stop-save/README.md for actual audio/native-position acceptance.",
+      "remaining": "BLOCK-POLICY/BLOCK-HOSTED/BLOCK-DEVICE: supported custom-input/rejection limits, hosted companion and actual accessibility/touch/party sessions. Actual published-document engine lifecycle, desktop engines and queue heartbeat now pass.",
+      "receipts": [
+        "receipts/query-audit.json",
+        "receipts/container-ui-audit.json",
+        "receipts/browser-preview-fixed.json",
+        "receipts/browser-responsive.json",
+        "receipts/real-crop-codecs.json",
+        "receipts/browser-final-interactions.json",
+        "stop-save/browser-stop-accepted.json",
+        "stop-save/stop-native.json"
+      ],
+      "independentContinuation": "independent/README.md"
+    }
+  ],
+  "independentContinuation": "independent/README.md"
+}

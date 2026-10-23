@@ -1,0 +1,48 @@
+{
+  "scope": "Actual published Gutenberg War and Peace EPUB, unchanged production preflight/repack owner, shipping Linux Bun. Three serial trials; 10ms sampled parent RSS excludes browser/OS cache; every original non-directory entry independently byte-equal after verified repack. Not a malicious/oversized-archive or linked-provider admission claim.",
+  "runtime": {
+    "bun": "1.4.4",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54"
+  },
+  "bytes": 1832521,
+  "sha256": "0353122c5a554193a8a777d8156e7a02d9c2014cce90b26891e2057edd30556c",
+  "trials": [
+    {
+      "n": 0,
+      "ms": 103.70345900000001,
+      "cpuMicros": 161206,
+      "beforeRss": 54722560,
+      "sampledPeakRss": 102957056,
+      "preparedBytes": 4428476,
+      "allOriginalEntriesExact": true
+    },
+    {
+      "n": 1,
+      "ms": 81.881417,
+      "cpuMicros": 120049,
+      "beforeRss": 86122496,
+      "sampledPeakRss": 119676928,
+      "preparedBytes": 4428476,
+      "allOriginalEntriesExact": true
+    },
+    {
+      "n": 2,
+      "ms": 79.337083,
+      "cpuMicros": 94188,
+      "beforeRss": 88846336,
+      "sampledPeakRss": 117288960,
+      "preparedBytes": 4428476,
+      "allOriginalEntriesExact": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "pre-abort-denied",
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "entries": 377,
+  "expandedBytes": 4353104,
+  "status": "passed"
+}

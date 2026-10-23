@@ -1,6 +1,7 @@
 import type { SQL } from 'bun';
 import { drizzle } from 'drizzle-orm/bun-sql';
 import * as schema from './schema';
+import { cancellableReads } from './read-cancellation';
 
 // SSR module reloads do not reliably expose import.meta.hot. Keep the pool in
 // process state, while each module generation rebuilds its schema-aware ORM.
@@ -19,7 +20,7 @@ function assertRunning() {
 }
 let database: ReturnType<typeof createDatabase> | undefined;
 function createDatabase(sql: SQL) {
-  return drizzle({ client: sql, schema });
+  return drizzle({ client: cancellableReads(sql), schema });
 }
 
 /** Lazy construction keeps SvelteKit build/prerender independent of a running database. */

@@ -1,0 +1,36 @@
+import {SQL} from 'bun';
+import {createHash} from 'node:crypto';
+const copy=await Bun.file('/audit/copy.private.json').json();
+if(!/^coast_audit_completion_[a-f0-9]{32}$/.test(copy.name)||copy.marker!==`coast-performance-completion:${copy.name.slice(-32)}`)throw Error('Marked copy required');
+const guard=new SQL(copy.url,{max:1});const[row]=await guard`select current_database() name,shobj_description(oid,'pg_database') marker from pg_database where datname=current_database()`;await guard.close();if(row.name!==copy.name||row.marker!==copy.marker)throw Error('Copy ownership mismatch');
+process.env.DATABASE_URL=copy.url;process.env.COAST_DATA_DIR='/audit/data';await import('<PRIVATE_RUN_ROOT>/read-only-transport.ts');
+const{getSql,closeDb}=await import('<APP_ROOT>/src/lib/server/db');
+const{createList,addListItem,deleteList,getList}=await import('<APP_ROOT>/src/lib/core/lists/service.server');
+const{libraryContainers}=await import('<APP_ROOT>/src/lib/server/queries/library-containers');
+const{createRoom,roomState}=await import('<APP_ROOT>/src/lib/playback/synced/service.server');
+const{profileInsightsData}=await import('<APP_ROOT>/src/lib/server/queries/profile');
+const{parseData}=await import('<APP_ROOT>/src/routes/ui-preview/props');
+const sql=getSql(),created:string[]=[],rooms:string[]=[];let admin:any;
+const report:any={scope:'Controlled native containers and idle party on actual retained identities/media; no natural playlist or multi-device claim. Actual largest profile JSON input, unchanged parser. All writes limited to marked copy.',checks:[],failures:[],party:[],preview:[]};
+const check=(name:string,v:unknown)=>{report.checks.push({name,passed:!!v});if(!v)report.failures.push(name);};
+try{
+[admin]=await sql`select id from users where username='admin'`;const[other]=await sql`select id from users where id<>${admin.id} and not disabled order by id limit 1`;
+const tracks=await sql`select distinct a.media_id from availability a join works w on w.id=a.media_id join provider_connections c on c.id=a.connection_id where a.user_id=${admin.id} and a.state='available' and c.status='connected' and w.kind='track' order by a.media_id limit 3`;if(tracks.length!==3)throw Error('Actual accessible music required');
+const list=await createList(admin.id,{name:'Disposable real-track audit',playlist:true,mediaId:tracks[0].media_id});created.push(list.id);for(const track of tracks.slice(1))await addListItem(admin.id,list.id,track.media_id);
+const otherList=await createList(admin.id,{name:'Disposable non-playlist audit',playlist:false,mediaId:tracks[0].media_id});created.push(otherList.id);
+const url=new URL('http://audit.invalid/?selection=playlist&sort=title');
+const owner=await libraryContainers(admin.id,url),denied=await libraryContainers(other.id,url);
+check('playlist-count-is-container-not-tracks',owner.total===1&&owner.items.length===1&&owner.items[0].id===list.id);
+check('playlist-membership-count-is-three',owner.items[0]?.captionSubtitle==='3 tracks');check('playlist-private-to-owner',denied.total===0&&!denied.items.length);
+const available=await libraryContainers(admin.id,new URL(url+'&scope=available'));check('playlist-available-via-real-member-access',available.total===1);
+check('native-playlist-order-preserved',(await getList(admin.id,list.id)).items.map(x=>x.item.id).join()===tracks.map(x=>x.media_id).join());
+const aborted=new AbortController();aborted.abort();try{await libraryContainers(admin.id,url,aborted.signal);check('playlist-preaborted-read-denied',false);}catch(e){check('playlist-preaborted-read-denied',e.name==='AbortError');}
+const room=await createRoom(admin.id,{});rooms.push(room.id);check('genuine-idle-room-no-media-or-encoder',room.mediaId===null&&room.participants.length===1);
+for(let n=0;n<20;n++){const at=performance.now();const state=await roomState(admin.id,room.id,{buffering:false});report.party.push(performance.now()-at);check('native-idle-heartbeat-preserves-session',!state.ended&&state.participants[0].online&&state.participants[0].joined);}
+await sql`update synced_participants set heartbeat_at=now()-interval '16 seconds' where room_id=${room.id}`;const offline=await roomState(admin.id,room.id);check('idle-host-freshness-expires-at-existing-bound',!offline.participants[0].online&&offline.bufferingPaused);
+await sql`update synced_rooms set created_at=now()-interval '25 hours' where id=${room.id}`;check('idle-room-ordinary-expiry',(await roomState(admin.id,room.id)).ended);
+try{await roomState(other.id,room.id);check('idle-room-uninvited-user-denied',false);}catch(e){check('idle-room-uninvited-user-denied',e.status===404);}
+const users=await sql`select id from users where not disabled order by id`;let largest:any;for(const user of users){const data=await profileInsightsData(user.id,{period:'all'},new Date(),user.id),text=JSON.stringify(data);if(!largest||text.length>largest.text.length)largest={data,text};}
+const times=[];for(let n=0;n<100;n++){const at=performance.now();const parsed=parseData(largest.text,{name:'data',type:'Record<string,unknown>',nullable:false}as any);times.push(performance.now()-at);if(n===0)check('real-profile-preview-JSON-value-equality',JSON.stringify(parsed)===largest.text);}
+report.preview={bytes:Buffer.byteLength(largest.text),activityDays:largest.data.activity.days.length,calls:times.length,medianMs:times.toSorted((a,b)=>a-b)[50],maxMs:Math.max(...times),inputHash:createHash('sha256').update(largest.text).digest('hex'),policy:'Existing owner validates object/array shape only; no new JSON byte/depth/image-decoding budget inferred from this finite workload.'};
+}catch(e:any){report.failure={name:e.name,code:e.code,message:String(e.message).split('query:')[0].slice(0,130)};report.failures.push('probe-exception');}finally{if(admin){for(const id of rooms)await sql`delete from synced_rooms where id=${id} and host_id=${admin.id}`;for(const id of created)await deleteList(admin.id,id);}await closeDb();report.status=report.failures.length?'findings':'passed';await Bun.write('/audit/container-ui-audit.json',JSON.stringify(report,null,2));console.log(JSON.stringify({status:report.status,checks:report.checks.length,failures:report.failures,failure:report.failure,preview:report.preview,partyCalls:report.party.length}));}

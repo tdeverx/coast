@@ -24,7 +24,9 @@
     "code:inventory": "bun scripts/code-inventory.ts --check",
     "navigation:check": "bun scripts/check-navigation-runtime.ts",
     "reading:native": "bun scripts/build-reading-extractor.ts",
-    "adapter:check": "bun scripts/check-bun-adapter.ts"
+    "adapter:check": "bun scripts/check-bun-adapter.ts",
+    "test:performance:copy": "bun scripts/performance-followup.ts",
+    "test:performance:finalization": "bun scripts/performance-finalization.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",

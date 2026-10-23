@@ -2946,5 +2946,24 @@
     "open": 25,
     "other": 5,
     "additionalObservations": 12
+  },
+  "currentAuditHandoff": {
+    "date": "2026-10-23",
+    "status": "local-acceptance-complete-with-explicit-blockers",
+    "roadmap": "../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026",
+    "report": "../2026-10-22-performance-followup/completion/independent/README.md",
+    "blockers": "../2026-10-22-performance-followup/completion/independent/blockers.json",
+    "remainingIds": [
+      "BLOCK-AUTO-REVIEW-JOBS",
+      "BLOCK-DEVICE",
+      "BLOCK-HOSTED",
+      "BLOCK-COHORT",
+      "BLOCK-FORMAT",
+      "BLOCK-BULK",
+      "BLOCK-POLICY",
+      "BOUND-CAPACITY"
+    ],
+    "wholeAuditComplete": false,
+    "note": "Historical counts, findings and source fingerprints retain their original evidence epochs. PR-02 Stop semantics are selected/implemented; PJ-15 still needs a durable bulk-recovery decision."
   }
 }

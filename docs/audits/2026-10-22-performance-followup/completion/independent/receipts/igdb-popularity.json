@@ -1,0 +1,18 @@
+{
+  "scope": "Native read-only IGDB trending popularity_primitives plus games query with actual configured credentials; no import or user/provider mutation.",
+  "cases": [
+    {
+      "section": "trending",
+      "items": 60,
+      "identityHash": "dddc8bdf71c2acc43949075a8a54d2d09ad7424439631759d5f16c866bd4b493",
+      "ms": 1852.873376
+    },
+    {
+      "section": "recent",
+      "items": 60,
+      "identityHash": "ccc66769c6d90350dc246bcdf86f94417c9ce4b81e84ba9f20fb2a85785c3dbd",
+      "ms": 773.3736250000002
+    }
+  ],
+  "status": "passed"
+}

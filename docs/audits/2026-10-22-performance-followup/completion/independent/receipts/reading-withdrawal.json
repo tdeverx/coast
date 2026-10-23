@@ -1,0 +1,13 @@
+{
+  "scope": "Actual saved comic metadata passed through the shared provider-card publisher after the copied viewer withdraws Comics. Same real identity/content, no fabricated provider response. User settings restored in finally.",
+  "checks": [
+    {
+      "name": "withdrawn-comic-cannot-be-republished-as-remote-preview",
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "before": 1,
+  "after": 0,
+  "status": "passed"
+}

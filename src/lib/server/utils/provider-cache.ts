@@ -6,7 +6,7 @@ export function providerCache<T>(
 ) {
   const values = new Map<string, { value: T; expires: number }>();
   const pending = new Map<string, Promise<T>>();
-  return async (key: string, fetcher: () => Promise<T>): Promise<T> => {
+  const read = async (key: string, fetcher: () => Promise<T>): Promise<T> => {
     // Lookups also release expired entries for other keys, including after outages.
     // Capacity bounds this sweep; no background timer or retained stale fallback.
     const now = Date.now();
@@ -26,4 +26,13 @@ export function providerCache<T>(
     pending.set(key, request);
     return request;
   };
+  return Object.assign(read, {
+    /** Reuse a complete snapshot before admitting an earlier progressive stage. */
+    peek(key: string): T | undefined {
+      const entry = values.get(key);
+      if (!entry) return undefined;
+      if (entry.expires <= Date.now()) { values.delete(key); return undefined; }
+      return entry.value;
+    },
+  });
 }

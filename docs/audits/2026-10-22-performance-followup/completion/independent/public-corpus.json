@@ -1,0 +1,22 @@
+{
+  "scope": "Unmodified actual published documents; no repository redistribution or provider-library import.",
+  "files": [
+    {
+      "title": "War and Peace",
+      "publisherPage": "https://www.gutenberg.org/ebooks/2600",
+      "download": "https://www.gutenberg.org/ebooks/2600.epub3.images",
+      "format": "epub",
+      "bytes": 1832521,
+      "sha256": "0353122c5a554193a8a777d8156e7a02d9c2014cce90b26891e2057edd30556c"
+    },
+    {
+      "title": "PostgreSQL 17 A4 manual",
+      "publisherPage": "https://www.postgresql.org/docs/",
+      "download": "https://www.postgresql.org/files/documentation/pdf/17/postgresql-17-A4.pdf",
+      "format": "pdf",
+      "pages": 3100,
+      "bytes": 15520374,
+      "sha256": "7581578f7e96d3061bac20d6a6cf0097ae4a156efc7f39fdf8769c63f331efa3"
+    }
+  ]
+}

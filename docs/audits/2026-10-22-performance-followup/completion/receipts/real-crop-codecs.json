@@ -1,0 +1,82 @@
+{
+  "boundary": "Five actual accessible AV1/H.264/HEVC/4K/VP9 cohorts (retained source hints; compare actual decoded rectangles); unchanged native FFmpeg arguments; original serial and current parallel controller calls; authenticated request context linked directly without hosted Jellyfin middleware; 25ms sampled child RSS excludes parent and can miss peaks; not a latency speedup comparison",
+  "results": [
+    {
+      "version": "baseline",
+      "input": "4F3B0323A65E7DE062ABE8006B7A640388928FC530D39EE2E1942321AE847B87",
+      "status": 200,
+      "elapsedMs": 484.898,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}"
+    },
+    {
+      "version": "baseline",
+      "input": "7B00497B604776AC9B6331FBC03B5C311DC28E9927E55160152AEC06ED3205B1",
+      "status": 200,
+      "elapsedMs": 428.2005,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}"
+    },
+    {
+      "version": "baseline",
+      "input": "FCC7F909F38932B053C209156DE9646CC3E0F19059A0E9EDF05ED8CCDEF14699",
+      "status": 200,
+      "elapsedMs": 591.4686,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}"
+    },
+    {
+      "version": "baseline",
+      "input": "4C5915C8B68909C53D141D0C46EA7DA19BA70E643C660E84501AC89B29521577",
+      "status": 200,
+      "elapsedMs": 2134.055,
+      "payload": "{\"Crop\":{\"Width\":3840,\"Height\":2160,\"X\":0,\"Y\":0},\"Error\":null}"
+    },
+    {
+      "version": "baseline",
+      "input": "566960CA4DC7F727E5FC3A93E512775A4DFA41C53E1EB297BD418AB7AD041906",
+      "status": 200,
+      "elapsedMs": 209.4015,
+      "payload": "{\"Crop\":{\"Width\":1280,\"Height\":720,\"X\":0,\"Y\":0},\"Error\":null}"
+    },
+    {
+      "version": "current",
+      "input": "4F3B0323A65E7DE062ABE8006B7A640388928FC530D39EE2E1942321AE847B87",
+      "status": 200,
+      "elapsedMs": 338.8198,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}",
+      "equal": true
+    },
+    {
+      "version": "current",
+      "input": "7B00497B604776AC9B6331FBC03B5C311DC28E9927E55160152AEC06ED3205B1",
+      "status": 200,
+      "elapsedMs": 553.3223,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}",
+      "equal": true
+    },
+    {
+      "version": "current",
+      "input": "FCC7F909F38932B053C209156DE9646CC3E0F19059A0E9EDF05ED8CCDEF14699",
+      "status": 200,
+      "elapsedMs": 1250.5361,
+      "payload": "{\"Crop\":{\"Width\":1920,\"Height\":1080,\"X\":0,\"Y\":0},\"Error\":null}",
+      "equal": true
+    },
+    {
+      "version": "current",
+      "input": "4C5915C8B68909C53D141D0C46EA7DA19BA70E643C660E84501AC89B29521577",
+      "status": 200,
+      "elapsedMs": 3280.6951,
+      "payload": "{\"Crop\":{\"Width\":3840,\"Height\":2160,\"X\":0,\"Y\":0},\"Error\":null}",
+      "equal": true
+    },
+    {
+      "version": "current",
+      "input": "566960CA4DC7F727E5FC3A93E512775A4DFA41C53E1EB297BD418AB7AD041906",
+      "status": 200,
+      "elapsedMs": 1508.0606,
+      "payload": "{\"Crop\":{\"Width\":1280,\"Height\":720,\"X\":0,\"Y\":0},\"Error\":null}",
+      "equal": true
+    }
+  ],
+  "peakChildren": 2,
+  "peakChildRssKiB": 758912
+}

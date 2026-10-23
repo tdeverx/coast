@@ -1,0 +1,6289 @@
+{
+  "scope": "Thirty-minute concurrent browsing/idle exercise on three actual copied accounts; all four actions/pages, genuine network, no response substitutes; Chromium 1248. Browser heap/DOM are distinct from decoder/GPU/whole-process memory.",
+  "runtime": "156.0.8078.4",
+  "durationMs": 1808958,
+  "routes": [
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2485,
+      "content": 1462,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2490,
+      "content": 1430,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2581,
+      "content": 1543,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1617,
+      "content": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1723,
+      "content": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 9
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1791,
+      "content": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1480,
+      "content": 3016,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1898,
+      "content": 2844,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2334,
+      "content": 3019,
+      "overlay": false,
+      "overflow": false,
+      "images": 17
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1553,
+      "content": 2213,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1795,
+      "content": 2213,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 772,
+      "content": 1571,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1873,
+      "content": 2192,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1010,
+      "content": 866,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 911,
+      "content": 130,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1408,
+      "content": 4084,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 2158,
+      "content": 2493,
+      "overlay": false,
+      "overflow": false,
+      "images": 20
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 655,
+      "content": 681,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 698,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 1
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 665,
+      "content": 185,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1420,
+      "content": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 721,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 658,
+      "content": 2194,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 673,
+      "content": 2204,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 648,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 660,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1654,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 668,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 678,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 698,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1014,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 664,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 669,
+      "content": 891,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 667,
+      "content": 2066,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 646,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 649,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1603,
+      "content": 1254,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 635,
+      "content": 157,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 654,
+      "content": 157,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 936,
+      "content": 3316,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 880,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1520,
+      "content": 928,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1512,
+      "content": 1941,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 888,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 897,
+      "content": 136,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 0,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25057,
+      "content": 1053,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 0,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25058,
+      "content": 1037,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    },
+    {
+      "actor": 0,
+      "round": 0,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25292,
+      "content": 1034,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1480,
+      "content": 1491,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2089,
+      "content": 1430,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2100,
+      "content": 2999,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1541,
+      "content": 2779,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1540,
+      "content": 2779,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 2085,
+      "content": 2782,
+      "overlay": false,
+      "overflow": false,
+      "images": 20
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1412,
+      "content": 3028,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1303,
+      "content": 2853,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1035,
+      "content": 2160,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2059,
+      "content": 2160,
+      "overlay": false,
+      "overflow": false,
+      "images": 8
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2309,
+      "content": 3016,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 705,
+      "content": 423,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 811,
+      "content": 1568,
+      "overlay": false,
+      "overflow": false,
+      "images": 1
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 769,
+      "content": 130,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 688,
+      "content": 681,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 649,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1543,
+      "content": 2493,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2772,
+      "content": 2166,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 695,
+      "content": 288,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 759,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 664,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 666,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 649,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1642,
+      "content": 4084,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 684,
+      "content": 2204,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 647,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 703,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 641,
+      "content": 891,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 661,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1732,
+      "content": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 24
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 649,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 661,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 634,
+      "content": 660,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 662,
+      "content": 2066,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1616,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 686,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 672,
+      "content": 157,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1553,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1517,
+      "content": 1254,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1500,
+      "content": 3316,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1556,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1554,
+      "content": 928,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1526,
+      "content": 1941,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1560,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1480,
+      "content": 136,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 1,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25045,
+      "content": 1322,
+      "overlay": false,
+      "overflow": false,
+      "images": 8
+    },
+    {
+      "actor": 1,
+      "round": 1,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25083,
+      "content": 1511,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 0,
+      "round": 1,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25890,
+      "content": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1209,
+      "content": 1656,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1780,
+      "content": 3000,
+      "overlay": false,
+      "overflow": false,
+      "images": 9
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1796,
+      "content": 1430,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1285,
+      "content": 2779,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1463,
+      "content": 2779,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1951,
+      "content": 2782,
+      "overlay": false,
+      "overflow": false,
+      "images": 20
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1350,
+      "content": 3028,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1212,
+      "content": 2844,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1360,
+      "content": 2163,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2020,
+      "content": 3016,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 709,
+      "content": 1569,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1481,
+      "content": 2160,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 778,
+      "content": 1035,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 915,
+      "content": 130,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1754,
+      "content": 2493,
+      "overlay": false,
+      "overflow": false,
+      "images": 24
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 644,
+      "content": 681,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 693,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2711,
+      "content": 2166,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 664,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 702,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 643,
+      "content": 2196,
+      "overlay": false,
+      "overflow": false,
+      "images": 1
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 665,
+      "content": 2204,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 649,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1826,
+      "content": 4084,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 718,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 667,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 683,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 645,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 685,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 1593,
+      "content": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 24
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 639,
+      "content": 891,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 670,
+      "content": 2066,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 641,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 649,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1518,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 652,
+      "content": 660,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 648,
+      "content": 157,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1595,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1491,
+      "content": 1254,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1479,
+      "content": 3316,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1565,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1446,
+      "content": 928,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1451,
+      "content": 1941,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1485,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1460,
+      "content": 660,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 2,
+      "round": 2,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25064,
+      "content": 1322,
+      "overlay": false,
+      "overflow": false,
+      "images": 8
+    },
+    {
+      "actor": 1,
+      "round": 2,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25063,
+      "content": 1511,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 0,
+      "round": 2,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25849,
+      "content": 1508,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1398,
+      "content": 1430,
+      "overlay": false,
+      "overflow": false,
+      "images": 2
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1651,
+      "content": 1491,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "watch",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 2128,
+      "content": 3000,
+      "overlay": false,
+      "overflow": false,
+      "images": 9
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1403,
+      "content": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 1709,
+      "content": 2776,
+      "overlay": false,
+      "overflow": false,
+      "images": 18
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1339,
+      "content": 2850,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "watch",
+      "path": "/library",
+      "status": 200,
+      "ms": 2192,
+      "content": 2782,
+      "overlay": false,
+      "overflow": false,
+      "images": 20
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1523,
+      "content": 3028,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1544,
+      "content": 2163,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 676,
+      "content": 908,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 1510,
+      "content": 2160,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "watch",
+      "path": "/discover",
+      "status": 200,
+      "ms": 2296,
+      "content": 3016,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 711,
+      "content": 130,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 778,
+      "content": 1568,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 645,
+      "content": 681,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 650,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "watch",
+      "path": "/search",
+      "status": 200,
+      "ms": 2183,
+      "content": 2166,
+      "overlay": false,
+      "overflow": false,
+      "images": 16
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 677,
+      "content": 288,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 2268,
+      "content": 2493,
+      "overlay": false,
+      "overflow": false,
+      "images": 22
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 670,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 672,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 649,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "listen",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1792,
+      "content": 4084,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 677,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 662,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 750,
+      "content": 2208,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 653,
+      "content": 891,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 739,
+      "content": 6079,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 680,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "listen",
+      "path": "/library",
+      "status": 200,
+      "ms": 2076,
+      "content": 2490,
+      "overlay": false,
+      "overflow": false,
+      "images": 24
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 694,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 649,
+      "content": 136,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 668,
+      "content": 1536,
+      "overlay": false,
+      "overflow": false,
+      "images": 5
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "listen",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1606,
+      "content": 1099,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 672,
+      "content": 2066,
+      "overlay": false,
+      "overflow": false,
+      "images": 14
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 675,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 663,
+      "content": 157,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "listen",
+      "path": "/search",
+      "status": 200,
+      "ms": 1520,
+      "content": 181,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "play",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1524,
+      "content": 1254,
+      "overlay": false,
+      "overflow": false,
+      "images": 3
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "play",
+      "path": "/library",
+      "status": 200,
+      "ms": 1499,
+      "content": 3316,
+      "overlay": false,
+      "overflow": false,
+      "images": 15
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "play",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1525,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "play",
+      "path": "/search",
+      "status": 200,
+      "ms": 1462,
+      "content": 928,
+      "overlay": false,
+      "overflow": false,
+      "images": 6
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "read",
+      "path": "/for-you",
+      "status": 200,
+      "ms": 1584,
+      "content": 1941,
+      "overlay": false,
+      "overflow": false,
+      "images": 11
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "read",
+      "path": "/library",
+      "status": 200,
+      "ms": 1494,
+      "content": 79,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "read",
+      "path": "/discover",
+      "status": 200,
+      "ms": 1453,
+      "content": 136,
+      "overlay": false,
+      "overflow": false,
+      "images": 0
+    },
+    {
+      "actor": 2,
+      "round": 3,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25093,
+      "content": 1053,
+      "overlay": false,
+      "overflow": false,
+      "images": 7
+    },
+    {
+      "actor": 1,
+      "round": 3,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25084,
+      "content": 1037,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    },
+    {
+      "actor": 0,
+      "round": 3,
+      "action": "read",
+      "path": "/search",
+      "status": 200,
+      "ms": 25875,
+      "content": 1034,
+      "overlay": false,
+      "overflow": false,
+      "images": 13
+    }
+  ],
+  "samples": [
+    {
+      "label": "round-0",
+      "actor": 0,
+      "elapsedMs": 48789,
+      "dom": {
+        "documents": 1,
+        "nodes": 22689,
+        "jsEventListeners": 362
+      },
+      "heapBytes": 3731024,
+      "cards": 180
+    },
+    {
+      "label": "round-0",
+      "actor": 1,
+      "elapsedMs": 48903,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16564148,
+      "cards": 180
+    },
+    {
+      "label": "round-0",
+      "actor": 2,
+      "elapsedMs": 48963,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16479720,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 64043,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17180936,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 64085,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17293976,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 64125,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17210920,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 79155,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17179944,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 79201,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17292424,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 79242,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17209368,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 94269,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17180560,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 94305,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17293856,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 94339,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17210800,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 109377,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17206896,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 109400,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17775064,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 109422,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17730448,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 124470,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17708884,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 124511,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17782936,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 124548,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17739196,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 139593,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17709592,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 139637,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17783344,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 139677,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17739504,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 154721,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17718424,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 154749,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17783784,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 154777,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17745732,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 169845,
+      "dom": {
+        "documents": 2,
+        "nodes": 23305,
+        "jsEventListeners": 2465
+      },
+      "heapBytes": 17929508,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 169896,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17911388,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 169945,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17874656,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 185015,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17873632,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 185057,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17942956,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 185088,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17904460,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 200136,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17874036,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 200178,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17943284,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 200236,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17904764,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 215263,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17877920,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 215286,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17947176,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 215308,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17908656,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 230339,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18086696,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 230365,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18044860,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 230391,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18005836,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 245446,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17985012,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 245507,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047484,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 245556,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18008460,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 260689,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17985548,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 260772,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047436,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 260841,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18008412,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 275894,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17985564,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 275959,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047460,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 276024,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18008436,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 291073,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016412,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 291106,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18089296,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 291134,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18052136,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 306176,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016472,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 306206,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18089560,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 306232,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18052400,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 321275,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016592,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 321303,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18089636,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 321330,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18052476,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 336365,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016584,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 336397,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18089636,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 336425,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18052476,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 351460,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18093920,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 351491,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18143848,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 351518,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18103812,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 366557,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18094000,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 366584,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18144124,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 366608,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18104088,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 381645,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18093988,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 381678,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18144076,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 381709,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18104040,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 396738,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18094024,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 396758,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18144112,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 396778,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18104076,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 411808,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18096420,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 411830,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18142516,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 411851,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18103740,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 426887,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18096656,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 426909,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18142756,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 426930,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18103980,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 441982,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18096704,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 442022,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18142804,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 442061,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18104028,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 0,
+      "elapsedMs": 457107,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18096740,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 1,
+      "elapsedMs": 457137,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18142840,
+      "cards": 180
+    },
+    {
+      "label": "idle-0",
+      "actor": 2,
+      "elapsedMs": 457162,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18104064,
+      "cards": 180
+    },
+    {
+      "label": "round-1",
+      "actor": 0,
+      "elapsedMs": 511171,
+      "dom": {
+        "documents": 1,
+        "nodes": 22689,
+        "jsEventListeners": 362
+      },
+      "heapBytes": 3734924,
+      "cards": 180
+    },
+    {
+      "label": "round-1",
+      "actor": 1,
+      "elapsedMs": 511295,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16570184,
+      "cards": 180
+    },
+    {
+      "label": "round-1",
+      "actor": 2,
+      "elapsedMs": 511389,
+      "dom": {
+        "documents": 2,
+        "nodes": 23331,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16490556,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 526453,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17186404,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 526489,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17300828,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 526521,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17224388,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 541558,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17184548,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 541587,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17299276,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 541615,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17222836,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 556648,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17184932,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 556669,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17299744,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 556691,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17223244,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 571730,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17210600,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 571757,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17782164,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 571793,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17744280,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 586833,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17705492,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 586861,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17789696,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 586885,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17753968,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 601916,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17706080,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 601937,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17790104,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 601957,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17754168,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 616993,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17715032,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 617013,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17790544,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 617032,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17775408,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 632108,
+      "dom": {
+        "documents": 2,
+        "nodes": 23305,
+        "jsEventListeners": 2465
+      },
+      "heapBytes": 17927028,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 632135,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17919208,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 632158,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17885144,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 647193,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17869304,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 647219,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17950776,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 647242,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17914788,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 662273,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17869924,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 662295,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17951104,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 662314,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17915264,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 677349,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17873808,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 677375,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17954996,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 677403,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17994208,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 692438,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17940416,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 692460,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18023676,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 692479,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17994208,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 707513,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17942952,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 707540,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18026220,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 707565,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17996752,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 722608,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17943408,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 722629,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18026220,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 722648,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17996752,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 737677,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17943424,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 737699,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18026244,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 737720,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18025312,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 752756,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17977548,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 752778,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18055668,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 752797,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18025312,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 767834,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17977588,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 767860,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18055716,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 767885,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18025484,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 782921,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17977720,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 782944,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18055840,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 782965,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18025484,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 797988,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17977712,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 798008,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18055840,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 798029,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18069808,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 813072,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016908,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 813095,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18076720,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 813115,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18070048,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 828137,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016988,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 828158,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18079964,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 828180,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18070036,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 843218,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18016976,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 843246,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18076960,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 843270,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18070036,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 858292,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18017048,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 858315,
+      "dom": {
+        "documents": 2,
+        "nodes": 22946,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18202316,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 858338,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18091428,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 873371,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18036884,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 873394,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18120748,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 873414,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18091668,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 888451,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18036980,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 888473,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18121084,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 888492,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18091620,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 0,
+      "elapsedMs": 903527,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18037040,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 1,
+      "elapsedMs": 903550,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18121084,
+      "cards": 180
+    },
+    {
+      "label": "idle-1",
+      "actor": 2,
+      "elapsedMs": 903571,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18091620,
+      "cards": 180
+    },
+    {
+      "label": "round-2",
+      "actor": 0,
+      "elapsedMs": 955763,
+      "dom": {
+        "documents": 1,
+        "nodes": 22689,
+        "jsEventListeners": 362
+      },
+      "heapBytes": 3711376,
+      "cards": 180
+    },
+    {
+      "label": "round-2",
+      "actor": 1,
+      "elapsedMs": 955877,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16584368,
+      "cards": 180
+    },
+    {
+      "label": "round-2",
+      "actor": 2,
+      "elapsedMs": 955922,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16495040,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 970970,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17179892,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 970992,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17314196,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 971012,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17228592,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 986042,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17178036,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 986061,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17312644,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 986081,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17227040,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1001111,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17178420,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1001131,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17313916,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1001151,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17227448,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1016180,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17204088,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1016200,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17384960,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1016220,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17345060,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1031249,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17293728,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1031267,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17391068,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1031284,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17354112,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1046319,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17294236,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1046343,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17391488,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1046365,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17354412,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1061396,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17301612,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1061418,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17391928,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1061437,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17354972,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1076468,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17317512,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1076489,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17540884,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1076508,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17508936,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1091549,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17481300,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1091571,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17575944,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1091591,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17539388,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1106624,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17485672,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1106645,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17576284,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1106664,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17539908,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1121693,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17485724,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1121713,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17580176,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1121732,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17543800,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1136762,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17555648,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1136814,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17618220,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1136834,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17582196,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1151868,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17516308,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1151889,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17620764,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1151907,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17584740,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1166935,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17516764,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1166955,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17620808,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1166974,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17584784,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1182008,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17516780,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1182029,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17620832,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1182047,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17584892,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1197087,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17556332,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1197109,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17639096,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1197128,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17602976,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1212172,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17556372,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1212208,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17639144,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1212238,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17603024,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1227279,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17556504,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1227300,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17639268,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1227318,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17603148,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1242345,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17556496,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1242365,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17639268,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1242383,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17603148,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1257416,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17709692,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1257439,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17650172,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1257460,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17627176,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1272502,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17897696,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1272532,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17650208,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1272560,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17627212,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1287589,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17897776,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1287611,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17650212,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1287631,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17627216,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1302665,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17897848,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1302686,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17650284,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1302707,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17627288,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1317741,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17934984,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1317767,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17974532,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1317788,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17937516,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1332818,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17935080,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1332840,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17974772,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1332861,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17937756,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1347899,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17935140,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1347927,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17974820,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1347955,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17937804,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 0,
+      "elapsedMs": 1362985,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17935176,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 1,
+      "elapsedMs": 1363005,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17974856,
+      "cards": 180
+    },
+    {
+      "label": "idle-2",
+      "actor": 2,
+      "elapsedMs": 1363025,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17937840,
+      "cards": 180
+    },
+    {
+      "label": "round-3",
+      "actor": 0,
+      "elapsedMs": 1416618,
+      "dom": {
+        "documents": 1,
+        "nodes": 22689,
+        "jsEventListeners": 362
+      },
+      "heapBytes": 3742928,
+      "cards": 180
+    },
+    {
+      "label": "round-3",
+      "actor": 1,
+      "elapsedMs": 1416762,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16581592,
+      "cards": 180
+    },
+    {
+      "label": "round-3",
+      "actor": 2,
+      "elapsedMs": 1416869,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2453
+      },
+      "heapBytes": 16481952,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1431917,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17180372,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1431943,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17311408,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1431963,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17213152,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1446992,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17178516,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1447011,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17309856,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1447029,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17211600,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1462060,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17179764,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1462081,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17311128,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1462099,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17212008,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1477130,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17205532,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1477152,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17383636,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1477186,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17329708,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1492210,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17294156,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1492232,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17390060,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1492251,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17338828,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1507284,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17294784,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1507303,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17390480,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1507322,
+      "dom": {
+        "documents": 2,
+        "nodes": 23007,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17339128,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1522346,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17302040,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1522365,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17390920,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1522386,
+      "dom": {
+        "documents": 2,
+        "nodes": 22944,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17597584,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1537415,
+      "dom": {
+        "documents": 2,
+        "nodes": 23003,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17317940,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1537436,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17866064,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1537456,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17843028,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1552493,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17816812,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1552513,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17902548,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1552533,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17875732,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1567567,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17817180,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1567588,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17902876,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1567609,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17876208,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1582638,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17821100,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1582658,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17906768,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1582678,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18021136,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1597703,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17844404,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1597731,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17964904,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1597757,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17943168,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1612784,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17846940,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1612805,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17967688,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1612823,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17945952,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1627855,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17847396,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1627875,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17967640,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1627893,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17945952,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1642922,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17847412,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1642946,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17967748,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1642967,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18017796,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1658004,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17878484,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1658024,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18059216,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1658044,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18017796,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1673092,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17878524,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1673139,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18059264,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1673182,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18017968,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1688224,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17878656,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1688253,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18059388,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1688277,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18017968,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1703311,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17878648,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1703331,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18059388,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1703351,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047624,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1718383,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17972212,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1718404,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18090632,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1718424,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047864,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1733458,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17972292,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1733478,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18090908,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1733496,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047852,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1748527,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17972280,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1748553,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18090860,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1748583,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18047852,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1763620,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 17972352,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1763647,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18090932,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1763674,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18071416,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1778699,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18007072,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1778720,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18115244,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1778737,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18071656,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1793777,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18007168,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1793805,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18115484,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1793829,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18071608,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 0,
+      "elapsedMs": 1808869,
+      "dom": {
+        "documents": 2,
+        "nodes": 23004,
+        "jsEventListeners": 2467
+      },
+      "heapBytes": 18007228,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 1,
+      "elapsedMs": 1808907,
+      "dom": {
+        "documents": 2,
+        "nodes": 23009,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18115532,
+      "cards": 180
+    },
+    {
+      "label": "idle-3",
+      "actor": 2,
+      "elapsedMs": 1808955,
+      "dom": {
+        "documents": 2,
+        "nodes": 23008,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 18071608,
+      "cards": 180
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "name": "all-observed-route-responses-meaningful-and-no-overlay",
+      "pass": true
+    },
+    {
+      "name": "no-page-errors",
+      "pass": true
+    },
+    {
+      "name": "thirty-minute-observation",
+      "pass": true
+    }
+  ],
+  "status": "passed"
+}

@@ -1,0 +1,62 @@
+{
+  "boundary": "Independent new browser context and page inside a single CLI invocation, avoiding automatic CLI aria snapshots for the probe page; actual Library/admin and retained artwork; record successful/failed artwork policy separately and preserve decoded-image counts",
+  "samples": [
+    {
+      "page": 3,
+      "cards": 180,
+      "dom": {
+        "documents": 2,
+        "nodes": 20657,
+        "jsEventListeners": 2466
+      },
+      "heapBytes": 17456932,
+      "images": {
+        "total": 180,
+        "decoded": 78
+      }
+    },
+    {
+      "page": 6,
+      "cards": 180,
+      "dom": {
+        "documents": 2,
+        "nodes": 19549,
+        "jsEventListeners": 2483
+      },
+      "heapBytes": 18447728,
+      "images": {
+        "total": 180,
+        "decoded": 72
+      }
+    },
+    {
+      "page": 12,
+      "cards": 180,
+      "dom": {
+        "documents": 2,
+        "nodes": 19549,
+        "jsEventListeners": 2483
+      },
+      "heapBytes": 19004768,
+      "images": {
+        "total": 180,
+        "decoded": 72
+      }
+    },
+    {
+      "page": 18,
+      "cards": 180,
+      "dom": {
+        "documents": 2,
+        "nodes": 19549,
+        "jsEventListeners": 2483
+      },
+      "heapBytes": 19060908,
+      "images": {
+        "total": 180,
+        "decoded": 72
+      }
+    }
+  ],
+  "detachedCards": 1
+}

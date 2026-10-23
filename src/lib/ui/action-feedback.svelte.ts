@@ -15,6 +15,7 @@ export function createFeedback() {
     state.notices = [...state.notices.filter(value => value.owner !== notice.owner), notice];
   }
   function notify(text: string, undo?: () => Promise<void>) { publish({ text, undo, kind: 'info', busy: false, error: '' }); }
+  function pending(text: string, owner: symbol) { publish({ text, owner, kind: 'info', busy: true, error: '' }); }
   function failure(text: string, retry?: () => unknown, owner?: symbol, actionLabel?:string) { publish({ text, retry, owner, actionLabel, kind: 'error', busy: false, error: '' }); }
   function clear(owner?: symbol) {
     if (owner) state.notices = state.notices.filter(value => value.owner !== owner);
@@ -60,7 +61,7 @@ export function createFeedback() {
     return () => { state.hosts = state.hosts.filter(value => value !== id); };
   }
   return { get current() { return current(); },
-    get activeHost() { return state.hosts.at(-1) ?? null; }, notify, failure, clear, act, watch, host };
+    get activeHost() { return state.hosts.at(-1) ?? null; }, notify, pending, failure, clear, act, watch, host };
 }
 export type Feedback = ReturnType<typeof createFeedback>;
 export const actionFeedback = createFeedback();

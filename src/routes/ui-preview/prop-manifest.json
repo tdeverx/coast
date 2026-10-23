@@ -135,6 +135,24 @@
           "busy",
           "offline"
         ]
+      },
+      {
+        "name": "border",
+        "type": "'default' | 'none' | 'loading' | 'buffering' | 'ready' | 'error'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "default",
+          "none",
+          "loading",
+          "buffering",
+          "ready",
+          "error"
+        ],
+        "defaultSource": "'default'",
+        "defaultValue": "default"
       }
     ]
   },

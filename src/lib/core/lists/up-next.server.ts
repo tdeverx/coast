@@ -1,5 +1,5 @@
-import { requireWorkFeature } from '#lib/server/features.js';
-import { and, eq } from 'drizzle-orm';
+import { lockFeaturePolicyInTransaction, requireWorkFeature } from '#lib/server/features.js';
+import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';
 import { works, upNext } from '../../server/db/schema';
@@ -12,6 +12,10 @@ export async function setUpNext(userId: string, raw: unknown) {
     raw
   );
   return getDb().transaction(async db=>{
+  // Queue edits and tracking consumption share one order. A later enqueue must
+  // not commit between Continue's snapshot and deletion, then disappear on Undo.
+  await lockFeaturePolicyInTransaction(db,userId);
+  await db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
   if (!input.queued) {
     const removed = await db
       .delete(upNext)

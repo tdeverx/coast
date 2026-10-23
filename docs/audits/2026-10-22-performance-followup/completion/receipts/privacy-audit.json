@@ -1,0 +1,769 @@
+{
+  "boundary": "Current genuine user privacy and role matrix on isolated actual-data copy; no settings/relationships fabricated",
+  "cases": [
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 2.432583000000001,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.2272499999999908,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.1549579999999935,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0367499999999978,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9651669999999939,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.919124999999994,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9639999999999986,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9950840000000056,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0161659999999983,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.8940830000000091,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": null,
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9645420000000087,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": null,
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0160000000000053,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 109.95824999999999,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 13.215499999999992,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 124.28145899999998,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 84.05362500000001,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.3086250000000064,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.21712500000001,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.058540999999991,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.056332999999995,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0128749999999513,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0095419999999535,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0915840000000117,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0479579999999942,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 191.04379199999994,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 13.902499999999918,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 76.63570800000002,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 74.99570899999992,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.454417000000035,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0984999999999445,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 8.831833999999958,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 10.263333999999986,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0756659999999556,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.038791999999944,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 78.68179199999997,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 52.01358400000004,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.412584000000038,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.134375000000091,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.069250000000011,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9491249999999809,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 197.138917,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 59.25820799999997,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.58075000000008,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.3110420000000431,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.1534160000001066,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.2038339999999152,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0971660000000156,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.074333999999908,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0711669999998321,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0027079999999842,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 168.52479200000016,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 98.48258299999998,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.3690420000000358,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.1111249999999018,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 6.80033299999991,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 9.48391700000002,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.1161249999997835,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0589169999998376,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.1020000000000891,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0050000000001091,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9978330000001279,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9517089999999371,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9208749999997963,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.8762080000001333,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9670000000000982,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9107500000000073,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.9452920000001086,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 0.8973749999997835,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 196.46629100000018,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 69.93729099999996,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.4892499999998563,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.0895000000000437,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.18037500000014,
+      "passed": true
+    },
+    {
+      "owner": "4f34a99e498015525d16ca9319f3984f3ed6731f27650f8bb86803ac0e74b232",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.025624999999991,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 193.4810010000001,
+      "passed": true
+    },
+    {
+      "owner": "1e1745374c7f292c5d5e6abc288a4dcc21fa889eab156970c018bab292084d4f",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 82.50158300000021,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.649167000000034,
+      "passed": true
+    },
+    {
+      "owner": "b0481bf841875e729a11e469540dbc14a85522aec92b1225bdf5bd198d315eda",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.7463330000000497,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.7847090000000208,
+      "passed": true
+    },
+    {
+      "owner": "17fd2f6671c432b49f0cf3cab366845280d4a2405135a12ca3b639955307fc42",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.4828330000000278,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.3085000000000946,
+      "passed": true
+    },
+    {
+      "owner": "d20e7501d340c93f70890a8138f9b447b8971c042f9fdb0142cfbe96453ee20f",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": false,
+      "status": 404,
+      "ms": 1.4892909999998665,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "activity",
+      "allowed": true,
+      "status": 200,
+      "ms": 164.03025000000025,
+      "passed": true
+    },
+    {
+      "owner": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "viewer": "4e64643bc190096a063eb952b780b85f76187452422b6bfed8cf33050919f156",
+      "section": "insights",
+      "allowed": true,
+      "status": 200,
+      "ms": 62.69329199999993,
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "checks": [
+    {
+      "name": "complete-six-user-two-section-anonymous-and-authenticated-matrix",
+      "passed": true
+    }
+  ],
+  "status": "passed"
+}

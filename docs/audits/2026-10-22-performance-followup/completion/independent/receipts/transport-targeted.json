@@ -1,0 +1,10 @@
+{
+  "scope": "Targeted metadata-only Play browser/native IGDB reads after finite soak. No broadening to external progress, job execution or hosted crop.",
+  "requests": 20,
+  "admitted": 20,
+  "denied": 0,
+  "methods": {
+    "GET": 16,
+    "POST": 4
+  }
+}

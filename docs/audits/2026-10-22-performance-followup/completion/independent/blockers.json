@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "status": "explicit-remaining-inputs-and-decisions",
+  "date": "2026-10-23",
+  "items": [
+    {
+      "id": "BLOCK-AUTO-REVIEW-JOBS",
+      "kind": "explicit-approval",
+      "required": "Explicit approval for the proposed repeated real Jellyfin queue-job exercise on the disposable copy, or a genuinely isolated provider environment.",
+      "observed": "Automatic approval review rejected the proposed ten rounds \u00d7 three existing real-account jobs. No command from that rejected call executed, and no indirect/relabelled retry was used.",
+      "statedRisk": "Mutating audit job state and repeatedly executing native real-account handlers could have external provider side effects; general real-data audit authorization was not accepted as sufficient for this repeated mutation.",
+      "safeAlternative": "Six PostgreSQL READ ONLY selector/eligibility trials completed with zero job/provider mutation. Retained policy cohorts and empty pending results are explicit; they are not active-load execution acceptance."
+    },
+    {
+      "id": "BLOCK-DEVICE",
+      "kind": "external-access",
+      "required": "A connected supported physical device/browser session; real touch, accessibility/screen-reader, decoder/GPU and synchronized playback observation.",
+      "observed": "Fresh unrestricted devicectl completed with No devices found. A sandboxed attempt timed out in CoreDeviceService; that is not evidence of device failure. Desktop Chromium, WebKit and Firefox and narrow viewports run locally.",
+      "whyNotSubstitutable": "Viewport emulation and desktop WebKit are not physical iOS/Safari or device memory/decoder acceptance."
+    },
+    {
+      "id": "BLOCK-HOSTED",
+      "kind": "external-environment",
+      "required": "Disposable Jellyfin host/configuration with genuine users/media and the current companion installed, with authority to change permissions/revoke credentials and clean up real encoder sessions.",
+      "observed": "Existing direct crop comparisons and current native provider delivery do not execute the new plugin through Jellyfin middleware. No plugin deployment or live-provider permission/encoder mutation was performed. Actual crop timeout and shared/final-consumer drain now also pass through a bounded genuine-byte stall proxy, without hosted middleware.",
+      "remaining": [
+        "Hosted cross-user cached crop authorization and permission withdrawal",
+        "HLS/transcode/shared-party decoder and process-tree failure/cleanup acceptance",
+        "Multi-device synchronized playback and drift under real media"
+      ]
+    },
+    {
+      "id": "BLOCK-COHORT",
+      "kind": "actual-data",
+      "required": "Naturally connected Trakt account, pending received recommendations, viewer-accessible natural playlists and same-user unequal connected media sources. A naturally active viewer-owned game playthrough and actual party/media session are also missing; the all-user read-only census records zero.",
+      "observed": "The retained real cohort has no connected Trakt, no pending received recommendations and no natural playlists; previous controlled real-track playlist checks stay labelled. No unequal same-user source cohort was observed.",
+      "remaining": [
+        "Trakt full-account value walk/export continuation",
+        "Positive recommendation grouping/privacy and natural playlist pagination",
+        "Unequal-source and naturally short nonfinal-page composition"
+      ]
+    },
+    {
+      "id": "BLOCK-FORMAT",
+      "kind": "actual-data",
+      "required": "Actual CB7/CBT/solid-archive files, and provider-linked EPUB/PDF files with their genuine identity/access metadata.",
+      "observed": "Connected Book metadata has CBR/CBZ only. A published real EPUB and PDF now pass local engine/resource checks; they were not fabricated or installed as provider library records.",
+      "remaining": [
+        "Missing archive-format/decompression/peak-allocation cohort",
+        "Linked EPUB/PDF source version, authorization and party-location workflows",
+        "Larger actual EPUB/decoded-image cohorts before a new worker/range architecture"
+      ]
+    },
+    {
+      "id": "BLOCK-BULK",
+      "kind": "product-contract",
+      "required": "Choose the durable command membership, receipt lifetime, response-loss/resume behavior and user-visible incomplete-result contract for bulk task controls.",
+      "observed": "Current canonical controls already admit at most 100 targets. A crash can leave a committed prefix. The older proposal requires a durable command/target receipt owner; it is not a selected recovery contract.",
+      "whyNeedsDecision": "This changes persisted history and retry semantics; a new table or overloading diagnostics without a selected retention/recovery contract would add unreviewed complexity.",
+      "reference": "../../../2026-10-17-app-performance/candidates/recovery-bulk-contracts/PJ15.md"
+    },
+    {
+      "id": "BLOCK-POLICY",
+      "kind": "product-contract",
+      "required": "Supported custom-preview JSON/image limits and rejection UX; retained evidence/session/history lifetime and preservation requirements.",
+      "observed": "Finite real imports, existing bounded archive extraction and current table sizes are measured. A source audit confirms transient-only pruning deliberately preserves history, playback evidence and outbox records.",
+      "whyNeedsDecision": "Arbitrary caps reject previously supported inputs; automatic retention deletes evidence. Neither threshold nor irreversible deletion policy can be inferred from one local workload."
+    },
+    {
+      "id": "BOUND-CAPACITY",
+      "kind": "evidence-boundary",
+      "required": "A defined target deployment, workload mix/concurrency and duration for production capacity/tail/startup claims.",
+      "observed": "Finite local three-account soak, process samples, genuine reads, five-trial warmed SQL blocks and process restarts do not establish production p95, cold-disk startup or hardware/GPU capacity.",
+      "whyNotAProductFix": "No local benchmark proves every future workload. The finite acceptance executed in this pass is recorded separately; this boundary is not a hidden failing test."
+    }
+  ],
+  "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026"
+}

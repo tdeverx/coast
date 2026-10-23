@@ -1,0 +1,46 @@
+{
+  "scope": "Derived unchanged Discover observations from browser-play-metadata probe; For You has no positive game cohort and is not promoted to positive acceptance. No observation or status was modified.",
+  "source": "unaccepted-browser-play-positive-for-you.json",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "status": "passed"
+}

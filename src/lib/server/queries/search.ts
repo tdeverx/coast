@@ -59,7 +59,8 @@ async function searchKinds(userId: string, kind: 'all' | ReadingKind) {
 
 /** One search combines local metadata and enabled providers; reads never import titles.
  * Routes pass their already-rendered local page to avoid reading it a second time. */
-export async function readingSearch(userId: string, raw: unknown, initial?: ReadingSearchContent): Promise<ReadingSearchContent> {
+export async function readingSearch(userId: string, raw: unknown, initial?: ReadingSearchContent, stage: 'primary' | 'complete' = 'complete', signal?: AbortSignal): Promise<ReadingSearchContent> {
+  signal?.throwIfAborted();
   const input = v.parse(inputSchema, raw);
   const kinds = await searchKinds(userId, input.kind);
   const local = initial ?? await readingSearchInitial(userId, input);
@@ -71,7 +72,7 @@ export async function readingSearch(userId: string, raw: unknown, initial?: Read
     const label = kind === 'book' ? 'Open Library' : 'Comic Vine';
     try {
       if (!await readingProviderConfigured(kind)) return { ...empty, notice: 'An administrator can connect Comic Vine in Integrations to search comics.' };
-      const result = await searchReading(kind, input.query, input.page);
+      const result = await searchReading(kind, input.query, input.page, stage);
       const pageSize = kind === 'book' ? 20 : 10;
       return {
         ...empty,
@@ -84,10 +85,15 @@ export async function readingSearch(userId: string, raw: unknown, initial?: Read
       return { ...empty, failure: cause instanceof AppError ? cause.message : cause instanceof ProviderHttpError ? providerApiError(cause).body.error : `${label} search could not be loaded. Please try again.` };
     }
   }));
+  signal?.throwIfAborted();
   const cards = await readingProviderCards(userId, results.flatMap(result => result.items).filter(item => kinds.includes(item.kind)));
+  signal?.throwIfAborted();
+  const current = await getFeatureConfig(userId);
+  const admitted = kinds.filter(kind => kind === 'book' ? current.experimentalBooks : current.experimentalComics);
+  if (!admitted.length) return { ...local, items: [], failure: 'This reading type is unavailable.', notice: '', truncated: false, pages: 1, total: 0 };
   return {
     ...empty,
-    items: rankSearch([...new Map([...local.items, ...cards].map(item => [item.id, item])).values()], input.query),
+    items: rankSearch([...new Map([...local.items, ...cards].filter(item => admitted.includes(item.kind as ReadingKind)).map(item => [item.id, item])).values()], input.query),
     total: results.reduce((total, result) => total + result.total, local.total),
     pages: Math.max(local.pages, ...results.map(result => result.pages)),
     truncated: input.page < READING_PROVIDER_PAGE_LIMIT && (local.truncated || results.some(result => result.truncated)),

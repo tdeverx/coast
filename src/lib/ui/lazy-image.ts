@@ -86,10 +86,20 @@ export function lazyImage(image: HTMLImageElement, source: string) {
       } else if (!pending.has(image)) observe();
     },
     destroy() {
+      if (destroyed) return;
       destroyed = true;
       unobserve(image);
       image.removeEventListener('load', completed);
       image.removeEventListener('error', completed);
+      // Removing a card does not itself cancel an image fetch while browser or
+      // accessibility instrumentation still retains its detached DOM wrapper.
+      // Release the owned request as well as its observers/listeners.
+      image.style.visibility = 'hidden';
+      image.removeAttribute('srcset');
+      // An empty src candidate can retain Blink's viewport listener (including
+      // images that never intersected). A valid inline pixel cancels network
+      // demand and releases that dependency without starting another request.
+      image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       removeWaiting();
       finish();
     },

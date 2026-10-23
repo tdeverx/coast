@@ -171,7 +171,7 @@ run('unchanged rich music pages preserve metadata tuples while refreshing access
 
 run('rich music page access cannot publish for an obsolete generation or cancelled execution',async()=>{
  const track={...item(crypto.randomUUID()),externalIds:{}},saved=await persistMusic(instanceId,track);workIds.push(saved.workId!);
- await expect(observeMusicLibraryAccess(userId,connection.id,instanceId,crypto.randomUUID(),[track])).rejects.toThrow('connected account changed');
+ await expect(observeMusicLibraryAccess(userId,connection.id,instanceId,crypto.randomUUID(),[track])).rejects.toMatchObject({status:409,code:'source_changed'});
  expect(await getDb().select().from(s.availability).where(and(eq(s.availability.connectionId,connection.id),eq(s.availability.mediaId,saved.workId!)))).toHaveLength(0);
  const [action]=await getDb().insert(s.outboxActions).values({userId,connectionId:connection.id,kind:'jellyfin.sync',payload:{},state:'cancelled',attempts:1}).returning();
  const {jobExecution,JobYield}=await import('../src/lib/server/queue/execution');

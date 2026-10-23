@@ -94,7 +94,7 @@ async function assertMusicAccount(tx:Transaction,userId:string,connectionId:stri
   const [connection]=await tx.select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.instanceId,instanceId),eq(providerConnections.accountGeneration,accountGeneration),eq(providerConnections.status,'connected'))).for('update');
   const [active]=await tx.select({id:users.id}).from(users).innerJoin(providerInstances,eq(providerInstances.id,instanceId))
     .where(and(eq(users.id,userId),eq(users.disabled,false),eq(providerInstances.enabled,true)));
-  if(!connection||!active)throw new Error('The connected account changed during this task.');
+  if(!connection||!active)throw new DomainError('The connected account changed during this task.', 409, 'source_changed');
   if(expectedResetId!==undefined&&(connection.settings.userSyncResetId??null)!==expectedResetId)throw new JobYield();
   await assertJobLease(tx,true);
 }

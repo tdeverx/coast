@@ -1,0 +1,200 @@
+{
+  "scope": "Additional historical API families on final production build with actual stored source/media/artist identities and genuine GETs. Metadata enhancement/credits may import genuine metadata only on the copy. Permission/unsupported/empty results remain separately labelled.",
+  "cases": [
+    {
+      "name": "invite-libraries",
+      "status": 200,
+      "expected": [
+        200,
+        403
+      ],
+      "bytes": 313,
+      "sha256": "7534479e6bbf333e4a67e5bf2f93c614dd971addc62966181c60fa788f5ce621",
+      "items": 5,
+      "ms": 143.825416,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "experiments-feed",
+      "status": 200,
+      "expected": [
+        200,
+        403
+      ],
+      "bytes": 7406,
+      "sha256": "6c84f5aa7be4718b86a73d67ecdf0baa18e1c9c0048fd9881258002bcc1125f0",
+      "ms": 88.201625,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "experiments-row",
+      "status": 200,
+      "expected": [
+        200,
+        403
+      ],
+      "bytes": 83,
+      "sha256": "e478bede8fa4b56cbff3f69d6950f4ce23c9f8c2a97364649e002eaaab36ca03",
+      "items": 0,
+      "total": 0,
+      "ms": 67.71712499999998,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "experiments-recommendations",
+      "status": 200,
+      "expected": [
+        200,
+        403
+      ],
+      "bytes": 127493,
+      "sha256": "4ddd346b217f1405ef085a67e4b057c3ffe378140a172ad5885ccbbc52dfd9bc",
+      "items": 60,
+      "total": 2000,
+      "ms": 237.47604200000006,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "avatar-provider-image",
+      "status": 200,
+      "expected": [
+        200,
+        404
+      ],
+      "bytes": 17730,
+      "sha256": "540541a31ac4fe73eb7ca9e9f53fb449871cca35572a831e045dc4b02057d2e4",
+      "ms": 27.356540999999993,
+      "pass": true,
+      "contentType": "image/webp"
+    },
+    {
+      "name": "discover-watch",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 40212,
+      "sha256": "f4184c33b34956649ebb86447abde39007aaa811968c8d1a4979e487c00cf61f",
+      "items": 20,
+      "ms": 313.704875,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "discover-play",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 78,
+      "sha256": "ee324874e4069eec1e81e280e225ca185e0ddf5f964400e84fe53a249a6dc8a9",
+      "items": 0,
+      "ms": 435.47966699999995,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "discover-read",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 4135,
+      "sha256": "3405965bea5b3629dfae2295e576ea63e7da5df41b9c74d6ed196c8123642ffe",
+      "items": 10,
+      "total": 374454,
+      "ms": 8625.001961,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "media-screen-enhance",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 38914,
+      "sha256": "7b7a7804543c84c6889634b397aba3fbd7958768ab01531c400171bad5623bca",
+      "ms": 625.2943340000002,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "media-trailer",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 487,
+      "sha256": "f320ec96363a5ebe8f39c0e763457963001a9dfa02d63952954406edf99819dd",
+      "ms": 70.83770900000127,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "artwork-fallback",
+      "status": 404,
+      "expected": [
+        200,
+        404
+      ],
+      "bytes": 18,
+      "sha256": "bb299bbe76350c541c32daedbaf85d93d9d03a5655dd3b064b5eee2214281006",
+      "ms": 1.7059169999993173,
+      "pass": true,
+      "contentType": "text/plain;charset=utf-8"
+    },
+    {
+      "name": "steam-callback-malformed",
+      "status": 400,
+      "expected": [
+        400,
+        401,
+        403
+      ],
+      "bytes": 79,
+      "sha256": "e08134619a9a58b0f9800af450f99988f3e7b8d1556c9e47f04a5076d997dbe6",
+      "ms": 2.4055420000004233,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "music-children-provider",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 9067,
+      "sha256": "d899f68bca6198bd7bc0e7b2ca43654a024e7dcf8f695451ae4d19ec5ba5b175",
+      "items": 15,
+      "total": 15,
+      "ms": 143.25550099999964,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    },
+    {
+      "name": "person-credits",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "bytes": 36535,
+      "sha256": "78d4992cf342b4046f389af2a873f20281dd3ed481d7a7164f2ccf2afa465e1a",
+      "items": 24,
+      "total": 148,
+      "ms": 281.3550410000007,
+      "pass": true,
+      "contentType": "application/json;charset=utf-8"
+    }
+  ],
+  "gaps": [
+    "No actor-owned natural game playthrough",
+    "Enabled IGDB present; provider metadata/OAuth POST reads need a separate explicit read-transport scope, not GET-only evidence"
+  ],
+  "failures": [],
+  "status": "passed"
+}

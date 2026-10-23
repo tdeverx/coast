@@ -1,0 +1,1 @@
+{"status":"passed","summary":{"baseline":{"trials":6,"medianMs":138.026,"medianWalBytes":379705,"medianHits":60738},"candidate":{"trials":4,"medianMs":154.106,"medianWalBytes":411401,"medianHits":61576}},"failures":[]}

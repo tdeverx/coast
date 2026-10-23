@@ -4,6 +4,7 @@ import { defaultConfig } from '#lib/server/config.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {importJellyfinReading} from './jellyfin-reading.server';
 import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '#lib/music/persistence.server.js';
+import { reconcileJellyfinBatch } from './jellyfin-finalization.server';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import {
   reconcileProviderValue,
@@ -218,18 +219,18 @@ async function runJellyfinScan(
   // filter union must never resume as an unfiltered whole-library request.
   if (scope === 'personal' && filterIndex === filters.length && filterPhases.includes(phase as typeof filterPhases[number])) phase = 'reconciling';
   async function report(processed: number, total: number | null, nextPhase: JellyfinScanProgress['phase'] = 'scanning',
-    details: Pick<JellyfinScanProgress, 'playbackCursor' | 'readingOffset' | 'musicOffset' | 'musicFilter' | 'musicPlaybackCursor' | 'traversalTotal' | 'stageProcessed' | 'stageTotal'> = {}) {
+    details: Pick<JellyfinScanProgress, 'playbackCursor' | 'readingOffset' | 'musicOffset' | 'musicFilter' | 'musicPlaybackCursor' | 'traversalTotal' | 'stageProcessed' | 'stageTotal' | 'finalizationPhase' | 'finalizationCursor' | 'finalizationCategory'> = {}, store: Pick<Database,'update'> = db) {
     phase = nextPhase;
     const progress = { featureSignature, processed, total, phase, startedAt, scanId, accountGeneration: connection.accountGeneration, resetId, ...details };
     if (scope === 'library')
-      await db
+      await store
         .update(providerInstances)
         .set({
           settings: sql`jsonb_set(${providerInstances.settings}, '{libraryScan}', coalesce(${providerInstances.settings}->'libraryScan', '{}'::jsonb) || ${progress}::jsonb, true)`,
         })
         .where(eq(providerInstances.id, instance.id));
     else
-      await db
+      await store
         .update(providerConnections)
         .set({
           settings: sql`jsonb_set(${providerConnections.settings}, ARRAY[${progressKey}]::text[], ${progress}::jsonb, true)`,
@@ -252,6 +253,7 @@ async function runJellyfinScan(
     readingOffset:resume?.readingOffset, playbackCursor: resume?.playbackCursor, musicOffset: resume?.musicOffset, musicFilter: resume?.musicFilter,
     musicPlaybackCursor:resume?.musicPlaybackCursor, traversalTotal:resume?.traversalTotal,
     stageProcessed: resume?.stageProcessed, stageTotal: resume?.stageTotal,
+    finalizationPhase:resume?.finalizationPhase,finalizationCursor:resume?.finalizationCursor,finalizationCategory:resume?.finalizationCategory,
   });
   const visited = new Map<string, string>();
   const hydratedItems = new Map<string, AvailableItem>();
@@ -281,7 +283,10 @@ async function runJellyfinScan(
           eq(providerInstances.enabled, true)
         )
       );
-    const [current] = await (lock ? query.for('update', {of: providerConnections}) : query);
+    // Protect account/generation changes without blocking the FK key-share lock
+    // of a concurrent intent/outbox insert. FOR UPDATE formed a lock cycle with
+    // finalization waiting on that writer's intent row.
+    const [current] = await (lock ? query.for('no key update', {of: providerConnections}) : query);
     if (!current) throw new PermanentActionError('The connected account changed during this task.');
     if(signatureOf(featureValues({...defaultConfig,...current.featurePolicy},userScope?current.featureChoices.features:undefined))!==featureSignature)throw new JobYield();
     if(scope==='user'&&!changes&&current.settings.userSyncResetId!==resetId)throw new JobYield();
@@ -852,7 +857,9 @@ async function runJellyfinScan(
     await report(processed,total,'reading',{readingOffset:0,traversalTotal:null});
   }
   // Reading positives were already checked by the independently retained prepass.
-  await report(processed, total, 'finalizing', {stageProcessed: 0, stageTotal: null});
+  let finalizationPhase=resume?.finalizationPhase??'screen',finalizationCursor=resume?.finalizationCursor??null,finalizationCategory=resume?.finalizationCategory??null;
+  let finalizationProcessed=resume?.phase==='finalizing'?resume.stageProcessed??0:0;
+  await report(processed, total, 'finalizing', {stageProcessed:finalizationProcessed,stageTotal:null,finalizationPhase,finalizationCursor,finalizationCategory});
   // Counts are scoped to the authenticated source account, never server-wide.
   // Restrict recomputation to parents touched by this metadata pass or its children.
   if (scope === 'library') await db.execute(sql`update provider_items parent set snapshot=parent.snapshot || jsonb_build_object('membershipComplete',
@@ -867,22 +874,18 @@ async function runJellyfinScan(
         where child.instance_id=parent.instance_id and child.last_seen_at>=${startedAt}::timestamptz
         and (parent.kind='show' and e.show_id=parent.media_id or parent.kind='season' and e.season_id=parent.media_id)))`);
   if(scope === 'user' && featureConfig.features.screen && (await ensureConnected()).settings.reconcileTracking===true){
-    await db.transaction(async tx=>{
-      await ensureConnected(tx,true);
-      // Include state imported while no mapping existed, without treating empty rows as intent.
-      const states=await tx.select().from(trackingState).where(and(eq(trackingState.userId,userId),sql`(${trackingState.favourite} or ${trackingState.watched} or ${trackingState.positionSeconds}>0)`));
-      for(const state of states)for(const [category,value] of [['favourite',{value:state.favourite}],['history',{value:state.watched}],['progress',{positionSeconds:state.positionSeconds,durationSeconds:state.durationSeconds??0}]] as const){
-        if(category==='progress'?state.positionSeconds<=0:!value.value)continue;
-        await tx.insert(reconciliationIntents).values({connectionId,workId:state.mediaId,category,value}).onConflictDoNothing();
-      }
-      const music=await tx.select().from(musicProgress).where(eq(musicProgress.userId,userId));
-      for(const state of music){
-        if(state.playCount>0)await tx.insert(reconciliationIntents).values({connectionId,workId:state.trackId,category:'history',value:{value:true,playCount:state.playCount}}).onConflictDoNothing();
-        if(state.positionSeconds>0)await tx.insert(reconciliationIntents).values({connectionId,workId:state.trackId,category:'progress',value:{positionSeconds:state.positionSeconds,durationSeconds:state.durationSeconds??0}}).onConflictDoNothing();
-      }
-      const intents=await tx.select().from(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),sql`exists(select 1 from availability a where a.connection_id=${connectionId} and a.media_id=${reconciliationIntents.workId} and a.scan_id=${scanId} and a.state='available')`));
-      for(const intent of intents)await enqueueInTransaction(tx,{userId,connectionId,kind:'jellyfin.reconcile',payload:{mediaId:intent.workId,field:intent.category==='history'?'watched':intent.category,value:intent.category==='progress'?Number(intent.value.positionSeconds):Boolean(intent.value.value),playCount:intent.value.playCount,durationSeconds:intent.value.durationSeconds,intentVersion:intent.version,backfill:true},compactionKey:`jellyfin-reconcile:${intent.workId}:${intent.category}`});
-    });
+    while(finalizationPhase!=='done'){
+      await db.transaction(async tx=>{
+        const current=await ensureConnected(tx,true);
+        if(current.settings.reconcileTracking!==true){finalizationPhase='done';finalizationCursor=null;finalizationCategory=null;}
+        else {
+          const cursor=await reconcileJellyfinBatch(tx,userId,connectionId,scanId,{phase:finalizationPhase,workId:finalizationCursor,category:finalizationCategory,processed:finalizationProcessed});
+          finalizationPhase=cursor.phase;finalizationCursor=cursor.workId;finalizationCategory=cursor.category;finalizationProcessed=cursor.processed;
+        }
+        await report(processed,total,'finalizing',{stageProcessed:finalizationProcessed,stageTotal:null,finalizationPhase,finalizationCursor,finalizationCategory},tx);
+      });
+      await jobCheckpoint();
+    }
   }
   onStage?.('reconcile');
   await ensureConnected();

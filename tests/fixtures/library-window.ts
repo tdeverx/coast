@@ -26,18 +26,19 @@ const fixture=compileRunes(`
  import {surfaceEnabled,categoryEnabled} from ${JSON.stringify(features)};
  import {readingTypeOptions} from ${JSON.stringify(filters)};
  export function create(transport,data,input={}){
-  let route=$state.raw({data,state:{}}),options=$state.raw({surface:'watch',layout:'grid',...input.options});
+  let navigating=$state.raw({to:null}),route=$state.raw({data,state:{},url:new URL('http://fixture/library?view=watch')}),options=$state.raw({surface:'watch',layout:'grid',...input.options});
   const cleanups=[],resources=[],navigation=[];
   const createResource=(...args)=>{const r=nativeResource(...args);resources.push(r);return r;};
   const useShelfLocation=()=>({embedded:input.embedded??true}),useClient=()=>({api:transport,preview:false});
-  const replaceState=(href,state)=>{if(input.embedded!==false)throw Error('embedded_must_not_rewrite_route');navigation.push({href,state});},onDestroy=fn=>cleanups.push(fn);
+  const goto=(href,options)=>{if(input.embedded!==false)throw Error('embedded_must_not_rewrite_route');navigation.push({href,state:options.state});route={...route,url:new URL(href,route.url)};},onDestroy=fn=>cleanups.push(fn);
   ${owner}
   const source=createLibrarySource(()=>options);
-  return {source,navigation,setOptions(value){options=value;},setData(value){route={...route,data:value};},get content(){if(resources.length!==1)throw Error('one_resource_required');return resources[0].data;},dispose(){for(const fn of cleanups.splice(0))fn();}};
+  return {source,navigation,setNavigating(value){navigating={to:{url:new URL(value,route.url)}};},setUrl(value){route={...route,url:new URL(value,route.url)};},setOptions(value){options=value;},setData(value){route={...route,data:value};},get content(){if(resources.length!==1)throw Error('one_resource_required');return resources[0].data;},dispose(){for(const fn of cleanups.splice(0))fn();}};
  }
 `);
 const {create}=await import(moduleUrl(fixture));
 const settle=async()=>{for(let i=0;i<18;i++){runtime.flush();await Promise.resolve();}};
+export {create,settle};
 const assert=(value:unknown,code:string)=>{if(!value)throw Error(code);};
 
 type ActualReader=(path:string)=>Promise<LibraryContent>;

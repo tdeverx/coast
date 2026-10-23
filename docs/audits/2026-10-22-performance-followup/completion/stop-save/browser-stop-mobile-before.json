@@ -1,0 +1,13 @@
+{
+  "status": "not-accepted-for-layout",
+  "reason": "DOM checks passed but visual inspection showed pending feedback overlapping the bottom navigation. The corrected probe additionally checks rectangle separation.",
+  "originalObservation": {
+    "scope": "Headless Chromium 390x844 with real copied track/stream. Layout and visible player teardown only; not physical-device/audio-policy acceptance.",
+    "status": "passed",
+    "closeHidden": true,
+    "notice": "Saving playback progress\u2026",
+    "pendingDismissDisabled": true,
+    "overflow": false,
+    "frameworkOverlay": 0
+  }
+}

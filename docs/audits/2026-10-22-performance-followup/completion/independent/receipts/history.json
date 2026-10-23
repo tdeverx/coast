@@ -1,0 +1,348 @@
+{
+  "scope": "Current real six-user Activity first/middle/last native reads at one fixed clock; stored totals/retained page sizes and repeat DTO equality. Actual table sizes/counts/time coverage, not synthetic history-growth extrapolation or a production p95. No deletion or retention change.",
+  "users": [
+    {
+      "actorHash": "1d07d4afbbd82ea5fe2779d1d783bbb4286265bb1b8a922b8ecc126b3f1a9bfb",
+      "total": 19,
+      "pages": 1,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 19,
+          "items": 19,
+          "ms": 282.99058299999996,
+          "includesRepeat": true,
+          "completeDtoHash": "c9c9ebaeba014d695a1f6a9f571a744068411590aab52ef37886b65b8938fcf6",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 19,
+          "items": 19,
+          "ms": 216.55654199999992,
+          "includesRepeat": true,
+          "completeDtoHash": "c9c9ebaeba014d695a1f6a9f571a744068411590aab52ef37886b65b8938fcf6",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 19,
+          "items": 19,
+          "ms": 288.79312500000003,
+          "includesRepeat": true,
+          "completeDtoHash": "c9c9ebaeba014d695a1f6a9f571a744068411590aab52ef37886b65b8938fcf6",
+          "repeatExact": true
+        }
+      ]
+    },
+    {
+      "actorHash": "99c1e895577737e29281faae7580e6910a49e8cede295e9d4e057149f437de54",
+      "total": 11023,
+      "pages": 184,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 184,
+          "total": 11023,
+          "items": 60,
+          "ms": 178.75716699999998,
+          "includesRepeat": true,
+          "completeDtoHash": "133be8cac62ab6c8b6e1522b7b021367d476b549a2bca3459e9a75f51efa740d",
+          "repeatExact": true
+        },
+        {
+          "requested": 92,
+          "page": 92,
+          "pages": 184,
+          "total": 11023,
+          "items": 60,
+          "ms": 213.4631670000001,
+          "includesRepeat": true,
+          "completeDtoHash": "780a37de30f811f9774c4d4a0ccda65ee82fbabf09f2aea376319c3ef8b1060c",
+          "repeatExact": true
+        },
+        {
+          "requested": 184,
+          "page": 184,
+          "pages": 184,
+          "total": 11023,
+          "items": 43,
+          "ms": 204.13374999999996,
+          "includesRepeat": true,
+          "completeDtoHash": "a8da5f706222bb1c6cf80fd33ac9a49029d510192b90acb57ea09c5f71ba629e",
+          "repeatExact": true
+        }
+      ]
+    },
+    {
+      "actorHash": "eb0be839be5018503855d95c61adc7469035e46d99964a96d1530de693770cbc",
+      "total": 40,
+      "pages": 1,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 40,
+          "items": 40,
+          "ms": 270.02475000000004,
+          "includesRepeat": true,
+          "completeDtoHash": "dbf37e5bc1db5dcdb7aaaa63a39f55460596aa5d99a342e23cc274e66ef5b0bd",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 40,
+          "items": 40,
+          "ms": 244.70933300000024,
+          "includesRepeat": true,
+          "completeDtoHash": "dbf37e5bc1db5dcdb7aaaa63a39f55460596aa5d99a342e23cc274e66ef5b0bd",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 40,
+          "items": 40,
+          "ms": 278.87954200000013,
+          "includesRepeat": true,
+          "completeDtoHash": "dbf37e5bc1db5dcdb7aaaa63a39f55460596aa5d99a342e23cc274e66ef5b0bd",
+          "repeatExact": true
+        }
+      ]
+    },
+    {
+      "actorHash": "b1cedc72fb5ee9b0b043203a3a0c421d31d6f4c13d881a8004214052b86e8886",
+      "total": 0,
+      "pages": 1,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 0,
+          "items": 0,
+          "ms": 13.487958000000162,
+          "includesRepeat": true,
+          "completeDtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 0,
+          "items": 0,
+          "ms": 13.462375000000065,
+          "includesRepeat": true,
+          "completeDtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+          "repeatExact": true
+        },
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 1,
+          "total": 0,
+          "items": 0,
+          "ms": 13.326000000000022,
+          "includesRepeat": true,
+          "completeDtoHash": "91c1f6d43129e5754e6a82668bebe3d32697d0099c4a5c7aa2222a89cb7716be",
+          "repeatExact": true
+        }
+      ]
+    },
+    {
+      "actorHash": "00e645ad20d5a590a8c3243c8141b84cbe88008124aac08a2b739c4a84eb7319",
+      "total": 1383,
+      "pages": 24,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 24,
+          "total": 1383,
+          "items": 60,
+          "ms": 382.46016699999973,
+          "includesRepeat": true,
+          "completeDtoHash": "0e71444eeda399991998ffd51255713cee778989d27e8dd9cdb536ce8dbbbb86",
+          "repeatExact": true
+        },
+        {
+          "requested": 12,
+          "page": 12,
+          "pages": 24,
+          "total": 1383,
+          "items": 60,
+          "ms": 416.0681669999999,
+          "includesRepeat": true,
+          "completeDtoHash": "3b5355403acf4d7587d9f1d2dcb6bd7e23c5ac0e3934261adc945f6da3ce6af3",
+          "repeatExact": true
+        },
+        {
+          "requested": 24,
+          "page": 24,
+          "pages": 24,
+          "total": 1383,
+          "items": 3,
+          "ms": 249.8614580000003,
+          "includesRepeat": true,
+          "completeDtoHash": "cbaed1c75ce1788895fa31ebad10678bcc3011ce29307e8cf37c4608d5105aeb",
+          "repeatExact": true
+        }
+      ]
+    },
+    {
+      "actorHash": "c6426e6415e043fd8574ebd76f39b6790b6311e16462ccf67af1fedbde362b02",
+      "total": 6890,
+      "pages": 115,
+      "samples": [
+        {
+          "requested": 1,
+          "page": 1,
+          "pages": 115,
+          "total": 6890,
+          "items": 60,
+          "ms": 317.74395900000036,
+          "includesRepeat": true,
+          "completeDtoHash": "ad8ef16173e34413c0271bd5aecf47da879d7fc77557eee7414ed41f4a9c7c30",
+          "repeatExact": true
+        },
+        {
+          "requested": 58,
+          "page": 58,
+          "pages": 115,
+          "total": 6890,
+          "items": 60,
+          "ms": 390.3104999999996,
+          "includesRepeat": true,
+          "completeDtoHash": "454ad021857492a4a184e2b736957173e7453d7a37e3b67c23a1358151245989",
+          "repeatExact": true
+        },
+        {
+          "requested": 115,
+          "page": 115,
+          "pages": 115,
+          "total": 6890,
+          "items": 50,
+          "ms": 260.96679200000017,
+          "includesRepeat": true,
+          "completeDtoHash": "97b25da116942a01caa08816e7a38b689d06cfc955ea42847b03233adee50472",
+          "repeatExact": true
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "table": "tracking_events",
+      "n": 140693,
+      "bytes": "40689664",
+      "spanDays": 23,
+      "recent30DayRows": 140693
+    },
+    {
+      "table": "playback_sessions",
+      "n": 39,
+      "bytes": "172032",
+      "spanDays": 23,
+      "recent30DayRows": 39
+    },
+    {
+      "table": "reading_sessions",
+      "n": 28,
+      "bytes": "139264",
+      "spanDays": 4,
+      "recent30DayRows": 28
+    },
+    {
+      "table": "outbox_actions",
+      "n": 220338,
+      "bytes": "206249984",
+      "spanDays": 23,
+      "recent30DayRows": 220338
+    },
+    {
+      "table": "music_listens",
+      "n": 8,
+      "bytes": "65536",
+      "spanDays": 18,
+      "recent30DayRows": 8
+    },
+    {
+      "table": "diagnostics",
+      "n": 0,
+      "bytes": "24576",
+      "spanDays": 0,
+      "recent30DayRows": 0
+    },
+    {
+      "table": "benchmark_runs",
+      "n": 3,
+      "bytes": "114688",
+      "spanDays": 17,
+      "recent30DayRows": 3
+    }
+  ],
+  "tasks": [
+    {
+      "n": 0,
+      "warmup": true,
+      "ms": 130.1569580000005,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    },
+    {
+      "n": 1,
+      "warmup": false,
+      "ms": 109.4986659999995,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    },
+    {
+      "n": 2,
+      "warmup": false,
+      "ms": 136.84237500000017,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    },
+    {
+      "n": 3,
+      "warmup": false,
+      "ms": 105.19737499999974,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    },
+    {
+      "n": 4,
+      "warmup": false,
+      "ms": 107.98550000000068,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    },
+    {
+      "n": 5,
+      "warmup": false,
+      "ms": 128.71783400000004,
+      "completeDtoHash": "03d8c7975a3d898b4df18c5efd8abb0530f67bd92c5ebbf666aa5c703bc733ff",
+      "groups": 23
+    }
+  ],
+  "checks": [
+    {
+      "name": "six-real-users-and-positive-history",
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

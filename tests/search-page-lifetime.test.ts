@@ -10,7 +10,7 @@ const source = compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  export function create(initial,page,go,rankSearch,searchSelectionUrl){
   const cleanups=[],navigation=[],nativeHistory=new EventTarget(),window={location:{href:page.url.href},addEventListener:(...args)=>nativeHistory.addEventListener(...args),removeEventListener:(...args)=>nativeHistory.removeEventListener(...args)},beforeNavigate=fn=>navigation.push(fn),onDestroy=fn=>cleanups.push(fn),onMount=fn=>cleanups.push(fn()),reportFailure=()=>{},goto=go;
   ${script}
-  return {select(bucket,kind){submit({bucket,kind});},submit,get items(){return searchItems;},get rows(){return data.rows;},get pending(){return pendingTargets.size;},get intentHref(){return intent?.href;},edit(value){query=value;},update(next){data=next;},history(url){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));},navigate(type,url){if(type==='popstate'){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));}for(const fn of navigation)fn({type,to:{url}});},cleanup(){for(const fn of cleanups)fn();}};
+  return {select(bucket,kind){submit({bucket,kind});},submit,get busy(){return busy;},get items(){return searchItems;},get rows(){return data.rows;},get pending(){return pendingTargets.size;},get intentHref(){return intent?.href;},edit(value){query=value;},update(next){data=next;},history(url){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));},navigate(type,url){if(type==='popstate'){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));}for(const fn of navigation)fn({type,to:{url}});},cleanup(){for(const fn of cleanups)fn();}};
  }`);
 const { create } = await import(moduleUrl(source));
 const features = { experimentalMusic: true, experimentalGaming: true, experimentalBooks: true, experimentalComics: true };
@@ -18,7 +18,7 @@ const settle = async () => { for (let i = 0; i < 6; i++) { runtime.flush(); awai
 function data(url: URL, items: object[] = [], pending?: Promise<unknown>) {
   const selection = searchSelection(url.searchParams), empty = { items: [], discover: [], failure: '', truncated: false }, reading = { items: [], failure: '', notice: '', truncated: false };
   return { ...selection, demand: searchDemand(selection, features), initial: { items: [], providerUnavailable: false }, readingInitial: reading,
-    watch: Promise.resolve({ items, providerUnavailable: false }), listen: pending ?? Promise.resolve(empty), play: Promise.resolve(empty), read: Promise.resolve(reading) };
+    watch: Promise.resolve({ items, providerUnavailable: false }), listen: pending ?? Promise.resolve(empty), play: Promise.resolve(empty), read: Promise.resolve(reading), readComplete: Promise.resolve(reading) };
 }
 
 test('actual search controller pushes independent filter history, replaces query edits and restores both rows', async () => {
@@ -107,4 +107,19 @@ test('native Back retargets filter composition before route data and skipped Kit
     owner.cleanup();owner.history(new URL('http://coast/search?q=disposed'));
     expect(owner.pending).toBe(0);expect(owner.intentHref).toBeUndefined();
   }finally{owner.cleanup();dispose();for(const call of calls)call.resolve();}
+});
+
+
+test('reading completion owns loading and cannot be overwritten by a later primary page',async()=>{
+  const page={url:new URL('http://coast/search?q=batman&view=read')};
+  let primary!:(value:unknown)=>void,complete!:(value:unknown)=>void,owner:any;
+  const initial={...data(page.url),read:new Promise(resolve=>primary=resolve),readComplete:new Promise(resolve=>complete=resolve)};
+  const dispose=runtime.effect_root(()=>{owner=create(initial,page,()=>Promise.resolve(),rankSearch,searchSelectionUrl);});
+  const result=(id:string)=>({items:[{id,kind:'comic',title:'Batman'}],failure:'',notice:'',truncated:false});
+  try{
+    await settle();expect(owner.busy).toBe(true);
+    complete(result('complete'));await settle();expect(owner.busy).toBe(false);
+    expect(owner.items.map((item:any)=>item.id)).toEqual(['complete']);
+    primary(result('primary'));await settle();expect(owner.items.map((item:any)=>item.id)).toEqual(['complete']);
+  }finally{owner.cleanup();dispose();}
 });

@@ -1,0 +1,24 @@
+{
+  "scope": "Metadata-enabled thirty-minute workload and final Search/engine/API checks in same process epoch. Guard denials are intentional constraints/harness omissions, not product outages. Native DNS/TLS admission remains authoritative.",
+  "requests": 721,
+  "admitted": 693,
+  "denied": 28,
+  "methods": {
+    "GET": 649,
+    "POST": 72
+  },
+  "denials": [
+    {
+      "provider": "jellyfin",
+      "method": "POST",
+      "count": 14,
+      "cause": "Crop calculation POST intentionally outside hosted-provider acceptance."
+    },
+    {
+      "provider": "igdb",
+      "method": "POST",
+      "count": 14,
+      "cause": "Native read-only popularity_primitives omitted by outer guard; targeted replay uses exact endpoint admission."
+    }
+  ]
+}

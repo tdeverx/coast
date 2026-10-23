@@ -1,0 +1,54 @@
+{
+  "scope": "Finite genuine metadata GETs, native adapters/transport and provider pacing unchanged; wrapper records adapter-call elapsed including queue and validation, not pure provider CPU. No fabricated responses or metadata imports.",
+  "tmdb": [
+    {
+      "page": 1,
+      "ms": 543.899626,
+      "calls": [
+        {
+          "kind": "detail-with-credits",
+          "ms": 161.015084,
+          "resultHash": "6576ae1593cebc4d4f8f25bc648325577a015a445650c92cfe6852c4026cbe3a"
+        },
+        {
+          "kind": "reviews",
+          "ms": 374.854417,
+          "resultHash": "f6e0aa79f036e1a1b2fd52b7e19b99c9eda5ead6fad50eb51d6f9cade05467c8"
+        }
+      ],
+      "reviews": 1,
+      "pages": 1,
+      "incomplete": false,
+      "invariantHash": "9eb4d70f5532a3f6b74ae0a8058f947f152550a767afe2357ba01cd8b399ccb0"
+    },
+    {
+      "page": 2,
+      "ms": 677.514667,
+      "calls": [
+        {
+          "kind": "detail-with-credits",
+          "ms": 298.892916,
+          "resultHash": "6576ae1593cebc4d4f8f25bc648325577a015a445650c92cfe6852c4026cbe3a"
+        },
+        {
+          "kind": "reviews",
+          "ms": 377.5295,
+          "resultHash": "f47b4e9ca6937b195d2573a5a8812c9f33eb3d217a107b79c1d8e50a4c2e9a76"
+        }
+      ],
+      "reviews": 0,
+      "pages": 1,
+      "incomplete": false,
+      "invariantHash": "9eb4d70f5532a3f6b74ae0a8058f947f152550a767afe2357ba01cd8b399ccb0"
+    }
+  ],
+  "comic": [],
+  "failures": [
+    "probe-exception"
+  ],
+  "failure": {
+    "name": "Error",
+    "message": "This global provider URL is not allowed."
+  },
+  "status": "findings"
+}

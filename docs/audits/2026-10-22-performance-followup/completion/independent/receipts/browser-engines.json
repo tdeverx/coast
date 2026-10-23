@@ -1,0 +1,375 @@
+{
+  "scope": "Genuine copied-data desktop and narrow viewport on downloaded project-matched WebKit 2370 and Firefox 1555; Playwright library fallback because cached CLI targets different engine revisions. Browser plugin absent. Not physical-device acceptance.",
+  "engines": [
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "routes": [
+        {
+          "action": "watch",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 3000,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 2782,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 3019,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 2166,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 4084,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 2490,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 1099,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 181,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 1254,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 3316,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 132,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 2390,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 1941,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 79,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 1344,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 1805,
+          "overlay": false,
+          "overflow": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "manual-retained-library-bounds",
+          "pass": true,
+          "initial": 60,
+          "clicks": 4,
+          "count": 180
+        },
+        {
+          "name": "keyboard-selector-focus-restored",
+          "pass": true
+        },
+        {
+          "name": "action-switch-keeps-library",
+          "pass": true
+        },
+        {
+          "name": "back-restores-action",
+          "pass": true
+        },
+        {
+          "name": "narrow-library-layout",
+          "pass": true,
+          "overflow": false,
+          "content": 79,
+          "overlay": false
+        },
+        {
+          "name": "no-page-errors",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "status": "passed"
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "routes": [
+        {
+          "action": "watch",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 3016,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 2782,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 3019,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "watch",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 2166,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 4084,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 2490,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 1099,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "listen",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 181,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 1254,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 3316,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 132,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "play",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 2390,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/for-you",
+          "status": 200,
+          "title": "For You · Coast",
+          "content": 1941,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/library",
+          "status": 200,
+          "title": "Library · Coast",
+          "content": 79,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/discover",
+          "status": 200,
+          "title": "Discover · Coast",
+          "content": 1344,
+          "overlay": false,
+          "overflow": false
+        },
+        {
+          "action": "read",
+          "path": "/search",
+          "status": 200,
+          "title": "Search · Coast",
+          "content": 1805,
+          "overlay": false,
+          "overflow": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "manual-retained-library-bounds",
+          "pass": true,
+          "initial": 60,
+          "clicks": 4,
+          "count": 180
+        },
+        {
+          "name": "keyboard-selector-focus-restored",
+          "pass": true
+        },
+        {
+          "name": "action-switch-keeps-library",
+          "pass": true
+        },
+        {
+          "name": "back-restores-action",
+          "pass": true
+        },
+        {
+          "name": "narrow-library-layout",
+          "pass": true,
+          "overflow": false,
+          "content": 79,
+          "overlay": false
+        },
+        {
+          "name": "no-page-errors",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "status": "passed"
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

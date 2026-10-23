@@ -1,0 +1,10 @@
+import {chromium,webkit,firefox} from '<APP_ROOT>/node_modules/playwright/index.mjs';
+import fs from 'node:fs/promises';
+const root='<PRIVATE_RUN_ROOT>/private',u=JSON.parse(await fs.readFile(root+'/sessions.json')).find(x=>x.role==='admin'),report={scope:'Targeted read-only IGDB popularity metadata endpoint correction after finite soak; no new product build, no provider mutation or crop admission.',engines:[],status:'running'};
+for(const[name,engine]of Object.entries({chromium,webkit,firefox})){
+ const b=await engine.launch({headless:true}),c=await b.newContext(),p=await c.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.name));await c.addCookies([{name:'coast_session',value:u.token,url:'http://127.0.0.1:5175',httpOnly:true,sameSite:'Lax'}]);
+ const routes=[];
+ for(const path of ['/discover','/for-you']){const r=await p.goto('http://127.0.0.1:5175'+path+'?view=play',{waitUntil:'domcontentloaded',timeout:60000});await p.waitForTimeout(12000);routes.push({path,status:r.status(),cards:await p.locator('main article').count(),providerError:await p.getByText(/unavailable|failed|could not/i).count()});}
+ report.engines.push({name,version:b.version(),routes,errors});await c.close();await b.close();
+}
+report.status=report.engines.every(e=>!e.errors.length&&e.routes.every(r=>r.status===200&&r.cards>0&&r.providerError===0))?'passed':'findings';await fs.writeFile(root+'/browser-play-metadata.json',JSON.stringify(report,null,2));console.log(report.status);

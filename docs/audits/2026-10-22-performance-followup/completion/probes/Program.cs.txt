@@ -1,0 +1,27 @@
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Jellyfin.Plugin.Coast;
+using Jellyfin.Plugin.Coast.Api;
+using MediaBrowser.Controller.MediaEncoding;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+var input=JsonDocument.Parse(File.ReadAllText("<PRIVATE_RUN_ROOT>/private/codec-input.json")).RootElement;
+var uri=new Uri(input.GetProperty("baseUrl").GetString()!);
+var authorization=input.GetProperty("authorization").GetString()!;
+Plugin.Instance=new Plugin();Plugin.Instance.Configuration.FfmpegPath="/opt/homebrew/bin/ffmpeg";
+var encoder=new Encoder();var results=new List<object>();var peakChildren=0;long peakRssKiB=0;
+using var stopped=new CancellationTokenSource();
+var monitor=Task.Run(async()=>{while(!stopped.IsCancellationRequested){try{using var ps=Process.Start(new ProcessStartInfo("/bin/ps"){ArgumentList={"-axo","pid,ppid,rss"},RedirectStandardOutput=true,UseShellExecute=false})!;var text=await ps.StandardOutput.ReadToEndAsync();await ps.WaitForExitAsync();var children=text.Split('\n').Select(x=>x.Split(' ',StringSplitOptions.RemoveEmptyEntries)).Where(x=>x.Length==3&&int.TryParse(x[1],out var parent)&&parent==Environment.ProcessId).Select(x=>(Pid:int.Parse(x[0]),Rss:long.Parse(x[2]))).Where(x=>{try{return Process.GetProcessById(x.Pid).ProcessName=="ffmpeg";}catch{return false;}}).ToArray();peakChildren=Math.Max(peakChildren,children.Length);peakRssKiB=Math.Max(peakRssKiB,children.Sum(x=>x.Rss));}catch{}await Task.Delay(25);}});
+DefaultHttpContext Context(){var c=new DefaultHttpContext();c.Request.Scheme=uri.Scheme;c.Request.Host=new HostString(uri.Authority);c.Request.PathBase=uri.AbsolutePath.TrimEnd('/');c.Request.Headers.Authorization=authorization;return c;}
+var originals=new Dictionary<string,string>();
+try{
+ foreach(var item in input.GetProperty("items").EnumerateArray()){
+ var id=item.GetProperty("id").GetString()!;var before=new BaselineCropController(encoder,NullLogger<BaselineCropController>.Instance){ControllerContext=new ControllerContext{HttpContext=Context()}};var start=Stopwatch.StartNew();var response=await before.DetectCrop(new(id));var payload=JsonSerializer.Serialize((response.Result as ObjectResult)?.Value);originals[id]=payload;results.Add(new{version="baseline",input=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id))),status=(response.Result as ObjectResult)?.StatusCode,elapsedMs=start.Elapsed.TotalMilliseconds,payload});
+ }
+ var jobs=input.GetProperty("items").EnumerateArray().Select(async item=>{var id=item.GetProperty("id").GetString()!;var current=new TrailerCropController(encoder,NullLogger<TrailerCropController>.Instance){ControllerContext=new ControllerContext{HttpContext=Context()}};var start=Stopwatch.StartNew();var response=await current.DetectCrop(new(id));var payload=JsonSerializer.Serialize((response.Result as ObjectResult)?.Value);return new{version="current",input=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id))),status=(response.Result as ObjectResult)?.StatusCode,elapsedMs=start.Elapsed.TotalMilliseconds,payload,equal=payload==originals[id]};}).ToArray();results.AddRange(await Task.WhenAll(jobs));
+}finally{stopped.Cancel();await monitor;}
+File.WriteAllText("<PRIVATE_RUN_ROOT>/private/real-crop-codecs.json",JsonSerializer.Serialize(new{boundary="Five actual accessible AV1/H.264/HEVC/4K/VP9 cohorts (retained source hints; compare actual decoded rectangles); unchanged native FFmpeg arguments; original serial and current parallel controller calls; authenticated request context linked directly without hosted Jellyfin middleware; 25ms sampled child RSS excludes parent and can miss peaks; not a latency speedup comparison",results,peakChildren,peakChildRssKiB=peakRssKiB},new JsonSerializerOptions{WriteIndented=true}));
+sealed class Encoder:IMediaEncoder{public string EncoderPath=>"/opt/homebrew/bin/ffmpeg";}

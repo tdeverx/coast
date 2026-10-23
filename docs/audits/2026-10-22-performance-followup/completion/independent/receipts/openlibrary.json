@@ -1,0 +1,29 @@
+{
+  "scope": "Genuine built-in Open Library requests through corrected audit host scope and unchanged production DNS/TLS/validation. Source public metadata only; no catalogue import or fabricated response.",
+  "cases": [
+    {
+      "kind": "search",
+      "ms": 1047.368292,
+      "items": 20,
+      "total": 4506,
+      "completeDtoHash": "3dffd031f7729525089b4027b2529c35f8ae4593fb2adcfd6c5deed794f0e147",
+      "status": "passed"
+    },
+    {
+      "kind": "discover",
+      "ms": 2445.384585,
+      "items": 20,
+      "total": 856,
+      "completeDtoHash": "2bc4fbcf3dade0fb156573c357f5f1ac757966672f38a7a0c1c8c098a352fed1",
+      "status": "passed"
+    },
+    {
+      "kind": "detail",
+      "ms": 2719.8355010000005,
+      "completeDtoHash": "6b13afe09d4a3d8ee183093af5a249da4178fd150b0e61c2b1b6906ccf0a5a49",
+      "status": "passed"
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

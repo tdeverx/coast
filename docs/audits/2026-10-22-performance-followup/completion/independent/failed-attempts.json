@@ -1,0 +1,108 @@
+{
+  "scope": "Failures and instrumentation corrections retained, never counted as passing acceptance.",
+  "items": [
+    {
+      "file": "receipts/unaccepted-source-races-empty-cohort.txt",
+      "accepted": false,
+      "reason": "No album cohort on first selected account; not accepted.",
+      "sha256": "3c120ae8742ce09006aec040b7976700b83365bf724972f6b82a0e4866db7d01"
+    },
+    {
+      "file": "receipts/unaccepted-source-races-selector-error.txt",
+      "accepted": false,
+      "reason": "Harness used wrong-case IncludeItemTypes; no held response; not accepted.",
+      "sha256": "66bcf2b530b2de8bba1cf12f273bdbef292d819e8bf0fafbd97a7a726ad069ee"
+    },
+    {
+      "file": "receipts/unaccepted-source-races-corrected.txt",
+      "accepted": false,
+      "reason": "Native withdrawal passes; foreign-owner expectation incorrectly required AppError instead of existing generic denial. Actual error classification subsequently fixed and replayed.",
+      "sha256": "30be421b2bbbf607d43304a125d4117cb5b6185c419175136bcfde3349a7d8da"
+    },
+    {
+      "file": "receipts/unaccepted-membership-unbalanced-first.txt",
+      "accepted": false,
+      "reason": "Unbalanced measured arms; retained diagnostic, superseded by balanced trial.",
+      "sha256": "e9cdbb890d93eb4d30832682ff2a3a38700c331db325e072c636b9ead9f00815"
+    },
+    {
+      "file": "receipts/unaccepted-reading-refresh-schema-error.txt",
+      "accepted": false,
+      "reason": "Source verification used obsolete reading_sources table; native importer completed. Correct current editions/availability receipt supersedes the harness check.",
+      "sha256": "b50787c8337aa908c3e0b73a698664bc0c15494164642b695ff0f9453a6ee3b3"
+    },
+    {
+      "file": "receipts/unaccepted-browser-engines-first.json",
+      "accepted": false,
+      "reason": "Wrong accessible selector label timed out; not accepted for interaction checks.",
+      "sha256": "400da16ef64d5d8d25e4e077c493b9ed9d82bc18db4da8d35365e9d84b539358"
+    },
+    {
+      "file": "receipts/unaccepted-browser-readers-first.json",
+      "accepted": false,
+      "reason": "Text assertion evaluated on the actual image-only cover; corrected by turning to actual text.",
+      "sha256": "73be3a3d8fd1429887cc9887e17012a118980d45ffd88b50f0f1179c30827b37"
+    },
+    {
+      "file": "receipts/unaccepted-browser-search-before-navigation-fix.json",
+      "accepted": false,
+      "reason": "Actual query-loss bug after action-settings refresh; fixed in Header and replayed.",
+      "sha256": "3871c5ea9f082c2a3739f16519654cc1654c76357e6a958e471c7bd9faf0eb6a"
+    },
+    {
+      "file": "receipts/unaccepted-reading-cache-first.txt",
+      "accepted": false,
+      "reason": "Disabled one of two configured Comic Vine sources; legitimate fallback was mistaken for a denial failure. Correct all-sources-disabled and rotation checks supersede it.",
+      "sha256": "987c256ec9bdf36b1c52515360651b56f6e9e6165aa75c9c1c597f4382fadf74"
+    },
+    {
+      "file": "receipts/unaccepted-api-variants-first.json",
+      "accepted": false,
+      "reason": "Requests raced startup before isolated app was listening. Final health-checked rerun passes.",
+      "sha256": "07d6fc81c67da6b2228d5a6dd2ab64d12948c5529d454b28a89a52cba01fa193"
+    },
+    {
+      "file": "receipts/unaccepted-api-positive-first.json",
+      "accepted": false,
+      "reason": "Same startup race; final rerun passes.",
+      "sha256": "c20480173d3c8ace577a0a1003c7ad007dbf8cebccb717d52f3bde13e15eeb22"
+    },
+    {
+      "file": "receipts/unaccepted-binary-hls-gap.txt",
+      "accepted": false,
+      "reason": "Actual first movie required HLS; no encoder GET launched. Genuine direct source selected separately.",
+      "sha256": "24a831681ac0b3ca41ccee91733d5c99fb12913f19c1551659a8dffed9d8fbb6"
+    },
+    {
+      "file": "receipts/unaccepted-browser-search-provider-virtualization-observation.json",
+      "accepted": false,
+      "reason": "Comic Vine-only DOM expectation ignored merged ranking and virtualized rows; final primary/enrichment busy/settled checks use all real provider cards. Native Comic Vine DTO probe proves the ten-issue primary.",
+      "sha256": "76ec45e6219d4e523e8982a254fe2c27b4405b705fc37cb63375a37695b40fae"
+    },
+    {
+      "file": "receipts/unaccepted-browser-search-restricted-provider-pass.json",
+      "accepted": false,
+      "reason": "Restricted transport omitted Open Library/IGDB hosts; superseded by corrected-provider replay, never successful-source acceptance.",
+      "sha256": "169579d144d3bb959252e0c0ba4dcce1b8ff57d410d981fef15b5274b7c98e1a"
+    },
+    {
+      "file": "receipts/unaccepted-browser-play-positive-for-you.json",
+      "accepted": false,
+      "reason": "Overbroad harness expectation required positive game cards on For You despite absent active personal game cohort. Genuine Discover observations pass in all three engines and are separately derived without changing observations. For You remains an empty-cohort boundary.",
+      "sha256": "9e179ccdef84ca55e12d08a7861bc942c11cd375803bd55c619e55e21c027309"
+    }
+  ],
+  "setupCorrections": [
+    "Archive root was postgres/secrets, not data/postgres; corrected only in owned container.",
+    "POSIX printf did not expand the previous script hexadecimal quoting; corrected copied PostgreSQL config.",
+    "New copy database needed the application role as owner for migrations; marker verified before changing only that copy.",
+    "Production-only image lacked test/build @sveltejs/kit; existing exact installed package plus esm-env copied into disposable test runtime.",
+    "Initial reading integration assertions did not await the new complete stream; corrected tests and removed unnecessary book-only enrichment.",
+    "Private bundlers needed host source/dependency paths; source transcripts retain placeholders, not an executable setup.",
+    "Initial outer transport denied 117 of 1,452 requests because built-in Open Library and IGDB token origins were omitted; restricted workload preserved separately from corrected successful-provider epoch.",
+    "The read-only queue lexical guard initially matched delete inside a quoted job name; no SQL ran. Corrected quote stripping plus PostgreSQL READ ONLY protects the replacement.",
+    "Automatic approval review rejected the thirty-job, three-account repeated native execution proposal before execution; it was not retried indirectly.",
+    "Final full-suite first pass: 1,010 passed, 731 skipped, five failures. Four old Search controller fixtures omitted readComplete and one metadata pin was refreshed in the wrong order. Fixture contract and pin ordering corrected; new actual-controller completion-before-primary regression added. Complete rerun: 1,016 passed, 731 skipped, zero failures. No product code changed for these gate corrections.",
+    "Targeted Play browser first launch failed before navigation under sandbox MachPort permission restrictions. Rerun requires unrestricted browser launch; no product/provider failure inferred."
+  ]
+}

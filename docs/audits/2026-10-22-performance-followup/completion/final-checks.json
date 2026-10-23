@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "status": "passed-local-gates-with-open-audit-acceptance",
+  "gates": [
+    {
+      "name": "unit",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "29755f9af4a715e490bb2d859402d191edf3fb8c546f69bf847a76eb9c473670",
+      "passed": 986,
+      "skipped": 729,
+      "failed": 0,
+      "assertions": 35708,
+      "files": 316
+    },
+    {
+      "name": "svelte-check",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "name": "production-build",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "76e328d7c42280990c0e0d4ae90ed922875fc2597cd4d6b4e929f1ca8ac4a075",
+      "note": "Successful final product-source build; existing large-chunk warning retained."
+    },
+    {
+      "name": "code-inventory",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "1134cbb035f3924d366b01a22d0ce7e964d3c5f36ed28d2bdd23c254a0791de2",
+      "unusedModules": 0,
+      "productionModules": 591
+    },
+    {
+      "name": "ui-inventory",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "7acc131f6f29eb1738fd7b4d6a3db0754a7c285d3d6b8763029b99295029775a",
+      "components": 65,
+      "compositions": 28,
+      "internalRenderers": 10,
+      "delegatedRoutes": 9
+    },
+    {
+      "name": "source-style",
+      "status": "passed",
+      "runtime": "supplementary host Bun research canary 963452075",
+      "logSha256": "ae98e571535efdce073e09fe6c312711f39ad9c52e8890b5fae6f9b0fa79b2c3",
+      "adoptedModules": 56
+    }
+  ],
+  "failedAttemptsRetained": [
+    {
+      "name": "first-full-unit",
+      "logSha256": "9d124233b661db9cb4ed7b6d46a9d022789a05f7702d7a15b0bf0003e748d0d0",
+      "reason": "Existing route-state test mock lacked the newly used navigating export; corrected to match SvelteKit."
+    },
+    {
+      "name": "first-final-typecheck",
+      "logSha256": "33d56360ed4066548198942dcaeb0ca5d1c0dc5aa8e83de23c4d992524871d99",
+      "reason": "Two unknown hash-map values in new audit test needed Record<string,string> annotations; no product runtime change."
+    }
+  ],
+  "realDataRuntime": "shipping Bun 6bb5dc1956505dd1113455f58d4757c924f3ad54; marked disposable actual-data copy only",
+  "earlierEvidencePreserved": {
+    "nativeDatabaseChecks": 55,
+    "shippingFocusedChecks": 33,
+    "companionCropFixtureChecks": 24,
+    "companionJournalFixtureChecks": 11,
+    "note": "Passed in preceding implementation pass at frozen native/plugin owners; not represented as reruns of final host suite. Later changes are UI guard/reset and regression documentation."
+  },
+  "cleanup": {
+    "databaseReceipt": "receipts/cleanup.json",
+    "runtimeReceipt": "receipts/runtime-cleanup.json",
+    "ownedContainerConfirmedAbsent": true,
+    "loopback5175ConfirmedClosed": true,
+    "unrelatedUserEditsPreserved": {
+      "src/lib/ui/components/Avatar.svelte": "1c163afb7867caf5aeb08d8a5a854624a3cc1303a35c04c9d805ea7e5217e878",
+      "src/routes/ui-preview/prop-manifest.json": "ab31ca9f1c8f63bb1689d6e44fa09053a12f3197d12caa5efbe25786ff077c6c"
+    }
+  },
+  "delivery": {
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "dependencyOrSchemaChanges": false
+  },
+  "remaining": "See coverage.json and README.md; hardware/real-format/provider cohorts, hosted authorization, wider failure/load and explicit product decisions remain unaccepted."
+}

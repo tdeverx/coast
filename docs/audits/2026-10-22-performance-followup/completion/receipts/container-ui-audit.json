@@ -1,0 +1,162 @@
+{
+  "scope": "Controlled native containers and idle party on actual retained identities/media; no natural playlist or multi-device claim. Actual largest profile JSON input, unchanged parser. All writes limited to marked copy.",
+  "checks": [
+    {
+      "name": "playlist-count-is-container-not-tracks",
+      "passed": true
+    },
+    {
+      "name": "playlist-membership-count-is-three",
+      "passed": true
+    },
+    {
+      "name": "playlist-private-to-owner",
+      "passed": true
+    },
+    {
+      "name": "playlist-available-via-real-member-access",
+      "passed": true
+    },
+    {
+      "name": "native-playlist-order-preserved",
+      "passed": true
+    },
+    {
+      "name": "playlist-preaborted-read-denied",
+      "passed": true
+    },
+    {
+      "name": "genuine-idle-room-no-media-or-encoder",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "native-idle-heartbeat-preserves-session",
+      "passed": true
+    },
+    {
+      "name": "idle-host-freshness-expires-at-existing-bound",
+      "passed": true
+    },
+    {
+      "name": "idle-room-ordinary-expiry",
+      "passed": true
+    },
+    {
+      "name": "idle-room-uninvited-user-denied",
+      "passed": true
+    },
+    {
+      "name": "real-profile-preview-JSON-value-equality",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "party": [
+    4.0742910000000165,
+    3.7105410000000347,
+    3.253250000000037,
+    3.054916999999989,
+    2.796958000000018,
+    2.62008400000002,
+    2.8530000000000086,
+    2.73358300000001,
+    2.104249999999979,
+    1.8847920000000045,
+    1.8295420000000036,
+    1.5923329999999964,
+    1.573208999999963,
+    1.5467499999999745,
+    1.721416999999974,
+    1.6394169999999804,
+    1.7230420000000208,
+    1.873625000000004,
+    1.6382500000000277,
+    1.5170420000000036
+  ],
+  "preview": {
+    "bytes": 201536,
+    "activityDays": 4366,
+    "calls": 100,
+    "medianMs": 0.2815840000000662,
+    "maxMs": 1.4338749999999436,
+    "inputHash": "d94932d04c5c3b20604f5c1bb40e50a1d380524ce6196002c787b5e9016d9c75",
+    "policy": "Existing owner validates object/array shape only; no new JSON byte/depth/image-decoding budget inferred from this finite workload."
+  },
+  "status": "passed"
+}

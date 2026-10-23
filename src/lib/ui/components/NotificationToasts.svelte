@@ -55,6 +55,11 @@
     gap: 12px;
   }
   :global(.player-active) .toasts {bottom:calc(96px + env(safe-area-inset-bottom));}
+  @media (max-width: 767px) {
+    :global([data-coast-glass]:not(.player-active):has(nav[aria-label="Primary navigation"])) .toasts {
+      bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+  }
   @media (max-width: 600px) {
     .toasts {
       right: 16px;

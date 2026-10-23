@@ -1,0 +1,27 @@
+{
+  "boundary": "Actual linked comic, real reader user and real source GETs. HTTP manifest/page and fresh authorization checks; controlled user feature and generation withdrawal only in marked copy. No fabricated files/provider replies.",
+  "checks": [
+    {
+      "name": "genuine-manifest-response",
+      "passed": false
+    },
+    {
+      "name": "read-only-navigation-preserves-actual-bookmarks",
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "name": "actual-manifest",
+      "status": 403,
+      "format": "cbz",
+      "ms": 29.500917000000015,
+      "bytes": 85
+    }
+  ],
+  "failures": [
+    "genuine-manifest-response"
+  ],
+  "cleanupStatus": 200,
+  "status": "findings"
+}

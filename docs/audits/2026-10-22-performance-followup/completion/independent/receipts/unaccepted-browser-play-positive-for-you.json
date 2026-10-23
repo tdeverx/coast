@@ -1,0 +1,63 @@
+{
+  "scope": "Targeted read-only IGDB popularity metadata endpoint correction after finite soak; no new product build, no provider mutation or crop admission.",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        },
+        {
+          "path": "/for-you",
+          "status": 200,
+          "cards": 0,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        },
+        {
+          "path": "/for-you",
+          "status": 200,
+          "cards": 0,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "routes": [
+        {
+          "path": "/discover",
+          "status": 200,
+          "cards": 40,
+          "providerError": 0
+        },
+        {
+          "path": "/for-you",
+          "status": 200,
+          "cards": 0,
+          "providerError": 0
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "status": "findings"
+}

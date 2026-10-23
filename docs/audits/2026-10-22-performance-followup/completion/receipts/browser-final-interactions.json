@@ -1,0 +1,36 @@
+{
+  "detail": {
+    "during": {
+      "page": "4",
+      "cards": 180
+    },
+    "after": {
+      "cards": 180,
+      "page": "4",
+      "clickedCardRetained": true,
+      "focusRestored": true
+    }
+  },
+  "preview": {
+    "scope": "Same genuine encoded image selected and removed three times; no GPU or maximum image budget claim.",
+    "samples": [
+      {
+        "width": 3053,
+        "height": 4320
+      },
+      {
+        "width": 3053,
+        "height": 4320
+      },
+      {
+        "width": 3053,
+        "height": 4320
+      }
+    ],
+    "urls": {
+      "created": 3,
+      "revoked": 3,
+      "active": 0
+    }
+  }
+}

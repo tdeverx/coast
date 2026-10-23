@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import type { MediaInsights, PersonDetails } from '#lib/media/details.js';
 import type { ProviderTransport } from '../contracts';
 import { tmdbArtwork } from './artwork';
+import { providerCache } from '../../server/utils/provider-cache';
 const text = v.nullish(v.string());
 const num = v.nullish(v.number());
 const person = v.object({
@@ -12,12 +13,10 @@ const person = v.object({
   department: text,
 });
 const names = v.optional(v.array(v.object({ name: v.string() })), []);
-export async function tmdbInsights(
-  request: ProviderTransport,
-  path: string,
-  language: string,
-  page = 1
-): Promise<MediaInsights> {
+type InsightSummary = Omit<MediaInsights, 'reviews' | 'page' | 'pages' | 'incomplete'>;
+const summaries = providerCache<InsightSummary>(100, 15 * 60_000);
+
+async function insightSummary(request: ProviderTransport, path: string, language: string): Promise<InsightSummary> {
   const query = new URLSearchParams({ language, append_to_response: 'credits' });
   const data = v.parse(
     v.object({
@@ -80,6 +79,38 @@ export async function tmdbInsights(
       'Next episode',
       [data.next_episode_to_air.name, data.next_episode_to_air.air_date].filter(Boolean).join(' · ')
     );
+  const crew = new Map<number, MediaInsights['crew'][number]>();
+  for (const p of data.credits?.crew ?? []) {
+    const old = crew.get(p.id);
+    if (old) {
+      if (p.job && !old.character.split(' · ').includes(p.job)) old.character += ` · ${p.job}`;
+    } else
+      crew.set(p.id, {
+        id: p.id,
+        name: p.name,
+        character: p.job ?? p.department ?? '',
+        portrait: tmdbArtwork(p.profile_path, 'w342'),
+      });
+  }
+  return {
+    source: 'TMDB',
+    url: `https://www.themoviedb.org/${path}`,
+    rating: data.vote_count ? (data.vote_average ?? undefined) : undefined,
+    votes: data.vote_count ?? undefined,
+    facts,
+    crew: [...crew.values()],
+  };
+}
+/** Facts/credits have one bounded lifetime across review pages. Source checks precede callers. */
+export async function tmdbInsights(
+  request: ProviderTransport,
+  path: string,
+  language: string,
+  page = 1,
+  scope?: string
+): Promise<MediaInsights> {
+  const read = () => insightSummary(request, path, language);
+  const summary = await (scope ? summaries(JSON.stringify([scope, language, path]), read) : read());
   let incomplete = false;
   let reviews: MediaInsights['reviews'] = [],
     pages = 0;
@@ -114,31 +145,7 @@ export async function tmdbInsights(
       incomplete = true;
     }
   }
-  const crew = new Map<number, MediaInsights['crew'][number]>();
-  for (const p of data.credits?.crew ?? []) {
-    const old = crew.get(p.id);
-    if (old) {
-      if (p.job && !old.character.split(' · ').includes(p.job)) old.character += ` · ${p.job}`;
-    } else
-      crew.set(p.id, {
-        id: p.id,
-        name: p.name,
-        character: p.job ?? p.department ?? '',
-        portrait: tmdbArtwork(p.profile_path, 'w342'),
-      });
-  }
-  return {
-    source: 'TMDB',
-    incomplete,
-    url: `https://www.themoviedb.org/${path}`,
-    rating: data.vote_count ? (data.vote_average ?? undefined) : undefined,
-    votes: data.vote_count ?? undefined,
-    facts,
-    crew: [...crew.values()],
-    reviews,
-    page,
-    pages,
-  };
+  return { ...summary, incomplete, reviews, page, pages };
 }
 export async function tmdbPerson(
   request: ProviderTransport,

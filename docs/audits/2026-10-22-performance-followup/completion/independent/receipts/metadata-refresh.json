@@ -1,0 +1,21 @@
+{
+  "scope": "Bounded genuine metadata refresh of at most 80 existing screen provider identities through the production incremental handler on the marked copy. No catalogue synthesis/exports. Needed to measure current account-scoped membership SQL on current evidence; not a full natural library scan.",
+  "checks": [
+    {
+      "name": "current-native-membership-evidence-positive",
+      "pass": true
+    }
+  ],
+  "failures": [],
+  "requested": 80,
+  "before": 23,
+  "outcome": {
+    "checked": 80,
+    "count": 80,
+    "full": false,
+    "deferred": 0
+  },
+  "ms": 769.409584,
+  "after": 101,
+  "status": "passed"
+}
