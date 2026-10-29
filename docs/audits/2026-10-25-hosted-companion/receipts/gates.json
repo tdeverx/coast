@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-25",
+  "status": "passed-with-explicit-remaining-boundaries",
+  "companion": {
+    "build": "Release net10.0 against Jellyfin 12.1.0 references; hosted runtime 12.3.0",
+    "warnings": 0,
+    "errors": 0,
+    "cropChecks": 29,
+    "journalChecks": 11,
+    "totalChecks": 40,
+    "controlledChildrenAreMediaEvidence": false
+  },
+  "appFocused": {
+    "passed": 57,
+    "failed": 0,
+    "files": 11
+  },
+  "appFull": {
+    "passed": 1028,
+    "skipped": 742,
+    "failed": 0,
+    "files": 322,
+    "elapsedMs": 9080,
+    "note": "Skipped database/integration cases are not new hosted acceptance. No app production code changed in this epoch."
+  },
+  "housekeeping": {
+    "appDiffCheck": "passed",
+    "companionDiffCheck": "passed"
+  },
+  "initialAttempts": [
+    {
+      "kind": "guard metadata not yet fully refreshed",
+      "passed": 54,
+      "failed": 3,
+      "functionalRegressions": 0
+    },
+    {
+      "kind": "outer evidence-index fingerprint still referenced previous manifest",
+      "passed": 56,
+      "failed": 1,
+      "functionalRegressions": 0
+    }
+  ],
+  "remaining": [
+    "Coast party orchestration and physical multi-device synchronization/drift",
+    "Unrelated existing audit boundaries"
+  ],
+  "blanketAcceptance": false
+}

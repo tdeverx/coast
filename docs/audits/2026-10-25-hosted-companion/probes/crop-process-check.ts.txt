@@ -1,0 +1,22 @@
+import {readFile,writeFile,chmod} from 'node:fs/promises';
+const root='/tmp/coast-hosted-20261025',base='http://127.0.0.1:8097';if(JSON.parse(await readFile(root+'/ownership.json','utf8')).marker!=='coast-hosted-20261025')throw Error('ownership');
+const actors=JSON.parse(await readFile(root+'/actors.private.json','utf8')),viewer=actors.find((a:any)=>!a.admin),admin=actors.find((a:any)=>a.admin),item=JSON.parse(await readFile(root+'/selected.private.json','utf8'));
+const auth=(a:any,device:string)=>`MediaBrowser Client="Coast Audit", Device="Isolated copy", DeviceId="${device}", Version="1", Token="${a.token}"`;
+const headers=(a:any,device:string)=>({'Authorization':auth(a,device),'Content-Type':'application/json'});
+const pid='b08ee40269a241819f49ed92bc9dc640',path=base+'/Plugins/'+pid+'/Configuration';
+const r=await fetch(path,{headers:headers(admin,'config')});if(!r.ok)throw Error('config');const config=await r.json();
+await writeFile(root+'/paced-ffmpeg','#!/bin/sh\nexec /Applications/Jellyfin.app/Contents/MacOS/ffmpeg -readrate 0.05 "$@"\n');await chmod(root+'/paced-ffmpeg',0o700);
+async function setting(value:any){const r=await fetch(path,{method:'POST',headers:headers(admin,'config'),body:JSON.stringify(value)});if(!r.ok)throw Error('setting '+r.status);}
+async function count(){const p=Bun.spawn(['ps','-axo','pid,ppid,comm'],{stdout:'pipe'});return (await new Response(p.stdout).text()).split('\n').filter(l=>l.includes('ffmpeg')).length;}
+const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+const results:any={scope:'Hosted middleware and real FFmpeg reading the genuine movie at deliberately reduced input rate; forced failure schedule, not production latency'};
+function crop(device:string,signal?:AbortSignal){return fetch(base+'/Coast/TrailerCrop',{method:'POST',headers:headers(viewer,device),body:JSON.stringify({ItemId:item.Id}),signal});}
+try{
+ await setting({...config,FfmpegPath:root+'/paced-ffmpeg'});
+ let t=performance.now();const timed=await crop('deadline-'+crypto.randomUUID());results.timeout={status:timed.status,body:await timed.json(),elapsedMs:performance.now()-t,remainingProcesses:await count()};
+ if(timed.status!==502||results.timeout.remainingProcesses!==0)throw Error('deadline drain');
+ const device='shared-'+crypto.randomUUID(),one=new AbortController(),two=new AbortController();
+ const p1=crop(device,one.signal).catch(e=>e.name),p2=crop(device,two.signal).catch(e=>e.name);const until=Date.now()+5000;while(await count()===0&&Date.now()<until)await sleep(25);
+ results.sharedChildren=await count();one.abort();await p1;await sleep(300);results.afterFirstAbort=await count();t=performance.now();two.abort();await p2;const stopUntil=Date.now()+5000;while(await count()&&Date.now()<stopUntil)await sleep(25);results.afterFinalAbort=await count();results.finalDrainMs=performance.now()-t;
+ results.passed=results.sharedChildren===1&&results.afterFirstAbort===1&&results.afterFinalAbort===0;if(!results.passed)throw Error('shared cancellation');
+}finally{await setting(config);await writeFile(root+'/crop-process-results.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results,null,2));}

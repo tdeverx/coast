@@ -1,0 +1,37 @@
+{
+  "provenance": "Sanitized observations retained from the first hosted tool output, before the repair; original receipt name was overwritten by the after-run. Values below reproduce that observed output, not a new execution.",
+  "cases": [
+    {
+      "case": "visible-before",
+      "status": 200,
+      "elapsedMs": 22.84
+    },
+    {
+      "case": "cold",
+      "status": 200,
+      "elapsedMs": 492.62,
+      "crop": {
+        "Width": 1902,
+        "Height": 802,
+        "X": 0,
+        "Y": 0
+      }
+    },
+    {
+      "case": "cached",
+      "status": 200,
+      "elapsedMs": 4.29
+    },
+    {
+      "case": "visibility-withdrawn",
+      "status": 404,
+      "elapsedMs": 7.42
+    },
+    {
+      "case": "cached-withdrawn",
+      "status": 200,
+      "elapsedMs": 3.5
+    }
+  ],
+  "bugConfirmed": true
+}

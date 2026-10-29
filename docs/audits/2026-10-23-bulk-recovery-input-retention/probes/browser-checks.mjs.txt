@@ -1,0 +1,73 @@
+import {chromium,webkit,firefox} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/playwright/index.mjs';
+import {createRequire} from 'node:module';
+const sharp=createRequire('/Users/admin/Documents/ChatGPT/coast-new/package.json')('sharp');
+import fs from 'node:fs/promises';
+const root='/tmp/coast-bulk-policy-20261023',base='http://127.0.0.1:5199';
+const {token}=JSON.parse(await fs.readFile(root+'/private/browser-session.json','utf8'));
+const original=await fs.readFile('/Users/admin/Documents/ChatGPT/coast-new/static/coast-mark.png');
+const images={png:original,jpeg:await sharp(original).jpeg().toBuffer(),webp:await sharp(original).webp().toBuffer()};
+const report={scope:'Production JobsSettings/Recovery and UI playground rendered with temporary navigation adapters. Genuine native session, queue handlers and actual retained rows on marker-owned isolated copy. Actual shipped image pixels re-encoded with existing sharp. Oversized/deep/malformed inputs are authored edge cases. No workers, provider delivery, deployed-route or physical-device claim.',engines:[],status:'running'};
+for(const [name,type] of [['chromium',chromium],['webkit',webkit],['firefox',firefox]]){
+ const result={name,version:'',checks:[],errors:[],status:'running'};let browser;
+ const check=(name,pass,details={})=>{result.checks.push({name,pass,...details});if(!pass)throw Error(name);};
+ try{
+  browser=await type.launch({headless:true});result.version=browser.version();
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await context.addCookies([{name:'coast_session',value:token,url:base,httpOnly:true,sameSite:'Lax'}]);
+  await context.addInitScript(()=>{
+   const owned=new Set();window.__images={owned,created:0,revoked:0,decodes:0};
+   const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL),decode=Image.prototype.decode;
+   URL.createObjectURL=value=>{const url=create(value);owned.add(url);window.__images.created++;return url;};
+   URL.revokeObjectURL=url=>{owned.delete(url);window.__images.revoked++;return revoke(url);};
+   Image.prototype.decode=function(){window.__images.decodes++;return decode.call(this);};
+  });
+  const p=await context.newPage();p.on('pageerror',e=>result.errors.push({name:e.name,message:e.message.slice(0,160)}));
+  const status=await p.goto(base);await p.getByText('Bulk task actions',{exact:false}).first().waitFor();
+  check('native-actual-jobs-render',status.status()===200&&await p.getByRole('heading',{name:'Live activity',exact:true}).count()>0);
+  if(name==='chromium'){
+   const before=await (await context.request.get(base+'/bootstrap')).json();const c=before.commands.items.find(x=>x.status==='incomplete');if(!c){check('existing-completed-receipts-visible',before.commands.items.some(x=>x.status==='complete'));}else{
+   await p.route('**/api/v1/queue/task-commands/*/resume',async route=>{const response=await route.fetch();check('lost-response-followed-real-native-commit',response.status()===200);await route.abort('failed');});
+   await p.getByRole('button',{name:'Resume',exact:true}).first().click();
+   await p.waitForFunction(()=>Object.keys(sessionStorage).some(k=>k.startsWith('coast:task-control:')));
+   await p.waitForTimeout(500);await p.unroute('**/api/v1/queue/task-commands/*/resume');await p.reload();
+   await p.getByText('awaiting acknowledgement',{exact:false}).waitFor();
+   const committed=await (await context.request.get(base+'/bootstrap')).json();const done=committed.commands.items.find(x=>x.id===c.id);
+   check('unknown-ack-keeps-reload-recovery',done.status==='complete'&&done.updated===c.total&&done.total>0,{targets:done.total});
+   await p.getByRole('button',{name:'Resume',exact:true}).first().click();
+   await p.waitForFunction(()=>!Object.keys(sessionStorage).some(k=>k.startsWith('coast:task-control:')));
+   const replay=await (await context.request.get(base+'/bootstrap')).json();check('reload-replay-does-not-repeat-effects',JSON.stringify(done)===JSON.stringify(replay.commands.items.find(x=>x.id===c.id))&&replay.providerCalls===0);}
+  }
+  await p.screenshot({path:root+'/evidence/'+name+'-jobs-desktop.png',animations:'disabled'});
+  await p.setViewportSize({width:390,height:844});check('narrow-jobs-no-overflow',await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await p.screenshot({path:root+'/evidence/'+name+'-jobs-mobile.png',animations:'disabled'});
+  await p.setViewportSize({width:1440,height:900});
+  const actual=await (await context.request.get(base+'/bootstrap')).json();
+  await p.goto(base+'/ui-preview?section=components&component=QueueList');await p.getByLabel('Customise component props').waitFor();
+  await p.getByText('Actions data',{exact:true}).click();const input=p.getByLabel('Actions JSON',{exact:true});await input.fill(JSON.stringify(actual.actions));await p.getByRole('button',{name:'Apply data',exact:true}).click();
+  await p.getByRole('button',{name:'Copy configuration',exact:true}).click();const config=p.getByLabel('Configuration',{exact:true});await config.waitFor();const accepted=await config.inputValue();await fs.writeFile(root+'/private/'+name+'-configuration.json',accepted);await fs.writeFile(root+'/private/'+name+'-actions.json',JSON.stringify(actual.actions));
+  check('actual-queue-configuration-preserved',JSON.stringify(JSON.parse(accepted).props.actions)===JSON.stringify(actual.actions),{actualActions:actual.actions.length});
+  await input.fill(JSON.stringify([{x:'z'.repeat(1048576)}]));await p.getByRole('button',{name:'Apply data',exact:true}).click();
+  await p.getByRole('alert').filter({hasText:'1 MiB'}).waitFor();check('oversized-rejection-preserves-accepted-configuration',await config.inputValue()===accepted);
+  await input.fill(JSON.stringify(Array(1001).fill({})));await p.getByRole('button',{name:'Apply data',exact:true}).click();await p.getByRole('alert').filter({hasText:'1,000'}).waitFor();check('structural-limit-visible',await config.inputValue()===accepted);
+  await p.getByRole('button',{name:'Image',exact:true}).click();const file=p.getByLabel('Preview background image',{exact:true}),background=p.locator('.playground-background img');
+  for(const [format,buffer] of Object.entries(images)){
+   const old=await background.count()?await background.getAttribute('src'):null;
+   await file.setInputFiles({name:'actual-coast.'+format,mimeType:'image/'+format,buffer});
+   await p.waitForFunction(old=>{const e=document.querySelector('.playground-background img');return e?.getAttribute('src')!==old&&e?.complete&&e.naturalWidth>0&&window.__images.owned.size===1;},old);
+   check('actual-'+format+'-background-decodes',await p.evaluate(()=>window.__images.owned.size===1));
+  }
+  const beforeUrl=await background.getAttribute('src'),beforeMetrics=await p.evaluate(()=>({created:window.__images.created,decodes:window.__images.decodes}));
+  await file.setInputFiles({name:'vector.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg width="1" height="1"/>')});
+  await p.getByText('Choose a valid static PNG, JPEG or WebP background.',{exact:true}).waitFor();
+  check('invalid-header-keeps-accepted-image-without-url-or-decode',await background.getAttribute('src')===beforeUrl&&await p.evaluate(m=>window.__images.created===m.created&&window.__images.decodes===m.decodes,beforeMetrics));
+  const large=Buffer.alloc(10*1024*1024+1);await file.setInputFiles({name:'too-large.png',mimeType:'image/png',buffer:large});await p.getByText('Choose a background of 10 MiB or smaller.',{exact:true}).waitFor();check('compressed-size-admission-preserves-image',await background.getAttribute('src')===beforeUrl);
+  await p.getByRole('button',{name:'Remove image',exact:true}).click();await background.waitFor({state:'detached'});check('remove-releases-url',await p.evaluate(()=>window.__images.owned.size===0));
+  await file.setInputFiles({name:'actual-coast.png',mimeType:'image/png',buffer:original});await background.waitFor();
+  await p.screenshot({path:root+'/evidence/'+name+'-preview-desktop.png',animations:'disabled'});
+  await p.setViewportSize({width:390,height:844});check('narrow-preview-no-overflow',await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await p.screenshot({path:root+'/evidence/'+name+'-preview-mobile.png',animations:'disabled'});
+  await p.evaluate(async()=>{const {page}=await import('/state.svelte.ts');page.url=new URL(location.origin+'/');});await p.getByRole('heading',{name:'Jobs',exact:true}).waitFor();check('unmount-releases-accepted-url',await p.evaluate(()=>window.__images.owned.size===0));
+  check('no-runtime-error-or-vite-overlay',result.errors.length===0&&await p.locator('vite-error-overlay').count()===0);await context.close();result.status='passed';
+ }catch(e){result.errors.push({stage:'probe',name:e.name,message:e.message.slice(0,260)});result.status='findings';}
+ finally{await browser?.close();report.engines.push(result);await fs.writeFile(root+'/evidence/browser.json',JSON.stringify(report,null,2));}
+}
+report.status=report.engines.every(x=>x.status==='passed')?'passed':'findings';await fs.writeFile(root+'/evidence/browser.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

@@ -20,6 +20,11 @@ export async function pruneTransientRecords() {
     const snapshots=await tx.execute(sql`delete from provider_job_snapshots where action_id in (select s.action_id from provider_job_snapshots s join outbox_actions a on a.id=s.action_id where s.updated_at < now()-interval '30 days' and a.state in ('succeeded','cancelled') order by s.updated_at limit 500 for update of s skip locked) returning action_id`);
     // Preserve the newest bookmark of each edition, including closed sessions.
     const reading=await tx.execute(sql`delete from reading_sessions where id in (select s.id from reading_sessions s where s.expires_at < now()-interval '30 days' and exists(select 1 from reading_sessions newer where newer.user_id=s.user_id and newer.work_id=s.work_id and newer.edition=s.edition and newer.format=s.format and (newer.updated_at,newer.id)>(s.updated_at,s.id)) order by s.updated_at limit 500 for update of s skip locked) returning id`);
-    return { busy: false, removed: sessions.length + previews.length + invites.length + rooms.length + diagnostics.length + staging.length + snapshots.length + reading.length, expired: expired.length, more: [sessions, previews, invites, expired, rooms, diagnostics, staging, snapshots,reading].some(rows => rows.length === 500) };
+    // Keep identity/specification and totals permanently replay-safe. Unfinished
+    // work is never expired, and existing durable history remains untouched.
+    const commands=await tx.execute(sql`update task_control_commands set target_ids=null,outcomes=null,compacted_at=now()
+      where id in (select id from task_control_commands where status<>'incomplete' and compacted_at is null and updated_at < now()-interval '30 days'
+        order by updated_at,id limit 500 for update skip locked) returning id`);
+    return { busy: false, removed: sessions.length + previews.length + invites.length + rooms.length + diagnostics.length + staging.length + snapshots.length + reading.length, expired: expired.length, compacted:commands.length, more: [sessions, previews, invites, expired, rooms, diagnostics, staging, snapshots,reading,commands].some(rows => rows.length === 500) };
   });
 }

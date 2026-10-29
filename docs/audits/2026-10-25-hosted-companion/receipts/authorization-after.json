@@ -1,0 +1,43 @@
+[
+  {
+    "case": "visible-before",
+    "status": 200,
+    "elapsedMs": 40.0,
+    "crop": null,
+    "error": null
+  },
+  {
+    "case": "cold",
+    "status": 200,
+    "elapsedMs": 423.95,
+    "crop": {
+      "Width": 1902,
+      "Height": 802,
+      "X": 0,
+      "Y": 0
+    },
+    "error": null
+  },
+  {
+    "case": "cached",
+    "status": 200,
+    "elapsedMs": 11.29,
+    "crop": {
+      "Width": 1902,
+      "Height": 802,
+      "X": 0,
+      "Y": 0
+    },
+    "error": null
+  },
+  {
+    "case": "visibility-withdrawn",
+    "status": 404,
+    "elapsedMs": 12.9
+  },
+  {
+    "case": "cached-withdrawn",
+    "status": 404,
+    "elapsedMs": 7.94
+  }
+]

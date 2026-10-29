@@ -4,6 +4,7 @@ import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import { ProviderQueueBusyError, requestPriority } from '#lib/server/security/request-priority.js';
 import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '#lib/sharing/policy.js';
+import {h264Level,hevcLevel,vrchatMaximumBitrate,type VrchatVideoCodec} from '#lib/sharing/vrchat-profile.js';
 import {playbackArtwork} from '#lib/media/artwork.js';
 import { acceptedPlayedTime, listenReached } from './listening';
 import { recordMusicListen } from '#lib/music/persistence.server.js';
@@ -159,7 +160,7 @@ async function resourceUrl(sessionId: string, path: string, expiresAt: Date) {
   );
   return `/api/v1/playback/${sessionId}/stream?resource=${encodeURIComponent(token)}`;
 }
-type PlaybackShare = {id:string;viewerId:string;connectionId:string;expiresAt:Date;sourceId?:string;maxBitrate:number};
+type PlaybackShare = {id:string;viewerId:string;connectionId:string;expiresAt:Date;sourceId?:string;maxBitrate:number;vrchatCodec?:VrchatVideoCodec};
 export async function startPlayback(userId: string,input: unknown,
   share?: PlaybackShare, signal?:AbortSignal) {
   return requestPriority.run(0,()=>preparePlayback(userId,input,share,signal));
@@ -220,7 +221,7 @@ async function preparePlayback(
   }[] = [];
   const queried = new Set<string>();
   const [account] = await getDb().select({settings:users.settings}).from(users).where(eq(users.id,userId));
-  const maximum = Math.min(share?.maxBitrate ?? playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity);
+  const maximum = Math.min(share?.maxBitrate ?? Infinity,playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity);
   if(share&&maximum<minimumSharedBitrate)throw new Error('Shared playback requires a bitrate limit of at least 0.5 Mbps.');
   const providerDeviceId = share ? crypto.randomUUID() : userId;
   let providerBusy: ProviderQueueBusyError | undefined;
@@ -241,7 +242,7 @@ async function preparePlayback(
         connection.externalUserId!,
         data.browser,
         maximum,
-        {shared:!!share,deviceId:providerDeviceId,signal}
+        {shared:!!share?.vrchatCodec,vrchatCodec:share?.vrchatCodec,deviceId:providerDeviceId,signal}
       );
       signal?.throwIfAborted();
       for (const source of info.sources) {
@@ -258,8 +259,8 @@ async function preparePlayback(
           if(!duration||Math.abs(duration-data.expectedDuration)>2)continue;
         }
         try {
-          const plan = planPlayback([share?{...source,directPlay:false,directStream:false}:source], data.browser, {
-            delivery: config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
+          const plan = planPlayback([share?.vrchatCodec?{...source,directPlay:false,directStream:false}:source], data.browser, {
+            delivery: share || config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
             maxBitrate: maximum,
             allowTranscoding: config.allowTranscoding,
           },undefined,mediaType);
@@ -283,7 +284,7 @@ async function preparePlayback(
       data.expectedDuration!==undefined ? 'No accessible source matches the synced session edition and duration.' : 'No available version can play on this device under the current playback policy.'
     );
   const { source } = best.plan;
-  const initialCrop=mediaType==='video'?await providerVideoCrop(best.adapter,best.row.providerItem.externalId,source,signal):null;
+  const initialCrop=mediaType==='video'&&!share?.vrchatCodec?await providerVideoCrop(best.adapter,best.row.providerItem.externalId,source,signal):null;
   signal?.throwIfAborted();
   const query = new URLSearchParams({
     static: 'true',
@@ -311,14 +312,17 @@ async function preparePlayback(
     undefined,mediaType,best.instance.baseUrl
   );
   if(share) {
-    streamPath=sharedResourcePath(streamPath,{providerSessionId:best.playSessionId??crypto.randomUUID(),providerDeviceId,maxBitrate:maximum,mediaType});
-    const path=new URL(streamPath,'http://resource.invalid');
-    // Fixed dimensions/segment boundaries let later bitrate-only generations share a timeline.
-    for(const key of [...path.searchParams.keys()])if(['width','height','maxwidth','maxheight','segmentlength'].includes(key.toLowerCase()))path.searchParams.delete(key);
-    path.searchParams.set('MaxWidth',String(Math.min(data.browser.maxWidth??1280,1280)));
-    path.searchParams.set('MaxHeight','720');
-    path.searchParams.set('SegmentLength','3');
-    streamPath=path.pathname+path.search;
+    streamPath=sharedResourcePath(streamPath,{providerSessionId:best.playSessionId??crypto.randomUUID(),providerDeviceId,maxBitrate:maximum,mediaType,vrchatCodec:share.vrchatCodec});
+    if(share.vrchatCodec){
+      const video=source.streams.find(stream=>stream.type==='Video');
+      if(video?.frameRate&&video.width&&video.height){
+        const scale=Math.min(1,1920/video.width,1080/video.height);
+        const path=new URL(streamPath,'http://resource.invalid');
+        for(const key of [...path.searchParams.keys()])if(['level','h264-level','hevc-level'].includes(key.toLowerCase()))path.searchParams.delete(key);
+        path.searchParams.set(`${share.vrchatCodec}-level`,(share.vrchatCodec==='h264'?h264Level:hevcLevel)(video.width*scale,video.height*scale,video.frameRate));
+        streamPath=path.pathname+path.search;
+      }
+    }
   }
   const [state] = await getDb()
     .select()
@@ -437,7 +441,7 @@ async function preparePlayback(
       providerSessionId: best.playSessionId ?? (share ? new URL(streamPath,'http://resource.invalid').searchParams.get('PlaySessionId') : undefined),
       providerDeviceId,
       maxBitrate:maximum,
-      bitrateCeiling:Math.min(config.maxBitrateMbps*1_000_000,data.browser.maxBitrate??Infinity),
+      bitrateCeiling:Math.min(playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal,data.browser.maxBitrate??Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity),
       delivery: best.plan.useHls ? 'hls' : 'direct',
       streamPath,
       positionSeconds: position,
@@ -635,7 +639,7 @@ export async function streamPlayback(
   sessionId: string,
   request: Request,
   shareId?: string,
-  resources?: {url:(path:string,url:string)=>Promise<string>;headersReceived?:()=>Promise<void>}
+  resources?: {url:(path:string,url:string)=>Promise<string>;headersReceived?:()=>Promise<void>;vrchatCodec?:VrchatVideoCodec}
 ): Promise<Response> {
   const [session] = await getDb()
     .select()
@@ -679,7 +683,9 @@ export async function streamPlayback(
   const serverUrl = instanceServerUrl(instance);
   const prefix = new URL(serverUrl).pathname.replace(/\/$/, '');
   path = playbackResourcePath(serverUrl, item.externalId, `${prefix}${path}`,undefined,session.mediaType,instance.baseUrl);
-  if(shareId && session.providerDeviceId && session.providerSessionId && session.maxBitrate)path=sharedResourcePath(path,session as typeof session & {providerSessionId:string;providerDeviceId:string;maxBitrate:number});
+  if(shareId && session.providerDeviceId && session.providerSessionId && session.maxBitrate){
+    path=sharedResourcePath(path,{...session,providerDeviceId:session.providerDeviceId,providerSessionId:session.providerSessionId,maxBitrate:session.maxBitrate,vrchatCodec:resources?.vrchatCodec});
+  }
   if(shareId && request.method!=='HEAD' && /\.(?:ts|m4s)(?:\?|$)/i.test(path)) {
     const ticks=Number(new URL(path,'http://resource.invalid').searchParams.get('runtimeTicks'));
     if(Number.isFinite(ticks)&&ticks>=0)await getDb().update(playbackSessions).set({state:'active',positionSeconds:Math.min(ticks/10_000_000,session.durationSeconds??2592000),updatedAt:new Date()}).where(and(eq(playbackSessions.id,session.id),sql`${playbackSessions.state}<>'stopped'`,sql`${playbackSessions.updatedAt}<now()-interval '5 seconds'`));

@@ -1,0 +1,68 @@
+[
+  {
+    "case": "anonymous",
+    "status": 401,
+    "expected": 401,
+    "elapsedMs": 9.51
+  },
+  {
+    "case": "invalid-token",
+    "status": 401,
+    "expected": 401,
+    "elapsedMs": 1.09
+  },
+  {
+    "case": "invalid-item",
+    "status": 400,
+    "expected": 400,
+    "elapsedMs": 4.33
+  },
+  {
+    "case": "other-credential-cold",
+    "status": 200,
+    "expected": 200,
+    "elapsedMs": 469.0
+  },
+  {
+    "case": "other-credential-withdrawn",
+    "status": 404,
+    "expected": 404,
+    "elapsedMs": 4.45
+  },
+  {
+    "case": "first-credential-still-allowed",
+    "status": 200,
+    "expected": 200,
+    "elapsedMs": 365.17
+  },
+  {
+    "case": "playback-withdrawn",
+    "status": 404,
+    "expected": 404,
+    "elapsedMs": 5.08
+  },
+  {
+    "case": "disabled-user",
+    "status": 401,
+    "expected": 401,
+    "elapsedMs": 0.66
+  },
+  {
+    "case": "feature-disabled-cached",
+    "status": 404,
+    "expected": 404,
+    "elapsedMs": 3.13
+  },
+  {
+    "case": "feature-restored",
+    "status": 200,
+    "expected": 200,
+    "elapsedMs": 332.92
+  },
+  {
+    "case": "logged-out-credential",
+    "status": 401,
+    "expected": 401,
+    "elapsedMs": 0.73
+  }
+]

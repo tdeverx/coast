@@ -1,0 +1,356 @@
+{
+  "epoch": "hosted-companion-2026-10-25",
+  "algorithm": "sha256",
+  "blanketAcceptance": false,
+  "files": {
+    "docs/audits/2026-10-25-hosted-companion/probes/browser-hls-check.ts.txt": "febcca875c6319426657b9f8ee54e705f1ef11cff5c5d0d6bdbf4c37e26efefa",
+    "docs/audits/2026-10-25-hosted-companion/probes/crop-check.py.txt": "d311f5a8fe2a8f83d9a2c6780aa36bfef4597d80cc435c7515df7dc15bcf311d",
+    "docs/audits/2026-10-25-hosted-companion/probes/crop-matrix.py.txt": "6cd747faaf712d147bfecb32927b7d6a3614e8a68a628a3c96e7cfc07aa66767",
+    "docs/audits/2026-10-25-hosted-companion/probes/crop-process-check.ts.txt": "1791bf818c72ef3a4050af6f438f95e627629b2bc9415b773ad793eee78522f3",
+    "docs/audits/2026-10-25-hosted-companion/probes/hls-check.ts.txt": "6a42b9ec402433b4da0435047c33fc03ff3a997b66ebd6bc2c8468bc61ad6fbf",
+    "docs/audits/2026-10-25-hosted-companion/probes/isolate.sb.txt": "8d018b07580f80788fe224c1aeff965c6bc81035771be41aa2b90f397999dd8c",
+    "docs/audits/2026-10-25-hosted-companion/probes/probe.py.txt": "e611928ae61540e4efc6836656d3d6533e0b352717969bab4ec9d747e6d668a8",
+    "docs/audits/2026-10-25-hosted-companion/receipts/authorization-after.json": "2f5edee182e56283dbe0278b447f476b6013c2adbab1a6eb597c52d1b0c3c462",
+    "docs/audits/2026-10-25-hosted-companion/receipts/authorization-before.json": "da736c099555be2f2faa53be5c2fca7ce0272587af17895a8d27981d32d88dc6",
+    "docs/audits/2026-10-25-hosted-companion/receipts/authorization-matrix.json": "016442fc8cf11fc1e11f8b294b618a81e5cc5fd3721f4b67eaac88069325a123",
+    "docs/audits/2026-10-25-hosted-companion/receipts/browser-hls-chromium.json": "9b8665933df5b675596620cec1287f623783cba5398b08b8266f67c543857849",
+    "docs/audits/2026-10-25-hosted-companion/receipts/browser-hls-firefox.json": "dc7f1f7bc916355dcc0b9d3f37b8046f5178b7482dc9279356fb0ac00324f497",
+    "docs/audits/2026-10-25-hosted-companion/receipts/browser-hls-too-early.json": "1a270f4854ad9d52c855f68032d88d598b8b5734435037be9dfb1100cb49c785",
+    "docs/audits/2026-10-25-hosted-companion/receipts/browser-hls-webkit.json": "3d3efecfe1b38bafb0701d80c88293d2269a629be4dfde465379f3d232f819b2",
+    "docs/audits/2026-10-25-hosted-companion/receipts/cleanup.json": "2e7736378fad3a513ae0d6aeb447b069feca2ebc2f02522ab7ae3da9cc554b7d",
+    "docs/audits/2026-10-25-hosted-companion/receipts/companion-build.txt": "0f9d42491a0322c9e4f70787c03e23b4b48a98334a3a56aa6b526d6ae7f7596f",
+    "docs/audits/2026-10-25-hosted-companion/receipts/companion-tests.txt": "a48c4efa1a0d2fd936c148bd7efba910f744c6125a77d446e0a841c2e36590d7",
+    "docs/audits/2026-10-25-hosted-companion/receipts/crop-process.json": "78df4aa6d2e3235005f2f21df2affb553020563ae809a67a1c61f229bf64a455",
+    "docs/audits/2026-10-25-hosted-companion/receipts/environment.json": "c97d7498ed28febdb9e8c480a243d18dde944bf6b9cf4409cf8b51938690336a",
+    "docs/audits/2026-10-25-hosted-companion/receipts/gates.json": "ede9b282b3e6c7315058a520c5f2b2bed89be4e921a45f5ebd405cf540be79aa",
+    "docs/audits/2026-10-25-hosted-companion/receipts/hls-independent.json": "2d0edf1d499afe721bef4a5dec9d8696b310a46f5a61537a8f482076356d2a3d",
+    "docs/audits/2026-10-25-hosted-companion.md": "1ff78934d7d571d170526b825565154ab396d4d39b8e781bb3fcae0dc39de456",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
+    "src/lib/providers/jellyfin/adapter.server.ts": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865",
+    "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
+    "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
+    "src/lib/sharing/allocation.ts": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190",
+    "src/lib/sharing/policy.ts": "f57b503fab7d2658832e232541bb810761eef64c60508675a428c9d2e4e77c2a",
+    "src/lib/sharing/service.server.ts": "4992f43b8ce44c76c573d56f6d2589ddbcddc6754ba0da80da9959d2f5a5e227",
+    "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
+    "src/lib/sharing/leases.server.ts": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9",
+    "src/lib/sharing/ShareAction.svelte": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4",
+    "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
+    "src/lib/playback/service.server.ts": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5",
+    "src/lib/ui/work-menu/ScreenActions.svelte": "4799f15383d72f89f5e7ba36bbc7289850587752c5588bb813a8a7c2d0d15a81",
+    "src/routes/+layout.server.ts": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09",
+    "src/lib/settings/sections.ts": "c1b4246992e438e089a999398754ae097070b4fc59c2d267ec15b233c9064288",
+    "src/lib/server/config.ts": "8b328917cec1ab14760559283e1fb77a5b3c3d640fee848e79102f396bf528c4",
+    "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+    "src/routes/settings/[[section]]/+page.svelte": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+    "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
+    "tests/sharing-db.test.ts": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3",
+    "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
+    "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
+    "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+    "docs/audits/2026-10-28-share-destinations/pins.json": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270",
+    "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce",
+    "tests/profile-db.test.ts": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3"
+  },
+  "companion": {
+    "baseline": "6077aee",
+    "files": {
+      "Coast/Api/TrailerCropController.cs": "f0093ca135cc5d1d0608b9c5576b45b34dddc9f9365427c031bbd7833284e6a4",
+      "Coast/Jellyfin.Plugin.Coast.csproj": "bba5a4d844b4924c0b31ca4af753139f0af64c5a57db0b83facf5b6fd6148fd4",
+      "README.md": "8af8b8c379098181f79cc84f623f14dfb74392e2cb8221815a0428e92a7fd961",
+      "Tests/Coast.Journal.Tests.csproj": "1989f13676a17bc933ad24482f2aaa70f853f9dc8e7a5f8714f9ef28beed793d",
+      "Tests/TrailerCropChecks.cs": "4c689a1d71446246bb775a4baa1cc9d74263c9061396863642308e11ca94afa7",
+      "Tests/TrailerCropStubs.cs": "367b8b676b42a4cfe7d9c5fe43ea3de586666c572355072dfe9c45dcd2fb5040"
+    }
+  },
+  "remaining": [
+    "Coast party orchestration and multi-device synchronization/drift",
+    "Physical-device decoder/GPU/accessibility acceptance",
+    "Unrelated queue-job, format, cohort and capacity boundaries"
+  ],
+  "note": "Finite native macOS hosted acceptance; current source pins do not relabel earlier evidence.",
+  "reviewedOwnerEpochs": [
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "9644b56298c7076c8178e2cb3473611403164ef558d49c4678ff590cb53b3978",
+          "currentSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e"
+        },
+        {
+          "path": "src/lib/providers/jellyfin/adapter.server.ts",
+          "previousSha256": "7b5af6ccc4ff481ebc1d996c605584d6cdce7c0c1cd6be231c2d09e3f95fdfe7",
+          "currentSha256": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865"
+        },
+        {
+          "path": "src/lib/sharing/vrchat-profile.ts",
+          "currentSha256": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21"
+        },
+        {
+          "path": "src/lib/sharing/allocation.ts",
+          "currentSha256": "e588a962664199c177b8cd000e49370ecb390edbeb2a892001ddba1ab63e275c"
+        },
+        {
+          "path": "src/lib/sharing/policy.ts",
+          "currentSha256": "ec28beb3405d9f21424743a444770ea346c73cbc079b574b8554dde39faf4a4d"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "currentSha256": "841d599e88c76d08dc883b0c691f65c94cafb4fe73785305eaed11ec2d231fc1"
+        },
+        {
+          "path": "src/lib/sharing/external.server.ts",
+          "currentSha256": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba"
+        },
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "currentSha256": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9"
+        },
+        {
+          "path": "src/lib/sharing/ShareAction.svelte",
+          "currentSha256": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4"
+        },
+        {
+          "path": "src/lib/providers/contracts.ts",
+          "currentSha256": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04"
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "currentSha256": "421e3048de0b7c0f8feed2aa3f6437190c055e6a8ada448d062d6bc3c7d6ef91"
+        },
+        {
+          "path": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "currentSha256": "5033c58e51a32fff3b4169f8b9333d368f5af23b8b28a5ca51ba8e72c8687f15"
+        },
+        {
+          "path": "src/routes/+layout.server.ts",
+          "currentSha256": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09"
+        },
+        {
+          "path": "src/lib/settings/sections.ts",
+          "currentSha256": "c1b4246992e438e089a999398754ae097070b4fc59c2d267ec15b233c9064288"
+        },
+        {
+          "path": "src/lib/server/config.ts",
+          "currentSha256": "8b328917cec1ab14760559283e1fb77a5b3c3d640fee848e79102f396bf528c4"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "currentSha256": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "currentSha256": "6756b45619a0b1ba3648d7a4625c32bbb0a438abf0f101276b51b0bbf8ca544c"
+        },
+        {
+          "path": "tests/share-profiles.test.ts",
+          "currentSha256": "291b54c907729691e753874657be4fd3898e582d79f1cb42e4153710ba106d9b"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "currentSha256": "050ceb3641c9b1dc35a6e5c0b77be864ac76ce2371bf5d665d900cbacf74a74b"
+        },
+        {
+          "path": "tests/sharing.test.ts",
+          "currentSha256": "9913791a4dce8cebd35cb1e4c1caba9b392d08b27546a8957e86c3531e85b5c6"
+        },
+        {
+          "path": "drizzle/0066_share_destinations.sql",
+          "currentSha256": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389"
+        },
+        {
+          "path": "drizzle/meta/_journal.json",
+          "currentSha256": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "currentSha256": "736c3d3454b026296de49a491dc7a6a051a23f214ee36ec94ad72eb6108f2405"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "736c3d3454b026296de49a491dc7a6a051a23f214ee36ec94ad72eb6108f2405",
+          "currentSha256": "4591a0255de6f862befdb7bc17f289f5c4b9e6bc89981b358038c45fc07ba816"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "4591a0255de6f862befdb7bc17f289f5c4b9e6bc89981b358038c45fc07ba816",
+          "currentSha256": "24122198a6fbf7e24b4a414e953a92f386c413307a739605ffdf2c491ff8a230"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "src/lib/sharing/policy.ts",
+          "previousSha256": "ec28beb3405d9f21424743a444770ea346c73cbc079b574b8554dde39faf4a4d",
+          "currentSha256": "01a956741cad10b66bd9db84254c992ee3c37984a7a99116e53d2c4efa4bcc23"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "previousSha256": "841d599e88c76d08dc883b0c691f65c94cafb4fe73785305eaed11ec2d231fc1",
+          "currentSha256": "4992f43b8ce44c76c573d56f6d2589ddbcddc6754ba0da80da9959d2f5a5e227"
+        },
+        {
+          "path": "tests/share-profiles.test.ts",
+          "previousSha256": "291b54c907729691e753874657be4fd3898e582d79f1cb42e4153710ba106d9b",
+          "currentSha256": "d953c16abe0fc5cb7783333704ab2ba30ba159c77cb4eb8c373d427cc0066435"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "050ceb3641c9b1dc35a6e5c0b77be864ac76ce2371bf5d665d900cbacf74a74b",
+          "currentSha256": "8fc8d376f0369c62044d6e1ef2d08775f000bcbaca250b0675999c1d14ece1c7"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "24122198a6fbf7e24b4a414e953a92f386c413307a739605ffdf2c491ff8a230",
+          "currentSha256": "157739acf140ad89b6b70440649403fc239e6fe88f19a0224bb95b6cc9f0c472"
+        },
+        {
+          "path": "src/routes/api/share/[...path]/+server.ts",
+          "currentSha256": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "src/lib/sharing/allocation.ts",
+          "previousSha256": "e588a962664199c177b8cd000e49370ecb390edbeb2a892001ddba1ab63e275c",
+          "currentSha256": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190"
+        },
+        {
+          "path": "src/lib/sharing/policy.ts",
+          "previousSha256": "01a956741cad10b66bd9db84254c992ee3c37984a7a99116e53d2c4efa4bcc23",
+          "currentSha256": "f57b503fab7d2658832e232541bb810761eef64c60508675a428c9d2e4e77c2a"
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "previousSha256": "421e3048de0b7c0f8feed2aa3f6437190c055e6a8ada448d062d6bc3c7d6ef91",
+          "currentSha256": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "6756b45619a0b1ba3648d7a4625c32bbb0a438abf0f101276b51b0bbf8ca544c",
+          "currentSha256": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472"
+        },
+        {
+          "path": "tests/share-profiles.test.ts",
+          "previousSha256": "d953c16abe0fc5cb7783333704ab2ba30ba159c77cb4eb8c373d427cc0066435",
+          "currentSha256": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "8fc8d376f0369c62044d6e1ef2d08775f000bcbaca250b0675999c1d14ece1c7",
+          "currentSha256": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3"
+        },
+        {
+          "path": "tests/sharing.test.ts",
+          "previousSha256": "9913791a4dce8cebd35cb1e4c1caba9b392d08b27546a8957e86c3531e85b5c6",
+          "currentSha256": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "157739acf140ad89b6b70440649403fc239e6fe88f19a0224bb95b6cc9f0c472",
+          "currentSha256": "b221b341931fa0382e1bc2eb498391d19276f35576a558183c5835b72954f2c4"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "b221b341931fa0382e1bc2eb498391d19276f35576a558183c5835b72954f2c4",
+          "currentSha256": "9b1b77fa80d090d74c7d049cdd6a4a61c5949751562af3f8fc56371de3569b1d"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "previousSha256": "5033c58e51a32fff3b4169f8b9333d368f5af23b8b28a5ca51ba8e72c8687f15",
+          "currentSha256": "4799f15383d72f89f5e7ba36bbc7289850587752c5588bb813a8a7c2d0d15a81"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "9b1b77fa80d090d74c7d049cdd6a4a61c5949751562af3f8fc56371de3569b1d",
+          "currentSha256": "6955d0a6db391c5c580492855fc20a5e6680dbf40b440b3012bb1f6307e5dd7a"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "6955d0a6db391c5c580492855fc20a5e6680dbf40b440b3012bb1f6307e5dd7a",
+          "currentSha256": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12",
+          "currentSha256": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49",
+          "currentSha256": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270"
+        },
+        {
+          "path": "tests/profile-db.test.ts",
+          "currentSha256": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    }
+  ]
+}

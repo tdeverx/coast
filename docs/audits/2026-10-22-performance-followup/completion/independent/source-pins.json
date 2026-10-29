@@ -3,9 +3,9 @@
   "baseline": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
   "files": {
     "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
-    "docs/audits/2026-10-17-app-performance/follow-up-roadmap.json": "779c0954328c45cc4264b9f1c80effad31d54d9c8922b4307a07c540a5655471",
-    "docs/audits/2026-10-17-app-performance/follow-up-roadmap.md": "8b967434c58335ce12e9a24a9c24331aa9e668166d664cc0909b834a8bc747a2",
-    "docs/roadmap.md": "378d97dd5363b0ca38c45a007399959b6a4f689ce6646701ced6c88ae8e1c189",
+    "docs/audits/2026-10-17-app-performance/follow-up-roadmap.json": "f148ec435c2da69b535b6b8d31303da8ffb18e290467db2de3948aaf14c3258e",
+    "docs/audits/2026-10-17-app-performance/follow-up-roadmap.md": "854e0e9aa9beac03fd0865f2923045e58aa81fd07f65d32c042d7d5e7f1256c1",
+    "docs/roadmap.md": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "src/lib/catalogue/details.server.ts": "3eddaac9c7aa5a6cb3c29b28d6d042bdf644347a700f3f2954d2e18253771139",
     "src/lib/catalogue/service.server.ts": "f5e6e596ca03a6cd766909f733e9df2c0ce83b21e938f46d408698af568a7569",
@@ -22,11 +22,11 @@
     "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
     "src/routes/search/+page.server.ts": "8ff050474443315af765bbca75eaf87aecac8ddcf220d20c646422f88213ce3a",
     "src/routes/search/+page.svelte": "27d340507661d8de5fdfc979b656413a7b7d0d7b225dc6b3a6f8a0b86ee8c917",
-    "src/routes/ui-preview/prop-manifest.json": "ab31ca9f1c8f63bb1689d6e44fa09053a12f3197d12caa5efbe25786ff077c6c",
+    "src/routes/ui-preview/prop-manifest.json": "52236775dd00a601e33ae51e110e9c16d165ee717e52ee33b872819d92bf8ef2",
     "tests/action-navigation.test.ts": "a84ba0338f78290d1b530a2a51d4de751d914ad81b87ee8b582da5b2ca6fb371",
     "tests/jellyfin-music-persistence-db.test.ts": "5fe8860604673aa8331fdb0bb98bfae1b55bd13483548ebad1879e3bff8f099b",
     "tests/media-details.test.ts": "06d107d1ea60624254b4de950e093b219f66089de79412bd28ab60074c084175",
-    "tests/performance-audit-register.test.ts": "6b11f0435e41e2d2fb0da797944f3bd4d791daeb6a85bae8b3a749e37a5bc86d",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "tests/provider-live-db.test.ts": "f29e5bfcab4e3868a17f9264e32b8c6352355c4f29897f9f6439712e0c90026c",
     "tests/reading-db.test.ts": "2e9ed9fc19f5c56a2aa465090d17d04649d94e1a8ccf3419a9fcdd33d49495a1",
     "tests/reading-providers.test.ts": "45a076f3952242ab0f1288ffc0694f05c243fae9e406612c518e071a9abcb94b",
@@ -36,11 +36,119 @@
   "companion": {
     "baseline": "e5bac3461ea00f9eb783019fd483c28d1fccefc7",
     "files": {
-      "Coast/Api/TrailerCropController.cs": "46445747bab6173d3490bd7221b027c3a6ba60d40112a2cf37608bbb6ccf56cd",
-      "Tests/TrailerCropChecks.cs": "90270ec7398d12bcbd067dacb4058dfe5fb398700e5ef7378ecfaf5b0ecb67f1",
-      "Tests/TrailerCropStubs.cs": "d30bbe3628e81411c904b96de26fe12fc61cf3e7ec8b93e60ff029a751805fe7",
-      "README.md": "35b7867bb404923b05d7ef7f8a3e73d12895e4f3df476652db6b56ecb001d123"
+      "Coast/Api/TrailerCropController.cs": "f0093ca135cc5d1d0608b9c5576b45b34dddc9f9365427c031bbd7833284e6a4",
+      "Tests/TrailerCropChecks.cs": "4c689a1d71446246bb775a4baa1cc9d74263c9061396863642308e11ca94afa7",
+      "Tests/TrailerCropStubs.cs": "367b8b676b42a4cfe7d9c5fe43ea3de586666c572355072dfe9c45dcd2fb5040",
+      "README.md": "8af8b8c379098181f79cc84f623f14dfb74392e2cb8221815a0428e92a7fd961"
     }
   },
-  "note": "Current continuation owners; earlier receipts retain their own epoch. Supplementary host gates are distinct from shipping Linux real-data probes."
+  "note": "Current continuation owners; earlier receipts retain their own epoch. Supplementary host gates are distinct from shipping Linux real-data probes.",
+  "reviewedOwnerEpochs": [
+    {
+      "epoch": "selected-policy-2026-10-23",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-17-app-performance/follow-up-roadmap.json",
+          "previousSha256": "779c0954328c45cc4264b9f1c80effad31d54d9c8922b4307a07c540a5655471",
+          "currentSha256": "f148ec435c2da69b535b6b8d31303da8ffb18e290467db2de3948aaf14c3258e"
+        },
+        {
+          "path": "docs/audits/2026-10-17-app-performance/follow-up-roadmap.md",
+          "previousSha256": "8b967434c58335ce12e9a24a9c24331aa9e668166d664cc0909b834a8bc747a2",
+          "currentSha256": "854e0e9aa9beac03fd0865f2923045e58aa81fd07f65d32c042d7d5e7f1256c1"
+        },
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "378d97dd5363b0ca38c45a007399959b6a4f689ce6646701ced6c88ae8e1c189",
+          "currentSha256": "de0e931efd0a577a808c483c3a8df229f2e1a563bb9cfc80af708f3de033a08f"
+        },
+        {
+          "path": "src/routes/ui-preview/prop-manifest.json",
+          "previousSha256": "ab31ca9f1c8f63bb1689d6e44fa09053a12f3197d12caa5efbe25786ff077c6c",
+          "currentSha256": "52236775dd00a601e33ae51e110e9c16d165ee717e52ee33b872819d92bf8ef2"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "6b11f0435e41e2d2fb0da797944f3bd4d791daeb6a85bae8b3a749e37a5bc86d",
+          "currentSha256": "afd7a31df4e13399e9959510497e6525f878e2d3dbd064b14fd650f563e8f9b1"
+        }
+      ],
+      "report": "docs/audits/2026-10-23-bulk-recovery-input-retention.md",
+      "evidence": "docs/audits/2026-10-23-bulk-recovery-input-retention/pins.json",
+      "note": "Current owner refresh after selected-policy acceptance. Historical raw measurements/source fingerprints remain unchanged; this does not promote unrelated blocked acceptance."
+    },
+    {
+      "epoch": "hosted-companion-2026-10-25",
+      "report": "docs/audits/2026-10-25-hosted-companion.md",
+      "changes": [
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "de0e931efd0a577a808c483c3a8df229f2e1a563bb9cfc80af708f3de033a08f",
+          "currentSha256": "8e54d60fe8dad7e2801c8fdf87a1b209c48e84c3854f9b787847635543e0ffcf"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "afd7a31df4e13399e9959510497e6525f878e2d3dbd064b14fd650f563e8f9b1",
+          "currentSha256": "9644b56298c7076c8178e2cb3473611403164ef558d49c4678ff590cb53b3978"
+        },
+        {
+          "path": "../coast-plugin/Coast/Api/TrailerCropController.cs",
+          "previousSha256": "46445747bab6173d3490bd7221b027c3a6ba60d40112a2cf37608bbb6ccf56cd",
+          "currentSha256": "f0093ca135cc5d1d0608b9c5576b45b34dddc9f9365427c031bbd7833284e6a4"
+        },
+        {
+          "path": "../coast-plugin/Tests/TrailerCropChecks.cs",
+          "previousSha256": "90270ec7398d12bcbd067dacb4058dfe5fb398700e5ef7378ecfaf5b0ecb67f1",
+          "currentSha256": "4c689a1d71446246bb775a4baa1cc9d74263c9061396863642308e11ca94afa7"
+        },
+        {
+          "path": "../coast-plugin/Tests/TrailerCropStubs.cs",
+          "previousSha256": "d30bbe3628e81411c904b96de26fe12fc61cf3e7ec8b93e60ff029a751805fe7",
+          "currentSha256": "367b8b676b42a4cfe7d9c5fe43ea3de586666c572355072dfe9c45dcd2fb5040"
+        },
+        {
+          "path": "../coast-plugin/README.md",
+          "previousSha256": "35b7867bb404923b05d7ef7f8a3e73d12895e4f3df476652db6b56ecb001d123",
+          "currentSha256": "8af8b8c379098181f79cc84f623f14dfb74392e2cb8221815a0428e92a7fd961"
+        }
+      ],
+      "note": "Reviewed current-owner metadata only; earlier media/SQL observations retain their recorded source epoch. Hosted receipts cover the changed companion; party/device acceptance remains open."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "9644b56298c7076c8178e2cb3473611403164ef558d49c4678ff590cb53b3978",
+          "currentSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "8e54d60fe8dad7e2801c8fdf87a1b209c48e84c3854f9b787847635543e0ffcf",
+          "currentSha256": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    }
+  ]
 }

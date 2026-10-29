@@ -1,0 +1,8 @@
+{
+  "status": "healthy",
+  "image": "coast:share-20261028-a93aedbbf804",
+  "build": "fd9bd304-share-a93aedbbf804",
+  "originalImage": "coast:quest-20261024-e28708f5eccc",
+  "rollbackUsed": false,
+  "dataAndPostgresMountsPreserved": true
+}

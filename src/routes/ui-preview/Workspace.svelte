@@ -42,7 +42,7 @@
       <Field label="Preview background color"><input type="color" value={canvasSettings.color} oninput={event=>updateCanvas({color:event.currentTarget.value})} /></Field>
       <div class="row"><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#ffffff'})}>White</Button><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#000000'})}>Black</Button></div>
     {:else if canvasSettings.background === 'image'}
-      <Field label="Preview background image"><input bind:this={backgroundImageInput} type="file" accept="image/*" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
+      <Field label="Preview background image"><input bind:this={backgroundImageInput} type="file" accept="image/png,image/jpeg,image/webp" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
       {#if canvasSettings.image}<Button emphasis="subtle" onclick={removeBackgroundImage}>Remove image</Button>{/if}
     {/if}
 

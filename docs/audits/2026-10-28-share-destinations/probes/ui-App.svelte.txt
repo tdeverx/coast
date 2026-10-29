@@ -1,0 +1,20 @@
+<script lang="ts">
+ import '/Users/admin/Documents/ChatGPT/coast-new/src/app.css';
+ import ShareAction from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/sharing/ShareAction.svelte';
+ import Button from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/Button.svelte';
+ import {providePreviewClient} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/client-context';
+ import {page} from './state.svelte';
+ let open=$state(false),target=$state<'website'|'vrchat'>('website');
+ providePreviewClient(async(input,init)=>{
+  const url=String(input);if(url.includes('sharing/sources'))return Response.json([{id:'11111111-1111-4111-8111-111111111111',name:'Test library'}]);
+  if(init?.method==='POST'){(window as any).submitted=JSON.parse(String(init.body));return Response.json({id:'22222222-2222-4222-8222-222222222222',token:'a'.repeat(43)});}
+  return Response.json({ok:true});
+ });
+</script>
+<svelte:head><title>Share destinations acceptance</title></svelte:head>
+<main class="content page">
+ <h1>Share destinations</h1>
+ <label><input type="checkbox" bind:checked={page.data.allowVrchatHevc}/>Admin H.265 policy fixture</label>
+ <Button menu text="Movie actions"><Button item icon="friends" onclick={()=>{target='website';open=true;}}>Share</Button><Button item icon="play" onclick={()=>{target='vrchat';open=true;}}>Share to VRChat</Button></Button>
+ <ShareAction bind:open title="Test movie" workId="33333333-3333-4333-8333-333333333333" {target}/>
+</main>

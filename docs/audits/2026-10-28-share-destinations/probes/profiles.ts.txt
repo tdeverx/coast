@@ -1,0 +1,37 @@
+import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {JellyfinAdapter} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/providers/jellyfin/adapter.server.ts';
+import {sharedResourcePath} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/sharing/policy.ts';
+import {h264Level,hevcLevel,vrchatMaximumBitrate} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/sharing/vrchat-profile.ts';
+const root='/tmp/coast-share-real-20261028',base='http://127.0.0.1:8097';
+if(JSON.parse(await readFile(root+'/ownership.json','utf8')).marker!=='coast-share-real-20261028')throw Error('ownership');
+const actor=JSON.parse(await readFile(root+'/actor.private.json','utf8')),item=JSON.parse(await readFile(root+(process.argv[2]==='highfps'?'/highfps.private.json':'/item.private.json'),'utf8'));
+const results:any={scope:'Production Jellyfin adapter and VRChat path policy, genuine movie, fresh clone-only login; not physical Quest acceptance',runs:[]};
+const ffmpeg='/Applications/Jellyfin.app/Contents/MacOS/ffmpeg',ffprobe='/Applications/Jellyfin.app/Contents/MacOS/ffprobe';
+const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+async function capture(args:string[]){const p=Bun.spawn(args,{stdout:'pipe',stderr:'pipe'});const [out,err]=await Promise.all([new Response(p.stdout).text(),new Response(p.stderr).text()]);return {code:await p.exited,out,err};}
+for(const codec of ['h264','hevc'] as const){
+ const device='profile-'+crypto.randomUUID(),requests:any[]=[];
+ const adapter=new JellyfinAdapter(async(path,init)=>{const u=new URL(path,base);if(u.origin!==base)throw Error('origin');if(path.includes('/PlaybackInfo'))requests.push(JSON.parse(String(init?.body)));const r=await fetch(u,{...init,signal:AbortSignal.timeout(25000)});if(!r.ok)throw Error('provider '+r.status);const text=await r.text();return text?JSON.parse(text):null;},device,actor.token);
+ let info:any;
+ try{
+  info=await adapter.playbackInfo(item.id,actor.id,{containers:[],videoCodecs:[codec],audioCodecs:['aac'],nativeHls:true,hlsJs:false},vrchatMaximumBitrate,{shared:true,vrchatCodec:codec,deviceId:device});
+  const source=info.sources.find(s=>s.transcodingUrl);if(!source)throw Error('no transcode');
+  let path=sharedResourcePath(source.transcodingUrl!,{providerSessionId:info.playSessionId,providerDeviceId:device,maxBitrate:vrchatMaximumBitrate,mediaType:'video',vrchatCodec:codec});
+  const url=new URL(path,base);if(url.origin!==base)throw Error('origin');const video=source.streams.find(s=>s.type==='Video');
+  if(video?.frameRate&&video.width&&video.height){const scale=Math.min(1,1920/video.width,1080/video.height);for(const k of [...url.searchParams.keys()])if(['level','h264-level','hevc-level'].includes(k.toLowerCase()))url.searchParams.delete(k);url.searchParams.set(codec+'-level',(codec==='h264'?h264Level:hevcLevel)(video.width*scale,video.height*scale,video.frameRate));}
+  const fpsOverrides=[...url.searchParams.keys()].filter(k=>k.toLowerCase().includes('framerate'));url.searchParams.set('api_key',actor.token);
+  const master=await(await fetch(url)).text();await writeFile(root+'/'+codec+'-master.private.m3u8',master);
+  const codecs=[...master.matchAll(/CODECS="([^"]+)"/g)].map(m=>m[1]);
+  const sample=root+'/'+codec+'-sample.ts';
+  const encoded=await capture(['/usr/bin/sandbox-exec','-f',root+'/isolate.sb',ffmpeg,'-hide_banner','-loglevel','error','-i',url.href,'-t','4','-c','copy','-y',sample]);
+  await writeFile(root+'/'+codec+'-encode.private.log',encoded.err);if(encoded.code)throw Error(codec+' decoder failed; private log retained');
+  const probe=await capture([ffprobe,'-v','error','-show_streams','-of','json',sample]);if(probe.code)throw Error('probe failed');
+  const streams=JSON.parse(probe.out).streams.map((s:any)=>({type:s.codec_type,codec:s.codec_name,profile:s.profile,pixelFormat:s.pix_fmt,width:s.width,height:s.height,level:s.level,frameRate:s.avg_frame_rate,channels:s.channels,sampleRate:s.sample_rate,bFrames:s.has_b_frames}));
+  const volume=await capture([ffmpeg,'-hide_banner','-i',sample,'-map','0:a:0','-af','volumedetect','-f','null','-']);
+  const audio=streams.find((s:any)=>s.type==='audio');const v=streams.find((s:any)=>s.type==='video');
+  const row={codec,sourceFrameRate:video?.frameRate,fpsOverrides,masterCodecs:codecs,deviceProfile:requests[0].DeviceProfile,streams,audioMeanDb:volume.err.match(/mean_volume: ([^ ]+)/)?.[1],audioPeakDb:volume.err.match(/max_volume: ([^ ]+)/)?.[1],passed:audio?.codec==='aac'&&audio?.profile==='LC'&&audio?.channels===2&&audio?.sampleRate==='48000'&&v?.codec===codec&&fpsOverrides.length===0&&codecs.length>0&&codecs.every(c=>c.includes('mp4a.40.2'))&&Math.abs(Number(v.frameRate.split('/')[0])/Number(v.frameRate.split('/')[1])-video.frameRate)<0.01&&v.level>=Number((codec==='h264'?h264Level:hevcLevel)(v.width,v.height,video.frameRate))};
+  results.runs.push(row);console.log(JSON.stringify(row,null,2));if(!row.passed)throw Error('profile acceptance failed');
+ }finally{if(info?.playSessionId)await adapter.stopEncoding(device,info.playSessionId);await sleep(1700);}
+}
+results.remainingMediaFiles=(await readdir(root+'/transcodes')).filter(x=>x!=='.jellyfin-transcode').length;results.passed=results.runs.length===2&&results.runs.every((r:any)=>r.passed)&&results.remainingMediaFiles===0;
+await writeFile(root+(process.argv[2]==='highfps'?'/highfps-results.json':'/profile-results.json'),JSON.stringify(results,null,2));console.log('All profile checks',results.passed);if(!results.passed)throw Error('profile cleanup');

@@ -84,6 +84,7 @@ export const policyFields = [
   'playbackDelivery',
   'maxBitrateMbps',
   'allowTranscoding',
+  'allowVrchatHevc',
   'subtitleDefault',
   'subtitleLanguages',
   'metadataSource',

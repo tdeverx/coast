@@ -1,3 +1,4 @@
+import {resumeTaskCommand} from '../src/lib/server/queue/task-commands.server';
 import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {getDb,getSql} from '../src/lib/server/db';
 import {users,providerInstances,providerConnections,outboxActions} from '../src/lib/server/db/schema';
@@ -49,15 +50,17 @@ run('task retry can proceed beside another user and task cancellation retains ru
  await db`update provider_connections set account_generation=${crypto.randomUUID()} where id=${connections[153]}`;
  await db`insert into notifications(user_id,kind,title,source_key) values(${ids[151]},'external-action','Fixture',${`outbox:${failed}`}),(${ids[152]},'external-action','Fixture',${`outbox:${blocked}`})`;
  await expect(listTaskActions({...actor,role:'user'})).rejects.toThrow('Administrator');
- await expect(updateTaskActions({...actor,role:'user'},'jellyfin.live',instance,'cancel')).rejects.toThrow('Administrator');
- const retried=await updateTaskActions(actor,'jellyfin.live',instance,'retry');
+ await expect(updateTaskActions({...actor,role:'user'},'jellyfin.live',instance,'cancel',crypto.randomUUID())).rejects.toThrow('Administrator');
+ const admitted=await updateTaskActions(actor,'jellyfin.live',instance,'retry',crypto.randomUUID());
+ const retried=await resumeTaskCommand(actor,admitted.id,admitted.revision);
  expect((await db`select state from outbox_actions where id=${blocked}`)[0].state).toBe('failed');
  expect((await db`select state from outbox_actions where id=${unrelated}`)[0].state).toBe('failed');
  expect((await db`select state from outbox_actions where id=${obsolete}`)[0].state).toBe('failed');
- expect(retried).toEqual({updated:1,skipped:0,hasMore:false,limit:100,blocked:true});
+ expect(retried).toMatchObject({updated:1,skipped:0,hasMore:false,status:'complete',blocked:true});
  const summary=(await listTaskActions(actor)).filter(job=>job.kind==='jellyfin.live'&&job.instanceId===instance);
  expect(taskJobCount(summary,'running')).toBe(1);expect(taskJobCount(summary,'pending')).toBe(2);expect(taskJobCount(summary,'failed')).toBe(1);
- expect(await updateTaskActions(actor,'jellyfin.live',instance,'cancel')).toEqual({updated:3,skipped:0,hasMore:false,limit:100,blocked:false});
+ const cancel=await updateTaskActions(actor,'jellyfin.live',instance,'cancel',crypto.randomUUID());
+ expect(await resumeTaskCommand(actor,cancel.id,cancel.revision)).toMatchObject({updated:3,skipped:0,hasMore:false,status:'complete',blocked:false});
  const rows=await db<{id:string;state:string}[]>`select id,state from outbox_actions where id in (${running},${failed},${blocked},${unrelated},${obsolete})`;
  expect(rows.find(row=>row.id===running)?.state).toBe('running');
  expect(rows.find(row=>row.id===failed)?.state).toBe('cancelled');expect(rows.find(row=>row.id===blocked)?.state).toBe('cancelled');

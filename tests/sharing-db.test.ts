@@ -3,18 +3,22 @@ import {networkInterfaces} from 'node:os';
 import {getSql,closeDb} from '../src/lib/server/db';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {defaultConfig} from '../src/lib/server/config';
+import {updateConfig} from '../src/lib/application/configuration.server';
 import {createShare,claimShare,startShared,sharedStream,revokeShare,shareViewer,prepareShared} from '../src/lib/sharing/service.server';
 import {openPublicShare,externalStream} from '../src/lib/sharing/external.server';
+import {publicSharePath} from '../src/lib/sharing/policy';
 import {releaseViewer,expireSharedViewers} from '../src/lib/sharing/leases.server';
 import {sharedStreamRows} from '../src/lib/sharing/streams.server';
 import {activeStreams,streamCount} from '../src/lib/application/streams.server';
-import {POST as shareApiPost} from '../src/routes/api/share/[...path]/+server';
+import {POST as shareApiPost,GET as shareApiGet} from '../src/routes/api/share/[...path]/+server';
 import {updateUser,updateUserSettings} from '../src/lib/server/auth';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const owner=crypto.randomUUID(),other=crypto.randomUUID(),work=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID(),providerItem=crypto.randomUUID(),generation=crypto.randomUUID();
 const actor={id:owner,username:'sharing-admin',role:'admin' as const,email:null,settings:{}};
 const browser={containers:['mp4'],videoCodecs:['h264'],audioCodecs:['aac'],nativeHls:false,hlsJs:true};
 let failStop=false;
+let directSource=false;
+let playbackRequests:any[]=[];
 let playbackInfoBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
 let manifestBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
 let server:ReturnType<typeof Bun.serve>,stops:{device:string|null;session:string|null}[]=[],segments:{session:string|null;rate:string|null}[]=[];
@@ -27,14 +31,15 @@ beforeAll(async()=>{
   if(p==='/System/Info/Public')return Response.json({Id:'fixture',ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'12.2.0'});
   if(p==='/Users/fixture-user/Items/item')return Response.json({Id:'item',Name:'Fixture',Type:'Movie'});
   if(p==='/Items/item/PlaybackInfo') {
-   const input=await request.json();expect(input.EnableDirectPlay).toBe(false);expect(input.AllowVideoStreamCopy).toBe(false);
+   const input=await request.json();playbackRequests.push(input);if(input.DeviceProfile.Name.startsWith('Coast VRChat')){expect(input.EnableDirectPlay).toBe(false);expect(input.AllowVideoStreamCopy).toBe(false);}
    const barrier=playbackInfoBarrier;playbackInfoBarrier=undefined;if(barrier){barrier.entered();await barrier.ready;}
-   return Response.json({PlaySessionId:crypto.randomUUID(),MediaSources:[{Id:'source',Container:'mkv',Bitrate:10000000,RunTimeTicks:6000000000,SupportsTranscoding:true,SupportsDirectPlay:false,TranscodingUrl:'/Videos/item/master.m3u8?api_key=fixture-upstream-secret',MediaStreams:[{Index:0,Type:'Video',Codec:'h264',Width:1280,Height:720},{Index:1,Type:'Audio',Codec:'aac'}]}]});
+   return Response.json({PlaySessionId:crypto.randomUUID(),MediaSources:[{Id:'source',Container:directSource?'mp4':'mkv',Bitrate:directSource?500000:10000000,RunTimeTicks:6000000000,SupportsTranscoding:true,SupportsDirectPlay:directSource,TranscodingUrl:'/Videos/item/master.m3u8?api_key=fixture-upstream-secret',MediaStreams:[{Index:0,Type:'Video',Codec:'h264',Width:1920,Height:1080,RealFrameRate:59.94},{Index:1,Type:'Audio',Codec:'aac'}]}]});
   }
   if(p==='/Videos/ActiveEncodings') {if(failStop)return new Response('Synthetic stop failure',{status:400});stops.push({device:url.searchParams.get('DeviceId'),session:url.searchParams.get('PlaySessionId')});return new Response(null,{status:204});}
   if(p.endsWith('master.m3u8')){const barrier=manifestBarrier;manifestBarrier=undefined;if(barrier){barrier.entered();await barrier.ready;}return new Response('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000\nmain.m3u8?api_key=fixture-upstream-secret\n',{headers:{'content-type':'application/vnd.apple.mpegurl'}});}
   if(p.endsWith('main.m3u8'))return new Response('#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXTINF:3,\nsegment.ts?runtimeTicks=300000000&api_key=fixture-upstream-secret\n#EXT-X-ENDLIST\n',{headers:{'content-type':'application/vnd.apple.mpegurl'}});
   if(p.endsWith('segment.ts')) {const data={session:url.searchParams.get('PlaySessionId'),rate:url.searchParams.get('VideoBitrate')};segments.push(data);return new Response(JSON.stringify(data),{headers:{'content-type':'video/mp2t'}});}
+  if(p==='/Videos/item/stream')return new Response('authored direct media fixture',{headers:{'content-type':'video/mp4'}});
   return new Response('Fixture route unavailable',{status:404});
  }});
  const db=getSql();
@@ -48,13 +53,58 @@ beforeAll(async()=>{
 });
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
- const db=getSql();await db`delete from share_viewers`;await db`delete from playback_sessions`;await db`delete from playback_shares`;stops=[];segments=[];failStop=false;playbackInfoBarrier=undefined;
+ const db=getSql();await db`delete from share_viewers`;await db`delete from playback_sessions`;await db`delete from playback_shares`;stops=[];segments=[];failStop=false;directSource=false;playbackRequests=[];playbackInfoBarrier=undefined;
  await db`update users set settings=${{sharedBitrateMbps:2}} where id=${owner}`;
+ await db`update system_settings set value=${{...defaultConfig,allowPlaybackSharing:true,allowedProviderPorts:[server.port!],maxBitrateMbps:10}} where key='coast'`;
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST==='1'){server?.stop(true);await closeDb();}});
-const make=()=>createShare(actor,{workId:work,connectionId:connection,hours:1});
+const make=()=>createShare(actor,{workId:work,connectionId:connection,hours:1,target:'vrchat'});
 const request=(url:string,ua='fixture-a')=>new Request(new URL(url,'http://coast.test'),{headers:{accept:'*/*','user-agent':ua}});
 const child=async(response:Response)=>{const body=await response.text();expect(body).not.toContain('fixture-upstream-secret');return body.split('\n').find(line=>line&&!line.startsWith('#'))!;};
+run('website invitations always open Coast and use its ordinary direct/relay policy without transcoding',async()=>{
+ directSource=true;
+ await updateConfig(actor,{allowTranscoding:false});
+ await getSql()`update users set settings=${{sharedBitrateMbps:2,personalBitrateMbps:1}} where id=${owner}`;
+ const link=await createShare(actor,{workId:work,connectionId:connection,hours:1});
+ expect(link.target).toBe('website');expect(publicSharePath(link.token)).not.toContain('.m3u8');
+ for(const suffix of ['', '.m3u8']){
+  const response=await openPublicShare(link.token+suffix,request(publicSharePath(link.token)+suffix+'?play=1','AVProMobileVideo'),'fixture-address');
+  expect(response.status).toBe(302);expect(response.headers.get('location')).toBe('/share#invite='+link.token);
+ }
+ expect((await getSql()`select count(*)::int as n from share_viewers`)[0].n).toBe(0);
+ const grant=await claimShare({token:link.token},null),session=await startShared(grant.token,{mediaId:work,browser});
+ expect(playbackRequests.at(-1).EnableDirectPlay).toBe(true);expect(playbackRequests.at(-1).DeviceProfile.Name).toBe('Coast browser');
+ const [saved]=await getSql()`select delivery,stream_path,max_bitrate from playback_sessions where id=${session.id}`;
+ expect(saved.delivery).toBe('direct');expect(saved.stream_path).not.toContain('SegmentLength');expect(saved.max_bitrate).toBe(1_000_000);
+ const response=await sharedStream(grant.token,session.id,request(session.url));expect(response.headers.get('content-type')).toBe('video/mp4');await response.text();
+ await getSql()`update users set settings=${{sharedBitrateMbps:2,personalBitrateMbps:0.5}} where id=${owner}`;
+ const replay=await startShared(grant.token,{mediaId:work,browser});
+ await (await sharedStream(grant.token,replay.id,request(replay.url))).text();
+ const [limited]=await getSql()`select max_bitrate,bitrate_ceiling from playback_sessions where id=${replay.id}`;
+ expect(limited.max_bitrate).toBe(500_000);expect(limited.bitrate_ceiling).toBe(500_000);
+});
+run('H.265 is an admin-enabled VRChat option and withdrawing it rejects existing media capabilities',async()=>{
+ await expect(createShare(actor,{workId:work,connectionId:connection,target:'vrchat',videoCodec:'hevc'})).rejects.toThrow('disabled');
+ await expect(updateConfig({...actor,id:other,role:'user'},{allowVrchatHevc:true})).rejects.toThrow('Administrator');
+ await updateConfig(actor,{allowVrchatHevc:true});
+ await expect(createShare(actor,{workId:work,connectionId:connection,target:'website',videoCodec:'hevc'})).rejects.toThrow('valid sharing');
+ const link=await createShare(actor,{workId:work,connectionId:connection,target:'vrchat',videoCodec:'hevc'});
+ const variant=await child(await openPublicShare(link.token,request(publicSharePath(link.token,'vrchat')),'fixture-address'));
+ const body=playbackRequests.at(-1);expect(body.DeviceProfile.TranscodingProfiles[0]).toMatchObject({VideoCodec:'hevc',Container:'mp4',SegmentLength:4});
+ const [saved]=await getSql()`select stream_path from playback_sessions where share_id=${link.id}`;const path=new URL(saved.stream_path,'http://fixture');
+ expect(path.searchParams.get('SegmentContainer')).toBe('mp4');expect(path.searchParams.get('aac-profile')).toBe('lc');
+ expect(path.searchParams.get('hevc-level')).toBe('123');
+ expect(path.searchParams.has('Framerate')).toBe(false);expect(path.searchParams.has('MaxFramerate')).toBe(false);
+ await updateConfig(actor,{allowVrchatHevc:false});
+ await expect(externalStream(variant.split('/')[4],request(variant))).rejects.toThrow('disabled');
+});
+run('VRChat uses native cadence and an H.264 level sufficient for the selected 1080p59.94 source',async()=>{
+ const link=await make(),grant=await claimShare({token:link.token},null),session=await startShared(grant.token,{mediaId:work,browser});
+ const [saved]=await getSql()`select stream_path from playback_sessions where id=${session.id}`;const path=new URL(saved.stream_path,'http://fixture');
+ expect(path.searchParams.get('h264-level')).toBe('42');expect(path.searchParams.get('SegmentLength')).toBe('4');
+ expect(path.searchParams.get('AudioBitrate')).toBe('192000');expect(path.searchParams.get('AudioSampleRate')).toBe('48000');
+ expect(path.searchParams.get('MaxWidth')).toBe('1920');expect(path.searchParams.has('Framerate')).toBe(false);
+});
 run('reusable links create separate browser viewers without changing the owner history',async()=>{
  const link=await make(),[a,b]=await Promise.all([claimShare({token:link.token},null),claimShare({token:link.token},null)]);
  expect(a.token).not.toBe(b.token);
@@ -65,16 +115,41 @@ run('reusable links create separate browser viewers without changing the owner h
  await expect(startShared(a.token,{mediaId:other,browser})).rejects.toThrow('only its selected item');
 });
 run('native link probes do not allocate viewers; media URLs are cookie-free and viewer-bound',async()=>{
- const link=await make(),url='http://coast.test/share/'+link.token;
- const head=await openPublicShare(link.token,new Request(url,{method:'HEAD'}),'fixture-address');expect(head.status).toBe(200);
- const html=await openPublicShare(link.token,new Request(url,{headers:{accept:'text/html'}}),'fixture-address');expect(html.status).toBe(302);
+ const link=await make(),url='http://coast.test'+publicSharePath(link.token,'vrchat'),entry=new URL(url).pathname.split('/').at(-1)!;
+ const head=await openPublicShare(entry,new Request(url,{method:'HEAD'}),'fixture-address');expect(head.status).toBe(200);expect(head.headers.get('content-type')).toContain('mpegurl');
+ const web=await createShare(actor,{workId:work,connectionId:connection,hours:1});const webUrl='http://coast.test'+publicSharePath(web.token);const html=await openPublicShare(web.token,new Request(webUrl,{headers:{accept:'text/html'}}),'fixture-address');expect(html.status).toBe(302);expect(html.headers.get('location')).toBe('/share#invite='+web.token);
  expect((await getSql()`select count(*)::int as n from share_viewers`)[0].n).toBe(0);
- const master=await openPublicShare(link.token,request(url),'fixture-address'),variant=await child(master);
- const leaf=await child(await externalStream(variant.split('/')[4],request(variant)));
+ const master=await openPublicShare(entry,request(url,'AVProMobileVideo (Linux;Android 14) ExoPlayerLib/1.8.0'),'fixture-address'),variant=await child(master);
+ expect(new URL(variant,'http://coast.test').pathname).toEndWith('/stream.m3u8');
+ const variantRequest=request(variant);
+ const leaf=await child(await shareApiGet({request:variantRequest,params:{path:`external/${variant.split('/')[4]}/stream.m3u8`},cookies:{get:()=>undefined},locals:{user:null},url:new URL(variantRequest.url)} as any));
+ expect(new URL(leaf,'http://coast.test').pathname).toEndWith('/stream');
  const id=leaf.split('/')[4],response=await externalStream(id,request(leaf));expect(response.status).toBe(200);await response.text();
- await openPublicShare(link.token,request(url),'fixture-address');expect((await getSql()`select count(*)::int as n from share_viewers`)[0].n).toBe(1);
+ await openPublicShare(entry,request(url,'AVProMobileVideo (Linux;Android 14) ExoPlayerLib/1.8.0'),'fixture-address');expect((await getSql()`select count(*)::int as n from share_viewers`)[0].n).toBe(1);
  await expect(externalStream(id,request(leaf.replace(/access=[^&]+/,'access=invalid')))).rejects.toThrow('Invalid viewer');
  await revokeShare(actor,link.id);await expect(externalStream(id,request(leaf))).rejects.toThrow('revoked');
+});
+run('VRChat viewers use the normal personal target inside an independently larger sharing budget',async()=>{
+ await getSql()`update users set settings=${{personalBitrateMbps:1,sharedBitrateMbps:40}} where id=${owner}`;
+ const link=await make(),grants=await Promise.all([claimShare({token:link.token},null),claimShare({token:link.token},null)]);
+ for(const grant of grants)await startShared(grant.token,{mediaId:work,browser});
+ const rows=await getSql()`select v.desired_bitrate,p.max_bitrate,p.bitrate_ceiling from share_viewers v join playback_sessions p on p.id=v.playback_id`;
+ expect(rows).toHaveLength(2);
+ for(const row of rows)expect(row).toMatchObject({desired_bitrate:1_000_000,max_bitrate:1_000_000,bitrate_ceiling:1_000_000});
+});
+run('a larger shared pool restores normal targets and a smaller pool reduces the same viewer again',async()=>{
+ await getSql()`update system_settings set value=jsonb_set(value,'{maxBitrateMbps}','4') where key='coast'`;
+ await getSql()`update users set settings=${{personalBitrateMbps:4,sharedBitrateMbps:4}} where id=${owner}`;
+ const link=await make(),grants=await Promise.all(Array.from({length:3},()=>claimShare({token:link.token},null)));
+ const sessions=[];for(const grant of grants)sessions.push(await startShared(grant.token,{mediaId:work,browser}));
+ const last=sessions[2];expect((await getSql()`select max_bitrate from playback_sessions where id=${last.id}`)[0].max_bitrate).toBe(1_100_000);
+ for(const [budget,expected]of [[40,4_000_000],[4,1_100_000]]){
+  await getSql()`update users set settings=${{personalBitrateMbps:4,sharedBitrateMbps:budget}} where id=${owner}`;
+  await getSql()`update share_viewers set last_seen_at=now()-interval '11 seconds'`;
+  const response=await sharedStream(grants[2].token,last.id,request(last.url));expect(response.status).toBe(200);await response.text();
+  const [row]=await getSql()`select v.desired_bitrate,p.max_bitrate,p.bitrate_ceiling from share_viewers v join playback_sessions p on p.id=v.playback_id where p.id=${last.id}`;
+  expect(row).toMatchObject({desired_bitrate:expected,max_bitrate:expected,bitrate_ceiling:4_000_000});
+ }
 });
 run('a saved stable segment URL moves to a new provider generation after another viewer joins',async()=>{
  const link=await make(),a=await claimShare({token:link.token},null),b=await claimShare({token:link.token},null);

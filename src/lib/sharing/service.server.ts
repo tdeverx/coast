@@ -8,6 +8,7 @@ import { hashToken,randomToken,requireUser,type SessionUser } from '#lib/server/
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { startPlayback,streamPlayback } from '#lib/playback/service.server.js';
 import { withSharedRequest } from './request-leases.server';
+import {externalShareResourcePath} from './policy';
 import { reserveViewer, ensureSharedEncoding, releaseViewer, stopViewerPlayback } from './leases.server';
 
 const uuid=v.pipe(v.string(),v.uuid());
@@ -15,26 +16,31 @@ export const shareCookie='coast_share_viewer';
 export async function createShare(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),config=await getFeatureConfig(user.id);
  if(!config.allowPlaybackSharing||(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true))throw new AppError(403,'Playback sharing requires administrator permission.');
- const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false)}),input);
- if(!config.allowTranscoding)throw new AppError(400,'Enable Jellyfin transcoding in playback policy before creating shared links.');
+ const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false),target:v.optional(v.picklist(['website','vrchat']),'website'),videoCodec:v.optional(v.picklist(['h264','hevc']),'h264')}),input);
+ if(data.target==='vrchat'&&!config.allowTranscoding)throw new AppError(400,'VRChat sharing requires Jellyfin transcoding.');
+ if(data.target==='website'&&data.videoCodec!=='h264'||data.target==='vrchat'&&data.together)throw new AppError(400,'Choose a valid sharing destination.');
+ if(data.videoCodec==='hevc'&&!config.allowVrchatHevc)throw new AppError(403,'H.265 VRChat sharing is disabled by the administrator.');
  if(data.together&&!config.experimentalParties)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
  const context=await getJellyfin(user.id,data.connectionId);
  await context.adapter.identity(context.instance.serverIdentity??undefined);
  const db=getSql(),[access]=await db`select a.id,pi.external_id from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) limit 1`;
  if(!access)throw new AppError(403,'Choose one playable item from your accessible source.');
  // Item-level evidence confirms this account's access before issuing the capability.
- if((await db`select kind from works where id=${data.workId}`)[0].kind==='track')await context.adapter.musicItem(context.connection.externalUserId!,access.external_id);
+ if((await db`select kind from works where id=${data.workId}`)[0].kind==='track'){
+  if(data.target==='vrchat')throw new AppError(400,'VRChat sharing requires a movie or episode.');
+  await context.adapter.musicItem(context.connection.externalUserId!,access.external_id);
+ }
  else await context.adapter.item(context.connection.externalUserId!,access.external_id);
  const token=randomToken(),expiresAt=new Date(Date.now()+data.hours*3600000);
  return db.begin(async tx=>{
   await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
   const [count]=await tx`select count(*)::int as total from playback_shares where owner_id=${user.id} and revoked_at is null and expires_at>now()`;
   if(count.total>=20)throw new AppError(409,'Revoke an active link before creating more.');
-  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,together,expires_at) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${await hashToken(token)},${data.together},${expiresAt}) returning id`;
-  return {id:row.id,token,expiresAt};
+  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,together,target,video_codec,expires_at) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${await hashToken(token)},${data.together},${data.target},${data.videoCodec},${expiresAt}) returning id`;
+  return {id:row.id,token,expiresAt,target:data.target,videoCodec:data.videoCodec};
  });
 }
-export async function listShares(actor:SessionUser|null){const user=requireUser(actor);return getSql()`select id,work_id as "workId",together,expires_at as "expiresAt",claimed_at as "claimedAt",revoked_at as "revokedAt" from playback_shares where owner_id=${user.id} order by created_at desc limit 50`;}
+export async function listShares(actor:SessionUser|null){const user=requireUser(actor);return getSql()`select id,work_id as "workId",together,target,video_codec as "videoCodec",expires_at as "expiresAt",claimed_at as "claimedAt",revoked_at as "revokedAt" from playback_shares where owner_id=${user.id} order by created_at desc limit 50`;}
 export async function revokeShare(actor:SessionUser|null,id:string){
  const user=requireUser(actor),rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()) where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;
  if(!rows.length)throw new AppError(404,'Link not found.');
@@ -60,11 +66,11 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
 }
 export async function assertShare(share:Record<string,any>,db=getSql()){
  const config=await getFeatureConfig(share.owner_id,db);
- const [current]=await db`select s.revoked_at,s.expires_at,s.together,w.category,
+ const [current]=await db`select s.revoked_at,s.expires_at,s.together,s.target,s.video_codec,w.category,
  c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available') as accessible
  from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;
  if(!current||!config.allowPlaybackSharing||current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
- if(!config.allowTranscoding)throw new AppError(410,'Shared playback is disabled by the transcoding policy.');
+ if(current.target==='vrchat'&&(!config.allowTranscoding||current.video_codec==='hevc'&&!config.allowVrchatHevc))throw new AppError(410,'This VRChat profile is disabled by the administrator.');
  if(!categoryEnabled(config,current.category)||current.together&&!config.experimentalParties)throw new AppError(410,'This medium is disabled.');
  if(!current.accessible)throw new AppError(410,'The shared source is no longer accessible.');
 }
@@ -93,7 +99,7 @@ export async function prepareShared(viewer:Awaited<ReturnType<typeof shareViewer
  await stopViewerPlayback(viewer.owner_id,viewer.viewer_id);
  const [current]=await getSql()`select playback_id from share_viewers where id=${viewer.viewer_id} and preparation_token=${preparationToken} and preparing_until>now()`;
  if(!current)throw new AppError(409,'Playback preparation was superseded. Retry.');
- const playback=await startPlayback(viewer.owner_id,{...data,fromStart:true,...(viewer.together&&viewer.duration_seconds>0?{expectedDuration:viewer.duration_seconds}:{})},{id:viewer.id,viewerId:viewer.viewer_id,connectionId:viewer.connection_id,expiresAt:new Date(viewer.expires_at),maxBitrate,sourceId:viewer.together?viewer.source_id??undefined:undefined},signal);
+ const playback=await startPlayback(viewer.owner_id,{...data,fromStart:true,...(viewer.together&&viewer.duration_seconds>0?{expectedDuration:viewer.duration_seconds}:{})},{id:viewer.id,viewerId:viewer.viewer_id,connectionId:viewer.connection_id,expiresAt:new Date(viewer.expires_at),maxBitrate,vrchatCodec:viewer.target==='vrchat'?viewer.video_codec:undefined,sourceId:viewer.together?viewer.source_id??undefined:undefined},signal);
  preparedId=playback.id;
  const attached=await getSql()`update share_viewers set playback_id=${playback.id} where id=${viewer.viewer_id} and preparation_token=${preparationToken} returning id`;
  if(!attached.length){await getSql()`update playback_sessions set state='stopped',cleanup_pending=true where id=${playback.id}`;throw new AppError(409,'Playback preparation was superseded. Retry.');}
@@ -135,9 +141,9 @@ export async function streamForViewer(viewer:Awaited<ReturnType<typeof shareView
   request.signal.throwIfAborted();
   await ensureSharedEncoding(viewer.owner_id,viewer.viewer_id,request.signal);
  }
- return withSharedRequest(viewer.owner_id,viewer.viewer_id,id,request,(leasedRequest,headersReceived)=>streamPlayback(viewer.owner_id,id,leasedRequest,viewer.id,{headersReceived,url:async(_path,url)=>{
+ return withSharedRequest(viewer.owner_id,viewer.viewer_id,id,request,(leasedRequest,headersReceived)=>streamPlayback(viewer.owner_id,id,leasedRequest,viewer.id,{headersReceived,vrchatCodec:viewer.target==='vrchat'?viewer.video_codec:undefined,url:async(_path,url)=>{
   const target=new URL(url,'http://resource.invalid');
-  target.pathname=access?`/api/share/external/${id}/stream`:`/api/share/playback/${id}/stream`;
+  target.pathname=access?externalShareResourcePath(id,_path):`/api/share/playback/${id}/stream`;
   if(access)target.searchParams.set('access',access);
   return target.pathname+target.search;
  }}));

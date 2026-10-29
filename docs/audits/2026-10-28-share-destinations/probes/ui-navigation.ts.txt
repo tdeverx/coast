@@ -1,0 +1,11 @@
+import {page,refresh} from './state.svelte';
+export const invalidate=refresh,refreshAll=refresh;
+export function beforeNavigate(){}
+export function afterNavigate(){}
+export function onNavigate(){}
+export async function goto(url:URL|string){history.replaceState({},'',url);page.url=new URL(url,location.href);}
+export function preloadData(){}
+export function preloadCode(){}
+export function pushState(){}
+export function replaceState(){}
+export function disableScrollHandling(){}

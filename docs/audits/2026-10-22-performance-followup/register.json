@@ -467,5 +467,59 @@
         "contract": "Capture the entering route/query before asynchronous settings persistence refreshes old data, honor newer ordinary navigation while saving, and fence actor changes. Preserve the approved selector UI."
       }
     ]
+  },
+  "selectedPolicyImplementation": {
+    "epoch": "selected-policy-2026-10-23",
+    "report": "docs/audits/2026-10-23-bulk-recovery-input-retention.md",
+    "pins": "docs/audits/2026-10-23-bulk-recovery-input-retention/pins.json",
+    "blanketAcceptance": false,
+    "findings": [
+      {
+        "id": "BLOCK-BULK",
+        "status": "selected-and-implemented-local",
+        "contract": "Freeze the existing 100-job membership per command; canonical effects and revisions commit atomically, replay remains actor/specification bound, and unfinished work requires explicit Resume or Abandon.",
+        "owners": [
+          "src/lib/providers/task-control.ts",
+          "src/lib/server/queue/task-commands.server.ts",
+          "src/lib/server/queue/task-controls.server.ts",
+          "src/lib/server/queue/index.ts",
+          "src/lib/server/api/queue.server.ts",
+          "src/lib/server/db/schema.ts",
+          "drizzle/0065_task_control_commands.sql",
+          "src/lib/server/storage/retention.server.ts",
+          "src/lib/ui/task-control.svelte.ts",
+          "src/lib/ui/task-control/Recovery.svelte",
+          "src/lib/ui/client.ts",
+          "src/lib/ui/components/JobSchedule.svelte",
+          "src/lib/ui/components/JobsSettings.svelte",
+          "src/routes/settings/[[section]]/+page.server.ts",
+          "src/routes/settings/[[section]]/+page.svelte"
+        ],
+        "tests": [
+          "tests/task-command-db.test.ts",
+          "tests/job-task-summary-db.test.ts",
+          "tests/task-command-client.test.ts",
+          "tests/retention-db.test.ts"
+        ]
+      },
+      {
+        "id": "BLOCK-POLICY",
+        "status": "selected-and-implemented-local",
+        "contract": "Preserve existing durable history; compact only terminal command details after 30 days while keeping replay identity. Bound complete preview configuration, events and staged native image decoding at the selected limits without truncating accepted content.",
+        "owners": [
+          "src/lib/ui/preview-input.ts",
+          "src/routes/ui-preview/props.ts",
+          "src/routes/ui-preview/ComponentPlayground.svelte",
+          "src/routes/ui-preview/+page.svelte",
+          "src/routes/ui-preview/Workspace.svelte",
+          "src/lib/server/storage/retention.server.ts"
+        ],
+        "tests": [
+          "tests/preview-input.test.ts",
+          "tests/task-command-db.test.ts",
+          "tests/task-command-client.test.ts"
+        ]
+      }
+    ]
   }
 }

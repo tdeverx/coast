@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "scope": "Authored native database regressions, distinct from actual retained-data probe. Final command/summary/retention suites replace earlier runs; other canonical suites retain their accepted run.",
+  "passed": 59,
+  "suites": [
+    {
+      "suite": "job-task-summary-db.test.ts",
+      "pass": 3,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "83fa335d1ab02f55278008d61cf0e5d55bddc7402fd1bae703f72986c3efd412"
+    },
+    {
+      "suite": "jobs-list-delivery-db.test.ts",
+      "pass": 4,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "ebf584cfb409b618ac7d800b986cb5a7f500e5eda1e664bb97abbfd71ec27a37"
+    },
+    {
+      "suite": "maintenance-db.test.ts",
+      "pass": 5,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "7e36f9f8f83130690014fea97a281b5e0c29acb456cde6748cfdb7a1be1783b8"
+    },
+    {
+      "suite": "maintenance-runner-db.test.ts",
+      "pass": 25,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "ebb9fdfc9194be120a9c5788f8a180fc544af1e1f2efe04d0964840037c8b811"
+    },
+    {
+      "suite": "retention-db.test.ts",
+      "pass": 1,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "e8bccbe6b65dda0561c074efaeb8b21818a851dd61e11ac4a0fc08fa1e6fe73f"
+    },
+    {
+      "suite": "task-command-db.test.ts",
+      "pass": 11,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "c3b6b7d862b4ed6a92c8e22ba2edf06ec0d2412862bcd2c4808d2833df569ce2"
+    },
+    {
+      "suite": "task-timing-db.test.ts",
+      "pass": 7,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "f118645e3f5d14fa46a687efbbb09f511c5c01d1205fe2189ec2e29790e0cd22"
+    },
+    {
+      "suite": "webhooks-db.test.ts",
+      "pass": 3,
+      "fail": 0,
+      "runtime": "shipping Linux Bun 6bb5dc195; PostgreSQL 17; disposable authored database",
+      "logSha256": "47d1bc355b535aa5e013129c86e1f2e07ebeee6341323d3eadf337de21b09fdd"
+    }
+  ]
+}

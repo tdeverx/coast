@@ -1,0 +1,15 @@
+{
+  "scope": "One finite native 100-job command on existing retained job rows; no workers or provider delivery. WAL includes canonical effects, receipt writes and indexes, not pure storage overhead or production capacity. Terminal aging is controlled on the disposable copy.",
+  "targets": 100,
+  "status": "complete",
+  "elapsedMs": 69.27570899999999,
+  "walBytes": 277968,
+  "rowBytesBefore": 1832,
+  "rowBytesAfter": 160,
+  "checks": {
+    "complete100": true,
+    "compacted": true,
+    "replayRetainsIdentity": true,
+    "retainedCounts": true
+  }
+}

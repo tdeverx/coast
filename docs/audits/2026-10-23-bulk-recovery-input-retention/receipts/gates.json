@@ -1,0 +1,55 @@
+{
+  "epoch": "selected-policy-2026-10-23",
+  "status": "passed",
+  "blanketAcceptance": false,
+  "nativeDatabaseTests": 59,
+  "nativeRuntime": "Linux Bun 6bb5dc195 / PostgreSQL 17",
+  "hostRuntime": "macOS Bun 963452075; supplementary checks, not shipping-runtime acceptance",
+  "browser": "browser.json and browser-start.json",
+  "notes": [
+    "No production dependencies added.",
+    "Actual-data controls ran with provider delivery forbidden.",
+    "Existing large-chunk build warnings are retained.",
+    "Schema generator found no changes beyond migration 0065.",
+    "Full-suite fixture isolation caught a read-only sessionStorage descriptor leaking into another suite; the test now restores the original descriptor.",
+    "Current source/evidence indexes were refreshed in dependency order; original native measurement epochs remain historical.",
+    "Probe source is retained as text transcripts; application tooling no longer loads audit harness configuration."
+  ],
+  "unit": {
+    "passed": 1026,
+    "skipped": 742,
+    "failed": 0,
+    "files": 322,
+    "note": "Default skips include DB-gated/optional suites; the affected native suites ran separately. No blanket acceptance of skipped cases."
+  },
+  "checks": {
+    "unit": {
+      "status": "passed",
+      "logSha256": "76babc83d1ab4f4784be35e4eefb86e54c1ad3570a283fadf251e56dcaa83174"
+    },
+    "svelteCheck": {
+      "status": "passed",
+      "logSha256": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a"
+    },
+    "build": {
+      "status": "passed",
+      "logSha256": "d1d8a1f9efb85498138b3b4137b47c6d76d0351e34ceda1157d643f97220b77d"
+    },
+    "schemaConsistency": {
+      "status": "passed",
+      "logSha256": "649ebb461ee11930c97aab27f00034785377095f19351fbd92bfd5316b93a011"
+    },
+    "uiInventory": {
+      "status": "passed",
+      "logSha256": "37844d662c668ba36c54bda1769d1065d56639ca776f111d07a5a85dcb04687f"
+    },
+    "sourceStyle": {
+      "status": "passed",
+      "logSha256": "68d1680d97c7583285bba628877527f55e8382f7f101c5bb22007029ebc014bd"
+    },
+    "codeInventory": {
+      "status": "passed",
+      "logSha256": "2afedf631ecdb428f203952315c338a1778545516135473d60de8021a190a320"
+    }
+  }
+}

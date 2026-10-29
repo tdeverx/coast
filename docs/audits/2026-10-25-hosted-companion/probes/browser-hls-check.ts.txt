@@ -1,0 +1,35 @@
+import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {JellyfinAdapter} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/providers/jellyfin/adapter.server.ts';
+const root='/tmp/coast-hosted-20261025',base='http://127.0.0.1:8097';
+if(JSON.parse(await readFile(root+'/ownership.json','utf8')).marker!=='coast-hosted-20261025')throw Error('ownership');
+const actors=JSON.parse(await readFile(root+'/actors.private.json','utf8')),actor=actors.find((x:any)=>!x.admin);
+const item=JSON.parse(await readFile(root+'/selected.private.json','utf8'));
+const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+function adapter(device:string){return new JellyfinAdapter(async(path,init)=>{const u=new URL(path,base);if(u.origin!==base)throw Error('origin');const r=await fetch(u,{...init,signal:init?.signal??AbortSignal.timeout(20000)});if(!r.ok)throw Error('provider '+r.status);const text=await r.text();return text?JSON.parse(text):null;},device,actor.token);}
+
+import {chromium,webkit,firefox} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/playwright/index.mjs';
+
+const engine=process.argv[2]||'chromium';
+const results:any={scope:'One genuine hosted HLS producer, two Chromium browser contexts; no Coast membership/sync claim',browserFallback:'Browser plugin not available',externalRequests:0};
+const server=Bun.serve({hostname:'127.0.0.1',port:8098,fetch(req){const u=new URL(req.url);if(u.pathname==='/hls.js')return new Response(Bun.file('/Users/admin/Documents/ChatGPT/coast-new/node_modules/hls.js/dist/hls.min.js'));return new Response('<!doctype html><title>Hosted HLS acceptance</title><video muted playsinline></video><script src="/hls.js"></script>',{headers:{'Content-Type':'text/html'}})}});
+const device='coast-hosted-browser-'+crypto.randomUUID(),a=adapter(device);let info:any,source:any,browser:any;const contexts:any[]=[];
+async function count(){const p=Bun.spawn(['ps','-axo','pid,ppid,comm'],{stdout:'pipe'});return (await new Response(p.stdout).text()).split('\n').filter(l=>l.includes('ffmpeg')).length;}
+try{
+ info=await a.playbackInfo(item.Id,actor.id,{containers:['mp4'],videoCodecs:['h264'],audioCodecs:['aac']} as any,1000000,{shared:true,deviceId:device});source=info.sources.find(x=>x.transcodingUrl);if(!source)throw Error('missing HLS');
+ const u=new URL(source.transcodingUrl,base);if(u.origin!==base)throw Error('origin');u.searchParams.set('MaxWidth','640');u.searchParams.set('MaxHeight','360');u.searchParams.set('api_key',actor.token);
+ browser=await ({chromium,webkit,firefox} as any)[engine].launch({headless:true});results.engine=engine;results.browser=browser.version();
+ const pages=[];
+ for(let i=0;i<2;i++){
+  const context=await browser.newContext();contexts.push(context);
+  await context.route('**/*',async route=>{const q=new URL(route.request().url());if(q.origin!==base&&q.origin!=='http://127.0.0.1:8098'){results.externalRequests++;return route.abort();}return route.continue();});
+  const page=await context.newPage();pages.push(page);await page.goto('http://127.0.0.1:8098');
+  await page.evaluate((url:string)=>{const w=window as any;w.failures=[];if(!w.Hls.isSupported()){document.querySelector('video')!.src=url;document.querySelector('video')!.play();return;}w.hls=new w.Hls({maxBufferLength:6});w.hls.on(w.Hls.Events.ERROR,(_:any,e:any)=>{if(e.fatal)w.failures.push(e.details)});w.hls.loadSource(url);w.hls.attachMedia(document.querySelector('video'));w.hls.on(w.Hls.Events.MANIFEST_PARSED,()=>document.querySelector('video')!.play());},u.href);
+ }
+ await Promise.all(pages.map(p=>p.waitForFunction(()=>{const v=document.querySelector('video')!;return v.currentTime>1&&v.getVideoPlaybackQuality().totalVideoFrames>1;},null,{timeout:30000})));
+ results.before=await Promise.all(pages.map(p=>p.evaluate(()=>{const v=document.querySelector('video')!;return {time:v.currentTime,frames:v.getVideoPlaybackQuality().totalVideoFrames,errors:(window as any).failures};})));results.encoderCountDuring=await count();
+ await contexts[0].close();const before=await pages[1].evaluate(()=>document.querySelector('video')!.currentTime);await pages[1].waitForFunction((t:number)=>document.querySelector('video')!.currentTime>t+1,before,{timeout:10000});results.survivorContinued=true;results.encoderCountAfterFirst=await count();
+ await contexts[1].close();const t=performance.now();await a.stopEncoding(device,info.playSessionId);results.stopMs=performance.now()-t;const cleanupStart=performance.now();const until=Date.now()+5000;do{results.encoderCountAfterFinal=await count();results.mediaFilesRemaining=(await readdir(root+'/transcodes')).filter(x=>x!=='.jellyfin-transcode').length;if(!results.encoderCountAfterFinal&&!results.mediaFilesRemaining)break;await sleep(100);}while(Date.now()<until);results.cleanupMs=performance.now()-cleanupStart;
+ results.passed=results.encoderCountDuring===1&&results.encoderCountAfterFirst===1&&results.encoderCountAfterFinal===0&&results.mediaFilesRemaining===0&&results.externalRequests===0;
+ if(!results.passed)throw Error('shared encoder acceptance');
+}catch(e){results.passed=false;results.error=String(e);throw e;}
+finally{await browser?.close();if(info?.playSessionId)await a.stopEncoding(device,info.playSessionId).catch(()=>{});server.stop(true);await writeFile(root+'/browser-hls-'+engine+'.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results,null,2));}

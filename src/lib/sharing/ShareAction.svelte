@@ -3,13 +3,17 @@
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import { message } from '#lib/ui/client.js';
   import { useClient, reportFailure } from '#lib/ui/client-context.js';
+  import { publicSharePath } from './policy';
+  import type {ShareTarget,VrchatVideoCodec} from './vrchat-profile';
+  import {page} from '$app/state';
   const {api,preview}=useClient();
 
-  let { workId, title, open = $bindable(false) }: {
-    workId: string; title: string; open?: boolean;
+  let { workId, title, target='website', open = $bindable(false) }: {
+    workId: string; title: string; target?:ShareTarget; open?: boolean;
   } = $props();
   let busy = $state(false), loading = $state(false), error = $state('');
   let hours = $state(6), connectionId = $state(''), copied=$state(false);
+  let videoCodec=$state<VrchatVideoCodec>('h264');
   let sources = $state<{ id: string; name: string }[]>([]);
   let created = $state<{ id: string; token: string } | null>(null);
   let activeDialog: AbortController | null = null;
@@ -18,7 +22,7 @@
     if (!open) return;
     const id = workId, controller = new AbortController();
     activeDialog = controller;
-    created = null; copied=false; error = ''; sources = []; connectionId = ''; loading = true;
+    created = null; copied=false; error = ''; sources = []; connectionId = ''; loading = true;videoCodec='h264';
     void api<typeof sources>(`sharing/sources?workId=${id}`, undefined, 'GET', { signal: controller.signal })
       .then(value => {
         if (controller.signal.aborted) return;
@@ -36,7 +40,7 @@
     const scope = activeDialog;
     busy = true; error = '';
     try {
-      const result = await api<{ id: string; token: string }>('sharing', { workId, connectionId, hours });
+      const result = await api<{ id: string; token: string }>('sharing', { workId, connectionId, hours,target,videoCodec });
       if (scope === activeDialog && !scope?.signal.aborted) created = result;
     }
     catch (cause) { if (scope === activeDialog && !scope?.signal.aborted) error = message(cause); }
@@ -57,17 +61,17 @@
     if(!created)return;
     if(preview){copied=true;return;}
     const scope=activeDialog;
-    try {await navigator.clipboard.writeText(`${location.origin}/share/${created.token}`);if(scope===activeDialog&&!scope?.signal.aborted)copied=true;}
+    try {await navigator.clipboard.writeText(`${location.origin}${publicSharePath(created.token,target)}`);if(scope===activeDialog&&!scope?.signal.aborted)copied=true;}
     catch {if(scope===activeDialog&&!scope?.signal.aborted)error='Select the link and copy it using your browser.';}
   }
   reportFailure(()=>error);
 </script>
 
-<Dialog bind:open title={`Share · ${title}`}>
+<Dialog bind:open title={`${target==='vrchat'?'Share to VRChat':'Share'} · ${title}`}>
   <p class="small muted">Anyone with this link can play this item until it expires or you revoke it. Each viewer controls their own playback.</p>
   {#if created}
     <label class="field">Invitation link
-      <input readonly value={`${preview?'https://coast.example':location.origin}/share/${created.token}`} onfocus={event => event.currentTarget.select()} />
+      <input readonly value={`${preview?'https://coast.example':location.origin}${publicSharePath(created.token,target)}`} onfocus={event => event.currentTarget.select()} />
     </label>
     <Button onclick={copyLink}>{copied?'Copied':'Copy'}</Button>
     <Button disabled={busy} onclick={revoke}>Revoke</Button>
@@ -79,6 +83,10 @@
         </select>
       </label>
       <label class="field">Expires in hours<input type="number" min="1" max="24" bind:value={hours} required /></label>
+      {#if target==='vrchat'}
+        <p class="small muted">For AVPro video players, including compatible ProTV and VideoTXL worlds. Unity-only players need a direct video file.</p>
+        {#if page.data.allowVrchatHevc}<label class="field">Video format<select bind:value={videoCodec}><option value="h264">H.264 / AAC · MPEG-TS HLS</option><option value="hevc">H.265 / AAC · fMP4 HLS (experimental)</option></select></label>{/if}
+      {/if}
       <Button type="submit" disabled={busy || loading || !connectionId}>{busy ? 'Creating…' : 'Create'}</Button>
     </form>
   {/if}

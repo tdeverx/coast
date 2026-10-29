@@ -20,14 +20,21 @@
     },
     {
       "id": "BLOCK-HOSTED",
-      "kind": "external-environment",
-      "required": "Disposable Jellyfin host/configuration with genuine users/media and the current companion installed, with authority to change permissions/revoke credentials and clean up real encoder sessions.",
-      "observed": "Existing direct crop comparisons and current native provider delivery do not execute the new plugin through Jellyfin middleware. No plugin deployment or live-provider permission/encoder mutation was performed. Actual crop timeout and shared/final-consumer drain now also pass through a bounded genuine-byte stall proxy, without hosted middleware.",
+      "kind": "remaining-party-and-device-acceptance",
+      "required": "A joined Coast party and connected supported device/browser sessions for application orchestration, synchronized playback and drift acceptance.",
+      "observed": "25 October disposable hosted Jellyfin 12.3.0 acceptance now passes with genuine media and fresh clone-only credentials: cached library/playback withdrawal (after a companion repair), disabled/logout revocation, feature withdrawal, real FFmpeg timeout/shared cancellation, independent HLS sessions and one shared producer decoded by two contexts in each of Chromium/WebKit/Firefox. No live tokens were extracted and the copy was deleted. These checks do not exercise Coast party orchestration or physical devices.",
       "remaining": [
-        "Hosted cross-user cached crop authorization and permission withdrawal",
-        "HLS/transcode/shared-party decoder and process-tree failure/cleanup acceptance",
-        "Multi-device synchronized playback and drift under real media"
-      ]
+        "Coast party invitation/membership, host controls, authorization withdrawal and teardown through application routes with genuine joined viewers",
+        "Multi-device synchronized playback and drift under real media",
+        "Optional HEVC1080p60 VideoToolbox level conformance: actual level120 despite123 request; H.26460 passed and HEVC remains disabled by default."
+      ],
+      "report": "docs/audits/2026-10-25-hosted-companion.md",
+      "acceptedLocal": [
+        "Hosted cached crop authorization and permission withdrawal",
+        "Hosted crop deadline, shared/final-consumer drain",
+        "Genuine independent HLS sessions and shared-producer desktop decoder/process/segment cleanup"
+      ],
+      "shareProfileFollowup": "docs/audits/2026-10-28-share-destinations.md"
     },
     {
       "id": "BLOCK-COHORT",
@@ -52,21 +59,6 @@
       ]
     },
     {
-      "id": "BLOCK-BULK",
-      "kind": "product-contract",
-      "required": "Choose the durable command membership, receipt lifetime, response-loss/resume behavior and user-visible incomplete-result contract for bulk task controls.",
-      "observed": "Current canonical controls already admit at most 100 targets. A crash can leave a committed prefix. The older proposal requires a durable command/target receipt owner; it is not a selected recovery contract.",
-      "whyNeedsDecision": "This changes persisted history and retry semantics; a new table or overloading diagnostics without a selected retention/recovery contract would add unreviewed complexity.",
-      "reference": "../../../2026-10-17-app-performance/candidates/recovery-bulk-contracts/PJ15.md"
-    },
-    {
-      "id": "BLOCK-POLICY",
-      "kind": "product-contract",
-      "required": "Supported custom-preview JSON/image limits and rejection UX; retained evidence/session/history lifetime and preservation requirements.",
-      "observed": "Finite real imports, existing bounded archive extraction and current table sizes are measured. A source audit confirms transient-only pruning deliberately preserves history, playback evidence and outbox records.",
-      "whyNeedsDecision": "Arbitrary caps reject previously supported inputs; automatic retention deletes evidence. Neither threshold nor irreversible deletion policy can be inferred from one local workload."
-    },
-    {
       "id": "BOUND-CAPACITY",
       "kind": "evidence-boundary",
       "required": "A defined target deployment, workload mix/concurrency and duration for production capacity/tail/startup claims.",
@@ -74,5 +66,29 @@
       "whyNotAProductFix": "No local benchmark proves every future workload. The finite acceptance executed in this pass is recorded separately; this boundary is not a hidden failing test."
     }
   ],
-  "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026"
+  "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026",
+  "resolved": [
+    {
+      "id": "BLOCK-BULK",
+      "kind": "product-contract",
+      "required": "Choose the durable command membership, receipt lifetime, response-loss/resume behavior and user-visible incomplete-result contract for bulk task controls.",
+      "observed": "Current canonical controls already admit at most 100 targets. A crash can leave a committed prefix. The older proposal requires a durable command/target receipt owner; it is not a selected recovery contract.",
+      "whyNeedsDecision": "This changes persisted history and retry semantics; a new table or overloading diagnostics without a selected retention/recovery contract would add unreviewed complexity.",
+      "reference": "../../../2026-10-17-app-performance/candidates/recovery-bulk-contracts/PJ15.md",
+      "status": "selected-and-implemented-local",
+      "resolution": "docs/audits/2026-10-23-bulk-recovery-input-retention.md",
+      "note": "Previous observed/required text is historical; the user selected the recommended contract on 23 October 2026. Local acceptance and remaining limits are in the implementation report."
+    },
+    {
+      "id": "BLOCK-POLICY",
+      "kind": "product-contract",
+      "required": "Supported custom-preview JSON/image limits and rejection UX; retained evidence/session/history lifetime and preservation requirements.",
+      "observed": "Finite real imports, existing bounded archive extraction and current table sizes are measured. A source audit confirms transient-only pruning deliberately preserves history, playback evidence and outbox records.",
+      "whyNeedsDecision": "Arbitrary caps reject previously supported inputs; automatic retention deletes evidence. Neither threshold nor irreversible deletion policy can be inferred from one local workload.",
+      "status": "selected-and-implemented-local",
+      "resolution": "docs/audits/2026-10-23-bulk-recovery-input-retention.md",
+      "note": "Previous observed/required text is historical; the user selected the recommended contract on 23 October 2026. Local acceptance and remaining limits are in the implementation report."
+    }
+  ],
+  "reviewedHostedEpoch": "hosted-companion-2026-10-25"
 }

@@ -1,0 +1,8 @@
+(version 1)
+(allow default)
+(deny file-write*)
+(allow file-write* (subpath "/private/tmp/coast-hosted-20261025") (literal "/dev/null"))
+(deny network*)
+(allow network-inbound (local ip "localhost:8097"))
+(allow network-bind (local ip "localhost:8097"))
+(allow network-outbound (remote ip "localhost:8097"))

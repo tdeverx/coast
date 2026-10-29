@@ -1,5 +1,6 @@
 import { jellyfinBook, jellyfinBooks, jellyfinBookPage } from './reading.server';
 import {companionPageSchema} from './companion';
+import {vrchatDeviceProfile,type VrchatVideoCodec} from '#lib/sharing/vrchat-profile.js';
 import { artworkKeys, artworkTypes } from '#lib/artwork.js';
 import {activeSessionsSchema,streamPresentation} from './streams';
 import * as v from 'valibot';
@@ -30,6 +31,8 @@ const streamSchema = v.object({
   DeliveryMethod: str,
   Width: num,
   Height: num,
+  RealFrameRate: num,
+  AverageFrameRate: num,
 });
 const sourceSchema = v.object({
   Id: v.string(),
@@ -119,6 +122,7 @@ function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
       deliveryMethod: s.DeliveryMethod || undefined,
       width: s.Width ?? undefined,
       height: s.Height ?? undefined,
+      frameRate: s.RealFrameRate ?? s.AverageFrameRate ?? undefined,
     })),
     raw: data,
   };
@@ -414,7 +418,7 @@ export class JellyfinAdapter {
     userId: string,
     capabilities: BrowserCapabilities,
     maxBitrate: number,
-    options: { shared?: boolean; deviceId?: string; signal?: AbortSignal } = {}
+    options: { shared?: boolean; vrchatCodec?: VrchatVideoCodec; deviceId?: string; signal?: AbortSignal } = {}
   ) {
     options.signal?.throwIfAborted();
     const profile = {
@@ -475,7 +479,7 @@ export class JellyfinAdapter {
         body: JSON.stringify({
           UserId: userId,
           MaxStreamingBitrate: maxBitrate,
-          DeviceProfile: profile,
+          DeviceProfile: options.vrchatCodec ? {...vrchatDeviceProfile(options.vrchatCodec),MaxStreamingBitrate:maxBitrate,MaxStaticBitrate:maxBitrate} : profile,
           EnableDirectPlay: !options.shared,
           EnableDirectStream: !options.shared,
           EnableTranscoding: true,

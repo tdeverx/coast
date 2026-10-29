@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TaskControlRecovery from '../task-control/Recovery.svelte';
+  import type {TaskControlListing} from '#lib/providers/task-control.js';
   import {page} from '$app/state';
   import {providerSchedule} from '#lib/providers/schedule.js';
   import {recurringTask} from '#lib/providers/task-timing.js';
@@ -20,6 +22,7 @@
     actions,
     timing = [],
     tasteJob=null,
+    commands={items:[],more:false},
   }: {
     providers: {
       id: string;
@@ -33,6 +36,7 @@
     }[];
     tasteJob?:Awaited<ReturnType<typeof import('#lib/social/taste-cache.server.js').tasteJob>>|null;
     actions: QueueAction[];
+    commands?:TaskControlListing;
     timing?: import('#lib/providers/job-timing.server.js').JobTiming[];
   } = $props();
   let filter = $state('all'),
@@ -99,6 +103,7 @@
 {#if page.data.developerMode}<p class="notice" role="status">Developer mode: automatic jobs are paused. Run or Retry to start work explicitly.</p>{/if}
 
 <div class="stack jobs">
+  <TaskControlRecovery {commands} />
   <Heading title="Queue">
     {#snippet actions()}<RowFilter groups={[
       { label: 'Job service', value: service, options: [

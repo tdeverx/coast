@@ -1,0 +1,51 @@
+{
+  "scope": "Actual restored job/account rows on exact marker-owned copy. Existing states are controlled for admission; no new provider replies, jobs or accounts. No worker or delivery handler starts. Actual per-target transaction commit/process-kill/restart proof, not a throughput or p95 claim.",
+  "runtime": {
+    "bun": "1.4.4",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54"
+  },
+  "checks": [
+    {
+      "name": "actual-bounded-membership",
+      "pass": true,
+      "cohort": 121,
+      "identityHash": "225eda75b7974f2465788819404543a80d82cbf3f1d42f8df94ae188d42d23aa"
+    },
+    {
+      "name": "actual-process-kill-preserves-39-committed-receipts",
+      "pass": true,
+      "updated": 39,
+      "remaining": 61
+    },
+    {
+      "name": "restart-completes-only-original-membership",
+      "pass": true
+    },
+    {
+      "name": "late-existing-job-not-admitted",
+      "pass": true
+    },
+    {
+      "name": "complete-job-dto-equality-excluding-wall-clock-update-field",
+      "pass": true,
+      "baselineHash": "e034a25beb7ced6eedde0a020642378355f33b1ae6923375b91d4d067e1ad68f",
+      "candidateHash": "e034a25beb7ced6eedde0a020642378355f33b1ae6923375b91d4d067e1ad68f",
+      "rows": 121
+    },
+    {
+      "name": "response-loss-replay-is-read-only",
+      "pass": true
+    },
+    {
+      "name": "zero-provider-delivery",
+      "pass": true,
+      "providerCalls": 0
+    }
+  ],
+  "timings": {
+    "canonicalSerialMs": 42.41829100000001,
+    "restartRemainderMs": 41.52087499999999
+  },
+  "status": "passed",
+  "actualNotificationCohort": 0
+}

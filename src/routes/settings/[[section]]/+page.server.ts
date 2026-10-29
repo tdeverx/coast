@@ -1,3 +1,4 @@
+import {listTaskCommands} from '#lib/server/queue/task-commands.server.js';
 import { resolveFeatures } from '#lib/features.js';
 import {listShares} from '#lib/sharing/service.server.js';
 import {listApiTokens} from '#lib/server/public-api/tokens.server.js';
@@ -91,6 +92,7 @@ export const load = (async ({locals, params, depends, url}) => {
     users: section === 'users' ? await listUsers(locals.user) : [],
     tasteJob:section==='jobs'?await (await import('#lib/social/taste-cache.server.js')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
+    taskCommands:section==='jobs'?await listTaskCommands(locals.user):{items:[],more:false},
     actions: section === 'jobs' ? await listTaskActions(locals.user) : section === 'admin' ? await listActions(locals.user) : [],
     loggingAudit:
       section === 'activity'

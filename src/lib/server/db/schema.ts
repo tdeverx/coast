@@ -707,6 +707,34 @@ export const outboxActions = pgTable(
     index('outbox_state_created_idx').on(t.state, t.createdAt),
   ]
 );
+/** Bounded queue-control membership and receipts commit with each canonical effect. */
+export const taskControlCommands = pgTable('task_control_commands', {
+  id:uuid('id').primaryKey(),
+  actorId:uuid('actor_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+  kind:text('kind').notNull(),
+  instanceId:uuid('instance_id'),
+  action:text('action').$type<'retry'|'cancel'|'promote'>().notNull(),
+  status:text('status').$type<'incomplete'|'complete'|'abandoned'>().notNull(),
+  targetIds:uuid('target_ids').array(),
+  outcomes:jsonb('outcomes').$type<('updated'|'skipped')[]>(),
+  total:integer('total').notNull(),
+  updated:integer('updated').notNull().default(0),
+  skipped:integer('skipped').notNull().default(0),
+  revision:integer('revision').notNull().default(0),
+  hasMore:boolean('has_more').notNull().default(false),
+  blocked:boolean('blocked').notNull().default(false),
+  lastError:text('last_error'),
+  compactedAt:timestamp('compacted_at',{withTimezone:true}),
+  createdAt:createdAt(),
+  updatedAt:updatedAt(),
+},t=>[
+  index('task_control_actor_idx').on(t.actorId,t.createdAt.desc(),t.id.desc()).where(sql`${t.status}<>'incomplete'`),
+  index('task_control_incomplete_idx').on(t.actorId,t.createdAt,t.id).where(sql`${t.status}='incomplete'`),
+  index('task_control_compact_idx').on(t.updatedAt).where(sql`${t.status}<>'incomplete' and ${t.compactedAt} is null`),
+  check('task_control_bounds',sql`${t.total} between 0 and 100 and ${t.updated}>=0 and ${t.skipped}>=0 and ${t.updated}+${t.skipped}<=${t.total} and ${t.revision}>=0`),
+  check('task_control_state',sql`${t.action} in ('retry','cancel','promote') and ${t.status} in ('incomplete','complete','abandoned') and (${t.status}<>'complete' or ${t.updated}+${t.skipped}=${t.total})`),
+  check('task_control_details',sql`(${t.compactedAt} is null and ${t.targetIds} is not null and ${t.outcomes} is not null and cardinality(${t.targetIds})=${t.total} and jsonb_typeof(${t.outcomes})='array' and jsonb_array_length(${t.outcomes})=${t.updated}+${t.skipped}) or (${t.compactedAt} is not null and ${t.status}<>'incomplete' and ${t.targetIds} is null and ${t.outcomes} is null)`),
+]);
 /** Complete upstream snapshots for resumable account imports. Never returned by
  * public/Jobs APIs; cursors and personal effects commit together. */
 export const providerJobSnapshots = pgTable('provider_job_snapshots', {
@@ -1364,11 +1392,16 @@ export const playbackShares = pgTable('playback_shares',{
  id:uuid('id').primaryKey().defaultRandom(),ownerId:uuid('owner_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
  workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),connectionId:uuid('connection_id').notNull().references(()=>providerConnections.id,{onDelete:'cascade'}),
  sourceId:text('source_id'),edition:text('edition'),
+ target:text('target').$type<'website'|'vrchat'>().notNull().default('website'),
+ videoCodec:text('video_codec').$type<'h264'|'hevc'>().notNull().default('h264'),
  accountGeneration:uuid('account_generation').notNull(),tokenHash:text('token_hash').notNull().unique(),
  together:boolean('together').notNull().default(false),expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
  claimedAt:timestamp('claimed_at',{withTimezone:true}),revokedAt:timestamp('revoked_at',{withTimezone:true}),
  positionSeconds:real('position_seconds').notNull().default(0),durationSeconds:real('duration_seconds').notNull().default(0),paused:boolean('paused').notNull().default(true),updatedAt:updatedAt(),createdAt:createdAt(),
-},t=>[index('playback_shares_owner_idx').on(t.ownerId)]);
+},t=>[index('playback_shares_owner_idx').on(t.ownerId),
+ check('playback_shares_target_check',sql`${t.target} in ('website','vrchat')`),
+ check('playback_shares_codec_check',sql`${t.videoCodec} in ('h264','hevc') and (${t.target}='vrchat' or ${t.videoCodec}='h264')`),
+]);
 export const shareViewers = pgTable('share_viewers',{
  id:uuid('id').primaryKey().defaultRandom(),shareId:uuid('share_id').notNull().references(()=>playbackShares.id,{onDelete:'cascade'}),
  tokenHash:text('token_hash').notNull().unique(),host:boolean('host').notNull().default(false),

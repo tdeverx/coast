@@ -1,0 +1,214 @@
+{
+  "scope": "Production JobsSettings/Recovery and UI playground rendered with temporary navigation adapters. Genuine native session, queue handlers and actual retained rows on marker-owned isolated copy. Actual shipped image pixels re-encoded with existing sharp. Oversized/deep/malformed inputs are authored edge cases. No workers, provider delivery, deployed-route or physical-device claim.",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "lost-response-followed-real-native-commit",
+          "pass": true
+        },
+        {
+          "name": "unknown-ack-keeps-reload-recovery",
+          "pass": true,
+          "targets": 100
+        },
+        {
+          "name": "reload-replay-does-not-repeat-effects",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-webp-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "invalid-header-keeps-accepted-image-without-url-or-decode",
+          "pass": true
+        },
+        {
+          "name": "compressed-size-admission-preserves-image",
+          "pass": true
+        },
+        {
+          "name": "remove-releases-url",
+          "pass": true
+        },
+        {
+          "name": "narrow-preview-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "unmount-releases-accepted-url",
+          "pass": true
+        },
+        {
+          "name": "no-runtime-error-or-vite-overlay",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "status": "passed"
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-webp-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "invalid-header-keeps-accepted-image-without-url-or-decode",
+          "pass": true
+        },
+        {
+          "name": "compressed-size-admission-preserves-image",
+          "pass": true
+        },
+        {
+          "name": "remove-releases-url",
+          "pass": true
+        },
+        {
+          "name": "narrow-preview-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "unmount-releases-accepted-url",
+          "pass": true
+        },
+        {
+          "name": "no-runtime-error-or-vite-overlay",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "status": "passed"
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-webp-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "invalid-header-keeps-accepted-image-without-url-or-decode",
+          "pass": true
+        },
+        {
+          "name": "compressed-size-admission-preserves-image",
+          "pass": true
+        },
+        {
+          "name": "remove-releases-url",
+          "pass": true
+        },
+        {
+          "name": "narrow-preview-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "unmount-releases-accepted-url",
+          "pass": true
+        },
+        {
+          "name": "no-runtime-error-or-vite-overlay",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "status": "passed"
+    }
+  ],
+  "status": "passed"
+}

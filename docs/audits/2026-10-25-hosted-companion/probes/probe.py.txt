@@ -1,0 +1,29 @@
+import json,urllib.request,urllib.error,pathlib,time,uuid
+ROOT=pathlib.Path('/tmp/coast-hosted-20261025');BASE='http://127.0.0.1:8097'
+assert json.loads((ROOT/'ownership.json').read_text())['marker']==ROOT.name
+DEVICE='coast-hosted-'+uuid.uuid4().hex
+
+def call(path,actor=None,body=None,method=None,timeout=35):
+ assert path.startswith('/') and '://' not in path
+ auth='MediaBrowser Client="Coast Hosted Audit", Device="Isolated copy", DeviceId="'+DEVICE+'", Version="1"'
+ if actor:auth+=', Token="'+actor['token']+'"'
+ data=json.dumps(body).encode() if body is not None else None
+ req=urllib.request.Request(BASE+path,data=data,headers={'Authorization':auth,'Content-Type':'application/json'},method=method)
+ try:
+  with urllib.request.urlopen(req,timeout=timeout) as res:
+   b=res.read();return res.status,json.loads(b) if b and res.headers.get_content_type()=='application/json' else b
+ except urllib.error.HTTPError as e:return e.code,e.read()
+
+if __name__=='__main__':
+ logins=json.loads((ROOT/'audit-logins.private.json').read_text());actors=[]
+ for u in logins['users']:
+  status,result=call('/Users/AuthenticateByName',body={'Username':u['name'],'Pw':logins['password']})
+  if status!=200:print('login failed',status);continue
+  user=result['User'];actors.append({'id':user['Id'],'token':result['AccessToken'],'admin':user['Policy']['IsAdministrator'],'policy':user['Policy']})
+  if sum(a['admin'] for a in actors)>0 and sum(not a['admin'] for a in actors)>1:break
+ (ROOT/'actors.private.json').write_text(json.dumps(actors));(ROOT/'actors.private.json').chmod(0o600)
+ print('fresh clone logins',len(actors),'admins',sum(a['admin'] for a in actors))
+ admin=next(a for a in actors if a['admin'])
+ status,v=call('/Items?Recursive=true&IncludeItemTypes=Movie,Episode&Limit=20&Fields=Path,MediaSources&UserId='+admin['id'],admin)
+ print('real video query',status,'total',v.get('TotalRecordCount') if isinstance(v,dict) else len(v))
+ (ROOT/'items.private.json').write_text(json.dumps(v))

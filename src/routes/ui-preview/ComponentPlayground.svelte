@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {previewJson,previewEvent} from '#lib/ui/preview-input.js';
   import {useClient} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import type { Snippet } from 'svelte';
@@ -37,16 +38,28 @@
     });
   });
   const entry = $derived(referenceEntries.find(entry => entry.id === name)!);
-  const configuration = $derived.by(()=>{
+  function configurationValue(next:Customisation=values,enabled=custom){
     const contract=contracts[name];
-    return JSON.stringify({...(custom&&contract?{component:name,props:{...Object.fromEntries(contract.props.filter(prop=>prop.defaultValue!==undefined).map(prop=>[prop.name,prop.defaultValue])),...specimenDefaults(name),...values.props},slots:Object.fromEntries(contract.props.filter(prop=>prop.kind==='snippet').map(prop=>[prop.name,values.slots[prop.name]?.kind&&values.slots[prop.name].kind!=='example'?values.slots[prop.name]:defaultSlot(name,prop)])),handlers:Object.fromEntries(contract.props.filter(prop=>prop.kind==='callback').map(prop=>[prop.name,handlerMode(name,prop,values)]))}:{reference:name,scenario,sources:entry.sources}),preview:{background:canvasSettings.background,color:canvasSettings.color,hasImage:Boolean(canvasSettings.image),width}},null,2);
+    return {...(enabled&&contract?{component:name,props:{...Object.fromEntries(contract.props.filter(prop=>prop.defaultValue!==undefined).map(prop=>[prop.name,prop.defaultValue])),...specimenDefaults(name),...next.props},slots:Object.fromEntries(contract.props.filter(prop=>prop.kind==='snippet').map(prop=>[prop.name,next.slots[prop.name]?.kind&&next.slots[prop.name].kind!=='example'?next.slots[prop.name]:defaultSlot(name,prop)])),handlers:Object.fromEntries(contract.props.filter(prop=>prop.kind==='callback').map(prop=>[prop.name,handlerMode(name,prop,next)]))}:{reference:name,scenario,sources:entry.sources}),preview:{background:canvasSettings.background,color:canvasSettings.color,hasImage:Boolean(canvasSettings.image),width}};
+  }
+  const configuration=$derived.by(()=>{
+    try{return previewJson(configurationValue(),2);}catch(cause){return cause instanceof Error?cause.message:'Configuration exceeds preview limits.';}
   });
   function reset() {values=emptyCustomisation();custom=!!contracts[name];events=[];revision++;}
-  function setProp(key:string,value:unknown) {values={...values,props:{...values.props,[key]:value}};}
-  function record(name:string,args:unknown[]) {events=[...events.slice(-7),{name,value:JSON.stringify(args,(_key,value)=>value instanceof Event?{type:value.type}:value)??''}];}
+  function accept(next:Customisation){
+    try{
+      previewJson(configurationValue(next,true),2);
+      values=next;
+    }catch(cause){delivery.failure(cause instanceof Error?cause.message:'The preview input could not be accepted.');}
+  }
+  function setProp(key:string,value:unknown){accept({...values,props:{...values.props,[key]:value}});}
+  function record(name:string,args:unknown[]){events=[...events.slice(-7),{name,value:previewEvent(args)}];}
+
   async function copy() {
     exported = true;
-    try {await navigator.clipboard.writeText(configuration);delivery.notify('Configuration copied.');}
+    let text:string;
+    try{text=previewJson(configurationValue(),2);}catch(cause){delivery.failure(cause instanceof Error?cause.message:'Configuration exceeds preview limits.');return;}
+    try {await navigator.clipboard.writeText(text);delivery.notify('Configuration copied.');}
     catch {delivery.notify('Select the configuration below to copy it.');}
   }
   function selectState(value:string) {scenario = value;custom = false;onscenario(value);}
@@ -68,7 +81,7 @@
     <Field label="Example state"><select value={scenario} onchange={event => selectState(event.currentTarget.value)}>{#each scenarios(name) as value}<option {value}>{scenarioLabel(value)}</option>{/each}</select></Field>
     {#if contracts[name]}
       <label class="check"><input type="checkbox" bind:checked={custom} />Customise component props</label>
-      {#if custom}<PropEditor {name} custom={values} change={value=>values=value} />{/if}
+      {#if custom}<PropEditor {name} custom={values} change={accept} />{/if}
       <details><summary>Preview events · {events.length}</summary><div class="stack source-details" aria-live="polite">{#each events as event}<div><code>{event.name}</code><pre>{event.value}</pre></div>{:else}<p class="small quiet">Use a component control to inspect its local callback events.</p>{/each}</div></details>
     {/if}
     <details><summary>Canvas</summary><div class="stack canvas-options">

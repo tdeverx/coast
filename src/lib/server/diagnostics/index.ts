@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { mkdir, stat, rename, unlink, appendFile, readFile, chmod } from 'node:fs/promises';
+import { mkdir, stat, rename, unlink, appendFile, readFile, chmod, readdir, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { dataDirectory } from '../security/credentials';
 import {
@@ -16,11 +16,18 @@ import {
 export const context = new AsyncLocalStorage<string>();
 export const storageLimits = {
   segmentBytes: 1024 * 1024,
-  segments: 4,
+  segments: 256,
   retentionMs: 7 * 86400_000,
   pending: 128,
 };
+type DiagnosticRow = {createdAt: string; level: DiagnosticLevel; kind: DiagnosticEvent; message: string; correlationId: string | undefined; detail: ReturnType<typeof safeFields>};
+export type DiagnosticRetention = { maxSizeMiB: number; maxAgeDays: number };
 export class DiagnosticStore {
+  retention: DiagnosticRetention = { maxSizeMiB: storageLimits.segments, maxAgeDays: 7 };
+  configure(retention: DiagnosticRetention) {
+    if (retention.maxSizeMiB !== this.retention.maxSizeMiB || retention.maxAgeDays !== this.retention.maxAgeDays) this.lastPrune = 0;
+    this.retention = { ...retention };
+  }
   level: DiagnosticLevel = 'info';
   private tail: Promise<void> = Promise.resolve();
   private pending = 0;
@@ -29,6 +36,14 @@ export class DiagnosticStore {
   private failures = 0;
   metrics() { return {diagnosticPending: this.pending, diagnosticDropped: this.dropped, diagnosticFailures: this.failures}; }
   constructor(private directory: () => string = () => join(dataDirectory(), 'diagnostics'), private maxLineBytes = storageLimits.segmentBytes) {}
+  private async files(directory: string) {
+    return (await readdir(directory).catch(error => {
+      if (error.code !== 'ENOENT') throw error;
+      return [] as string[];
+    }))
+      .filter(name => /^(0|[1-9]\d*)\.jsonl$/.test(name))
+      .sort((a, b) => Number(a.slice(0, -6)) - Number(b.slice(0, -6)));
+  }
   private async prepare(directory: string) {
     try {
       const file = await stat(directory);
@@ -43,24 +58,30 @@ export class DiagnosticStore {
   private async prune(directory: string, force = false) {
     if (!force && Date.now() - this.lastPrune < 60_000) return;
     this.lastPrune = Date.now();
-    for (let i = 0; i < storageLimits.segments; i++) {
-      const path = join(directory, `${i}.jsonl`);
+    for (const name of await this.files(directory)) {
+      const index = Number(name.slice(0, -6));
+      const path = join(directory, name);
       try {
+        if (index >= this.retention.maxSizeMiB) { await unlink(path); continue; }
         const file = await stat(path);
         let oldest = file.mtimeMs;
         if (file.size <= storageLimits.segmentBytes) {
           try {
-            const contents = await readFile(path, 'utf8');
-            const boundary = contents.indexOf('\n');
-            oldest = Math.min(
-              oldest,
-              Date.parse(JSON.parse(boundary < 0 ? contents : contents.slice(0, boundary)).createdAt)
-            );
+            const handle = await open(path, 'r');
+            try {
+              // Age checks need only the first event, not the entire storage budget.
+              const buffer = Buffer.alloc(4096);
+              const {bytesRead} = await handle.read(buffer, 0, buffer.length, 0);
+              const contents = buffer.toString('utf8', 0, bytesRead);
+              const boundary = contents.indexOf('\n');
+              const createdAt = Date.parse(JSON.parse(boundary < 0 ? contents : contents.slice(0, boundary)).createdAt);
+              if (Number.isFinite(createdAt)) oldest = Math.min(oldest, createdAt);
+            } finally { await handle.close(); }
           } catch {
             /* Not a complete event. */
           }
         }
-        if (Date.now() - oldest > storageLimits.retentionMs) await unlink(path);
+        if (Date.now() - oldest > this.retention.maxAgeDays * 86400_000) await unlink(path);
       } catch {
         /* absent or inaccessible */
       }
@@ -107,18 +128,15 @@ export class DiagnosticStore {
             return 0;
           });
         if (size + Buffer.byteLength(line) > storageLimits.segmentBytes) {
-          await unlink(join(directory, `${storageLimits.segments - 1}.jsonl`)).catch(
-            (error) => {
-              if (error.code !== 'ENOENT') throw error;
-            }
-          );
-          for (let i = storageLimits.segments - 2; i >= 0; i--)
-            await rename(
-              join(directory, `${i}.jsonl`),
-              join(directory, `${i + 1}.jsonl`)
+          for (const name of (await this.files(directory)).reverse()) {
+            const index = Number(name.slice(0, -6));
+            await (index >= this.retention.maxSizeMiB - 1
+              ? unlink(join(directory, name))
+              : rename(join(directory, name), join(directory, `${index + 1}.jsonl`))
             ).catch((error) => {
               if (error.code !== 'ENOENT') throw error;
             });
+          }
         }
         await appendFile(path, line, { mode: 0o600 });
       })
@@ -128,53 +146,56 @@ export class DiagnosticStore {
       });
     return this.tail;
   }
-  async recent(limit = Infinity) {
-    limit = Math.max(0, Math.trunc(limit) || 0);
+  private async *segments() {
     await this.tail;
     const directory = this.directory();
-    await this.prune(directory, true);
-    const rows = [];
-    for (let i = 0; i < storageLimits.segments; i++) {
+    let names: string[];
+    try {
+      await this.prune(directory, true);
+      names = await this.files(directory);
+    } catch { return; /* Unavailable diagnostics must not break the Activity page. */ }
+    for (const name of names) {
+      if (Number(name.slice(0, -6)) >= this.retention.maxSizeMiB) continue;
+      const rows: DiagnosticRow[] = [];
       try {
-        const path = join(directory, `${i}.jsonl`);
+        const path = join(directory, name);
         if ((await stat(path)).size > storageLimits.segmentBytes) continue;
         const lines = (await readFile(path, 'utf8')).trim().split('\n');
-        for (const line of lines) {
+        for (const line of lines.reverse()) {
           try {
             const row = JSON.parse(line);
             if (
-              Date.now() - Date.parse(row.createdAt) <= storageLimits.retentionMs &&
+              Date.now() - Date.parse(row.createdAt) <= this.retention.maxAgeDays * 86400_000 &&
               diagnosticEvents.includes(row.kind) &&
               diagnosticLevels.includes(row.level)
-            )
-              rows.push({
-                createdAt: new Date(row.createdAt).toISOString(),
-                level: row.level,
-                kind: row.kind,
-                message: eventMessages[row.kind as DiagnosticEvent],
-                correlationId: correlationId(row.correlationId),
-                detail: row.detail,
-              });
-          } catch {
-            /* truncated line */
-          }
+            ) rows.push({
+              createdAt: new Date(row.createdAt).toISOString(),
+              level: row.level,
+              kind: row.kind,
+              message: eventMessages[row.kind as DiagnosticEvent],
+              correlationId: correlationId(row.correlationId),
+              detail: safeFields(row.detail),
+            });
+          } catch { /* Invalid records must not hide the next eligible event. */ }
         }
-      } catch {
-        /* Diagnostics must never prevent application use. */
-      }
+      } catch { /* Diagnostics must never prevent application use. */ }
+      yield rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
-    const recent = [];
-    for (const row of rows.reverse().sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
-      if (recent.length >= limit) break;
-      try {
-        // Sanitize only admitted output, but keep looking if malformed fields
-        // reject a record. Sorting and equal-time occurrence order stay exact.
-        recent.push({ ...row, detail: safeFields(row.detail) });
-      } catch {
-        /* Invalid diagnostic detail must not hide the next eligible record. */
-      }
+  }
+  async recent(limit = Infinity) {
+    limit = Math.max(0, Math.trunc(limit) || 0);
+    // Keep only the requested tail while reading at most one 1 MiB segment at a time.
+    let rows: DiagnosticRow[] = [];
+    for await (const segment of this.segments()) {
+      rows = rows.concat(segment).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
     }
-    return recent;
+    return rows;
+  }
+  async *download() {
+    // Stream exports so a larger disk budget does not require loading it all into memory.
+    for await (const segment of this.segments()) {
+      if (segment.length) yield segment.map(row => JSON.stringify(row) + '\n').join('');
+    }
   }
 }
 export const diagnosticStore = new DiagnosticStore();

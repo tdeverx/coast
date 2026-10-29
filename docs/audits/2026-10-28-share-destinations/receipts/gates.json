@@ -1,0 +1,44 @@
+{
+  "status": "passed-with-retained-HEVC60-provider-limitation",
+  "typeCheck": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "nativeDatabase": {
+    "passed": 47,
+    "sharing": 21,
+    "settings": 7,
+    "playbackGeneration": 19
+  },
+  "shippingDatabase": {
+    "passed": 47,
+    "bun": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "candidate": "b74ed1d3106e",
+    "note": "Final a93aedbbf804 adds the native-tested website replay ceiling fence; final image compiled and booted successfully."
+  },
+  "functionalUnit": {
+    "passed": 1024,
+    "skipped": 745,
+    "failed": 0,
+    "scope": "Only ./tests files; audit ownership guards rerun after this evidence-index refresh"
+  },
+  "browserDialogCases": 4,
+  "originalAttempts": [
+    "A broad Bun filename-filter command also selected historical archived tests; corrected explicit ./tests paths passed.",
+    "First PostgreSQL fixture admission/socket settings were corrected only on the disposable cluster.",
+    "An initial allocation JSON cast failed authored fixtures; explicit text-to-jsonb casting passed the final suites.",
+    "UI harness locators were corrected for the existing accessible menu name and native select labels."
+  ],
+  "physicalQuestAccepted": false,
+  "hevc60LevelAccepted": false,
+  "liveHealth": 200,
+  "liveBackupRestoreVerified": true,
+  "fullUnitAndAudit": {
+    "passed": 1034,
+    "skipped": 745,
+    "failed": 0,
+    "files": 324,
+    "elapsedMs": 10150
+  },
+  "uiInventory": "65 components,28 compositions,11 internal renderers,9 delegated routes verified"
+}

@@ -59,10 +59,11 @@ test('limited diagnostic reads preserve full-tail order and fill past rejected d
 
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const filesystemUrl=moduleUrl(`import * as real from 'node:fs/promises';
- export const counts={stat:0,mkdir:0,chmod:0,appendFile:0,rename:0,unlink:0,readFile:0};
+ export const open=real.open;
+ export const counts={stat:0,mkdir:0,chmod:0,appendFile:0,rename:0,unlink:0,readFile:0,readdir:0};
  export const fault={operation:'',path:'',code:''};
  const call=(operation,args)=>{counts[operation]++;if(fault.operation===operation&&fault.path===args[0]){fault.operation='';throw Object.assign(new Error('controlled filesystem failure'),{code:fault.code});}return real[operation](...args);};
- export const stat=(...args)=>call('stat',args),mkdir=(...args)=>call('mkdir',args),chmod=(...args)=>call('chmod',args),appendFile=(...args)=>call('appendFile',args),rename=(...args)=>call('rename',args),unlink=(...args)=>call('unlink',args),readFile=(...args)=>call('readFile',args);`);
+ export const stat=(...args)=>call('stat',args),mkdir=(...args)=>call('mkdir',args),chmod=(...args)=>call('chmod',args),appendFile=(...args)=>call('appendFile',args),rename=(...args)=>call('rename',args),unlink=(...args)=>call('unlink',args),readFile=(...args)=>call('readFile',args),readdir=(...args)=>call('readdir',args);`);
 const source=await Bun.file(new URL('../src/lib/server/diagnostics/index.ts',import.meta.url)).text();
 const code=new Bun.Transpiler({loader:'ts'}).transformSync(source)
  .replace(/(['"])node:fs\/promises\1/u,JSON.stringify(filesystemUrl))
@@ -75,7 +76,7 @@ test('warm writes avoid redundant directory setup while a non-missing size error
   const reset=()=>{for(const key of Object.keys(filesystem.counts))filesystem.counts[key]=0;};
   try{
     await store.write('info','request.complete',{status:200});reset();
-    await store.write('info','request.complete',{status:201});expect(filesystem.counts).toEqual({stat:2,mkdir:0,chmod:0,appendFile:1,rename:0,unlink:0,readFile:0});
+    await store.write('info','request.complete',{status:201});expect(filesystem.counts).toEqual({stat:2,mkdir:0,chmod:0,appendFile:1,rename:0,unlink:0,readFile:0,readdir:0});
     const before=await fs.readFile(join(directory,'0.jsonl'),'utf8');filesystem.fault.operation='stat';filesystem.fault.path=join(directory,'0.jsonl');filesystem.fault.code='EIO';reset();
     await expect(store.write('info','request.complete',{status:202})).resolves.toBeUndefined();expect(filesystem.counts.appendFile).toBe(0);expect(await fs.readFile(join(directory,'0.jsonl'),'utf8')).toBe(before);expect(store.metrics().diagnosticFailures).toBe(1);
     await store.write('info','request.complete',{status:203});expect((await store.recent()).map((row:{detail:{status:number}})=>row.detail.status).sort()).toEqual([200,201,203]);

@@ -1,0 +1,16 @@
+{
+  "scope": "Hosted middleware and real FFmpeg reading the genuine movie at deliberately reduced input rate; forced failure schedule, not production latency",
+  "timeout": {
+    "status": 502,
+    "body": {
+      "Error": "analysis_failed"
+    },
+    "elapsedMs": 20031.41625,
+    "remainingProcesses": 0
+  },
+  "sharedChildren": 1,
+  "afterFirstAbort": 1,
+  "afterFinalAbort": 0,
+  "finalDrainMs": 66.72712500000125,
+  "passed": true
+}

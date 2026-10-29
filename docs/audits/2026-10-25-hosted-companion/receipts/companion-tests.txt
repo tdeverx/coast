@@ -1,0 +1,4 @@
+CSSM_ModuleLoad(): One or more parameters passed to a function were not valid.
+11 journal checks passed (coalescing, bounded retention, paging, reset, concurrency).
+Controlled crop contention: 8 requests, 1 analysis admissions.
+29 crop checks passed (single flight, credential isolation, two-child admission, 64-entry cache, expiry, shared/last-consumer cancellation, retry, request contracts). Controlled child output is not actual media evidence.

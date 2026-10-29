@@ -1,0 +1,47 @@
+{
+  "scope": "Production JellyfinAdapter, genuine movie, fresh clone credentials; two independent provider sessions, not Coast party synchronization",
+  "runs": [
+    {
+      "frames": 28,
+      "decoderExit": 255
+    },
+    {
+      "frames": 105,
+      "decoderExit": 255
+    }
+  ],
+  "during": [
+    {
+      "pid": 80066,
+      "ppid": 80064
+    },
+    {
+      "pid": 80067,
+      "ppid": 80064
+    },
+    {
+      "pid": 80068,
+      "ppid": 79538
+    },
+    {
+      "pid": 80069,
+      "ppid": 79538
+    }
+  ],
+  "firstStopMs": 1739.933875,
+  "secondContinued": true,
+  "afterFirst": [
+    {
+      "pid": 80067,
+      "ppid": 80064
+    },
+    {
+      "pid": 80068,
+      "ppid": 79538
+    }
+  ],
+  "finalStopMs": 1649.2265829999997,
+  "afterFinal": [],
+  "remainingTranscodeFiles": 1,
+  "passed": true
+}

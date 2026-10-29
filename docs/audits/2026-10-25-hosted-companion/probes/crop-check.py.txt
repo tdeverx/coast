@@ -1,0 +1,16 @@
+from probe import *
+a=json.loads((ROOT/'actors.private.json').read_text());admin=next(x for x in a if x['admin']);viewer=next(x for x in a if not x['admin']);items=json.loads((ROOT/'items.private.json').read_text())['Items']
+import sqlite3
+d=sqlite3.connect(ROOT/'server/data/jellyfin.db'); candidate=next(x for x in d.execute("select Id,Path from BaseItems where MediaType='Video' and Type like '%Movie%' and Path is not null") if pathlib.Path(x[1]).is_file());status,item=call('/Items/'+candidate[0].replace('-','')+'?UserId='+admin['id'],admin);assert status==200;(ROOT/'selected.private.json').write_text(json.dumps(item));iid=item['Id'];results=[]
+def record(case,status,body,elapsed):
+ row={'case':case,'status':status,'elapsedMs':round(elapsed*1000,2)}
+ if isinstance(body,dict):row['crop']=body.get('Crop');row['error']=body.get('Error')
+ results.append(row);print(row,flush=True)
+for name,path,actor,body in [('visible-before','/Items/'+iid+'?UserId='+viewer['id'],viewer,None),('cold','/Coast/TrailerCrop',viewer,{'ItemId':iid}),('cached','/Coast/TrailerCrop',viewer,{'ItemId':iid})]:
+ t=time.monotonic();s,b=call(path,actor,body);record(name,s,b,time.monotonic()-t)
+policy={**viewer['policy'],'EnableAllFolders':False,'EnabledFolders':[]}
+s,b=call('/Users/'+viewer['id']+'/Policy',admin,policy);assert s==204,(s,str(b)[:100])
+for name,path,body in [('visibility-withdrawn','/Items/'+iid+'?UserId='+viewer['id'],None),('cached-withdrawn','/Coast/TrailerCrop',{'ItemId':iid})]:
+ t=time.monotonic();s,b=call(path,viewer,body);record(name,s,b,time.monotonic()-t)
+s,b=call('/Users/'+viewer['id']+'/Policy',admin,viewer['policy']);assert s==204
+(ROOT/'crop-before.json').write_text(json.dumps(results,indent=2))

@@ -1,0 +1,176 @@
+{
+  "epoch": "selected-policy-2026-10-23",
+  "algorithm": "sha256",
+  "scope": "Selected policies and affected local acceptance. Earlier actual-data receipts retain their original source/runtime epoch; browser-start is the final starter/refresh follow-up.",
+  "files": {
+    "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
+    "docs/audits/2026-10-22-performance-followup/completion/independent/blockers.json": "c23d56287d775720f4e31085748512a2aa7a5e03963916000f6dbff5747b0c13",
+    "docs/audits/2026-10-22-performance-followup/register.json": "9bd83477a0e30352a9b3acdebb4268d6f95f363a61824279578555c42b11b231",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention.md": "fdbd142542f99701bd3f13a83c676f2bc7276430e94d7ddbb4f53c30c93947b9",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/actual-recovery.ts.txt": "cc29b604659c39a17217db29c0578570fbecd1c7eceb1b5e1b6d4d33784ecc3c",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-api.ts.txt": "5b8d0b20efab34054351b6fd9d9964face52dfa122e40317575b8ede2d6205d6",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-checks.mjs.txt": "78f32fabe02a37014aebeb5601c4dc40d78644eed02aee184313268e76452bd3",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/App.svelte.txt": "085dc18df3bb9793aa6b4d9a3b2367b3d463db0c58bfab6aa0e6e1be1424b73f",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/environment.ts.txt": "d55e91d159ff42f0bc225cc9f602db887721d801e37403ebd02c51115a3ec402",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/index.html.txt": "d006ce43db4b810540f5202efc919f3e46888692a4c1dff0e3d002453beaab55",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/main.ts.txt": "b1ce783c386502607a5835e6d600ddb42ac5ba0eecc40fd7069780f4214a7341",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/navigation.ts.txt": "b82f60d338430cbaa7443c17d4c5c1e623358daaf85a4905b3e41c340c0a86e6",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/state.svelte.ts.txt": "5e139aab0103b6ebfb3885c70cb6be9e14ddd0767191786a170dc7ac00e3b7f6",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-harness/vite.config.mjs.txt": "697e3e83f6872a50fbf826440116b64ae4b482e80d059f2cafbb6e5430e60c50",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-start-api.ts.txt": "c6cd6a4c5fd0afee2799feda9d106c1baeeb11383c773f0274a3195eb9553992",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-start-prep.ts.txt": "93a2ec2e671c40ac46e89d86eaaa4c00892b74c4ff4144d768b296634def1f07",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/browser-start.mjs.txt": "0d7d0567ed582cff52b309c44cf6bf5aa3c7b31e876475ed3ca9187c4507af72",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/cleanup.ts.txt": "de319d5a0b4705505438b582983735564c6f1db89a0debb08a6c855e5c739bc2",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/crash-resume.ts.txt": "d14141d6fddcce61d81ace2451f773a7938a9153828f504a34336e8a5b732856",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/image-lifetime.mjs.txt": "529273fd6784b9b8deee8196fbd90fe0c79fe403e56340d576f3995a71487e97",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/probes/storage-cost.ts.txt": "7ede490cf1d43e9c4f603e774d31afc3e8d0ad0764d8745f536236a59ec58b4f",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/actual-recovery.json": "354276130c56a4d76ace00eb1f4c1eeb96fe4a0ceaf19c00858c98903b698443",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser-attempt1.json": "c8848bb3e99bf88d772c4eff50cd9adb1feb71db50754982e3272df29afb4366",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser-attempt3.json": "3a0e6f0fe4f32c1c35afe7794fde287dda4ece24a460bf2aa68480b467e96c8d",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser-attempt4.json": "0d3c7b85069b08aeb0de0f5f04c50050185f34793f965a3f6eb93794ea08cff1",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser-response-loss-replay.json": "108c6f0ac8c1cdb7a4e8da9e252a0ce2da66dd9edd213237590beb1c6a3fd663",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser-start.json": "22c457f859e6dc477f29ce3623efa3cef53e7d71ad421ac364920694d74ac64d",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/browser.json": "ae10b4da978de5df1d9f38149c4e37026da268e9a4f067345f195a9dfda284b7",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/cleanup.json": "79a8ca757ebf581accc4ca91d116e0ecd04fb44c5b1169782c1744c23cdade32",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/development-findings.json": "f857702539c980832f0492a982a2d153016ad40e0bfa8dbfd22bd59d3a844090",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/gates.json": "002386ee4ac12cd74c34d75d2f714d8bb939cb8126d6704d73ae119dd4c86640",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/image-lifetime.json": "1c159dee42e18214ba92a503fb67c9eee19946a52b5616ed8d4ee3361918cfef",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/native-tests.json": "21c94b4257dba313451ce77cc64867c0d5738cd062334dd8dd77c57f2aa3740e",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/storage-cost-earlier-index.json": "a0c2299e82b6d9a413bc46284d7f12b805bed41988e8f9d89ad5973078875373",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/storage-cost-final.json": "bb5ab529ec752806b543461f4d2bc7285b33b2dcc7c2f83d11626eb5d413108d",
+    "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/visual-review.json": "89d42a656666c863c8906a55c3b26f8a83714ccbf67ec812223791e60d77040c",
+    "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
+    "docs/roadmap.md": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
+    "drizzle/0065_task_control_commands.sql": "0f7b57af9636ca0a472cb12dd151245bef1fda4bca54b3f76af6ea622811f3f1",
+    "drizzle/meta/0065_snapshot.json": "065625d17f4ef424b86dbd3934c34d2231af53172c85545d70422e9758d93668",
+    "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+    "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
+    "scripts/ui-inventory.ts": "4094bf1c9f084379e2c53ba2adea5145ab803ce5edec4eea0e911966c9d00d66",
+    "src/lib/providers/task-control.ts": "52a3877e76a84a1729980ef0c7dc5f8c62eba0dc78ac65d1c38b8dd48c89534a",
+    "src/lib/server/api/queue.server.ts": "460da8f835b0d6e5d160c383ffaa7f549335c1c5303cd29756a1ff26ddb89341",
+    "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+    "src/lib/server/queue/index.ts": "13e26a07753f5e4ba3947a145bde4532bedada25132b7d58c4868986dd69d645",
+    "src/lib/server/queue/task-commands.server.ts": "1d2834f302c66dc5e5504c290a930b756a34a9be53fbe81b05f5a6f2f3bf9c0d",
+    "src/lib/server/queue/task-controls.server.ts": "1ae39806d7aaf00df8d79c74de6649dd03e39eb20a1809e5dfbfbb8433338b75",
+    "src/lib/server/storage/retention.server.ts": "25c0f195a6da979c87d18174b6895776d36607ded4bca2659d994824defba341",
+    "src/lib/ui/client.ts": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
+    "src/lib/ui/component-manifest.json": "c0c2c67601b12c12e0bb1458996519315c0a3c7138a9e4b83f7c6f4865d7d0ae",
+    "src/lib/ui/components/JobSchedule.svelte": "d6271135414d43f66f623437bca73dc97c5d999d46b94a80eead17b1ad0cd3c1",
+    "src/lib/ui/components/JobsSettings.svelte": "b3bfb514018d41fe2de74c74d66f1fdce718a74953cfb930e17e126334c48f1a",
+    "src/lib/ui/preview-input.ts": "9d4bccbd96811079c30eef319068fcfef3077c8de7e559e8d98a2f2bb61c240f",
+    "src/lib/ui/task-control.svelte.ts": "00dd35cc7525fb9a35bc18f27ae4d895e46cc2e456e574fceb3fa898261b6b34",
+    "src/lib/ui/task-control/Recovery.svelte": "fa978b6aaf72490290183196bbbada8a12cd42093d6ee07abc777eb4407a750b",
+    "src/routes/settings/[[section]]/+page.server.ts": "a23dc43832d4ccbe7f5609cf2c825a9a396d34d7249c9e1a9677cbf2066e844b",
+    "src/routes/settings/[[section]]/+page.svelte": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+    "src/routes/ui-preview/+page.svelte": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
+    "src/routes/ui-preview/ComponentPlayground.svelte": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
+    "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
+    "src/routes/ui-preview/prop-manifest.json": "52236775dd00a601e33ae51e110e9c16d165ee717e52ee33b872819d92bf8ef2",
+    "src/routes/ui-preview/props.ts": "2c41d2695f77a4e96507c1f3e8894be7fcbf9d9d4d024c0d22c79751e7636067",
+    "static/coast-mark.png": "04efcda120c7032ef626f3b9486f75c0a3f98361c98347325affdd1cb8ae12b4",
+    "tests/job-task-summary-db.test.ts": "314bb823f730abce104e82acff948f5d26d2f2efe36a3d6f5049c496ca8e5dff",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
+    "tests/preview-input.test.ts": "290dbbd6984ead172f957b69230f55c747f45ae7a27e50a065ea706718a7c8b0",
+    "tests/retention-db.test.ts": "54150a4e211b2f152d37334a06c0f1e52ed9bf65b7c8665e7bf4763c4266b6b6",
+    "tests/task-command-client.test.ts": "e8db1534f7d1157a26939b10172bbcdfde4b2235c32336d9431e016a58193154",
+    "tests/task-command-db.test.ts": "535a15c9e5490c63d48605d7cbbdafb213133c630aaeb9f1ef2367748859f8e9",
+    "tests/ui-reference.test.ts": "bc1537839c3bee643d7b49ddc77e903703376dc9e7d21157eff9d9e9895f5515"
+  },
+  "reviewedOwnerEpochs": [
+    {
+      "epoch": "hosted-companion-2026-10-25",
+      "report": "docs/audits/2026-10-25-hosted-companion.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/blockers.json",
+          "previousSha256": "5093776bd3bb4083a5ee80bc59d4ea1f265802a6af34c3ba82efbef24fbf1eae",
+          "currentSha256": "31c2d2177f6ad8d2dbebbadd9c47386e40db3af32b7051b2d7bea8d92ddce67a"
+        },
+        {
+          "path": "docs/performance.md",
+          "previousSha256": "0c5d9ae72ab3bedf79f2fa3baa70f6811522a17f6540a2216f7e7167950b59c7",
+          "currentSha256": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d"
+        },
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "de0e931efd0a577a808c483c3a8df229f2e1a563bb9cfc80af708f3de033a08f",
+          "currentSha256": "8e54d60fe8dad7e2801c8fdf87a1b209c48e84c3854f9b787847635543e0ffcf"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "afd7a31df4e13399e9959510497e6525f878e2d3dbd064b14fd650f563e8f9b1",
+          "currentSha256": "9644b56298c7076c8178e2cb3473611403164ef558d49c4678ff590cb53b3978"
+        }
+      ],
+      "note": "Roadmap/hosted boundary and audit-guard updates only; selected bulk and preview owners and their execution receipts are unchanged."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "drizzle/meta/_journal.json",
+          "previousSha256": "51c29108ae77bc081ce39f3d73ea0d175c030907436372af570b6d0d58758131",
+          "currentSha256": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "previousSha256": "5db8a584bac0a600e16162889aec25060cf265754b69ec9a78f451a802c11312",
+          "currentSha256": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "93dafe2e7ced80f67eeb546e8bce20e2448cc375dcdab3bee3d168c93ff729ab",
+          "currentSha256": "6756b45619a0b1ba3648d7a4625c32bbb0a438abf0f101276b51b0bbf8ca544c"
+        },
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "9644b56298c7076c8178e2cb3473611403164ef558d49c4678ff590cb53b3978",
+          "currentSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/blockers.json",
+          "previousSha256": "31c2d2177f6ad8d2dbebbadd9c47386e40db3af32b7051b2d7bea8d92ddce67a",
+          "currentSha256": "c23d56287d775720f4e31085748512a2aa7a5e03963916000f6dbff5747b0c13"
+        },
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "8e54d60fe8dad7e2801c8fdf87a1b209c48e84c3854f9b787847635543e0ffcf",
+          "currentSha256": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "6756b45619a0b1ba3648d7a4625c32bbb0a438abf0f101276b51b0bbf8ca544c",
+          "currentSha256": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    }
+  ]
+}

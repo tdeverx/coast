@@ -6,7 +6,9 @@ Current counts: **33 implemented / 39 partial / 19 open / 3 other**, 94 canonica
 
 ## Current handoff — 23 October 2026
 
-The [application roadmap](../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026) now carries all eight remaining blocker/boundary IDs from the [current register](../2026-10-22-performance-followup/completion/independent/blockers.json), including the exact missing input and acceptance condition. The [continuation report](../2026-10-22-performance-followup/completion/independent/README.md) records completed real-data, multi-engine, reader, resource and lease checks. The per-area descriptions below retain their 19 October evidence epoch; consult the current handoff before repeating a now-completed check. Historical counts are not updated to imply universal acceptance.
+The [application roadmap](../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026) now carries all six remaining blocker/boundary IDs from the [current register](../2026-10-22-performance-followup/completion/independent/blockers.json), including the exact missing input and acceptance condition. The [continuation report](../2026-10-22-performance-followup/completion/independent/README.md) records completed real-data, multi-engine, reader, resource and lease checks. The per-area descriptions below retain their 19 October evidence epoch; consult the current handoff before repeating a now-completed check. Historical counts are not updated to imply universal acceptance.
+
+The selected 100-job recovery and preview/retention policies are [implemented locally](../2026-10-23-bulk-recovery-input-retention.md); BLOCK-BULK and BLOCK-POLICY are resolved for that scope. Earlier descriptions of those decisions remain historical.
 
 ## Resume order
 

@@ -19,9 +19,12 @@ export const configSchema = v.object({
   experimentalParties: v.optional(v.boolean(),false),
   experimentalPlanning: v.optional(v.boolean(),false),
   allowPlaybackSharing: v.optional(v.boolean(),false),
+  allowVrchatHevc: v.optional(v.boolean(),false),
   registrationMode: v.picklist(['invite','open']),
   registrationProvider: v.picklist(['jellyfin','trakt','either','none']),
   diagnosticLevel: v.picklist(diagnosticLevels),
+  diagnosticMaxSizeMiB: v.pipe(v.number(), v.integer(), v.minValue(4), v.maxValue(4096)),
+  diagnosticMaxAgeDays: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(365)),
   sessionLifetimeDays: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(365)),
   allowArbitraryServers: v.boolean(),
   serverAllowlist: v.array(v.string()),
@@ -49,9 +52,12 @@ export const defaultConfig: CoastConfig = {
   experimentalBooks: false, experimentalComics: false,
   experimentalPlanning:false,
   allowPlaybackSharing:false,
+  allowVrchatHevc:false,
   registrationMode: 'invite',
   registrationProvider: 'jellyfin',
   diagnosticLevel: 'info',
+  diagnosticMaxSizeMiB: 256,
+  diagnosticMaxAgeDays: 7,
   sessionLifetimeDays: 30,
   allowArbitraryServers: false,
   serverAllowlist: [],
@@ -116,12 +122,17 @@ export function getConfig(database?: ConfigDatabase): Promise<CoastConfig> {
   return readConfig(getSql());
 }
 
+export function applyDiagnosticConfig(config: CoastConfig) {
+  diagnosticStore.level = config.diagnosticLevel;
+  diagnosticStore.configure({maxSizeMiB: config.diagnosticMaxSizeMiB, maxAgeDays: config.diagnosticMaxAgeDays});
+}
+
 /** Refresh between requests and jobs so persisted changes also reach other processes. */
 export async function refreshDiagnosticConfig() {
   try {
-    diagnosticStore.level = (await getConfig()).diagnosticLevel;
+    applyDiagnosticConfig(await getConfig());
   } catch {
-    /* Keep the last known level during outages. */
+    /* Keep the last known logging configuration during outages. */
   }
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {previewBackground} from '#lib/ui/preview-input.js';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { onDestroy } from 'svelte';
@@ -17,13 +18,9 @@
   provideCanvas(canvasSettings);
   function updateCanvas(values: Partial<Pick<typeof canvasSettings,'background'|'color'>>) { Object.assign(canvasSettings,values); }
   let backgroundError = $state('');
-  function setBackgroundImage(file?: File) {
-    if (file && !file.type.startsWith('image/')) { backgroundError = 'Choose an image for the preview background.'; return; }
-    if (canvasSettings.image) URL.revokeObjectURL(canvasSettings.image);
-    canvasSettings.image = file ? URL.createObjectURL(file) : '';
-    backgroundError = '';
-  }
-  onDestroy(() => { if (canvasSettings.image) URL.revokeObjectURL(canvasSettings.image); });
+  const backgrounds=previewBackground(url=>canvasSettings.image=url,message=>backgroundError=message);
+  function setBackgroundImage(file?:File){backgrounds.replace(file);}
+  onDestroy(()=>backgrounds.destroy());
   const section = $derived(page.url.searchParams.has('section') ? referenceSection(page.url.searchParams.get('section')) : 'elements');
   const inventory = $derived<readonly string[]>(section === 'elements' ? elements : section === 'compositions' ? compositions.map(item=>item.id) : composedComponents);
   const options = $derived(referenceEntries.filter(entry=>inventory.includes(entry.id)).map(entry=>({value:entry.id,label:entry.title})));

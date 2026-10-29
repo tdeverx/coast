@@ -1,0 +1,16 @@
+import {chromium} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/playwright/index.mjs';import fs from 'node:fs/promises';
+const root='/tmp/coast-bulk-policy-20261023',base='http://127.0.0.1:5199',report={scope:'Initial production JobSchedule menu action, same-account native admission refresh, explicit Pause and Resume against a second independently restored/marked actual-data copy. No workers or provider delivery.',checks:[],status:'running'};
+const check=(name,pass)=>{report.checks.push({name,pass});if(!pass)throw Error(name);};let browser;
+try{
+ browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:1440,height:900}}),{token}=JSON.parse(await fs.readFile(root+'/private/browser-session.json','utf8'));await context.addCookies([{name:'coast_session',value:token,url:base,httpOnly:true}]);const p=await context.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(base);
+ const row=p.locator('article').filter({has:p.getByRole('heading',{name:'Live activity',exact:true})}).filter({hasText:'100 waiting'});await row.waitFor();
+ let held;await p.route('**/api/v1/queue/task-commands/*/resume',route=>{held=route;});
+ await row.getByRole('button',{name:/Live activity actions/}).click();await p.getByRole('menuitem',{name:'Cancel up to 100 waiting jobs',exact:true}).click();await p.getByRole('button',{name:'Pause',exact:true}).waitFor();
+ await p.waitForFunction(()=>!!document.querySelector('details[open] button'));
+ for(let n=0;!held&&n<100;n++)await p.waitForTimeout(5);check('initial-menu-survives-same-account-admission-refresh',!!held);check('applying-disables-duplicate-resume',await p.getByRole('button',{name:'Resume',exact:true}).first().isDisabled());
+ await p.screenshot({path:root+'/evidence/recovery-applying-desktop.png',animations:'disabled'});await p.setViewportSize({width:390,height:844});await p.screenshot({path:root+'/evidence/recovery-applying-mobile.png',animations:'disabled'});
+ await p.getByRole('button',{name:'Pause',exact:true}).click();await held.abort('aborted');await p.unroute('**/api/v1/queue/task-commands/*/resume');
+ const before=await (await context.request.get(base+'/bootstrap')).json(),command=before.commands.items.find(x=>x.status==='incomplete');check('pause-before-dispatch-retains-original100-with-zero-effects',command?.total===100&&command.updated===0&&command.remaining===100);
+ await p.getByRole('button',{name:'Resume',exact:true}).first().click();await p.waitForFunction(()=>!Object.keys(sessionStorage).some(k=>k.startsWith('coast:task-control:')));
+ const after=await (await context.request.get(base+'/bootstrap')).json(),done=after.commands.items.find(x=>x.id===command.id);check('resume-completes-original100',done?.status==='complete'&&done.updated===100&&done.skipped===0);check('zero-provider-delivery',after.providerCalls===0);check('no-runtime-errors',errors.length===0);await context.close();report.status='passed';
+}catch(e){report.status='findings';report.error={name:e.name,message:e.message.slice(0,350)};}finally{await browser?.close();await fs.writeFile(root+'/evidence/browser-start.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

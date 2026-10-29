@@ -1,0 +1,5 @@
+import {defineConfig} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/vite/dist/node/index.js';
+import {svelte} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/@sveltejs/vite-plugin-svelte/src/index.js';
+import tailwindcss from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/@tailwindcss/vite/dist/index.mjs';
+const repo='/Users/admin/Documents/ChatGPT/coast-new',root='/tmp/coast-pr-ui-20261029';
+export default defineConfig({root,cacheDir:root+'/.vite',publicDir:repo+'/static',plugins:[tailwindcss(),svelte({hot:false})],resolve:{alias:{'/src':repo+'/src','#lib':repo+'/src/lib','$app/state':root+'/state.svelte.ts','$app/navigation':root+'/navigation.ts','$app/environment':root+'/environment.ts'},dedupe:['svelte']},server:{host:'127.0.0.1',port:5298,strictPort:true,fs:{strict:true,allow:[repo,root]}},optimizeDeps:{include:['svelte','svelte/internal/client']}});

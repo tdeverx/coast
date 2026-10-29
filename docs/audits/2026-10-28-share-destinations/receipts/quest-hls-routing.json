@@ -1,0 +1,109 @@
+{
+  "timeUtc": "2026-10-28T18:17:27.278840+00:00",
+  "beforeFix": {
+    "quest": "Repeated unsuffixed HLS playlist GETs without segment requests",
+    "playlistBytes": 3024624,
+    "segments": 1634,
+    "proxyBufferErrors": false
+  },
+  "fix": {
+    "build": "fd9bd304-quest-hls-9570e3cd49c1",
+    "image": "coast:quest-hls-20261028-9570e3cd49c1",
+    "rollbackUsed": false,
+    "change": "Retain .m3u8 on external child playlist URLs; accept through same route authorization",
+    "targetedSourceFingerprint": "9570e3cd49c1",
+    "migrationsChanged": false
+  },
+  "checks": {
+    "unitPassed": 7,
+    "databasePassed": 40,
+    "sharingDatabasePassed": 21,
+    "playbackGenerationDatabasePassed": 19,
+    "svelteErrors": 0,
+    "svelteWarnings": 0,
+    "compiledUnauthenticatedHlsRoute": 401,
+    "publicApiHealth": 200,
+    "initialDisposableDatabaseSetup": "SQL_ASCII cluster rejected by Unicode-normalization test; recreated UTF8 before final passing run"
+  },
+  "publicExistingGrantChain": {
+    "usesExistingGrantAndUserAgent": true,
+    "newGrantCreated": false,
+    "master": {
+      "status": 200,
+      "mime": "application/vnd.apple.mpegurl",
+      "childHasHlsSuffix": true
+    },
+    "playlist": {
+      "status": 200,
+      "mime": "application/vnd.apple.mpegurl",
+      "bytes": 2849449,
+      "segments": 1629
+    },
+    "segment": {
+      "status": 200,
+      "mime": "video/mp4",
+      "bytes": 244502
+    },
+    "init": {
+      "status": 200,
+      "mime": "video/mp4",
+      "bytes": 1422
+    }
+  },
+  "actualFirstChunk": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "hevc",
+        "profile": "Main",
+        "codec_type": "video",
+        "width": 960,
+        "height": 404,
+        "pix_fmt": "yuv420p",
+        "level": 90,
+        "r_frame_rate": "24000/1001"
+      },
+      {
+        "codec_name": "aac",
+        "profile": "LC",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 2,
+        "r_frame_rate": "0/0"
+      }
+    ]
+  },
+  "liveCounts": {
+    "build": "fd9bd304-quest-hls-9570e3cd49c1",
+    "counts": {
+      "users": 7,
+      "history": 90198,
+      "shares": 10,
+      "connections": 13
+    },
+    "before": {
+      "users": 7,
+      "history": 90198,
+      "shares": 10,
+      "connections": 13
+    }
+  },
+  "backupBytes": 315833339,
+  "latestQuestObservation": {
+    "backend": "Android AVPro / ExoPlayer1.8.0",
+    "timeWindowUtc": "18:14\u201318:15",
+    "playlistAndChunksRequested": true,
+    "firstInitBytes": 1422,
+    "firstChunkBytes": 244502,
+    "stillRetriesInitialChunks": true,
+    "actualCodec": "hevc",
+    "physicalVideoAndAudioAccepted": false,
+    "h264AfterFixAccepted": false,
+    "note": "HTTP delivery and valid elementary streams do not establish headset decoder acceptance. A fresh H264 device attempt after the corrected URL deployment remains required."
+  },
+  "proxyErrorDuringReplacement": {
+    "timeUtc": "18:13:10",
+    "kind": "one upstream connection reset while old app stopped; no renewed buffer-file write error observed"
+  }
+}

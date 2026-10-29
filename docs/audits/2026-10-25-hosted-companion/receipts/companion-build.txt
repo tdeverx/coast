@@ -1,0 +1,7 @@
+  Jellyfin.Plugin.Coast -> /Users/admin/Documents/ChatGPT/coast-plugin/Coast/bin/Release/net10.0/Jellyfin.Plugin.Coast.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:21.34
