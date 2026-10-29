@@ -37,7 +37,7 @@
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "Dockerfile": "303cffb25274c4d3d388da33d0b8966eb404e2a6ef041f090659801bfeb60f8d",
     "tests/ui-source-freshness.test.ts": "6970421b6d1689c7e1b5ae28529b62bc545e6e6450fd44cb2763fa62d8fdcaf7",
-    "tests/performance-audit-register.test.ts": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
     "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
     "src/lib/playback/service.server.ts": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5",
@@ -221,6 +221,18 @@
           "path": "src/lib/playback/service.server.ts",
           "previousSha256": "421e3048de0b7c0f8feed2aa3f6437190c055e6a8ada448d062d6bc3c7d6ef91",
           "currentSha256": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."

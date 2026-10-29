@@ -25,7 +25,7 @@
     "docs/audits/2026-10-25-hosted-companion/receipts/gates.json": "ede9b282b3e6c7315058a520c5f2b2bed89be4e921a45f5ebd405cf540be79aa",
     "docs/audits/2026-10-25-hosted-companion/receipts/hls-independent.json": "2d0edf1d499afe721bef4a5dec9d8696b310a46f5a61537a8f482076356d2a3d",
     "docs/audits/2026-10-25-hosted-companion.md": "1ff78934d7d571d170526b825565154ab396d4d39b8e781bb3fcae0dc39de456",
-    "tests/performance-audit-register.test.ts": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "src/lib/providers/jellyfin/adapter.server.ts": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865",
     "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
     "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
@@ -48,7 +48,7 @@
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
-    "docs/audits/2026-10-28-share-destinations/pins.json": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12",
+    "docs/audits/2026-10-28-share-destinations/pins.json": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49",
     "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce"
   },
   "companion": {
@@ -314,6 +314,23 @@
           "path": "docs/audits/2026-10-28-share-destinations/pins.json",
           "previousSha256": "6955d0a6db391c5c580492855fc20a5e6680dbf40b440b3012bb1f6307e5dd7a",
           "currentSha256": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
+        },
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12",
+          "currentSha256": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49"
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."

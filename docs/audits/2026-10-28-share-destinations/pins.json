@@ -23,7 +23,7 @@
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
     "tests/sharing-db.test.ts": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
-    "tests/performance-audit-register.test.ts": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
     "docs/audits/2026-10-28-share-destinations.md": "9725c8b56355d196d6738eb75d2500ee249aeda4633226807587b869d6790914",

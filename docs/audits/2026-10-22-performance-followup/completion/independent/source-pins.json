@@ -26,7 +26,7 @@
     "tests/action-navigation.test.ts": "a84ba0338f78290d1b530a2a51d4de751d914ad81b87ee8b582da5b2ca6fb371",
     "tests/jellyfin-music-persistence-db.test.ts": "5fe8860604673aa8331fdb0bb98bfae1b55bd13483548ebad1879e3bff8f099b",
     "tests/media-details.test.ts": "06d107d1ea60624254b4de950e093b219f66089de79412bd28ab60074c084175",
-    "tests/performance-audit-register.test.ts": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+    "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "tests/provider-live-db.test.ts": "f29e5bfcab4e3868a17f9264e32b8c6352355c4f29897f9f6439712e0c90026c",
     "tests/reading-db.test.ts": "2e9ed9fc19f5c56a2aa465090d17d04649d94e1a8ccf3419a9fcdd33d49495a1",
     "tests/reading-providers.test.ts": "45a076f3952242ab0f1288ffc0694f05c243fae9e406612c518e071a9abcb94b",
@@ -134,6 +134,18 @@
           "path": "docs/roadmap.md",
           "previousSha256": "8e54d60fe8dad7e2801c8fdf87a1b209c48e84c3854f9b787847635543e0ffcf",
           "currentSha256": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "tests/performance-audit-register.test.ts",
+          "previousSha256": "60a680a5a11edfadcca834f934637a360f0347dc6516018d7bc466e750b8d94e",
+          "currentSha256": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498"
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."

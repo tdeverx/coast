@@ -133,18 +133,25 @@ test('hosted companion evidence binds permission repairs without promoting party
  expect(matrix).toHaveLength(11);
  expect(matrix.every((x:any)=>x.status===x.expected)).toBe(true);
  const crop=await Bun.file(root+'receipts/crop-process.json').json();
- expect(crop.passed).toBe(true);expect(crop.timeout.status).toBe(502);
+ expect(crop.passed).toBe(true);
+ expect(crop.timeout.status).toBe(502);
  expect(crop.timeout.remainingProcesses).toBe(0);
- expect(crop.afterFirstAbort).toBe(1);expect(crop.afterFinalAbort).toBe(0);
+ expect(crop.afterFirstAbort).toBe(1);
+ expect(crop.afterFinalAbort).toBe(0);
  for(const engine of ['chromium','webkit','firefox']){
   const r=await Bun.file(root+`receipts/browser-hls-${engine}.json`).json();
-  expect(r.passed).toBe(true);expect(r.survivorContinued).toBe(true);
-  expect(r.encoderCountDuring).toBe(1);expect(r.encoderCountAfterFinal).toBe(0);
-  expect(r.mediaFilesRemaining).toBe(0);expect(r.externalRequests).toBe(0);
+  expect(r.passed).toBe(true);
+ expect(r.survivorContinued).toBe(true);
+  expect(r.encoderCountDuring).toBe(1);
+ expect(r.encoderCountAfterFinal).toBe(0);
+  expect(r.mediaFilesRemaining).toBe(0);
+ expect(r.externalRequests).toBe(0);
  }
  expect((await Bun.file(root+'receipts/browser-hls-too-early.json').json()).passed).toBe(false);
  const cleanup=await Bun.file(root+'receipts/cleanup.json').json();
- expect(cleanup.privateSnapshotDeleted).toBe(true);expect(cleanup.temporaryCredentialsDeleted).toBe(true);
- expect(cleanup.ffmpegProcessesAfter).toBe(0);expect(cleanup.liveServerHealth).toBe(200);
+ expect(cleanup.privateSnapshotDeleted).toBe(true);
+ expect(cleanup.temporaryCredentialsDeleted).toBe(true);
+ expect(cleanup.ffmpegProcessesAfter).toBe(0);
+ expect(cleanup.liveServerHealth).toBe(200);
  expect(pins.remaining).toContain('Coast party orchestration and multi-device synchronization/drift');
 });

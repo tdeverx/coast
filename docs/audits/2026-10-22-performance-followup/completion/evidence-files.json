@@ -100,7 +100,7 @@
     "independent/receipts/unaccepted-source-races-corrected.txt": "30be421b2bbbf607d43304a125d4117cb5b6185c419175136bcfde3349a7d8da",
     "independent/receipts/unaccepted-source-races-empty-cohort.txt": "3c120ae8742ce09006aec040b7976700b83365bf724972f6b82a0e4866db7d01",
     "independent/receipts/unaccepted-source-races-selector-error.txt": "66bcf2b530b2de8bba1cf12f273bdbef292d819e8bf0fafbd97a7a726ad069ee",
-    "independent/source-pins.json": "f036005622b16f57e2ff65c0d66324eeb3b15cd24681297f6b267f180d32b626",
+    "independent/source-pins.json": "707d72bc723564ce9daa2cbc4016760a7c01ac1194cd894d8420d833c8165970",
     "independent/verification.json": "8de7c73945065693db7b07d41fc60fa8b570df0123aba163fd6d52883973b5e5",
     "probe-pins.json": "4aedb33acc751b2ed5153aac3d93646d7cde2b1700ea329426af27204f282a84",
     "probes/Program.cs.txt": "27e2e58f9e31b5483985980720f189abe6824f0c15b3a6aca8684238332845c3",
@@ -156,7 +156,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "35f204c950b7d894af542c8507722b55a0e66fff9e2feb31d5de0fb3cb0d12f7",
+    "source-pins.json": "9b4485fa43f0408765a1a70941659cd594bf7dff4c4dbad52ba1dd78344c7284",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -247,6 +247,23 @@
           "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
           "previousSha256": "d54523e68ae82f22b0b8b281e563d54df9c50cf8c1210e1702dddc0e80086cd8",
           "currentSha256": "35f204c950b7d894af542c8507722b55a0e66fff9e2feb31d5de0fb3cb0d12f7"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/source-pins.json",
+          "previousSha256": "f036005622b16f57e2ff65c0d66324eeb3b15cd24681297f6b267f180d32b626",
+          "currentSha256": "707d72bc723564ce9daa2cbc4016760a7c01ac1194cd894d8420d833c8165970"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "35f204c950b7d894af542c8507722b55a0e66fff9e2feb31d5de0fb3cb0d12f7",
+          "currentSha256": "9b4485fa43f0408765a1a70941659cd594bf7dff4c4dbad52ba1dd78344c7284"
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
