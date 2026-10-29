@@ -1,0 +1,43 @@
+import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {JellyfinAdapter} from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/providers/jellyfin/adapter.server.ts';
+const root='/tmp/coast-hosted-20261025',base='http://127.0.0.1:8097';
+if(JSON.parse(await readFile(root+'/ownership.json','utf8')).marker!=='coast-hosted-20261025')throw Error('ownership');
+const actors=JSON.parse(await readFile(root+'/actors.private.json','utf8')),actor=actors.find((x:any)=>!x.admin);
+const item=JSON.parse(await readFile(root+'/selected.private.json','utf8'));
+const record:any={scope:'Production JellyfinAdapter, genuine movie, fresh clone credentials; two independent provider sessions, not Coast party synchronization',runs:[]};
+const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+function adapter(device:string){return new JellyfinAdapter(async(path,init)=>{const u=new URL(path,base);if(u.origin!==base)throw Error('origin');const r=await fetch(u,{...init,signal:init?.signal??AbortSignal.timeout(20000)});if(!r.ok)throw Error('provider '+r.status);const text=await r.text();return text?JSON.parse(text):null;},device,actor.token);}
+const ffmpeg='/Applications/Jellyfin.app/Contents/MacOS/ffmpeg';
+const sessions:any[]=[];
+async function processes(){const p=Bun.spawn(['ps','-axo','pid,ppid,comm'],{stdout:'pipe'});const text=await new Response(p.stdout).text();return text.split('\n').filter(x=>x.includes('ffmpeg')).map(x=>{const a=x.trim().split(/\s+/);return {pid:Number(a[0]),ppid:Number(a[1])}});}
+try{
+ for(let i=0;i<2;i++){
+  const device='coast-hosted-stream-'+i+'-'+crypto.randomUUID(),a=adapter(device);
+  const info=await a.playbackInfo(item.Id,actor.id,{containers:['mp4'],videoCodecs:['h264'],audioCodecs:['aac']} as any,1000000,{shared:true,deviceId:device});
+  const source=info.sources.find(x=>x.transcodingUrl);if(!source||!info.playSessionId)throw Error('No HLS source');
+  const u=new URL(source.transcodingUrl!,base);if(u.origin!==base)throw Error('origin');u.searchParams.set('MaxWidth','640');u.searchParams.set('MaxHeight','360');u.searchParams.set('api_key',actor.token);
+  await a.scrobble('start',{itemId:item.Id,sourceId:source.id,playSessionId:info.playSessionId,positionSeconds:0,method:'Transcode'});
+  const s:any={device,a,info,source,progress:'',errors:''};sessions.push(s);
+  s.decoder=Bun.spawn(['/usr/bin/sandbox-exec','-f',root+'/isolate.sb',ffmpeg,'-hide_banner','-loglevel','error','-readrate','1','-i',u.href,'-t','12','-an','-threads','1','-progress','pipe:1','-f','null','-'],{stdout:'pipe',stderr:'pipe',env:{...process.env,TMPDIR:root+'/temp'}});
+  s.output=(async()=>{for await(const b of s.decoder.stdout)s.progress+=new TextDecoder().decode(b);})();
+  s.error=(async()=>{for await(const b of s.decoder.stderr)s.errors+=new TextDecoder().decode(b);})();
+ }
+ const deadline=Date.now()+30000;
+ while(!sessions.every(s=>/frame=\d+/.test(s.progress))&&Date.now()<deadline)await sleep(100);
+ if(!sessions.every(s=>/frame=\d+/.test(s.progress)))throw Error('decoder frames missing: '+sessions.map(s=>s.errors.replace(/https?:\/\/\S+/g,'[url]')).join('|').slice(0,700));
+ record.during=await processes();
+ const first=sessions[0],second=sessions[1];
+ first.decoder.kill('SIGTERM');await first.decoder.exited;await first.output;await first.error;
+ let t=performance.now();await first.a.scrobble('stop',{itemId:item.Id,sourceId:first.source.id,playSessionId:first.info.playSessionId,positionSeconds:1,method:'Transcode'});await first.a.stopEncoding(first.device,first.info.playSessionId);record.firstStopMs=performance.now()-t;
+ const before=second.progress.length;await sleep(1300);record.secondContinued=second.progress.length>before;record.afterFirst=await processes();
+ second.decoder.kill('SIGTERM');await second.decoder.exited;await second.output;await second.error;
+ t=performance.now();await second.a.scrobble('stop',{itemId:item.Id,sourceId:second.source.id,playSessionId:second.info.playSessionId,positionSeconds:2,method:'Transcode'});await second.a.stopEncoding(second.device,second.info.playSessionId);record.finalStopMs=performance.now()-t;
+ await sleep(500);record.afterFinal=await processes();record.remainingTranscodeFiles=(await readdir(root+'/transcodes')).length;
+ record.runs=sessions.map(s=>({frames:Math.max(...[...s.progress.matchAll(/frame=(\d+)/g)].map(m=>Number(m[1]))),decoderExit:s.decoder.exitCode}));
+ if(!record.secondContinued)throw Error('second consumer stopped');
+ record.passed=true;
+}catch(e){record.passed=false;record.error=String(e);throw e;}
+finally{
+ for(const s of sessions){if(s.decoder?.exitCode===null){s.decoder.kill('SIGTERM');await s.decoder.exited;}await s.a.stopEncoding(s.device,s.info.playSessionId).catch(()=>{});}
+ await writeFile(root+'/hls-results.json',JSON.stringify(record,null,2));console.log(JSON.stringify(record,null,2));
+}

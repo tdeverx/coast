@@ -1,0 +1,50 @@
+{
+  "scope": "Compiled production share dialog and existing menu components with authored API fixtures; not a full authenticated-page or device test",
+  "browserFallback": "Browser plugin not available",
+  "runs": [
+    {
+      "engine": "chromium",
+      "version": "156.0.8078.4",
+      "viewport": "1280x900",
+      "passed": true,
+      "keyboard": true,
+      "hevcPolicy": true,
+      "distinctUrls": true,
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "version": "156.0.8078.4",
+      "viewport": "390x844",
+      "passed": true,
+      "keyboard": true,
+      "hevcPolicy": true,
+      "distinctUrls": true,
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "version": "27.2",
+      "viewport": "1280x900",
+      "passed": true,
+      "keyboard": true,
+      "hevcPolicy": true,
+      "distinctUrls": true,
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "version": "27.2",
+      "viewport": "390x844",
+      "passed": true,
+      "keyboard": true,
+      "hevcPolicy": true,
+      "distinctUrls": true,
+      "pageErrors": [],
+      "overflow": false
+    }
+  ]
+}

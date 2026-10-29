@@ -1,0 +1,10 @@
+{
+  "privateJellyfinCopyDeleted": true,
+  "freshCloneCredentialsDeleted": true,
+  "ownedNativeServerStopped": true,
+  "uiHarnessStoppedAndDeleted": true,
+  "liveJellyfinNotModified": true,
+  "liveContainerUpdatedThrough": "Apple container CLI",
+  "testDatabaseAndPreflightContainersRemoved": true,
+  "liveBackupRetained": true
+}

@@ -1,0 +1,34 @@
+{
+  "timeUtc": "2026-10-28T17:59:37.554122+00:00",
+  "userReportedQuest": "both codec URLs failed to load",
+  "observedBackend": "AVProMobileVideo Android14 ExoPlayerLib1.8.0",
+  "confirmedFault": "Nginx proxy_temp write failures on corresponding share resources; root EXT4 emergency_ro after I/O/journal error",
+  "repair": {
+    "scope": "Coast proxy host21 only",
+    "persistedSetting": "proxy_buffering off",
+    "restart": "Apple container CLI stop/start; same container and mounted data",
+    "rootAfter": "rw,relatime",
+    "nginxConfigTest": true,
+    "backups": "private NPM /data/recovery/coast-streaming-20261028"
+  },
+  "publicStaticTransfer": {
+    "bytes": 588409,
+    "limitBytesPerSecond": 131072,
+    "sha256": "01136c624dcd70ff28376702bd1ebf24c1958a68c18c7b6621eea19d8391886b",
+    "sourceAndDownloadedHashesMatch": true
+  },
+  "publicApiHealth": {
+    "path": "/api/v1/health",
+    "redirectsFollowed": false,
+    "status": 200
+  },
+  "previousHealthCaveat": "/health redirects to login; the earlier deployment probe followed redirects. Its200 is not the API health check.",
+  "revokedAttemptedGrants": 2,
+  "reactivatedGrants": 0,
+  "questPlaybackAfterRepair": "awaiting fresh link/headset retest",
+  "remaining": [
+    "Physical Quest video/audio acceptance",
+    "Root cause of proxy backing-store I/O failure",
+    "Previously retained HEVC1080p60 level conformance failure"
+  ]
+}

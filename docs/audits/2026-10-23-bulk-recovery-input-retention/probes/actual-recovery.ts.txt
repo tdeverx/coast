@@ -1,0 +1,32 @@
+import{SQL}from'bun';import{createHash}from'node:crypto';
+const copy=await Bun.file('/audit/copy.private.json').json();if(!/^coast_audit_bulk_[a-f0-9]{32}$/.test(copy.name)||copy.marker!==`coast-performance-bulk:${copy.name.slice(-32)}`)throw Error('Wrong owned copy');const guard=new SQL(copy.url),[marked]=await guard`select shobj_description(oid,'pg_database') marker from pg_database where datname=current_database()`;if(marked.marker!==copy.marker)throw Error('Wrong marker');await guard.close();
+process.env.DATABASE_URL=copy.url;process.env.COAST_DATA_DIR='/audit/data';let providerCalls=0;globalThis.fetch=(async()=>{providerCalls++;throw Error('Provider delivery forbidden by audit');})as typeof fetch;
+const{getSql,closeDb}=await import('/audit/source/src/lib/server/db');const{cancelAction,selectTaskTargets}=await import('/audit/source/src/lib/server/queue/task-controls.server');const{updateTaskActions,resumeTaskCommand,readTaskCommand}=await import('/audit/source/src/lib/server/queue/task-commands.server');const sql=getSql();
+const report:any={scope:'Actual restored job/account rows on exact marker-owned copy. Existing states are controlled for admission; no new provider replies, jobs or accounts. No worker or delivery handler starts. Actual per-target transaction commit/process-kill/restart proof, not a throughput or p95 claim.',runtime:{bun:Bun.version,revision:Bun.revision},checks:[],timings:{},status:'running'};
+const hash=(value:any)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');const check=(name:string,pass:boolean,details?:any)=>{report.checks.push({name,pass,...details});if(!pass)throw Error(name);};
+try{
+ const[admin]=await sql`select id,username,role,email,settings from users where role='admin' and not disabled order by created_at limit 1`;if(!admin)throw Error('No actual admin');
+ const[group]=await sql`select c.instance_id,count(*)::int n from outbox_actions a join provider_connections c on c.id=a.connection_id where a.kind='jellyfin.live' and a.account_generation=c.account_generation group by c.instance_id having count(*)>=121 order by count(*) desc limit 1`;if(!group)throw Error('No sufficient actual retained job cohort');
+ const cohort=await sql<{id:string}[]>`select a.id from outbox_actions a join provider_connections c on c.id=a.connection_id where a.kind='jellyfin.live' and c.instance_id=${group.instance_id} and a.account_generation=c.account_generation order by a.created_at,a.id limit 121`;
+ const ids=cohort.slice(0,120).map(x=>x.id),late=cohort[120].id;
+ await sql`update system_settings set value=jsonb_set(value,'{developerMode}','true'::jsonb) where key='coast'`;
+ await sql`update outbox_actions set state='cancelled',locked_at=null where state in ('pending','running')`;
+ await sql`update outbox_actions set state='pending' where id=any(${sql.array(ids,'UUID')})`;await sql`update outbox_actions set state='failed' where id=${late}`;
+ const selected=await selectTaskTargets(sql,'jellyfin.live',group.instance_id,'cancel');check('actual-bounded-membership',selected.ids.length===100&&selected.hasMore,{cohort:121,identityHash:hash(selected.ids)});
+ const keys=selected.ids.map(id=>'outbox:'+id);const notifications=await sql`select row_to_json(n) data from notifications n where source_key=any(${sql.array(keys,'TEXT')})`;
+ const snapshot=async()=>await sql`select id,user_id,connection_id,kind,payload,compaction_key,state,attempts,next_attempt_at,locked_at,last_error,created_at,account_generation,correlation_id from outbox_actions where id=any(${sql.array([...ids,late],'UUID')}) order by id`;
+ const started=performance.now();for(const id of selected.ids)await cancelAction(admin,id);report.timings.canonicalSerialMs=performance.now()-started;const baseline=await snapshot();
+ await sql`update outbox_actions set state='pending' where id=any(${sql.array(selected.ids,'UUID')})`;
+ if(notifications.length)await sql`insert into notifications select * from jsonb_populate_recordset(null::notifications,${notifications.map(x=>x.data)}::jsonb) on conflict do nothing`;
+ const command=await updateTaskActions(admin,'jellyfin.live',group.instance_id,'cancel',crypto.randomUUID());await sql`update outbox_actions set state='pending' where id=${late}`;
+ await Bun.write('/audit/crash.private.json',JSON.stringify({actor:admin,commandId:command.id}));
+ const child=Bun.spawn(['bun','/audit/crash-resume.ts'],{env:{...process.env,DATABASE_URL:copy.url,COAST_DATA_DIR:'/audit/data'},stdout:Bun.file('/audit/crash-child.log'),stderr:Bun.file('/audit/crash-child-error.log')});
+ let ready=false;for(let i=0;i<1000;i++){if(await Bun.file('/audit/crash-boundary.json').exists()){ready=true;break;}if(child.exitCode!==null)break;await Bun.sleep(10);}if(!ready){child.kill('SIGKILL');await child.exited;throw Error('Native crash boundary not reached');}
+ child.kill('SIGKILL');await child.exited;const prefix=await readTaskCommand(admin,command.id);check('actual-process-kill-preserves-39-committed-receipts',prefix.updated===39&&prefix.remaining===61,{updated:prefix.updated,remaining:prefix.remaining});
+ const resumeStart=performance.now(),done=await resumeTaskCommand(admin,command.id,prefix.revision);report.timings.restartRemainderMs=performance.now()-resumeStart;
+ check('restart-completes-only-original-membership',done.status==='complete'&&done.updated===100&&done.skipped===0);
+ check('late-existing-job-not-admitted',(await sql`select state from outbox_actions where id=${late}`)[0].state==='pending');
+ const actual=await snapshot();const normalized=actual.map((r:any)=>r.id===late?{...r,state:'failed'}:r);check('complete-job-dto-equality-excluding-wall-clock-update-field',hash(normalized)===hash(baseline),{baselineHash:hash(baseline),candidateHash:hash(normalized),rows:actual.length});
+ const replay=await resumeTaskCommand(admin,command.id,0);check('response-loss-replay-is-read-only',hash(replay)===hash(done));
+ check('zero-provider-delivery',providerCalls===0,{providerCalls});report.actualNotificationCohort=notifications.length;report.status='passed';
+}catch(e:any){report.status='findings';report.failure={name:e.name,message:e.message};}finally{await closeDb();await Bun.write('/audit/actual-recovery.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-25",
+  "ownedServerStopped": true,
+  "testPortClosed": true,
+  "allAuditDecodersClosed": true,
+  "ffmpegProcessesAfter": 0,
+  "liveServerOriginalPid": 66013,
+  "liveServerHealth": 200,
+  "liveConfigHashesUnchangedDuringCleanup": {
+    "system.xml": "ecf5ff341841237d4ebdd8a2f05a64af0e50611d169d46e4098757588e28e861",
+    "network.xml": "a9783cf40fc41777a054342f80740ce1b16f07c7f75acd031b18c340b9a83ae4",
+    "encoding.xml": "82658c1baa75e1790526da0a7fd7b37e0c4532656bddf9784a58f9f5d27e450b"
+  },
+  "privateSnapshotDeleted": true,
+  "temporaryCredentialsDeleted": true,
+  "livePermissionsOrCredentialsMutated": false,
+  "productionPluginDeployment": false
+}

@@ -24,6 +24,7 @@ export const load = (async ({ locals, depends,params,url }) => {
     experimentalParties: config.experimentalParties,
     experiments:{planning:config.experimentalPlanning},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
+    allowVrchatHevc:config.allowVrchatHevc,
     user: locals.user,
     contentRevision: revision,
     expiresAt: locals.expiresAt?.toISOString() ?? null,

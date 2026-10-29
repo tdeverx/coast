@@ -1,0 +1,1 @@
+export const page=$state({params:{},url:new URL('http://127.0.0.1:5298/media/fixture'),data:{allowVrchatHevc:true,playbackSharing:true,capabilities:{playback:true,social:false,presence:false},featuredHeroIds:[],user:{id:'fixture-admin',role:'admin'},experimentalMusic:true,experiments:{}}});export async function refresh(){}

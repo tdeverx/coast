@@ -1,0 +1,24 @@
+{
+  "status": "reviewed",
+  "scope": "Local screenshots of actual copied job data; preserve approved layout. Images stay in local task artifacts, not source control.",
+  "screenshots": [
+    {
+      "file": "recovery-applying-mobile.png",
+      "sha256": "c80f4b329bb036bc3f3c1c3c703cde9c35557bb67eb0d108f854c917c0694891"
+    },
+    {
+      "file": "recovery-applying-desktop.png",
+      "sha256": "35d0fcd82cf8a7dd555f4bf6a9d897a591cf3c2e3e645b28890495a1522ba1f6"
+    },
+    {
+      "file": "chromium-preview-desktop.png",
+      "sha256": "7299c95f0abaf8eec07ece9c408aa4eb913350004ff13f0b154eb03a512913b8"
+    },
+    {
+      "file": "chromium-preview-mobile.png",
+      "sha256": "ef1ffe268de19eae1d5c142bee272999cffdb8195d0b35985aeac4ad11878112"
+    }
+  ],
+  "mobile": "390x844; no horizontal document overflow",
+  "desktop": "1440x900; no runtime error overlay"
+}

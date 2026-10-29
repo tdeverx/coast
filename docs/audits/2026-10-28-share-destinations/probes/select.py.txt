@@ -1,0 +1,14 @@
+from pathlib import Path
+import json,sqlite3,urllib.request,urllib.error
+r=Path('/tmp/coast-share-real-20261028');logins=json.loads((r/'logins.private.json').read_text());auth='MediaBrowser Client="Coast Profile Audit", Device="Isolated", DeviceId="fresh-profile-audit", Version="1"'
+admin=None
+for user in logins['users']:
+ req=urllib.request.Request('http://127.0.0.1:8097/Users/AuthenticateByName',data=json.dumps({'Username':user['name'],'Pw':logins['password']}).encode(),headers={'Authorization':auth,'Content-Type':'application/json'})
+ try:
+  x=json.load(urllib.request.urlopen(req,timeout=5))
+  if x['User']['Policy']['IsAdministrator']:admin={'id':x['User']['Id'],'token':x['AccessToken']};break
+ except urllib.error.HTTPError:pass
+assert admin
+(r/'actor.private.json').write_text(json.dumps(admin));(r/'actor.private.json').chmod(0o600)
+d=sqlite3.connect(r/'server/data/jellyfin.db');candidate=next(x for x in d.execute("select Id,Path from BaseItems where MediaType='Video' and Type like '%Movie%' and Path is not null") if Path(x[1]).is_file())
+(r/'item.private.json').write_text(json.dumps({'id':candidate[0].replace('-','')}));print('Fresh clone admin and genuine existing movie selected.')

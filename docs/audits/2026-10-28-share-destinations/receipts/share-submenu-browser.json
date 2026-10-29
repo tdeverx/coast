@@ -1,0 +1,64 @@
+{
+  "url": "http://127.0.0.1:5298",
+  "browserPlugin": "absent",
+  "actualComponent": "ScreenActions",
+  "fixtures": "authored API/page state",
+  "results": [
+    {
+      "engine": "chromium",
+      "version": "156.0.8078.4",
+      "mobile": false,
+      "passed": true,
+      "keyboard": true,
+      "submenus": true,
+      "website": true,
+      "vrchat": true,
+      "trackWebsiteOnly": true,
+      "permission": true,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "version": "156.0.8078.4",
+      "mobile": true,
+      "passed": true,
+      "keyboard": true,
+      "submenus": true,
+      "website": true,
+      "vrchat": true,
+      "trackWebsiteOnly": true,
+      "permission": true,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "version": "27.2",
+      "mobile": false,
+      "passed": true,
+      "keyboard": true,
+      "submenus": true,
+      "website": true,
+      "vrchat": true,
+      "trackWebsiteOnly": true,
+      "permission": true,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "version": "27.2",
+      "mobile": true,
+      "passed": true,
+      "keyboard": true,
+      "submenus": true,
+      "website": true,
+      "vrchat": true,
+      "trackWebsiteOnly": true,
+      "permission": true,
+      "overflow": false,
+      "errors": []
+    }
+  ]
+}

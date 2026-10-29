@@ -1726,6 +1726,15 @@
         "nullable": true,
         "defaultSource": "null",
         "defaultValue": null
+      },
+      {
+        "name": "commands",
+        "type": "TaskControlListing",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "{items:[],more:false}"
       }
     ]
   },

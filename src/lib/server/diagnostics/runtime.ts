@@ -5,6 +5,7 @@ import { dataDirectory } from '../security/credentials';
 
 // Resource history has its own quota; provider/job chatter cannot rotate it out.
 export const runtimeSampleStore = new DiagnosticStore(() => join(dataDirectory(), 'runtime', 'samples'), 4096);
+runtimeSampleStore.configure({maxSizeMiB: 4, maxAgeDays: 7});
 function persist(event: 'runtime.sample' | 'runtime.operation', fields: Record<string, unknown>) {
   if (event !== 'runtime.sample') return logDiagnostic(fields.failed === true ? 'error' : 'info', event, fields);
   runtimeSampleStore.level = diagnosticStore.level;

@@ -116,6 +116,7 @@
       "src/lib/ui/components/WorkListActions.svelte",
       "src/lib/ui/components/WorkMenu.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/lib/ui/task-control/Recovery.svelte",
       "src/lib/ui/work-menu/CatalogueActions.svelte",
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",

@@ -1,0 +1,60 @@
+{
+  "timeUtc": "2026-10-28T18:33:42.129462+00:00",
+  "approvedPolicy": {
+    "aggregatePoolIndependent": true,
+    "normalPersonalTargetAppliesToEveryViewer": true,
+    "normalPersonalTargetIsCreatorLimit": true,
+    "normalTargetRemainsServerBounded": true,
+    "headroomPercent": 15,
+    "idleExpirySeconds": 90,
+    "maximumViewers": 20,
+    "minimumBitrate": 500000
+  },
+  "examples": {
+    "poolMbps": 40,
+    "normalTargetMbps": 4,
+    "eightViewersEachMbps": 4,
+    "nineViewersEachMbps": 3.75
+  },
+  "checks": {
+    "unitPassed": 8,
+    "databasePassed": 49,
+    "sharingDatabasePassed": 23,
+    "playbackGenerationDatabasePassed": 19,
+    "settingsDatabasePassed": 7,
+    "svelteErrors": 0,
+    "svelteWarnings": 0,
+    "backupBytes": 315809268
+  },
+  "replacement": {
+    "status": "healthy",
+    "image": "coast:share-budget-20261028-467390edbd01",
+    "build": "fd9bd304-share-budget-467390edbd01",
+    "originalImage": "coast:quest-hls-20261028-9570e3cd49c1",
+    "rollbackUsed": false,
+    "dataAndPostgresMountsPreserved": true
+  },
+  "live": {
+    "build": "fd9bd304-share-budget-467390edbd01",
+    "counts": {
+      "users": 7,
+      "history": 90198,
+      "shares": 13,
+      "connections": 13
+    },
+    "before": {
+      "users": 7,
+      "history": 90198,
+      "shares": 13,
+      "connections": 13
+    },
+    "activeViewers": []
+  },
+  "publicApiHealth": {
+    "path": "/api/v1/health",
+    "redirectsFollowed": false,
+    "status": 200
+  },
+  "liveAllocationObservation": "No active viewers remained at final verification. Actual new encoder target must be observed on the next user request; do not promote unit/fixture allocations to a live headset result.",
+  "scope": "No database migrations, production dependencies or normal-playback setting values changed. Existing small-increase generation hysteresis retained."
+}

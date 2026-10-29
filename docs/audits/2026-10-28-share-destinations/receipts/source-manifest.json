@@ -1,0 +1,39 @@
+{
+  "baseline": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
+  "scope": "Existing live baseline plus share destinations and explicit VRChat profiles. Additive0065 task table/schema prerequisite retained so0066 cannot skip an earlier journal timestamp. No bulk-recovery UI/runtime, preview-bound or concurrent diagnostic-retention edits included.",
+  "files": {
+    "src/lib/providers/jellyfin/adapter.server.ts": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865",
+    "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
+    "src/lib/playback/service.server.ts": "421e3048de0b7c0f8feed2aa3f6437190c055e6a8ada448d062d6bc3c7d6ef91",
+    "src/lib/sharing/policy.ts": "ec28beb3405d9f21424743a444770ea346c73cbc079b574b8554dde39faf4a4d",
+    "src/lib/sharing/service.server.ts": "841d599e88c76d08dc883b0c691f65c94cafb4fe73785305eaed11ec2d231fc1",
+    "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
+    "src/lib/sharing/ShareAction.svelte": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4",
+    "src/lib/sharing/leases.server.ts": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9",
+    "src/lib/sharing/allocation.ts": "e588a962664199c177b8cd000e49370ecb390edbeb2a892001ddba1ab63e275c",
+    "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
+    "src/lib/ui/work-menu/ScreenActions.svelte": "5033c58e51a32fff3b4169f8b9333d368f5af23b8b28a5ca51ba8e72c8687f15",
+    "src/lib/settings/sections.ts": "c1b4246992e438e089a999398754ae097070b4fc59c2d267ec15b233c9064288",
+    "src/routes/+layout.server.ts": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09",
+    "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+    "drizzle/0065_task_control_commands.sql": "0f7b57af9636ca0a472cb12dd151245bef1fda4bca54b3f76af6ea622811f3f1",
+    "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
+    "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+    "drizzle/meta/0065_snapshot.json": "065625d17f4ef424b86dbd3934c34d2231af53172c85545d70422e9758d93668",
+    "drizzle/meta/0066_snapshot.json": "cf0218dfed6bbe65662a3345d3cfd77eec8362f4bb2f2b0630f82bf3fbd6946e",
+    "tests/sharing.test.ts": "9913791a4dce8cebd35cb1e4c1caba9b392d08b27546a8957e86c3531e85b5c6",
+    "tests/sharing-db.test.ts": "050ceb3641c9b1dc35a6e5c0b77be864ac76ce2371bf5d665d900cbacf74a74b",
+    "tests/share-profiles.test.ts": "291b54c907729691e753874657be4fd3898e582d79f1cb42e4153710ba106d9b",
+    "src/lib/server/config.ts": "d4c0ee588d1cc09b9e54c79ac7d9e7ee69951cceb1ce7a95a69b39b72e44f6c9",
+    "src/routes/settings/[[section]]/+page.svelte": "a43e147a471dea18f324803fef4c35a71cefb748cf05fa2e006055e6d53e755c"
+  },
+  "excluded": [
+    "bulk recovery UI and queue runtime",
+    "preview input changes",
+    "concurrent diagnostic retention changes",
+    "companion plugin installation"
+  ],
+  "fingerprint": "a93aedbbf804ec1797ef512bf0e0067961f085c776cce8f9b3bcffa56bc4f66b",
+  "archiveSha256": "669d8fdfa7bc61b1ddc1de3b1410dc68923af1eda5c64c6d4985ba237f9936b8",
+  "archiveBytes": 29447234
+}

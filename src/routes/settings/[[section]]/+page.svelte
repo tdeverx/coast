@@ -101,7 +101,7 @@
     data.section === 'features-policy' ? ['features'] : data.section === 'policies'
       ? policyFields
       : data.section === 'activity'
-        ? ['diagnosticLevel']
+        ? ['diagnosticLevel', 'diagnosticMaxSizeMiB', 'diagnosticMaxAgeDays']
         : preferenceFields[data.section as keyof typeof preferenceFields] ?? []);
 
   let saved = $state(untrack(() => JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields))));
@@ -842,7 +842,7 @@
                 >{/if}</EmptyState
             >{/if}
         </div>
-      {:else if data.section === 'jobs'}<JobsSettings
+      {:else if data.section === 'jobs'}<JobsSettings commands={data.taskCommands}
           tasteJob={data.tasteJob}
           timing={data.jobTiming}
           providers={data.providers}
@@ -1364,10 +1364,11 @@
                 max="1000"
                 bind:value={policy.maxBitrateMbps}
                 required
-              /><small>Upper limit used when planning new playback sessions.</small></label
+              /><small>Per-stream ceiling for normal playback and shared viewers. Shared links have a separate aggregate budget.</small></label
             ><label class="check"
               ><input type="checkbox" bind:checked={policy.allowTranscoding} />Allow Jellyfin
               transcoding</label
+            ><SettingsRow title="H.265 VRChat sharing" description="Allow an experimental H.265 / AAC fMP4 HLS option. H.264 remains the default; support depends on the world player and device."><input type="checkbox" aria-label="H.265 VRChat sharing" bind:checked={policy.allowVrchatHevc}/></SettingsRow
             ><label class="field"
               >Default subtitle mode<select bind:value={policy.subtitleDefault}
                 ><option value="off">Off</option><option value="preferred"
@@ -1450,11 +1451,18 @@
                 >
               </select></label
             >
+            <label class="field">Maximum diagnostic log size (MiB)
+              <input type="number" min="4" max="4096" step="1" required disabled={busy} bind:value={policy.diagnosticMaxSizeMiB} />
+            </label>
+            <label class="field">Maximum diagnostic log age (days)
+              <input type="number" min="1" max="365" step="1" required disabled={busy} bind:value={policy.diagnosticMaxAgeDays} />
+            </label>
             <p class="small">
               Info is the default. Debug and Trace enable verbose lifecycle and playback timing
-              events. Changes apply while Coast is running. Local diagnostics rotate at 1 MiB, keep
-              up to four files, and expire after seven days. Security and audit records remain
-              independent.
+              events. Changes apply while Coast is running. The defaults are 256 MiB and seven days.
+              Oldest application diagnostics are removed when either limit is reached. Lowering
+              a limit removes older logs on the next read or write. Resource history, security
+              and audit records are kept separately.
             </p>
             {@render saveControls('Save diagnostic logging')}
             <a href="/api/v1/diagnostics?download">Download recent diagnostics</a>
@@ -1616,7 +1624,7 @@
       >
       <label class="check"><input type="checkbox" bind:checked={editing.allowPlaybackSharing} disabled={busy}/>Allow playback sharing</label>
       <label class="field">Personal stream limit (Mbps)<input type="number" min="1" max="1000" bind:value={editing.personalBitrateMbps} disabled={busy}/></label>
-      <label class="field">Shared links budget (Mbps)<input type="number" min="1" max="1000" bind:value={editing.sharedBitrateMbps} disabled={busy}/><small>Shared across this account’s active link viewers. The server limit also applies; headroom is reserved for transport and bitrate bursts.</small></label>
+      <label class="field">Shared links budget (Mbps)<input type="number" min="1" max="1000" bind:value={editing.sharedBitrateMbps} disabled={busy}/><small>Shared across this account’s active link viewers. Each targets the personal stream limit; headroom is reserved for transport and bitrate bursts.</small></label>
       <p class="small">
         Role, access and password changes sign this account out on every device. Jellyfin role sync
         applies again at its next Jellyfin sign-in.

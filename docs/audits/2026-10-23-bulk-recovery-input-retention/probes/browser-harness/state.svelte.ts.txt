@@ -1,0 +1,3 @@
+export const page=$state<any>({data:{},state:{},url:new URL(location.href)});
+let pending:Promise<void>|undefined;
+export function refresh(){return pending??=(async()=>{const r=await fetch('/bootstrap');if(!r.ok)throw Error('Audit bootstrap failed');page.data=await r.json();})().finally(()=>pending=undefined);}

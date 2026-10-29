@@ -1,0 +1,25 @@
+{
+  "databaseNameAndMarkerVerified": true,
+  "ownedIdentityHash": "4a6e7a48631970bbb826a331caacb567ad0c3377a8b24f514a43750b3e4aef91",
+  "activeClientsBeforeDrop": 0,
+  "remainingOwnedDatabases": 0,
+  "forcedDrop": false,
+  "status": "passed",
+  "postgresGracefullyStopped": true,
+  "ownedContainerDeleted": true,
+  "ownedLoopbackServersStopped": true,
+  "originalArchiveMountedReadOnly": true,
+  "liveAndDevUntouched": true,
+  "privateHostPayloads": "Removed task-owned scratch directory after preserving safe receipts and local visual proof.",
+  "followupRestore": {
+    "databaseNameAndMarkerVerified": true,
+    "ownedIdentityHash": "cd8decc37dd47f32a0dfce1b65816698e8dd38b42a719b6f9a1689a13264146a",
+    "activeClientsBeforeDrop": 0,
+    "remainingOwnedDatabases": 0,
+    "forcedDrop": false,
+    "postgresGracefullyStopped": true,
+    "ownedContainerDeleted": true,
+    "ownedLoopbackServersStopped": true
+  },
+  "auditPorts5199And5200Closed": true
+}

@@ -1,0 +1,30 @@
+import {chromium,webkit} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/playwright/index.mjs';
+import fs from 'node:fs/promises';
+const root='/tmp/coast-pr-ui-20261029',results=[];
+for(const [engine,type]of Object.entries({chromium,webkit})){
+ const browser=await type.launch({headless:true});try{
+ for(const mobile of [false,true]){console.log('Checking',engine,mobile?'mobile':'desktop');
+  const p=await browser.newPage({viewport:mobile?{width:390,height:844}:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+  await p.goto('http://127.0.0.1:5298');await p.getByRole('heading',{name:'Sharing submenu',exact:true}).waitFor();
+  const open=()=>p.getByRole('button',{name:/Actions for Test (movie|track)/}).click();
+  await open();const share=p.getByRole('menuitem',{name:'Share',exact:true});await share.waitFor();
+  if(await p.getByRole('menuitem',{name:'VRChat',exact:true}).isVisible())throw Error('VRChat leaked into root');
+  await share.click();await p.getByRole('menuitem',{name:'Website',exact:true}).waitFor();await p.getByRole('menuitem',{name:'Website',exact:true}).focus();await p.keyboard.press('Escape');await share.waitFor();await share.focus();await p.keyboard.press('ArrowRight');await p.getByRole('menuitem',{name:'Website',exact:true}).waitFor();
+  await p.screenshot({path:root+'/'+engine+(mobile?'-mobile':'-desktop')+'-submenu.png'});
+  await p.getByRole('menuitem',{name:'VRChat',exact:true}).click();let d=p.getByRole('dialog');await d.getByRole('heading',{name:'Share to VRChat · Test movie',exact:true}).waitFor();
+  await d.getByRole('combobox',{name:'Video format'}).selectOption('hevc');await d.getByRole('button',{name:'Create',exact:true}).click();
+  if(!(await d.getByLabel('Invitation link').inputValue()).endsWith('.m3u8'))throw Error('VRChat URL');
+  if((await p.evaluate(()=>window.submitted)).target!=='vrchat')throw Error('VRChat target');await d.getByRole('button',{name:'Revoke',exact:true}).click();
+  await p.getByRole('checkbox',{name:'Admin H.265 policy fixture'}).uncheck();await open();await p.getByRole('menuitem',{name:'Share',exact:true}).click();await p.getByRole('menuitem',{name:'VRChat',exact:true}).click();
+  if(await d.getByRole('combobox',{name:'Video format'}).count())throw Error('HEVC policy withdrawal');await d.getByRole('button',{name:'Close dialog',exact:true}).click();
+  await open();await p.getByRole('menuitem',{name:'Share',exact:true}).click();await p.getByRole('menuitem',{name:'Website',exact:true}).click();await d.getByRole('heading',{name:'Share · Test movie',exact:true}).waitFor();await d.getByRole('button',{name:'Create',exact:true}).click();
+  if((await d.getByLabel('Invitation link').inputValue()).endsWith('.m3u8'))throw Error('Website URL');await d.getByRole('button',{name:'Revoke',exact:true}).click();
+  await p.getByRole('checkbox',{name:'Track fixture'}).check();await open();await p.getByRole('menuitem',{name:'Share',exact:true}).click();await p.getByRole('menuitem',{name:'Website',exact:true}).waitFor();
+  if(await p.getByRole('menuitem',{name:'VRChat',exact:true}).count())throw Error('Track exposes unsupported VRChat sharing');await p.keyboard.press('Escape');await p.keyboard.press('Escape');
+  await p.getByRole('checkbox',{name:'Sharing permission fixture'}).uncheck();await open();if(await p.getByRole('menuitem',{name:'Share',exact:true}).count())throw Error('Share permission withdrawn');
+  const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);if(overflow||errors.length)throw Error(JSON.stringify({overflow,errors}));
+  results.push({engine,version:browser.version(),mobile,passed:true,keyboard:true,submenus:true,website:true,vrchat:true,trackWebsiteOnly:true,permission:true,overflow,errors});await p.close();
+ }
+ }finally{await browser.close();}
+}
+await fs.writeFile(root+'/results.json',JSON.stringify({url:'http://127.0.0.1:5298',browserPlugin:'absent',actualComponent:'ScreenActions',fixtures:'authored API/page state',results},null,2));console.log(JSON.stringify(results,null,2));

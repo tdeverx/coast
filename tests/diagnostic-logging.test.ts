@@ -87,12 +87,13 @@ test('runtime level changes, asynchronous context and redaction reach stored eve
 test('rotation, retention and bounded pending writes constrain local storage', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'coast-log-'));
   const store = new DiagnosticStore(() => directory);
+  store.configure({maxSizeMiB: 4, maxAgeDays: 7});
   try {
     for (let cycle = 0; cycle < 8; cycle++) {
       await writeFile(join(directory, '0.jsonl'), 'x'.repeat(storageLimits.segmentBytes));
       await store.write('info', 'request.complete', { status: 200 });
     }
-    expect((await readdir(directory)).length).toBeLessThanOrEqual(storageLimits.segments);
+    expect((await readdir(directory)).length).toBeLessThanOrEqual(4);
     for (const file of await readdir(directory))
       expect((await stat(join(directory, file))).size).toBeLessThanOrEqual(
         storageLimits.segmentBytes

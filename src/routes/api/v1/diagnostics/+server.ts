@@ -21,8 +21,18 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     requireUser(locals.user);
     if (!url.searchParams.has('download')) return Response.json({ level: diagnosticStore.level });
     requireAdmin(locals.user);
-    const rows = await diagnosticStore.recent();
-    return new Response(rows.map((row) => JSON.stringify(row)).join('\n'), {
+    const chunks = diagnosticStore.download();
+    const encoder = new TextEncoder();
+    return new Response(new ReadableStream({
+      async pull(controller) {
+        try {
+          const chunk = await chunks.next();
+          if (chunk.done) controller.close();
+          else controller.enqueue(encoder.encode(chunk.value));
+        } catch (failure) { controller.error(failure); }
+      },
+      async cancel() { await chunks.return(); },
+    }), {
       headers: {
         'content-type': 'application/x-ndjson',
         'content-disposition': 'attachment; filename="coast-diagnostics.jsonl"',

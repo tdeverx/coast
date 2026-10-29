@@ -1,0 +1,1 @@
+export const browser=true,dev=true,building=false,version='audit';

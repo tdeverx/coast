@@ -1,0 +1,30 @@
+import {chromium,webkit,firefox} from '/Users/admin/Documents/ChatGPT/coast-new/node_modules/playwright/index.mjs';
+import {createRequire} from 'node:module';import fs from 'node:fs/promises';
+const sharp=createRequire('/Users/admin/Documents/ChatGPT/coast-new/package.json')('sharp'),root='/tmp/coast-bulk-policy-20261023';
+const png=await fs.readFile('/Users/admin/Documents/ChatGPT/coast-new/static/coast-mark.png'),jpeg=await sharp(png).resize(400,200).withMetadata({orientation:6}).jpeg().toBuffer();
+const report={scope:'Production image owner, native decoders and actual shipped pixels. Decode barriers, missing image-data payload and rapid replacements are authored scheduling/corruption edge cases, not real user workload.',engines:[],status:'running'};
+for(const [name,type] of [['chromium',chromium],['webkit',webkit],['firefox',firefox]]){
+ let browser;const result={name,checks:{},status:'running'};
+ try{browser=await type.launch({headless:true});const context=await browser.newContext();const {token}=JSON.parse(await fs.readFile(root+'/private/browser-session.json','utf8'));await context.addCookies([{name:'coast_session',value:token,url:'http://127.0.0.1:5199',httpOnly:true}]);const page=await context.newPage();await page.goto('http://127.0.0.1:5199');
+ result.checks=await page.evaluate(async data=>{
+  const {previewBackground}=await import('/@fs/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/preview-input.ts');
+  const files={png:new File([new Uint8Array(data.png)],'actual.png'),jpeg:new File([new Uint8Array(data.jpeg)],'actual-oriented.jpeg')};
+  const originalDecode=Image.prototype.decode,create=URL.createObjectURL,revoke=URL.revokeObjectURL,owned=new Set();
+  URL.createObjectURL=function(file){const url=create.call(URL,file);owned.add(url);return url;};URL.revokeObjectURL=function(url){owned.delete(url);return revoke.call(URL,url);};
+  const tick=()=>new Promise(r=>setTimeout(r,5));const until=async predicate=>{for(let i=0;i<1000;i++){if(predicate())return;await tick();}throw Error('Image owner did not settle');};
+  let current='',error='',accepted=0;const owner=previewBackground(url=>{current=url;accepted++;},message=>error=message);
+  try{
+   owner.replace(files.png);await until(()=>!!current);const previous=current;
+   const corrupt=new File([new Uint8Array(data.png.slice(0,33)),new Uint8Array(data.png.slice(-12))],'missing-data.png');owner.replace(corrupt);await until(()=>!!error);const corruptKept=current===previous&&owned.size===1;
+   let release,entered=false,once=true;const gate=new Promise(r=>release=r);
+   Image.prototype.decode=function(){if(once){once=false;entered=true;return gate.then(()=>originalDecode.call(this));}return originalDecode.call(this);};
+   const before=accepted;owner.replace(files.png);await until(()=>entered);owner.replace(files.jpeg);release();await until(()=>accepted>before&&!error&&owned.size===1);const latestWins=accepted===before+1&&current!==previous;
+   let finish;const hold=new Promise(r=>finish=r);entered=false;
+   Image.prototype.decode=function(){entered=true;return hold.then(()=>originalDecode.call(this));};const acceptedBefore=accepted;owner.replace(files.png);await until(()=>entered);owner.destroy();finish();await until(()=>owned.size===0);await tick();
+   return {decoderFailureKeepsPrevious:corruptKept,supersededDecodeCannotPublish:latestWins,orientedJpegAccepted:latestWins,destroyDuringDecodeReleasesAll:owned.size===0&&accepted===acceptedBefore};
+  }finally{owner.destroy();Image.prototype.decode=originalDecode;URL.createObjectURL=create;URL.revokeObjectURL=revoke;}
+ },{png:[...png],jpeg:[...jpeg]});
+ result.status=Object.values(result.checks).every(Boolean)?'passed':'findings';await context.close();
+ }catch(e){result.status='findings';result.error={name:e.name,message:e.message.slice(0,240)};}finally{await browser?.close();report.engines.push(result);}
+}
+report.status=report.engines.every(e=>e.status==='passed')?'passed':'findings';await fs.writeFile(root+'/evidence/image-lifetime.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

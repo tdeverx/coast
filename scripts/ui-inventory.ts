@@ -47,6 +47,7 @@ export function validateRecipeDispatches(recipes: readonly ReferenceRecipe[], di
 
 /** Internal renderers are demonstrated through their owner, not separate public widgets. */
 export const internalReferenceOwners: Record<string, InternalOwner> = {
+  'src/lib/ui/task-control/Recovery.svelte': {owner:'src/lib/ui/components/JobsSettings.svelte',reason:'Recoverable bulk commands are owned by the existing Jobs settings surface.'},
   'src/lib/ui/charts/ChartView.svelte': { owner: 'src/routes/ui-preview/charts/ChartGallery.svelte', reason: 'The Charts section owns the selected chart renderer.' },
   'src/lib/ui/charts/StandardChart.svelte': { owner: 'src/lib/ui/charts/ChartView.svelte', reason: 'Demand-loaded standard chart implementation.' },
   'src/lib/ui/charts/ExtendedChart.svelte': { owner: 'src/lib/ui/charts/ChartView.svelte', reason: 'Demand-loaded extended chart implementation.' },

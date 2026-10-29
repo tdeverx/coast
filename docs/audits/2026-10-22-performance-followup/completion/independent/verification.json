@@ -66,5 +66,12 @@
   "processSamples": "receipts/resource-soak-successful.json",
   "sourceEpochNotes": "Historical metadata pins are refreshed as an index only. Earlier native fingerprints and observations remain unchanged.",
   "roadmap": "../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026",
-  "delivery": "delivery.json"
+  "delivery": "delivery.json",
+  "hostedContinuation": {
+    "epoch": "hosted-companion-2026-10-25",
+    "report": "docs/audits/2026-10-25-hosted-companion.md",
+    "pins": "docs/audits/2026-10-25-hosted-companion/pins.json",
+    "blanketAcceptance": false,
+    "remaining": "Coast party orchestration, physical devices and synchronization/drift; unrelated blockers unchanged"
+  }
 }

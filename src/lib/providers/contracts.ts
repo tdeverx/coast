@@ -55,6 +55,7 @@ export interface MediaStream {
   deliveryMethod?: string;
   width?: number;
   height?: number;
+  frameRate?: number;
 }
 export interface PlaybackSource {
   id: string;

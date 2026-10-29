@@ -1,0 +1,8 @@
+import {SQL} from 'bun';import {createHash} from 'node:crypto';
+const copy=await Bun.file('/audit/copy.private.json').json();if(!/^coast_audit_bulk_[a-f0-9]{32}$/.test(copy.name)||copy.marker!==`coast-performance-bulk:${copy.name.slice(-32)}`)throw Error('Wrong owned database');
+const password=(await Bun.file('/audit/admin-password').text()).trim(),admin=new SQL(`postgresql://postgres:${password}@127.0.0.1:5432/postgres`);
+const [db]=await admin`select shobj_description(oid,'pg_database') marker from pg_database where datname=${copy.name}`;if(db?.marker!==copy.marker)throw Error('Wrong database marker');
+const [clients]=await admin`select count(*)::int n from pg_stat_activity where datname=${copy.name}`;if(clients.n!==0)throw Error('Owned copy still has clients');
+await admin.unsafe(`drop database ${copy.name}`);
+const [remaining]=await admin`select count(*)::int n from pg_database where datname=${copy.name}`;await admin.close();
+console.log(JSON.stringify({databaseNameAndMarkerVerified:true,ownedIdentityHash:createHash('sha256').update(copy.name).digest('hex'),activeClientsBeforeDrop:clients.n,remainingOwnedDatabases:remaining.n,forcedDrop:false}));

@@ -65,15 +65,16 @@ describe.skipIf(!enabled)('settings persistence', () => {
   test('concurrent policy and logging patches preserve both updates and apply logging immediately', async () => {
     await Promise.all([
       updateConfig(admin, { experimentalMusic:true,experimentalGaming:true,experimentalParties:true, maxBitrateMbps: 42 }),
-      updateConfig(admin, { diagnosticLevel: 'debug' }),
+      updateConfig(admin, { diagnosticLevel: 'debug', diagnosticMaxSizeMiB: 64, diagnosticMaxAgeDays: 30 }),
     ]);
     expect(await getConfig()).toEqual({
       ...defaultConfig,
       experimentalMusic:true,experimentalGaming:true,experimentalParties:true,
       maxBitrateMbps: 42,
-      diagnosticLevel: 'debug',
+      diagnosticLevel: 'debug', diagnosticMaxSizeMiB: 64, diagnosticMaxAgeDays: 30,
     });
     expect(diagnosticStore.level).toBe('debug');
+    expect(diagnosticStore.retention).toEqual({maxSizeMiB:64,maxAgeDays:30});
     const audit = await getSql()`SELECT previous_level, next_level FROM diagnostic_setting_audit`;
     expect(audit).toHaveLength(1);
     expect(audit[0]).toMatchObject({

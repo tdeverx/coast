@@ -1,0 +1,139 @@
+{
+  "scope": "Production JobsSettings/Recovery and UI playground rendered with temporary navigation adapters. Genuine native session, queue handlers and actual retained rows on marker-owned isolated copy. Actual shipped image pixels re-encoded with existing sharp. Oversized/deep/malformed inputs are authored edge cases. No workers, provider delivery, deployed-route or physical-device claim.",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "existing-completed-receipts-visible",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": false
+        }
+      ],
+      "errors": [
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-jpeg-background-decodes"
+        }
+      ],
+      "status": "findings"
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": false
+        }
+      ],
+      "errors": [
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-jpeg-background-decodes"
+        }
+      ],
+      "status": "findings"
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": true,
+          "actualActions": 23
+        },
+        {
+          "name": "oversized-rejection-preserves-accepted-configuration",
+          "pass": true
+        },
+        {
+          "name": "structural-limit-visible",
+          "pass": true
+        },
+        {
+          "name": "actual-png-background-decodes",
+          "pass": true
+        },
+        {
+          "name": "actual-jpeg-background-decodes",
+          "pass": false
+        }
+      ],
+      "errors": [
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-jpeg-background-decodes"
+        }
+      ],
+      "status": "findings"
+    }
+  ],
+  "status": "findings"
+}

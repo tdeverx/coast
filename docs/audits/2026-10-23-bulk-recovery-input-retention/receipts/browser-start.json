@@ -1,0 +1,30 @@
+{
+  "scope": "Initial production JobSchedule menu action, same-account native admission refresh, explicit Pause and Resume against a second independently restored/marked actual-data copy. No workers or provider delivery.",
+  "checks": [
+    {
+      "name": "initial-menu-survives-same-account-admission-refresh",
+      "pass": true
+    },
+    {
+      "name": "applying-disables-duplicate-resume",
+      "pass": true
+    },
+    {
+      "name": "pause-before-dispatch-retains-original100-with-zero-effects",
+      "pass": true
+    },
+    {
+      "name": "resume-completes-original100",
+      "pass": true
+    },
+    {
+      "name": "zero-provider-delivery",
+      "pass": true
+    },
+    {
+      "name": "no-runtime-errors",
+      "pass": true
+    }
+  ],
+  "status": "passed"
+}

@@ -4,19 +4,21 @@ import { hashToken, randomToken } from '#lib/server/auth/index.js';
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { assertShare, prepareShared, streamForViewer } from './service.server';
-import { shareTokenPattern, wantsSharePage } from './policy';
+import { shareTokenPattern } from './policy';
 
 const headers={'cache-control':'private, no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff','vary':'Accept'};
 const capability=v.strictObject({viewerId:v.pipe(v.string(),v.uuid()),shareId:v.pipe(v.string(),v.uuid()),expiresAt:v.number()});
 
-/** The copied URL resolves to a browser landing page or a cookie-free media playlist. */
+/** A persisted destination selects the browser invitation or cookie-free VRChat HLS. */
 export async function openPublicShare(token:string,request:Request,address:string) {
  request.signal.throwIfAborted();
+ // The extension is a media-format hint, never part of the bearer token.
+ token=token.replace(/\.m3u8$/,'');
  if(!shareTokenPattern.test(token))throw new AppError(404,'This playback link is unavailable.');
  const db=getSql(),[share]=await db`select * from playback_shares where token_hash=${await hashToken(token)}`;
  if(!share)throw new AppError(404,'This playback link is unavailable.');
  await assertShare(share);
- if(wantsSharePage(request)&&new URL(request.url).searchParams.get('play')!=='1')return new Response(null,{status:302,headers:{...headers,location:`/share#invite=${token}`}});
+ if(share.target==='website')return new Response(null,{status:302,headers:{...headers,location:`/share#invite=${token}`}});
  // Probes must not consume bandwidth slots or launch encoders.
  if(request.method==='HEAD')return new Response(null,{headers:{...headers,'content-type':'application/vnd.apple.mpegurl'}});
  if(share.together)throw new AppError(400,'Together playback uses the browser player. Create an independent link for external players.');
@@ -36,7 +38,7 @@ export async function openPublicShare(token:string,request:Request,address:strin
  });
  const context={...share,viewer_id:viewer.id,playback_id:viewer.playback_id,host:false};
  if(!context.playback_id||(await db`select id from playback_sessions where id=${context.playback_id} and state<>'stopped' and expires_at>now()`).length===0) {
-  const playback=await prepareShared(context,{mediaId:share.work_id,fromStart:true,browser:{containers:[],videoCodecs:['h264'],audioCodecs:['aac'],nativeHls:true,hlsJs:false,maxWidth:1280}},request.signal);
+  const playback=await prepareShared(context,{mediaId:share.work_id,fromStart:true,browser:{containers:[],videoCodecs:[share.video_codec],audioCodecs:['aac'],nativeHls:true,hlsJs:false}},request.signal);
   context.playback_id=playback.id;
  }
  const access=await encryptCredential(JSON.stringify({viewerId:viewer.id,shareId:share.id,expiresAt:new Date(share.expires_at).getTime()}));
@@ -54,5 +56,6 @@ export async function externalStream(id:string,request:Request) {
  if(grant.expiresAt<=Date.now())throw new AppError(410,'This playback link has expired.');
  const [viewer]=await getSql()`select s.*,v.id as viewer_id,v.playback_id,v.host from share_viewers v join playback_shares s on s.id=v.share_id where v.id=${grant.viewerId} and s.id=${grant.shareId}`;
  if(!viewer)throw new AppError(410,'This viewer session has expired.');
+ if(viewer.target!=='vrchat')throw new AppError(403,'This invitation is for the Coast website.');
  return streamForViewer(viewer,id,request,access);
 }

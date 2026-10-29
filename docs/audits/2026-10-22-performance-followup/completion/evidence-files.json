@@ -1,12 +1,12 @@
 {
   "algorithm": "sha256",
-  "epoch": "independent-continuation-2026-10-23",
+  "epoch": "selected-policy-2026-10-23",
   "files": {
     "README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
     "coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
     "final-checks.json": "1c7fc7bae1b2f85e911bfe486585a49958f31b120fa8e16d0feb91654a2daf3b",
-    "independent/README.md": "c2e4bb07777b6730a8c2382e08427a8a0862ae30ac42261d15bbebcd4c31532f",
-    "independent/blockers.json": "dc92ce2d15c822d6dec3f6040d2d35803cbf388d968826f46c184525e217619f",
+    "independent/README.md": "95e2afa14c7945c4c00af67514358bcd54d84aee9d84a9de7794cf4e818b5473",
+    "independent/blockers.json": "c23d56287d775720f4e31085748512a2aa7a5e03963916000f6dbff5747b0c13",
     "independent/delivery.json": "9de6b2706a1942a50be01f27ddf8f311272727924f4a8aaf1311b86e955eedc1",
     "independent/failed-attempts.json": "308ac6197a6f16133f09c2ee7f56a9449c8b1292774cbf046c5bc5ff7007bee9",
     "independent/gates.json": "012463cf57f6f322214fde509170683f36dd7c9df19123374db024f2ce51f0de",
@@ -100,8 +100,8 @@
     "independent/receipts/unaccepted-source-races-corrected.txt": "30be421b2bbbf607d43304a125d4117cb5b6185c419175136bcfde3349a7d8da",
     "independent/receipts/unaccepted-source-races-empty-cohort.txt": "3c120ae8742ce09006aec040b7976700b83365bf724972f6b82a0e4866db7d01",
     "independent/receipts/unaccepted-source-races-selector-error.txt": "66bcf2b530b2de8bba1cf12f273bdbef292d819e8bf0fafbd97a7a726ad069ee",
-    "independent/source-pins.json": "5cdc44c02214517a1aa9b1643060e8ed6e5ceb3c9d306be72067ce62cf6d61d2",
-    "independent/verification.json": "346defc9fd3f18a32cdad492819f88d8ee04f3e37ce3863f7aeb41cc7acf4251",
+    "independent/source-pins.json": "f036005622b16f57e2ff65c0d66324eeb3b15cd24681297f6b267f180d32b626",
+    "independent/verification.json": "8de7c73945065693db7b07d41fc60fa8b570df0123aba163fd6d52883973b5e5",
     "probe-pins.json": "4aedb33acc751b2ed5153aac3d93646d7cde2b1700ea329426af27204f282a84",
     "probes/Program.cs.txt": "27e2e58f9e31b5483985980720f189abe6824f0c15b3a6aca8684238332845c3",
     "probes/README.md": "9176bfc0536d70a878414d80b8760d088f847d30996f55c8cb8cbbc7c7027623",
@@ -156,7 +156,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "ec29a718ceabfe9728c4e94b3dbb6af968410d71f58fd1b4f53df5d6e9f961a7",
+    "source-pins.json": "35f204c950b7d894af542c8507722b55a0e66fff9e2feb31d5de0fb3cb0d12f7",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -170,5 +170,86 @@
     "stop-save/stop-native.json": "bc39f5a45d4a512e23ef1d93a2aafd869652bb042c62148fe8bbc1027c790a9f",
     "stop-save/verification.json": "10343489372fd2bc89c8b4a93668eb8f3f065b7f1cae277eb2eb6902b9cfa387",
     "stop-save/verify-native.ts.txt": "57bd3fb11033bd1ffa16aab659d6a4f7235832ca98e9203796a0d1a5e04a0418"
-  }
+  },
+  "selectedPolicyEvidence": "docs/audits/2026-10-23-bulk-recovery-input-retention/pins.json",
+  "reviewedOwnerEpochs": [
+    {
+      "epoch": "hosted-companion-2026-10-25",
+      "report": "docs/audits/2026-10-25-hosted-companion.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/README.md",
+          "previousSha256": "7adc4862a0619e0f739e4de4a42c170a8ee0e12859c265444eb003227de3b627",
+          "currentSha256": "95e2afa14c7945c4c00af67514358bcd54d84aee9d84a9de7794cf4e818b5473"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/blockers.json",
+          "previousSha256": "5093776bd3bb4083a5ee80bc59d4ea1f265802a6af34c3ba82efbef24fbf1eae",
+          "currentSha256": "31c2d2177f6ad8d2dbebbadd9c47386e40db3af32b7051b2d7bea8d92ddce67a"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/source-pins.json",
+          "previousSha256": "4f9851087ddf5ddab655060116d8ad718ce8e2b8e070a2a3aae44a953b7e9a4a",
+          "currentSha256": "30cce2ac72092d3906033a56da201cdb58e91cc1aad1e33858ba12a3795eb408"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/verification.json",
+          "previousSha256": "346defc9fd3f18a32cdad492819f88d8ee04f3e37ce3863f7aeb41cc7acf4251",
+          "currentSha256": "8de7c73945065693db7b07d41fc60fa8b570df0123aba163fd6d52883973b5e5"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "0798250e59184c38a9568701182023803bd659bb6ad3746383123347cdd1fba5",
+          "currentSha256": "10e68cfe64de215074413072471919ff87f4aead14dffed571d531f161eb2d02"
+        }
+      ],
+      "note": "New hosted continuation linked explicitly; earlier failures and receipts are not reclassified."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/source-pins.json",
+          "previousSha256": "30cce2ac72092d3906033a56da201cdb58e91cc1aad1e33858ba12a3795eb408",
+          "currentSha256": "4d88acf168277510460c5fcb2acfc156f928016fcf59cd40a85344dbb19070e1"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "10e68cfe64de215074413072471919ff87f4aead14dffed571d531f161eb2d02",
+          "currentSha256": "d54523e68ae82f22b0b8b281e563d54df9c50cf8c1210e1702dddc0e80086cd8"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/blockers.json",
+          "previousSha256": "31c2d2177f6ad8d2dbebbadd9c47386e40db3af32b7051b2d7bea8d92ddce67a",
+          "currentSha256": "c23d56287d775720f4e31085748512a2aa7a5e03963916000f6dbff5747b0c13"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/independent/source-pins.json",
+          "previousSha256": "4d88acf168277510460c5fcb2acfc156f928016fcf59cd40a85344dbb19070e1",
+          "currentSha256": "f036005622b16f57e2ff65c0d66324eeb3b15cd24681297f6b267f180d32b626"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "share-destinations-2026-10-28",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "d54523e68ae82f22b0b8b281e563d54df9c50cf8c1210e1702dddc0e80086cd8",
+          "currentSha256": "35f204c950b7d894af542c8507722b55a0e66fff9e2feb31d5de0fb3cb0d12f7"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    }
+  ]
 }

@@ -1,3 +1,4 @@
+import {parsePreviewJson} from '#lib/ui/preview-input.js';
 import manifest from './prop-manifest.json';
 import {serviceTasks} from '#lib/providers/tasks.js';
 import {providerSchedule} from '#lib/providers/schedule.js';
@@ -84,7 +85,7 @@ export function dataSample(name:string,prop:PropContract):unknown {
 
 /** Reject the wrong container before it can reach the component; the boundary handles domain constraints. */
 export function parseData(text:string,prop:PropContract) {
- const value=JSON.parse(text);
+ const value=parsePreviewJson(text);
  if(value===null){if(!prop.nullable)throw new Error('This prop does not accept null.');return value;}
  const array=/\[\]$/.test(prop.type.trim())||prop.type==='T[]';
  if(array?!Array.isArray(value):typeof value!=='object'||Array.isArray(value))throw new Error(array?'Enter a JSON array.':'Enter a JSON object.');

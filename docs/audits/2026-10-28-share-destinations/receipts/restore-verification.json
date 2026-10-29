@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "before": {
+    "users": 7,
+    "history": 90192,
+    "historyIdentityMd5": "0ed9557a7ac6da89944daae6a7d4f376",
+    "shares": 6,
+    "connections": 13,
+    "migrations": 65
+  },
+  "after": {
+    "users": 7,
+    "history": 90192,
+    "historyIdentityMd5": "0ed9557a7ac6da89944daae6a7d4f376",
+    "shares": 6,
+    "connections": 13,
+    "migrations": 67,
+    "websiteShares": 6,
+    "taskCommands": 0
+  },
+  "providerWorkersRun": false,
+  "onlyAdditiveMigrations": true
+}

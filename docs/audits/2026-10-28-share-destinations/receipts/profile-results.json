@@ -1,0 +1,167 @@
+{
+  "scope": "Production Jellyfin adapter and VRChat path policy, genuine movie, fresh clone-only login; not physical Quest acceptance",
+  "runs": [
+    {
+      "codec": "h264",
+      "sourceFrameRate": 25,
+      "fpsOverrides": [],
+      "masterCodecs": [
+        "avc1.640029,mp4a.40.2"
+      ],
+      "deviceProfile": {
+        "Name": "Coast VRChat H.264",
+        "DirectPlayProfiles": [],
+        "TranscodingProfiles": [
+          {
+            "Container": "ts",
+            "Type": "Video",
+            "VideoCodec": "h264",
+            "AudioCodec": "aac",
+            "Protocol": "hls",
+            "Context": "Streaming",
+            "MaxAudioChannels": "2",
+            "SegmentLength": 4,
+            "MinSegments": 2,
+            "BreakOnNonKeyFrames": false,
+            "EnableAudioVbrEncoding": false
+          }
+        ],
+        "CodecProfiles": [
+          {
+            "Type": "VideoAudio",
+            "Codec": "aac",
+            "Conditions": [
+              {
+                "Condition": "Equals",
+                "Property": "AudioProfile",
+                "Value": "lc",
+                "IsRequired": true
+              },
+              {
+                "Condition": "LessThanEqual",
+                "Property": "AudioChannels",
+                "Value": "2",
+                "IsRequired": true
+              },
+              {
+                "Condition": "LessThanEqual",
+                "Property": "AudioSampleRate",
+                "Value": "48000",
+                "IsRequired": true
+              }
+            ]
+          }
+        ],
+        "SubtitleProfiles": [],
+        "MaxStreamingBitrate": 8192000,
+        "MaxStaticBitrate": 8192000
+      },
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264",
+          "profile": "High",
+          "pixelFormat": "yuv420p",
+          "width": 1920,
+          "height": 802,
+          "level": 41,
+          "frameRate": "25/1",
+          "bFrames": 0
+        },
+        {
+          "type": "audio",
+          "codec": "aac",
+          "profile": "LC",
+          "frameRate": "0/0",
+          "channels": 2,
+          "sampleRate": "48000"
+        }
+      ],
+      "audioMeanDb": "-32.3",
+      "audioPeakDb": "-8.4",
+      "passed": true
+    },
+    {
+      "codec": "hevc",
+      "sourceFrameRate": 25,
+      "fpsOverrides": [],
+      "masterCodecs": [
+        "hvc1.1.4.L120.B0,mp4a.40.2"
+      ],
+      "deviceProfile": {
+        "Name": "Coast VRChat H.265 (experimental)",
+        "DirectPlayProfiles": [],
+        "TranscodingProfiles": [
+          {
+            "Container": "mp4",
+            "Type": "Video",
+            "VideoCodec": "hevc",
+            "AudioCodec": "aac",
+            "Protocol": "hls",
+            "Context": "Streaming",
+            "MaxAudioChannels": "2",
+            "SegmentLength": 4,
+            "MinSegments": 2,
+            "BreakOnNonKeyFrames": false,
+            "EnableAudioVbrEncoding": false
+          }
+        ],
+        "CodecProfiles": [
+          {
+            "Type": "VideoAudio",
+            "Codec": "aac",
+            "Conditions": [
+              {
+                "Condition": "Equals",
+                "Property": "AudioProfile",
+                "Value": "lc",
+                "IsRequired": true
+              },
+              {
+                "Condition": "LessThanEqual",
+                "Property": "AudioChannels",
+                "Value": "2",
+                "IsRequired": true
+              },
+              {
+                "Condition": "LessThanEqual",
+                "Property": "AudioSampleRate",
+                "Value": "48000",
+                "IsRequired": true
+              }
+            ]
+          }
+        ],
+        "SubtitleProfiles": [],
+        "MaxStreamingBitrate": 8192000,
+        "MaxStaticBitrate": 8192000
+      },
+      "streams": [
+        {
+          "type": "video",
+          "codec": "hevc",
+          "profile": "Main",
+          "pixelFormat": "yuv420p",
+          "width": 1920,
+          "height": 802,
+          "level": 120,
+          "frameRate": "25/1",
+          "bFrames": 0
+        },
+        {
+          "type": "audio",
+          "codec": "aac",
+          "profile": "LC",
+          "frameRate": "0/0",
+          "channels": 2,
+          "sampleRate": "48000"
+        }
+      ],
+      "audioMeanDb": "-32.3",
+      "audioPeakDb": "-8.4",
+      "passed": true
+    }
+  ],
+  "remainingMediaFiles": 0,
+  "passed": true
+}

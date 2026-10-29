@@ -1,0 +1,41 @@
+{
+  "observedAtUtc": "2026-10-28T18:58:04.853912+00:00",
+  "build": "fd9bd304-share-budget-467390edbd01",
+  "recentSessionEvidence": {
+    "codecs": [
+      "h264",
+      "hevc"
+    ],
+    "desiredBitrate": 4000000,
+    "negotiatedBitrate": 4000000,
+    "ceiling": 4000000,
+    "h264DeliveryPositionsSeconds": [
+      116,
+      32
+    ],
+    "sessionStateAtRead": "stopped; links revoked",
+    "activeNonrevokedViewers": 0
+  },
+  "latestQuestRequestWindowUtc": "18:55:38\u201318:55:57",
+  "latestQuestResponses": {
+    "status": 200,
+    "multipleVideoChunkSizes": true
+  },
+  "latestJellyfinEncoders": {
+    "codec": "hevc",
+    "dimensions": "1920x804",
+    "sourceCadence": "24000/1001",
+    "videoTargetBitsPerSecond": 3808000,
+    "audioCodec": "aac",
+    "audioChannels": 2,
+    "audioSampleRate": 48000,
+    "audioTargetBitsPerSecond": 192000,
+    "loggedEncodingFailures": false
+  },
+  "proxy": {
+    "lastLoggedErrorUtc": "18:32:02",
+    "lastErrors": "upstream resets during application replacement",
+    "renewedBufferWriteErrors": false
+  },
+  "acceptanceBoundary": "Confirms configured 4Mbps allocation and server-side media delivery, not physical Quest decoded picture/audio. HEVC60 limitation remains separate."
+}

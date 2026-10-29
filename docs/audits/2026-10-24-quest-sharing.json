@@ -1,0 +1,304 @@
+{
+  "date": "2026-10-24",
+  "status": "deployed-http-verified-device-acceptance-pending",
+  "actualEvidence": {
+    "scope": "Read-only actual retained proxy evidence, 20 October 2026, 12:00\u201312:59 BST. Bearer URLs, addresses and raw identifiers omitted. No new playback sessions started.",
+    "androidEntryRequests": [
+      {
+        "time": "20/Oct/2026:12:55:10 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1594,
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:55:17 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1599,
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:55:24 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1599,
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:55:30 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1599,
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:55:37 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1599,
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:59:10 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1594,
+        "grantSha256": "0353586c981ff28c59b4ab4c78af7c52f59d7da03ffc2eb8bceae6cf9eadc4cc",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:59:18 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1594,
+        "grantSha256": "0353586c981ff28c59b4ab4c78af7c52f59d7da03ffc2eb8bceae6cf9eadc4cc",
+        "urlHasHlsSuffix": false
+      },
+      {
+        "time": "20/Oct/2026:12:59:25 +0100",
+        "client": "Android AVPro ExoPlayer 1.8.0",
+        "kind": "entry",
+        "status": [
+          "200",
+          "200",
+          "GET"
+        ],
+        "bytes": 1594,
+        "grantSha256": "0353586c981ff28c59b4ab4c78af7c52f59d7da03ffc2eb8bceae6cf9eadc4cc",
+        "urlHasHlsSuffix": false
+      }
+    ],
+    "androidChildRequests": 0,
+    "pcRequestsSameHour": {
+      "Other entry": 14,
+      "Android AVPro ExoPlayer 1.8.0 entry": 8,
+      "PC Windows Media Foundation entry": 4,
+      "PC Windows Media Foundation resource": 205
+    },
+    "sameGrantClients": [
+      {
+        "grantSha256": "96f83d77e191383ef2f0e66b02274f5185c4d22dc2e2225cdb51e880591d4113",
+        "counts": {
+          "Other": 9,
+          "Android AVPro ExoPlayer 1.8.0": 5,
+          "PC Windows Media Foundation": 3
+        }
+      },
+      {
+        "grantSha256": "0353586c981ff28c59b4ab4c78af7c52f59d7da03ffc2eb8bceae6cf9eadc4cc",
+        "counts": {
+          "Other": 5,
+          "PC Windows Media Foundation": 1,
+          "Android AVPro ExoPlayer 1.8.0": 3
+        }
+      }
+    ],
+    "redirectCauseSupported": false,
+    "nativeHlsDetectionCause": "Strong inference from retained client behavior plus exact ExoPlayer 1.8.0 source; not physical-device verification."
+  },
+  "verification": {
+    "nativeDatabaseTests": 18,
+    "focusedTests": 15,
+    "fullUnit": {
+      "passed": 1027,
+      "skipped": 742,
+      "failed": 0
+    },
+    "shippingBunRevision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "postgresMajor": 17,
+    "hostChecks": "Supplementary macOS Bun 963452075",
+    "results": {
+      "database": {
+        "status": "passed",
+        "logSha256": "c23a996e7c33cd16256670a62be9adfa987096b0be026d9dfe1e75e09760ed54"
+      },
+      "unit": {
+        "status": "passed",
+        "logSha256": "66f5a2997caf2e815dc458365e60515a8707f0bd938f6c1e592a01da2a917915"
+      },
+      "all-unit": {
+        "status": "passed",
+        "logSha256": "8a489761032143765b631cc35ca2dd1d3eff1705290aa2e2ff767eb9ec616b34"
+      },
+      "check": {
+        "status": "passed",
+        "logSha256": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a"
+      },
+      "build": {
+        "status": "passed",
+        "logSha256": "cbb1d916e12164c8632e905cffd0f7d4100edc3e4bcc266bb89278c14c412bdc"
+      },
+      "route": {
+        "status": "passed",
+        "logSha256": "4ab25aeb3ed758cfaf07c5a6ee8988d8b63ada4bb1a5ad72be2c36e0708a7a7b"
+      },
+      "inventory": {
+        "status": "passed",
+        "logSha256": "37844d662c668ba36c54bda1769d1065d56639ca776f111d07a5a85dcb04687f"
+      }
+    }
+  },
+  "cleanup": {
+    "remainingTestDatabases": 0,
+    "runtime": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "postgresGracefullyStopped": true,
+    "ownedContainerDeleted": true,
+    "liveConfigurationAndDataUnchanged": true
+  },
+  "sourceFiles": {
+    "src/lib/sharing/policy.ts": "5e1993f5dbb716a88abd45b2a4e334ad1a5b98bdd0e56024e91011e1156b277d",
+    "src/lib/sharing/external.server.ts": "2a41068d6517be243eb14b57d717f7d8d229d543506f4897035b31abbb32da2e",
+    "src/lib/sharing/ShareAction.svelte": "a313ea5210535c96cbb3e636269a998697f241997cb6e3940181bbdc94ccd99d",
+    "src/routes/share/[token]/+server.ts": "a8011490d4bfa069cd4edbbb3b75937d72609ccb8add127f71a59d16cebdba34",
+    "tests/sharing.test.ts": "949c40490c41eef51509468a7d96c641062ddcd3d98bac78a72b4632f963aefa",
+    "tests/sharing-db.test.ts": "1dab529b72eeb704c0c5199d067280ebc79bb14129a0521f2cf1851db3259c75",
+    "docs/synced-experiences.md": "8e18427cad69eb70f2919729787e453679c3e10bd4510846ee995eff52f720a9",
+    "docs/audits/2026-10-24-quest-sharing.md": "451ff60364b19014d1310bff619b55e3bb07eb7c827259a6a903e38761d82854"
+  },
+  "deployment": {
+    "baseSource": "fd9bd304ef4da3f2f2d5b46bd89df857fe065401",
+    "rollbackImage": "ghcr.io/tdeverx/coast@sha256:ea786f59caae4af3b105bcdff4ed94a7e5699fc78c6810cc9b4e6b32ac6f179f",
+    "deployedImage": "coast:quest-20261024-e28708f5eccc",
+    "deployedDigest": "sha256:5625d1f4a184a44f37a3587f065ca4581510959b43023996e561b97251b0fc53",
+    "patchSha256": "e28708f5eccc315833d28c6525ec2ea52786899e5c522f779928fd06481015b7",
+    "sourceArchiveSha256": "330e0c00df758e3c8b0e9826a9feba76bf3cad2bf157723d9edea8816b6aa7d9",
+    "restoreProof": {
+      "restoreVerified": true,
+      "markerVerified": true,
+      "credentialDecryptionVerified": true,
+      "counts": {
+        "users": 6,
+        "tracking_events": 86394,
+        "playback_shares": 5,
+        "provider_connections": 11
+      },
+      "migrations": [
+        {
+          "id": 65,
+          "hash": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171"
+        }
+      ]
+    },
+    "health": 200,
+    "publicEntryProof": {
+      "originalEntry": 410,
+      "suffixedEntry": 410,
+      "publicHttpsVerified": true,
+      "scope": "Retained expired grant: validates live route normalization without starting playback, allocating a viewer or exposing a bearer URL."
+    },
+    "historyProof": {
+      "baselineEvents": 86394,
+      "preservedEvents": 86394,
+      "currentEvents": 86406,
+      "missing": 0,
+      "newEventSources": [
+        {
+          "source": "jellyfin",
+          "action": "progress",
+          "n": 12,
+          "first": "2026-10-24T20:11:15.305Z",
+          "latest": "2026-10-24T20:19:35.105Z"
+        }
+      ]
+    },
+    "databaseBefore": {
+      "version": "17.11 (Debian 17.11-1.pgdg12+2)",
+      "counts": {
+        "users": 6,
+        "tracking_events": 86394,
+        "playback_shares": 5,
+        "provider_connections": 11
+      },
+      "migrations": [
+        {
+          "id": 65,
+          "hash": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171"
+        }
+      ],
+      "activePlayback": {
+        "n": 0
+      }
+    },
+    "databaseAfter": {
+      "build": "fd9bd304-quest-e28708f5eccc",
+      "bun": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+      "version": "17.11 (Debian 17.11-1.pgdg12+2)",
+      "counts": {
+        "users": 6,
+        "tracking_events": 86404,
+        "playback_shares": 5,
+        "provider_connections": 11
+      },
+      "migrations": [
+        {
+          "id": 65,
+          "hash": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171"
+        }
+      ]
+    },
+    "sameDatabaseVolume": true,
+    "noNewMigrations": true,
+    "scope": "Only the Quest format-hint fix is deployed; local bulk-recovery and preview changes are excluded.",
+    "preflight": {
+      "restoreMatched": true,
+      "credentialDecryptionVerified": true,
+      "httpEntry": {
+        "health": 200,
+        "originalEntry": 410,
+        "suffixedEntry": 410,
+        "grantNormalizationVerified": true,
+        "providerCalls": 0,
+        "scope": "Authored expired staging grant; no playback or encoder starts."
+      },
+      "initialScratchFailures": [
+        "Host data-root mode mismatched the runtime requirement.",
+        "Fresh filesystem root contained metadata, so staging was recreated with a managed data volume."
+      ],
+      "markedRestoreDropped": true,
+      "stagingContainerAndVolumeDeleted": true,
+      "managerShowsRunning": true
+    },
+    "buildLogSha256": "08bcc5dac3b36ed664ef5e585cab45bba7eff633cb9afed88d94cc69c8ad5901"
+  }
+}

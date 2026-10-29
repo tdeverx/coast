@@ -1,0 +1,25 @@
+from probe import *
+a=json.loads((ROOT/'actors.private.json').read_text());admin=next(x for x in a if x['admin']);viewer=next(x for x in a if not x['admin']);other=[x for x in a if not x['admin']][1];iid=json.loads((ROOT/'selected.private.json').read_text())['Id'];rows=[]
+def crop(name,actor,expected,body=None):
+ t=time.monotonic();s,b=call('/Coast/TrailerCrop',actor,body or {'ItemId':iid});rows.append({'case':name,'status':s,'expected':expected,'elapsedMs':round((time.monotonic()-t)*1000,2)});assert s==expected,(name,s);print(rows[-1],flush=True)
+def policy(actor,**changes):
+ s,_=call('/Users/'+actor['id']+'/Policy',admin,{**actor['policy'],**changes});assert s==204
+try:
+ crop('anonymous',None,401);crop('invalid-token',{'token':'fresh-invalid-audit-token'},401)
+ crop('invalid-item',viewer,400,{'ItemId':'bad'})
+ crop('other-credential-cold',other,200)
+ policy(other,EnableAllFolders=False,EnabledFolders=[]);crop('other-credential-withdrawn',other,404);crop('first-credential-still-allowed',viewer,200)
+ policy(other)
+ policy(viewer,EnableMediaPlayback=False);crop('playback-withdrawn',viewer,404);policy(viewer)
+ policy(viewer,IsDisabled=True);crop('disabled-user',viewer,401);policy(viewer)
+ logins=json.loads((ROOT/'audit-logins.private.json').read_text());u=next(u for u in logins['users'] if u['id'].replace('-','').lower()==viewer['id'].replace('-','').lower());s,b=call('/Users/AuthenticateByName',body={'Username':u['name'],'Pw':logins['password']});assert s==200;viewer['token']=b['AccessToken'];(ROOT/'actors.private.json').write_text(json.dumps(a))
+ pid='b08ee40269a241819f49ed92bc9dc640';s,config=call('/Plugins/'+pid+'/Configuration',admin);assert s==200
+ s,_=call('/Plugins/'+pid+'/Configuration',admin,{**config,'EnableTrailerCrop':False});assert s==204
+ crop('feature-disabled-cached',viewer,404)
+ s,_=call('/Plugins/'+pid+'/Configuration',admin,config);assert s==204
+ crop('feature-restored',viewer,200)
+ s,_=call('/Sessions/Logout',other,{});assert s==204
+ crop('logged-out-credential',other,401)
+finally:
+ policy(viewer);policy(other)
+ (ROOT/'crop-matrix.json').write_text(json.dumps(rows,indent=2))

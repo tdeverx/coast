@@ -1,0 +1,32 @@
+{
+  "history": {
+    "expected": 90192,
+    "retained": 90192
+  },
+  "counts": {
+    "users": 7,
+    "history": 90196,
+    "shares": 6,
+    "connections": 13,
+    "migrations": 67,
+    "hevcenabled": false
+  },
+  "build": "fd9bd304-share-a93aedbbf804",
+  "bun": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+  "pgVersion": "17\n",
+  "publicHealth": 200,
+  "image": "coast:share-20261028-a93aedbbf804",
+  "imageDigest": "sha256:c4423f01710b85ee2bd66b410fcb81005bf86ef78ced37236dbbf253587ac940",
+  "cpus": 4,
+  "memory": 4294967296,
+  "mounts": [
+    {
+      "destination": "/data",
+      "source": "/Volumes/Vault/Container/Configs/Coast-recovered-20261011"
+    },
+    {
+      "destination": "/data/postgres",
+      "source": "coast-postgres-17-recovered-20261022"
+    }
+  ]
+}

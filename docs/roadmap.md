@@ -16,12 +16,12 @@ The [current report](audits/2026-10-22-performance-followup/completion/independe
 |---|---|---|
 | BLOCK-AUTO-REVIEW-JOBS | Repeated native Jellyfin job load | Explicit authorization for the thirty-job exercise or an isolated provider; verify claim/lease/retry/cancel, throughput and cleanup. |
 | BLOCK-DEVICE | Physical-device and assistive-technology checks | Connected device/browser session; touch, keyboard/screen reader, decoder/GPU release and synchronized playback. |
-| BLOCK-HOSTED | Hosted companion and encoder acceptance | Disposable Jellyfin host with current companion and permission to revoke access; test cached crop authorization, HLS/transcode and shared-session teardown. |
+| BLOCK-HOSTED | Coast party and multi-device acceptance | [Hosted crop authorization and real encoder/HLS cleanup now pass](audits/2026-10-25-hosted-companion.md). Remaining: joined Coast party membership/host controls/withdrawal and multi-device synchronization, drift and teardown. [Optional HEVC1080p60 encoder-level failure](audits/2026-10-28-share-destinations.md) also remains; H.26460 passed. |
 | BLOCK-COHORT | Missing natural accounts and relationships | Connected Trakt, pending received recommendations, natural playlists, unequal same-user sources, active game playthrough and party sessions; exact paging/privacy/export results. |
 | BLOCK-FORMAT | Additional reading formats and linked documents | Actual CB7/CBT/solid archives and provider-linked EPUB/PDF; verify identity/access, decompression peaks and party locations. |
-| BLOCK-BULK | Durable bulk-task recovery | Choose target membership, receipt lifetime, response-loss/resume and incomplete-result UX before persisted recovery implementation. |
-| BLOCK-POLICY | Input limits and retention policy | Choose supported preview JSON/image limits and rejection UX, plus evidence/history retention and preservation requirements before imposing caps/deletion. |
 | BOUND-CAPACITY | Deployment capacity and cold/tail measurements | Define target hardware, workload/concurrency and duration; collect attributable startup, tail latency and decoder/GPU evidence. Finite local results already recorded. |
+
+The user selected and the local implementation now verifies [100-job bulk recovery and preview/retention policy](audits/2026-10-23-bulk-recovery-input-retention.md), resolving BLOCK-BULK and BLOCK-POLICY. Existing durable history is preserved. Six independent acceptance boundaries remain above.
 
 Playback Stop semantics are selected and implemented: close immediately, wait for the previous save before starting a successor, and offer Retry after failure. The older PR-02 undecided wording is superseded. Task-history and membership SQL candidates were rejected on measured results; retain the current production query/index pairs unless a new matched comparison wins. This roadmap entry does not authorize provider side effects, retention deletion, a new architecture or automatic recurring audit work.
 

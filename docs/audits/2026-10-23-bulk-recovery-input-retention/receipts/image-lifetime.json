@@ -1,0 +1,36 @@
+{
+  "scope": "Production image owner, native decoders and actual shipped pixels. Decode barriers, missing image-data payload and rapid replacements are authored scheduling/corruption edge cases, not real user workload.",
+  "engines": [
+    {
+      "name": "chromium",
+      "checks": {
+        "decoderFailureKeepsPrevious": true,
+        "supersededDecodeCannotPublish": true,
+        "orientedJpegAccepted": true,
+        "destroyDuringDecodeReleasesAll": true
+      },
+      "status": "passed"
+    },
+    {
+      "name": "webkit",
+      "checks": {
+        "decoderFailureKeepsPrevious": true,
+        "supersededDecodeCannotPublish": true,
+        "orientedJpegAccepted": true,
+        "destroyDuringDecodeReleasesAll": true
+      },
+      "status": "passed"
+    },
+    {
+      "name": "firefox",
+      "checks": {
+        "decoderFailureKeepsPrevious": true,
+        "supersededDecodeCannotPublish": true,
+        "orientedJpegAccepted": true,
+        "destroyDuringDecodeReleasesAll": true
+      },
+      "status": "passed"
+    }
+  ],
+  "status": "passed"
+}

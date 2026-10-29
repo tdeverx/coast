@@ -1,10 +1,12 @@
 <script lang="ts">
+  import {runTaskControl,taskControlMessage} from '#lib/ui/task-control.svelte.js';
+  import type {TaskControlCommand} from '#lib/providers/task-control.js';
   import FormActions from '#lib/ui/components/FormActions.svelte';
   import Field from '#lib/ui/components/Field.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import {page} from '$app/state';
   import { useClock } from '#lib/ui/clock.svelte.js';
-  import { untrack } from 'svelte';
+  import { untrack,onDestroy } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { message } from '#lib/ui/client.js';
@@ -64,34 +66,27 @@
     return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}h ` : ''}${minutes % 60 ? `${minutes % 60}m ` : ''}${seconds % 60}s`;
   }
 
+  let taskRequest:AbortController|undefined;
+  onDestroy(()=>taskRequest?.abort());
+  const taskActor=$derived(page.data.user?.id);
+  $effect(()=>{taskActor;return ()=>taskRequest?.abort();});
   async function updateActive(action: 'retry' | 'cancel' | 'promote') {
     if (busy) return;
 
+    const owner=page.data.user?.id;
+    if(!owner||preview)return;
+    const controller=new AbortController();taskRequest=controller;
     busy = true;
     error = '';
 
     try {
-      const result = await change<{
-        updated: number;
-        skipped: number;
-        hasMore: boolean;
-        limit: number;
-        blocked: boolean
-       }>(`queue/tasks/${action}`, { kind: task.kinds[0], instanceId: jobs[0]?.instanceId ?? null });
-
-      if (!preview) notifyAction(`${result.updated} jobs ${action === 'retry'
-        ? 'queued for retry'
-        : action === 'cancel' ? 'cancelled' : 'prioritized'}${result.skipped
-        ? ` · ${result.skipped} unchanged because the job changed or already has active work`
-        : ''}${result.hasMore
-        ? ' · More eligible jobs remain; use the action again for the next batch'
-        : ''}${result.blocked
-        ? ' · Some failures must wait for queued or running work for the same task'
-        : ''}.`);
+      const result=await runTaskControl(owner,{kind:task.kinds[0],instanceId:jobs[0]?.instanceId??null,action},
+        (path,body)=>change<TaskControlCommand>(path,body,'POST',{signal:controller.signal}),()=>page.data.user?.id===owner&&!controller.signal.aborted,undefined,()=>controller.abort());
+      if(result)notifyAction(taskControlMessage(result));
     } catch(cause) {
-      error = message(cause);
+      if(page.data.user?.id===owner&&!controller.signal.aborted)error = message(cause);
     } finally {
-      busy = false;
+      if(taskRequest===controller){taskRequest=undefined;busy = false;}
     }
   }
 
@@ -190,7 +185,8 @@
   }
 
   beforeNavigate(({ cancel, to, shallow }) => {
-    if (shallow) return;
+    if (shallow || preview) return;
+    if(taskRequest){if(dirty&&!window.confirm('Discard unsaved schedule changes?'))cancel();else taskRequest.abort();return;}
     if (!preview && to && to.url.pathname !== window.location.pathname && (busy || dirty && !window.confirm('Discard unsaved schedule changes?'))) cancel();
   });
 

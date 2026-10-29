@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-25",
+  "applicationBaseline": "fa449106f028566b1e32d1c1f9ed5ae86468be85",
+  "companionBaseline": "6077aee5c9f041b791a453aac0b8fdebc4175046",
+  "jellyfin": "12.3.0",
+  "sdk": "10.0.400",
+  "ffmpeg": "8.1.3",
+  "os": "26.7.1",
+  "bun": "1.4.4-canary.1+963452075 (local audit runtime; not the shipping Linux runtime)",
+  "snapshot": {
+    "method": "SQLite online backup from read-only live connection; quick_check completed before hosting",
+    "users": 18,
+    "videoQueryTotal": 34687,
+    "freshActors": 3,
+    "freshAdmins": 1,
+    "copiedTokensDeleted": true,
+    "copiedPasswordsReplaced": true
+  },
+  "media": {
+    "selection": "First existing local Movie file in the copied genuine catalogue; no fabricated video",
+    "metadataIdentitySha256": "ad8a51423f884942aa0dea585fd2e4a4d575fdb33a38b6b2099b7b2b1ce2731a",
+    "bytes": 2022576578,
+    "crop": {
+      "Width": 1902,
+      "Height": 802,
+      "X": 0,
+      "Y": 0
+    },
+    "fingerprintIsFullContentHash": false
+  },
+  "isolation": {
+    "bind": "127.0.0.1:8097",
+    "fileWrites": "Only owned root and /dev/null allowed; attempted external write denied",
+    "outbound": "Only localhost:8097 allowed by inherited sandbox profile",
+    "liveServerPidBefore": 66013,
+    "livePluginVersion": "0.3.0.0",
+    "currentPluginInstalledOnlyInCopy": true,
+    "externalJobHandlersRun": false
+  },
+  "binarySha256": {
+    "jellyfin": "39500cde3de4e8f254fef2dc3d9f9d445901a101e1831c56544af08212358a8c",
+    "ffmpeg": "675e3f1b0d31d5555e6eb301a7bc67d506e6178eb96d70c459be1f5f31a2b8de",
+    "hostedPlugin": "4e56778d4da431d05ae285f6af47c76e3b44fca9d814455d499d51cce48cd442"
+  },
+  "approvalBoundary": {
+    "liveTokenExtraction": "Automatic approval review rejected export of decrypted live tokens; command did not execute. No indirect extraction was used.",
+    "safeAlternative": "All copied device/API tokens deleted and clone passwords replaced offline; fresh clone-only sessions created."
+  }
+}

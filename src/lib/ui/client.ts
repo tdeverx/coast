@@ -73,16 +73,16 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
 }
 export function createApiClient(transport: ApiTransport, afterChange: (path: string) => Promise<void>) {
   const api = <T = unknown>(path: string, body?: unknown, method = 'POST', options: Pick<RequestInit, 'signal'> = {}) => requestApi<T>(transport, path, body, method, options);
-  const change = async <T = unknown>(path: string, body?: unknown, method = 'POST') => {
-    const result = await api<T>(path, body, method);
+  const change = async <T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) => {
+    const result = await api<T>(path, body, method,options);
     await acknowledgeRefresh(() => afterChange(path));
     return result;
   };
   const changeMany = <T = unknown>(paths: readonly string[], body?: unknown, method = 'POST') => orderedChanges<T>(api, afterChange, paths, body, method);
   return { api, change, changeMany };
 }
-export async function change<T = unknown>(path: string, body?: unknown, method = 'POST') {
-  const result = await api<T>(path, body, method);
+export async function change<T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) {
+  const result = await api<T>(path, body, method,options);
   await acknowledgeRefresh(() => refreshAfterChange(path));
   return result;
 }

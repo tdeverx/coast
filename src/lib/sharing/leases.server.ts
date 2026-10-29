@@ -4,7 +4,8 @@ import { AppError } from '#lib/server/security/errors.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import {logDiagnostic,classifyFailure} from '#lib/server/diagnostics/index.js';
 import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
-import { encodingBitrate, playbackLimits, sharedAllocation, viewerIdleSeconds } from './policy';
+import { encodingBitrate, playbackLimits, viewerIdleSeconds } from './policy';
+import {allocateViewers} from './allocation';
 
 /** Short owner-scoped transactions allocate all links together. No provider I/O holds a DB lock. */
 export async function reserveViewer(ownerId:string,viewerId:string,force=false) {
@@ -18,22 +19,23 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
     await tx`select pg_advisory_xact_lock(hashtextextended(${'sharing:'+ownerId},0))`;
     const [owner]=await tx`select settings from users where id=${ownerId} and not disabled`;
     if(!owner)throw new AppError(410,'The shared account is unavailable.');
-    const [viewer]=await tx`select v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v left join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and v.share_id in (select id from playback_shares where owner_id=${ownerId})`;
+    const [viewer]=await tx`select v.id,s.target,v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId}`;
     if(!viewer||!force&&viewer.playback_state==='stopped')throw new AppError(410,'The viewer playback session has expired.');
     if(!force&&viewer.last_seen_at&&!viewer.ended_at&&Date.now()-new Date(viewer.last_seen_at).getTime()<10_000)return {bitrate:viewer.desired_bitrate as number,cleanup:[]};
     const budget=playbackLimits(config.maxBitrateMbps,owner.settings).shared;
-    const active=await tx<{id:string}[]>`select v.id from share_viewers v join playback_shares s on s.id=v.share_id where s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second' order by v.created_at,v.id limit 21`;
-    const capacity=sharedAllocation(budget,1).capacity;
-    const retained=active.slice(0,capacity).map(row=>row.id),excess=active.slice(capacity).map(row=>row.id);
+    const active=await tx<{id:string;target:'website'|'vrchat';desired_bitrate:number|null}[]>`select v.id,s.target,v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id where s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second' order by v.created_at,v.id limit 21`;
+    const rates=allocateViewers(budget,active,viewer,playbackLimits(config.maxBitrateMbps,owner.settings).personal);
+    const excess=active.filter(row=>!rates.has(row.id)).map(row=>row.id);
     const cleanup=excess.length?await tx<ReleasedSession[]>`with ended as (
       update share_viewers set ended_at=now(),desired_bitrate=null where id in ${tx(excess)} returning playback_id
     ) update playback_sessions set state='stopped',cleanup_pending=true,updated_at=now() where id in (select playback_id from ended) returning id,user_id,connection_id,provider_device_id,provider_session_id`:[];
-    // A new/rejoining viewer cannot displace an already admitted viewer.
-    if(!active.some(row=>row.id===viewerId)&&retained.length<capacity)retained.push(viewerId);
-    const admitted=retained.includes(viewerId),allocation=sharedAllocation(budget,retained.length);
+    const admitted=rates.has(viewerId);
     if(admitted)await tx`update share_viewers set last_seen_at=now(),ended_at=null where id=${viewerId}`;
-    if(retained.length)await tx`update share_viewers set desired_bitrate=${allocation.bitrate} where id in ${tx(retained)}`;
-    return {bitrate:admitted?allocation.bitrate:0,cleanup};
+    if(rates.size){
+      const allocations=[...rates].map(([id,rate])=>({id,rate}));
+      await tx`update share_viewers v set desired_bitrate=r.rate from jsonb_to_recordset(${JSON.stringify(allocations)}::text::jsonb) as r(id uuid,rate integer) where v.id=r.id`;
+    }
+    return {bitrate:rates.get(viewerId)??0,cleanup};
   });
   // Commit evictions even if this caller is over capacity. Provider I/O never holds the owner lock.
   for(const session of result.cleanup){try{await stopReleasedSession(session);}catch{/* Durable retry remains pending. */}}

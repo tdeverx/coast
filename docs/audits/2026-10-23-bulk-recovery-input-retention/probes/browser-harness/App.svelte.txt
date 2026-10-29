@@ -1,0 +1,12 @@
+<script lang="ts">
+ import '/Users/admin/Documents/ChatGPT/coast-new/src/app.css';
+ import JobsSettings from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/JobsSettings.svelte';
+ import Preview from '/Users/admin/Documents/ChatGPT/coast-new/src/routes/ui-preview/+page.svelte';
+ import Toasts from '/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/NotificationToasts.svelte';
+ import {page,refresh} from './state.svelte';
+ import {onMount} from 'svelte';
+ onMount(()=>{void refresh();});
+</script>
+{#if page.data.user}
+ {#if page.url.pathname==='/ui-preview'}<Preview/>{:else}<main class="content page"><h1>Jobs</h1><JobsSettings providers={page.data.providers} actions={page.data.actions} commands={page.data.commands}/></main><Toasts notifications={[]}/>{/if}
+{:else}<main>Loading actual audit copy…</main>{/if}

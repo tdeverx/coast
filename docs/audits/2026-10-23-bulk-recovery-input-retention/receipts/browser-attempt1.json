@@ -1,0 +1,112 @@
+{
+  "scope": "Production JobsSettings/Recovery and UI playground rendered with temporary navigation adapters. Genuine native session, queue handlers and actual retained rows on marker-owned isolated copy. Actual shipped image pixels re-encoded with existing sharp. Oversized/deep/malformed inputs are authored edge cases. No workers, provider delivery, deployed-route or physical-device claim.",
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "156.0.8078.4",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "lost-response-followed-real-native-commit",
+          "pass": true
+        },
+        {
+          "name": "unknown-ack-keeps-reload-recovery",
+          "pass": true,
+          "targets": 21
+        },
+        {
+          "name": "reload-replay-does-not-repeat-effects",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": false,
+          "actualActions": 23
+        }
+      ],
+      "errors": [
+        {
+          "name": "TypeError",
+          "message": "loaders[contracts[selected].path.replace(...)] is not a function\n\n\tin $effect\n\tin ComponentSpecimen.svelte\n\tin PreviewExample.svelte\n\tin Workspace.svelte\n\tin Co"
+        },
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-queue-configuration-preserved"
+        }
+      ],
+      "status": "findings"
+    },
+    {
+      "name": "webkit",
+      "version": "27.2",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": false,
+          "actualActions": 23
+        }
+      ],
+      "errors": [
+        {
+          "name": "Unhandled Promise Rejection",
+          "message": "TypeError: loaders[contracts[selected].path.replace(/^src\\//, '/src/')] is not a function. (In 'loaders[contracts[selected].path.replace(/^src\\//, '/src/')]()',"
+        },
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-queue-configuration-preserved"
+        }
+      ],
+      "status": "findings"
+    },
+    {
+      "name": "firefox",
+      "version": "157.0",
+      "checks": [
+        {
+          "name": "native-actual-jobs-render",
+          "pass": true
+        },
+        {
+          "name": "narrow-jobs-no-overflow",
+          "pass": true
+        },
+        {
+          "name": "actual-queue-configuration-preserved",
+          "pass": false,
+          "actualActions": 23
+        }
+      ],
+      "errors": [
+        {
+          "name": "TypeError",
+          "message": "loaders[(intermediate value)[selected].path.replace(...)] is not a function\n\n  in $effect\n  in ComponentSpecimen.svelte\n  in PreviewExample.svelte\n  in Workspac"
+        },
+        {
+          "stage": "probe",
+          "name": "Error",
+          "message": "actual-queue-configuration-preserved"
+        }
+      ],
+      "status": "findings"
+    }
+  ],
+  "status": "findings"
+}

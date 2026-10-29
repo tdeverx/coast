@@ -1,0 +1,27 @@
+{
+  "scope": "One genuine hosted HLS producer, two Chromium browser contexts; no Coast membership/sync claim",
+  "browserFallback": "Browser plugin not available",
+  "externalRequests": 0,
+  "engine": "webkit",
+  "browser": "27.2",
+  "before": [
+    {
+      "time": 1.034934915,
+      "frames": 25,
+      "errors": []
+    },
+    {
+      "time": 1.014925541,
+      "frames": 32,
+      "errors": []
+    }
+  ],
+  "encoderCountDuring": 1,
+  "survivorContinued": true,
+  "encoderCountAfterFirst": 1,
+  "stopMs": 323.06587500000023,
+  "encoderCountAfterFinal": 0,
+  "mediaFilesRemaining": 0,
+  "cleanupMs": 1524.360334,
+  "passed": true
+}

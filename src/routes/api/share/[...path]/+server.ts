@@ -10,7 +10,7 @@ const headers = { 'cache-control': 'private, no-store', 'referrer-policy': 'no-r
 const handler: RequestHandler = async ({ request, params, cookies, locals, url }) => {
  try {
   const path = (params.path ?? '').split('/'), token = cookies.get(shareCookie);
-  if(['GET','HEAD'].includes(request.method)&&path[0]==='external'&&path.length===3&&path[2]==='stream')return await externalStream(path[1],request);
+  if(['GET','HEAD'].includes(request.method)&&path[0]==='external'&&path.length===3&&['stream','stream.m3u8'].includes(path[2]))return await externalStream(path[1],request);
   if (request.method === 'POST' && path.length === 1 && path[0] === 'claim') {
    const grant = await claimShare(await readJsonBody(request,65536,false), locals.user, token);
    cookies.set(shareCookie, grant.token, { path: '/', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:', expires: new Date(grant.expiresAt) });

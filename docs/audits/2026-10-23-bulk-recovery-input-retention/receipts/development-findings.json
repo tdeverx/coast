@@ -1,0 +1,15 @@
+{
+  "scope": "Earlier development failures; kept separate from final acceptance. See browser-attempt receipts for observed failing checks.",
+  "items": [
+    {
+      "name": "initial-native-jsonb",
+      "logSha256": "52dd0381b94b942a41ad80bc725a136a94f5003db8b98fad1c2e4ffe81634f17",
+      "disposition": "Native CHECK rejected JSONB double encoding; corrected to pass the array as native JSONB and reran native acceptance."
+    },
+    {
+      "name": "early-browser-harness",
+      "logSha256": "99c685e4f88d47f96fe2babdc143bd95167b3d3b8c8f160988aeb81df14344d5",
+      "disposition": "Temporary harness import/root and decode-boundary issues, not accepted as passing trials."
+    }
+  ]
+}

@@ -76,3 +76,13 @@ The exact name/comment-matched audit database was dropped with zero active clien
 All eight outstanding inputs/decisions/boundaries are now listed with stable IDs, resume conditions and acceptance requirements on the [application roadmap](../../../../roadmap.md#performance-follow-up--remaining-acceptance-23-october-2026). The older area roadmap links here and explicitly marks its 19 October narrative as historical. The audit guard verifies that roadmap IDs match this blocker register. No blocked external job exercise is admitted by PR/merge authorization.
 
 The combined delivery also includes the pre-existing Avatar border-state option and its matching generated preview manifest, at the user's explicit request. The preview image-input reset remains an audit repair. Report-closure indentation is tidied without changing behavior; its existing Stop/save and lifecycle regressions are rerun. Historical receipts retain their recorded source fingerprints, including those that noted the then-uncommitted Avatar changes. PR/check/merge state belongs to the delivery record and does not retroactively alter measured evidence.
+
+
+## Selected policy implementation — 23 October 2026
+
+The user subsequently selected 100-job durable recovery, 30-day terminal-detail compaction with permanent replay receipts, existing-history preservation and bounded preview inputs. The [new implementation epoch](../../../2026-10-23-bulk-recovery-input-retention.md) records native actual-data process interruption/restart, multi-engine component checks, regression gates and cleanup. BLOCK-BULK and BLOCK-POLICY moved to the resolved register; six unrelated boundaries remain. Earlier eight-item counts and receipts above retain their original dated meaning. Current-owner indexes link the new epoch without relabelling old measurements.
+
+
+## Hosted continuation — 25 October 2026
+
+The [new hosted epoch](../../../2026-10-25-hosted-companion.md) confirms and repairs cached crop permission withdrawal, then passes actual Jellyfin middleware, genuine FFmpeg timeout/shared cancellation and HLS decoder/process/segment cleanup. Three desktop engines each exercised two consumers of one producer. Fresh credentials were minted only inside a confined real-data snapshot; no live tokens were exported. BLOCK-HOSTED now retains Coast party orchestration and physical multi-device synchronization, rather than the completed local provider checks. Historical blocked observations above retain their original dates and scope. The copy was deleted and live Jellyfin stayed healthy; no production plugin deployment was performed.

@@ -65,6 +65,7 @@
   type View =
     | 'root'
     | 'play'
+    | 'share'
     | 'details'
     | 'history'
     | 'watched'
@@ -141,6 +142,7 @@
         : 'Play'
   );
   let planningOpen=$state(false),sharingOpen=$state(false);
+  let sharingTarget=$state<'website'|'vrchat'>('website');
   let requestOpen = $state(false),
     editOpen = $state(false),
     editAdmin = $state(false);
@@ -570,7 +572,9 @@
         onclick={startTarget}>{playLabel}</Button>
     {/if}
     {@render requestControls()}
-    {#if page.data.playbackSharing&&['movie','episode','track'].includes(active.kind)}<Button item icon="friends" onclick={()=>sharingOpen=true}>Share</Button>{/if}
+    {#if page.data.playbackSharing&&['movie','episode','track'].includes(active.kind)}
+      {@render branch('Share', 'share', 'friends')}
+    {/if}
     {#if page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
     {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
     <WorkActions section="social" workId={active.id} disabled={busy||loading} />
@@ -616,6 +620,11 @@
     {#if isAdmin}
       <div class="menu-divider" role="separator"></div>
       {@render branch('Admin', 'admin', 'settings')}
+    {/if}
+  {:else if view === 'share'}
+    <Button item icon="friends" onclick={()=>{sharingTarget='website';sharingOpen=true;}}>Website</Button>
+    {#if ['movie','episode'].includes(active.kind)}
+      <Button item icon="play" onclick={()=>{sharingTarget='vrchat';sharingOpen=true;}}>VRChat</Button>
     {/if}
   {:else if view === 'details'}
     {#each detailTargets as target (target.id)}
@@ -839,7 +848,7 @@
     />{/if}
 
   {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
-  {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title}/>{/if}
+  {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title} target={sharingTarget}/>{/if}
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}
     ><div class="stack">
