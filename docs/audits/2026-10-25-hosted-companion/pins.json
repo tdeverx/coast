@@ -48,8 +48,9 @@
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
-    "docs/audits/2026-10-28-share-destinations/pins.json": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49",
-    "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce"
+    "docs/audits/2026-10-28-share-destinations/pins.json": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270",
+    "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce",
+    "tests/profile-db.test.ts": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3"
   },
   "companion": {
     "baseline": "6077aee",
@@ -331,6 +332,22 @@
           "path": "docs/audits/2026-10-28-share-destinations/pins.json",
           "previousSha256": "4d57c1c611e2e4fbb5a2e32870e80be900ad125be666e709d5a110dea7eaff12",
           "currentSha256": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49"
+        }
+      ],
+      "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "sharing-submenu-housekeeping-2026-10-29",
+      "report": "docs/audits/2026-10-28-share-destinations.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-28-share-destinations/pins.json",
+          "previousSha256": "df539a465ab905a9e7e96bd8c835ab2766d4a47dec0b4f893ffa65c464a7cd49",
+          "currentSha256": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270"
+        },
+        {
+          "path": "tests/profile-db.test.ts",
+          "currentSha256": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3"
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."

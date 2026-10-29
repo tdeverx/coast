@@ -414,17 +414,18 @@ run('GIF avatars preserve all frames, enforce visibility and remove replaced fil
 });
 
 run('periods align history, totals, genres and ratings without changing favourites', async () => {
+  const now = new Date('2026-09-30T12:00:00Z');
   const old = new Date('2000-01-01T12:00:00Z');
   const [event] = await getDb()
     .insert(trackingEvents)
     .values({ userId: owner, mediaId: ids[0], action: 'watch', occurredAt: old })
     .returning();
   try {
-    const month = await profileData(owner, { period: 'month' });
-    const all = await profileData(owner, { period: 'all' });
+    const month = await profileData(owner, { period: 'month' }, now);
+    const all = await profileData(owner, { period: 'all' }, now);
     expect(all.totals.watches).toBe(month.totals.watches + 1);
     expect(month.totals.favourites).toBe(all.totals.favourites);
-    const filtered = await profileData(owner, { view: 'history', genre: 'Missing genre' });
+    const filtered = await profileData(owner, { view: 'history', genre: 'Missing genre' }, now);
     expect(filtered.total).toBe(0);
     const activity = await profileActivity(owner, new Date('2000-01-02T12:00:00Z'), 'month');
     expect(activity.days).toEqual([{ date: '2000-01-01', movies: 1, episodes: 0 }]);
