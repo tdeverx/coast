@@ -185,6 +185,7 @@ export async function enqueueAction(input: {
 
 /** Safe, actionable descriptions without leaking provider response bodies. */
 export function jobFailureMessage(error: unknown, permanent: boolean) {
+  if (safeDiagnosticErrorCode(error) === 'local.database-deadlock') return 'Concurrent database work conflicted. Coast will retry automatically; committed work is retained.';
   if (error instanceof ProviderQueueBusyError) return 'Coast is busy contacting connected services. This job will retry automatically.';
   if (classifyFailure(error) === 'timeout') return 'The service did not respond in time. Coast will retry automatically; completed import pages are retained.';
   if (error instanceof ProviderHttpError) {
@@ -248,6 +249,13 @@ export function validationDiagnostic(error: unknown) {
 
 /** Map known scan invariants to stable codes without exposing arbitrary error messages. */
 export function safeDiagnosticErrorCode(error: unknown) {
+  // Drizzle wraps the Bun PostgreSQL error as its cause. Inspect only the fixed
+  // SQLSTATE, never SQL text/parameters or arbitrary exception messages.
+  let cause=error;
+  for(let depth=0;depth<5&&cause instanceof Error;depth++){
+    if('code' in cause&&cause.code==='40P01'||'errno' in cause&&cause.errno==='40P01')return 'local.database-deadlock';
+    cause=cause.cause;
+  }
   if (!(error instanceof Error)) return undefined;
   const codes: Record<string, string> = {
     'Jellyfin returned an incomplete library page.': 'jellyfin.incomplete-library-page',

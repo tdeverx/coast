@@ -113,6 +113,7 @@ test('every known queue failure code survives storage without private exception 
     [new DOMException('PRIVATE EXCEPTION', 'TimeoutError'), false, 'provider.timeout'],
     [new Error('PRIVATE EXCEPTION'), true, 'action.rejected'],
     [new Error('PRIVATE EXCEPTION'), false, 'provider.interrupted'],
+    [new Error('PRIVATE SQL', {cause:Object.assign(new Error('PRIVATE PARAMETERS'),{code:'40P01'})}), false, 'local.database-deadlock'],
   ];
   try {
     for (const [error, permanent, code] of cases) {
@@ -126,6 +127,19 @@ test('every known queue failure code survives storage without private exception 
   } finally {
     await rm(directory, {recursive: true, force: true});
   }
+});
+
+test('database deadlocks retain a local retry remedy through wrapped errors',async()=>{
+ const {jobFailureDetail}=await import('../src/lib/server/queue');
+ const deadlock=Object.assign(new Error('PRIVATE SQL'),{code:'ERR_POSTGRES_SERVER_ERROR',errno:'40P01'});
+ for(const error of [deadlock,new Error('PRIVATE QUERY',{cause:deadlock})]){
+  expect(jobFailureMessage(error,false)).toContain('Concurrent database work');
+  expect(jobFailureDetail(error,false)).toEqual({code:'local.database-deadlock',remedy:'retry',retryable:true});
+ }
+ expect(safeDiagnosticErrorCode(Object.assign(new Error('deadlock detected'),{code:'OTHER'}))).toBeUndefined();
+ const cyclic=new Error('PRIVATE');
+ cyclic.cause=cyclic;
+ expect(safeDiagnosticErrorCode(cyclic)).toBeUndefined();
 });
 
 test('local provider admission saturation is retryable and does not claim a provider outage',async()=>{

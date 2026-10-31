@@ -14,7 +14,7 @@
     "src/lib/server/queries/media.ts": "59cfba66604f912aacb82b57d3a3870bbbb22526919e2534b8320fe7e1637fe8",
     "src/lib/server/queries/progress-experiment.ts": "81bf0b8691d404bbd98a07dfa358f1a6592370f253e174fcaaca2e330ed9f69c",
     "src/lib/server/queries/recent-library.ts": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
-    "src/lib/server/queue/index.ts": "13e26a07753f5e4ba3947a145bde4532bedada25132b7d58c4868986dd69d645",
+    "src/lib/server/queue/index.ts": "f84573c1cb00804104031af7b1defad8a493d036c1000d1eb781f29f04459f81",
     "src/lib/server/security/provider-fetch.ts": "042953d7f52e8aa1d0c074d823f6365999fa2831dcd3e079859b63b619ab4007",
     "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
     "src/lib/sync/jellyfin-finalization.server.ts": "87af15b0b6c053e5c6d9276315fb8a75c8a274e2619cc85d7c4f5d1116a1cf0d",
@@ -236,6 +236,18 @@
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "provider-lock-order-2026-10-31",
+      "report": "docs/audits/2026-10-31-provider-deadlocks.json",
+      "changes": [
+        {
+          "path": "src/lib/server/queue/index.ts",
+          "previousSha256": "13e26a07753f5e4ba3947a145bde4532bedada25132b7d58c4868986dd69d645",
+          "currentSha256": "f84573c1cb00804104031af7b1defad8a493d036c1000d1eb781f29f04459f81"
+        }
+      ],
+      "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
     }
   ]
 }

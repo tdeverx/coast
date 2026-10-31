@@ -1,5 +1,6 @@
 import * as v from 'valibot';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import { providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
 import { decryptCredential } from '#lib/server/security/credentials.js';
@@ -15,11 +16,14 @@ export type SeerrAccountScope={userId:string;instanceId:string;connectionId:stri
   linkedInstanceId:string;linkedConnectionId:string;linkedGeneration:string;linkedExternalUserId:string};
 /** Pin both the request identity and its verified linked Jellyfin account before personal writes. */
 export async function assertSeerrAccount(tx:Tx,scope:SeerrAccountScope) {
-  const [connection]=await tx.select().from(providerConnections).where(eq(providerConnections.id,scope.connectionId)).for('update');
-  const [linked]=await tx.select().from(providerConnections).where(eq(providerConnections.id,scope.linkedConnectionId)).for('update');
-  const [instance]=await tx.select().from(providerInstances).where(eq(providerInstances.id,scope.instanceId)).for('update');
-  const [mediaInstance]=await tx.select().from(providerInstances).where(eq(providerInstances.id,scope.linkedInstanceId)).for('update');
-  const [user]=await tx.select().from(users).where(eq(users.id,scope.userId)).for('update');
+  // Match reconciliation: policy/user first, then instances and accounts in ID order.
+  // The shared user lock fences settings/disable without a later exclusive upgrade.
+  await lockFeaturePolicyInTransaction(tx,scope.userId);
+  const [user]=await tx.select().from(users).where(eq(users.id,scope.userId));
+  const instances=await tx.select().from(providerInstances).where(inArray(providerInstances.id,[scope.instanceId,scope.linkedInstanceId])).orderBy(providerInstances.id).for('update');
+  const accounts=await tx.select().from(providerConnections).where(inArray(providerConnections.id,[scope.connectionId,scope.linkedConnectionId])).orderBy(providerConnections.id).for('update');
+  const instance=instances.find(row=>row.id===scope.instanceId),mediaInstance=instances.find(row=>row.id===scope.linkedInstanceId);
+  const connection=accounts.find(row=>row.id===scope.connectionId),linked=accounts.find(row=>row.id===scope.linkedConnectionId);
   if(!connection||connection.userId!==scope.userId||connection.instanceId!==scope.instanceId||connection.status!=='connected'||
     connection.accountGeneration!==scope.accountGeneration||connection.externalUserId!==scope.externalUserId||
     !linked||linked.userId!==scope.userId||linked.instanceId!==scope.linkedInstanceId||linked.status!=='connected'||

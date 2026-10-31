@@ -156,7 +156,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "9b4485fa43f0408765a1a70941659cd594bf7dff4c4dbad52ba1dd78344c7284",
+    "source-pins.json": "ae11040ba82859ec2e6b055bdeeb27801bd8d7cb50fe917d54bd402f85bfe859",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -267,6 +267,18 @@
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "provider-lock-order-2026-10-31",
+      "report": "docs/audits/2026-10-31-provider-deadlocks.json",
+      "changes": [
+        {
+          "path": "source-pins.json",
+          "previousSha256": "9b4485fa43f0408765a1a70941659cd594bf7dff4c4dbad52ba1dd78344c7284",
+          "currentSha256": "ae11040ba82859ec2e6b055bdeeb27801bd8d7cb50fe917d54bd402f85bfe859"
+        }
+      ],
+      "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
     }
   ]
 }

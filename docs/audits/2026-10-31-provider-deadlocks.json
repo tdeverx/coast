@@ -1,0 +1,58 @@
+{
+  "epoch": "provider-lock-order-2026-10-31",
+  "baseline": "b069c7fa9995d48135c6e013ddd69669675c27d4",
+  "blanketAcceptance": false,
+  "liveObservation": {
+    "retainedDeadlocks": 29,
+    "firstUTC": "2026-10-29T20:32:57.025Z",
+    "lastUTC": "2026-10-30T20:04:04.717Z",
+    "victims": {
+      "jellyfin.delta": 9,
+      "jellyfin.reconcile": 4,
+      "seerr.sync": 16
+    },
+    "allVictimsSucceededOnAttempt": 2,
+    "lockWaitsAtInspection": 0,
+    "cumulativeDeadlocks": 192,
+    "limitation": "Cumulative counter includes older history. Matching tasks recovered; imported-row correctness and all older incidents were not audited."
+  },
+  "rootCause": "Reconciliation takes user FOR SHARE before connection FOR UPDATE; provider guards previously requested user FOR UPDATE after holding connections.",
+  "contract": [
+    "Shared configuration/user policy fence before instance, connection and lease locks.",
+    "Multiple instances/connections ordered by ID.",
+    "Cache source user/connection checks use shared locks, retaining disabled/generation fences.",
+    "SQLSTATE40P01 from Bun errno or a bounded wrapped cause becomes local.database-deadlock.",
+    "Existing retry backoff, checkpoints, permissions and account fences remain in force."
+  ],
+  "verification": {
+    "runtime": "Bun1.4.4-canary.1+6bb5dc195, PostgreSQL17, disposable Apple container",
+    "redGreen": "Four actual guard concurrency tests failed the original source and passed the fixed source.",
+    "newDatabaseSuite": "6 passed, including real Bun and Drizzle error objects.",
+    "focusedDatabaseSuites": [
+      "seerr-account-scope-db.test.ts",
+      "seerr-refresh-db.test.ts",
+      "seerr-delivery-db.test.ts",
+      "jellyfin-access-proof-db.test.ts",
+      "jellyfin-reconciliation-db.test.ts",
+      "provider-recommendations-db.test.ts",
+      "feature-boundaries-db.test.ts",
+      "features-db.test.ts"
+    ],
+    "diagnosticUnitSuites": "queue-diagnostics and diagnostic-logging passed.",
+    "initialHarnessFailure": "Feature-boundaries initially lacked development-only @sveltejs/kit in the production image. Installed unchanged frozen dev dependencies inside the disposable container and reran successfully."
+  },
+  "remaining": [
+    "Post-deployment live recurrence observation; no production deployment is part of this PR request.",
+    "No new physical-device or provider-performance acceptance is claimed."
+  ],
+  "files": {
+    "src/lib/diagnostics.ts": "9893d2cd4605026b803c901c57df45b002a986c4effadfed5e2ce06e21754282",
+    "src/lib/providers/jellyfin/access-proof.server.ts": "787f7cee506948514cab36edd7962fb38df78bd0ec94efe21b5871b86928707a",
+    "src/lib/providers/seerr/connection.server.ts": "d80592216275a31129481650aa06f5150db498869e1c1af900f70a4ded353c6a",
+    "src/lib/recommendations/providers.server.ts": "4289cad7894ac5c9b17906326b76f163abcbf518e466e34d3480266b1a9d017d",
+    "src/lib/server/queue/index.ts": "f84573c1cb00804104031af7b1defad8a493d036c1000d1eb781f29f04459f81",
+    "tests/queue-diagnostics.test.ts": "5c96fa440223b88d6e1e2bf0d5843eabfa2d8c16d5f9f2ec28ecdbdfc4f76de5",
+    "tests/provider-lock-order-db.test.ts": "a6f4eed4dfe1747e7e3c402594f9dd9f774ac860570b12cb66634ae8148818ed",
+    "docs/diagnostic-logging.md": "4b313c0c4063c24353b03300f7a433c5b0a498faf25880ce06da8fc8198f4580"
+  }
+}

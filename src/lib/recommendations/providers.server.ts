@@ -5,6 +5,7 @@ import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '
 import {getDb,getSql} from '#lib/server/db/index.js';
 import type {Metadata} from '#lib/providers/contracts.js';
 import {getConfig} from '#lib/server/config.js';
+import {lockFeaturePolicyInTransaction} from '#lib/server/features.js';
 import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
 import {getTmdb,ingestMetadata} from '#lib/catalogue/service.server.js';
 import {getTrakt} from '#lib/providers/trakt/connection.server.js';
@@ -75,13 +76,14 @@ const checkpointSchema=v.object({
 });
 async function saveSet(instanceId:string,key:string,ids:string[],seedId:string|null,action:OutboxAction){
  await getDb().transaction(async tx=>{
+  await lockFeaturePolicyInTransaction(tx,action.userId);
+  const [user]=await tx.select().from(users).where(eq(users.id,action.userId));
+  const [instance]=await tx.select().from(providerInstances).where(eq(providerInstances.id,instanceId)).for('update');
   if(action.connectionId){
    const [account]=await tx.select().from(providerConnections).where(eq(providerConnections.id,action.connectionId)).for('update');
    if(!account||account.userId!==action.userId||account.instanceId!==instanceId||account.status!=='connected'||account.accountGeneration!==action.accountGeneration)
     throw new PermanentActionError('The recommendation account changed.');
   }
-  const [instance]=await tx.select().from(providerInstances).where(eq(providerInstances.id,instanceId)).for('update');
-  const [user]=await tx.select().from(users).where(eq(users.id,action.userId)).for('update');
   if(!instance?.enabled||!instance.credentials||!user||user.disabled)throw new PermanentActionError('The recommendation service is unavailable.');
   await assertJobLease(tx,true);
   const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_job_allowed(${action.userId}::uuid,${action.kind},${action.payload}::jsonb) as allowed`);

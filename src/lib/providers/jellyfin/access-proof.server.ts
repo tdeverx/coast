@@ -9,6 +9,7 @@ import type {AvailableItem} from '../contracts';
 import {jellyfinItemKey} from './paging';
 import {assertJobLease} from '#lib/server/queue/execution.js';
 import {providerSchedule} from '../schedule';
+import {lockFeaturePolicyInTransaction} from '#lib/server/features.js';
 
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 export type JellyfinAccessContext={connection:typeof providerConnections.$inferSelect;instance:typeof providerInstances.$inferSelect;adapter:JellyfinAdapter};
@@ -58,9 +59,10 @@ export function sameScreenAccessProof(a:ScreenAccessProof,b:ScreenAccessProof|nu
   return b!==null&&JSON.stringify(a)===JSON.stringify(b);
 }
 async function assertContext(tx:Tx,context:JellyfinAccessContext) {
+  await lockFeaturePolicyInTransaction(tx,context.connection.userId);
+  const [user]=await tx.select().from(users).where(eq(users.id,context.connection.userId));
   const [instance]=await tx.select().from(providerInstances).where(eq(providerInstances.id,context.instance.id)).for('update');
   const [connection]=await tx.select().from(providerConnections).where(eq(providerConnections.id,context.connection.id)).for('update');
-  const [user]=await tx.select().from(users).where(eq(users.id,context.connection.userId)).for('update');
   if(!instance?.enabled||instance.provider!=='jellyfin'||instance.serverIdentity!==context.instance.serverIdentity||!user||user.disabled||
     !connection||connection.userId!==user.id||connection.instanceId!==instance.id||connection.accountGeneration!==context.connection.accountGeneration||
     connection.externalUserId!==context.connection.externalUserId||connection.status!=='connected'||!connection.credentials)
@@ -132,7 +134,9 @@ export async function tryReuseScreenAccess(context:JellyfinAccessContext):Promis
       const census=parsed.output,age=Date.now()-Date.parse(census.completedAt);
       if(age<0||age>maxAge||Date.parse(census.expiresAt)<=Date.now()||census.serverIdentity!==proof.serverIdentity||census.serverVersion!==proof.serverVersion)continue;
       const [source]=await tx.select({connection:providerConnections,user:users}).from(providerConnections).innerJoin(users,eq(users.id,providerConnections.userId))
-        .where(and(eq(providerConnections.id,census.sourceConnectionId),eq(providerConnections.instanceId,instance.id))).for('update');
+        // Source identity and disabled state are read-only fences. An exclusive
+        // user lock here would recreate the reconciliation cycle across accounts.
+        .where(and(eq(providerConnections.id,census.sourceConnectionId),eq(providerConnections.instanceId,instance.id))).for('share');
       if(!source||source.user.disabled||source.connection.status!=='connected'||!source.connection.credentials||source.connection.accountGeneration!==census.accountGeneration||source.connection.externalUserId!==census.externalUserId)continue;
       const [size]=await tx.execute<{total:number}>(sql`select count(*)::integer as total from provider_items where instance_id=${instance.id}
         and kind in ('movie','show','season','episode') and (
