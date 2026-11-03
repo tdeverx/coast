@@ -43,6 +43,7 @@ export const load = (async ({locals, params, depends, url}) => {
     section,
     featureDecisions: resolveFeatures(config),
     benchmarks:section==='benchmarks'?await listBenchmarks(locals.user,Number(url.searchParams.get('page'))||1):null,
+    backups: section === 'backups' ? await (await import('#lib/backups/service.server.js')).backupStatus(locals.user) : null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
     invites: section==='users'?await listInvites(locals.user):[],

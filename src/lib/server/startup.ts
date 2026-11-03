@@ -6,6 +6,7 @@ import { startQueueWorker, stopQueueWorker } from './queue';
 import { stopProviderMaintenance } from '#lib/providers/maintenance.server.js';
 import { runtimeEvidence } from './diagnostics/runtime';
 import {closeDb} from './db';
+import { startBackupScheduler } from '#lib/backups/service.server.js';
 
 type Runtime = { register?: () => void; initialization: Promise<void>; stop: () => void };
 const runtimeKey=Symbol.for('coast.platform.runtime');
@@ -29,7 +30,9 @@ export function initializePlatform(registerHandlers?: () => void): Promise<void>
   if(current&&current.register===registerHandlers)return current.initialization;
   // SSR reloads must replace the old workers and handlers together, just like the ORM.
   current?.stop();
+  let stopBackups: (() => void) | undefined;
   const stop=()=>{
+    stopBackups?.();
     stopQueueWorker();stopProviderMaintenance();
     void stopReadingCache().catch(() => {});
     runtimeEvidence.stop();
@@ -49,6 +52,7 @@ export function initializePlatform(registerHandlers?: () => void): Promise<void>
     process.once('SIGTERM',onShutdown);process.once('SIGINT',onShutdown);
     process.once('sveltekit:shutdown',onShutdown);
     startQueueWorker();
+    stopBackups = startBackupScheduler();
   })();
   return runtime.initialization;
 }

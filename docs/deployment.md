@@ -57,6 +57,27 @@ Run `bun run code:inventory`, `bun run ui:inventory:check`, `bun run check`, `bu
 
 Back up the database and `secrets/` together. A logical database restore without the original credential key cannot recover provider tokens. Use a private backup directory (`umask 077`), and preserve secret-file permissions. Keep backups outside the application's transient/cache retention directories.
 
+On installations using bundled PostgreSQL, **Settings → Backups** lets administrators set a daily schedule and time zone, choose how many snapshots to keep, run a backup, and review its result. Automatic backups start disabled and pause in Developer mode. Coast runs at most one backup at a time. If Coast is offline at the chosen time, it can catch up later that calendar day. A failed run can be retried with **Back up now**.
+
+Generate a public RSA certificate and its private key outside the Coast data directory. Keep the private key and its passphrase somewhere you can recover them independently of the server. Paste only `recipient.pem` into the Backups settings. An existing RSA recovery certificate can also be used.
+
+```sh
+umask 077
+openssl req -x509 -newkey rsa:3072 -days 3650 -subj '/CN=Coast Backup' \
+  -keyout recovery-key.pem -out recipient.pem
+```
+
+Coast writes a PostgreSQL logical dump, an archive of `secrets/` and uploaded avatars, and a checksum manifest under `/data/backups` (the `backups` folder in the Coast data mount). Both archives are encrypted with CMS AES-256-GCM for the configured certificate. Coast publishes the folder after capture and checksum generation, then applies retention to its own completed snapshots. Keep older private keys as long as any backup still uses them. The data mount must allow Coast to write to a private `backups` directory. Copy the encrypted snapshots to independent storage if you need protection against losing that mount.
+
+To rehearse a restore, verify the two ciphertext hashes in `manifest.json` and decrypt into private scratch storage for an isolated installation. Use the matching recovery key. Use `app-files.cms` and `app-files.tar.gz` in the same command for the app archive.
+
+```sh
+openssl cms -decrypt -inform DER -binary -in database.cms \
+  -inkey /path/to/recovery-key.pem -out database.dump
+```
+
+Restore into a fresh database using `pg_restore --exit-on-error` as a PostgreSQL administrator, with the Coast role already created. Preserve the original object owners and grants, including any privileged extensions. Extract the app archive into the restored Coast data directory and keep `secrets/` private and readable by the Coast account. Check database contents, credential decryption and app readiness before putting a restored instance online. Use the build recorded in the manifest or a compatible release. Coast's Backups page reports capture status. A successful restore rehearsal is a separate check.
+
 `TEST_DATABASE_URL=… bun run test:recovery` exercises a logical PostgreSQL dump/restore using only newly created disposable databases and fixture credentials. It requires matching `pg_dump`/`pg_restore` tools and permission to create databases. It verifies fresh-process decryption with the restored key, rejection with a different key, and retention of queued work. It does not restore an installation or alter its configured database. See [the audit follow-up](audits/2026-10-02-follow-up.md) for tested scope and the optional local container workflow.
 
 Transient cleanup runs through existing provider maintenance: expired login sessions, unapproved previews, old unused invites, ended synced rooms and diagnostics. History, playback evidence, redeemed invites, approved cleanup previews and completed outbox evidence remain durable. Artwork cache has a separate bounded eviction policy.

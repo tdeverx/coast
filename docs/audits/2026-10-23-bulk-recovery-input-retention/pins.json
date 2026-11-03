@@ -54,14 +54,14 @@
     "src/lib/server/queue/task-controls.server.ts": "1ae39806d7aaf00df8d79c74de6649dd03e39eb20a1809e5dfbfbb8433338b75",
     "src/lib/server/storage/retention.server.ts": "25c0f195a6da979c87d18174b6895776d36607ded4bca2659d994824defba341",
     "src/lib/ui/client.ts": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
-    "src/lib/ui/component-manifest.json": "c0c2c67601b12c12e0bb1458996519315c0a3c7138a9e4b83f7c6f4865d7d0ae",
+    "src/lib/ui/component-manifest.json": "fa7030e2c8db36e2bb264310cd64283edf2bc1de4c8e3f24eeb2994898418a3e",
     "src/lib/ui/components/JobSchedule.svelte": "d6271135414d43f66f623437bca73dc97c5d999d46b94a80eead17b1ad0cd3c1",
     "src/lib/ui/components/JobsSettings.svelte": "b3bfb514018d41fe2de74c74d66f1fdce718a74953cfb930e17e126334c48f1a",
     "src/lib/ui/preview-input.ts": "9d4bccbd96811079c30eef319068fcfef3077c8de7e559e8d98a2f2bb61c240f",
     "src/lib/ui/task-control.svelte.ts": "00dd35cc7525fb9a35bc18f27ae4d895e46cc2e456e574fceb3fa898261b6b34",
     "src/lib/ui/task-control/Recovery.svelte": "fa978b6aaf72490290183196bbbada8a12cd42093d6ee07abc777eb4407a750b",
-    "src/routes/settings/[[section]]/+page.server.ts": "a23dc43832d4ccbe7f5609cf2c825a9a396d34d7249c9e1a9677cbf2066e844b",
-    "src/routes/settings/[[section]]/+page.svelte": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+    "src/routes/settings/[[section]]/+page.server.ts": "5fbfe1e8b2a66bde166c3408aea9db3e1592723f3e480e8d2755198528ac82c5",
+    "src/routes/settings/[[section]]/+page.svelte": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798",
     "src/routes/ui-preview/+page.svelte": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
     "src/routes/ui-preview/ComponentPlayground.svelte": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
@@ -183,6 +183,28 @@
         }
       ],
       "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
+    },
+    {
+      "epoch": "coast-native-backups-2026-11-03",
+      "report": "docs/deployment.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/component-manifest.json",
+          "previousSha256": "c0c2c67601b12c12e0bb1458996519315c0a3c7138a9e4b83f7c6f4865d7d0ae",
+          "currentSha256": "fa7030e2c8db36e2bb264310cd64283edf2bc1de4c8e3f24eeb2994898418a3e"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.server.ts",
+          "previousSha256": "a23dc43832d4ccbe7f5609cf2c825a9a396d34d7249c9e1a9677cbf2066e844b",
+          "currentSha256": "5fbfe1e8b2a66bde166c3408aea9db3e1592723f3e480e8d2755198528ac82c5"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+          "currentSha256": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798"
+        }
+      ],
+      "note": "Admin backup section and generated preview coverage. The offline application check exercised the rendered backup page, admin authorization and automatic/manual backup capture. Existing bulk, preview input and hosted companion acceptance receipts are preserved."
     }
   ]
 }

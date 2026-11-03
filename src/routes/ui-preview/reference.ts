@@ -26,6 +26,7 @@ export const compositions: ReferenceRecipe[] = [
   { id: 'admin.table', title: 'Administrative tables', family: 'admin', example: 'admin-table', sources: ['src/routes/settings/[[section]]/+page.svelte'], scenarios: ['normal', 'empty'] },
   { id: 'admin.diagnostics', title: 'Diagnostics and disclosure', family: 'admin', example: 'diagnostics', sources: ['src/routes/settings/[[section]]/+page.svelte'], scenarios: ['normal', 'empty'] },
   { id: 'account.secret', title: 'One-time output', family: 'admin', example: 'secret-output', sources: ['src/routes/settings/[[section]]/+page.svelte'], scenarios: ['token', 'invite', 'hidden'] },
+  { id: 'admin.backups', title: 'Backups and schedules', family: 'admin', example: 'backups', sources: ['src/lib/backups/BackupSettings.svelte'], scenarios: ['completed', 'running', 'failed', 'unavailable'] },
   { id: 'admin.benchmark', title: 'Benchmark results', family: 'admin', example: 'benchmark', sources: ['src/lib/benchmarks/BenchmarkSettings.svelte'], scenarios: ['complete', 'empty', 'running', 'error'] },
   { id: 'profile.identity', title: 'Profile identity', family: 'feature', example: 'profile.identity', sources: ['src/routes/profile/[username]/+page.svelte'], scenarios: ['self', 'other', 'private', 'no-art', 'long'] },
   { id: 'profile.insights', title: 'Profile and taste insights', family: 'feature', example: 'profile.insights', sources: ['src/routes/taste/[friendId]/+page.svelte'], scenarios: ['activity', 'taste', 'unknown'] },

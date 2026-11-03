@@ -19,6 +19,7 @@
   } from '#lib/settings/sections.js';
   import Heading from '#lib/ui/components/Heading.svelte';
   import JobsSettings from '#lib/ui/components/JobsSettings.svelte';
+  import BackupSettings from '#lib/backups/BackupSettings.svelte';
   import BenchmarkSettings from '#lib/benchmarks/BenchmarkSettings.svelte';
   import Pagination from '#lib/ui/components/Pagination.svelte';
   import IntegrationSettings from '#lib/ui/components/IntegrationSettings.svelte';
@@ -848,6 +849,7 @@
           providers={data.providers}
           actions={data.actions}
         />
+      {:else if data.section === 'backups' && data.backups}<BackupSettings initial={data.backups} />
       {:else if data.section === 'benchmarks' && data.benchmarks}<BenchmarkSettings history={data.benchmarks} />
       {:else if data.section === 'pending'}<p class="small" style="margin-bottom:20px">
           Choose which service should win when saved changes disagree. Background sync is managed by

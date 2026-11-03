@@ -68,6 +68,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/backups/BackupSettings.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/games/Details.svelte",
@@ -877,6 +878,7 @@
     "path": "src/lib/ui/components/SettingsRow.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/backups/BackupSettings.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": true

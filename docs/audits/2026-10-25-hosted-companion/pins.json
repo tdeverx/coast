@@ -39,10 +39,10 @@
     "src/lib/playback/service.server.ts": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5",
     "src/lib/ui/work-menu/ScreenActions.svelte": "4799f15383d72f89f5e7ba36bbc7289850587752c5588bb813a8a7c2d0d15a81",
     "src/routes/+layout.server.ts": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09",
-    "src/lib/settings/sections.ts": "c1b4246992e438e089a999398754ae097070b4fc59c2d267ec15b233c9064288",
+    "src/lib/settings/sections.ts": "6eba0926ccda5741dce7abb75239cc50b7278ea8e9e3bcda1a9ce63997f47f38",
     "src/lib/server/config.ts": "8b328917cec1ab14760559283e1fb77a5b3c3d640fee848e79102f396bf528c4",
     "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
-    "src/routes/settings/[[section]]/+page.svelte": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+    "src/routes/settings/[[section]]/+page.svelte": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
     "tests/sharing-db.test.ts": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
@@ -351,6 +351,23 @@
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "coast-native-backups-2026-11-03",
+      "report": "docs/deployment.md",
+      "changes": [
+        {
+          "path": "src/lib/settings/sections.ts",
+          "previousSha256": "c1b4246992e438e089a999398754ae097070b4fc59c2d267ec15b233c9064288",
+          "currentSha256": "6eba0926ccda5741dce7abb75239cc50b7278ea8e9e3bcda1a9ce63997f47f38"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
+          "currentSha256": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798"
+        }
+      ],
+      "note": "Admin backup section and generated preview coverage. The offline application check exercised the rendered backup page, admin authorization and automatic/manual backup capture. Existing bulk, preview input and hosted companion acceptance receipts are preserved."
     }
   ]
 }
