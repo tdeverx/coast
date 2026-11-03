@@ -38,7 +38,7 @@
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
       "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "ae11040ba82859ec2e6b055bdeeb27801bd8d7cb50fe917d54bd402f85bfe859",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "8cbdb0dbb7d05019dd8aedc34f63a119b370d0c2e1111e9b9b7efab548aaf0b0",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "1a156439e028106d444b842f5a239ceaa78b00588ef232bdca6b618e6e31f0cf",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
       "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
       "src/lib/ui/components/PersistentPlayer.svelte": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
@@ -2872,6 +2872,18 @@
       ],
       "reason": "Reviewed documentation/source register refresh; historical native acceptance fingerprint and receipts unchanged.",
       "report": "completion/independent/README.md"
+    },
+    {
+      "epoch": "coast-native-backups-2026-11-03",
+      "report": "docs/deployment.md",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "8cbdb0dbb7d05019dd8aedc34f63a119b370d0c2e1111e9b9b7efab548aaf0b0",
+          "currentSha256": "1a156439e028106d444b842f5a239ceaa78b00588ef232bdca6b618e6e31f0cf"
+        }
+      ],
+      "note": "Review the backup roadmap source pin change. Historical evidence and outstanding acceptance are preserved."
     }
   ],
   "deliveryHousekeeping": {

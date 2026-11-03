@@ -40,7 +40,7 @@
     "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/storage-cost-final.json": "bb5ab529ec752806b543461f4d2bc7285b33b2dcc7c2f83d11626eb5d413108d",
     "docs/audits/2026-10-23-bulk-recovery-input-retention/receipts/visual-review.json": "89d42a656666c863c8906a55c3b26f8a83714ccbf67ec812223791e60d77040c",
     "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
-    "docs/roadmap.md": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
+    "docs/roadmap.md": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700",
     "drizzle/0065_task_control_commands.sql": "0f7b57af9636ca0a472cb12dd151245bef1fda4bca54b3f76af6ea622811f3f1",
     "drizzle/meta/0065_snapshot.json": "065625d17f4ef424b86dbd3934c34d2231af53172c85545d70422e9758d93668",
     "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
@@ -202,6 +202,11 @@
           "path": "src/routes/settings/[[section]]/+page.svelte",
           "previousSha256": "76b83ee672e4073f4d828e97084b835d481f5a86bb88004adaa3f8f691fda472",
           "currentSha256": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798"
+        },
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
+          "currentSha256": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700"
         }
       ],
       "note": "Admin backup section and generated preview coverage. The offline application check exercised the rendered backup page, admin authorization and automatic/manual backup capture. Existing bulk, preview input and hosted companion acceptance receipts are preserved."
