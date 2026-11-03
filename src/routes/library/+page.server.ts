@@ -3,13 +3,13 @@ import { getFeatureConfig } from '#lib/server/features.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { libraryOptionsSchema } from '#lib/server/queries/library.js';
-import { libraryContent } from '#lib/server/queries/library-content.js';
+import { libraryContent, libraryImportStatus } from '#lib/server/queries/library-content.js';
 import { collectionData, collectionOptionsSchema, collectionParameters } from '#lib/collection/query.server.js';
 import { missingDemand } from '#lib/collection/demand.server.js';
 import { profileUser } from '#lib/server/queries/profile-user.js';
 import type { PageServerLoad } from './$types';
 import {resolveAction,actionUrl} from '#lib/actions.js';
-import { libraryBrowseDefaults, libraryTypeOptions, libraryEntityOptions } from '#lib/library.js';
+import { libraryBrowseDefaults, libraryTypeOptions, libraryEntityOptions, type LibraryContent } from '#lib/library.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { AppError } from '#lib/server/security/errors.js';
 
@@ -50,12 +50,16 @@ const loadLibrary = async ({ locals, url, depends, request }: Parameters<PageSer
   browseUrl.searchParams.set('scope', scope);
   browseUrl.searchParams.set('kind',kind);
   browseUrl.searchParams.set('collection',String(collection));
+  const content: LibraryContent | null = !fallback ? null : !container&&kind!=='artist'&&(collection || view==='listen'&&collectionFilters.segment!=='all')
+    ? await collectionData(locals.user.id, collectionFilters, username, requestedPageInterval(collectionFilters.page,parameters.get('firstPage')),request.signal)
+    : await libraryContent(locals.user.id, browseUrl,request.signal);
+  const importStatus = !profile && !collection && content?.total === 0 && !content.failure
+    && view !== 'play' && kind !== 'playlist' && !genre && tracking === 'all' && collectionFilters.segment === 'all'
+    ? await libraryImportStatus(locals.user.id) : null;
   return {
     view, collection, username: profile?.username ?? null, owner: !profile || profile.id === locals.user.id,
     filters: { ...collectionFilters, genre, tracking, scope, kind },
-    content: !fallback ? null : !container&&kind!=='artist'&&(collection || view==='listen'&&collectionFilters.segment!=='all')
-      ? await collectionData(locals.user.id, collectionFilters, username, requestedPageInterval(collectionFilters.page,parameters.get('firstPage')),request.signal)
-      : await libraryContent(locals.user.id, browseUrl,request.signal),
+    content, importStatus,
     missing: view !== 'read' && collection && !profile && parameters.get('missing') === 'true'
       ? missingDemand(locals.user.id, new URL(`http://coast/missing?category=${category}&page=${parameters.get('missingPage') ?? 1}`)) : null,
   };

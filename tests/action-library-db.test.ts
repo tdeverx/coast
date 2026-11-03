@@ -3,7 +3,7 @@ import {eq,inArray} from 'drizzle-orm';
 import {getDb,closeDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
-import {libraryContent} from '../src/lib/server/queries/library-content';
+import {libraryContent,libraryImportStatus} from '../src/lib/server/queries/library-content';
 
 const target=process.env.TEST_DATABASE_URL;
 describe.skipIf(!target)('action Library container counts and pagination',()=>{
@@ -29,6 +29,24 @@ describe.skipIf(!target)('action Library container counts and pagination',()=>{
   await closeDb();
  });
  const read=(parameters:string,user=owner)=>libraryContent(user,new URL(`http://fixture/library?${parameters}`));
+ test('empty Library import status belongs to the current connection generation',async()=>{
+  const db=getDb();
+  const [instance]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Library import',baseUrl:'http://127.0.0.1:9'}).returning();
+  try {
+   const [connection]=await db.insert(s.providerConnections).values({userId:owner,instanceId:instance.id}).returning();
+   const job={userId:owner,connectionId:connection.id,kind:'jellyfin.bootstrap',payload:{}};
+   const [stale]=await db.insert(s.outboxActions).values({...job,state:'failed'}).returning({id:s.outboxActions.id});
+   // The insert trigger pins jobs to the live account. Age this fixture after insertion.
+   await db.update(s.outboxActions).set({accountGeneration:crypto.randomUUID()}).where(eq(s.outboxActions.id,stale.id));
+   expect(await libraryImportStatus(owner)).toBeNull();
+   await db.insert(s.outboxActions).values({...job,accountGeneration:connection.accountGeneration});
+   expect(await libraryImportStatus(owner)).toContain('queued');
+   expect(await libraryImportStatus(other)).toBeNull();
+  } finally {
+   await db.delete(s.outboxActions).where(eq(s.outboxActions.userId,owner));
+   await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instance.id));
+  }
+ });
  test('playlist pages count containers, retain exact ordering and exclude another account',async()=>{
   const first=await read('surface=listen&selection=playlist&sort=title&scope=all');
   expect(first.total).toBe(75);expect(first.items).toHaveLength(60);expect(first.pages).toBe(2);

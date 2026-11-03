@@ -21,7 +21,7 @@
     "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
     "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
     "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
-    "src/lib/ui/shelves/library.svelte.ts": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+    "src/lib/ui/shelves/library.svelte.ts": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
     "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
     "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
@@ -248,6 +248,18 @@
         }
       ],
       "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
+    },
+    {
+      "epoch": "library-first-run-2026-11-03",
+      "report": "docs/collection.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/shelves/library.svelte.ts",
+          "previousSha256": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+          "currentSha256": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e"
+        }
+      ],
+      "note": "Only the empty state uses the new guidance. The existing paging, retained window, query cancellation and prior acceptance evidence are preserved."
     }
   ]
 }
