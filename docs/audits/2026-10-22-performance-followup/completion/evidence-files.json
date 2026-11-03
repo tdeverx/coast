@@ -100,7 +100,7 @@
     "independent/receipts/unaccepted-source-races-corrected.txt": "30be421b2bbbf607d43304a125d4117cb5b6185c419175136bcfde3349a7d8da",
     "independent/receipts/unaccepted-source-races-empty-cohort.txt": "3c120ae8742ce09006aec040b7976700b83365bf724972f6b82a0e4866db7d01",
     "independent/receipts/unaccepted-source-races-selector-error.txt": "66bcf2b530b2de8bba1cf12f273bdbef292d819e8bf0fafbd97a7a726ad069ee",
-    "independent/source-pins.json": "707d72bc723564ce9daa2cbc4016760a7c01ac1194cd894d8420d833c8165970",
+    "independent/source-pins.json": "dd84caa234c32ddb16843ea7ff047ef817c9ab9bf2ee1cbdf47b7bac2eb99317",
     "independent/verification.json": "8de7c73945065693db7b07d41fc60fa8b570df0123aba163fd6d52883973b5e5",
     "probe-pins.json": "4aedb33acc751b2ed5153aac3d93646d7cde2b1700ea329426af27204f282a84",
     "probes/Program.cs.txt": "27e2e58f9e31b5483985980720f189abe6824f0c15b3a6aca8684238332845c3",
@@ -258,7 +258,7 @@
         {
           "path": "docs/audits/2026-10-22-performance-followup/completion/independent/source-pins.json",
           "previousSha256": "f036005622b16f57e2ff65c0d66324eeb3b15cd24681297f6b267f180d32b626",
-          "currentSha256": "707d72bc723564ce9daa2cbc4016760a7c01ac1194cd894d8420d833c8165970"
+          "currentSha256": "dd84caa234c32ddb16843ea7ff047ef817c9ab9bf2ee1cbdf47b7bac2eb99317"
         },
         {
           "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",

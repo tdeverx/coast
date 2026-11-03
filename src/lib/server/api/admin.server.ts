@@ -20,6 +20,12 @@ export async function handleAdmin(context: ApiContext): Promise<Response | undef
         result = await updateUser(user, uuid(path[2]), body);
       else if(path[1]==='taste-refresh'&&path.length===2&&method==='POST')result=await (await import('#lib/social/taste-cache.server.js')).runTasteRefresh();
       else if(path[1]==='taste-schedule'&&path.length===2&&method==='POST')result=await (await import('#lib/social/taste-cache.server.js')).updateTasteSchedule(body);
+      else if (path[1] === 'backups' && path.length === 2 && method === 'GET')
+        result = await (await import('#lib/backups/service.server.js')).backupStatus(user);
+      else if (path[1] === 'backups' && path.length === 2 && method === 'PATCH')
+        result = await (await import('#lib/backups/service.server.js')).configureBackups(user, body);
+      else if (path[1] === 'backups' && path.length === 2 && method === 'POST')
+        result = await (await import('#lib/backups/service.server.js')).queueBackup(user);
       else if (path[1] === 'health' && method === 'GET') result = await systemHealth(user);
       else if (path[1] === 'benchmarks' && path.length === 2 && method === 'GET') result = await listBenchmarks(user,Number(url.searchParams.get('page'))||1);
       else if (path[1] === 'benchmarks' && path.length === 2 && method === 'POST') result = await startBenchmark(user);

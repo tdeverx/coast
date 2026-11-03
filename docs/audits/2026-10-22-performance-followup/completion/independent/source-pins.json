@@ -5,7 +5,7 @@
     "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
     "docs/audits/2026-10-17-app-performance/follow-up-roadmap.json": "f148ec435c2da69b535b6b8d31303da8ffb18e290467db2de3948aaf14c3258e",
     "docs/audits/2026-10-17-app-performance/follow-up-roadmap.md": "854e0e9aa9beac03fd0865f2923045e58aa81fd07f65d32c042d7d5e7f1256c1",
-    "docs/roadmap.md": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
+    "docs/roadmap.md": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700",
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "src/lib/catalogue/details.server.ts": "3eddaac9c7aa5a6cb3c29b28d6d042bdf644347a700f3f2954d2e18253771139",
     "src/lib/catalogue/service.server.ts": "f5e6e596ca03a6cd766909f733e9df2c0ce83b21e938f46d408698af568a7569",
@@ -149,6 +149,18 @@
         }
       ],
       "note": "Current-owner/index refresh for the separately measured share destinations epoch. Earlier performance measurements and failed/blocked receipts are not relabelled. Workspace-only diagnostics/bulk/preview runtime changes are excluded from the deployed source."
+    },
+    {
+      "epoch": "coast-native-backups-2026-11-03",
+      "report": "docs/deployment.md",
+      "changes": [
+        {
+          "path": "docs/roadmap.md",
+          "previousSha256": "684d9397d12266c86f702dc1a02a6bd8fc1496d1c70fd023f7b8d8aa981ed90e",
+          "currentSha256": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700"
+        }
+      ],
+      "note": "Backup rollout roadmap refresh. Historical evidence and independent acceptance boundaries remain unchanged."
     }
   ]
 }

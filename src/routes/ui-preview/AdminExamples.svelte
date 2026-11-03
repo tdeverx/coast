@@ -9,6 +9,7 @@
   import Heading from '#lib/ui/components/Heading.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
   import Toast from '#lib/ui/components/Toast.svelte';
+  import { defaultBackupPolicy } from '#lib/backups/model.js';
   import type { BenchmarkRun } from '#lib/benchmarks/model.js';
 
   let { name, scenario }: { name: string; scenario: string } = $props();
@@ -116,6 +117,19 @@
   <div class="panel stack form-width">
     {#if revealed}<p role="status">{scenario === 'invite' ? 'Copy this code — shown once' : 'Copy this token now. It will not be shown again.'}</p><Field label={scenario === 'invite' ? 'Invite link' : 'API token'}><input readonly autocomplete="off" spellcheck={false} value={scenario === 'invite' ? 'https://coast.example/register#invite=synthetic-invite' : 'coast_preview_only_not_a_real_token'} onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
   </div>
+{:else if name === 'backups'}
+  {#await import('#lib/backups/BackupSettings.svelte') then { default: BackupSettings }}
+    {#key scenario}
+      <BackupSettings initial={{
+        available: scenario !== 'unavailable',
+        policy: { ...defaultBackupPolicy, enabled: true, timeZone: 'Europe/London' },
+        state: scenario === 'running' ? 'running' : scenario === 'failed' ? 'failed' : 'completed',
+        attemptedAt: '2026-11-03T03:30:00Z',
+        error: scenario === 'failed' ? 'Backup failed. Check the backups folder permissions.' : null,
+        latest: { name: 'coast-app-example', completedAt: '2026-11-02T03:30:20Z', bytes: 346030080 },
+      }} />
+    {/key}
+  {/await}
 {:else if name === 'benchmark'}
   {#await import('#lib/benchmarks/BenchmarkSettings.svelte')}
     <p class="small quiet" role="status">{'Loading benchmark example…'}</p>

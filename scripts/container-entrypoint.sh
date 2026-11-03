@@ -43,6 +43,7 @@ for setting in COAST_SHUTDOWN_APP_SECONDS:5 COAST_SHUTDOWN_DATABASE_SECONDS:18 C
 done
 command -v setsid >/dev/null
 
+unset COAST_BUNDLED_POSTGRES
 if [[ -z "${DATABASE_URL:-}" ]]; then
   lock_coast_storage "$data_dir"
   pg_bin=/usr/lib/postgresql/17/bin
@@ -108,6 +109,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     gosu postgres "$pg_bin/createdb" -h /var/run/postgresql -U postgres -O coast coast
   fi
   export DATABASE_URL="postgresql://coast:$database_password@127.0.0.1:5432/coast"
+  export COAST_BUNDLED_POSTGRES=1
   unset database_password
 fi
 
