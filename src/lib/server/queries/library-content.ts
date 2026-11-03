@@ -11,6 +11,34 @@ import { gameCard } from '#lib/games/presentation.js';
 import { musicBrowseData } from './music';
 import type { LibraryContent } from '#lib/library.js';
 import { readingCatalogue, readingCards } from '#lib/reading/query.server.js';
+import { getSql } from '#lib/server/db/index.js';
+import { jellyfinImportStage, jellyfinScanProgressSchema } from '#lib/sync/jellyfin-progress.js';
+
+export async function libraryImportStatus(userId: string) {
+  const [job] = await getSql()<{
+    state: string; progress: unknown; createdAt: Date;
+  }[]>`select j.state, c.settings->'initialSync' as progress, j.created_at as "createdAt"
+    from provider_connections c join provider_instances i on i.id=c.instance_id
+    cross join lateral (
+      select state, created_at from outbox_actions
+      where user_id=c.user_id and connection_id=c.id and account_generation=c.account_generation
+        and kind='jellyfin.bootstrap'
+      order by created_at desc, id desc limit 1
+    ) j
+    where c.user_id=${userId} and c.status='connected' and i.provider='jellyfin' and i.enabled
+      and j.state in ('running','pending','failed')
+    order by case j.state when 'running' then 0 when 'pending' then 1 else 2 end, j.created_at desc
+    limit 1`;
+  if (!job) return null;
+  if (job.state === 'failed') return 'Your library import needs attention. Check your connection.';
+  if (job.state === 'pending') return 'Your library import is queued. Titles will appear as they are imported.';
+  const parsed = v.safeParse(jellyfinScanProgressSchema, job.progress);
+  if (!parsed.success || new Date(parsed.output.startedAt) < job.createdAt) return 'Importing your library…';
+  const { phase, processed, total, stageProcessed, stageTotal } = parsed.output;
+  const count = stageProcessed ?? processed;
+  const expected = stageTotal === undefined ? total : stageTotal;
+  return `${jellyfinImportStage(phase)} · ${count}${expected == null ? '' : ` of ${expected}`}`;
+}
 
 export async function libraryContent(userId: string, url: URL,signal?:AbortSignal): Promise<LibraryContent> {
   signal?.throwIfAborted();

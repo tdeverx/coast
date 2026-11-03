@@ -29,7 +29,7 @@
       "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
       "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
       "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
-      "src/lib/ui/shelves/library.svelte.ts": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+      "src/lib/ui/shelves/library.svelte.ts": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
       "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
       "tests/library-navigation.test.ts": "4a43d6342ada8378341e47c4d41fd904b55ce70e7ee745870f608f8f0faa59ae",
       "tests/fixtures/library-window.ts": "82a9187280c524d073326a0cb3ff408d21c69bbf522df0efc680be28373f5a4b",
@@ -37,8 +37,8 @@
       "scripts/performance-preview-browser.js": "4a920ab2b98061b2d57ae22c2a8e7fc60b05f6e9d8b9cb30434936980525d0c8",
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
-      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "ae11040ba82859ec2e6b055bdeeb27801bd8d7cb50fe917d54bd402f85bfe859",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "1a156439e028106d444b842f5a239ceaa78b00588ef232bdca6b618e6e31f0cf",
+      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "985566f505ffeaf8822f6703a83ebc25a6848b5b1e97ed9e3a41f7ad0a2cfab0",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
       "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
       "src/lib/ui/components/PersistentPlayer.svelte": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
@@ -3067,6 +3067,28 @@
         }
       ],
       "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
+    },
+    {
+      "epoch": "library-first-run-2026-11-03",
+      "report": "docs/collection.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/shelves/library.svelte.ts",
+          "previousSha256": "398e1f294d3c1cf7107276d00947bb0b5298f2b994feaa479cb374b1e64874df",
+          "currentSha256": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "ae11040ba82859ec2e6b055bdeeb27801bd8d7cb50fe917d54bd402f85bfe859",
+          "currentSha256": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "1a156439e028106d444b842f5a239ceaa78b00588ef232bdca6b618e6e31f0cf",
+          "currentSha256": "985566f505ffeaf8822f6703a83ebc25a6848b5b1e97ed9e3a41f7ad0a2cfab0"
+        }
+      ],
+      "note": "Only the empty state uses the new guidance. The existing paging, retained window, query cancellation and prior acceptance evidence are preserved."
     }
   ]
 }

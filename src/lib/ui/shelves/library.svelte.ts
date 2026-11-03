@@ -50,6 +50,7 @@ export type LibrarySourceOptions = {
   initialRelationship?: string;
   initialSource?: string;
     initialAvailability?: string;
+  onboarding?: { importStatus: string | null };
  };
 export function createLibrarySource(getOptions: () => LibrarySourceOptions): ShelfSource {
  const location=useShelfLocation();
@@ -101,6 +102,21 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const busy = $derived(resource.busy);
   const failure = $derived(resource.error);
   const ready = $derived(resource.ready);
+  const guidance = $derived.by(() => {
+    const onboarding = getOptions().onboarding;
+    if (!onboarding || !ready || busy || content.total !== 0 || segment !== 'all' || selectedGenre ||
+      relationship !== 'all' || source !== 'all' || availability !== 'all' ||
+      (surface !== 'listen' && selection !== 'all') || entity === 'playlist') return null;
+    if (collection) return {
+      text: 'Your Collection is personal. Save a title for Later, favourite it, or add it to a list to see it here.',
+      href: `/library?${new URLSearchParams({ view: surface, kind: entity })}`, label: 'Browse Library',
+    };
+    if (surface === 'play') return null;
+    return {
+      text: onboarding.importStatus ?? 'Library shows titles from your connected media servers.',
+      href: '/settings/connections', label: 'Manage connections',
+    };
+  });
 
   const selections = $derived(collection && surface === 'listen'
     ? librarySelections.listen.filter((option) => option.value !== 'artist')
@@ -586,8 +602,8 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           : []
       ];
     },
-    get empty() { return surface === 'play' && scope === 'available' ? 'No owned games match this selection. Turn off Available to browse all games.' : preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'; },
-    get emptyHref() { return preview && ready && !busy ? href() : undefined; },
-    get emptyLink() { return `Browse ${surface==='listen'?'music':'games'}`; }, load,
+    get empty() { return guidance?.text ?? (surface === 'play' && scope === 'available' ? 'No owned games match this selection. Turn off Available to browse all games.' : preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'); },
+    get emptyHref() { return guidance?.href ?? (preview && ready && !busy ? href() : undefined); },
+    get emptyLink() { return guidance?.label ?? `Browse ${surface==='listen'?'music':'games'}`; }, load,
   };
 }

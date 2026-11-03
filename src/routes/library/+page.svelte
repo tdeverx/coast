@@ -28,6 +28,7 @@
     {#if surfaceEnabled({...data,features:page.data.capabilities},data.view)}
       <Shelf source={{type:'library',surface:data.view as LibrarySurface,collection:data.collection,
         username:data.username??'',layout:'grid',initial:data.content??undefined,
+        onboarding:!data.username ? {importStatus:data.importStatus} : undefined,
         genre:data.filters.genre,initialSelection:selection(data.view as LibrarySurface),
         initialKind:data.filters.kind as import('#lib/library.js').LibraryKind,initialScope:data.filters.scope as 'all'|'available',
         initialSort:data.filters.sort,initialSegment:data.filters.segment,segments:true,initialAvailability:data.filters.availability,initialRelationship:data.filters.relationship,initialSource:data.filters.source,kindControl:false,entitySegments:true,countHeading:true}}>
