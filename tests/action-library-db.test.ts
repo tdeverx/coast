@@ -35,7 +35,9 @@ describe.skipIf(!target)('action Library container counts and pagination',()=>{
   try {
    const [connection]=await db.insert(s.providerConnections).values({userId:owner,instanceId:instance.id}).returning();
    const job={userId:owner,connectionId:connection.id,kind:'jellyfin.bootstrap',payload:{}};
-   await db.insert(s.outboxActions).values({...job,accountGeneration:crypto.randomUUID(),state:'failed'});
+   const [stale]=await db.insert(s.outboxActions).values({...job,state:'failed'}).returning({id:s.outboxActions.id});
+   // The insert trigger pins jobs to the live account. Age this fixture after insertion.
+   await db.update(s.outboxActions).set({accountGeneration:crypto.randomUUID()}).where(eq(s.outboxActions.id,stale.id));
    expect(await libraryImportStatus(owner)).toBeNull();
    await db.insert(s.outboxActions).values({...job,accountGeneration:connection.accountGeneration});
    expect(await libraryImportStatus(owner)).toContain('queued');
