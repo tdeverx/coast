@@ -14,6 +14,7 @@ const tag=crypto.randomUUID(),server='d'.repeat(32),epoch='e'.repeat(32),externa
 let instance:typeof s.providerInstances.$inferSelect,accounts:(typeof s.providerConnections.$inferSelect)[]=[],userIds:string[]=[],works:string[]=[],oldConfig:Record<string,unknown>|null=null;
 const calls:string[]=[];
 let allowed=true;
+let virtual=false;
 const adapter=new JellyfinAdapter(async(path)=>{
  const url=new URL(path,'https://fixture.invalid');calls.push(path);
  if(url.pathname==='/System/Info/Public')return {Id:server,ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'12.0.0'};
@@ -21,7 +22,7 @@ const adapter=new JellyfinAdapter(async(path)=>{
  if(url.pathname==='/Items'){
   const ids=(url.searchParams.get('ids')??'').split(',');
   if(!url.searchParams.has('ids'))return {Items:[],TotalRecordCount:0,StartIndex:0};
-  const items=allowed?ids.filter(id=>external.includes(id)).map(Id=>({Id,Type:'Movie',Name:'Changed movie',UserData:{Played:true,PlayCount:1,IsFavorite:true,PlaybackPositionTicks:0,LastPlayedDate:'2026-10-06T20:00:00Z'}})):[];
+  const items=allowed?ids.filter(id=>external.includes(id)).map(Id=>({Id,Type:'Movie',Name:'Changed movie',...(virtual?{LocationType:'Virtual',MediaSources:[{Id,MediaStreams:[]}]}:{}),UserData:{Played:true,PlayCount:1,IsFavorite:true,PlaybackPositionTicks:0,LastPlayedDate:'2026-10-06T20:00:00Z'}})):[];
   return {Items:items,TotalRecordCount:items.length,StartIndex:0};
  }
  throw new Error(`Unexpected incremental request ${path}`);
@@ -83,6 +84,16 @@ run('incremental item imports never touch full cursors or remove unrelated avail
  expect(await db.select().from(s.trackingEvents).where(and(eq(s.trackingEvents.userId,userIds[1]),eq(s.trackingEvents.mediaId,works[0]),eq(s.trackingEvents.action,'watch')))).toHaveLength(1);
  allowed=false;try{await syncJellyfinChanges(userIds[1],accounts[1].id,'user',{video:[external[0]],music:[]},await context(1));}finally{allowed=true;}
  const access=await db.select().from(s.availability).where(eq(s.availability.connectionId,accounts[1].id));expect(access.find(a=>a.mediaId===works[0])?.state).toBe('unavailable');expect(access.find(a=>a.mediaId===works[1])?.state).toBe('available');
+});
+run('a virtual item with a media-source placeholder withdraws only its observed availability',async()=>{
+ const db=getDb();
+ virtual=true;
+ try{await syncJellyfinChanges(userIds[1],accounts[1].id,'user',{video:[external[1]],music:[]},await context(1));}
+ finally{virtual=false;}
+ const rows=await db.select().from(s.availability).where(eq(s.availability.mediaId,works[1]));
+ expect(rows.filter(row=>row.connectionId===accounts[1].id).map(row=>row.state)).toEqual(['unavailable','unavailable']);
+ expect(rows.find(row=>row.connectionId===accounts[0].id)?.state).toBe('available');
+ expect(await db.select().from(s.media).where(eq(s.media.id,works[1]))).toHaveLength(1);
 });
 run('large change jobs yield after committed batches and resume without requesting completed IDs',async()=>{
  const db=getDb(),items=Array.from({length:130},(_,index)=>(index+1000).toString(16).padStart(32,'0'));

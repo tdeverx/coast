@@ -73,6 +73,7 @@ export async function playMedia(
   options: {
     mediaType?: 'audio' | 'video';
     sourceId?: string;
+    fallbackSessionId?: string;
     edition?: string;
     editionName?:string;
     expectedDuration?: number;
@@ -98,6 +99,7 @@ export async function playMedia(
     JSON.stringify(options.sequence) === JSON.stringify(player.session.sequence) &&
     !options.fromStart &&
     !options.retry &&
+    options.fallbackSessionId === undefined &&
     options.sourceId === undefined &&
     options.edition === undefined &&
     options.editionName === undefined &&

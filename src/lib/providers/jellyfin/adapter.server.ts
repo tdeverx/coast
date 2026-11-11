@@ -7,6 +7,7 @@ import * as v from 'valibot';
 import { browseMusic, musicItem, musicItems, type MusicBrowseOptions, type MusicScanOptions } from './music.server';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { ProviderActionError } from '../contracts';
 import type {
   AvailableItem,
@@ -489,6 +490,8 @@ export class JellyfinAdapter {
         }),
       })
     );
+    if (info.ErrorCode === 'NoCompatibleStream')
+      throw new AppError(404, 'Jellyfin has no playable stream for this title.', 'playback_source_unavailable');
     if (info.ErrorCode) throw new Error(`Jellyfin playback is unavailable (${info.ErrorCode}).`);
     return {
       sources: info.MediaSources.map(source),

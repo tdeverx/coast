@@ -18,6 +18,8 @@ const actor={id:owner,username:'sharing-admin',role:'admin' as const,email:null,
 const browser={containers:['mp4'],videoCodecs:['h264'],audioCodecs:['aac'],nativeHls:false,hlsJs:true};
 let failStop=false;
 let directSource=false;
+let virtualSource=false;
+let noPlayableStream=false;
 let playbackRequests:any[]=[];
 let playbackInfoBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
 let manifestBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
@@ -29,10 +31,11 @@ beforeAll(async()=>{
  server=Bun.serve({hostname:'0.0.0.0',port:0,fetch:async request=>{
   const url=new URL(request.url),p=url.pathname;
   if(p==='/System/Info/Public')return Response.json({Id:'fixture',ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'12.2.0'});
-  if(p==='/Users/fixture-user/Items/item')return Response.json({Id:'item',Name:'Fixture',Type:'Movie'});
+  if(p==='/Users/fixture-user/Items/item')return Response.json({Id:'item',Name:'Fixture',Type:'Movie',LocationType:virtualSource?'Virtual':'FileSystem'});
   if(p==='/Items/item/PlaybackInfo') {
    const input=await request.json();playbackRequests.push(input);if(input.DeviceProfile.Name.startsWith('Coast VRChat')){expect(input.EnableDirectPlay).toBe(false);expect(input.AllowVideoStreamCopy).toBe(false);}
    const barrier=playbackInfoBarrier;playbackInfoBarrier=undefined;if(barrier){barrier.entered();await barrier.ready;}
+   if(noPlayableStream)return Response.json({ErrorCode:'NoCompatibleStream',MediaSources:[]});
    return Response.json({PlaySessionId:crypto.randomUUID(),MediaSources:[{Id:'source',Container:directSource?'mp4':'mkv',Bitrate:directSource?500000:10000000,RunTimeTicks:6000000000,SupportsTranscoding:true,SupportsDirectPlay:directSource,TranscodingUrl:'/Videos/item/master.m3u8?api_key=fixture-upstream-secret',MediaStreams:[{Index:0,Type:'Video',Codec:'h264',Width:1920,Height:1080,RealFrameRate:59.94},{Index:1,Type:'Audio',Codec:'aac'}]}]});
   }
   if(p==='/Videos/ActiveEncodings') {if(failStop)return new Response('Synthetic stop failure',{status:400});stops.push({device:url.searchParams.get('DeviceId'),session:url.searchParams.get('PlaySessionId')});return new Response(null,{status:204});}
@@ -54,6 +57,7 @@ beforeAll(async()=>{
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
  const db=getSql();await db`delete from share_viewers`;await db`delete from playback_sessions`;await db`delete from playback_shares`;stops=[];segments=[];failStop=false;directSource=false;playbackRequests=[];playbackInfoBarrier=undefined;
+ virtualSource=false;noPlayableStream=false;
  await db`update users set settings=${{sharedBitrateMbps:2}} where id=${owner}`;
  await db`update system_settings set value=${{...defaultConfig,allowPlaybackSharing:true,allowedProviderPorts:[server.port!],maxBitrateMbps:10}} where key='coast'`;
 });
@@ -61,6 +65,15 @@ afterAll(async()=>{if(process.env.COAST_DB_TEST==='1'){server?.stop(true);await 
 const make=()=>createShare(actor,{workId:work,connectionId:connection,hours:1,target:'vrchat'});
 const request=(url:string,ua='fixture-a')=>new Request(new URL(url,'http://coast.test'),{headers:{accept:'*/*','user-agent':ua}});
 const child=async(response:Response)=>{const body=await response.text();expect(body).not.toContain('fixture-upstream-secret');return body.split('\n').find(line=>line&&!line.startsWith('#'))!;};
+run('stale availability cannot share a virtual item, and an existing link reports missing media',async()=>{
+ const link=await make();
+ virtualSource=true;
+ await expect(make()).rejects.toMatchObject({status:404,code:'playback_source_unavailable'});
+ noPlayableStream=true;
+ await expect(openPublicShare(link.token,request(publicSharePath(link.token,'vrchat')),'fixture-address'))
+  .rejects.toMatchObject({status:404,code:'playback_source_unavailable'});
+ expect(await getSql()`select id from playback_sessions`).toHaveLength(0);
+});
 run('website invitations always open Coast and use its ordinary direct/relay policy without transcoding',async()=>{
  directSource=true;
  await updateConfig(actor,{allowTranscoding:false});

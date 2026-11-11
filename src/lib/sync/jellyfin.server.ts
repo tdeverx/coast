@@ -389,7 +389,8 @@ async function runJellyfinScan(
           .returning();
     if (scope === 'library' && item.expectedMembers !== undefined) expectedMembers.set(providerItem.id, item.expectedMembers);
     if (scope === 'library') return saved.id;
-    availableTitles.set(saved.id, saved.title);
+    const virtual = (item.kind === 'movie' || item.kind === 'episode') && item.access?.locationType === 'Virtual';
+    if (!virtual) availableTitles.set(saved.id, saved.title);
     const sources = item.sources.length
       ? item.sources
       : [
@@ -423,7 +424,7 @@ async function runJellyfinScan(
         height: video?.height,
         durationSeconds: source.durationSeconds,
         source: { ...source.raw, ...(userScope ? {coastUserData:item.userData??null,coastMembershipCount:item.expectedMembers??null,coastReadStage:scope==='personal'?String(filterIndex):'user',coastListed:listedItems.has(item.id)} : {}) },
-        state: 'available' as const,
+        state: virtual ? 'unavailable' as const : 'available' as const,
         verifiedAt: new Date(),
         scanId,
       };
@@ -440,8 +441,12 @@ async function runJellyfinScan(
       .where(and(eq(availability.userId, userId), inArray(availability.mediaId, ids), eq(availability.state, 'available'))) : [];
     const previouslyAvailable = new Set(previous.map(row => row.id));
     const rows = [...pendingAvailability.values()];
+    const virtualItems = [...new Set(rows.filter(row => row.state === 'unavailable').map(row => row.providerItemId))];
     await db.transaction(async tx => {
     await ensureConnected(tx, true);
+    if (virtualItems.length) await tx.update(availability).set({ state: 'unavailable', verifiedAt: new Date() })
+      .where(and(eq(availability.userId, userId), eq(availability.connectionId, connectionId),
+        inArray(availability.providerItemId, virtualItems), eq(availability.state, 'available')));
     for (let index = 0; index < rows.length; index += 500) {
       await tx.insert(availability).values(rows.slice(index, index + 500)).onConflictDoUpdate({
         target: [availability.userId, availability.connectionId, availability.providerItemId, availability.sourceId],
@@ -449,7 +454,7 @@ async function runJellyfinScan(
           mediaId: sql`excluded.media_id`, edition: sql`excluded.edition`, container: sql`excluded.container`,
           videoCodec: sql`excluded.video_codec`, audioCodec: sql`excluded.audio_codec`, bitrate: sql`excluded.bitrate`,
           width: sql`excluded.width`, height: sql`excluded.height`, durationSeconds: sql`excluded.duration_seconds`,
-          source: sql`excluded.source`, state: 'available', verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
+          source: sql`excluded.source`, state: sql`excluded.state`, verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
         },
       });
     }

@@ -14,7 +14,7 @@
   import { observeVideoCrop } from '#lib/playback/observe-crop.js';
   import { message, capturePlaybackApi } from '#lib/ui/client.js';
   import { createPlaybackReports } from '#lib/playback/reports.js';
-  import { createPlaybackStop, type PlaybackSave } from '#lib/playback/stop.js';
+  import { createPlaybackStop, PlaybackSavePending, type PlaybackSave } from '#lib/playback/stop.js';
   import { useClient, reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
@@ -263,6 +263,7 @@
     } else pause();
   }
   let streamFailure: { status?: number; code?: number } | null = null;
+  let failedSessionId = '';
   let lastMovement = 0;
   let failureTimer: ReturnType<typeof setInterval> | undefined;
   function clearStreamFailure() { streamFailure = null; clearInterval(failureTimer); failureTimer = undefined; }
@@ -282,13 +283,26 @@
     else streamInterrupted({ code: media?.error?.code });
   }
   async function failure(reason: { status?: number; code?: number } = {}) {
-    if (!src) return;
+    const session = player.session;
+    if (preview || !src || !session || session.id === failedSessionId || player.role !== 'playback') return;
+    failedSessionId = session.id;
+    clearStreamFailure();
     tracePlayback('playback.failed');
-    error = playbackFailureMessage(reason.status, reason.code ?? media?.error?.code);
-    if (player.session)
-      await change(`playback/${player.session.id}/error`, { code: media?.error?.code ?? 0 }).catch(
-        () => {}
-      );
+    const code = reason.code ?? media?.error?.code;
+    void change(`playback/${session.id}/error`, { code: code ?? 0 }).catch(() => {});
+    if (session.canFallback && !player.loading && !audioMode && !partyRoom && !sharedMode) {
+      try {
+        await playMedia(session.mediaId, {
+          fallbackSessionId: session.id,
+          continuationId: player.continuationId,
+          sequence: session.sequence,
+        });
+      } catch (cause) {
+        if (!(cause instanceof PlaybackSavePending)) feedback.failure(message(cause));
+      }
+      return;
+    }
+    error = playbackFailureMessage(reason.status, code);
   }
   function update() {
     if (media.currentTime !== current) lastMovement = performance.now();
@@ -444,7 +458,7 @@
         engine.loadSource(url);
         engine.attachMedia(element);
         engine.on(Hls.Events.ERROR, (_event, data) => {
-          if (!data.fatal) return;
+          if (!ownsStartup() || !data.fatal) return;
           if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recoveredMedia) { recoveredMedia = true; engine.recoverMediaError(); streamInterrupted({ code: 3 }); }
           else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) void failure({ code: 3 });
           else { streamInterrupted({ status: data.response?.code, code: 2 }); if (data.type === Hls.ErrorTypes.NETWORK_ERROR && !restartedNetwork) { restartedNetwork = true; engine.startLoad(); } }

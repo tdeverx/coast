@@ -203,6 +203,35 @@ run('replaced personal video and music sessions cannot progress, relay, join par
  }
 });
 
+run('fallback skips the failed copy and different cuts and resumes saved progress',async()=>{
+ const db=getSql();
+ const [original]=await db`SELECT provider_item_id FROM availability WHERE user_id=${user} AND media_id=${movie}`;
+ const copy=(id:string,durationSeconds:number,bitrate:number):PlaybackSource=>({
+  id,name:id,container:'mp4',bitrate,durationSeconds,directPlay:true,directStream:true,transcoding:false,raw:{},
+  streams:[{type:'Video',codec:'h264',index:0},{type:'Audio',codec:'aac',index:1}],
+ });
+ editionSources=[copy('alternate-cut',120,950_000),copy('alternate-runtime',180,900_000),copy('alternate-copy',120,800_000)];
+ try{
+  await db`INSERT INTO availability(user_id,connection_id,media_id,provider_item_id,source_id,duration_seconds) VALUES(${user},${connection},${movie},${original.provider_item_id},'default',120)`;
+  for(const source of editionSources)await db`INSERT INTO availability(user_id,connection_id,media_id,provider_item_id,source_id,edition,duration_seconds) VALUES(${user},${connection},${movie},${original.provider_item_id},${source.id},${source.name},${source.durationSeconds})`;
+  const first=await startPlayback(user,{mediaId:movie,browser,fromStart:true});
+  expect(first.canFallback).toBe(true);
+  await progressPlayback(user,first.id,{event:'start',positionSeconds:0});
+  await progressPlayback(user,first.id,{event:'stop',positionSeconds:47});
+  const input={mediaId:movie,browser,fallbackSessionId:first.id};
+  const fallback=await startPlayback(user,input);
+  expect(fallback).toMatchObject({startSeconds:47,canFallback:false});
+  const [saved]=await db`SELECT source_id FROM playback_sessions WHERE id=${fallback.id}`;
+  expect(saved.source_id).toBe('alternate-copy');
+  await expect(startPlayback(user,input)).rejects.toMatchObject({status:409});
+  await progressPlayback(user,fallback.id,{event:'stop',positionSeconds:47});
+  await db`UPDATE availability SET state='unavailable' WHERE provider_item_id=${original.provider_item_id} AND source_id IN ('default','alternate-copy')`;
+  await expect(startPlayback(user,input)).rejects.toMatchObject({status:404,code:'playback_source_unavailable'});
+ }finally{
+  await db`DELETE FROM availability WHERE provider_item_id=${original.provider_item_id} AND source_id IN ('default','alternate-cut','alternate-runtime','alternate-copy')`;
+ }
+});
+
 run('named edition selection retains quality policy and stores the exact selected source for sync',async()=>{
  const db=getSql();const [original]=await db`SELECT provider_item_id FROM availability WHERE user_id=${user} AND media_id=${movie}`;
  const source=(id:string,width:number):PlaybackSource=>({id,name:`Director's Cut ${width===1920?'1080p':'720p'}`,container:'mp4',bitrate:width===1920?2_000_000:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,raw:{},streams:[{type:'Video',codec:'h264',index:0,width,height:width===1920?1080:720},{type:'Audio',codec:'aac',index:1}]});

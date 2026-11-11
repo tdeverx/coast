@@ -133,6 +133,7 @@ export interface PlaybackView {
   kind: 'direct' | 'hls';
   startSeconds: number;
   durationSeconds: number;
+  canFallback?: boolean;
   provider: string;
   edition?: string;
   defaultSubtitleIndex: number | null;
