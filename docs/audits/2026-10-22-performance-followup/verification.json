@@ -37,11 +37,11 @@
       "scripts/performance-preview-browser.js": "4a920ab2b98061b2d57ae22c2a8e7fc60b05f6e9d8b9cb30434936980525d0c8",
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
-      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "9020d28ccd19a7a726cef41a15c3817ec74184879d42ca9abda5eca2acbb8ae7",
+      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "5b1eebcfe3f0f40b6a68be9b33aa1fdfeddaff74e2805a21bab198642eb9fe54",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "9b3e7c75642f5a22906504b09e2e58c6dc64f712569d85cc6cdc9afc3d88664b",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
       "src/lib/playback/client.svelte.ts": "aed044ac856e1a341672e5c66e399368cd2a65ea14004f921f02e5d614b70f19",
-      "src/lib/ui/components/PersistentPlayer.svelte": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9",
+      "src/lib/ui/components/PersistentPlayer.svelte": "19d0012dafe29a44b79a724764bcfa4d308304d998dcabca72cd9417171e3db8",
       "src/lib/ui/action-feedback.svelte.ts": "143eb58d887870dfbf76d6ea6cf7bcd3f577193ea8e07dfc7827bcf0827a3b4d",
       "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
       "tests/player-stop-lifecycle.test.ts": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
@@ -3121,6 +3121,38 @@
         }
       ],
       "note": "Current source reviewed against Jellyfin availability, finalization and personal playback stop contracts. Historical timings retain their original source fingerprints. The receipt records focused regression coverage and outstanding acceptance."
+    },
+    {
+      "epoch": "share-playback-options-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/share-playback-options-2026-11-11.json",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
+          "currentSha256": "5b1eebcfe3f0f40b6a68be9b33aa1fdfeddaff74e2805a21bab198642eb9fe54"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "9020d28ccd19a7a726cef41a15c3817ec74184879d42ca9abda5eca2acbb8ae7",
+          "currentSha256": "9b3e7c75642f5a22906504b09e2e58c6dc64f712569d85cc6cdc9afc3d88664b"
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "previousSha256": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9",
+          "currentSha256": "19d0012dafe29a44b79a724764bcfa4d308304d998dcabca72cd9417171e3db8"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
+          "currentSha256": "5b1eebcfe3f0f40b6a68be9b33aa1fdfeddaff74e2805a21bab198642eb9fe54"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "9020d28ccd19a7a726cef41a15c3817ec74184879d42ca9abda5eca2acbb8ae7",
+          "currentSha256": "9b3e7c75642f5a22906504b09e2e58c6dc64f712569d85cc6cdc9afc3d88664b"
+        }
+      ],
+      "note": "Focused share progress and lifecycle acceptance is recorded in its own receipt."
     }
   ]
 }

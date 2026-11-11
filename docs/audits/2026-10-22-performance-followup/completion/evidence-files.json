@@ -157,7 +157,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
+    "source-pins.json": "5b1eebcfe3f0f40b6a68be9b33aa1fdfeddaff74e2805a21bab198642eb9fe54",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -170,7 +170,8 @@
     "stop-save/runtime-cleanup.json": "3061982d17075fa5e017e1f74d9a0e1e147c3798eb133fbde7b2ebab701e890a",
     "stop-save/stop-native.json": "bc39f5a45d4a512e23ef1d93a2aafd869652bb042c62148fe8bbc1027c790a9f",
     "stop-save/verification.json": "10343489372fd2bc89c8b4a93668eb8f3f065b7f1cae277eb2eb6902b9cfa387",
-    "stop-save/verify-native.ts.txt": "57bd3fb11033bd1ffa16aab659d6a4f7235832ca98e9203796a0d1a5e04a0418"
+    "stop-save/verify-native.ts.txt": "57bd3fb11033bd1ffa16aab659d6a4f7235832ca98e9203796a0d1a5e04a0418",
+    "receipts/share-playback-options-2026-11-11.json": "ca786a0131b65c8304771fd349ae386f70a1a248706cfce113ea81bc153c23ec"
   },
   "selectedPolicyEvidence": "docs/audits/2026-10-23-bulk-recovery-input-retention/pins.json",
   "reviewedOwnerEpochs": [
@@ -292,6 +293,22 @@
         }
       ],
       "note": "The index adds the focused receipt and records the source index change. Previous measurement receipts retain their hashes."
+    },
+    {
+      "epoch": "share-playback-options-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/share-playback-options-2026-11-11.json",
+      "changes": [
+        {
+          "path": "source-pins.json",
+          "previousSha256": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
+          "currentSha256": "5b1eebcfe3f0f40b6a68be9b33aa1fdfeddaff74e2805a21bab198642eb9fe54"
+        },
+        {
+          "path": "receipts/share-playback-options-2026-11-11.json",
+          "currentSha256": "ca786a0131b65c8304771fd349ae386f70a1a248706cfce113ea81bc153c23ec"
+        }
+      ],
+      "note": "The new receipt records the isolated sharing checks. Earlier receipts retain their original fingerprints and scope."
     }
   ]
 }

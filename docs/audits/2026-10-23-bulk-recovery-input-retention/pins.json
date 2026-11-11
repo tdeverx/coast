@@ -43,12 +43,12 @@
     "docs/roadmap.md": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700",
     "drizzle/0065_task_control_commands.sql": "0f7b57af9636ca0a472cb12dd151245bef1fda4bca54b3f76af6ea622811f3f1",
     "drizzle/meta/0065_snapshot.json": "065625d17f4ef424b86dbd3934c34d2231af53172c85545d70422e9758d93668",
-    "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+    "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "scripts/ui-inventory.ts": "4094bf1c9f084379e2c53ba2adea5145ab803ce5edec4eea0e911966c9d00d66",
     "src/lib/providers/task-control.ts": "52a3877e76a84a1729980ef0c7dc5f8c62eba0dc78ac65d1c38b8dd48c89534a",
     "src/lib/server/api/queue.server.ts": "460da8f835b0d6e5d160c383ffaa7f549335c1c5303cd29756a1ff26ddb89341",
-    "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+    "src/lib/server/db/schema.ts": "d72bdf65405d870a3ab0bb716ae3c7f5bfded47b960c08a5a1739e3182e060f3",
     "src/lib/server/queue/index.ts": "f84573c1cb00804104031af7b1defad8a493d036c1000d1eb781f29f04459f81",
     "src/lib/server/queue/task-commands.server.ts": "1d2834f302c66dc5e5504c290a930b756a34a9be53fbe81b05f5a6f2f3bf9c0d",
     "src/lib/server/queue/task-controls.server.ts": "1ae39806d7aaf00df8d79c74de6649dd03e39eb20a1809e5dfbfbb8433338b75",
@@ -210,6 +210,23 @@
         }
       ],
       "note": "Admin backup section and generated preview coverage. The offline application check exercised the rendered backup page, admin authorization and automatic/manual backup capture. Existing bulk, preview input and hosted companion acceptance receipts are preserved."
+    },
+    {
+      "epoch": "share-playback-options-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/share-playback-options-2026-11-11.json",
+      "changes": [
+        {
+          "path": "drizzle/meta/_journal.json",
+          "previousSha256": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+          "currentSha256": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "previousSha256": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+          "currentSha256": "d72bdf65405d870a3ab0bb716ae3c7f5bfded47b960c08a5a1739e3182e060f3"
+        }
+      ],
+      "note": "The share migration was applied on PostgreSQL 17. Bulk command, job summary, retention and preview input regression checks passed against the updated schema. Historical evidence retains its original scope."
     }
   ]
 }

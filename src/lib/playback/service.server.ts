@@ -671,7 +671,7 @@ export async function streamPlayback(
   sessionId: string,
   request: Request,
   shareId?: string,
-  resources?: {url:(path:string,url:string)=>Promise<string>;headersReceived?:()=>Promise<void>;vrchatCodec?:VrchatVideoCodec}
+  resources?: {url:(path:string,url:string)=>Promise<string>;headersReceived?:()=>Promise<void>;vrchatCodec?:VrchatVideoCodec;segmentDelivered?:(start:number,length:number)=>Promise<void>}
 ): Promise<Response> {
   const [session] = await getDb()
     .select()
@@ -717,10 +717,6 @@ export async function streamPlayback(
   path = playbackResourcePath(serverUrl, item.externalId, `${prefix}${path}`,undefined,session.mediaType,instance.baseUrl);
   if(shareId && session.providerDeviceId && session.providerSessionId && session.maxBitrate){
     path=sharedResourcePath(path,{...session,providerDeviceId:session.providerDeviceId,providerSessionId:session.providerSessionId,maxBitrate:session.maxBitrate,vrchatCodec:resources?.vrchatCodec});
-  }
-  if(shareId && request.method!=='HEAD' && /\.(?:ts|m4s)(?:\?|$)/i.test(path)) {
-    const ticks=Number(new URL(path,'http://resource.invalid').searchParams.get('runtimeTicks'));
-    if(Number.isFinite(ticks)&&ticks>=0)await getDb().update(playbackSessions).set({state:'active',positionSeconds:Math.min(ticks/10_000_000,session.durationSeconds??2592000),updatedAt:new Date()}).where(and(eq(playbackSessions.id,session.id),sql`${playbackSessions.state}<>'stopped'`,sql`${playbackSessions.updatedAt}<now()-interval '5 seconds'`));
   }
   const credentials = v.parse(
     v.object({ accessToken: v.string() }),
@@ -783,7 +779,28 @@ export async function streamPlayback(
     outgoing.set('Content-Type', 'application/vnd.apple.mpegurl');
     return new Response(rewritten, { headers: outgoing });
   }
-  return new Response(response.body, { status: response.status, headers: outgoing });
+  let body = response.body;
+  if (resources?.vrchatCodec && request.method === 'GET' && body && /\.(?:ts|m4s|mp4)(?:\?|$)/i.test(path)) {
+    const params = new URL(path, 'http://resource.invalid').searchParams;
+    const start = Number(params.get('runtimeTicks') ?? NaN);
+    const length = Number(params.get('actualSegmentLengthTicks') ?? NaN);
+    const contentRange = /^bytes 0-(\d+)\/(\d+)$/.exec(outgoing.get('content-range') ?? '');
+    const fullSegment = response.status === 200 || (contentRange && Number(contentRange[1])+1 === Number(contentRange[2]));
+    if (Number.isSafeInteger(start) && start >= 0 && fullSegment) {
+      const delivered = resources.segmentDelivered;
+      if (delivered && session.durationSeconds && Number.isSafeInteger(start+length) && length >= 10_000) {
+        body = body.pipeThrough(new TransformStream({
+          async flush() {
+            try { await delivered(start, length); }
+            catch (error) { void logDiagnostic('warn','playback.failed',{sessionId,stage:'share-progress',failure:classifyFailure(error)}); }
+          },
+        }));
+      } else {
+        await getDb().update(playbackSessions).set({state:'active',positionSeconds:Math.min(start/10_000_000,session.durationSeconds??2592000),updatedAt:new Date()}).where(and(eq(playbackSessions.id,session.id),sql`${playbackSessions.state}<>'stopped'`,sql`${playbackSessions.updatedAt}<now()-interval '5 seconds'`));
+      }
+    }
+  }
+  return new Response(body, { status: response.status, headers: outgoing });
 }
 
 /** Local trailers use the persistent native video element without creating tracking events. */

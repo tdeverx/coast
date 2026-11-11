@@ -4,14 +4,14 @@ import { AppError } from '#lib/server/security/errors.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import {logDiagnostic,classifyFailure} from '#lib/server/diagnostics/index.js';
 import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
-import { encodingBitrate, playbackLimits, viewerIdleSeconds } from './policy';
+import { encodingBitrate, playbackLimits, shareCompletionGraceMinutes, shareIdleMinutes, viewerIdleSeconds } from './policy';
 import {allocateViewers} from './allocation';
 
 /** Short owner-scoped transactions allocate all links together. No provider I/O holds a DB lock. */
 export async function reserveViewer(ownerId:string,viewerId:string,force=false) {
   const db=getSql();
   if(!force){
-    const [recent]=await db`select v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and v.ended_at is null and v.last_seen_at>now()-interval '10 seconds' and p.state<>'stopped'`;
+    const [recent]=await db`select v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-interval '10 seconds' and p.state<>'stopped'`;
     if(recent?.desired_bitrate)return recent.desired_bitrate as number;
   }
   const config=await getConfig();
@@ -19,7 +19,7 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
     await tx`select pg_advisory_xact_lock(hashtextextended(${'sharing:'+ownerId},0))`;
     const [owner]=await tx`select settings from users where id=${ownerId} and not disabled`;
     if(!owner)throw new AppError(410,'The shared account is unavailable.');
-    const [viewer]=await tx`select v.id,s.target,v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId}`;
+    const [viewer]=await tx`select v.id,s.target,v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() for update of s`;
     if(!viewer||!force&&viewer.playback_state==='stopped')throw new AppError(410,'The viewer playback session has expired.');
     if(!force&&viewer.last_seen_at&&!viewer.ended_at&&Date.now()-new Date(viewer.last_seen_at).getTime()<10_000)return {bitrate:viewer.desired_bitrate as number,cleanup:[]};
     const budget=playbackLimits(config.maxBitrateMbps,owner.settings).shared;
@@ -102,19 +102,36 @@ export async function stopViewerPlayback(ownerId:string,viewerId:string) {
   const [remaining]=await db`select id from playback_sessions where user_id=${ownerId} and share_id is not null and cleanup_pending limit 1`;
   if(remaining)throw new AppError(503,'Previous shared playback is still stopping. Retry shortly.');
 }
-export async function releaseViewer(ownerId:string,viewerId:string,idleOnly=false) {
+export async function releaseViewer(ownerId:string,viewerId:string,idleOnly=false,playbackId?:string) {
   const db=getSql();
   const [session]=await db`with ended as (
     update share_viewers v set ended_at=now() from playback_shares s where v.id=${viewerId} and s.id=v.share_id and s.owner_id=${ownerId} and v.ended_at is null
+    ${playbackId?db`and v.playback_id=${playbackId}`:db``}
     ${idleOnly?db`and (v.last_seen_at<now()-interval '90 seconds' or s.revoked_at is not null or s.expires_at<=now())`:db``} returning v.playback_id
   ) update playback_sessions set state='stopped',cleanup_pending=true,updated_at=now() where id in (select playback_id from ended) and user_id=${ownerId} returning id,user_id,connection_id,provider_device_id,provider_session_id`;
   if(session)await stopReleasedSession(session);
+}
+
+async function revokeInactiveShares() {
+ const db=getSql();
+ await db.begin(async tx=>{
+  const eligible=tx`s.auto_revoke and s.revoked_at is null and s.expires_at>now()
+   and exists(select 1 from share_viewers v where v.share_id=s.id and v.playback_id is not null)
+   and not exists(select 1 from share_viewers v where v.share_id=s.id and (
+    v.preparing_until>now() or v.last_seen_at>now()-${shareIdleMinutes}*interval '1 minute'
+    and (s.completed_at is null or v.ended_at is null or v.ended_at>now()-${shareCompletionGraceMinutes}*interval '1 minute')
+   )) and (s.completed_at is null or s.completed_at<=now()-${shareCompletionGraceMinutes}*interval '1 minute')`;
+  const candidates=await tx<{id:string}[]>`select s.id from playback_shares s where ${eligible} order by s.expires_at,s.id limit 20 for update of s skip locked`;
+  // Check viewer activity again under the same share locks used for admission.
+  if(candidates.length)await tx`update playback_shares s set revoked_at=now() where s.id in ${tx(candidates.map(row=>row.id))} and ${eligible}`;
+ });
 }
 
 /** Lifecycle cleanup, including developer mode. Failed provider stops remain durable and retryable. */
 export async function expireSharedViewers() {
  const db=getSql();
  await db`delete from share_request_leases where id in (select id from share_request_leases where expires_at<=now() limit 200)`;
+ await revokeInactiveShares();
  const rows=await db`select v.id,s.owner_id from share_viewers v join playback_shares s on s.id=v.share_id where v.ended_at is null and v.playback_id is not null and (v.last_seen_at<now()-interval '90 seconds' or s.revoked_at is not null or s.expires_at<=now()) order by v.last_seen_at limit 20`;
  for(const row of rows) {
   try {await releaseViewer(row.owner_id,row.id,true);} catch { /* The durable cleanup flag is retried below. */ }
