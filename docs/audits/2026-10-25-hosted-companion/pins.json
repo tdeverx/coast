@@ -26,17 +26,17 @@
     "docs/audits/2026-10-25-hosted-companion/receipts/hls-independent.json": "2d0edf1d499afe721bef4a5dec9d8696b310a46f5a61537a8f482076356d2a3d",
     "docs/audits/2026-10-25-hosted-companion.md": "1ff78934d7d571d170526b825565154ab396d4d39b8e781bb3fcae0dc39de456",
     "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
-    "src/lib/providers/jellyfin/adapter.server.ts": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865",
+    "src/lib/providers/jellyfin/adapter.server.ts": "619d6d1d8b09b66461f9420ad124f733451f25ceb4a10013189bc3110f076827",
     "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
     "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
     "src/lib/sharing/allocation.ts": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190",
     "src/lib/sharing/policy.ts": "f57b503fab7d2658832e232541bb810761eef64c60508675a428c9d2e4e77c2a",
-    "src/lib/sharing/service.server.ts": "4992f43b8ce44c76c573d56f6d2589ddbcddc6754ba0da80da9959d2f5a5e227",
+    "src/lib/sharing/service.server.ts": "2c363a4b689302c0624f3edf7b8ffae3573c0956cf62002942be3fdeb8b67a74",
     "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
     "src/lib/sharing/leases.server.ts": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9",
     "src/lib/sharing/ShareAction.svelte": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4",
     "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
-    "src/lib/playback/service.server.ts": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5",
+    "src/lib/playback/service.server.ts": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7",
     "src/lib/ui/work-menu/ScreenActions.svelte": "4799f15383d72f89f5e7ba36bbc7289850587752c5588bb813a8a7c2d0d15a81",
     "src/routes/+layout.server.ts": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09",
     "src/lib/settings/sections.ts": "6eba0926ccda5741dce7abb75239cc50b7278ea8e9e3bcda1a9ce63997f47f38",
@@ -44,7 +44,7 @@
     "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
     "src/routes/settings/[[section]]/+page.svelte": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
-    "tests/sharing-db.test.ts": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3",
+    "tests/sharing-db.test.ts": "7bceaa69ac4855a9792def9cfb977c6770f00880c5f3fe5684ce22f8b58396ae",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
@@ -368,6 +368,33 @@
         }
       ],
       "note": "Admin backup section and generated preview coverage. The offline application check exercised the rendered backup page, admin authorization and automatic/manual backup capture. Existing bulk, preview input and hosted companion acceptance receipts are preserved."
+    },
+    {
+      "epoch": "jellyfin-playback-availability-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/jellyfin-playback-availability-2026-11-11.json",
+      "changes": [
+        {
+          "path": "src/lib/providers/jellyfin/adapter.server.ts",
+          "previousSha256": "564920bb40066cd41a5647354bb12ff412bd2b204536c64e6191c58ad3e75865",
+          "currentSha256": "619d6d1d8b09b66461f9420ad124f733451f25ceb4a10013189bc3110f076827"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "previousSha256": "4992f43b8ce44c76c573d56f6d2589ddbcddc6754ba0da80da9959d2f5a5e227",
+          "currentSha256": "2c363a4b689302c0624f3edf7b8ffae3573c0956cf62002942be3fdeb8b67a74"
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "previousSha256": "ce1918d336738e774f09d0b5ff5d34971772e9a51994140026728f00c74045c5",
+          "currentSha256": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "66a02b06fe15d8e945f8e718011828e7aba05169fa971fbc7b1d34fa4fb8f2b3",
+          "currentSha256": "7bceaa69ac4855a9792def9cfb977c6770f00880c5f3fe5684ce22f8b58396ae"
+        }
+      ],
+      "note": "Current adapter and sharing owners were reviewed for virtual items, source selection and encoder lifecycle. The original authorization, crop and browser receipts retain their original source and results."
     }
   ]
 }

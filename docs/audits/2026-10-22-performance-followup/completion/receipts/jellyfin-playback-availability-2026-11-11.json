@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-11",
+  "sourceCommit": "bac409dd394a5cd169aca79c317641cbf51fdf0e",
+  "scope": "Focused acceptance for virtual Jellyfin availability, source selection, share preparation, and personal browser recovery.",
+  "contractReview": [
+    "Virtual items retain catalogue metadata and update only the observed connection's availability while the existing account and job fences are held.",
+    "The existing bounded finalization and checkpoint contract passed. Playback recovery uses the saved stop position, prefers an exact source record, and requires a different source with the same edition and a compatible runtime.",
+    "The hosted adapter maps Jellyfin's missing-stream result to a typed unavailable response. Successful H.264 HLS negotiation and encoder cleanup passed on the isolated host."
+  ],
+  "hosted": {
+    "jellyfin": "12.4.0",
+    "transport": "Localhost with the production adapter and a disposable login",
+    "data": "Consistent copy of the real Jellyfin catalogue with copied device tokens and API keys deleted and passwords reset before hosting",
+    "virtualLocation": "Virtual",
+    "virtualPlaybackStatus": 404,
+    "physicalLocation": "FileSystem",
+    "decodedHlsSegmentBytes": 529032,
+    "remainingMediaFiles": 0,
+    "priorProbeAttempts": [
+      "The initial Bun loopback request failed to connect.",
+      "An early network decoder probe did not observe frames. The accepted probe fetched the real playlist and segment directly from localhost and decoded the segment with Jellyfin's FFmpeg."
+    ]
+  },
+  "postgres": {
+    "environment": "Disposable PostgreSQL 17 and repository fixtures",
+    "suites": {
+      "jellyfin-access-proof-db.test.ts": 11,
+      "jellyfin-companion-db.test.ts": 8,
+      "jellyfin-finalization-db.test.ts": 1,
+      "playback-generation-db.test.ts": 20,
+      "provider-lock-order-db.test.ts": 6,
+      "sharing-db.test.ts": 24,
+      "synced-onboarding-db.test.ts": 20
+    }
+  },
+  "localPlayerTests": {
+    "passed": 22
+  },
+  "companion": {
+    "journalChecksPassed": 11,
+    "cropChecksPassed": 29
+  },
+  "remaining": [
+    "Full real-data multi-account rescan performance and a hosted browser end-to-end run of automatic fallback remain open.",
+    "The hosted probe verifies one real HLS segment and cleanup. Full party, physical device, long-session and capacity acceptance remain open."
+  ]
+}

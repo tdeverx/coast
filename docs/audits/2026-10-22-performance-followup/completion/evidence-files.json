@@ -2,6 +2,7 @@
   "algorithm": "sha256",
   "epoch": "selected-policy-2026-10-23",
   "files": {
+    "receipts/jellyfin-playback-availability-2026-11-11.json": "6a59dfc22a414e8e8c61636bbb8a7790c163d566b61b5a0586e4143a800a261a",
     "README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
     "coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
     "final-checks.json": "1c7fc7bae1b2f85e911bfe486585a49958f31b120fa8e16d0feb91654a2daf3b",
@@ -156,7 +157,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544",
+    "source-pins.json": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -279,6 +280,18 @@
         }
       ],
       "note": "Lock-order contract review with red/green concurrency and affected boundary suites. Historical performance measurements, failed receipts and open device/live acceptance remain unchanged."
+    },
+    {
+      "epoch": "jellyfin-playback-availability-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/jellyfin-playback-availability-2026-11-11.json",
+      "changes": [
+        {
+          "path": "source-pins.json",
+          "previousSha256": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544",
+          "currentSha256": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754"
+        }
+      ],
+      "note": "The index adds the focused receipt and records the source index change. Previous measurement receipts retain their hashes."
     }
   ]
 }
