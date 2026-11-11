@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-11",
+  "sourceBase": "317b634f0a4316dee6ad5d29beaabe24c72cafec",
+  "scope": "Focused acceptance for opt-in share progress, deduplicated watch history and automatic revocation.",
+  "postgres": {
+    "environment": "Disposable PostgreSQL 17",
+    "suites": {
+      "sharing-db.test.ts": 27,
+      "playback-generation-db.test.ts": 20,
+      "social-db.test.ts": 13
+    },
+    "coverage": [
+      "Default-off links retain ordinary expiry and produce no share history or presence.",
+      "Idle cleanup protects a connected viewer and does not close an unused link.",
+      "Browser watch coverage skips seek gaps and concurrent completions create one history entry.",
+      "VRChat byte-range probes and repeat segment requests add no extra coverage. Distinct viewer grants cannot combine coverage for a watch."
+    ]
+  },
+  "hosted": {
+    "jellyfin": "12.4.0",
+    "data": "Generated H.264 and AAC fixture in a disposable Jellyfin library and PostgreSQL database",
+    "transport": "Production share creation, capability rewrite, HLS relay, tracking and encoder stop with a VRChat-style HTTP client",
+    "segments": 5,
+    "segmentStatuses": [
+      206
+    ],
+    "decodedHlsSegmentBytes": 204544,
+    "coverageFraction": 1,
+    "watchEntries": 1,
+    "transcodeMediaFilesBeforeRevoke": 6,
+    "transcodeMediaFilesAfterRevoke": 0,
+    "checks": [
+      "A HEAD probe creates no viewer grant.",
+      "A decoded segment increments coverage once even if requested again.",
+      "The live activity exposes estimated VRChat progress.",
+      "Revocation stops the encoder, clears live activity and invalidates the existing resource URL."
+    ]
+  },
+  "focusedUnitTests": {
+    "passed": 59
+  },
+  "companion": {
+    "journalChecksPassed": 11,
+    "cropChecksPassed": 29
+  },
+  "remaining": [
+    "This run exercised the VRChat protocol through HTTP and FFmpeg. Physical VRChat players, long-session playback and joined party behavior remain outside its scope."
+  ],
+  "migrationCompatibility": {
+    "task-command-db.test.ts": 11,
+    "job-task-summary-db.test.ts": 3,
+    "retention-db.test.ts": 1,
+    "taskCommandAndPreviewInputTests": 9
+  }
+}

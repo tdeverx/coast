@@ -6,12 +6,24 @@ import {socialCheckins,socialLiveDeliveries,users,providerConnections,providerIn
 import {AppError} from '#lib/server/security/errors.js';
 import {trackInTransaction} from '#lib/core/tracking/service.server.js';
 import {enqueueInTransaction,enqueueTraktChangeInTransaction} from '#lib/sync/changes.server.js';
+import {viewerIdleSeconds} from '#lib/sharing/policy.js';
 export async function presence(userId:string) {
- return getSql()`with candidates as (
+ return getSql()<{userId:string;username:string;workId:string;category:string;title:string;href:string;source:string;expiresAt:Date;progress:number|null}[]>`with candidates as (
  select user_id,media_id as work_id,'playback' as source,updated_at as observed_at,expires_at,0 as priority,position_seconds,duration_seconds from playback_sessions where share_id is null and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'
  union all select b.user_id,b.work_id,'reading',b.updated_at,b.expires_at,0,case when b.location->>'format'='epub' then (b.location->>'fraction')::real else (b.location->>'page')::real end,case when b.location->>'format'='epub' then 1 else (b.location->>'total')::real end from reading_sessions b left join provider_connections c on c.id=b.connection_id left join provider_instances i on i.id=c.instance_id where b.closed_at is null and b.expires_at>now() and b.updated_at>now()-interval '2 minutes' and (b.connection_id is null or c.status='connected' and i.enabled and c.account_generation=b.account_generation)
  union all select user_id,work_id,'checkin',created_at,expires_at,1,null,null from social_checkins where state='active' and expires_at>now()
- union all select c.user_id,s.work_id,i.provider,s.checked_at,s.expires_at,2,null,null from social_live_state s join provider_connections c on c.id=s.connection_id join provider_instances i on i.id=c.instance_id where c.status='connected' and i.enabled and s.account_generation=c.account_generation and s.work_id is not null and (s.expires_at>now() or (s.checked_at>now()-interval '30 minutes' and exists(select 1 from outbox_actions a where a.connection_id=c.id and a.account_generation=c.account_generation and a.kind=i.provider||'.live' and a.state in ('pending','running')))))
+ union all select s.owner_id,s.work_id,case when s.target='vrchat' then 'vrchat-share' else 'share' end,p.updated_at,s.expires_at,2,
+   case when s.target='vrchat' then nullif(p.played_seconds,0) else p.position_seconds end,p.duration_seconds
+ from playback_shares s join share_viewers v on v.share_id=s.id join playback_sessions p on p.id=v.playback_id
+ join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id
+ join users owner on owner.id=s.owner_id
+ where s.track_progress and s.revoked_at is null and s.expires_at>now() and p.expires_at>now() and p.state='active'
+   and p.updated_at>now()-interval '2 minutes' and v.ended_at is null and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second'
+   and coast_feature_enabled(s.owner_id,'sharing') and (not s.together or coast_feature_enabled(s.owner_id,'parties'))
+   and (owner.role='admin' or owner.settings->>'allowPlaybackSharing'='true')
+   and c.status='connected' and c.account_generation=s.account_generation and i.enabled
+   and exists(select 1 from availability a where a.user_id=s.owner_id and a.connection_id=s.connection_id and a.media_id=s.work_id and a.state='available')
+ union all select c.user_id,s.work_id,i.provider,s.checked_at,s.expires_at,3,null,null from social_live_state s join provider_connections c on c.id=s.connection_id join provider_instances i on i.id=c.instance_id where c.status='connected' and i.enabled and s.account_generation=c.account_generation and s.work_id is not null and (s.expires_at>now() or (s.checked_at>now()-interval '30 minutes' and exists(select 1 from outbox_actions a where a.connection_id=c.id and a.account_generation=c.account_generation and a.kind=i.provider||'.live' and a.state in ('pending','running')))))
  select distinct on (p.user_id) p.user_id as "userId",u.username,p.work_id as "workId",w.category,
  case when e.media_id is not null then coalesce(show.title,m.title)||' — S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') else coalesce(m.title,music.title,g.title,b.title) end as title,
  case when w.category='music' then '/music/work/'||w.id when w.category='game' then '/games/'||w.id else '/media/'||w.id end as href,p.source,p.expires_at as "expiresAt",

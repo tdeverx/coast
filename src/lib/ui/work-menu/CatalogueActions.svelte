@@ -190,7 +190,7 @@
 {#if workId && item.kind === 'game'}<GameCommands bind:this={gameCommands} {workId} gameData={game} ensure={() => work.load()} {changed} created={ongamecreated} />{/if}
 {#if workId && reading}<ReadingCommands bind:this={readingCommands} {workId} progress={progress} ensure={() => work.load()} {changed} /><ReadingLaunch bind:this={readingLaunch} {workId} hideTrigger />{/if}
 {#if workId && page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalParties && item.kind === 'track'} />{/if}
-{#if workId && page.data.playbackSharing && item.kind === 'track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title} />{/if}
+{#if workId && page.data.playbackSharing && item.kind === 'track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title} allowProgressTracking={false} />{/if}
 
 <Dialog bind:open={removeOpen} title="Remove this entry?" message="Only this occurrence will be removed. Your history is kept.">
   {#snippet footer()}<Button danger disabled={busy} onclick={remove}>Remove</Button><Button onclick={() => removeOpen = false}>Cancel</Button>{/snippet}

@@ -2,6 +2,9 @@ import {vrchatResourceParameters, type ShareTarget, type VrchatVideoCodec} from 
 
 /** Keep quality stable inside a generation; only bitrate changes during a handoff. */
 export const viewerIdleSeconds = 90;
+export const shareIdleMinutes = 10;
+export const shareCompletionGraceMinutes = 2;
+export const shareCompletionPercent = 90;
 export const minimumSharedBitrate = 500_000;
 export const maximumSharedViewers = 20;
 export const shareTokenPattern = /^[A-Za-z0-9_-]{43}$/;

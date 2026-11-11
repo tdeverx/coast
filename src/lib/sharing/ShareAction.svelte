@@ -3,16 +3,17 @@
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import { message } from '#lib/ui/client.js';
   import { useClient, reportFailure } from '#lib/ui/client-context.js';
-  import { publicSharePath } from './policy';
+  import { publicSharePath, shareCompletionGraceMinutes, shareCompletionPercent, shareIdleMinutes } from './policy';
   import type {ShareTarget,VrchatVideoCodec} from './vrchat-profile';
   import {page} from '$app/state';
   const {api,preview}=useClient();
 
-  let { workId, title, target='website', open = $bindable(false) }: {
-    workId: string; title: string; target?:ShareTarget; open?: boolean;
+  let { workId, title, target='website', allowProgressTracking=true, open = $bindable(false) }: {
+    workId: string; title: string; target?:ShareTarget; allowProgressTracking?:boolean; open?: boolean;
   } = $props();
   let busy = $state(false), loading = $state(false), error = $state('');
   let hours = $state(6), connectionId = $state(''), copied=$state(false);
+  let autoRevoke = $state(false), trackProgress = $state(false);
   let videoCodec=$state<VrchatVideoCodec>('h264');
   let sources = $state<{ id: string; name: string }[]>([]);
   let created = $state<{ id: string; token: string } | null>(null);
@@ -23,6 +24,7 @@
     const id = workId, controller = new AbortController();
     activeDialog = controller;
     created = null; copied=false; error = ''; sources = []; connectionId = ''; loading = true;videoCodec='h264';
+    autoRevoke = false; trackProgress = false;
     void api<typeof sources>(`sharing/sources?workId=${id}`, undefined, 'GET', { signal: controller.signal })
       .then(value => {
         if (controller.signal.aborted) return;
@@ -40,7 +42,7 @@
     const scope = activeDialog;
     busy = true; error = '';
     try {
-      const result = await api<{ id: string; token: string }>('sharing', { workId, connectionId, hours,target,videoCodec });
+      const result = await api<{ id: string; token: string }>('sharing', { workId, connectionId, hours,target,videoCodec,autoRevoke,trackProgress });
       if (scope === activeDialog && !scope?.signal.aborted) created = result;
     }
     catch (cause) { if (scope === activeDialog && !scope?.signal.aborted) error = message(cause); }
@@ -86,6 +88,12 @@
       {#if target==='vrchat'}
         <p class="small muted">For AVPro video players, including compatible ProTV and VideoTXL worlds. Unity-only players need a direct video file.</p>
         {#if page.data.allowVrchatHevc}<label class="field">Video format<select bind:value={videoCodec}><option value="h264">H.264 / AAC · MPEG-TS HLS</option><option value="hevc">H.265 / AAC · fMP4 HLS (experimental)</option></select></label>{/if}
+      {/if}
+      <label class="check"><input type="checkbox" bind:checked={autoRevoke} /> Auto-revoke after playback</label>
+      <p class="small muted">Close a used link after {shareIdleMinutes} minutes without a viewer, or {shareCompletionGraceMinutes} minutes after everyone leaves if one viewer reached {shareCompletionPercent}%{target==='vrchat'?' (estimated)':''}.</p>
+      {#if allowProgressTracking}
+        <label class="check"><input type="checkbox" bind:checked={trackProgress} /> Track progress</label>
+        <p class="small muted">Show playback in your live activity and record one watch on your account when any viewer reaches {shareCompletionPercent}%.{target==='vrchat'?' VRChat progress is estimated from video segments served.':''}</p>
       {/if}
       <Button type="submit" disabled={busy || loading || !connectionId}>{busy ? 'Creating…' : 'Create'}</Button>
     </form>

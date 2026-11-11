@@ -72,16 +72,20 @@
   const sharedMode = $derived(!!player.session?.shareId);
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
   let playedSeconds = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
+  function coveredPlayback() {
+    const ranges = media?.played;
+    let covered = 0;
+    if (ranges) for (let index = 0; index < ranges.length; index++)
+      covered += ranges.end(index) - ranges.start(index);
+    return covered;
+  }
   function accountPlayed() {
     if (!audioMode || !media) return;
     const now = performance.now();
     if (playedAt) playedSeconds += actualPlayedDelta(playedPosition, media.currentTime, (now - playedAt) / 1000, wasPlaying, seeking);
     // Native played ranges exclude seek gaps, pauses and buffering, and retain the
     // endpoints that coarse timeupdate events can miss on a complete traversal.
-    let covered = 0;
-    for (let index = 0; index < media.played.length; index++)
-      covered += media.played.end(index) - media.played.start(index);
-    playedSeconds = Math.max(playedSeconds, covered);
+    playedSeconds = Math.max(playedSeconds, coveredPlayback());
     playedAt = now;
     playedPosition = media.currentTime;
     current = media.currentTime;
@@ -164,7 +168,7 @@
       durationSeconds: started && Number.isFinite(duration) ? duration : session.durationSeconds,
       event,
       paused: event === 'pause' || event === 'stop' || !!media?.paused,
-      ...(audioMode ? { playedSeconds } : {}),
+      ...(session.measureSharePlayback ? { playedSeconds: coveredPlayback() } : audioMode ? { playedSeconds } : {}),
     };
     const request = capturePlaybackApi();
     // Coalesce queued positions without crossing lifecycle or session boundaries.

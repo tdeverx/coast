@@ -30,27 +30,29 @@
     "docs/performance.md": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d",
     "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
     "src/lib/sharing/allocation.ts": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190",
-    "src/lib/sharing/policy.ts": "f57b503fab7d2658832e232541bb810761eef64c60508675a428c9d2e4e77c2a",
-    "src/lib/sharing/service.server.ts": "2c363a4b689302c0624f3edf7b8ffae3573c0956cf62002942be3fdeb8b67a74",
+    "src/lib/sharing/policy.ts": "1d5afa1edc3eb902244f161f829fb2a236f4ab5436691f68d08063a7260b3384",
+    "src/lib/sharing/service.server.ts": "24e6c91b5d6f25b18b10d19e33caa571fc4091e16b2a4dc670385bf3b548382f",
     "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
-    "src/lib/sharing/leases.server.ts": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9",
-    "src/lib/sharing/ShareAction.svelte": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4",
+    "src/lib/sharing/leases.server.ts": "9a625a365e32140adb0c3b55db3b46f3abe30db524907ed2f5fa7c81f0a4f21b",
+    "src/lib/sharing/ShareAction.svelte": "d3a09ad495cdfeea449717468ac08e424557794cccef782c07814cd5b95ee022",
     "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
-    "src/lib/playback/service.server.ts": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7",
+    "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
     "src/lib/ui/work-menu/ScreenActions.svelte": "4799f15383d72f89f5e7ba36bbc7289850587752c5588bb813a8a7c2d0d15a81",
     "src/routes/+layout.server.ts": "6413b3acf515b294115c39a630893c5759d6d3cd3e0e2529c94b096f82ddfd09",
     "src/lib/settings/sections.ts": "6eba0926ccda5741dce7abb75239cc50b7278ea8e9e3bcda1a9ce63997f47f38",
     "src/lib/server/config.ts": "8b328917cec1ab14760559283e1fb77a5b3c3d640fee848e79102f396bf528c4",
-    "src/lib/server/db/schema.ts": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+    "src/lib/server/db/schema.ts": "d72bdf65405d870a3ab0bb716ae3c7f5bfded47b960c08a5a1739e3182e060f3",
     "src/routes/settings/[[section]]/+page.svelte": "568a4ff8373c09f00fe95db4bc5439a32a0a7f5847c74b18e558a6188038d798",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
-    "tests/sharing-db.test.ts": "7bceaa69ac4855a9792def9cfb977c6770f00880c5f3fe5684ce22f8b58396ae",
+    "tests/sharing-db.test.ts": "cd7d39c80cb6444fb9988407c51648dbccb0c701330e109140f6e726ec5ffd48",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
-    "drizzle/meta/_journal.json": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+    "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
     "docs/audits/2026-10-28-share-destinations/pins.json": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270",
     "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce",
-    "tests/profile-db.test.ts": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3"
+    "tests/profile-db.test.ts": "1ced24602e6ed17424958af52cf8a1f18f6780b3ab9735b7ad7319ca866d64a3",
+    "src/lib/sharing/progress.server.ts": "569bd944ef26d24ad8eb8c71bb0ed8227b2298a6afa92fccaf46875c1303c2aa",
+    "drizzle/0067_share_playback_options.sql": "458be1ed95192fa3528e83563d73576f2fbf2cbd057d454b475855d3a82d9c10"
   },
   "companion": {
     "baseline": "6077aee",
@@ -395,6 +397,61 @@
         }
       ],
       "note": "Current adapter and sharing owners were reviewed for virtual items, source selection and encoder lifecycle. The original authorization, crop and browser receipts retain their original source and results."
+    },
+    {
+      "epoch": "share-playback-options-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/share-playback-options-2026-11-11.json",
+      "changes": [
+        {
+          "path": "src/lib/sharing/policy.ts",
+          "previousSha256": "f57b503fab7d2658832e232541bb810761eef64c60508675a428c9d2e4e77c2a",
+          "currentSha256": "1d5afa1edc3eb902244f161f829fb2a236f4ab5436691f68d08063a7260b3384"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "previousSha256": "2c363a4b689302c0624f3edf7b8ffae3573c0956cf62002942be3fdeb8b67a74",
+          "currentSha256": "24e6c91b5d6f25b18b10d19e33caa571fc4091e16b2a4dc670385bf3b548382f"
+        },
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "previousSha256": "4e71bb8bc15beb495d1c8e05a2a40e9814a61c0b92bc0261d5a6384317bf43c9",
+          "currentSha256": "9a625a365e32140adb0c3b55db3b46f3abe30db524907ed2f5fa7c81f0a4f21b"
+        },
+        {
+          "path": "src/lib/sharing/ShareAction.svelte",
+          "previousSha256": "693bcde8755d11ac7a9ce9529ee565422c70a061d61b27a48883435edbd545a4",
+          "currentSha256": "d3a09ad495cdfeea449717468ac08e424557794cccef782c07814cd5b95ee022"
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "previousSha256": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7",
+          "currentSha256": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "previousSha256": "a473afcf719da69b9779807ed22dd56435420da46a876cdc7681d972a1e7679f",
+          "currentSha256": "d72bdf65405d870a3ab0bb716ae3c7f5bfded47b960c08a5a1739e3182e060f3"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "7bceaa69ac4855a9792def9cfb977c6770f00880c5f3fe5684ce22f8b58396ae",
+          "currentSha256": "cd7d39c80cb6444fb9988407c51648dbccb0c701330e109140f6e726ec5ffd48"
+        },
+        {
+          "path": "drizzle/meta/_journal.json",
+          "previousSha256": "20a992fbde1aefdeb9a6a14a20f97c1d75906261a545c9221cd8c7c39e3dd8b4",
+          "currentSha256": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7"
+        },
+        {
+          "path": "src/lib/sharing/progress.server.ts",
+          "currentSha256": "569bd944ef26d24ad8eb8c71bb0ed8227b2298a6afa92fccaf46875c1303c2aa"
+        },
+        {
+          "path": "drizzle/0067_share_playback_options.sql",
+          "currentSha256": "458be1ed95192fa3528e83563d73576f2fbf2cbd057d454b475855d3a82d9c10"
+        }
+      ],
+      "note": "The sharing stream path and cleanup were checked in an isolated Jellyfin run. Physical-device and party acceptance remain open."
     }
   ]
 }

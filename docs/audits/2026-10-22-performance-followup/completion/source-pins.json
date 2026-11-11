@@ -27,7 +27,7 @@
     "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
     "src/lib/providers/tmdb/details.server.ts": "0da75fccbefe61153c78028dfe6b3d840d3188a934b36a14c8abbad9e95ec5eb",
     "src/lib/providers/comic-vine/adapter.server.ts": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d",
-    "src/lib/ui/components/PersistentPlayer.svelte": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9",
+    "src/lib/ui/components/PersistentPlayer.svelte": "19d0012dafe29a44b79a724764bcfa4d308304d998dcabca72cd9417171e3db8",
     "src/lib/server/queries/library-containers.ts": "7758601bb65bf19e63f6c280a6fdf95ad21ca277278744ed3765deb3a70013ab",
     "tests/library-navigation.test.ts": "4a43d6342ada8378341e47c4d41fd904b55ce70e7ee745870f608f8f0faa59ae",
     "tests/fixtures/library-window.ts": "82a9187280c524d073326a0cb3ff408d21c69bbf522df0efc680be28373f5a4b",
@@ -40,7 +40,7 @@
     "tests/performance-audit-register.test.ts": "e28e08da02715623fbb21381ec4fbdc0509a5a531ac4a290f7f54911a267f498",
     "src/lib/playback/client.svelte.ts": "aed044ac856e1a341672e5c66e399368cd2a65ea14004f921f02e5d614b70f19",
     "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
-    "src/lib/playback/service.server.ts": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7",
+    "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
     "src/lib/playback/synced/client.svelte.ts": "b3a4155bd66d3590fd45f5e74fc9c33c2dbf00de8b6f4f2a77cb7162ce98d515",
     "src/lib/ui/client.ts": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
     "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
@@ -287,6 +287,23 @@
         }
       ],
       "note": "Reviewed only the changed availability and playback contracts. Earlier receipts retain their recorded source. The receipt records the new isolated checks and their remaining scope."
+    },
+    {
+      "epoch": "share-playback-options-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/share-playback-options-2026-11-11.json",
+      "changes": [
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "previousSha256": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9",
+          "currentSha256": "19d0012dafe29a44b79a724764bcfa4d308304d998dcabca72cd9417171e3db8"
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "previousSha256": "c67d93ef6e971676f8ffb9f5a9bef6b6c75356a1b3f2bd17c41602ceb80050e7",
+          "currentSha256": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561"
+        }
+      ],
+      "note": "Browser progress and native stream delivery were reviewed against the opt-in sharing contract. Historical timings retain their original measurements."
     }
   ]
 }

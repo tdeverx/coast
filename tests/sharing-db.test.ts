@@ -4,7 +4,7 @@ import {getSql,closeDb} from '../src/lib/server/db';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {defaultConfig} from '../src/lib/server/config';
 import {updateConfig} from '../src/lib/application/configuration.server';
-import {createShare,claimShare,startShared,sharedStream,revokeShare,shareViewer,prepareShared} from '../src/lib/sharing/service.server';
+import {createShare,claimShare,startShared,sharedStream,sharedProgress,revokeShare,shareViewer,prepareShared} from '../src/lib/sharing/service.server';
 import {openPublicShare,externalStream} from '../src/lib/sharing/external.server';
 import {publicSharePath} from '../src/lib/sharing/policy';
 import {releaseViewer,expireSharedViewers} from '../src/lib/sharing/leases.server';
@@ -12,6 +12,7 @@ import {sharedStreamRows} from '../src/lib/sharing/streams.server';
 import {activeStreams,streamCount} from '../src/lib/application/streams.server';
 import {POST as shareApiPost,GET as shareApiGet} from '../src/routes/api/share/[...path]/+server';
 import {updateUser,updateUserSettings} from '../src/lib/server/auth';
+import {presence} from '../src/lib/social/presence.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const owner=crypto.randomUUID(),other=crypto.randomUUID(),work=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID(),providerItem=crypto.randomUUID(),generation=crypto.randomUUID();
 const actor={id:owner,username:'sharing-admin',role:'admin' as const,email:null,settings:{}};
@@ -20,6 +21,7 @@ let failStop=false;
 let directSource=false;
 let virtualSource=false;
 let noPlayableStream=false;
+let nativeTimeline=false;
 let playbackRequests:any[]=[];
 let playbackInfoBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
 let manifestBarrier:{entered:()=>void;ready:Promise<void>}|undefined;
@@ -40,8 +42,17 @@ beforeAll(async()=>{
   }
   if(p==='/Videos/ActiveEncodings') {if(failStop)return new Response('Synthetic stop failure',{status:400});stops.push({device:url.searchParams.get('DeviceId'),session:url.searchParams.get('PlaySessionId')});return new Response(null,{status:204});}
   if(p.endsWith('master.m3u8')){const barrier=manifestBarrier;manifestBarrier=undefined;if(barrier){barrier.entered();await barrier.ready;}return new Response('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000\nmain.m3u8?api_key=fixture-upstream-secret\n',{headers:{'content-type':'application/vnd.apple.mpegurl'}});}
-  if(p.endsWith('main.m3u8'))return new Response('#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXTINF:3,\nsegment.ts?runtimeTicks=300000000&api_key=fixture-upstream-secret\n#EXT-X-ENDLIST\n',{headers:{'content-type':'application/vnd.apple.mpegurl'}});
-  if(p.endsWith('segment.ts')) {const data={session:url.searchParams.get('PlaySessionId'),rate:url.searchParams.get('VideoBitrate')};segments.push(data);return new Response(JSON.stringify(data),{headers:{'content-type':'video/mp2t'}});}
+  if(p.endsWith('main.m3u8')){
+   const entries=nativeTimeline?Array.from({length:10},(_,index)=>`#EXTINF:60,\nsegment.ts?runtimeTicks=${index*600_000_000}&actualSegmentLengthTicks=600000000`):['#EXTINF:3,\nsegment.ts?runtimeTicks=300000000&api_key=fixture-upstream-secret'];
+   return new Response(['#EXTM3U',`#EXT-X-TARGETDURATION:${nativeTimeline?60:3}`,...entries,'#EXT-X-ENDLIST',''].join('\n'),{headers:{'content-type':'application/vnd.apple.mpegurl'}});
+  }
+  if(p.endsWith('segment.ts')) {
+   const data={session:url.searchParams.get('PlaySessionId'),rate:url.searchParams.get('VideoBitrate')};segments.push(data);
+   const body=JSON.stringify(data),headers=new Headers({'content-type':'video/mp2t'});
+   const range=request.headers.get('range');
+   if(nativeTimeline&&range)headers.set('content-range',`bytes 0-${range==='bytes=0-0'?0:body.length-1}/${body.length}`);
+   return new Response(range==='bytes=0-0'?body.slice(0,1):body,{headers,status:headers.has('content-range')?206:200});
+  }
   if(p==='/Videos/item/stream')return new Response('authored direct media fixture',{headers:{'content-type':'video/mp4'}});
   return new Response('Fixture route unavailable',{status:404});
  }});
@@ -57,7 +68,7 @@ beforeAll(async()=>{
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
  const db=getSql();await db`delete from share_viewers`;await db`delete from playback_sessions`;await db`delete from playback_shares`;stops=[];segments=[];failStop=false;directSource=false;playbackRequests=[];playbackInfoBarrier=undefined;
- virtualSource=false;noPlayableStream=false;
+ virtualSource=false;noPlayableStream=false;nativeTimeline=false;
  await db`update users set settings=${{sharedBitrateMbps:2}} where id=${owner}`;
  await db`update system_settings set value=${{...defaultConfig,allowPlaybackSharing:true,allowedProviderPorts:[server.port!],maxBitrateMbps:10}} where key='coast'`;
 });
@@ -370,4 +381,84 @@ run('withdrawn quality handoffs leave the encoder generation intact and release 
  }finally{release();await (await resource).text();}
  const retry=await sharedStream(a.token,first.id,request(first.url));await retry.text();expect(stops).toHaveLength(1);
  expect((await getSql()`select count(*)::int as n from share_request_leases`)[0].n).toBe(0);
+});
+
+const website=async(options:{autoRevoke?:boolean;trackProgress?:boolean}={})=>createShare(actor,{workId:work,connectionId:connection,hours:1,...options});
+const joinWebsite=async(token:string)=>{
+ const grant=await claimShare({token},null),playback=await startShared(grant.token,{mediaId:work,browser});
+ return {playback,report:(event:string,positionSeconds:number,playedSeconds:number)=>sharedProgress(grant.token,playback.id,{event,positionSeconds,playedSeconds})};
+};
+const watchCount=async(id:string)=>(await getSql()`select count(*)::int as total from tracking_events where user_id=${owner} and source_event_id=${`share:${id}`}`)[0].total;
+
+run('share auto-revocation is opt-in, starts after use, and protects a second active viewer',async()=>{
+ const db=getSql();
+ await db`update users set settings=${{sharedBitrateMbps:5,personalBitrateMbps:1}} where id=${owner}`;
+ const [unused,regular,automatic]=await Promise.all([website({autoRevoke:true}),website(),website({autoRevoke:true})]);
+ await claimShare({token:unused.token},null);
+ const untracked=await joinWebsite(regular.token);
+ expect(untracked.playback.measureSharePlayback).toBe(false);
+ await untracked.report('start',0,0);
+ await untracked.report('progress',595,595);
+ expect(await watchCount(regular.id)).toBe(0);
+ expect(await presence(owner)).toHaveLength(0);
+ const first=await joinWebsite(automatic.token),second=await joinWebsite(automatic.token);
+ await first.report('start',0,0);
+ await second.report('start',0,0);
+ await db`update share_viewers set last_seen_at=now()-interval '11 minutes' where share_id=${regular.id} or playback_id=${first.playback.id}`;
+ await expireSharedViewers();
+ expect(await db`select id from playback_shares where revoked_at is not null`).toHaveLength(0);
+ await db`update share_viewers set last_seen_at=now()-interval '11 minutes' where playback_id=${second.playback.id}`;
+ await expireSharedViewers();
+ expect(await db`select id from playback_shares where revoked_at is not null`).toEqual([{id:automatic.id}]);
+ await expect(claimShare({token:automatic.token},null)).rejects.toMatchObject({status:410});
+});
+
+run('browser coverage records one watch per opted-in link and starts the completion grace after viewers leave',async()=>{
+ const db=getSql();
+ await db`update users set settings=${{sharedBitrateMbps:5,personalBitrateMbps:1}} where id=${owner}`;
+ const link=await website({trackProgress:true,autoRevoke:true});
+ const a=await joinWebsite(link.token),b=await joinWebsite(link.token);
+ expect(a.playback.measureSharePlayback).toBe(true);
+ await db`update playback_sessions set created_at=now()-interval '10 minutes' where share_id=${link.id}`;
+ await a.report('start',0,0);
+ await b.report('start',0,0);
+ await a.report('progress',595,5);
+ expect(await watchCount(link.id)).toBe(0);
+ expect((await presence(owner)).filter(row=>row.source==='share')).toHaveLength(1);
+ await Promise.all([a.report('ended',600,550),b.report('ended',600,545)]);
+ expect(await watchCount(link.id)).toBe(1);
+ expect((await presence(owner)).filter(row=>row.source==='share')).toHaveLength(0);
+ await expireSharedViewers();
+ expect((await db`select revoked_at from playback_shares where id=${link.id}`)[0].revoked_at).toBeNull();
+ await db`update playback_shares set completed_at=now()-interval '3 minutes' where id=${link.id}`;
+ await db`update share_viewers set ended_at=now()-interval '3 minutes' where share_id=${link.id}`;
+ await expireSharedViewers();
+ expect((await db`select revoked_at from playback_shares where id=${link.id}`)[0].revoked_at).toBeInstanceOf(Date);
+});
+
+run('VRChat estimates coverage from complete segment responses without counting repeats or pooling viewers',async()=>{
+ nativeTimeline=true;
+ const link=await createShare(actor,{workId:work,connectionId:connection,target:'vrchat',trackProgress:true});
+ async function resources(agent:string){
+  const variant=await child(await openPublicShare(link.token,request(publicSharePath(link.token,'vrchat'),agent),'fixture-address'));
+  const manifest=await (await externalStream(variant.split('/')[4],request(variant,agent))).text();
+  return manifest.split('\n').filter(line=>line&&!line.startsWith('#'));
+ }
+ const a=await resources('vrchat-a'),b=await resources('vrchat-b');
+ const probe=await externalStream(a[9].split('/')[4],new Request(new URL(a[9],'http://coast.test'),{headers:{Range:'bytes=0-0'}}));
+ expect(await probe.text()).toHaveLength(1);
+ expect(await presence(owner)).toHaveLength(0);
+ async function download(path:string){
+  const response=await externalStream(path.split('/')[4],new Request(new URL(path,'http://coast.test'),{headers:{Range:'bytes=0-'}}));
+  expect(response.status).toBe(206);
+  await response.arrayBuffer();
+ }
+ await Promise.all([download(a[9]),download(a[9])]);
+ expect((await presence(owner)).find(row=>row.source==='vrchat-share')?.progress).toBeCloseTo(0.1);
+ for(let index=0;index<8;index++)await download(b[index]);
+ expect(await watchCount(link.id)).toBe(0);
+ await download(b[8]);
+ expect(await watchCount(link.id)).toBe(1);
+ await download(b[9]);
+ expect(await watchCount(link.id)).toBe(1);
 });
