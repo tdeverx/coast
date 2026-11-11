@@ -14,7 +14,7 @@ import { sequenceEntries } from '#lib/core/lists/sequence.server.js';
 import { rewatchBoundary, rewatchFields } from '#lib/core/tracking/rewatch.server.js';
 import { mediaViews } from '#lib/server/queries/media.js';
 import * as v from 'valibot';
-import { and, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import {
   availability,
@@ -34,6 +34,7 @@ import { instanceFetchConfig, instanceServerUrl } from '#lib/providers/instances
 import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
 import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { logDiagnostic, classifyFailure, context } from '#lib/server/diagnostics/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import {
@@ -58,6 +59,7 @@ const playbackInput = v.object({
   mediaId: uuid,
   sequence: v.optional(sequenceContextSchema),
   sourceId: v.optional(v.string()),
+  fallbackSessionId: v.optional(uuid),
   edition: v.optional(v.string()),
   editionName:v.optional(v.pipe(v.string(),v.minLength(1),v.maxLength(500))),
   expectedDuration: v.optional(v.pipe(v.number(),v.minValue(0.01),v.maxValue(604800))),
@@ -189,6 +191,18 @@ async function preparePlayback(
       )
     : undefined;
   if (data.sequence && !sequenceEntry) throw new Error('This sequence entry no longer exists.');
+  let fallback: typeof playbackSessions.$inferSelect | undefined;
+  if (data.fallbackSessionId) {
+    if (share) throw new AppError(403, 'Shared playback uses its selected source.');
+    [fallback] = await getDb().select().from(playbackSessions).where(and(
+      eq(playbackSessions.id, data.fallbackSessionId), eq(playbackSessions.userId, userId),
+      eq(playbackSessions.mediaId, item.id), isNull(playbackSessions.shareId),
+      eq(playbackSessions.state, 'stopped'), gt(playbackSessions.expiresAt, new Date())
+    ));
+    if (!fallback?.durationSeconds) throw new AppError(409, 'The previous playback session cannot be resumed.');
+  }
+  const expectedDuration = fallback?.durationSeconds ?? data.expectedDuration;
+  const fallbackEdition = fallback && namedEdition(fallback.edition, item.title).value;
   const available = await getDb()
     .select({ availability, providerItem: providerItems })
     .from(availability)
@@ -210,10 +224,11 @@ async function preparePlayback(
       (data.editionName===undefined||namedEdition(row.availability.edition,item.title)?.value===data.editionName)
   );
   if (!rows.length)
-    throw new Error('This title is no longer available from your connected sources.');
+    throw new AppError(404, 'This title is no longer available from your connected sources.', 'playback_source_unavailable');
   const candidates: {
     row: (typeof rows)[number];
     plan: PlaybackPlan;
+    duration: number;
     playSessionId?: string;
     instance: Awaited<ReturnType<typeof getJellyfin>>['instance'];
     accountGeneration: string;
@@ -221,10 +236,11 @@ async function preparePlayback(
   }[] = [];
   const queried = new Set<string>();
   const [account] = await getDb().select({settings:users.settings}).from(users).where(eq(users.id,userId));
-  const maximum = Math.min(share?.maxBitrate ?? Infinity,playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity);
+  const maximum = Math.min(share?.maxBitrate ?? Infinity,playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity,fallback?.maxBitrate ?? Infinity);
   if(share&&maximum<minimumSharedBitrate)throw new Error('Shared playback requires a bitrate limit of at least 0.5 Mbps.');
   const providerDeviceId = share ? crypto.randomUUID() : userId;
   let providerBusy: ProviderQueueBusyError | undefined;
+  let providerFailed = false;
   for (const row of rows) {
     signal?.throwIfAborted();
     const key = `${row.availability.connectionId}:${row.providerItem.id}`;
@@ -247,24 +263,25 @@ async function preparePlayback(
       signal?.throwIfAborted();
       for (const source of info.sources) {
         if(share?.sourceId && source.id!==share.sourceId)continue;
-        const sourceRow = rows.find(
-          (r) =>
-            r.availability.connectionId === row.availability.connectionId &&
-            r.providerItem.id === row.providerItem.id &&
-            (r.availability.sourceId === source.id || r.availability.sourceId === 'default')
-        );
+        const matchesItem = (candidate: typeof row) =>
+          candidate.availability.connectionId === row.availability.connectionId &&
+          candidate.providerItem.id === row.providerItem.id;
+        const sourceRow = rows.find(candidate => matchesItem(candidate) && candidate.availability.sourceId === source.id) ??
+          rows.find(candidate => matchesItem(candidate) && candidate.availability.sourceId === 'default');
         if (!sourceRow) continue;
-        if(data.expectedDuration!==undefined){
-          const duration=source.durationSeconds||sourceRow.availability.durationSeconds||item.runtimeMinutes! * 60;
-          if(!duration||Math.abs(duration-data.expectedDuration)>2)continue;
-        }
+        if (fallbackEdition && namedEdition(sourceRow.availability.edition, item.title).value !== fallbackEdition) continue;
+        if (fallback?.connectionId === sourceRow.availability.connectionId &&
+          fallback.providerItemId === sourceRow.providerItem.id && fallback.sourceId === source.id) continue;
+        const duration = source.durationSeconds || sourceRow.availability.durationSeconds || 0;
+        const comparableDuration = duration || (fallback ? 0 : (item.runtimeMinutes || 0) * 60);
+        if (expectedDuration !== undefined && (!comparableDuration || Math.abs(comparableDuration - expectedDuration) > 2)) continue;
         try {
           const plan = planPlayback([share?.vrchatCodec?{...source,directPlay:false,directStream:false}:source], data.browser, {
             delivery: share || config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
             maxBitrate: maximum,
             allowTranscoding: config.allowTranscoding,
           },undefined,mediaType);
-          candidates.push({ row: sourceRow, adapter, plan, playSessionId: info.playSessionId, instance, accountGeneration: connection.accountGeneration });
+          candidates.push({ row: sourceRow, adapter, plan, duration, playSessionId: info.playSessionId, instance, accountGeneration: connection.accountGeneration });
         } catch {
           /* Try all sources before reporting incompatibility. */
         }
@@ -272,6 +289,8 @@ async function preparePlayback(
     } catch (error) {
       signal?.throwIfAborted();
       if (error instanceof ProviderQueueBusyError) providerBusy ??= error;
+      if (error instanceof AppError && error.code === 'playback_source_unavailable') continue;
+      providerFailed = true;
       void logDiagnostic('error', 'playback.failed', { failure: classifyFailure(error) });
     }
   }
@@ -279,10 +298,13 @@ async function preparePlayback(
   candidates.sort((a, b) => comparePlaybackPlans(a.plan, b.plan));
   const best = candidates[0];
   if (!best && providerBusy) throw providerBusy;
-  if (!best)
-    throw new Error(
-      data.expectedDuration!==undefined ? 'No accessible source matches the synced session edition and duration.' : 'No available version can play on this device under the current playback policy.'
-    );
+  if (!best) {
+    const message = fallback ? 'No other playable copy matches this version.' : data.expectedDuration !== undefined
+      ? 'No accessible source matches the synced session edition and duration.'
+      : 'No available version can play on this device under the current playback policy.';
+    if (providerFailed) throw new Error(message);
+    throw new AppError(404, message, 'playback_source_unavailable');
+  }
   const { source } = best.plan;
   const initialCrop=mediaType==='video'&&!share?.vrchatCodec?await providerVideoCrop(best.adapter,best.row.providerItem.externalId,source,signal):null;
   signal?.throwIfAborted();
@@ -338,10 +360,7 @@ async function preparePlayback(
         eq(editionProgress.editionId, `${best.row.availability.connectionId}:${source.id}`)
       )
     );
-  const duration =
-    source.durationSeconds ||
-    best.row.availability.durationSeconds ||
-    (item.runtimeMinutes || 0) * 60;
+  const duration = best.duration || (item.runtimeMinutes || 0) * 60;
   const [audioProgress]=music?await getDb().select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,item.id))):[];
   const saved = audioProgress ?? edition ?? state;
   const [rewatch] = await getDb()
@@ -364,6 +383,7 @@ async function preparePlayback(
   const newerThanCompletion =
     !state?.watched || !state.lastWatchedAt || (!!saved && saved.updatedAt >= state.lastWatchedAt);
   const position =
+    fallback ? Math.min(fallback.positionSeconds, Math.max(0, duration - 0.1)) :
     !data.fromStart &&
     (sequenceEntry || newerThanCompletion) &&
     savedPosition > 0 &&
@@ -415,6 +435,13 @@ async function preparePlayback(
   await requireFeatureInTransaction(tx,userId,mediaType==='audio'?'music':'screen');
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   signal?.throwIfAborted();
+  if (fallback) {
+    const [active] = await tx.select({id:playbackSessions.id}).from(playbackSessions).where(and(
+      eq(playbackSessions.userId, userId), isNull(playbackSessions.shareId), ne(playbackSessions.state, 'stopped'),
+      gt(playbackSessions.expiresAt, new Date())
+    )).limit(1);
+    if (active) throw new AppError(409, 'Another playback session has already started.');
+  }
   const [current]=await tx.select({generation:providerConnections.accountGeneration}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
     .where(and(eq(providerConnections.id,best.row.availability.connectionId),eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).for('update',{of:providerConnections});
   if(!current||current.generation!==best.accountGeneration)throw new Error('The playback source account changed.');
@@ -470,11 +497,16 @@ async function preparePlayback(
     kind: best.plan.useHls ? 'hls' : 'direct',
     startSeconds: position,
     durationSeconds: duration,
+    canFallback: !share && !fallback && mediaType === 'video' && !!best.duration && candidates.slice(1).some(candidate =>
+      candidate.duration > 0 && Math.abs(candidate.duration - best.duration) <= 2 &&
+      namedEdition(candidate.row.availability.edition, item.title).value === namedEdition(best.row.availability.edition, item.title).value &&
+      (candidate.row.availability.connectionId !== best.row.availability.connectionId ||
+        candidate.row.providerItem.id !== best.row.providerItem.id || candidate.plan.source.id !== source.id)),
     provider: best.instance.name,
     edition: session.edition || undefined,
     subtitles,
     defaultSubtitleIndex,
-    subtitlePrompt: viewer.settings.subtitlePrompt === true,
+    subtitlePrompt: !fallback && viewer.settings.subtitlePrompt === true,
     sources,
   };
 }

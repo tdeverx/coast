@@ -27,7 +27,7 @@
       "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
       "src/lib/sync/jellyfin-finalization.server.ts": "87af15b0b6c053e5c6d9276315fb8a75c8a274e2619cc85d7c4f5d1116a1cf0d",
       "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
-      "src/lib/sync/jellyfin.server.ts": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
+      "src/lib/sync/jellyfin.server.ts": "0091dfaf36109697e95ec62b003a2e91a2d7d1e5719c71d5a44b377d1b59a258",
       "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
       "src/lib/ui/shelves/library.svelte.ts": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
       "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
@@ -37,11 +37,11 @@
       "scripts/performance-preview-browser.js": "4a920ab2b98061b2d57ae22c2a8e7fc60b05f6e9d8b9cb30434936980525d0c8",
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
-      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "985566f505ffeaf8822f6703a83ebc25a6848b5b1e97ed9e3a41f7ad0a2cfab0",
+      "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "9020d28ccd19a7a726cef41a15c3817ec74184879d42ca9abda5eca2acbb8ae7",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
-      "src/lib/playback/client.svelte.ts": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
-      "src/lib/ui/components/PersistentPlayer.svelte": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
+      "src/lib/playback/client.svelte.ts": "aed044ac856e1a341672e5c66e399368cd2a65ea14004f921f02e5d614b70f19",
+      "src/lib/ui/components/PersistentPlayer.svelte": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9",
       "src/lib/ui/action-feedback.svelte.ts": "143eb58d887870dfbf76d6ea6cf7bcd3f577193ea8e07dfc7827bcf0827a3b4d",
       "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
       "tests/player-stop-lifecycle.test.ts": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
@@ -3089,6 +3089,38 @@
         }
       ],
       "note": "Only the empty state uses the new guidance. The existing paging, retained window, query cancellation and prior acceptance evidence are preserved."
+    },
+    {
+      "epoch": "jellyfin-playback-availability-2026-11-11",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/jellyfin-playback-availability-2026-11-11.json",
+      "changes": [
+        {
+          "path": "src/lib/sync/jellyfin.server.ts",
+          "previousSha256": "1e516f722072d897fc38658d5f826fc47e6a30bc6578f2b50e5f510beecf4150",
+          "currentSha256": "0091dfaf36109697e95ec62b003a2e91a2d7d1e5719c71d5a44b377d1b59a258"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/source-pins.json",
+          "previousSha256": "31577bbea957204bc8f769d6e190e7302d65d7ccca5d63548199df91da16d544",
+          "currentSha256": "0bb8142525a8ab3de113db700df11a47297c659af428a8b7545892b9dea28754"
+        },
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "985566f505ffeaf8822f6703a83ebc25a6848b5b1e97ed9e3a41f7ad0a2cfab0",
+          "currentSha256": "9020d28ccd19a7a726cef41a15c3817ec74184879d42ca9abda5eca2acbb8ae7"
+        },
+        {
+          "path": "src/lib/playback/client.svelte.ts",
+          "previousSha256": "dd4e1a7c27654bbb38e88aa2b3d4460cfe0d37f885f0e52823e32e89f2f63a2d",
+          "currentSha256": "aed044ac856e1a341672e5c66e399368cd2a65ea14004f921f02e5d614b70f19"
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "previousSha256": "591db1405852ad7e3841dbb4575f43a3f08c3914d214bd36eacb71f2e36ddc5a",
+          "currentSha256": "0ec8f228db6088b492e2ffd91e0824c1522a0ff923ced6b92d2549691359dcc9"
+        }
+      ],
+      "note": "Current source reviewed against Jellyfin availability, finalization and personal playback stop contracts. Historical timings retain their original source fingerprints. The receipt records focused regression coverage and outstanding acceptance."
     }
   ]
 }

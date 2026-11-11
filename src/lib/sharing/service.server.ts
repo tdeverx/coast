@@ -23,14 +23,20 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  if(data.together&&!config.experimentalParties)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
  const context=await getJellyfin(user.id,data.connectionId);
  await context.adapter.identity(context.instance.serverIdentity??undefined);
- const db=getSql(),[access]=await db`select a.id,pi.external_id from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) limit 1`;
- if(!access)throw new AppError(403,'Choose one playable item from your accessible source.');
+ const db=getSql(),sources=await db<{external_id:string;kind:string}[]>`select distinct pi.external_id,w.kind from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) order by pi.external_id`;
+ if(!sources.length)throw new AppError(403,'Choose one playable item from your accessible source.');
  // Item-level evidence confirms this account's access before issuing the capability.
- if((await db`select kind from works where id=${data.workId}`)[0].kind==='track'){
+ if(sources[0].kind==='track'){
   if(data.target==='vrchat')throw new AppError(400,'VRChat sharing requires a movie or episode.');
-  await context.adapter.musicItem(context.connection.externalUserId!,access.external_id);
+  await context.adapter.musicItem(context.connection.externalUserId!,sources[0].external_id);
+ }else{
+  let playable=false;
+  for(const source of sources){
+   const item=await context.adapter.itemIfAvailable(context.connection.externalUserId!,source.external_id);
+   if(item&&item.access?.locationType!=='Virtual'){playable=true;break;}
+  }
+  if(!playable)throw new AppError(404,'Jellyfin has no playable file for this title.','playback_source_unavailable');
  }
- else await context.adapter.item(context.connection.externalUserId!,access.external_id);
  const token=randomToken(),expiresAt=new Date(Date.now()+data.hours*3600000);
  return db.begin(async tx=>{
   await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
@@ -88,7 +94,7 @@ export async function startShared(token:string|undefined,input:unknown,signal?:A
 export async function prepareShared(viewer:Awaited<ReturnType<typeof shareViewer>>,input:unknown,signal?:AbortSignal){
  signal?.throwIfAborted();
  const data=v.parse(v.record(v.string(),v.unknown()),input);
- if(data.mediaId!==viewer.work_id||data.sequence||data.sourceId||data.edition||data.expectedDuration)throw new AppError(403,'This invitation grants only its selected item.');
+ if(data.mediaId!==viewer.work_id||data.sequence||data.sourceId||data.edition||data.expectedDuration||data.fallbackSessionId)throw new AppError(403,'This invitation grants only its selected item.');
  const maxBitrate=await reserveViewer(viewer.owner_id,viewer.viewer_id,true);
  const preparationToken=crypto.randomUUID();
  let preparedId:string|undefined;
