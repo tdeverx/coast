@@ -1843,6 +1843,16 @@
         ]
       },
       {
+        "name": "artworkOnly",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
         "name": "onselect",
         "type": "(item: MediaView) => void",
         "optional": true,
@@ -2470,6 +2480,16 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "rich",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -4121,7 +4141,7 @@
       },
       {
         "name": "description",
-        "type": "string|null",
+        "type": "string | null",
         "optional": true,
         "bindable": false,
         "kind": "text",
@@ -4137,7 +4157,7 @@
       },
       {
         "name": "kind",
-        "type": "'info'|'error'",
+        "type": "'info' | 'error'",
         "optional": true,
         "bindable": false,
         "kind": "select",
@@ -4160,6 +4180,34 @@
         "defaultValue": false
       },
       {
+        "name": "category",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "persistent",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "autoDismiss",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
         "name": "actionLabel",
         "type": "string",
         "optional": true,
@@ -4169,7 +4217,7 @@
       },
       {
         "name": "onaction",
-        "type": "()=>unknown",
+        "type": "() => unknown",
         "optional": true,
         "bindable": false,
         "kind": "callback",
@@ -4177,7 +4225,7 @@
       },
       {
         "name": "onopen",
-        "type": "()=>void",
+        "type": "() => void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
@@ -4185,7 +4233,15 @@
       },
       {
         "name": "ondismiss",
-        "type": "()=>void",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onpause",
+        "type": "(paused: boolean) => void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
@@ -4200,6 +4256,40 @@
         "nullable": false,
         "defaultSource": "'Dismiss message'",
         "defaultValue": "Dismiss message"
+      },
+      {
+        "name": "actor",
+        "type": "{ username: string; avatar: string | null }",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "media",
+        "type": "ToastArtwork",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "stampId",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "rich",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },

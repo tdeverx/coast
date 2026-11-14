@@ -63,7 +63,7 @@ test('broadcast pages settings and batch writes without per-recipient queries or
  }finally{delete globals[boundary];}
 });
 
-test('shared preparation preserves silence, locked levels, social preferences, missing users and sequential source upserts',async()=>{
+test('shared preparation presents delivered notices as toasts while retaining category preferences and sequential upserts',async()=>{
  const f=fixture(4);
  try{
   f.users.get(id(1))!.settings={notificationsSilenced:true};
@@ -80,7 +80,7 @@ test('shared preparation preserves silence, locked levels, social preferences, m
   ];
   const result=await module.notifyMany(inputs);
   expect(result).toHaveLength(5);expect(result[3]).toBe(result[4]);
-  expect([...f.rows.values()].map(row=>[row.title,row.level,row.locked])).toEqual([['Silent','silent',false],['Locked','normal',true],['Persistent','persistent',false],['After','normal',false]]);
+  expect([...f.rows.values()].map(row=>[row.title,row.level,row.locked])).toEqual([['Silent','normal',false],['Locked','persistent',true],['Persistent','persistent',false],['After','normal',false]]);
   expect(f.counts.policy).toBe(1);expect(f.counts.reads).toBe(1);
   f.setPolicy({allowNotificationSilencing:false,notificationLevel:'normal'});
   await module.notify({userId:id(1),kind:'administrator',title:'Policy',sourceKey:'policy'});

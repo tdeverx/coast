@@ -100,11 +100,9 @@
     return () => clearInterval(timer);
   });
 </script>
-{#if page.data.developerMode}<p class="notice" role="status">Developer mode: automatic jobs are paused. Run or Retry to start work explicitly.</p>{/if}
-
 <div class="stack jobs">
   <TaskControlRecovery {commands} />
-  <Heading title="Queue">
+  <Heading title="Queue" description={page.data.developerMode ? 'Developer mode pauses automatic jobs. Use Run or Retry to start work.' : undefined}>
     {#snippet actions()}<RowFilter groups={[
       { label: 'Job service', value: service, options: [
         { value: 'all', label: 'All services' },

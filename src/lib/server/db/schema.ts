@@ -64,7 +64,7 @@ export type UserSettings = {
   subtitlesAlways?: boolean;
   subtitlePrompt?: boolean;
   notificationsSilenced?: boolean;
-  notificationLevel?: 'silent' | 'normal' | 'persistent';
+  notificationLevel?: 'silent' | 'normal' | 'persistent' | null;
 };
 
 export const users = pgTable(

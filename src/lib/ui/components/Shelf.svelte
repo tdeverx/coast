@@ -40,6 +40,7 @@
 
   const { api, change, preview } = useClient();
   const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
+  reportFailure(() => sequence.error);
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', mixed = false, overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
@@ -152,7 +153,7 @@
   const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
   const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
   // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
-  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && !adapter?.notice && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
+  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
@@ -217,7 +218,7 @@
   reportFailure(()=>({text:displayError,retry:adapter ? continuation.retry : retry}));
 </script>
 
-{#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
+{#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} actions={sequence.actions} />{/if}
 {#snippet menuActions()}
   {#if adapter?.sequence}<Button item text="Play playlist" icon="play" disabled={sequence.busy} onclick={() => sequence.start()} />{/if}
   {#each adapter?.actions ?? [] as action}<Button item text={action.label} onclick={action.run} />{/each}
@@ -315,7 +316,6 @@
       bind:overrideOverlay={rail.overrideOverlay}
     />{/if}
 
-  {#if adapter?.notice}<p class="small muted">{adapter.notice}</p>{/if}
   {@render before?.()}
   {#if displayLayout==='grid' && displayHasPrevious}<div class="load-more"><Button emphasis="subtle" disabled={displayBusy} onclick={()=>rail.loadPrevious()}>Load previous titles</Button></div>{/if}
   <div class="rail-shell" class:mixed-shell={displayMixed}>

@@ -4,17 +4,18 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 let script=await componentScript('src/lib/ui/components/NotificationToasts.svelte');
 const start=script.indexOf('let { notifications'),end=script.indexOf('= $props();',start)+'= $props();'.length;
-script=script.slice(0,start)+'let notifications=$state.raw(initial),initialFailure;'+script.slice(end);
-const source=`import {createNotificationToasts} from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))};export function create(initial,client,ApiError){const mounts=[];const onMount=run=>mounts.push(run),useClient=()=>client,refreshAfterChange=async()=>{};${script}
+script=script.slice(0,start)+'let notifications=$state.raw(initial),initialFailure,rich=false;'+script.slice(end);
+const source=`import {createNotificationToasts} from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))};export function create(initial,client,ApiError){const mounts=[];const onMount=run=>mounts.push(run),useClient=()=>client,refreshAfterChange=async()=>{},inboxToasts=()=>{},document={visibilityState:'visible',addEventListener(){},removeEventListener(){}};client.feedback.showNotifications=()=>()=>{};client.feedback.clearAll=client.feedback.clear;${script}
  return {mount(){return mounts[0]();},replace(next){notifications=next;},dismiss(id){toasts.dismiss(notifications.find(n=>n.id===id));},retry(){return toasts.retry();},get visible(){return visible;}};}`;
 const {create}=await import(moduleUrl(compileRunes(source)));
 const settle=async()=>{for(let i=0;i<5;i++){runtime.flush();await Promise.resolve();}};
-test('compiled notification host updates are finite, preserve initial hiding and fence unmounted writes',async()=>{
+test('compiled notification host updates show older arrivals and fence unmounted writes',async()=>{
  const calls:{path:string;body:any;reject:()=>void}[]=[];const failures:string[]=[];let owner:any,cleanup:()=>void;
  const client={preview:false,api:(path:string,body:any)=>new Promise((_yes,reject)=>calls.push({path,body,reject:()=>reject(Error('Late failure'))})),feedback:{activeHost:null,current:null,failure:(text:string)=>failures.push(text),clear:()=>{}}};
  const old={id:'old',title:'Notice',body:null,level:'normal',readAt:null,toastHiddenAt:null,createdAt:new Date(0)};
  const dispose=runtime.effect_root(()=>{owner=create([old],client);});runtime.flush();cleanup=owner.mount();await settle();
- expect(owner.visible).toEqual([]);expect(calls.map(c=>c.path)).toEqual(['notifications/toast-hidden']);expect(calls[0].body).toEqual({ids:['old']});
+ expect(owner.visible.map((n:any)=>n.id)).toEqual(['old']);expect(calls).toHaveLength(0);
+ owner.dismiss('old');expect(calls.map(c=>c.path)).toEqual(['notifications/toast-hidden']);expect(calls[0].body).toEqual({ids:['old']});
  owner.replace([{...old,id:'arrival',createdAt:new Date()}]);await settle();expect(owner.visible.map((n:any)=>n.id)).toEqual(['arrival']);
  cleanup();dispose();calls[0].reject();await settle();expect(failures).toEqual([]);expect(calls).toHaveLength(1);
 });

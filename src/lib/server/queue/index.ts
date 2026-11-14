@@ -465,7 +465,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
                   ? 'An external action needs attention'
                   : 'Waiting for a connected service',
                 body: message,
-                level: 'normal',
+                level: permanent ? 'persistent' : 'normal',
                 sourceKey: `outbox:${action.id}`,
                 data:{actorId:action.userId,subjectId:action.id,destination:'/settings/jobs'},
               },

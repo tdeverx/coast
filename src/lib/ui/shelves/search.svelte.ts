@@ -18,9 +18,7 @@ export type SearchOptions = {
   onKindChange?: (value: string) => void;
   busy?: boolean;
   failure?: string;
-  truncated?: boolean;
   mediums?: Partial<MediumFeatures>;
-  notice?: string;
 };
 
 /** Both search rows share the same finite, lazy shelf and media-type controls. */
@@ -54,7 +52,6 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
     actions: [],
     rows: 1,
     get resetKey() { return `${options.query}:${options.view ?? 'all'}:${kind}`; },
-    get notice() { return options.notice || (options.truncated ? 'Refine your search for more results.' : ''); },
     get empty() { return options.bucket === 'available' ? 'No available titles match this search.' : 'No unavailable titles match this search.'; },
     load: async () => refreshRouteDependencies(['tracking', 'reading', 'providers']),
   };

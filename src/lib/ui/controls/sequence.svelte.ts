@@ -25,21 +25,23 @@ export function createSequencePlayback(options: {
       if (source.kind === 'collection' && restart)
         await options.change('rewatch', { mediaId: source.id, startedAt: new Date().toISOString() });
       const result = await options.api<{next: MediaView | null}>(sequencePath(source, {after, from: options.from?.()}), undefined, 'GET');
-      next = result.next;
-      if (next?.available) {
-        await playMedia(next.id, {sequence: next.sequence, continuationId: source.kind === 'collection' ? source.id : undefined});
+      if (result.next?.available) {
+        await playMedia(result.next.id, {sequence: result.next.sequence, continuationId: source.kind === 'collection' ? source.id : undefined});
         open = false;
-      } else open = true;
-    } catch (cause) {error = message(cause); open = true;}
+      } else {
+        next = result.next;
+        open = true;
+      }
+    } catch (cause) {error = message(cause);}
     finally {busy = false;}
   }
   return {
     start, get error() {return error;}, get busy() {return busy;}, get open() {return open;}, set open(value: boolean) {open = value;},
-    get title() {return error ? 'Playback unavailable' : next ? 'Next item unavailable' : 'Sequence complete';},
-    get message() {return error || (next ? `${next.title} is next in this sequence, but is not available to play.` : 'Every item has been watched. Start again without changing your history.');},
+    get title() {return next ? 'Next item unavailable' : 'Sequence complete';},
+    get message() {return next ? `${next.title} is next in this sequence, but is not available to play.` : 'Every item has been watched. Start again without changing your history.';},
     get actions() {
       return [
-        ...error ? [] : next ? [
+        ...next ? [
           {text: 'Skip this item', disabled: busy, onclick: () => start(false, next!.sequence!.entryId)},
           {text: 'View details', href: `/media/${next.id}`},
         ] : [{text: 'Start again', disabled: busy, onclick: () => start(true)}],

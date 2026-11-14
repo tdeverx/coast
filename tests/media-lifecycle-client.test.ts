@@ -17,15 +17,16 @@ async function loadClient(kind:'reading'|'playback'){
  const model=import.meta.resolve('../src/lib/reading/model.ts');
  const filename=kind==='reading'?'../src/lib/reading/client.svelte.ts':'../src/lib/playback/client.svelte.ts';
  const source=await Bun.file(new URL(filename,import.meta.url)).text();
+ const feedbackUrl=moduleUrl(`export const notices=[];export const notifyAction=text=>notices.push(text); // ${unique}`);
  const code=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:`${kind}.svelte.js`,generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
   .replaceAll('#lib/ui/client.js',transportUrl).replaceAll('#lib/ui/diagnostics.js',moduleUrl('export const browserDiagnostic=()=>{};'))
-  .replaceAll('#lib/ui/action-feedback.svelte.js',moduleUrl('export const notifyAction=()=>{};'))
+  .replaceAll('#lib/ui/action-feedback.svelte.js',feedbackUrl)
   .replaceAll('#lib/playback/synced/client.svelte.js',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
   .replaceAll('#lib/playback/client.svelte.js',playbackUrl).replaceAll('#lib/reading/client.svelte.js',readingUrl)
   .replaceAll('#lib/playback/stop.js',import.meta.resolve('../src/lib/playback/stop.ts'))
   .replaceAll('./model',model);
- return {client:await import(moduleUrl(code)),transport:await import(transportUrl),sync:await import(syncUrl),playback:await import(playbackUrl),reading:await import(readingUrl)};
+ return {client:await import(moduleUrl(code)),transport:await import(transportUrl),sync:await import(syncUrl),playback:await import(playbackUrl),reading:await import(readingUrl),feedback:await import(feedbackUrl)};
 }
 const readingSession=(id:string)=>({id,workId:'book',title:'Book',format:'pdf',edition:'edition',location:{format:'pdf',page:50,total:100},source:'jellyfin',url:'/file'});
 const input={connectionId:'connection',externalId:'external'};
@@ -264,10 +265,10 @@ test('new playback waits for a detached previous save and cancellation prevents 
 
 test('an unsaved Stop is not treated as an unavailable music track or skipped through the queue',()=>withDocument(async()=>{
  const {PlaybackSavePending}=await import('../src/lib/playback/stop');
- const {client:c,transport:t}=await loadClient('playback');let waits=0;
+ const {client:c,transport:t,feedback}=await loadClient('playback');let waits=0;
  c.registerPlaybackController({stop:async()=>{},waitForStop:async()=>{waits++;throw new PlaybackSavePending();},resume:async()=>{},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});
  await expect(c.playMusicQueue({items:[{id:'first',title:'First',availability:'available'},{id:'second',title:'Second',availability:'available'}],continueId:null})).rejects.toBeInstanceOf(PlaybackSavePending);
- expect(waits).toBe(1);expect(t.calls).toHaveLength(0);expect(c.player.audioIndex).toBe(0);expect(c.player.audioNotice).toBe('');
+ expect(waits).toBe(1);expect(t.calls).toHaveLength(0);expect(c.player.audioIndex).toBe(0);expect(feedback.notices).toEqual([]);
 }));
 
 for(const savedQueue of [false,true])test(`Stop fences a late ${savedQueue?'saved queue':'music work'} lookup before it can restart playback`,()=>withDocument(async()=>{

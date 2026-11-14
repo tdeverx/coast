@@ -57,13 +57,16 @@
     backgroundArtwork: scenario === 'activity' ? movie.backdrop ?? undefined : undefined,
     activity: scenario === 'activity' ? { label: 'Watching', title: 'Preview series — S01E03', href: '#', artwork: movie.backdrop ?? undefined, progress: .35 } : undefined,
   })));
-  const toastNotices = $derived(Array.from({ length: scenario === 'multiple' ? 3 : 1 }, (_, index) => ({
-    id: `preview-toast-${index}`,
+  const toastNotices = $derived((scenario === 'multiple' ? [
+    {kind:'synced-invite', title:'Invited you to a party', body:'Watch party · 20:00', actor:{username:'Alice',avatar:null}, media:movie, level:'normal'},
+    {kind:'administrator', title:'Scheduled maintenance', body:'Playback may pause during the server update.', level:'persistent'},
+    {kind:'external-action', title:'Trakt needs attention', body:'Reconnect to resume activity sync.', level:'persistent'},
+  ] as const : [{
+    kind:'availability',
     title: scenario === 'long' ? 'A longer notification title that remains readable on a narrow screen' : 'Your title is ready',
     body: scenario === 'long' ? 'This synthetic notification demonstrates wrapping without using a real account, provider or viewing history.' : 'Available from your connected library.',
     level: scenario === 'normal' ? 'normal' as const : 'persistent' as const,
-    readAt: null, toastHiddenAt: null, createdAt: new Date().toISOString(),
-  })));
+  }]).map((notice,index) => ({...notice,id:`preview-toast-${index}`,readAt:null,toastHiddenAt:null,createdAt:new Date().toISOString()})));
 
   let FriendsPanel = $state<typeof import('#lib/ui/components/FriendsPanel.svelte').default>();
   let NotificationInbox = $state<typeof import('#lib/ui/components/NotificationInbox.svelte').default>();
@@ -104,7 +107,7 @@
     <Button onclick={() => open = true}>Open streams example</Button>
     {#if StreamsPanel}<StreamsPanel bind:open initialView={scenario === 'history' ? 'history' : 'now'} />{/if}
   {:else if name === 'NotificationToasts'}
-    {#if NotificationToasts}<NotificationToasts notifications={toastNotices} />{/if}
+    {#if NotificationToasts}<NotificationToasts notifications={toastNotices} rich />{/if}
     <p class="small quiet">Notifications appear in their normal fixed position. Dismissal uses the isolated preview transport.</p>
   {:else if name === 'FriendRoster'}
     <div class="panel-example">

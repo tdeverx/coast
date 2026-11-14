@@ -21,7 +21,7 @@ test('notification preference reads retain policy, duplicate-key flush and same-
   {userId:id,kind:'sync',title:'Second',sourceKey:'same',locked:true},
  ],database)).toEqual([id,id]);
  expect(events).toEqual(['config','preferences','write','write']);
- expect(writes[0]).toContain('silent');expect(writes[1]).toContain('normal');
+ expect(writes[0]).toContain('normal');expect(writes[1]).toContain('persistent');
  expect(writes.flat()).not.toContain('Suppressed');
 });
 

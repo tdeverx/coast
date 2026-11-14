@@ -166,10 +166,6 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
       return `/for-you?${params}`;
     },
 
-    get notice() {
-      return undefined;
-    },
-
     get items() {
       return enabled() && resource.data.scope === selectionKey ? resource.data.items : [];
     },

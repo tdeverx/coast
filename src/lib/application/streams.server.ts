@@ -11,7 +11,7 @@ import {workCards} from '#lib/collection/query.server.js';
 import {profilePath} from '#lib/profile/url.js';
 import type {MediaView,MediaCardPresentation,MediaCardDisplay} from '#lib/ui/types.js';
 type Stream=NonNullable<ReturnType<typeof streamPresentation>>;
-export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
+export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];scanning:boolean;checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
 /** Resolve a whole server's streams in bounded batches; never fetch artwork directly from private server URLs. */
 export async function streamCards<T extends Stream>(userId:string,instanceId:string,streams:T[]){
  if(!streams.length)return [];
@@ -49,9 +49,17 @@ export async function streamCount(actor:SessionUser|null){
 const querySchema=v.object({view:v.optional(v.picklist(['now','history']),'now'),before:v.optional(v.pipe(v.string(),v.check(value=>{const [date,id,...rest]=value.split('|');return !rest.length&&v.safeParse(v.pipe(v.string(),v.isoTimestamp()),date).success&&v.safeParse(v.pipe(v.string(),v.uuid()),id).success;})))});
 export async function activeStreams(actor:SessionUser|null,input:unknown={}):Promise<StreamsSnapshot>{
  const user=requireAdmin(actor),query=v.parse(querySchema,input),sources=await streamSources(),sql=getSql();
- const snapshot:StreamsSnapshot={streams:[],issues:[],checkedAt:null,nextCursor:null,view:query.view};
+ const snapshot:StreamsSnapshot={streams:[],issues:[],scanning:false,checkedAt:null,nextCursor:null,view:query.view};
  snapshot.streams.push(...await readingStreamRows(user.id,query.view,query.before));
- for(const source of sources)if(!fresh(source))snapshot.issues.push({server:source.name,message:source.last_error??(!source.eligible?'Choose a connected Jellyfin administrator in the Server streams job schedule.':source.job_state==='failed'?'The server scan failed. Retry Server streams in Jobs.':!source.checked_at?(source.job_state==='running'?'Scanning server streams.':source.job_state==='pending'?'Server scan queued.':'No server scan has completed. Run Server streams in Jobs.'):'Waiting for the next server scan. Previous observations may be stale.')});
+ for(const source of sources){
+  if(fresh(source))continue;
+  if(source.eligible&&!source.last_error&&!source.checked_at&&(source.job_state==='pending'||source.job_state==='running')){
+   snapshot.scanning=true;
+   continue;
+  }
+  const message=source.last_error??(!source.eligible?'Choose a connected Jellyfin administrator in the Server streams job schedule.':source.job_state==='failed'?'The server scan failed. Retry Server streams in Jobs.':!source.checked_at?'No server scan has completed. Run Server streams in Jobs.':'Waiting for the next server scan. Previous observations may be stale.');
+  snapshot.issues.push({server:source.name,message});
+ }
  const ids=sources.filter(source=>query.view==='history'||source.valid).map(source=>source.id);
  if(!sources.length)snapshot.issues.push({server:'Jellyfin',message:'Connect a Jellyfin administrator account to record server streams.'});
  const shared=await sharedStreamRows(query.view,query.before);

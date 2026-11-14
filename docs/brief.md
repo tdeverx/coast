@@ -681,18 +681,18 @@ Use PostgreSQL row locking and an outbox/job model. Do not add Redis or another 
 
 Maintain a persistent per-user notification inbox.
 
-Notification presentation levels:
+Every delivered notification appears as a toast and is available in the inbox.
 
-- Silent: inbox only
-- Normal: temporary toast plus inbox
-- Persistent: requires dismissal
+- Ordinary updates dismiss automatically after seven seconds. Hover, keyboard focus and switching tabs pause dismissal.
+- Important notices and permanent connected-service failures stay until dismissed or resolved.
+- Action feedback with Retry or Undo stays available. Routine confirmations dismiss automatically.
 
 Administrators may:
 
 - control defaults
 - send important notices
-- prevent a particular notice from being silenced
-- disable user silencing globally if needed
+- mark a notice as important
+- allow users to set their own toast duration for ordinary updates
 
 Relevant notifications include:
 

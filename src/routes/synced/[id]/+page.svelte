@@ -10,6 +10,6 @@
 <svelte:head><title>Synced session · Coast</title></svelte:head>
 <Heading title="Synced session" variant="page" />
 <div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p>
-  {#if data.room.ended}<p class="notice">This session has ended.</p>{:else}<Button disabled={syncedPlayer.busy} onclick={join}>{syncedPlayer.busy?'Preparing your source…':'Join session'}</Button>{/if}
+  {#if data.room.ended}<p>This session has ended.</p>{:else}<Button disabled={syncedPlayer.busy} onclick={join}>{syncedPlayer.busy?'Preparing your source…':'Join session'}</Button>{/if}
 
 </div>

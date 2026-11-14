@@ -4,6 +4,8 @@
   import {onDestroy,tick} from 'svelte';
   import Button from './Button.svelte';
   import Toast from './Toast.svelte';
+  import { temporaryFeedback } from '#lib/ui/action-feedback.svelte.js';
+  import { raiseToastStack } from '#lib/ui/controls/notification-toasts.js';
   import { useClient } from '#lib/ui/client-context.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   import type { ComponentProps } from 'svelte';
@@ -249,14 +251,17 @@
       {@render floating?.()}
     </div>
   {:else}{@render dialogHeading()}{@render dialogContent()}{@render footer?.()}{/if}
-  {#if feedback.activeHost === hostId && feedback.current}
-    <div class="dialog-feedback"><Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} actionLabel={feedback.current.undo?'Undo':feedback.current.actionLabel??'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} /></div>
+  {#if feedback.activeHost === hostId && (feedback.current || feedback.notifications)}
+    <div class="toasts" popover="manual" use:raiseToastStack>
+      {#if feedback.notifications}{@render feedback.notifications()}
+      {:else if feedback.current}{#key feedback.current}
+        <Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} persistent={!temporaryFeedback(feedback.current)} autoDismiss={temporaryFeedback(feedback.current)} actionLabel={feedback.current.undo?'Undo':feedback.current.actionLabel??'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} dismissLabel="Dismiss action feedback" />
+      {/key}{/if}
+    </div>
   {/if}
 </svelte:element>
 
 <style>
-  .dialog-feedback {position:sticky;bottom:0;z-index:2;flex:none;margin-top:16px;}
-  .notification-popover > .dialog-feedback {margin:0;padding:12px 16px;}
   .dialog {
     color: var(--ink);
     border-radius: 12px;

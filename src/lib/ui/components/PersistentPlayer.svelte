@@ -716,7 +716,6 @@
         {#if page.data.experimentalParties&&!sharedMode}<Button item icon="party" disabled={partyBusy} onclick={()=>syncControls?.show()}>{partyRoom?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
           <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>{if(!preview)void playSavedMusicQueue().catch(cause=>error=message(cause));}}>Play saved music queue</Button>
-          {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}
           <Button menu label="Queue" icon="list" upward panel>
             {#each player.audioQueue as entry, index}
               <Button item selection="radio" checked={index === player.audioIndex} disabled={followingHost||entry.availability !== 'available'} disabledReason={followingHost?'Playback is controlled by the host':entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}

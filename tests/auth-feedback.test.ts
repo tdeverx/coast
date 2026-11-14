@@ -7,6 +7,11 @@ async function serverComponent(path:string){
   .replaceAll('svelte/internal/server',import.meta.resolve('svelte/internal/server'));
 }
 const toast=moduleUrl((await serverComponent('src/lib/ui/components/Toast.svelte'))
+ .replace(/from (['"])#lib\/ui\/controls\/notification-toasts\.js\1/,`from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))}`)
+ .replace(/import \{ cardArtwork \} from ['"].*?['"];?/,"const cardArtwork=()=>({candidates:[]});")
+ .replace(/import \{ liquidGlass \} from ['"].*?['"];?/,"const liquidGlass=()=>{};")
+ .replace(/import (Avatar|MediaCard) from ['"].*?['"];?/g,"const $1=()=>{};")
+ .replace(/import Icon from ['"].*?['"];?/,"const Icon=()=>{};")
  .replace(/import Button from ['"].*?['"];?/,"const Button=()=>{throw Error('Server fallback must not depend on interactive controls');};"));
 // Keep the production error class and controller without importing Kit's browser
 // navigation owner. SSR must never invoke persistence, refresh or interactive UI.
@@ -17,6 +22,7 @@ const client=moduleUrl(new Bun.Transpiler({loader:'ts'}).transformSync(clientSou
  "export function refreshAfterChange(){throw Error('Server feedback must not refresh routes');}");
 const host=await serverComponent('src/lib/ui/components/NotificationToasts.svelte');
 const {default:NotificationToasts}=await import(moduleUrl(host
+ .replace(/import \{ temporaryFeedback \} from ['"].*?['"];?/,"const temporaryFeedback=()=>false;")
  .replace(/import \{ openNotifications \} from ['"].*?['"];?/,"const openNotifications=()=>{};")
  .replace(/import \{ useClient \} from ['"].*?['"];?/,"const useClient=()=>({preview:false,api:()=>{throw Error('Server feedback must not persist notifications');},feedback:{activeHost:null,current:null}});")
  .replace(/from (['"])#lib\/ui\/client\.js\1/,`from ${JSON.stringify(client)}`)
@@ -24,7 +30,7 @@ const {default:NotificationToasts}=await import(moduleUrl(host
  .replace(/import Toast from ['"].*?['"];?/,`import Toast from ${JSON.stringify(toast)};`)));
 test('native form failures render the existing toast before hydration without requiring JavaScript',()=>{
  const html=render(NotificationToasts,{props:{notifications:[],initialFailure:'Check your username and password.'}}).body;
- expect(html).toContain('class="toasts');expect(html).toContain('toast solid-surface');expect(html).toContain('role="alert"');
+ expect(html).toContain('class="toasts');expect(html).toContain('solid-surface');expect(html).toContain('role="alert"');
  expect(html).toContain('Check your username and password.');expect(html).not.toContain('<button');
 });
 test('server auth feedback escapes errors and normal initial pages have no empty toast',()=>{

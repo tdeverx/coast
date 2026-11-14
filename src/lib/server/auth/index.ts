@@ -344,7 +344,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
         sanitizeOddReadingPages: v.boolean(),
         region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
         theme: v.optional(v.picklist(['dark', 'light', 'system'])),
-        notificationLevel: v.optional(v.picklist(['silent', 'normal', 'persistent'])),
+        notificationLevel: v.nullable(v.picklist(['normal', 'persistent'])),
         notificationsSilenced: v.boolean(),
         subtitleLanguages: v.array(v.string()),
         subtitlesAlways: v.boolean(),
