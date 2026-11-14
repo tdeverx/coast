@@ -38,8 +38,8 @@ export const fixtureFetch: import('#lib/ui/client.js').ApiTransport = async (inp
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
     if(path.endsWith('/sharing')&&url.searchParams.get('active')==='true')return Response.json([
-      {id,target:'vrchat',title:'The Expanse',expiresAt:new Date(Date.now()+3600000).toISOString(),viewers:2,card:episode},
-      {id:show.id,target:'website',title:'Preview title',expiresAt:new Date(Date.now()+7200000).toISOString(),viewers:0,card:movie},
+      {id,target:'vrchat',title:'The Expanse',expiresAt:new Date(Date.now()+3600000).toISOString(),viewers:2,card:episode,canCopy:true},
+      {id:show.id,target:'website',title:'Preview title',expiresAt:new Date(Date.now()+7200000).toISOString(),viewers:0,card:movie,canCopy:true},
     ]);
     if(/\/social\/works\/[^/]+\/friends$/.test(path))return Response.json({items:url.searchParams.get('filter')==='lists'?[]:[{id,kind:'person',title:'Alice',href:'/profile/Alice',poster:'/coast-mark.png',captionSubtitle:'4 / 5'}],page:1,pages:1,total:1});
     if(path.endsWith('/social/friends'))return Response.json(url.searchParams.get('state')==='pending'?[]:[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop}]);
@@ -102,7 +102,7 @@ export function createPreviewTransport(name: string, scenario: string): import('
           return Response.json({stopped:linkId==='preview-share'?2:1});
         }
       }
-      if (name === 'sharing.action' && path === 'sharing' && method === 'POST') { sharingCreated = true; return Response.json({id, token: 'preview-only-not-a-real-link'}); }
+      if (name === 'sharing.action' && path === 'sharing' && method === 'POST') { sharingCreated = true; return Response.json({id, token: 'preview-only-not-a-real-link', target:'website'}); }
       if (path === `sharing/${id}` && method === 'DELETE' && sharingCreated) { sharingCreated = false; return Response.json({ok: true}); }
       if (path === 'planning' && method === 'POST') return Response.json({id});
       if (name === 'admin.benchmark' && path === 'admin/benchmarks' && method === 'POST') { benchmarkQueued = true; return Response.json({queued:1, activeId:id}); }

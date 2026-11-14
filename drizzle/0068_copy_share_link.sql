@@ -1,0 +1,1 @@
+ALTER TABLE "playback_shares" ADD COLUMN "encrypted_token" text;
