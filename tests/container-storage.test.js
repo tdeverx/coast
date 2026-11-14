@@ -33,7 +33,7 @@ async function fixture(options = {}) {
   await shim('id', `
 case "$*" in
   '-u coast') printf '%s\\n' "$(/usr/bin/id -u)" ;;
-  '-u postgres') printf '%s\\n' "${options.postgresUid ?? 5432}" ;;
+  '-u postgres'|'-g postgres') printf '%s\\n' "${options.postgresUid ?? 5432}" ;;
   *) exec /usr/bin/id "$@" ;;
 esac`);
   await shim('gosu', 'user="$1"; shift; exec "$@"');

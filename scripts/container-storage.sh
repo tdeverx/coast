@@ -85,8 +85,10 @@ prepare_coast_storage() {
 }
 
 prepare_postgres_storage() {
-  local pg_data="$1" socket_dir="${2:-/var/run/postgresql}" expected_uid actual_uid
+  local pg_data="$1" socket_dir="${2:-/var/run/postgresql}" expected_uid expected_gid actual_uid
   expected_uid="$(id -u postgres)" || storage_error 'the bundled PostgreSQL user is missing from the image.'
+  expected_gid="$(id -g postgres)" || storage_error 'the bundled PostgreSQL group is missing from the image.'
+  [[ ! -L "$pg_data" ]] || storage_error 'the PostgreSQL data directory must not be a symbolic link.'
   if ! mkdir -p -- "$pg_data" "$socket_dir"; then
     storage_error "bundled PostgreSQL cannot create its data or socket directory. Use a POSIX-compatible managed volume or set DATABASE_URL to an external PostgreSQL database."
   fi
@@ -104,6 +106,29 @@ prepare_postgres_storage() {
   actual_uid="$(path_uid "$pg_data")" || postgres_storage_error "cannot verify the owner of $pg_data."
   [[ "$actual_uid" == "$expected_uid" ]] || postgres_storage_error "bundled PostgreSQL data at $pg_data must be owned by UID $expected_uid."
   write_probe postgres "$pg_data" 'PostgreSQL data directory'
+
+  # The installation lock is held by the entrypoint. Check a cluster file
+  # because earlier images could change PGDATA's owner before failing to boot.
+  if [[ -f "$pg_data/PG_VERSION" ]]; then
+    local version_owner
+    version_owner="$(stat -c '%u:%g' -- "$pg_data/PG_VERSION")" ||
+      postgres_storage_error "cannot verify the owner of $pg_data/PG_VERSION."
+    if [[ "$version_owner" != "$expected_uid:$expected_gid" ]]; then
+      local linked_path
+      linked_path="$(find "$pg_data" -xdev -type l -print -quit)" ||
+        postgres_storage_error "cannot inspect $pg_data for linked files."
+      [[ -z "$linked_path" ]] ||
+        storage_error 'bundled PostgreSQL ownership repair requires cluster files on the managed volume without symbolic links.'
+
+      # Change PG_VERSION last so an interrupted repair is retried on restart.
+      if ! find "$pg_data" -xdev ! -path "$pg_data/PG_VERSION" \
+          \( ! -uid "$expected_uid" -o ! -gid "$expected_gid" \) \
+          -exec chown -h postgres:postgres -- {} + ||
+        ! chown -h postgres:postgres -- "$pg_data/PG_VERSION"; then
+        postgres_storage_error "cannot update bundled PostgreSQL cluster ownership at $pg_data."
+      fi
+    fi
+  fi
 
   if ! chown postgres:postgres -- "$socket_dir" 2>/dev/null; then
     actual_uid="$(path_uid "$socket_dir")" || actual_uid='unknown'
@@ -131,6 +156,7 @@ bundled_postgres_directory() {
 
 check_bundled_postgres_version() {
   local data_dir="$1" version pg_data
+  [[ ! -L "$data_dir/postgres" ]] || storage_error 'the PostgreSQL data directory must not be a symbolic link.'
   if [[ -e "$data_dir/postgres-upgrade/in-progress" ]]; then
     storage_error 'PostgreSQL upgrade is incomplete. See docs/postgresql-17.md for recovery; startup will not initialise or select a cluster.'
   fi
