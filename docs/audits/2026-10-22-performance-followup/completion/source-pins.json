@@ -6,21 +6,21 @@
     "bun.lock": "fc7164647ca9e37fe87f611386cafb88bebc3ee4550c115762dd19b18e77c270",
     "scripts/performance-finalization.ts": "7fe327d03418375830ad0f066b850e7ab1033cf1e019ca2f1cb276d22e887318",
     "scripts/performance-followup.ts": "5a265db6f5dafe1dd8687427660b235dcf1808afab1f57e8fd8e05ba3cd74177",
-    "src/lib/collection/query.server.ts": "c280664474fc359e8a0ad272a44ea7444e2d096accd2474cffd74df62465a0d7",
+    "src/lib/collection/query.server.ts": "bf5d142bdfd6cb3b7900677e7492090aaa26d2d7e656e9942a87c41bbed6a7b6",
     "src/lib/core/lists/up-next.server.ts": "a87aa45ddae6d0fd8291779b284bf8b715e521433f3d66908d3a0082b2135cea",
     "src/lib/core/tracking/continue.server.ts": "578abbae1361d0768e8dc94c613df9a0b78219761ba0621c2462f5ba7b6ecd3d",
     "src/lib/server/db/index.ts": "be6092501410e2c0b0f0a325af3294853fd27729809fa8a987a8b1344dfdc616",
     "src/lib/server/db/read-cancellation.ts": "36deac25514f0935352aee0e14aeb217005d3479aa6161b1b6840b849b792c96",
     "src/lib/server/queries/library.ts": "7b2851d9a66923e61924f643f1e9836e82fdcf95d44c7a189ba3d4d89e0bbba2",
-    "src/lib/server/queries/media.ts": "771fd1450dd6c3a465e3b6e9037cd607f3b95c2de241f08a366bc5ada6980803",
-    "src/lib/server/queries/progress-experiment.ts": "81bf0b8691d404bbd98a07dfa358f1a6592370f253e174fcaaca2e330ed9f69c",
-    "src/lib/server/queries/recent-library.ts": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
+    "src/lib/server/queries/media.ts": "98985e74762282181898e79cec85fe8fa71535f169bc476ea97580679d077be3",
+    "src/lib/server/queries/progress-experiment.ts": "7fab26f9e7cbca1fa87d530688abee96696cc149d463da630e675d3fa4a5b2aa",
+    "src/lib/server/queries/recent-library.ts": "5820ad913709a5c0d746856f4ad1a3e0d26df2018e3008eafaaec5f6a527eca8",
     "src/lib/server/queue/index.ts": "102247c71ed4685740c9fd2d5064e3b42744574bbe28cdc6b976a79b93bd203a",
     "src/lib/server/security/provider-fetch.ts": "042953d7f52e8aa1d0c074d823f6365999fa2831dcd3e079859b63b619ab4007",
     "src/lib/server/security/request-priority.ts": "fd5aef78cfd19bec3a25e65900e1642704cd782995f4d7b8750b5caf37bb3a01",
     "src/lib/sync/jellyfin-finalization.server.ts": "ed1e49637748e2722281a910787d3a1741647f69328cec697fb0b9abed029c6d",
     "src/lib/sync/jellyfin-progress.ts": "907052593e78b505e4f57f886aa04191ea1437d97912cef417caa36f1183dcdb",
-    "src/lib/sync/jellyfin.server.ts": "0091dfaf36109697e95ec62b003a2e91a2d7d1e5719c71d5a44b377d1b59a258",
+    "src/lib/sync/jellyfin.server.ts": "69e08b76d2d71f16afa0099bfb98c2e59ed22299473803cfec0746d26af54d37",
     "src/lib/ui/lazy-image.ts": "5d62b4e49ae29a54a5ce91d68dff1c982808fe289f94601d5888ca5720b2e529",
     "src/lib/ui/shelves/library.svelte.ts": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
@@ -346,6 +346,33 @@
         }
       ],
       "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
+    },
+    {
+      "epoch": "aired-progress-and-library-recency-2026-11-14",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/aired-progress-and-library-recency-2026-11-14.json",
+      "changes": [
+        {
+          "path": "src/lib/collection/query.server.ts",
+          "previousSha256": "c280664474fc359e8a0ad272a44ea7444e2d096accd2474cffd74df62465a0d7",
+          "currentSha256": "bf5d142bdfd6cb3b7900677e7492090aaa26d2d7e656e9942a87c41bbed6a7b6"
+        },
+        {
+          "path": "src/lib/server/queries/media.ts",
+          "previousSha256": "771fd1450dd6c3a465e3b6e9037cd607f3b95c2de241f08a366bc5ada6980803",
+          "currentSha256": "98985e74762282181898e79cec85fe8fa71535f169bc476ea97580679d077be3"
+        },
+        {
+          "path": "src/lib/server/queries/recent-library.ts",
+          "previousSha256": "baca12fc56c03863e1fb50cf21bece7a4a16b3e687b84738c11c697f6534b492",
+          "currentSha256": "5820ad913709a5c0d746856f4ad1a3e0d26df2018e3008eafaaec5f6a527eca8"
+        },
+        {
+          "path": "src/lib/sync/jellyfin.server.ts",
+          "previousSha256": "0091dfaf36109697e95ec62b003a2e91a2d7d1e5719c71d5a44b377d1b59a258",
+          "currentSha256": "69e08b76d2d71f16afa0099bfb98c2e59ed22299473803cfec0746d26af54d37"
+        }
+      ],
+      "note": "Verified the current progress and library read contracts on an isolated actual copy, with authored source-ordering and playback eligibility cases. Historical measurements retain their original source fingerprints."
     }
   ]
 }

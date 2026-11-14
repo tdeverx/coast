@@ -48,7 +48,7 @@ run('a saved season and continuing episodes select their show while the shelf re
   const show = crypto.randomUUID(), season = crypto.randomUUID(), episodes = [crypto.randomUUID(), crypto.randomUUID()];
   await db.insert(s.media).values([
     { id: show, kind: 'show', title: 'Hero show' }, { id: season, kind: 'season', title: 'Season one' },
-    ...episodes.map((id, index) => ({ id, kind: 'episode' as const, title: `Episode ${index + 1}` })),
+    ...episodes.map((id, index) => ({ id, kind: 'episode' as const, title: `Episode ${index + 1}`, releaseDate: '2020-01-01' })),
   ]);
   await db.insert(s.shows).values({ mediaId: show });
   await db.insert(s.seasons).values({ mediaId: season, showId: show, seasonNumber: 1 });

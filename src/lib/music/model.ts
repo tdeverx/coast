@@ -26,6 +26,7 @@ export interface MusicItem {
   trackNumber?: number;
   durationSeconds?: number;
   releaseDate?: string;
+  addedAt?: string;
   year?: number;
   genres: string[];
   overview?: string;

@@ -6,6 +6,7 @@ import {activeSessionsSchema,streamPresentation} from './streams';
 import * as v from 'valibot';
 import { browseMusic, musicItem, musicItems, type MusicBrowseOptions, type MusicScanOptions } from './music.server';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
+import { jellyfinAddedDate } from './added-date.server';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { ProviderActionError } from '../contracts';
@@ -65,6 +66,7 @@ const itemSchema = v.object({
   Overview: str,
   ProductionYear: num,
   PremiereDate: str,
+  DateCreated: str,
   RunTimeTicks: num,
   RecursiveItemCount: num,
   IndexNumber: num,
@@ -139,6 +141,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   return {
     id: i.Id,
     kind,
+    addedAt: jellyfinAddedDate(i.DateCreated),
     access: {sourceType:i.SourceType, locationType:i.LocationType, tags:i.Tags, officialRating:i.OfficialRating, customRating:i.CustomRating},
     expectedMembers: (kind === 'show' || kind === 'season') ? i.RecursiveItemCount ?? undefined : undefined,
     parentId: i.ParentId || undefined,
@@ -271,7 +274,7 @@ export class JellyfinAdapter {
       includeItemTypes: 'Movie,Series,Season,Episode',
       // Source identities/editions are needed for per-user access. Individual
       // streams are obtained from playback info when playback is requested.
-      fields: scope === 'user' ? 'MediaSources,RecursiveItemCount,Tags,CustomRating,ParentId' : 'ProviderIds,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,Tags,CustomRating,ParentId',
+      fields: scope === 'user' ? 'DateCreated,MediaSources,RecursiveItemCount,Tags,CustomRating,ParentId' : 'DateCreated,ProviderIds,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,Tags,CustomRating,ParentId',
       enableImages: String(scope === 'library'),
       enableUserData: String(scope === 'user'),
       enableImageTypes: artworkKeys.map((type) => artworkTypes[type].jellyfin).join(','),
@@ -337,7 +340,7 @@ export class JellyfinAdapter {
   async item(userId: string, id: string) {
     const item = v.parse(
         itemSchema,
-        await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)
+        await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}?fields=DateCreated`)
       );
     validateJellyfinItems([item], [id]);
     return mapLibraryItem({...item, Id:id});
@@ -358,7 +361,7 @@ export class JellyfinAdapter {
       const batch = requested.slice(offset, offset + 100);
       const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
         includeItemTypes: 'Movie,Series,Season,Episode',
-        fields: 'ProviderIds,MediaSources,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
+        fields: 'DateCreated,ProviderIds,MediaSources,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
         enableImages: 'true', enableUserData: 'true', enableTotalRecordCount: 'true',
         startIndex: '0', limit: String(batch.length)});
       const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: v.number(), StartIndex: v.optional(v.number())}), await this.call(`/Items?${query}`));

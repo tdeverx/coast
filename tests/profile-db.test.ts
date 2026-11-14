@@ -553,7 +553,7 @@ run('show status comes from regular episodes, not stale parent counters or flags
     .insert(media)
     .values([
       ...showIds.map((id) => ({ id, kind: 'show' as const, title: 'Progress show' })),
-      ...episodeIds.map((id) => ({ id, kind: 'episode' as const, title: 'Progress episode' })),
+      ...episodeIds.map((id) => ({ id, kind: 'episode' as const, title: 'Progress episode', releaseDate: '2020-01-01' })),
     ]);
   try {
     await getDb()
@@ -618,7 +618,7 @@ run(
       .values([
         { id: showId, kind: 'show', title: 'Dropped series' },
         { id: seasonId, kind: 'season', title: 'A named season' },
-        { id: episodeId, kind: 'episode', title: 'A named episode' },
+        { id: episodeId, kind: 'episode', title: 'A named episode', releaseDate: '2020-01-01' },
         { id: movieId, kind: 'movie', title: 'Dropped movie' },
       ]);
     try {
@@ -672,7 +672,7 @@ run(
       .values([
         { id: showId, kind: 'show', title: 'Rewatch show' },
         ...[season1, season2].map((id) => ({ id, kind: 'season' as const, title: 'Named season' })),
-        ...[ep1, ep2].map((id) => ({ id, kind: 'episode' as const, title: 'Rewatch episode' })),
+        ...[ep1, ep2].map((id) => ({ id, kind: 'episode' as const, title: 'Rewatch episode', releaseDate: '2020-01-01' })),
         { id: collection, kind: 'collection', title: 'Rewatch collection' },
         ...[movie1, movie2].map((id) => ({ id, kind: 'movie' as const, title: 'Rewatch movie' })),
       ]);

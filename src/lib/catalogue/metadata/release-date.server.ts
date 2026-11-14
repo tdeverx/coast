@@ -14,3 +14,8 @@ export function effectiveReleaseDate(id: SQL, policy: CoastConfig['metadataSourc
       value => value instanceof Date ? value.toISOString().slice(0, 10) : String(value)
     );
 }
+
+/** An unknown date is not evidence that an episode has aired. */
+export function episodeHasAired(id: SQL, policy: CoastConfig['metadataSource']) {
+  return sql<boolean>`coalesce(${effectiveReleaseDate(id, policy)} <= (now() at time zone 'UTC')::date, false)`;
+}

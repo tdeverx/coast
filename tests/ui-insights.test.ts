@@ -10,9 +10,9 @@ const media = (patch: Partial<MediaView> = {}): MediaView => ({
 });
 test('member state determines completion, availability and season links without counting partial plays as watches',()=>{
   const panels=mediaOverviewPanels(media({totalEpisodes:20,completedEpisodes:20}),[
-    media({id:'one',kind:'episode',watched:true,available:true,runtimeMinutes:30}),
-    media({id:'two',kind:'episode',progress:20,available:true,runtimeMinutes:30}),
-    media({id:'three',kind:'episode',runtimeMinutes:30}),
+    media({id:'one',kind:'episode',releaseDate:'2020-01-01',watched:true,available:true,runtimeMinutes:30}),
+    media({id:'two',kind:'episode',releaseDate:'2020-01-01',progress:20,available:true,runtimeMinutes:30}),
+    media({id:'three',kind:'episode',releaseDate:'2020-01-01',runtimeMinutes:30}),
   ],[media({id:'season',kind:'season',completedEpisodes:1,totalEpisodes:3})]);
   const content=panels[0].content;
   expect(content.kind).toBe('chart');

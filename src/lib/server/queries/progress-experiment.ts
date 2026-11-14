@@ -79,7 +79,7 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
         ${history?sql`(select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=${s.works.id})`:sql`null::timestamptz`}
       ) desc nulls last`,s.works.id).limit(pageSize).offset((page-1)*pageSize);
   signal?.throwIfAborted();
-  let items=await workCards(userId,viewerId,visible.map(row=>row.id));
+  let items=await workCards(userId,viewerId,visible.map(row=>row.id),!saved);
   signal?.throwIfAborted();
   const readingIds=items.filter(item=>item.kind==='book'||item.kind==='comic').map(item=>item.id);
   if(readingIds.length){

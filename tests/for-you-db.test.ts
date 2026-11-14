@@ -14,7 +14,7 @@ beforeAll(async()=>{
  await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
  await db.insert(s.users).values([{id:user,username:`for-you-${user}`},{id:friend,username:`for-you-${friend}`,settings:{profile:{avatar:'/fixture-avatar.gif'}}}]);
  await db.insert(s.friendships).values({userA:[user,friend].sort()[0],userB:[user,friend].sort()[1],state:'accepted',requestedBy:user});
- await db.insert(s.media).values([{id:show,kind:'show',title:'Friend show'},{id:season,kind:'season',title:'Season one'},...episodes.map((id,index)=>({id,kind:'episode' as const,title:`Episode ${index+1}`,runtimeMinutes:30}))]);
+ await db.insert(s.media).values([{id:show,kind:'show',title:'Friend show'},{id:season,kind:'season',title:'Season one'},...episodes.map((id,index)=>({id,kind:'episode' as const,title:`Episode ${index+1}`, releaseDate: '2020-01-01',runtimeMinutes:30}))]);
  await db.insert(s.shows).values({mediaId:show});await db.insert(s.seasons).values({mediaId:season,showId:show,seasonNumber:1});
  await db.insert(s.episodes).values(episodes.map((id,index)=>({mediaId:id,showId:show,seasonId:season,seasonNumber:1,episodeNumber:index+1})));
  await db.insert(s.games).values({id:game,title:'Active game'});
@@ -70,6 +70,37 @@ run('an actively watched saved show remains in Continue rather than duplicating 
  const db=getDb();await db.insert(s.trackingState).values([{userId:user,mediaId:show,watchlist:true},{userId:user,mediaId:episodes[0],positionSeconds:30,durationSeconds:1800}]);
  expect((await progressData(user,{view:'watching',kind:'show'})).items.map(item=>item.id)).toContain(episodes[0]);
  expect((await progressData(user,{view:'next',kind:'show'})).items).toHaveLength(0);
+});
+
+run('Progress and Next omit future and undated episodes before counts and become eligible on their air date',async()=>{
+ const db=getDb(),owner=crypto.randomUUID(),series=crypto.randomUUID(),seasonId=crypto.randomUUID();
+ const [aired,future,undated]=Array.from({length:3},()=>crypto.randomUUID());
+ await db.insert(s.users).values({id:owner,username:`aired-${owner}`});
+ await db.insert(s.media).values([
+  {id:series,kind:'show',title:'Airing show'}, {id:seasonId,kind:'season',title:'Season 1'},
+  {id:aired,kind:'episode',title:'Aired',releaseDate:'2020-01-01'},
+  {id:future,kind:'episode',title:'Future',releaseDate:'2099-01-01'},
+  {id:undated,kind:'episode',title:'Unknown'},
+ ]);
+ await db.insert(s.shows).values({mediaId:series});
+ await db.insert(s.seasons).values({mediaId:seasonId,showId:series,seasonNumber:1});
+ await db.insert(s.episodes).values([aired,future,undated].map((mediaId,index)=>({mediaId,showId:series,seasonId,seasonNumber:1,episodeNumber:index+1})));
+ await db.insert(s.trackingState).values([{userId:owner,mediaId:aired,watched:true},{userId:owner,mediaId:undated,positionSeconds:30,durationSeconds:300}]);
+ await db.insert(s.upNext).values([future,undated].map(mediaId=>({userId:owner,mediaId})));
+ const {progressExperimentData}=await import('../src/lib/server/queries/progress-experiment');
+ for(const view of ['watching','next','up-next'] as const){
+  expect(await progressData(owner,{view})).toMatchObject({items:[],total:0});
+ }
+ expect(await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).toMatchObject({items:[],total:0});
+ const {detailsData}=await import('../src/lib/server/queries/media');
+ const season=await detailsData(owner,seasonId);
+ expect(season.item.trackingProgress).toEqual({unit:'episodes',value:1,total:1});
+ expect(season.episodes.map(item=>item.id)).toEqual([aired,future,undated]);
+ await db.insert(s.metadataOverrides).values({mediaId:future,releaseDate:new Date().toISOString().slice(0,10)});
+ expect((await progressData(owner,{view:'watching'})).items.map(item=>item.id)).toEqual([future]);
+ expect((await progressData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([future]);
+ expect((await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).items.map(item=>item.id)).toEqual([future]);
+ expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
 });
 
 run('imported activity joins the ordinary date-sorted feed with privacy and stable pagination',async()=>{
@@ -193,7 +224,7 @@ run('item activity filters before pagination and retains reading detail, privacy
 run('item Activity includes verified episode and album membership without leaking unrelated titles',async()=>{
  const db=getDb(),viewer=crypto.randomUUID(),series=crypto.randomUUID(),seasonA=crypto.randomUUID(),seasonB=crypto.randomUUID(),epA=crypto.randomUUID(),epB=crypto.randomUUID(),albumA=crypto.randomUUID(),albumB=crypto.randomUUID(),recording=crypto.randomUUID(),unrelated=crypto.randomUUID(),gameId=crypto.randomUUID();
  await db.insert(s.users).values({id:viewer,username:`scope-${viewer}`});
- await db.insert(s.media).values([{id:series,kind:'show',title:'Scoped show'},{id:seasonA,kind:'season',title:'One'},{id:seasonB,kind:'season',title:'Two'},{id:epA,kind:'episode',title:'A'},{id:epB,kind:'episode',title:'B'}]);
+ await db.insert(s.media).values([{id:series,kind:'show',title:'Scoped show'},{id:seasonA,kind:'season',title:'One'},{id:seasonB,kind:'season',title:'Two'},{id:epA,kind:'episode',title:'A', releaseDate: '2020-01-01'},{id:epB,kind:'episode',title:'B', releaseDate: '2020-01-01'}]);
  await db.insert(s.shows).values({mediaId:series});await db.insert(s.seasons).values([{mediaId:seasonA,showId:series,seasonNumber:1},{mediaId:seasonB,showId:series,seasonNumber:2}]);
  await db.insert(s.episodes).values([{mediaId:epA,showId:series,seasonId:seasonA,seasonNumber:1,episodeNumber:1},{mediaId:epB,showId:series,seasonId:seasonB,seasonNumber:2,episodeNumber:1}]);
  await db.insert(s.works).values([albumA,albumB,recording,unrelated].map(id=>({id,category:'music' as const,kind:[albumA,albumB].includes(id)?'album' as const:'track' as const})));

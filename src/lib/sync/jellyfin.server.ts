@@ -2,6 +2,7 @@ import { getFeatureConfig } from '#lib/server/features.js';
 import { featureValues, type FeatureConfiguration } from '#lib/features.js';
 import { defaultConfig } from '#lib/server/config.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
+import {saveJellyfinAddedDates} from '#lib/providers/jellyfin/added-date.server.js';
 import {importJellyfinReading} from './jellyfin-reading.server';
 import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '#lib/music/persistence.server.js';
 import { reconcileJellyfinBatch } from './jellyfin-finalization.server';
@@ -264,6 +265,7 @@ async function runJellyfinScan(
     { providerItem: typeof providerItems.$inferSelect; saved: typeof media.$inferSelect }
   >();
   const pendingAvailability = new Map<string, typeof availability.$inferInsert>();
+  const pendingAddedDates = new Map<string, string>();
   const availableTitles = new Map<string, string>();
   const expectedMembers = new Map<string, number>();
   async function ensureConnected(store: Pick<Database, 'select'> = db, lock = false) {
@@ -370,6 +372,7 @@ async function runJellyfinScan(
         isolateConflictingProviderIds: true,
       }));
     visited.set(item.id, saved.id);
+    const snapshot = { ...item.metadata, addedAt: item.addedAt };
     const [providerItem] = known
       ? [known.providerItem]
       : await db
@@ -379,16 +382,21 @@ async function runJellyfinScan(
             externalId: item.id,
             kind: item.kind,
             mediaId: saved.id,
-            snapshot: { ...item.metadata },
+            snapshot,
             lastSeenAt: new Date(),
           })
           .onConflictDoUpdate({
             target: [providerItems.instanceId, providerItems.externalId],
-            set: { mediaId: saved.id, snapshot: sql`${item.metadata}::jsonb || case when ${item.access?.locationType==='FileSystem'&&(item.access?.sourceType==null||item.access.sourceType==='Library')} and ${providerItems.snapshot}->'screenAccess' is not null then jsonb_build_object('screenAccess',${providerItems.snapshot}->'screenAccess') else '{}'::jsonb end`, lastSeenAt: new Date() },
+            set: { mediaId: saved.id, snapshot: sql`${snapshot}::jsonb ||
+              case when ${!item.addedAt} and ${providerItems.snapshot} ? 'addedAt' then jsonb_build_object('addedAt',${providerItems.snapshot}->'addedAt') else '{}'::jsonb end ||
+              case when ${item.access?.locationType==='FileSystem'&&(item.access?.sourceType==null||item.access.sourceType==='Library')} and ${providerItems.snapshot}->'screenAccess' is not null then jsonb_build_object('screenAccess',${providerItems.snapshot}->'screenAccess') else '{}'::jsonb end`, lastSeenAt: new Date() },
           })
           .returning();
     if (scope === 'library' && item.expectedMembers !== undefined) expectedMembers.set(providerItem.id, item.expectedMembers);
     if (scope === 'library') return saved.id;
+    if (known && item.addedAt && providerItem.snapshot.addedAt !== item.addedAt) {
+      pendingAddedDates.set(providerItem.id, item.addedAt);
+    }
     const virtual = (item.kind === 'movie' || item.kind === 'episode') && item.access?.locationType === 'Virtual';
     if (!virtual) availableTitles.set(saved.id, saved.title);
     const sources = item.sources.length
@@ -444,6 +452,7 @@ async function runJellyfinScan(
     const virtualItems = [...new Set(rows.filter(row => row.state === 'unavailable').map(row => row.providerItemId))];
     await db.transaction(async tx => {
     await ensureConnected(tx, true);
+    await saveJellyfinAddedDates(tx, pendingAddedDates);
     if (virtualItems.length) await tx.update(availability).set({ state: 'unavailable', verifiedAt: new Date() })
       .where(and(eq(availability.userId, userId), eq(availability.connectionId, connectionId),
         inArray(availability.providerItemId, virtualItems), eq(availability.state, 'available')));
@@ -471,7 +480,7 @@ async function runJellyfinScan(
       body: 'A title on your watchlist is now in your library.', sourceKey: `available:${id}`,
       data: {actorId: userId, subjectId: id, workId: id, destination: `/media/${id}`},
     });
-    pendingAvailability.clear(); availableTitles.clear(); expectedMembers.clear();
+    pendingAvailability.clear(); pendingAddedDates.clear(); availableTitles.clear(); expectedMembers.clear();
   }
   async function importMusic(saved:{workId:string},item:{id:string;kind:'album'|'track';favourite?:boolean;playCount:number;positionSeconds:number;durationSeconds:number}) {
     if(userScope && saved.workId && importPlayback){

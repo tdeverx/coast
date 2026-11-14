@@ -1,4 +1,6 @@
 import { getFeatureConfig } from '#lib/server/features.js';
+import { getConfig } from '../config';
+import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import type { MediaView } from '#lib/ui/types.js';
@@ -78,7 +80,7 @@ async function readProgressData(
   }
   const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId);
   const views = new Map(
-    (await mediaViewsForIds(userId, visibleIds, viewerId)).map((item) => [item.id, item])
+    (await mediaViewsForIds(userId, visibleIds, viewerId, true)).map((item) => [item.id, item])
   );
   const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
   decorateProgressCards(items, sequenceById, options.view);
@@ -169,6 +171,7 @@ export async function continueHeroId(userId: string) {
 
 export async function screenProgressPlan(userId: string, options: import('#lib/progress.js').ProgressOptions, viewerId: string, {firstEpisode=false,sortByActivity=true}:{firstEpisode?:boolean;sortByActivity?:boolean}={}) {
   const db = getDb();
+  const {metadataSource} = await getConfig();
   const states = await db
     .select({
       id: s.trackingState.mediaId,
@@ -187,7 +190,8 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
     states.filter((row) => !row.dropped && (row.watched || row.progress > 0)).map((row) => row.id),
     false,
     viewerId === userId,
-    firstEpisode
+    firstEpisode,
+    metadataSource
   );
   const sequenceById = new Map(planned.sequenceNext.map((next) => [next.entry.mediaId, next]));
   const activeIds = states
@@ -239,6 +243,11 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
     .where(
       and(
         inArray(s.media.id, candidateIds),
+        sql`case ${s.media.kind}
+          when 'episode' then ${episodeHasAired(sql`${s.media.id}`, metadataSource)}
+          when 'show' then exists(select 1 from episodes e where e.show_id=${s.media.id} and not e.is_special and ${episodeHasAired(sql`e.media_id`, metadataSource)})
+          when 'season' then exists(select 1 from episodes e where e.season_id=${s.media.id} and not e.is_special and ${episodeHasAired(sql`e.media_id`, metadataSource)})
+          else true end`,
         options.kind === 'movie'
           ? eq(s.media.kind, 'movie')
           : options.kind === 'show'

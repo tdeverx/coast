@@ -5,17 +5,22 @@ import type { ProfilePeriod } from '#lib/profile/period.js';
 import { activityChart } from '../charts/activity';
 import type { InsightPanel } from './types';
 export function mediaOverviewPanels(item:MediaView,members:MediaView[]=[],seasons:MediaView[]=[]):InsightPanel[] {
-  const group = (['show', 'season', 'collection'].includes(item.kind));
-  const total = (members.length || item.totalEpisodes || 0);
+  const episodic = item.kind === 'show' || item.kind === 'season';
+  const group = episodic || item.kind === 'collection';
+  const today = new Date().toISOString().slice(0, 10);
+  const progressMembers = episodic
+    ? members.filter(member => member.kind === 'episode' && member.releaseDate && member.releaseDate <= today)
+    : members;
+  const total = members.length ? progressMembers.length : item.totalEpisodes || 0;
   const completed = (
     Math.min(
       total,
-      members.length ? members.filter((m) => m.watched).length : item.completedEpisodes || 0
+      members.length ? progressMembers.filter((m) => m.watched).length : item.completedEpisodes || 0
     )
   );
-  const partial = (members.filter((m) => !m.watched && m.progress > 0).length);
-  const available = (members.filter((m) => m.available).length);
-  const minutes = (members.reduce((n, m) => n + (m.runtimeMinutes ?? 0), 0));
+  const partial = (progressMembers.filter((m) => !m.watched && m.progress > 0).length);
+  const available = (progressMembers.filter((m) => m.available).length);
+  const minutes = (progressMembers.reduce((n, m) => n + (m.runtimeMinutes ?? 0), 0));
   const duration = (item.duration || (item.runtimeMinutes ?? 0) * 60);
   const position = (
     item.progress > 0 ? Math.min(duration, item.progress) : item.watched ? duration : 0
@@ -79,11 +84,11 @@ export function mediaOverviewPanels(item:MediaView,members:MediaView[]=[],season
     },
   ]);
   return [
-    {title:group?'Completion':'Playback progress',description:group?`Across ${total} ${unit}`:
+    {title:group?'Completion':'Playback progress',description:group?`Across ${total} ${episodic?'aired ':''}${unit}`:
       item.progress>0 && position<duration?'Your saved resume point':item.watched?'Marked as watched':'Not started',
       content:(group && total) || duration ? {kind:'chart' as const,model:distributionModel({label:group?'Viewing completion':'Playback progress',items:progressItems,
         centre:`${group?Math.round((completed/Math.max(1,total))*100):percent}%`,unit:group?unit:'minutes',centreLabel:group?'watched':'played'})}
-      : {kind:'text',muted:true,text:group?'No episodes or titles have been added yet.':'Progress will appear when a playback duration is available.'},
+      : {kind:'text',muted:true,text:episodic?'No episodes with a confirmed air date yet.':group?'No titles have been added yet.':'Progress will appear when a playback duration is available.'},
       footerText:group?'Completion reflects your current watched state. Rewatches stay in your history.':'Playback is measured in minutes. Recorded plays and viewing history are kept separately.'},
     {title:'At a glance',content:{kind:'metrics',props:{items:metrics}}},
     ...(seasonItems.length?[{title:'Season progress',description:'Episodes watched in each season',content:{kind:'chart' as const,model:targetModel({label:'Season progress',items:seasonItems})}}]:[]),

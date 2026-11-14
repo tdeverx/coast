@@ -51,7 +51,7 @@ beforeAll(async () => {
       { id: movie, kind: 'movie', title: 'Movie', runtimeMinutes: 90 },
       { id: show, kind: 'show', title: 'Show' },
       { id: season, kind: 'season', title: 'Season' },
-      ...[ep1, ep2, special].map((id) => ({ id, kind: 'episode' as const, title: 'Episode' })),
+      ...[ep1, ep2, special].map((id) => ({ id, kind: 'episode' as const, title: 'Episode', releaseDate: '2020-01-01' })),
     ]);
   await getDb().insert(s.shows).values({ mediaId: show });
   await getDb().insert(s.seasons).values({ mediaId: season, showId: show, seasonNumber: 1 });
