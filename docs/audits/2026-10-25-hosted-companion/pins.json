@@ -32,20 +32,20 @@
     "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
     "src/lib/sharing/allocation.ts": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190",
     "src/lib/sharing/policy.ts": "1d5afa1edc3eb902244f161f829fb2a236f4ab5436691f68d08063a7260b3384",
-    "src/lib/sharing/service.server.ts": "24e6c91b5d6f25b18b10d19e33caa571fc4091e16b2a4dc670385bf3b548382f",
+    "src/lib/sharing/service.server.ts": "425e135dc07b6f068098bec5a74fdf42ec931e8d8e90812f6cf82805c4002dbb",
     "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
-    "src/lib/sharing/leases.server.ts": "9a625a365e32140adb0c3b55db3b46f3abe30db524907ed2f5fa7c81f0a4f21b",
+    "src/lib/sharing/leases.server.ts": "5ca14f16136f9b61f6b4b740df6de1d7d5b67e28bb4c499e2ffac169bf60b505",
     "src/lib/sharing/ShareAction.svelte": "d3a09ad495cdfeea449717468ac08e424557794cccef782c07814cd5b95ee022",
     "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
     "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
     "src/lib/ui/work-menu/ScreenActions.svelte": "e8f35e0fdbcaaf014af3bc105dcf8f1b90a4390d097fed806e642e4d0448b57c",
     "src/routes/+layout.server.ts": "7bb19c17ffb3b86409ba1ec3f013474a5178dd6c52edc4a845122b35080a48f0",
-    "src/lib/settings/sections.ts": "0997017ef4d2550b37d70909dd8dee1e7c9f5f35a20c05c1eb6d9bb17fd000b5",
-    "src/lib/server/config.ts": "ea78229c243ebfbff582f4a41c6a9ae1de6caeee771934f14fa1ad8cf59a4868",
+    "src/lib/settings/sections.ts": "137b289163f03468ae47f4928f6bde09a3e02e7ef601f2ae0ed896ea7a9e8cfc",
+    "src/lib/server/config.ts": "8c7d61d98bb2556b566227ba565a257b112bd0bcf13707f161394fe135abf3c8",
     "src/lib/server/db/schema.ts": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
-    "src/routes/settings/[[section]]/+page.svelte": "d5f47a62f1eae094bbda658c4e7de99af2575afbf6bb24f137904ac704346a17",
+    "src/routes/settings/[[section]]/+page.svelte": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
-    "tests/sharing-db.test.ts": "cd7d39c80cb6444fb9988407c51648dbccb0c701330e109140f6e726ec5ffd48",
+    "tests/sharing-db.test.ts": "d3b1af7805a366395ac18efea0a68d51e2eeb85a50ff31d5e4e3da3f17d312f7",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
@@ -453,6 +453,43 @@
         }
       ],
       "note": "The sharing stream path and cleanup were checked in an isolated Jellyfin run. Physical-device and party acceptance remain open."
+    },
+    {
+      "epoch": "vrchat-idle-timeout-2026-11-14",
+      "report": "docs/synced-experiences.md",
+      "changes": [
+        {
+          "path": "src/lib/server/config.ts",
+          "previousSha256": "ea78229c243ebfbff582f4a41c6a9ae1de6caeee771934f14fa1ad8cf59a4868",
+          "currentSha256": "8c7d61d98bb2556b566227ba565a257b112bd0bcf13707f161394fe135abf3c8"
+        },
+        {
+          "path": "src/lib/settings/sections.ts",
+          "previousSha256": "0997017ef4d2550b37d70909dd8dee1e7c9f5f35a20c05c1eb6d9bb17fd000b5",
+          "currentSha256": "137b289163f03468ae47f4928f6bde09a3e02e7ef601f2ae0ed896ea7a9e8cfc"
+        },
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "previousSha256": "9a625a365e32140adb0c3b55db3b46f3abe30db524907ed2f5fa7c81f0a4f21b",
+          "currentSha256": "5ca14f16136f9b61f6b4b740df6de1d7d5b67e28bb4c499e2ffac169bf60b505"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "previousSha256": "24e6c91b5d6f25b18b10d19e33caa571fc4091e16b2a4dc670385bf3b548382f",
+          "currentSha256": "425e135dc07b6f068098bec5a74fdf42ec931e8d8e90812f6cf82805c4002dbb"
+        },
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "d5f47a62f1eae094bbda658c4e7de99af2575afbf6bb24f137904ac704346a17",
+          "currentSha256": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "cd7d39c80cb6444fb9988407c51648dbccb0c701330e109140f6e726ec5ffd48",
+          "currentSha256": "d3b1af7805a366395ac18efea0a68d51e2eeb85a50ff31d5e4e3da3f17d312f7"
+        }
+      ],
+      "note": "Disposable PostgreSQL and a Jellyfin HTTP fixture verified stable HLS resources within the timeout, bandwidth release on expiry, administrator overrides and unchanged website cleanup. In-world device acceptance remains open."
     }
   ]
 }
