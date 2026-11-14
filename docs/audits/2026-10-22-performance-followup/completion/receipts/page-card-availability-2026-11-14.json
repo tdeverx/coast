@@ -1,0 +1,102 @@
+{
+  "epoch": "page-card-availability-2026-11-14",
+  "base": "d832a6a4fe944a9609e2a0018c91686112f27cbc",
+  "runtime": "Host Bun 1.4.4-canary.1+963452075, isolated PostgreSQL 17 copy of the live catalogue, workers disabled",
+  "scope": "Targeted screen card hydration only. The shared catalogue-wide eligibility query and its existing audit remain separate.",
+  "comparison": {
+    "warmup": "one full before/after pair per cohort",
+    "sampleOrder": "six alternating serial pairs",
+    "units": "milliseconds",
+    "cases": [
+      {
+        "cohort": "60 populated shows",
+        "ids": 60,
+        "before": [
+          87,
+          87,
+          82,
+          85,
+          119,
+          116
+        ],
+        "after": [
+          18,
+          16,
+          20,
+          17,
+          20,
+          17
+        ]
+      },
+      {
+        "cohort": "Watch Library first page",
+        "ids": 60,
+        "before": [
+          121,
+          112,
+          113,
+          125,
+          136,
+          125
+        ],
+        "after": [
+          6,
+          5,
+          10,
+          8,
+          10,
+          9
+        ]
+      },
+      {
+        "cohort": "Watching Progress first page",
+        "ids": 9,
+        "before": [
+          83,
+          76,
+          77,
+          91,
+          88,
+          82
+        ],
+        "after": [
+          7,
+          6,
+          5,
+          5,
+          8,
+          6
+        ]
+      }
+    ],
+    "equivalence": "Full card outputs and page ID order matched in each pair. Unordered available-source names were sorted for comparison."
+  },
+  "isolatedQuery": {
+    "cohort": "60 populated shows, 60 distinct media/source results and zero symmetric difference",
+    "beforeMs": [
+      87.361,
+      94.243
+    ],
+    "afterMs": [
+      12.875,
+      11.633
+    ],
+    "beforeSharedHitsPlusReads": [
+      132934,
+      132934
+    ],
+    "afterSharedHitsPlusReads": [
+      28235,
+      28235
+    ]
+  },
+  "regressions": [
+    "card-hydration-db.test.ts: 4 passed",
+    "progress-state-admission-db.test.ts: 1 passed",
+    "Svelte type check: 0 errors and 0 warnings"
+  ],
+  "remaining": [
+    "Production tail latency remains unverified. The pre-restart spikes were not reproduced on this copy.",
+    "Provider contention, live concurrency and wide collection descendant workloads were outside the measured comparison."
+  ]
+}

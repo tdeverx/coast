@@ -157,7 +157,7 @@
     "receipts/task-audit-developer-mode.json": "bd9f20a27912ca93e0d2fc184755f49578e57776396ce0804b92da3e4054c023",
     "receipts/task-audit-running-cancel-policy.json": "a100323741801675e50361c1d65cd94fccd4905b9748ad0eae53a5767285f5f5",
     "receipts/task-audit.json": "02a32fc5f054506839f372acbf90808543123f69e4ec52cff87d6a2a0b92a0df",
-    "source-pins.json": "baea53b4d4410aa0bd6927ce6a9c319ac79db28b86b5f58fb18cb01e6a62ba4f",
+    "source-pins.json": "d5c5c3ddcf54288f6edada06c443338230f6b1eaf0bee7a250a57d2ed199be5b",
     "stop-contract-review.md": "cba42a65f6059c9a61116f07129e6e925f638fa4a60c9dcdfa66e6cc42dce6d8",
     "stop-save/README.md": "4f1f0671034f82b2ffa715da4b9e129e39a8bbfa4ee1cc3039374e4b63437922",
     "stop-save/browser-stop-accepted.json": "d745ed343986f71f332f9886a64c7641b3f05e36d06f2774aab38076ab08b06c",
@@ -171,7 +171,9 @@
     "stop-save/stop-native.json": "bc39f5a45d4a512e23ef1d93a2aafd869652bb042c62148fe8bbc1027c790a9f",
     "stop-save/verification.json": "10343489372fd2bc89c8b4a93668eb8f3f065b7f1cae277eb2eb6902b9cfa387",
     "stop-save/verify-native.ts.txt": "57bd3fb11033bd1ffa16aab659d6a4f7235832ca98e9203796a0d1a5e04a0418",
-    "receipts/share-playback-options-2026-11-11.json": "ca786a0131b65c8304771fd349ae386f70a1a248706cfce113ea81bc153c23ec"
+    "receipts/share-playback-options-2026-11-11.json": "ca786a0131b65c8304771fd349ae386f70a1a248706cfce113ea81bc153c23ec",
+    "receipts/page-card-availability-2026-11-14.json": "421fd1be3c3c6fd22e4a5258d95c8d391429270b34b6dd2751a2e308c051cc9e",
+    "receipts/jellyfin-backfill-load-2026-11-14.json": "be6ac5e48426eb2fea0961fe19065ed9e33cf18b8edf7a6daf77717c0397f77b"
   },
   "selectedPolicyEvidence": "docs/audits/2026-10-23-bulk-recovery-input-retention/pins.json",
   "reviewedOwnerEpochs": [

@@ -1,0 +1,69 @@
+{
+  "epoch": "jellyfin-backfill-load-2026-11-14",
+  "base": "d832a6a4fe944a9609e2a0018c91686112f27cbc",
+  "scope": "Watched-state intent seeding in bounded Jellyfin user scan finalization. Other categories and existing durable intents use their existing path.",
+  "observedLive": {
+    "utc": "2026-11-13 22:00–23:00",
+    "backfillJobs": 12027,
+    "distinctAccountFieldTargets": 11997,
+    "jobsForTargetsCompletedPreviouslySinceNov10": 11736,
+    "firstLibraryProgressClusterUtc": "2026-11-13 23:35",
+    "slowSuccessfulGetsInWindow": 66,
+    "sameSessionJellyfinCallsAtLeastHalfRequestDuration": 1,
+    "limit": "Request identifiers are shared across a browser session. Temporal overlap bounds attribution but cannot identify the route stage."
+  },
+  "copiedCatalogue": {
+    "historicalWatchedTargets": 11994,
+    "targetsWithCleanAgreementAndAllCurrentRetainedSourceObservationsWatched": 11735,
+    "limit": "The retained data is a later snapshot. Counts are eligibility evidence on that copy, not a replay of what Jellyfin returned during the incident."
+  },
+  "comparison": {
+    "runtime": "Host Bun 1.4.4-canary.1+963452075, isolated PostgreSQL 17 copy of live catalogue",
+    "cohort": "100 tracked titles starting at the first confirmed clean baseline of the largest matching account/scan group. This is a positive, selected cohort.",
+    "before": {
+      "screenIntents": 100,
+      "newJobsFromPageInFirstEnqueueBatch": 89,
+      "screenMs": [
+        6,
+        6,
+        5,
+        6
+      ],
+      "firstEnqueueBatchMs": [
+        138,
+        120,
+        121,
+        121
+      ]
+    },
+    "after": {
+      "screenIntents": 11,
+      "newJobsFromPageInFirstEnqueueBatch": 0,
+      "screenMs": [
+        5,
+        5,
+        5,
+        6
+      ],
+      "firstEnqueueBatchMs": [
+        134,
+        145,
+        145,
+        156
+      ]
+    },
+    "protocol": "One warmup per variant, four alternating pairs. Each transaction rolled back. The first enqueue batch still filled with later titles after this page was skipped, so its overall latency did not improve.",
+    "priorAttempts": [
+      "Starting from the first overall tracking page did not reduce both counters.",
+      "Counting the entire first enqueue batch filled its 100 entries in both variants. Counting only jobs originating within the fixed screen page resolved that attribution issue."
+    ]
+  },
+  "regressions": [
+    "Native finalization covers rollback/resume, current versus stale and missing observations, disagreeing editions, conflicts and retained explicit intents.",
+    "Jellyfin reconciliation and progress export database suites passed. Svelte type check passed."
+  ],
+  "remaining": [
+    "No live rollout or repeat incident verification for this change.",
+    "Retained logs do not identify which server-side stage delayed most slow requests. The independent load spike is demonstrated; attribution of the full request tail remains open."
+  ]
+}
