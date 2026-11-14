@@ -28,7 +28,13 @@ function spawn(args:string[],name:string,env:Record<string,string>={}) {
 async function command(args:string[]) {
   const p=Bun.spawn(args,{stdout:'pipe',stderr:'pipe'});
   const [output,error,status]=await Promise.all([new Response(p.stdout).text(),new Response(p.stderr).text(),p.exited]);
-  assert(status===0,'fixture command failed');return output.trim();
+  assert(status===0,`fixture command ${args[0]} failed (${status}): ${error.trim()}`);return output.trim();
+}
+const postgresUid=Number(await command(['id','-u','postgres']));
+const postgresGid=Number(await command(['id','-g','postgres']));
+function postgresDirectory(path:string) {
+  mkdirSync(path,{mode:0o700});
+  chownSync(path,postgresUid,postgresGid);
 }
 async function sql(query:string,socket='/var/run/postgresql',db='coast',user='coast') {
   return command(['gosu','postgres',pg+'/psql','-X','-q','-A','-t','-h',socket,'-U',user,'-d',db,'-v','ON_ERROR_STOP=1','-c',query]);
@@ -87,7 +93,7 @@ try {
 
   // An independent cluster proves ownership fallback cannot catch another DB.
   const otherData=directory+'/other-pg',otherSocket=directory+'/other-socket';
-  mkdirSync(otherData,{mode:0o700});mkdirSync(otherSocket,{mode:0o700});chownSync(otherData,100,100);chownSync(otherSocket,100,100);
+  postgresDirectory(otherData);postgresDirectory(otherSocket);
   await command(['gosu','postgres',pg+'/initdb','-D',otherData,'--auth=trust','--locale=C.UTF-8']);
   const otherPg=spawn(['gosu','postgres',pg+'/postgres','-D',otherData,'-c','listen_addresses=','-c','unix_socket_directories='+otherSocket],'other-db');
   for(let i=0;i<100;i++){try{await sql('SELECT 1',otherSocket,'postgres','postgres');break;}catch{await Bun.sleep(30);}}
@@ -133,7 +139,7 @@ try {
   console.log('frozen PostgreSQL: bounded INT/QUIT/KILL, status143, fresh-cluster crash recovery retained committed marker');
 
   const extData=directory+'/external-postgres',socket=directory+'/external-socket';
-  mkdirSync(extData,{mode:0o700});mkdirSync(socket,{mode:0o700});chownSync(extData,100,100);chownSync(socket,100,100);
+  postgresDirectory(extData);postgresDirectory(socket);
   await command(['gosu','postgres',pg+'/initdb','-D',extData,'--auth=trust','--locale=C.UTF-8','--data-checksums']);
   const pgArgs=['gosu','postgres',pg+'/postgres','-D',extData,'-c','listen_addresses=127.0.0.1','-c','unix_socket_directories='+socket];
   let external=spawn(pgArgs,'external-db');
