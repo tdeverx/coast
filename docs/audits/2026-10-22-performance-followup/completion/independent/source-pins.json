@@ -10,7 +10,7 @@
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "src/lib/catalogue/details.server.ts": "3eddaac9c7aa5a6cb3c29b28d6d042bdf644347a700f3f2954d2e18253771139",
     "src/lib/catalogue/service.server.ts": "f5e6e596ca03a6cd766909f733e9df2c0ce83b21e938f46d408698af568a7569",
-    "src/lib/music/persistence.server.ts": "9754d74d931ba35316801314259351a4bd8bb746ed8587a30a8a9dee1a64fe83",
+    "src/lib/music/persistence.server.ts": "bce12be57f36e4bbbf91d0742c7ed2f15928594ad1144e90f1530e7ac1e79eb3",
     "src/lib/providers/comic-vine/adapter.server.ts": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d",
     "src/lib/providers/connections.server.ts": "75a4bf3d60fd00b7c7e87e8841f3cd1b74141f27bac455f00cce1cab7ab6b94a",
     "src/lib/providers/reading.server.ts": "17b9d4f64596d007278bc453035a94607029b714fd18e2f6a29e50c6f045454f",
@@ -190,6 +190,18 @@
         }
       ],
       "note": "The shared MediaCard exposes a corner menu for playback actions. Chromium preview checks passed on desktop and mobile. Past evidence retains its original scope."
+    },
+    {
+      "epoch": "aired-progress-and-library-recency-2026-11-14",
+      "report": "docs/audits/2026-10-22-performance-followup/completion/receipts/aired-progress-and-library-recency-2026-11-14.json",
+      "changes": [
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "previousSha256": "9754d74d931ba35316801314259351a4bd8bb746ed8587a30a8a9dee1a64fe83",
+          "currentSha256": "bce12be57f36e4bbbf91d0742c7ed2f15928594ad1144e90f1530e7ac1e79eb3"
+        }
+      ],
+      "note": "Verified the current progress and library read contracts on an isolated actual copy, with authored source-ordering and playback eligibility cases. Historical measurements retain their original source fingerprints."
     }
   ]
 }

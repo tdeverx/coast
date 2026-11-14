@@ -9,6 +9,7 @@ import { DomainError } from '#lib/core/errors.js';
 import * as v from 'valibot';
 import { assertJobLease, JobYield } from '#lib/server/queue/execution.js';
 import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
+import { saveJellyfinAddedDates } from '#lib/providers/jellyfin/added-date.server.js';
 import { musicAlbumMembers } from './editions.server';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -47,7 +48,7 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
       setWhere:sql`(${musicWorks.title},${musicWorks.kind},${musicWorks.artistNames},${musicWorks.releaseDate},${musicWorks.year},${musicWorks.durationSeconds},${musicWorks.overview},${musicWorks.genres})
         is distinct from (excluded.title,excluded.kind,excluded.artist_names,excluded.release_date,excluded.year,excluded.duration_seconds,excluded.overview,excluded.genres)`});
     if(verified) await tx.insert(workIdentifiers).values({workId:id,provider,externalId:verified,kind}).onConflictDoNothing();
-    const snapshot=musicMetadataSnapshot(item);
+    const snapshot={...musicMetadataSnapshot(item),addedAt:item.addedAt??mapping?.snapshot.addedAt};
     const externalId=mapping?.externalId??item.id;
     const [saved]=await tx.insert(providerItems).values({instanceId,externalId,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot:sql`excluded.snapshot`,lastSeenAt:new Date()}}).returning();
     const metadata={externalIds:item.externalIds,albumExternalId:item.albumId??null,position:(item.discNumber??1)*10000+(item.trackNumber??0),discNumber:item.discNumber??null,trackNumber:item.trackNumber??null};
@@ -127,7 +128,8 @@ export async function observeMusicPageAccess(userId: string, connectionId: strin
   if (!items.length) return [];
   items=items.map(item=>({...item,id:jellyfinItemKey(item.id)}));
   const db = getDb();
-  const known = await db.select({externalId: providerItems.externalId, providerItemId: providerItems.id, workId: musicWorks.id, kind: musicWorks.kind})
+  const known = await db.select({externalId: providerItems.externalId, providerItemId: providerItems.id, workId: musicWorks.id, kind: musicWorks.kind,
+    addedAt:sql<string | null>`${providerItems.snapshot}->>'addedAt'`})
     .from(providerItems).innerJoin(musicWorks, eq(musicWorks.id, providerItems.mediaId))
     .where(and(eq(providerItems.instanceId, instanceId),sql`${providerItems.kind} in ('album','track')`,sql`replace(lower(${providerItems.externalId}),'-','') in (${sql.join(items.map(item=>sql`${item.id}`),sql`,`)})`));
   const mappings = new Map<string,typeof known[number]>();
@@ -139,19 +141,24 @@ export async function observeMusicPageAccess(userId: string, connectionId: strin
   const hydrated=loadMissing && missing.length ? await loadMissing([...new Set(missing.map(item=>item.id))]) : missing;
   const details=new Map(hydrated.map(item=>[jellyfinItemKey(item.id),item]));
   const saved: (MusicItem & {providerItemId?: string})[] = [];
+  const addedDates = new Map<string,string>();
   for (const item of items) {
     const mapping = mappings.get(item.id);
-    if(mapping?.kind===item.kind)saved.push({...item,workId:mapping.workId,providerItemId:mapping.providerItemId});
+    if(mapping?.kind===item.kind){
+      saved.push({...item,workId:mapping.workId,providerItemId:mapping.providerItemId});
+      if(item.addedAt && item.addedAt!==mapping.addedAt)addedDates.set(mapping.providerItemId,item.addedAt);
+    }
     else {
       const detail=details.get(item.id);
       // An item removed or denied between the page and detail query grants no access.
       if(!detail)continue;
       if(detail.kind!==item.kind)throw new Error('Jellyfin returned an unexpected music item type.');
-      saved.push({...await persistMusic(instanceId,detail),favourite:item.favourite,playCount:item.playCount,positionSeconds:item.positionSeconds,expectedMembers:item.expectedMembers});
+      saved.push({...await persistMusic(instanceId,{...detail,addedAt:detail.addedAt??item.addedAt}),favourite:item.favourite,playCount:item.playCount,positionSeconds:item.positionSeconds,expectedMembers:item.expectedMembers});
     }
   }
   await db.transaction(async tx => {
     await assertMusicAccount(tx,userId,connectionId,instanceId,accountGeneration,expectedResetId);
+    await saveJellyfinAddedDates(tx, addedDates);
     const rows = new Map(saved.filter(item => item.workId && item.providerItemId).map(item => [item.providerItemId!, {
       userId, connectionId, mediaId: item.workId!, providerItemId: item.providerItemId!, sourceId: 'default',
       durationSeconds: item.durationSeconds, source:{coastMembershipCount:item.expectedMembers??null,coastReadStage:readStage,coastMusicGeneration:accountGeneration,coastMusicData:{favourite:item.favourite??null,playCount:item.playCount??0,positionSeconds:item.positionSeconds??0}},state: 'available' as const, scanId, verifiedAt: new Date(),

@@ -1,4 +1,6 @@
 import { requireFeatureInTransaction } from '#lib/server/features.js';
+import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
+import type { CoastConfig } from '#lib/server/config.js';
 import { sequenceContextSchema, sequenceSourceSchema, type SequenceContext, type SequenceSource } from '../../media/sequence';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb, type Database } from '../../server/db';
@@ -47,7 +49,7 @@ function sequenceWatched(userId: string) {
 /** One recursive definition serves explicit playback, card summaries and next-entry planning.
  * Source keys and playlist entry roots preserve repeated titles and independent rewatches.
  */
-function sequenceRows(userId: string, sources: SequenceSource[], entryIds?: string[], entryPath?: string[]) {
+function sequenceRows(userId: string, sources: SequenceSource[], entryIds?: string[], entryPath?: string[], airedEpisodes?: CoastConfig['metadataSource']) {
   const requested = sql.join(sources.map(source => sql`(${source.kind}::text,${source.id}::uuid)`), sql`, `);
   const eventScope = sequenceEventScope();
   const expectedPath = entryPath && sql`array[${sql.join(entryPath.map(id => sql`${id}::uuid`),sql`, `)}]`;
@@ -94,6 +96,7 @@ function sequenceRows(userId: string, sources: SequenceSource[], entryIds?: stri
     from nodes n join media m on m.id=n.media_id
     left join tracking_state t on t.media_id=n.media_id and t.user_id=${userId}
     where coast_feature_enabled(${userId}::uuid,'screen') and m.kind in ('movie','episode')
+      ${airedEpisodes ? sql`and (m.kind <> 'episode' or ${episodeHasAired(sql`m.id`, airedEpisodes)})` : undefined}
   ), entries as (
     select *,case when not watched and duration>0 and raw_progress>=duration*0.9 then 0 else raw_progress end as progress
     from observed
@@ -157,13 +160,13 @@ export async function sequenceSummaries(userId: string, raw: SequenceSource[], d
   }
   return result;
 }
-export async function nextSequenceEntries(userId: string, raw: SequenceSource[], db: SequenceDatabase = getDb()) {
+export async function nextSequenceEntries(userId: string, raw: SequenceSource[], db: SequenceDatabase = getDb(), airedEpisodes?: CoastConfig['metadataSource']) {
   const sources = [...new Map(v.parse(v.array(sequenceSourceSchema),raw).map(source => [sourceKey(source),source])).values()];
   const result = new Map<string,SequenceEntry>();
   for (let offset=0;offset<sources.length;offset+=BATCH_SIZE) {
     const batch=sources.slice(offset,offset+BATCH_SIZE);
     await validateSources(userId,batch,db);
-    const rows = await db.execute<SequenceEntry & {kind:SequenceSource['kind'];id:string}>(sql`${sequenceRows(userId,batch)}
+    const rows = await db.execute<SequenceEntry & {kind:SequenceSource['kind'];id:string}>(sql`${sequenceRows(userId,batch,undefined,undefined,airedEpisodes)}
       select distinct on(source_kind,source_id) source_kind as kind,source_id as id,entry_id as "entryId",
         media_id as "mediaId",watched,progress,duration,dropped,boundary::text as "startedAt"
       from entries where not watched and not dropped order by source_kind,source_id,sort_path,entry_id`);

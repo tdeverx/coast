@@ -75,6 +75,7 @@ export interface AvailableItem {
   id: string;
   kind: 'movie' | 'show' | 'season' | 'episode';
   metadata: Metadata;
+  addedAt?: string;
   /** Account-scoped expected leaf count; never grants access or proves server inventory. */
   expectedMembers?: number;
   /** Raw library visibility evidence; never personal state or an access grant by itself. */

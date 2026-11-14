@@ -19,6 +19,7 @@ import { searchDocument, searchSql } from './search-ranking';
 import { rankSearch } from '#lib/search.js';
 import {namedEdition} from '#lib/media/editions.js';
 import {editionSnapshot} from '#lib/media/edition-metadata.js';
+import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 const viewOptionsSchema = v.object({
@@ -28,6 +29,7 @@ const viewOptionsSchema = v.object({
   kind: v.optional(v.picklist(['movie', 'show', 'season', 'episode', 'collection'])),
   availableFirst: v.optional(v.boolean(), false),
   editionName: v.optional(v.pipe(v.string(),v.minLength(1),v.maxLength(500))),
+  airedProgress: v.optional(v.boolean(), false),
 });
 type CollectionDescendant = {
   rootId: string;
@@ -173,6 +175,7 @@ export async function mediaViews(
     kind?: string;
     availableFirst?: boolean;
     editionName?: string;
+    airedProgress?: boolean;
   } = {},
   viewerId: string | null = userId
 ): Promise<MediaView[]> {
@@ -546,29 +549,35 @@ export async function mediaViews(
           ? 'in-progress'
           : null;
   }
-  const rewatchGroups = views.filter(
-    (item) => item.rewatchStartedAt && ['show', 'season'].includes(item.kind)
-  );
-  if (rewatchGroups.length) {
+  const episodeGroups = views.filter(item => (options.airedProgress || item.rewatchStartedAt) &&
+    (item.kind === 'show' || item.kind === 'season'));
+  if (episodeGroups.length) {
     const effective = rewatchFields(userId, sql`e.media_id`, sql`child`);
     const counts = await db.execute<{ id: string; total: number; completed: number }>(sql`
-      select parent.id, count(*)::int total, count(*) filter(where ${effective.watched})::int completed
-      from media parent join episodes e on (e.show_id=parent.id or e.season_id=parent.id)
+      with parents(id,kind,rewatching) as (values ${sql.join(episodeGroups.map(item =>
+        sql`(${item.id}::uuid,${item.kind}::text,${!!item.rewatchStartedAt}::boolean)`), sql`, `)})
+      select parent.id, count(*)::int total,
+        count(*) filter(where case when parent.rewatching then ${effective.watched} else child.watched end)::int completed
+      from parents parent join lateral (
+        select media_id from episodes where parent.kind='show' and show_id=parent.id and not is_special
+        union all
+        select media_id from episodes where parent.kind='season' and season_id=parent.id and not is_special
+      ) e on true
       left join tracking_state child on child.media_id=e.media_id and child.user_id=${userId}
-      where parent.id in (${sql.join(
-        rewatchGroups.map((item) => sql`${item.id}::uuid`),
-        sql`,`
-      )})
-        and not e.is_special group by parent.id`);
-    for (const item of rewatchGroups) {
-      const count = counts.find((row) => row.id === item.id);
-      item.completedEpisodes = count?.completed ?? 0;
-      item.totalEpisodes = count?.total ?? 0;
-      item.watched = !!count?.total && count.completed === count.total;
-      item.progress = count?.completed ?? 0;
-      item.duration = count?.total ?? 0;
-      item.trackingProgress = { unit: 'episodes', value: item.progress, total: item.duration };
-      item.status = item.dropped ? 'dropped' : item.watched ? 'completed' : 'in-progress';
+      where ${episodeHasAired(sql`e.media_id`, config.metadataSource)} group by parent.id`);
+    const countById = new Map(counts.map(row => [row.id, row]));
+    for (const item of episodeGroups) {
+      const count = countById.get(item.id);
+      const completed = count?.completed ?? 0, total = count?.total ?? 0;
+      item.completedEpisodes = completed;
+      item.totalEpisodes = total;
+      item.trackingProgress = { unit: 'episodes', value: completed, total };
+      if (item.rewatchStartedAt) {
+        item.watched = total > 0 && completed === total;
+        item.progress = completed;
+        item.duration = total;
+        item.status = item.dropped ? 'dropped' : item.watched ? 'completed' : 'in-progress';
+      }
     }
   }
   if(viewerId!==userId){
@@ -584,10 +593,10 @@ export async function mediaViews(
 }
 
 /** Explicit membership remains complete; each ordered hydration batch stays bounded. */
-export async function mediaViewsForIds(userId: string, ids: string[], viewerId = userId): Promise<MediaView[]> {
+export async function mediaViewsForIds(userId: string, ids: string[], viewerId = userId, airedProgress = false): Promise<MediaView[]> {
   const unique = [...new Set(ids)], cards = new Map<string,MediaView>();
   for (let offset=0;offset<unique.length;offset+=PAGE_SIZE)
-    for (const card of await mediaViews(userId,{ids:unique.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE},viewerId))
+    for (const card of await mediaViews(userId,{ids:unique.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE,airedProgress},viewerId))
       cards.set(card.id,card);
   return unique.flatMap(id => cards.has(id) ? [cards.get(id)!] : []);
 }
@@ -655,40 +664,27 @@ export async function nextPlayable(userId: string, item: MediaView): Promise<Med
   if (item.kind === 'movie' || item.kind === 'episode') return item.available ? item : null;
   if (item.kind === 'collection')
     return sequenceNextView(userId, { kind: 'collection', id: item.id });
-  const children = await getDb()
-    .select({ id: s.episodes.mediaId })
-    .from(s.episodes)
-    .where(
-      and(
-        or(eq(s.episodes.showId, item.id), eq(s.episodes.seasonId, item.id)),
-        eq(s.episodes.isSpecial, false)
-      )
-    )
-    .orderBy(asc(s.episodes.seasonNumber), asc(s.episodes.episodeNumber));
-  const ids = children.map((child) => child.id);
-  if (!ids.length) return null;
-  const itemOrder = sql`case ${s.media.id} ${sql.join(
-    ids.map((id, index) => sql`when ${id} then ${index}`),
-    sql` `
-  )} else ${ids.length} end`;
+  const {metadataSource} = await getConfig();
+  const id = s.episodes.mediaId;
+  const state = rewatchFields(userId, sql`${id}`);
   const [candidate] = await getDb()
-    .select({ id: s.media.id })
-    .from(s.media)
+    .select({ id })
+    .from(s.episodes)
     .leftJoin(
       s.trackingState,
-      and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId))
+      and(eq(s.trackingState.mediaId, id), eq(s.trackingState.userId, userId))
     )
-    .leftJoin(s.episodes, eq(s.episodes.mediaId, s.media.id))
     .where(
       and(
-        inArray(s.media.id, ids),
-        sql`exists (select 1 from availability a join provider_connections c on c.id = a.connection_id join provider_instances p on p.id = c.instance_id where a.media_id = ${s.media.id} and a.user_id = ${userId} and c.user_id = ${userId} and a.state = 'available' and c.status = 'connected' and p.enabled)`
+        eq(item.kind === 'season' ? s.episodes.seasonId : s.episodes.showId, item.id),
+        eq(s.episodes.isSpecial, false),
+        episodeHasAired(sql`${id}`, metadataSource),
+        sql`exists (select 1 from availability a join provider_connections c on c.id = a.connection_id join provider_instances p on p.id = c.instance_id where a.media_id = ${id} and a.user_id = ${userId} and c.user_id = ${userId} and a.state = 'available' and c.status = 'connected' and p.enabled)`
       )
     )
     .orderBy(
-      sql`case when not (${rewatchFields(userId, sql`${s.media.id}`).watched}) and (${rewatchFields(userId, sql`${s.media.id}`).progress}) > 0 then 0 when not (${rewatchFields(userId, sql`${s.media.id}`).watched}) then 1 else 2 end`,
-      itemOrder,
-      asc(s.media.id)
+      sql`case when not (${state.watched}) and (${state.progress}) > 0 then 0 when not (${state.watched}) then 1 else 2 end`,
+      asc(s.episodes.seasonNumber), asc(s.episodes.episodeNumber), asc(id)
     )
     .limit(1);
   if (!candidate) return null;
@@ -697,7 +693,7 @@ export async function nextPlayable(userId: string, item: MediaView): Promise<Med
 
 export async function detailsData(userId: string, id: string, includeChildren = true) {
   v.parse(uuidSchema, id);
-  const [item] = await mediaViews(userId, { ids: [id] });
+  const [item] = await mediaViews(userId, { ids: [id], airedProgress: true });
   if (!item) throw new AppError(404, 'This title was not found.');
   const db = getDb();
   const contextId = item.showId ?? id;
@@ -759,7 +755,7 @@ export async function detailsData(userId: string, id: string, includeChildren = 
     const missing = [...new Set(ids)].filter(id => !cards.has(id));
     if (missing.length) {
       for (const id of missing) cards.set(id, undefined);
-      for (const card of await mediaViewsForIds(userId, missing)) cards.set(card.id, card);
+      for (const card of await mediaViewsForIds(userId, missing, userId, true)) cards.set(card.id, card);
     }
     return orderedCards(ids);
   };

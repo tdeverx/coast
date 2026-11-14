@@ -3,6 +3,7 @@ import * as v from 'valibot';
 import type { MusicItem, MusicPage } from '#lib/music/model.js';
 import type { ProviderTransport } from '../contracts';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
+import { jellyfinAddedDate } from './added-date.server';
 
 const text = v.nullish(v.string());
 const number = v.nullish(v.pipe(v.number(), v.finite(), v.minValue(0)));
@@ -51,6 +52,7 @@ const itemSchema = v.object({
   RunTimeTicks: number,
   ChildCount: number,
   PremiereDate: text,
+  DateCreated: text,
   ProductionYear: number,
   Genres: v.nullish(v.array(v.string()), []),
   Overview: text,
@@ -67,6 +69,7 @@ function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
   return {
     id: jellyfinItemKey(item.Id),
     kind: kinds[item.Type],
+    addedAt: jellyfinAddedDate(item.DateCreated),
     expectedMembers: item.Type === 'MusicAlbum' ? item.ChildCount ?? undefined : undefined,
     title:
       item.Name?.trim() || (item.Type === 'Audio' ? `Track ${item.IndexNumber ?? '?'}` : item.Id),
@@ -113,7 +116,7 @@ export async function browseMusic(
   const query = new URLSearchParams({
     userId,
     recursive: 'true',
-    fields: scan?.scope === 'user' ? 'ChildCount' : 'Genres,Overview,ProviderIds,ChildCount',
+    fields: scan?.scope === 'user' ? 'DateCreated,ChildCount' : 'DateCreated,Genres,Overview,ProviderIds,ChildCount',
     enableUserData: String(scan?.scope !== 'library'),
     enableImages: String(scan?.scope !== 'user'),
     enableImageTypes: 'Primary',
@@ -184,7 +187,7 @@ export async function musicItems(call: ProviderTransport, userId: string, ids: s
   for (let offset = 0; offset < requested.length; offset += 100) {
     const batch = requested.slice(offset, offset + 100);
     const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
-      includeItemTypes: 'MusicAlbum,Audio', fields: 'Genres,Overview,ProviderIds,ChildCount',
+      includeItemTypes: 'MusicAlbum,Audio', fields: 'DateCreated,Genres,Overview,ProviderIds,ChildCount',
       enableUserData: 'true', enableImages: 'true', enableImageTypes: 'Primary',
       enableTotalRecordCount: 'true', startIndex: '0', limit: String(batch.length)});
     const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: count, StartIndex: v.optional(count)}), await call(`/Items?${query}`));

@@ -109,12 +109,18 @@ run('inventory freshness follows full-refresh cadence while B permissions are al
 });
 
 run('recent ordinary metadata refresh retains completed library provenance',async()=>{
-  const f=await fixture(1),db=getDb();await syncJellyfinUser(f.a.user.id,f.a.context.connection.id,undefined,f.a.context);
+  const f=await fixture(1),db=getDb();
+  const addedAt='2024-02-03T12:00:00.000Z';
+  Object.assign(f.remote[0],{DateCreated:addedAt});
+  await syncJellyfinUser(f.a.user.id,f.a.context.connection.id,undefined,f.a.context);
   const [before]=await db.select().from(s.providerItems).where(and(eq(s.providerItems.instanceId,f.instance.id),eq(s.providerItems.externalId,f.mappings[0].externalId)));
+  expect(before.snapshot.addedAt).toBe(addedAt);
   f.remote[0].Name='Updated shared metadata';
+  Reflect.deleteProperty(f.remote[0],'DateCreated');
   await scanJellyfinLibrary(f.a.user.id,f.a.context.connection.id,false,undefined,f.a.context);
   const [after]=await db.select().from(s.providerItems).where(eq(s.providerItems.id,before.id));
   expect(after.mediaId).toBe(before.mediaId);expect(after.snapshot.title).toBe('Updated shared metadata');expect(after.snapshot.screenAccess).toEqual(before.snapshot.screenAccess);
+  expect(after.snapshot.addedAt).toBe(addedAt);
   const b=await f.account();expect(await tryReuseScreenAccess(b.context)).toBe(f.titles.length);
 });
 

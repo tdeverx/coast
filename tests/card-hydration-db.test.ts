@@ -12,7 +12,7 @@ beforeAll(async()=>{
   if(process.env.COAST_DB_TEST!=='1')return;
   const [user]=await getDb().insert(s.users).values({username:`hydration-${crypto.randomUUID()}`}).returning({id:s.users.id});owner=user.id;
   shows=(await getDb().insert(s.media).values(Array.from({length:60},(_,i)=>({kind:'show' as const,title:`Parent ${i}`}))).returning({id:s.media.id})).map(row=>row.id);
-  episodes=(await getDb().insert(s.media).values(Array.from({length:60},(_,i)=>({kind:'episode' as const,title:`Episode ${i}`}))).returning({id:s.media.id})).map(row=>row.id);
+  episodes=(await getDb().insert(s.media).values(Array.from({length:60},(_,i)=>({kind:'episode' as const,title:`Episode ${i}`, releaseDate: '2020-01-01'}))).returning({id:s.media.id})).map(row=>row.id);
   await getDb().insert(s.shows).values(shows.map(mediaId=>({mediaId})));
   await getDb().insert(s.episodes).values(episodes.map((mediaId,i)=>({mediaId,showId:shows[i],seasonNumber:1,episodeNumber:1})));
 });

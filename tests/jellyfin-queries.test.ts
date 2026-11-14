@@ -8,9 +8,13 @@ test('shared screen metadata omits discarded sources while user access keeps sou
     const query=new URL(path,'https://fixture.invalid').searchParams;
     fields.push(query.get('fields')!);
     expect(query.get('enableUserData')).toBe(fields.length===1?'false':'true');
-    return {Items:[],TotalRecordCount:0};
+    return {Items:[{Id:'a'.repeat(32),Type:'Movie',DateCreated:'2025-06-20T13:30:00.1234567+01:00'}],TotalRecordCount:1};
   },'device');
-  await adapter.library('user');await adapter.library('user',0,undefined,'user');
+  for(const scope of ['library','user'] as const){
+    const page=await adapter.library('user',0,undefined,scope);
+    expect(page.items[0].addedAt).toBe('2025-06-20T12:30:00.123Z');
+  }
+  expect(fields.every(value=>value.split(',').includes('DateCreated'))).toBe(true);
   expect(fields[0]).not.toContain('MediaSources');expect(fields[0]).not.toContain('MediaStreams');
   expect(fields[1]).toContain('MediaSources');
 });
@@ -84,7 +88,7 @@ test('music scan projections separate metadata from personal observations withou
   expect(queries[0].get('minDateLastSaved')).toBe(since);expect(queries[0].get('enableUserData')).toBe('false');
   expect(queries[0].get('fields')).toContain('ProviderIds');
   expect(queries[1].get('minDateLastSaved')).toBeNull();expect(queries[1].get('enableUserData')).toBe('true');
-  expect(queries[1].get('enableImages')).toBe('false');expect(queries[1].get('fields')).toBe('ChildCount');expect(queries[1].get('filters')).toBe('IsFavorite');
+  expect(queries[1].get('enableImages')).toBe('false');expect(queries[1].get('fields')).toBe('DateCreated,ChildCount');expect(queries[1].get('filters')).toBe('IsFavorite');
   expect(queries[2].get('enableImages')).toBe('true');expect(queries[2].get('fields')).toContain('Overview');
 });
 

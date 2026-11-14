@@ -1,8 +1,10 @@
 import { getFeatureConfig } from '#lib/server/features.js';
+import { getConfig } from '../config';
 import {profileVisibility,requireVisible} from '#lib/social/privacy.server.js';
 import {workCards} from '#lib/collection/query.server.js';
 import { recordedWatches as watches } from '#lib/core/tracking/recorded-watches.server.js';
 import { libraryTrackingCondition } from './library';
+import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
 import { periodStart, type ProfilePeriod } from '#lib/profile/period.js';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -545,7 +547,8 @@ export async function profileProgress(
     }
   }
   const showIds = rows.filter((row) => views.get(row.id)?.kind === 'show').map((row) => row.id);
-  const counts = showIds.length
+  const config = showIds.length ? await getConfig() : undefined;
+  const counts = config
     ? await getDb().execute<{
         id: string;
         total: number;
@@ -561,26 +564,27 @@ export async function profileProgress(
     where e.show_id in (${sql.join(
       showIds.map((id) => sql`${id}::uuid`),
       sql`,`
-    )}) and not e.is_special group by e.show_id
+    )}) and not e.is_special and ${episodeHasAired(sql`e.media_id`, config.metadataSource)} group by e.show_id
   `)
     : [];
-  for (const count of counts) {
-    const item = views.get(count.id)!;
+  const countById = new Map(counts.map(row => [row.id, row]));
+  for (const id of showIds) {
+    const item = views.get(id)!;
     if (item.rewatchStartedAt) {
       item.captionTitle = item.title;
-      item.captionSubtitle = `Rewatching · ${item.completedEpisodes} / ${item.totalEpisodes} episodes`;
+      item.captionSubtitle = `Rewatching · ${item.completedEpisodes} / ${item.totalEpisodes} aired`;
       continue;
     }
-    views.set(count.id, {
+    const count = countById.get(id) ?? {total:0, completed:0, partial:0, fraction:0};
+    views.set(id, {
       ...item,
-      watched: count.total > 0 && count.completed === count.total,
       completedEpisodes: count.completed,
       totalEpisodes: count.total,
       trackingProgress: { unit: 'percent', value: count.fraction * 100 },
       status:
         selected === 'dropped' ? 'dropped' : selected === 'watched' ? 'completed' : 'in-progress',
       captionTitle: item.title,
-      captionSubtitle: `${count.completed} / ${count.total} episodes${count.partial ? ` · ${count.partial} started` : ''}`,
+      captionSubtitle: `${count.completed} / ${count.total} aired${count.partial ? ` · ${count.partial} started` : ''}`,
     });
   }
   return {

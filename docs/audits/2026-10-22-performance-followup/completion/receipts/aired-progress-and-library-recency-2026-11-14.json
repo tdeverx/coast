@@ -1,0 +1,539 @@
+{
+  "baseline": "42626801a398538022ee839b7878839544b5db5d",
+  "runtime": "963452075e9d7e2a47a482f297143af5ed4f76c0",
+  "architecture": "arm64",
+  "database": {
+    "read_only": "on",
+    "postgres": "17.11",
+    "timeout": "10s",
+    "jit": "off"
+  },
+  "applicationScope": "Native read models on a pre-change actual-data copy in read-only mode. Account identities and media payloads are omitted.",
+  "container": {
+    "cpu": 6,
+    "memoryMiB": 2048
+  },
+  "accounts": [
+    {
+      "availableSourceWorks": 28812
+    },
+    {
+      "availableSourceWorks": 28812
+    }
+  ],
+  "largestShowEpisodes": 805,
+  "methodology": "Alternating execution order with one untimed-for-comparison warm-up and five recorded pairs. The measured functions include card hydration and time through returned DTOs. SQL plans from the last run were replayed outside the timing samples. The PostgreSQL fixture suite also ran during part of the sample window.",
+  "workloads": [
+    {
+      "workload": "recent-preview",
+      "cohort": 0,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 431.38,
+        "samplesMs": [
+          265.55,
+          277.89,
+          260.4,
+          255.29,
+          253.12
+        ],
+        "medianMs": 260.4,
+        "drizzleStatements": 19,
+        "total": 2693,
+        "cards": 20,
+        "plans": [
+          {
+            "executionMs": 138.137,
+            "hit": 182103,
+            "read": 19219,
+            "temp": 0,
+            "rows": 1
+          },
+          {
+            "executionMs": 134.848,
+            "hit": 182053,
+            "read": 19269,
+            "temp": 0,
+            "rows": 20
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 213.02,
+        "samplesMs": [
+          236.4,
+          162.69,
+          162.29,
+          168.35,
+          162.49
+        ],
+        "medianMs": 162.69,
+        "drizzleStatements": 18,
+        "total": 2693,
+        "cards": 20,
+        "plans": [
+          {
+            "executionMs": 150.369,
+            "hit": 182298,
+            "read": 30196,
+            "temp": 0,
+            "rows": 1
+          }
+        ]
+      }
+    },
+    {
+      "workload": "recent-page-two",
+      "cohort": 0,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 363.23,
+        "samplesMs": [
+          251.12,
+          256.13,
+          245.67,
+          242.58,
+          236.52
+        ],
+        "medianMs": 245.67,
+        "drizzleStatements": 19,
+        "total": 2693,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 137.055,
+            "hit": 182127,
+            "read": 19195,
+            "temp": 0,
+            "rows": 1
+          },
+          {
+            "executionMs": 134.394,
+            "hit": 182129,
+            "read": 19193,
+            "temp": 0,
+            "rows": 60
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 192.93,
+        "samplesMs": [
+          313.66,
+          147.12,
+          150.33,
+          159.89,
+          146.61
+        ],
+        "medianMs": 150.33,
+        "drizzleStatements": 18,
+        "total": 2693,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 146.537,
+            "hit": 182386,
+            "read": 30108,
+            "temp": 0,
+            "rows": 1
+          }
+        ]
+      }
+    },
+    {
+      "workload": "continue",
+      "cohort": 0,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 317.67,
+        "samplesMs": [
+          254.55,
+          259.85,
+          235.38,
+          260.53,
+          235.8
+        ],
+        "medianMs": 254.55,
+        "drizzleStatements": 23,
+        "total": 4,
+        "cards": 4,
+        "plans": [
+          {
+            "executionMs": 225.081,
+            "hit": 781822,
+            "read": 18424,
+            "temp": 0,
+            "rows": 206
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 141.49,
+        "samplesMs": [
+          443.47,
+          124.88,
+          122.52,
+          126.05,
+          121.75
+        ],
+        "medianMs": 124.88,
+        "drizzleStatements": 23,
+        "total": 4,
+        "cards": 4,
+        "plans": [
+          {
+            "executionMs": 98.903,
+            "hit": 521042,
+            "read": 0,
+            "temp": 0,
+            "rows": 206
+          }
+        ]
+      }
+    },
+    {
+      "workload": "next",
+      "cohort": 0,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 309.15,
+        "samplesMs": [
+          234.62,
+          224.8,
+          223.79,
+          274.91,
+          219.14
+        ],
+        "medianMs": 224.8,
+        "drizzleStatements": 26,
+        "total": 8,
+        "cards": 8,
+        "plans": [
+          {
+            "executionMs": 225.648,
+            "hit": 781868,
+            "read": 18378,
+            "temp": 0,
+            "rows": 206
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 141.32,
+        "samplesMs": [
+          179.62,
+          109.22,
+          114.78,
+          114.88,
+          112.17
+        ],
+        "medianMs": 114.78,
+        "drizzleStatements": 27,
+        "total": 8,
+        "cards": 8,
+        "plans": [
+          {
+            "executionMs": 96.968,
+            "hit": 521042,
+            "read": 0,
+            "temp": 0,
+            "rows": 206
+          },
+          {
+            "executionMs": 0.421,
+            "hit": 394,
+            "read": 0,
+            "temp": 0,
+            "rows": 1
+          }
+        ]
+      }
+    },
+    {
+      "workload": "recent-preview",
+      "cohort": 1,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 353.66,
+        "samplesMs": [
+          275.06,
+          253,
+          247.4,
+          278.04,
+          248.73
+        ],
+        "medianMs": 253,
+        "drizzleStatements": 19,
+        "total": 2693,
+        "cards": 20,
+        "plans": [
+          {
+            "executionMs": 147.014,
+            "hit": 210112,
+            "read": 21129,
+            "temp": 0,
+            "rows": 1
+          },
+          {
+            "executionMs": 150.528,
+            "hit": 210275,
+            "read": 20966,
+            "temp": 0,
+            "rows": 20
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 220.63,
+        "samplesMs": [
+          354.54,
+          155.43,
+          147.14,
+          153.86,
+          151.57
+        ],
+        "medianMs": 153.86,
+        "drizzleStatements": 18,
+        "total": 2693,
+        "cards": 20,
+        "plans": [
+          {
+            "executionMs": 168.287,
+            "hit": 210391,
+            "read": 37607,
+            "temp": 0,
+            "rows": 1
+          }
+        ]
+      }
+    },
+    {
+      "workload": "recent-page-two",
+      "cohort": 1,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 428.25,
+        "samplesMs": [
+          275.45,
+          259.59,
+          259.92,
+          299.95,
+          265.88
+        ],
+        "medianMs": 265.88,
+        "drizzleStatements": 19,
+        "total": 2693,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 148.014,
+            "hit": 210157,
+            "read": 21084,
+            "temp": 0,
+            "rows": 1
+          },
+          {
+            "executionMs": 149.949,
+            "hit": 210169,
+            "read": 21072,
+            "temp": 0,
+            "rows": 60
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 254.25,
+        "samplesMs": [
+          176.89,
+          158.21,
+          160.84,
+          161.57,
+          165.09
+        ],
+        "medianMs": 161.57,
+        "drizzleStatements": 18,
+        "total": 2693,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 165.487,
+            "hit": 210600,
+            "read": 37398,
+            "temp": 0,
+            "rows": 1
+          }
+        ]
+      }
+    },
+    {
+      "workload": "continue",
+      "cohort": 1,
+      "sameOrderedIdentities": false,
+      "baseline": {
+        "warmupMs": 627.98,
+        "samplesMs": [
+          418.8,
+          424.13,
+          416.64,
+          452.57,
+          445.09
+        ],
+        "medianMs": 424.13,
+        "drizzleStatements": 27,
+        "total": 84,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 294.987,
+            "hit": 889128,
+            "read": 20025,
+            "temp": 0,
+            "rows": 16628
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 747.37,
+        "samplesMs": [
+          449.89,
+          382.19,
+          387.58,
+          400.71,
+          386.13
+        ],
+        "medianMs": 387.58,
+        "drizzleStatements": 27,
+        "total": 83,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 246.859,
+            "hit": 843689,
+            "read": 17176,
+            "temp": 0,
+            "rows": 16153
+          }
+        ]
+      }
+    },
+    {
+      "workload": "next",
+      "cohort": 1,
+      "sameOrderedIdentities": false,
+      "baseline": {
+        "warmupMs": 699,
+        "samplesMs": [
+          396.16,
+          408.73,
+          384.69,
+          412.95,
+          382.14
+        ],
+        "medianMs": 396.16,
+        "drizzleStatements": 30,
+        "total": 238,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 292.292,
+            "hit": 889595,
+            "read": 19558,
+            "temp": 0,
+            "rows": 16628
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 771.8,
+        "samplesMs": [
+          366.56,
+          347.36,
+          347.52,
+          346.84,
+          353.76
+        ],
+        "medianMs": 347.52,
+        "drizzleStatements": 31,
+        "total": 236,
+        "cards": 60,
+        "plans": [
+          {
+            "executionMs": 240.912,
+            "hit": 843524,
+            "read": 17341,
+            "temp": 0,
+            "rows": 16153
+          },
+          {
+            "executionMs": 2.831,
+            "hit": 5378,
+            "read": 269,
+            "temp": 0,
+            "rows": 51
+          }
+        ]
+      }
+    },
+    {
+      "workload": "show-next",
+      "cohort": 0,
+      "sameOrderedIdentities": true,
+      "baseline": {
+        "warmupMs": 36.66,
+        "samplesMs": [
+          17.83,
+          16.18,
+          15.5,
+          20.41,
+          21.62
+        ],
+        "medianMs": 17.83,
+        "drizzleStatements": 18,
+        "total": null,
+        "cards": 1,
+        "plans": [
+          {
+            "executionMs": 0.248,
+            "hit": 179,
+            "read": 0,
+            "temp": 0,
+            "rows": 806
+          }
+        ]
+      },
+      "candidate": {
+        "warmupMs": 16.55,
+        "samplesMs": [
+          11.81,
+          12.66,
+          10.93,
+          12.13,
+          14.07
+        ],
+        "medianMs": 12.13,
+        "drizzleStatements": 17,
+        "total": null,
+        "cards": 1,
+        "plans": []
+      }
+    }
+  ],
+  "earlierTrial": {
+    "candidateContinueCohortOneMs": 1654.34,
+    "context": "Early candidate warm-up observed during other test activity. Not part of the warm medians."
+  },
+  "contracts": [
+    "Recently added shares the eligible count and ordered page read in one snapshot, hydrates at most 20 preview or 60 expanded cards, and adds no remote lookups.",
+    "Continuations stop expanding permitted availability when the caller tracks all titles. The caller still applies viewer availability when requested. Show next-playable keeps candidate sorting in PostgreSQL.",
+    "Aired group rollups run as one batch on hydrated Progress or detail cards. Existing Jellyfin scan pages store changed timestamps in one batch and skip unchanged observations."
+  ],
+  "fixtureCoverage": [
+    "Unknown and future episodes, air dates supplied by an override, read-time totals, and ordinary and experimental Next.",
+    "Movie ordering independent of catalogue insertion, accessible episode precedence, another account receiving a different order, revoked access, and paging before hydration.",
+    "Existing Jellyfin mappings gain their dates on authenticated scan pages and retain them through an ordinary metadata refresh."
+  ],
+  "limitations": [
+    "The actual copy had no Jellyfin added timestamps before this change. It verifies fallback order and cost on that cohort. Positive timestamp order and isolation are validated by the authored PostgreSQL cases.",
+    "These local samples do not measure production latency, fresh-provider behavior, browser rendering, or the rollout backfill."
+  ]
+}

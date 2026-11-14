@@ -81,10 +81,10 @@ suite('application PostgreSQL read models', () => {
         { id: season, kind: 'season', title: 'Season 1' },
         { id: completeShow, kind: 'show', title: 'Completed show' },
         { id: completeSeason, kind: 'season', title: 'Complete season' },
-        { id: episodeOne, kind: 'episode', title: 'Regular episode 1' },
-        { id: episodeTwo, kind: 'episode', title: 'Regular episode 2' },
-        { id: special, kind: 'episode', title: 'Special' },
-        { id: completeEpisode, kind: 'episode', title: 'Complete episode' },
+        { id: episodeOne, kind: 'episode', title: 'Regular episode 1', releaseDate: '2020-01-01' },
+        { id: episodeTwo, kind: 'episode', title: 'Regular episode 2', releaseDate: '2020-01-01' },
+        { id: special, kind: 'episode', title: 'Special', releaseDate: '2020-01-01' },
+        { id: completeEpisode, kind: 'episode', title: 'Complete episode', releaseDate: '2020-01-01' },
         { id: collection, kind: 'collection', title: 'Mixed collection' },
         { id: anchor, kind: 'movie', title: 'Recommendation anchor', genres: [genre] },
         { id: recommendation, kind: 'movie', title: 'Recommended movie' },
@@ -273,8 +273,8 @@ suite('application PostgreSQL read models', () => {
         { id: unwatched, kind: 'movie', title: 'Never viewed', updatedAt: new Date('2090-01-01') },
         { id: series, kind: 'show', title: 'Recently viewed series' },
         { id: seasonId, kind: 'season', title: 'Season' },
-        { id: e1, kind: 'episode', title: 'Finished episode' },
-        { id: e2, kind: 'episode', title: 'Next episode' },
+        { id: e1, kind: 'episode', title: 'Finished episode', releaseDate: '2020-01-01' },
+        { id: e2, kind: 'episode', title: 'Next episode', releaseDate: '2020-01-01' },
       ]);
     await getDb()
       .insert(s.movies)
@@ -429,7 +429,7 @@ suite('application PostgreSQL read models', () => {
           kind: 'season' as const,
           title: 'Named season ' + i,
         })),
-        ...[e1, e2, e3].map((id, i) => ({ id, kind: 'episode' as const, title: 'Episode ' + i })),
+        ...[e1, e2, e3].map((id, i) => ({ id, kind: 'episode' as const, title: 'Episode ' + i, releaseDate: '2020-01-01' })),
       ]);
     await getDb().insert(s.shows).values({ mediaId: showId });
     await getDb()
@@ -944,15 +944,16 @@ suite('application PostgreSQL read models', () => {
       await db.insert(s.providerConnections).values({id:connection,userId:owner,instanceId:instance,status:'connected'});
       await db.insert(s.media).values(rows);
       await db.execute(sql`update works set created_at=media.created_at from media where works.id=media.id and ${inArray(s.works.id,rows.map(row=>row.id))}`);
-      const sources=rows.slice(0,61).map(row=>({id:crypto.randomUUID(),instanceId:instance,mediaId:row.id,externalId:'recent-'+row.id,kind:'movie' as const}));
+      const sources=rows.slice(0,61).map((row,index)=>({id:crypto.randomUUID(),instanceId:instance,mediaId:row.id,externalId:'recent-'+row.id,kind:'movie' as const,
+        snapshot:index===0?{addedAt:'2025-01-01T00:00:00.000Z'}:{}}));
       await db.insert(s.providerItems).values(sources);
       await db.insert(s.availability).values(sources.map(item=>({userId:owner,connectionId:connection,providerItemId:item.id,mediaId:item.mediaId})));
       await db.update(s.media).set({updatedAt:new Date('2099-01-01')}).where(eq(s.media.id,rows[0].id));
       const first=await recentLibraryData(owner,{kind:'movie',preview:true});
       const second=await recentLibraryData(owner,{kind:'movie',preview:true,page:2});
       expect(first.total).toBe(61);expect(first.items).toHaveLength(20);expect(first.pages).toBe(4);
-      expect(first.items.map(item=>item.id)).toEqual(rows.slice(41,61).reverse().map(row=>row.id));
-      expect(second.items.map(item=>item.id)).toEqual(rows.slice(21,41).reverse().map(row=>row.id));
+      expect(first.items.map(item=>item.id)).toEqual([rows[0].id,...rows.slice(42,61).reverse().map(row=>row.id)]);
+      expect(second.items.map(item=>item.id)).toEqual(rows.slice(22,42).reverse().map(row=>row.id));
       expect(first.items.every(item=>item.available)).toBe(true);
       const oldest=await libraryData(owner,{kind:'movie',sort:'added-asc'});
       const newest=await libraryData(owner,{kind:'movie',sort:'added'});
@@ -965,6 +966,33 @@ suite('application PostgreSQL read models', () => {
     }finally{
       await db.delete(s.users).where(eq(s.users.id,owner));
       await db.delete(s.media).where(inArray(s.media.id,rows.map(row=>row.id)));
+    }
+  });
+  test('Recently added ranks a show using only the viewer’s accessible episodes',async()=>{
+    const db=getDb(),owner=crypto.randomUUID(),friend=crypto.randomUUID(),ownerSource=crypto.randomUUID(),friendSource=crypto.randomUUID();
+    const [series,film,sharedEpisode,privateEpisode]=Array.from({length:4},()=>crypto.randomUUID());
+    ids.push(series,film,sharedEpisode,privateEpisode);
+    try{
+      await db.insert(s.users).values([{id:owner,username:'recent-'+owner},{id:friend,username:'recent-'+friend}]);
+      await db.insert(s.providerConnections).values([{id:ownerSource,userId:owner,instanceId:instance,status:'connected'},{id:friendSource,userId:friend,instanceId:instance,status:'connected'}]);
+      const entries=[{id:series,kind:'show',addedAt:'2026-01-01T00:00:00.000Z'},{id:film,kind:'movie',addedAt:'2024-01-01T00:00:00.000Z'},
+        {id:sharedEpisode,kind:'episode',addedAt:'2023-01-01T00:00:00.000Z'},{id:privateEpisode,kind:'episode',addedAt:'2025-01-01T00:00:00.000Z'}] as const;
+      await db.insert(s.media).values(entries.map(({id,kind})=>({id,kind,title:id})));
+      await db.insert(s.shows).values({mediaId:series});
+      await db.insert(s.episodes).values([sharedEpisode,privateEpisode].map((mediaId,index)=>({mediaId,showId:series,seasonNumber:1,episodeNumber:index+1})));
+      const mappings=await db.insert(s.providerItems).values(entries.map(({id,kind,addedAt})=>({instanceId:instance,mediaId:id,externalId:id,kind,snapshot:{addedAt}}))).returning();
+      const grant=(mediaId:string,userId:string,connectionId:string)=>({mediaId,userId,connectionId,providerItemId:mappings.find(item=>item.mediaId===mediaId)!.id});
+      await db.insert(s.availability).values([grant(series,owner,ownerSource),grant(film,owner,ownerSource),grant(sharedEpisode,owner,ownerSource),grant(film,friend,friendSource),grant(privateEpisode,friend,friendSource)]);
+      const recent=async(id:string)=>(await recentLibraryData(id,{kind:'all',action:'watch'})).items.map(item=>item.id);
+      expect(await recent(owner)).toEqual([film,series]);
+      expect(await recent(friend)).toEqual([series,film]);
+      const [newGrant]=await db.insert(s.availability).values(grant(privateEpisode,owner,ownerSource)).returning();
+      expect(await recent(owner)).toEqual([series,film]);
+      await db.update(s.availability).set({state:'unavailable'}).where(eq(s.availability.id,newGrant.id));
+      expect(await recent(owner)).toEqual([film,series]);
+    }finally{
+      await db.delete(s.users).where(inArray(s.users.id,[owner,friend]));
+      await db.delete(s.media).where(inArray(s.media.id,[series,film,sharedEpisode,privateEpisode]));
     }
   });
   test('combined Recently added counts both screen types and excludes other actions before pagination',async()=>{

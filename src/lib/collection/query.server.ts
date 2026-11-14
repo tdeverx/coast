@@ -328,16 +328,16 @@ export async function workSummaries(ownerId: string, viewerId: string | null, id
   return ids.flatMap(id=>summaries.has(id)?[summaries.get(id)!]:[]);
 }
 
-export async function workCards(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
+export async function workCards(ownerId: string, viewerId: string | null, ids: string[], airedProgress = false): Promise<(MediaView | MediaCardPresentation)[]> {
   const unique = [...new Set(ids)];
   const cards = new Map<string,MediaView|MediaCardPresentation>();
   for (let offset=0;offset<unique.length;offset+=PAGE_SIZE) {
-    for (const card of await workCardPage(ownerId,viewerId,unique.slice(offset,offset+PAGE_SIZE)))
+    for (const card of await workCardPage(ownerId,viewerId,unique.slice(offset,offset+PAGE_SIZE),airedProgress))
       cards.set(('workId' in card ? card.workId : undefined)??card.id,card);
   }
   return ids.flatMap(id => cards.has(id) ? [cards.get(id)!] : []);
 }
-async function workCardPage(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
+async function workCardPage(ownerId: string, viewerId: string | null, ids: string[], airedProgress: boolean): Promise<(MediaView | MediaCardPresentation)[]> {
   if (!ids.length) return [];
   const uuid=v.pipe(v.string(),v.uuid());
   v.parse(uuid,ownerId);
@@ -353,7 +353,7 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   const screenIds=categoryIds('screen'),gameIds=categoryIds('game'),musicIds=categoryIds('music');
   const readingIds=identities.filter(work=>work.category==='book'||work.category==='comic').map(work=>work.id);
   const [screen,gameRows,musicRows,readingRows] = await Promise.all([
-    screenIds.length?mediaViews(ownerId,{ids:screenIds,limit:PAGE_SIZE},viewerId):[],
+    screenIds.length?mediaViews(ownerId,{ids:screenIds,limit:PAGE_SIZE,airedProgress},viewerId):[],
     gameIds.length?(await import('#lib/core/games/service.server.js')).gamePresentationMetadata(gameIds).then(rows=>[...rows.values()]):[],
     musicIds.length?db.select().from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
     readingIds.length&&(config.experimentalBooks||config.experimentalComics)

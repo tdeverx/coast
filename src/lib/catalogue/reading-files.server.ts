@@ -5,6 +5,7 @@ import {assertJobLease,JobYield} from '#lib/server/queue/execution.js';
 import {AppError} from '#lib/server/security/errors.js';
 import {bookFormat,jellyfinComicVineId,jellyfinOpenLibraryId,type JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
+import {jellyfinAddedDate} from '#lib/providers/jellyfin/added-date.server.js';
 import {readingWorkForEdition} from '#lib/providers/reading.server.js';
 import type {ReadingIdentity} from '#lib/reading/model.js';
 /** Resolve exact references before opening a transaction; edition lookups use the shared provider cache. */
@@ -57,7 +58,7 @@ export async function observeReadingFile(input:{userId:string;connectionId:strin
   const editionMetadata={version:edition,identityConflict:false};
   if(existing)await tx.update(workEditions).set({format,metadata:editionMetadata}).where(eq(workEditions.id,existing.id));
   else await tx.insert(workEditions).values({workId,instanceId,externalId:key,format,metadata:editionMetadata});
-  const snapshot={format,title:book.Name??'',version:edition};
+  const snapshot={format,title:book.Name??'',version:edition,addedAt:jellyfinAddedDate(book.DateCreated)??previous?.snapshot.addedAt};
   const [item]=previous?await tx.update(providerItems).set({snapshot,lastSeenAt:new Date()}).where(eq(providerItems.id,previous.id)).returning():await tx.insert(providerItems).values({instanceId,externalId:key,mediaId:workId,kind:work.kind,snapshot,lastSeenAt:new Date()}).returning();
   if(input.access!==false)await tx.insert(availability).values({userId,connectionId,mediaId:workId,providerItemId:item.id,sourceId:'default',container:format,edition,state:'available',scanId,source:{reading:true,identityConflict:false},verifiedAt:new Date()}).onConflictDoUpdate({target:[availability.userId,availability.connectionId,availability.providerItemId,availability.sourceId],set:{container:format,edition,state:'available',scanId,source:{reading:true,identityConflict:false},verifiedAt:new Date()}});
   return {item};
