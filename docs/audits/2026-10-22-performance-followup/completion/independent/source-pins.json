@@ -20,10 +20,10 @@
     "src/lib/server/queries/search.ts": "8152afce530d0f0ce93b700bb23b7e81f7aa018a16f8c1816def67e00f314f12",
     "src/lib/server/utils/provider-cache.ts": "d68be8af4b0aa884e2679ef75a044e93b3d46baadd03ecbd551a764bcaaa98f7",
     "src/lib/ui/components/Avatar.svelte": "1c163afb7867caf5aeb08d8a5a854624a3cc1303a35c04c9d805ea7e5217e878",
-    "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
+    "src/lib/ui/components/Header.svelte": "c00aadb260ecdccc0de6c0df85febfdf610a736a4a8907defe65fbf6010eae20",
     "src/routes/search/+page.server.ts": "8ff050474443315af765bbca75eaf87aecac8ddcf220d20c646422f88213ce3a",
     "src/routes/search/+page.svelte": "db1b9369b3decd13a338079177454d5764a4d5994c4bf4448df4b9d5d1a1dd5b",
-    "src/routes/ui-preview/prop-manifest.json": "45d75ac8f27cb10483a697eeaf674baaadd300e51dd5dee2dec9eed05a786688",
+    "src/routes/ui-preview/prop-manifest.json": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
     "tests/action-navigation.test.ts": "a84ba0338f78290d1b530a2a51d4de751d914ad81b87ee8b582da5b2ca6fb371",
     "tests/jellyfin-music-persistence-db.test.ts": "5fe8860604673aa8331fdb0bb98bfae1b55bd13483548ebad1879e3bff8f099b",
     "tests/media-details.test.ts": "06d107d1ea60624254b4de950e093b219f66089de79412bd28ab60074c084175",
@@ -162,6 +162,23 @@
         }
       ],
       "note": "Backup rollout roadmap refresh. Historical evidence and independent acceptance boundaries remain unchanged."
+    },
+    {
+      "epoch": "shared-links-panel-2026-11-14",
+      "report": "docs/synced-experiences.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "previousSha256": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
+          "currentSha256": "c00aadb260ecdccc0de6c0df85febfdf610a736a4a8907defe65fbf6010eae20"
+        },
+        {
+          "path": "src/routes/ui-preview/prop-manifest.json",
+          "previousSha256": "45d75ac8f27cb10483a697eeaf674baaadd300e51dd5dee2dec9eed05a786688",
+          "currentSha256": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357"
+        }
+      ],
+      "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
     }
   ]
 }

@@ -6,7 +6,7 @@
   import { publicSharePath, shareCompletionGraceMinutes, shareCompletionPercent, shareIdleMinutes } from './policy';
   import type {ShareTarget,VrchatVideoCodec} from './vrchat-profile';
   import {page} from '$app/state';
-  const {api,preview}=useClient();
+  const {api,change,preview}=useClient();
 
   let { workId, title, target='website', allowProgressTracking=true, open = $bindable(false) }: {
     workId: string; title: string; target?:ShareTarget; allowProgressTracking?:boolean; open?: boolean;
@@ -42,7 +42,7 @@
     const scope = activeDialog;
     busy = true; error = '';
     try {
-      const result = await api<{ id: string; token: string }>('sharing', { workId, connectionId, hours,target,videoCodec,autoRevoke,trackProgress });
+      const result = await change<{ id: string; token: string }>('sharing', { workId, connectionId, hours,target,videoCodec,autoRevoke,trackProgress });
       if (scope === activeDialog && !scope?.signal.aborted) created = result;
     }
     catch (cause) { if (scope === activeDialog && !scope?.signal.aborted) error = message(cause); }
@@ -53,7 +53,7 @@
     const scope = activeDialog;
     busy = true; error = '';
     try {
-      await api(`sharing/${created.id}`, undefined, 'DELETE');
+      await change(`sharing/${created.id}`, undefined, 'DELETE');
       if (scope === activeDialog && !scope?.signal.aborted) { created = null; open = false; }
     }
     catch (cause) { if (scope === activeDialog && !scope?.signal.aborted) error = message(cause); }

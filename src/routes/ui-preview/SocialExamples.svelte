@@ -105,7 +105,7 @@
   {:else if name === 'StreamsPanel'}
     <p class="small quiet" data-design-status="non-approved">Non-approved · Stream card arrangement</p>
     <Button onclick={() => open = true}>Open streams example</Button>
-    {#if StreamsPanel}<StreamsPanel bind:open initialView={scenario === 'history' ? 'history' : 'now'} />{/if}
+    {#if StreamsPanel}<StreamsPanel bind:open initialView={scenario === 'history' ? 'history' : scenario === 'links' ? 'links' : 'now'} />{/if}
   {:else if name === 'NotificationToasts'}
     {#if NotificationToasts}<NotificationToasts notifications={toastNotices} rich />{/if}
     <p class="small quiet">Notifications appear in their normal fixed position. Dismissal uses the isolated preview transport.</p>

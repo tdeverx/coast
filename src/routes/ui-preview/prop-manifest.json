@@ -294,6 +294,7 @@
           "fullscreen",
           "refresh",
           "server",
+          "broadcast",
           "clock",
           "film",
           "arrow",
@@ -1096,6 +1097,7 @@
           "fullscreen",
           "refresh",
           "server",
+          "broadcast",
           "clock",
           "film",
           "arrow",
@@ -1337,6 +1339,16 @@
         "nullable": false,
         "defaultSource": "true",
         "defaultValue": true
+      },
+      {
+        "name": "hasActiveLinks",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -1501,6 +1513,7 @@
           "fullscreen",
           "refresh",
           "server",
+          "broadcast",
           "clock",
           "film",
           "arrow",
@@ -3258,6 +3271,7 @@
           "fullscreen",
           "refresh",
           "server",
+          "broadcast",
           "clock",
           "film",
           "arrow",
@@ -4059,15 +4073,26 @@
         "nullable": false
       },
       {
+        "name": "isAdmin",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
         "name": "initialView",
-        "type": "'now'|'history'",
+        "type": "'now'|'history'|'links'",
         "optional": true,
         "bindable": false,
         "kind": "select",
         "nullable": false,
         "choices": [
           "now",
-          "history"
+          "history",
+          "links"
         ],
         "defaultSource": "'now'",
         "defaultValue": "now"

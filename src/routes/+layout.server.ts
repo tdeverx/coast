@@ -4,11 +4,13 @@ import type { LayoutServerLoad } from './$types';
 import { notificationToasts, notificationUnread } from '#lib/server/notifications/inbox.js';
 import {incomingFriendRequests} from '#lib/social/service.server.js';
 import { contentRevision } from '#lib/server/content-revision.server.js';
+import { activeShareExpiry } from '#lib/sharing/links.server.js';
 export const load = (async ({ locals, depends,params,url }) => {
-  depends('coast:session', 'coast:notifications', 'coast:social', 'coast:tracking', 'coast:planning');
+  depends('coast:session', 'coast:notifications', 'coast:social', 'coast:tracking', 'coast:planning', 'coast:sharing');
   const config=await getFeatureConfig(locals.user?.id??null);
   const viewedUsername=params.username??url.searchParams.get('username');
-  const [notifications,unreadNotifications,friendRequestCount,revision]=locals.user?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername)]):[[],0,0,null];
+  const regularUser=locals.user?.role==='user'?locals.user:null;
+  const [notifications,unreadNotifications,friendRequestCount,revision,activeShareUntil]=locals.user?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername),regularUser?activeShareExpiry(regularUser):null]):[[],0,0,null,null];
   return {
     action:resolveAction(url.searchParams,locals.user?.settings.action,config),
     capabilities:config.features,
@@ -24,6 +26,7 @@ export const load = (async ({ locals, depends,params,url }) => {
     experimentalRichToasts: config.experimentalRichToasts,
     experiments:{planning:config.experimentalPlanning},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
+    activeShareUntil,
     allowVrchatHevc:config.allowVrchatHevc,
     user: locals.user,
     contentRevision: revision,

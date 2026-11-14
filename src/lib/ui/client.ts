@@ -120,6 +120,7 @@ export async function refreshAfterChange(path: string) {
   const domain = path.split('/')[0];
   const dependencies = domain === 'planning' ? ['planning'] : domain === 'social' ? ['social', 'notifications']
     : domain === 'notifications' ? ['notifications']
+    : domain === 'sharing' ? ['sharing']
     : ['providers', 'queue', 'conflicts', 'requests'].includes(domain) ? ['providers', 'tracking', 'notifications']
     : ['settings', 'profile', 'admin'].includes(domain) ? ['session', 'settings', 'tracking', 'social']
     : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'reading', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']

@@ -11,7 +11,7 @@ import {workCards} from '#lib/collection/query.server.js';
 import {profilePath} from '#lib/profile/url.js';
 import type {MediaView,MediaCardPresentation,MediaCardDisplay} from '#lib/ui/types.js';
 type Stream=NonNullable<ReturnType<typeof streamPresentation>>;
-export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];scanning:boolean;checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
+export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{linkId:string;creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];scanning:boolean;checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
 /** Resolve a whole server's streams in bounded batches; never fetch artwork directly from private server URLs. */
 export async function streamCards<T extends Stream>(userId:string,instanceId:string,streams:T[]){
  if(!streams.length)return [];
@@ -68,7 +68,7 @@ export async function activeStreams(actor:SessionUser|null,input:unknown={}):Pro
   const duration=row.duration_seconds??0,position=row.position_seconds??0;
   const stream={id:row.id,deviceId:row.provider_device_id,externalId:row.external_id,externalUserId:null,mediaType:row.media_type==='audio'?'Audio':row.episode_number!=null?'Episode':'Movie',username:row.username,title:row.title,episode:row.episode_number!=null?`S${String(row.season_number).padStart(2,'0')}E${String(row.episode_number).padStart(2,'0')}`:null,client:row.client,device:null,paused:row.state==='paused',method:'Shared HLS',duration,position,progress:duration>0?Math.min(1,position/duration):null,firstSeenAt:new Date(row.first_seen_at).toISOString(),lastSeenAt:new Date(row.last_seen_at).toISOString(),endedAt:row.ended_at?new Date(row.ended_at).toISOString():null};
   let group=groups.get(row.instance_id);if(!group){group={server:row.server,connectionId:row.connection_id,sessions:[]};groups.set(row.instance_id,group);}
-  group.sessions.push({...stream,sharing:{creator:row.username,viewers:row.viewers,estimated:true,bitrateMbps:row.max_bitrate?row.max_bitrate/1_000_000:null}});groups.set(row.instance_id,group);
+  group.sessions.push({...stream,sharing:{linkId:row.share_id,creator:row.username,viewers:row.viewers,estimated:true,bitrateMbps:row.max_bitrate?row.max_bitrate/1_000_000:null}});groups.set(row.instance_id,group);
  }
 
  for(const [instanceId,group] of groups) snapshot.streams.push(...(await streamCards(user.id,instanceId,group.sessions)).map(stream=>({...stream,server:group.server,connectionId:group.connectionId})));

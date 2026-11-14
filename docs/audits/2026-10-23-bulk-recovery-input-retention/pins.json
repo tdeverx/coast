@@ -54,7 +54,7 @@
     "src/lib/server/queue/task-commands.server.ts": "1d2834f302c66dc5e5504c290a930b756a34a9be53fbe81b05f5a6f2f3bf9c0d",
     "src/lib/server/queue/task-controls.server.ts": "1ae39806d7aaf00df8d79c74de6649dd03e39eb20a1809e5dfbfbb8433338b75",
     "src/lib/server/storage/retention.server.ts": "25c0f195a6da979c87d18174b6895776d36607ded4bca2659d994824defba341",
-    "src/lib/ui/client.ts": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
+    "src/lib/ui/client.ts": "9c650119432ebe58afc2f52d818b99b7b3f15723c1a22c0ae19db670f0d76ec2",
     "src/lib/ui/component-manifest.json": "d524af25035e75a091f7a90f212579827cd055cdac08193d16e3c8f229efccdb",
     "src/lib/ui/components/JobSchedule.svelte": "d6271135414d43f66f623437bca73dc97c5d999d46b94a80eead17b1ad0cd3c1",
     "src/lib/ui/components/JobsSettings.svelte": "1ec64fa653a60dd838ec8797609685c4ab39bf071a211f45b5f6a222ac41d4b8",
@@ -66,7 +66,7 @@
     "src/routes/ui-preview/+page.svelte": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
     "src/routes/ui-preview/ComponentPlayground.svelte": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
-    "src/routes/ui-preview/prop-manifest.json": "45d75ac8f27cb10483a697eeaf674baaadd300e51dd5dee2dec9eed05a786688",
+    "src/routes/ui-preview/prop-manifest.json": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
     "src/routes/ui-preview/props.ts": "2c41d2695f77a4e96507c1f3e8894be7fcbf9d9d4d024c0d22c79751e7636067",
     "static/coast-mark.png": "04efcda120c7032ef626f3b9486f75c0a3f98361c98347325affdd1cb8ae12b4",
     "tests/job-task-summary-db.test.ts": "314bb823f730abce104e82acff948f5d26d2f2efe36a3d6f5049c496ca8e5dff",
@@ -240,6 +240,23 @@
         }
       ],
       "note": "The existing Policies form gains a VRChat playback field. Sharing database checks and Svelte diagnostics passed; prior bulk and preview evidence retains its original scope."
+    },
+    {
+      "epoch": "shared-links-panel-2026-11-14",
+      "report": "docs/synced-experiences.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/client.ts",
+          "previousSha256": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
+          "currentSha256": "9c650119432ebe58afc2f52d818b99b7b3f15723c1a22c0ae19db670f0d76ec2"
+        },
+        {
+          "path": "src/routes/ui-preview/prop-manifest.json",
+          "previousSha256": "45d75ac8f27cb10483a697eeaf674baaadd300e51dd5dee2dec9eed05a786688",
+          "currentSha256": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357"
+        }
+      ],
+      "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
     }
   ]
 }
