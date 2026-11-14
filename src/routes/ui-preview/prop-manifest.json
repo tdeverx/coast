@@ -1026,6 +1026,14 @@
         "nullable": false
       },
       {
+        "name": "onrequestclose",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
         "name": "contentKey",
         "type": "string",
         "optional": true,

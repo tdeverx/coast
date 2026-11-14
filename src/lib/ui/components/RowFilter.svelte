@@ -18,7 +18,14 @@
     {#each groups as group, index (group.label)}
       {#if submenus ?? !selection}
         <Button menu label={group.label}>
-          {#snippet trigger()}<Icon name={group.icon??filterGroupIcon(group.label)} /><span class="filter-choice"><span>{group.label}</span><span class="filter-value">{group.options.find(option=>option.value===group.value)?.label??group.value}</span></span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
+          {#snippet trigger()}
+            <Icon name={group.icon ?? filterGroupIcon(group.label)} />
+            <span class="menu-action-label filter-choice">
+              <span>{group.label}</span>
+              <span class="filter-value">{group.options.find(option => option.value === group.value)?.label ?? group.value}</span>
+            </span>
+            <span class="menu-chevron"><Icon name="right" /></span>
+          {/snippet}
           <ChoiceGroup label={group.label} value={group.value} options={group.options} change={value => { if (value !== null) group.change(value); }} />
         </Button>
       {:else}
@@ -31,7 +38,7 @@
 </div>
 
 <style>
-  .filter-choice{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+  .filter-choice{display:flex;flex-direction:column;gap:2px;}
   .filter-value{font-size:var(--text-sm);font-weight:var(--weight-regular);color:var(--muted);overflow-wrap:anywhere;}
   .row-filter { min-width: 0; }
   .row-filter :global(.row-filter-trigger) {

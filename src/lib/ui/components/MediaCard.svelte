@@ -517,9 +517,9 @@
     z-index: 2;
   }
   .card-menu > button,
-  .card-menu :global(.context > button) {
-    width: 32px;
-    height: 32px;
+  .card-menu > :global(.context > .icon-button) {
+    width: var(--control-compact-height);
+    height: var(--control-compact-height);
   }
   .play,
   .card-menu {
@@ -533,13 +533,6 @@
   .art:focus-within .play,
   .art:focus-within .card-menu {
     opacity: 1;
-  }
-  @media (pointer: coarse) {
-    .card-menu > button,
-    .card-menu :global(.context > button) {
-      width: 44px;
-      height: 44px;
-    }
   }
   @media (hover: none) {
     .art::before {
