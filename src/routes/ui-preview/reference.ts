@@ -50,7 +50,7 @@ export const componentScenarios: Record<string, string[]> = {
   PlaybackTimeline: ['seekable', 'passive', 'audio', 'reading', 'unknown', 'long'],
   NotificationInbox: ['all', 'unread', 'attachments', 'read', 'locked', 'loading', 'empty', 'error'],
   NotificationToasts: ['normal', 'persistent', 'multiple', 'long'],
-  StreamsPanel: ['now', 'history', 'shared', 'issues', 'loading', 'empty', 'error'],
+  StreamsPanel: ['now', 'history', 'shared', 'links', 'issues', 'loading', 'empty', 'error'],
   ConnectionCard: ['connected', 'disconnected', 'error'],
   AvatarPicker: ['upload', 'connected', 'error'],
   Field: ['text', 'select', 'file', 'range', 'checkbox', 'invalid'],

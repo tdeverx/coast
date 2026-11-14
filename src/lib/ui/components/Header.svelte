@@ -41,7 +41,7 @@
   const { player } = usePlayback();
   import { slidingPill } from '#lib/ui/materials/sliding-pill.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
-  let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
+  let { user, unread = 0, friendRequests = 0, publicBrowse = true, hasActiveLinks = false }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean; hasActiveLinks?:boolean } =
     $props();
   const actions=$derived(actionOptions({...page.data,features:page.data.capabilities}).filter(option=>!!user||option.value==='watch'));
   const action=$derived(user?resolveAction(page.url.searchParams,user?.settings?.action,{...page.data,features:page.data.capabilities}):'watch');
@@ -113,7 +113,12 @@
     <div class="account">
       {#if user}
       {#if !preview&&reader.session}<Button icon="library" size="icon" label={reader.visible?'Show app':'Resume reading'} onclick={()=>{if(reader.visible)void hideReading();else reader.visible=true;}}/>{/if}
-      {#if user.role==='admin'}<Button size="icon" id={preview?`${previewId}-streams`:"streams-trigger"} class="notification" label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</Button>{/if}
+      {#if user.role==='admin'||hasActiveLinks}
+        <Button size="icon" id={preview?`${previewId}-streams`:"streams-trigger"} class="notification" label={user.role!=='admin'?'Shared links':streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}>
+          <Icon name="broadcast" size={21}/>
+          {#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}
+        </Button>
+      {/if}
       {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
       <Button size="icon"
         id={preview?`${previewId}-notifications`:"notification-trigger"}

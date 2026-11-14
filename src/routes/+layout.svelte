@@ -15,6 +15,7 @@
   import {playbackVisible} from '#lib/playback/visibility.js';
   import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '#lib/playback/synced/client.svelte.js';
   import { refreshRouteDependencies } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import { installBrowserDiagnostics } from '#lib/ui/diagnostics.js';
   import { onMount, onDestroy, untrack } from 'svelte';
   import { page } from '$app/state';
@@ -25,6 +26,7 @@
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
   let { data, children } = $props();
+  const { api } = useClient();
   let expiredViewer = $state<string>();
   let content: HTMLElement;
   const notificationOpen = $derived(!!data.user && (page.state.notificationPopover ?? page.url.searchParams.get('notifications') === 'true'));
@@ -41,7 +43,45 @@
   const NotificationInbox = $derived(notificationImport.data),
     FriendsPanel = $derived(friendsImport.data);
 
-  const streamsOpen = $derived(data.user?.role === 'admin' && (page.state.streamsPopover ?? page.url.searchParams.get('streams') === 'true'));
+  let activeShareUntil = $state(untrack(() => data.activeShareUntil));
+  const showStreams = $derived(data.user?.role === 'admin' || !!data.user && !!activeShareUntil);
+  const streamsOpen = $derived(showStreams && (page.state.streamsPopover ?? page.url.searchParams.get('streams') === 'true'));
+
+  $effect(() => {
+    activeShareUntil = data.activeShareUntil;
+  });
+
+  $effect(() => {
+    if (data.user?.role==='user' && !showStreams && page.state.streamsPopover)
+      untrack(() => closeStreams());
+  });
+
+  $effect(() => {
+    const expiresAt = activeShareUntil;
+    if (!expiresAt || data.user?.role !== 'user') return;
+    const deadline = Date.parse(expiresAt);
+    const controller = new AbortController();
+    let busy = false;
+    async function refreshLinks() {
+      if (document.hidden || busy) return;
+      busy = true;
+      try {
+        const result = await api<{ expiresAt: string | null }>('sharing/status', undefined, 'GET', { signal: controller.signal });
+        if (!controller.signal.aborted) activeShareUntil = result.expiresAt;
+      } catch {
+        if (!controller.signal.aborted && deadline <= Date.now()) activeShareUntil = null;
+      } finally { busy = false; }
+    }
+    const poll = setInterval(() => void refreshLinks(), 60000);
+    const expiry = setTimeout(() => void refreshLinks(), Math.max(0, deadline - Date.now()));
+    document.addEventListener('visibilitychange', refreshLinks);
+    return () => {
+      clearInterval(poll);
+      clearTimeout(expiry);
+      document.removeEventListener('visibilitychange', refreshLinks);
+      controller.abort();
+    };
+  });
 
   const streamsImport = createResource<
     typeof import('#lib/ui/components/StreamsPanel.svelte').default |
@@ -66,7 +106,7 @@
   });
 
   reportImportFailure(() => streamsOpen && streamsImport.error
-    ? 'Active streams could not load. Reload the page to try again.'
+    ? 'Stream activity could not load. Reload the page to try again.'
     : '');
 
   const detailImport = createResource<
@@ -277,13 +317,16 @@
       publicBrowse={data.publicRead}
       unread={data.unreadNotifications}
       friendRequests={data.friendRequestCount}
+      hasActiveLinks={!!activeShareUntil}
     />{/if}
   <div class="page-shell" class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
     <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
   </div>
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
   {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
-  {#if streamsOpen&&StreamsPanel}<StreamsPanel open={true} onclose={closeStreams}/>{/if}
+  {#if streamsOpen&&StreamsPanel}
+    {#key data.user?.id}<StreamsPanel open={true} isAdmin={data.user?.role==='admin'} onclose={closeStreams}/>{/key}
+  {/if}
   {#key data.user?.id}<NotificationToasts notifications={data.user ? data.notifications : []} rich={data.experimentalRichToasts} initialFailure={typeof page.form?.error==='string'?page.form.error:undefined} />{/key}
 </div>
 

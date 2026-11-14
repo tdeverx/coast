@@ -25,7 +25,7 @@
     "src/lib/ui/shelves/library.svelte.ts": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
     "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
-    "src/lib/ui/components/Header.svelte": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
+    "src/lib/ui/components/Header.svelte": "c00aadb260ecdccc0de6c0df85febfdf610a736a4a8907defe65fbf6010eae20",
     "src/lib/providers/tmdb/details.server.ts": "0da75fccbefe61153c78028dfe6b3d840d3188a934b36a14c8abbad9e95ec5eb",
     "src/lib/providers/comic-vine/adapter.server.ts": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d",
     "src/lib/ui/components/PersistentPlayer.svelte": "25f492ae65233fb2f266fe0342ff986ae43ebe982849f7614d3e6f7f24b9c3e7",
@@ -43,7 +43,7 @@
     "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
     "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
     "src/lib/playback/synced/client.svelte.ts": "b3a4155bd66d3590fd45f5e74fc9c33c2dbf00de8b6f4f2a77cb7162ce98d515",
-    "src/lib/ui/client.ts": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
+    "src/lib/ui/client.ts": "9c650119432ebe58afc2f52d818b99b7b3f15723c1a22c0ae19db670f0d76ec2",
     "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
     "src/lib/ui/action-feedback.svelte.ts": "5a64439996d4ca830668c6cef179ef2f6021d19134bfdd951c2967a5a0116397",
     "tests/playback-stop.test.ts": "9cf4493b7bf52292af60cfe2362bb8f89caa6e92cb670b135d96f013bdadf0ce",
@@ -329,6 +329,23 @@
         }
       ],
       "note": "Focused finalization comparison and regression tests cover watched intent seeding. Historical receipts retain their original source identities and limits."
+    },
+    {
+      "epoch": "shared-links-panel-2026-11-14",
+      "report": "docs/synced-experiences.md",
+      "changes": [
+        {
+          "path": "src/lib/ui/client.ts",
+          "previousSha256": "93488c208fcd9f22fb8b16311e9a8c0b9fc82d7dbfae8e55c75e0b48bb9ffb62",
+          "currentSha256": "9c650119432ebe58afc2f52d818b99b7b3f15723c1a22c0ae19db670f0d76ec2"
+        },
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "previousSha256": "db0b3d9ec596ee058a78731cd582c1cad1d8b6028df8eb906c0f73d0d41c05f7",
+          "currentSha256": "c00aadb260ecdccc0de6c0df85febfdf610a736a4a8907defe65fbf6010eae20"
+        }
+      ],
+      "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
     }
   ]
 }

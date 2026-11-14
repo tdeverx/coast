@@ -11,6 +11,7 @@ import {releaseViewer,expireSharedViewers} from '../src/lib/sharing/leases.serve
 import {sharedStreamRows} from '../src/lib/sharing/streams.server';
 import {activeStreams,streamCount} from '../src/lib/application/streams.server';
 import {POST as shareApiPost,GET as shareApiGet} from '../src/routes/api/share/[...path]/+server';
+import {handler as apiHandler} from '../src/lib/server/api/index.server';
 import {updateUser,updateUserSettings} from '../src/lib/server/auth';
 import {presence} from '../src/lib/social/presence.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
@@ -76,6 +77,28 @@ afterAll(async()=>{if(process.env.COAST_DB_TEST==='1'){server?.stop(true);await 
 const make=()=>createShare(actor,{workId:work,connectionId:connection,hours:1,target:'vrchat'});
 const request=(url:string,ua='fixture-a')=>new Request(new URL(url,'http://coast.test'),{headers:{accept:'*/*','user-agent':ua}});
 const child=async(response:Response)=>{const body=await response.text();expect(body).not.toContain('fixture-upstream-secret');return body.split('\n').find(line=>line&&!line.startsWith('#'))!;};
+run('Links lists only the signed-in owner’s unexpired, unrevoked shares even before they have viewers',async()=>{
+ const db=getSql(),active=await make(),expired=await make(),revoked=await make();
+ await db`update playback_shares set expires_at=now()-interval '1 second' where id=${expired.id}`;
+ await revokeShare(actor,revoked.id);
+ const user={...actor,id:other,username:'sharing-user',role:'user' as const};
+ const otherLink=crypto.randomUUID();
+ await db`insert into playback_shares (id,owner_id,work_id,connection_id,account_generation,token_hash,expires_at)
+   values (${otherLink},${other},${work},${connection},${generation},${crypto.randomUUID()},now()+interval '2 hours')`;
+ const get=(path:string,session:typeof actor|typeof user|null)=>{
+  const request=new Request(new URL('/api/v1/'+path,'https://coast.test'));
+  return apiHandler({request,url:new URL(request.url),locals:{user:session},params:{path:path.split('?')[0]}} as Parameters<typeof apiHandler>[0]);
+ };
+ const own=await get('sharing?active=true&ownerId='+owner,user);
+ expect(own.status).toBe(200);
+ expect(await own.json()).toEqual([{id:otherLink,target:'website',title:'Sharing fixture',expiresAt:expect.any(String),viewers:0}]);
+ expect(await (await get('sharing?active=true',actor)).json()).toEqual([{id:active.id,target:'vrchat',title:'Sharing fixture',expiresAt:active.expiresAt.toISOString(),viewers:0}]);
+ expect(await (await get('sharing/status',actor)).json()).toEqual({expiresAt:active.expiresAt.toISOString()});
+ await db`update playback_shares set revoked_at=now() where id=${otherLink}`;
+ expect(await (await get('sharing/status',user)).json()).toEqual({expiresAt:null});
+ expect((await get('sharing?active=true',null)).status).toBe(401);
+ expect((await get('providers/streams?view=history',user)).status).toBe(403);
+});
 run('stale availability cannot share a virtual item, and an existing link reports missing media',async()=>{
  const link=await make();
  virtualSource=true;

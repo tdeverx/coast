@@ -37,6 +37,10 @@ export const fixtureFetch: import('#lib/ui/client.js').ApiTransport = async (inp
     if(url.pathname.endsWith('/providers/streams/refresh')&&method==='POST')return Response.json({queued:1});
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
+    if(path.endsWith('/sharing')&&url.searchParams.get('active')==='true')return Response.json([
+      {id,target:'vrchat',title:'The Expanse',expiresAt:new Date(Date.now()+3600000).toISOString(),viewers:2},
+      {id:show.id,target:'website',title:'Preview title',expiresAt:new Date(Date.now()+7200000).toISOString(),viewers:0},
+    ]);
     if(/\/social\/works\/[^/]+\/friends$/.test(path))return Response.json({items:url.searchParams.get('filter')==='lists'?[]:[{id,kind:'person',title:'Alice',href:'/profile/Alice',poster:'/coast-mark.png',captionSubtitle:'4 / 5'}],page:1,pages:1,total:1});
     if(path.endsWith('/social/friends'))return Response.json(url.searchParams.get('state')==='pending'?[]:[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop}]);
     if(path.endsWith('/social/checkins'))return Response.json([{userId:id,title:'The Expanse — S01E03',href:'#',category:'screen',progress:.35,artwork:movie.backdrop}]);
@@ -130,7 +134,16 @@ export function createPreviewTransport(name: string, scenario: string): import('
     if (scenario === 'requests' && path === 'social/friends') return Response.json([{id, userId: id, username: 'Alice', state: 'pending', requestedBy: episode.id, avatar: null, canCompare: false, activityStatus: 'offline'}]);
     if (path === 'providers/streams') {
       if (scenario === 'issues') result.issues = [{server:'Preview library',message:'The server could not respond; settled sessions remain visible.'}];
-      if (scenario === 'shared' && result.streams.length) result.streams[0].sharing = {creator:'Preview',viewers:4,estimated:true,bitrateMbps:6};
+      if (scenario === 'shared' && result.streams.length) {
+        const [stream,...others]=result.streams;
+        const sharing={linkId:'preview-share',creator:'Preview',viewers:2,estimated:true,bitrateMbps:6};
+        result.streams=[
+          {...stream,client:'External player',device:null,method:'Shared HLS',sharing},
+          {...stream,id:'fixture-viewer-2',client:'External player',device:null,method:'Shared HLS',position:360,progress:360/stream.duration,sharing},
+          {...stream,id:'fixture-viewer-3',client:'External player',device:null,method:'Shared HLS',sharing:{...sharing,linkId:'preview-other-share',viewers:1}},
+          ...others,
+        ];
+      }
     }
     if (scenario === 'empty') {
       if (Array.isArray(result)) return Response.json([]);
