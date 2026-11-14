@@ -8,6 +8,7 @@ import { actionFeedback } from './action-feedback.svelte';
 import { message } from './client';
 
 let opening: Promise<void> = Promise.resolve();
+let closingState: App.PageState | undefined;
 
 function overlayTarget(href: string, section = false) {
   return page.data.user && !page.url.pathname.startsWith('/ui-preview')
@@ -62,7 +63,15 @@ export function openMediaDetails(href:string,section=false){
 }
 export async function navigateMedia(href:string,options?:Parameters<typeof goto>[1]){if(openMediaDetails(href))await opening;else await goto(href,options);}
 export async function backMediaDetails(){await opening;if((page.state.mediaDetailDepth??1)>1)history.back();}
-export async function closeMediaDetails(){await opening;if(page.state.mediaDetailHref)history.go(-(page.state.mediaDetailDepth??1));}
+export async function closeMediaDetails() {
+  await opening;
+  const state = page.state;
+  if (!state.mediaDetailHref || state === closingState) return;
+  // The dialog remains modal until the history entry changes. Several close
+  // gestures during that traversal still belong to the same entry.
+  closingState = state;
+  history.go(-(state.mediaDetailDepth ?? 1));
+}
 /** One delegated listener covers anchors, Buttons, menus, heroes and future detail links. */
 export function mediaDetailLinks(node:HTMLElement){
  function anchor(event:Event){

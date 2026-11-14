@@ -4,15 +4,15 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 let script=await componentScript('src/lib/ui/components/Dialog.svelte');
 const start=script.indexOf('let {'),end=script.indexOf('} = $props();',start);
-script=(script.slice(0,start)+"let open=$state(true),popover=!initial.expanding,popoverWidth=560,anchor=initial.anchor,onclose=initial.onclose,contentKey=$state('first'),expanding=!!initial.expanding;"+script.slice(end+'} = $props();'.length))
+script=(script.slice(0,start)+"let open=$state(true),popover=!initial.expanding,popoverWidth=560,anchor=initial.anchor,onclose=initial.onclose,onrequestclose=initial.onrequestclose,contentKey=$state('first'),expanding=!!initial.expanding;"+script.slice(end+'} = $props();'.length))
  .replace('let dialog: HTMLElement;','let dialog=element;').replace('$props.id()', '"fixture-dialog"').replace('let detailScroll=$state<HTMLDivElement>();','let detailScroll=$state.raw(initial.scroll);').replace('let expansionScroll=$state<HTMLDivElement>();','let expansionScroll=$state.raw(initial.expansionScroll);');
 const code=compileRunes(`export function create(initial,element,document,window,requestAnimationFrame,cancelAnimationFrame,setTimeout,clearTimeout){
  const HTMLElement=initial.HTMLElement??class {};const useClient=()=>({feedback:{host:initial.feedbackHost??(()=>()=>{})}});const callbacks=[],onDestroy=fn=>callbacks.push(fn),tick=()=>Promise.resolve();
  ${script}
- return {nativeClose:closed,get open(){return open;},handoff:handoffScroll,replace(key){contentKey=key;},scroll(top){expansionScroll.scrollTop=top;expandSheet();},scrollPage(top){detailScroll.scrollTop=top;},close(){open=false;},reopen(){open=true;},cleanup(){callbacks.forEach(fn=>fn());}};
+ return {nativeClose:closed,requestClose,get open(){return open;},handoff:handoffScroll,replace(key){contentKey=key;},scroll(top){expansionScroll.scrollTop=top;expandSheet();},scrollPage(top){detailScroll.scrollTop=top;},close(){open=false;},reopen(){open=true;},cleanup(){callbacks.forEach(fn=>fn());}};
 }`);
 const {create}=await import(moduleUrl(code));
-function fixture(anchor:string|undefined='#trigger',expanding=false,snapping=false,lifecycle?:{onclose():void;focus():void;host():()=>void}){
+function fixture(anchor:string|undefined='#trigger',expanding=false,snapping=false,lifecycle?:{onclose():void;onrequestclose?():void;focus():void;host():()=>void}){
  let reads=0,writes=0,next=0;const frames=new Map<number,FrameRequestCallback>(),timers=new Map<number,()=>void>(),listeners=new Map<string,Function>();
  const properties=new Map<string,string>();
  let top=0;
@@ -22,7 +22,7 @@ function fixture(anchor:string|undefined='#trigger',expanding=false,snapping=fal
  const window={innerHeight:900,innerWidth:1200,addEventListener(type:string,fn:Function){listeners.set(type,fn);},removeEventListener(type:string){listeners.delete(type);}};
  const document={activeElement:lifecycle?new FocusTarget():undefined,querySelector:()=>({getBoundingClientRect(){reads++;return {bottom:50,right:1000};}})};
  let controller:any;
- const dispose=runtime.effect_root(()=>controller=create({anchor,expanding,scroll,expansionScroll,onclose:lifecycle?.onclose,HTMLElement:FocusTarget,feedbackHost:lifecycle?.host},element,document,window,(callback:FrameRequestCallback)=>{frames.set(++next,callback);return next;},(id:number)=>frames.delete(id),(callback:()=>void)=>{timers.set(++next,callback);return next;},(id:number)=>timers.delete(id)));
+ const dispose=runtime.effect_root(()=>controller=create({anchor,expanding,scroll,expansionScroll,onclose:lifecycle?.onclose,onrequestclose:lifecycle?.onrequestclose,HTMLElement:FocusTarget,feedbackHost:lifecycle?.host},element,document,window,(callback:FrameRequestCallback)=>{frames.set(++next,callback);return next;},(id:number)=>frames.delete(id),(callback:()=>void)=>{timers.set(++next,callback);return next;},(id:number)=>timers.delete(id)));
  runtime.flush();
  return {controller,element,listeners,frames,timers,properties,window,scroll,expansionScroll,get reads(){return reads;},get writes(){return writes;},reset(){reads=0;writes=0;},flush(){const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0));},settle(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn());},destroy(){controller.cleanup();dispose();}};
 }
@@ -124,6 +124,22 @@ test('expanded detail hands a latched wheel gesture to content and preserves nes
   expect(send(-80)).toBe(false);
   f.controller.close();runtime.flush();expect(send(80)).toBe(false);
  }finally{action.destroy();expect(listeners.size).toBe(0);f.destroy();}
+});
+
+test('a history-owned dialog stays modal until the owner closes it', () => {
+ let requests = 0;
+ const f = fixture(undefined, true, false, {
+  onclose() {}, onrequestclose() { requests++; }, focus() {}, host: () => () => {}
+ });
+ try {
+  f.controller.requestClose();
+  runtime.flush();
+  expect(requests).toBe(1);
+  expect(f.element.open).toBe(true);
+  f.controller.close();
+  runtime.flush();
+  expect(f.element.open).toBe(false);
+ } finally { f.destroy(); }
 });
 
 test('a queued native close event cannot dismiss a newly reopened dialog',()=>{

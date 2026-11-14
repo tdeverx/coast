@@ -39,7 +39,7 @@
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
       "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "df4d344a1403280b78625bb6eab0b667487e4ebbcafbc02dde5e58498e8a8a0c",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "a0cf6b961a06c197a01bc82ccf36eb1ed00e7671a398bb65a522447d53407d0a",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "3839b5f5b9ffb9cf2c501947dbe1cf20b23a1ab5a5e50033b192f69ac7f50f76",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
       "src/lib/playback/client.svelte.ts": "8125a5e219092ae7f5eaf0aa7e17fe9830eb86e935defc2b3ad3c033014b2a6c",
       "src/lib/ui/components/PersistentPlayer.svelte": "25f492ae65233fb2f266fe0342ff986ae43ebe982849f7614d3e6f7f24b9c3e7",
@@ -3215,6 +3215,17 @@
         }
       ],
       "note": "Verified the current progress and library read contracts on an isolated actual copy, with authored source-ordering and playback eligibility cases. Historical measurements retain their original source fingerprints."
+    },
+    {
+      "epoch": "shelf-context-menu-and-detail-close-2026-11-14",
+      "changes": [
+        {
+          "path": "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json",
+          "previousSha256": "a0cf6b961a06c197a01bc82ccf36eb1ed00e7671a398bb65a522447d53407d0a",
+          "currentSha256": "3839b5f5b9ffb9cf2c501947dbe1cf20b23a1ab5a5e50033b192f69ac7f50f76"
+        }
+      ],
+      "note": "The evidence index records the generated Dialog prop contract refresh. Chromium and WebKit verified the shelf menu layout and history-owned detail dismissal on a disposable database."
     }
   ]
 }

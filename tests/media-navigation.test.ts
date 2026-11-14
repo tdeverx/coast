@@ -61,6 +61,24 @@ test('nested detail links retain the underlying URL, support Back/Forward histor
  boundary.history.go(1);expect(boundary.page.state.mediaDetailHref).toBe(`/media/${other}?section=credits`);
  await navigation.closeMediaDetails();expect(boundary.page.state).toEqual({friendsPopover:true});
 });
+test('repeated close gestures request one traversal while the detail entry is current', async () => {
+ boundary.reset();
+ await navigation.navigateMedia(`/media/${id}`);
+ const go = boundary.history.go.bind(boundary.history);
+ const traversals: number[] = [];
+ boundary.history.go = (delta: number) => { traversals.push(delta); };
+ try {
+  await Promise.all([navigation.closeMediaDetails(), navigation.closeMediaDetails()]);
+  expect(traversals).toEqual([-1]);
+  expect(boundary.page.state.mediaDetailHref).toBe(`/media/${id}`);
+  go(-1);
+  await navigation.navigateMedia(`/media/${other}`);
+  await navigation.closeMediaDetails();
+  expect(traversals).toEqual([-1, -1]);
+ } finally {
+  boundary.history.go = go;
+ }
+});
 test('signed-out browsing and isolated references preserve normal navigation',async()=>{
  for(const mode of ['guest','preview']){
   boundary.reset();if(mode==='guest')boundary.page.data.user=null;else boundary.page.url=new URL('https://coast.invalid/ui-preview');

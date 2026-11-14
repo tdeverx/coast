@@ -14,13 +14,13 @@
     title,
     children, message, actions, alert = false,
     wide = false, edgeToEdge = false, expanding = false, popover = false, popoverWidth = 560, anchor, heading, footer, floating,
-    onclose,contentKey,
+    onclose, onrequestclose, contentKey,
   }: {
     open: boolean;
     title: string;
     children?: Snippet; message?: string; alert?: boolean; actions?: ComponentProps<typeof Button>[];
     wide?: boolean; edgeToEdge?: boolean; expanding?:boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet; floating?:Snippet;
-    onclose?: () => void;contentKey?:string;
+    onclose?: () => void; onrequestclose?: () => void; contentKey?: string;
   } = $props();
   const {feedback} = useClient();
   const retain=useRetention();
@@ -136,6 +136,10 @@
     return {destroy(){cancel();if(cancelHandoff===cancel)cancelHandoff=()=>{};node.removeEventListener('wheel',wheel);}};
   }
   let returnFocus:HTMLElement|null=null;
+  function requestClose() {
+    if (onrequestclose) onrequestclose();
+    else open = false;
+  }
   function closed() {
     if(destroyed)return;
     // Native close events are queued: an older event must not close a reopened dialog.
@@ -203,6 +207,11 @@
   aria-label={title}
   bind:this={dialog}
   onclose={closed}
+  oncancel={(event: Event) => {
+    if (!onrequestclose) return;
+    event.preventDefault();
+    requestClose();
+  }}
   ontoggle={(event: ToggleEvent) => {
     if (!destroyed && popover && event.oldState === 'open' && event.newState === 'closed') {
       closed();
@@ -214,7 +223,7 @@
     if (e.target === dialog) {
       const r = dialog.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
-        open = false;
+        requestClose();
     }
   }}
   onkeydown={() => {}}
@@ -222,7 +231,7 @@
   {#snippet dialogHeading()}
   {#if heading}{@render heading()}{:else}<div class="spread heading">
     <h2>{title}</h2>
-    <Button compact icon="close" label="Close dialog" onclick={() => (open = false)} />
+    <Button compact icon="close" label="Close dialog" onclick={requestClose} />
   </div>
   {/if}
   {/snippet}

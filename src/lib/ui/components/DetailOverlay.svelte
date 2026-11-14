@@ -7,14 +7,18 @@
  let {open=$bindable(false),editions=[],editionName=$bindable(),children,onclose,onback,contentKey,sectionPage=false}:{open:boolean;editions?:{value:string;label:string}[];editionName?:string;children?:Snippet;onclose?:()=>void;onback?:()=>void;contentKey?:string;sectionPage?:boolean}=$props();
  const sectionView=$derived(sectionPage||!!contentKey&&!!new URL(contentKey,'http://coast/').searchParams.get('section'));
  const section=provideDetailSection(()=>sectionView,()=>contentKey);
+ function requestClose() {
+   if (onclose) onclose();
+   else open = false;
+ }
 </script>
-<Dialog bind:open title={section.title||"Media details"} wide edgeToEdge expanding {onclose} {contentKey}>
+<Dialog bind:open title={section.title||"Media details"} wide edgeToEdge expanding onrequestclose={onclose} {contentKey}>
  {#snippet heading()}<div class="overlay-controls" style:--detail-controls={onback?2:1}>
   {#if onback}<Button icon="left" material="clear" class="detail-back-button" label="Back within media details" onclick={onback}/>{/if}
   {#if !sectionView&&editions.length>1}<SegmentedControl label="Edition" material="clear" presentation="navigation" options={editions} value={editionName??editions[0].value} onchange={value=>editionName=value}/>{/if}
   {#if sectionView&&section.title}<h1 class="section-title">{section.title}</h1>{/if}
   <div class="section-actions">{#if sectionView}{@render section.controls?.()}{/if}
-  <Button icon="close" material="clear" class="detail-close-button" label="Close media details" onclick={()=>open=false}/></div>
+  <Button icon="close" material="clear" class="detail-close-button" label="Close media details" onclick={requestClose}/></div>
  </div>{/snippet}
  {#snippet floating()}{#if sectionView&&section.segments}<nav class="section-navigation" aria-label={`${section.title} selection`}>{@render section.segments()}</nav>{/if}{/snippet}
  {@render children?.()}
