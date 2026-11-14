@@ -1397,6 +1397,7 @@ export const playbackShares = pgTable('playback_shares',{
  target:text('target').$type<'website'|'vrchat'>().notNull().default('website'),
  videoCodec:text('video_codec').$type<'h264'|'hevc'>().notNull().default('h264'),
  accountGeneration:uuid('account_generation').notNull(),tokenHash:text('token_hash').notNull().unique(),
+ encryptedToken:text('encrypted_token'),
  together:boolean('together').notNull().default(false),expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
  autoRevoke:boolean('auto_revoke').notNull().default(false),trackProgress:boolean('track_progress').notNull().default(false),
  completedAt:timestamp('completed_at',{withTimezone:true}),

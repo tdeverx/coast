@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { getSql } from '#lib/server/db/index.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { hashToken,randomToken,requireUser,type SessionUser } from '#lib/server/auth/index.js';
+import { encryptCredential } from '#lib/server/security/credentials.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { startPlayback,streamPlayback } from '#lib/playback/service.server.js';
 import { withSharedRequest } from './request-leases.server';
@@ -40,17 +41,18 @@ export async function createShare(actor:SessionUser|null,input:unknown){
   if(!playable)throw new AppError(404,'Jellyfin has no playable file for this title.','playback_source_unavailable');
  }
  const token=randomToken(),expiresAt=new Date(Date.now()+data.hours*3600000);
+ const [tokenHash,encryptedToken]=await Promise.all([hashToken(token),encryptCredential(token)]);
  return db.begin(async tx=>{
   await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
   const [count]=await tx`select count(*)::int as total from playback_shares where owner_id=${user.id} and revoked_at is null and expires_at>now()`;
   if(count.total>=20)throw new AppError(409,'Revoke an active link before creating more.');
-  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,together,target,video_codec,expires_at,auto_revoke,track_progress) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${await hashToken(token)},${data.together},${data.target},${data.videoCodec},${expiresAt},${data.autoRevoke},${data.trackProgress}) returning id`;
+  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,encrypted_token,together,target,video_codec,expires_at,auto_revoke,track_progress) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${tokenHash},${encryptedToken},${data.together},${data.target},${data.videoCodec},${expiresAt},${data.autoRevoke},${data.trackProgress}) returning id`;
   return {id:row.id,token,expiresAt,target:data.target,videoCodec:data.videoCodec};
  });
 }
 export async function listShares(actor:SessionUser|null){const user=requireUser(actor);return getSql()`select id,work_id as "workId",together,target,video_codec as "videoCodec",expires_at as "expiresAt",claimed_at as "claimedAt",revoked_at as "revokedAt" from playback_shares where owner_id=${user.id} order by created_at desc limit 50`;}
 export async function revokeShare(actor:SessionUser|null,id:string){
- const user=requireUser(actor),rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()) where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;
+ const user=requireUser(actor),rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()),encrypted_token=null where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;
  if(!rows.length)throw new AppError(404,'Link not found.');
  const viewers=await getSql()<{id:string}[]>`select id from share_viewers where share_id=${id} and ended_at is null limit 64`;
  for(let i=0;i<viewers.length;i+=2)await Promise.allSettled(viewers.slice(i,i+2).map(viewer=>releaseViewer(user.id,viewer.id)));

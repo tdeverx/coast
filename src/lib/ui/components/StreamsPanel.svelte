@@ -8,6 +8,7 @@
  import EmptyState from './EmptyState.svelte';
  import {createResource} from '#lib/ui/resource.svelte.js';
  import {useClient, reportFailure } from '#lib/ui/client-context.js';
+ import {message} from '#lib/ui/client.js';
  import {useClock} from '#lib/ui/clock.svelte.js';
  import {activityDateLabel} from '#lib/social/model.js';
  import {playbackTime} from '#lib/playback/time.js';
@@ -24,6 +25,8 @@
  setContext('profile-read-only',()=>true);
  let view=$state<string>(untrack(()=>isAdmin?initialView:'links')),refreshing=$state(false);
  let pendingAction=$state<StreamAction|null>(null),acting=$state(false);
+ let copying=$state(false),copyUrl=$state('');
+ let copyRequest:AbortController|undefined;
  const selectedView=$derived(isAdmin && (view==='now'||view==='history')?view:'links');
  const clock=useClock('minute',()=>open&&selectedView==='history');
  const empty=(view:'now'|'history'):StreamsSnapshot=>({streams:[],issues:[],scanning:false,checkedAt:null,nextCursor:null,view});
@@ -63,6 +66,38 @@
  function stopPlayback(stream:Stream){
   if(stream.sharing)pendingAction={kind:'stop',id:stream.sharing.linkId,title:stream.title};
  }
+ async function copyLink(link:Link){
+  if(copying)return;
+  if(preview){delivery.notify('Link copied.');return;}
+  const request=new AbortController();
+  copyRequest=request;
+  copying=true;
+  const url=api<{path:string}>(`sharing/${link.id}/copy`,undefined,'GET',{signal:request.signal})
+   .then(({path})=>`${location.origin}${path}`);
+  try{
+   // Start the clipboard write in the click handler, before the owner lookup resolves.
+   const clipboard=navigator.clipboard;
+   let write:Promise<void>;
+   try{
+    if(typeof clipboard?.write==='function' && typeof ClipboardItem!=='undefined'){
+     const text=url.then(value=>new Blob([value],{type:'text/plain'}));
+     void text.catch(()=>{}); // The request error is handled through url below.
+     write=clipboard.write([new ClipboardItem({'text/plain':text})]);
+    }else{
+     write=url.then(value=>clipboard?.writeText(value)??Promise.reject());
+    }
+   }catch(error){write=Promise.reject(error);}
+   const [linkResult,writeResult]=await Promise.allSettled([url,write]);
+   if(request.signal.aborted)return;
+   if(linkResult.status==='rejected')throw linkResult.reason;
+   if(writeResult.status==='fulfilled')delivery.notify('Link copied.');
+   else copyUrl=linkResult.value;
+  }catch(error){
+   if(!request.signal.aborted)delivery.failure(message(error));
+  }finally{
+   if(copyRequest===request){copyRequest=undefined;copying=false;}
+  }
+ }
  async function confirmAction(){
   const action=pendingAction;
   if(!action||acting)return;
@@ -93,10 +128,18 @@
    if(document.hidden||current.busy)return;
    if(selected==='links'||(selected==='now'||resource.data.scanning)&&!resource.data.nextCursor&&resource.data.streams.length<=20)void load();
   },15000);
-  return ()=>{clearInterval(timer);current.cancel();};
+  return ()=>{
+   clearInterval(timer);
+   current.cancel();
+   if(selected==='links'){
+    copyRequest?.abort();
+    copyUrl='';
+   }
+  };
  });
  onDestroy(resource.dispose);
  onDestroy(links.dispose);
+ onDestroy(()=>copyRequest?.abort());
  reportFailure(()=>open ? selectedView==='links'?links.error:resource.error || resource.data.issues.map(issue=>`${issue.server} · ${issue.message}`).join(' ') : '', ()=>load());
 </script>
 <Dialog bind:open title={isAdmin?'Active streams':'Shared links'} popover={true} popoverWidth={360} anchor={preview?undefined:"#streams-trigger"} {onclose}>
@@ -124,6 +167,7 @@
    {#each links.data as link (link.id)}
     <MediaCard item={{...link.card,captionTitle:link.title,captionSubtitle:link.target==='vrchat'?'VRChat':'Website',rating:null}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} activityProgress={null}>
      {#snippet cornerMenu()}
+      <Button item disabled={copying||!link.canCopy} disabledReason={link.canCopy?undefined:'Only links created after this update can be copied here.'} onclick={()=>void copyLink(link)}>Copy link</Button>
       <Button item danger disabled={acting} onclick={()=>{pendingAction={kind:'revoke',id:link.id,title:link.title};}}>Revoke link</Button>
      {/snippet}
      {#snippet body()}<p>{link.viewers ? `About ${link.viewers} ${link.viewers===1?'viewer':'viewers'}` : 'No active viewers'}</p>{/snippet}
@@ -152,6 +196,10 @@
   {#if resource.data.nextCursor}<div class="full"><Button disabled={resource.busy} onclick={()=>void load(true)}>More</Button></div>{/if}
  </div>
  {/if}
+<Dialog open={!!copyUrl} title="Copy link" onclose={()=>{copyUrl='';}}>
+ <label class="field">Invitation link<input readonly value={copyUrl} onfocus={event=>event.currentTarget.select()}/></label>
+ {#snippet footer()}<Button onclick={()=>{copyUrl='';}}>Done</Button>{/snippet}
+</Dialog>
 <Dialog open={pendingAction!==null} onclose={()=>{pendingAction=null;}} title={pendingAction?.kind==='revoke'?'Revoke link?':'Stop shared playback?'}>
  {#snippet footer()}
   <Button disabled={acting} onclick={()=>{pendingAction=null;}}>Cancel</Button>

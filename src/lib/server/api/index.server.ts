@@ -9,7 +9,7 @@ import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { providerApiError } from '#lib/server/security/provider-api-error.js';
 import { provisioningAuthority } from '#lib/providers/jellyfin/provisioning.server.js';
 import { createShare,listShares,revokeShare } from '#lib/sharing/service.server.js';
-import { activeShareExpiry, listActiveShares } from '#lib/sharing/links.server.js';
+import { activeShareExpiry, copySharePath, listActiveShares } from '#lib/sharing/links.server.js';
 import { stopSharedLinkPlayback } from '#lib/sharing/leases.server.js';
 import { planningData,createPlan,cancelPlan,completePlan } from '#lib/experiments/planning.server.js';
 import { dynamicFeed } from '#lib/recommendations/feed.server.js';
@@ -121,7 +121,8 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='sharing') {
       if(path.length===1&&method==='GET')return Response.json(url.searchParams.get('active')==='true'?await listActiveShares(user):await listShares(user));
       if(path.length===2&&path[1]==='status'&&method==='GET')return Response.json({expiresAt:await activeShareExpiry(user)});
-      if(path.length===1&&method==='POST')return Response.json(await createShare(user,await readBody(request)));
+      if(path.length===1&&method==='POST')return Response.json(await createShare(user,await readBody(request)),{headers:{'Cache-Control':'private, no-store'}});
+      if(path.length===3&&path[2]==='copy'&&method==='GET')return Response.json(await copySharePath(user,path[1]),{headers:{'Cache-Control':'private, no-store'}});
       if(path.length===3&&path[2]==='stop'&&method==='POST')return Response.json(await stopSharedLinkPlayback(user,path[1]));
       if(path.length===2&&method==='DELETE'){await revokeShare(user,path[1]);return Response.json({revoked:true});}
       if(path.length===2&&path[1]==='sources'&&method==='GET'){await requireFeature(uid,'sharing');const workId=uuid(url.searchParams.get('workId')??'');return Response.json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled and exists(select 1 from works where id=${workId}::uuid and coast_category_enabled(${uid}::uuid,category))`);}

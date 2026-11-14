@@ -44,12 +44,12 @@
     "docs/roadmap.md": "2523f83d9f9e833a7d4ca0cc2ebf426638beaa9851e6c53934bc0e566212f700",
     "drizzle/0065_task_control_commands.sql": "0f7b57af9636ca0a472cb12dd151245bef1fda4bca54b3f76af6ea622811f3f1",
     "drizzle/meta/0065_snapshot.json": "065625d17f4ef424b86dbd3934c34d2231af53172c85545d70422e9758d93668",
-    "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
+    "drizzle/meta/_journal.json": "de88427c70c4683964cecdd45c7c3ef486c4e2f88705c2fd583b89a02e39a3fc",
     "package.json": "7ad6c4d8607ea816985038d0c6daaba5c9c5422d81224e9a4910e7445ad4c10c",
     "scripts/ui-inventory.ts": "4094bf1c9f084379e2c53ba2adea5145ab803ce5edec4eea0e911966c9d00d66",
     "src/lib/providers/task-control.ts": "52a3877e76a84a1729980ef0c7dc5f8c62eba0dc78ac65d1c38b8dd48c89534a",
     "src/lib/server/api/queue.server.ts": "460da8f835b0d6e5d160c383ffaa7f549335c1c5303cd29756a1ff26ddb89341",
-    "src/lib/server/db/schema.ts": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
+    "src/lib/server/db/schema.ts": "5b29fd8b8ed3405f1caaef5f516f3a6acd39dd086a52ef7654d932bdd8a6cdb8",
     "src/lib/server/queue/index.ts": "102247c71ed4685740c9fd2d5064e3b42744574bbe28cdc6b976a79b93bd203a",
     "src/lib/server/queue/task-commands.server.ts": "1d2834f302c66dc5e5504c290a930b756a34a9be53fbe81b05f5a6f2f3bf9c0d",
     "src/lib/server/queue/task-controls.server.ts": "1ae39806d7aaf00df8d79c74de6649dd03e39eb20a1809e5dfbfbb8433338b75",
@@ -268,6 +268,22 @@
         }
       ],
       "note": "The shared MediaCard exposes a corner menu for playback actions. Chromium preview checks passed on desktop and mobile. Past evidence retains its original scope."
+    },
+    {
+      "epoch": "active-link-copy-2026-11-14",
+      "changes": [
+        {
+          "path": "drizzle/meta/_journal.json",
+          "previousSha256": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
+          "currentSha256": "de88427c70c4683964cecdd45c7c3ef486c4e2f88705c2fd583b89a02e39a3fc"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "previousSha256": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
+          "currentSha256": "5b29fd8b8ed3405f1caaef5f516f3a6acd39dd086a52ef7654d932bdd8a6cdb8"
+        }
+      ],
+      "note": "The additive migration and encrypted owner-only retrieval passed the isolated sharing database suite. Existing sharing and preview controls were exercised locally. Historical receipts retain their recorded source fingerprints."
     }
   ]
 }

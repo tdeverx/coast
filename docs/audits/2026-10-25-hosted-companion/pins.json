@@ -32,23 +32,23 @@
     "src/lib/sharing/vrchat-profile.ts": "3cd1a4e3bb39925725b27d8356c9290df6803ab58b45dbba198d83f3eb3e2d21",
     "src/lib/sharing/allocation.ts": "6331f496ef6b2498a1dd70a2ea3165082a9d51cc76a681c5dc3bada13f21f190",
     "src/lib/sharing/policy.ts": "1d5afa1edc3eb902244f161f829fb2a236f4ab5436691f68d08063a7260b3384",
-    "src/lib/sharing/service.server.ts": "425e135dc07b6f068098bec5a74fdf42ec931e8d8e90812f6cf82805c4002dbb",
+    "src/lib/sharing/service.server.ts": "48ebd0103e9b9caadb49e62d416f2f84e88b622917ca34e597d29eda85c54dd5",
     "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
     "src/lib/sharing/leases.server.ts": "1b5dac703df26ecb66fee30ac5538b277099b68c28ef26b059c930fd608cfbd4",
-    "src/lib/sharing/ShareAction.svelte": "9ba9f0865f7bb3176bbbf5d5c9f8619a4f207a2de1570feb0f31c7acdda98c22",
+    "src/lib/sharing/ShareAction.svelte": "65bb1ae28ad4603c1b492cc542526a3d3f40bc3cdb479e29328cf2eaa71deb83",
     "src/lib/providers/contracts.ts": "22291920a405d28760a350469c8377f7fb84692ef2780e81aa7748319882710b",
     "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
     "src/lib/ui/work-menu/ScreenActions.svelte": "e8f35e0fdbcaaf014af3bc105dcf8f1b90a4390d097fed806e642e4d0448b57c",
     "src/routes/+layout.server.ts": "6ac055995e1f08afdfd7f475d70516713db1dea964ac2aa0a67f693e1daeb7f2",
     "src/lib/settings/sections.ts": "137b289163f03468ae47f4928f6bde09a3e02e7ef601f2ae0ed896ea7a9e8cfc",
     "src/lib/server/config.ts": "8c7d61d98bb2556b566227ba565a257b112bd0bcf13707f161394fe135abf3c8",
-    "src/lib/server/db/schema.ts": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
+    "src/lib/server/db/schema.ts": "5b29fd8b8ed3405f1caaef5f516f3a6acd39dd086a52ef7654d932bdd8a6cdb8",
     "src/routes/settings/[[section]]/+page.svelte": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
-    "tests/sharing-db.test.ts": "375e15b4aca8151e34361c2131f411f4cce9e715f47e13231f29d37059b7af82",
+    "tests/sharing-db.test.ts": "b2501fc84f57aeea7d36e074087d5eaa6fa0ecc3dbd6cc2b8c9cc17fb2b94bb0",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
-    "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
+    "drizzle/meta/_journal.json": "de88427c70c4683964cecdd45c7c3ef486c4e2f88705c2fd583b89a02e39a3fc",
     "docs/audits/2026-10-28-share-destinations/pins.json": "54dd1fe44222408ef4263a66959f8dd6e8502782e9b75cc85acb6f16b0dba270",
     "src/routes/api/share/[...path]/+server.ts": "626e8eef835fa044849aea10ca5206dc807add0117f53627f2dc2e366ae107ce",
     "tests/profile-db.test.ts": "632c09b69dea6862f423ce2aa8ae9065680275ee73e219203e9a66ab0c005052",
@@ -550,6 +550,37 @@
         }
       ],
       "note": "Jellyfin authenticated item and scan fixture checks cover DateCreated projection. Historical hosted acceptance remains tied to its recorded sources."
+    },
+    {
+      "epoch": "active-link-copy-2026-11-14",
+      "changes": [
+        {
+          "path": "drizzle/meta/_journal.json",
+          "previousSha256": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
+          "currentSha256": "de88427c70c4683964cecdd45c7c3ef486c4e2f88705c2fd583b89a02e39a3fc"
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "previousSha256": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
+          "currentSha256": "5b29fd8b8ed3405f1caaef5f516f3a6acd39dd086a52ef7654d932bdd8a6cdb8"
+        },
+        {
+          "path": "src/lib/sharing/ShareAction.svelte",
+          "previousSha256": "9ba9f0865f7bb3176bbbf5d5c9f8619a4f207a2de1570feb0f31c7acdda98c22",
+          "currentSha256": "65bb1ae28ad4603c1b492cc542526a3d3f40bc3cdb479e29328cf2eaa71deb83"
+        },
+        {
+          "path": "src/lib/sharing/service.server.ts",
+          "previousSha256": "425e135dc07b6f068098bec5a74fdf42ec931e8d8e90812f6cf82805c4002dbb",
+          "currentSha256": "48ebd0103e9b9caadb49e62d416f2f84e88b622917ca34e597d29eda85c54dd5"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "375e15b4aca8151e34361c2131f411f4cce9e715f47e13231f29d37059b7af82",
+          "currentSha256": "b2501fc84f57aeea7d36e074087d5eaa6fa0ecc3dbd6cc2b8c9cc17fb2b94bb0"
+        }
+      ],
+      "note": "The additive migration and encrypted owner-only retrieval passed the isolated sharing database suite. Existing sharing and preview controls were exercised locally. Historical receipts retain their recorded source fingerprints."
     }
   ]
 }

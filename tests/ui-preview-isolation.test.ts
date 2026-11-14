@@ -26,7 +26,7 @@ test('preview state belongs to one specimen and synthetic links are never real c
   expect(await notices(first)).toHaveLength(before.length - 1);
   expect(await notices(second)).toHaveLength(before.length);
   const sharing = createPreviewTransport('sharing.action', 'normal');
-  expect(await (await sharing('/api/v1/sharing', {method: 'POST'})).json()).toEqual({id, token: 'preview-only-not-a-real-link'});
+  expect(await (await sharing('/api/v1/sharing', {method: 'POST'})).json()).toEqual({id, token: 'preview-only-not-a-real-link', target:'website'});
   expect((await sharing(`/api/v1/sharing/${id}`, {method: 'DELETE'})).ok).toBe(true);
   expect((await sharing(`/api/v1/sharing/${id}`, {method: 'DELETE'})).status).toBe(409);
 });
