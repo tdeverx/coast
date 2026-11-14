@@ -34,6 +34,18 @@ export function createHeroPresentation(get: () => HeroOptions) {
     gestureDistance = 0,
     gestureTimer: ReturnType<typeof setTimeout>;
   let switchController:AbortController|null=null;
+  let retained = $state(0);
+  // Menus and dialogs need their title to survive an already-started transition.
+  let deferredStep: number | undefined;
+  function retain() {
+    untrack(() => { retained++; });
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      untrack(() => { retained--; });
+    };
+  }
   let mounted = $state(false);
   let chosen = $state<HeroItem | null>(null);
   let previousSelection = '';
@@ -66,7 +78,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
   const activeId=$derived(active?.id);
   $effect(()=>{
     activeId;
-    return()=>{switchController?.abort();switchController=null;clearTimeout(fadeTimer);fading=false;};
+    return()=>{switchController?.abort();switchController=null;clearTimeout(fadeTimer);deferredStep=undefined;fading=false;};
   });
   const presentation = $derived(parents.find((parent) => parent.kind === 'show') ?? active);
   const titleLogo = $derived(active?.logo ?? presentation?.logo);
@@ -90,6 +102,10 @@ export function createHeroPresentation(get: () => HeroOptions) {
   }
   async function step(by: number) {
     if (fading || items.length < 2) return;
+    if (retained) {
+      deferredStep = by;
+      return;
+    }
     switchController?.abort();
     const controller=new AbortController();switchController=controller;
     const nextIndex=(current+by+items.length)%items.length,target=items[nextIndex];
@@ -103,10 +119,15 @@ export function createHeroPresentation(get: () => HeroOptions) {
       finally{controller.signal.removeEventListener('abort',cancel);}
     }));
     if(controller.signal.aborted)return;
+    if (retained) {
+      deferredStep = by;
+      return;
+    }
     if(heroPlayer.id===active?.id)heroPlayer.visible=false;
     fading = true;
     fadeTimer=setTimeout(()=>{
-      current = nextIndex;
+      if (retained) deferredStep = by;
+      else current = nextIndex;
       fading = false;
     },reducedMotion?0:160);
   }
@@ -186,11 +207,17 @@ export function createHeroPresentation(get: () => HeroOptions) {
     const enabled=intersecting&&foreground&&!obscured&&!motionSuspended;
     const owned=cycle;
     if(enabled&&prepare&&(phase==='artwork'||phase==='trailer'))untrack(prepare);
-    owned?.running(enabled&&(!controlFocused||resumeFocused)&&!paused);
+    owned?.running(enabled&&!retained&&(!controlFocused||resumeFocused)&&!paused);
     if(attached&&heroPlayer.id===active?.id){
       if(phase==='trailer'&&heroPlayer.outcome==='idle')heroPlayer.paused=paused;
       heroPlayer.visible=enabled&&phase==='trailer';
     }
+  });
+  $effect(() => {
+    if (retained || deferredStep === undefined) return;
+    const by = deferredStep;
+    deferredStep = undefined;
+    untrack(() => { void step(by); });
   });
   $effect(()=>{
     if(!attached||heroPlayer.id!==active?.id||phase!=='trailer')return;
@@ -244,6 +271,6 @@ export function createHeroPresentation(get: () => HeroOptions) {
     get posterFailed() { return posterFailed; }, set posterFailed(value) { posterFailed = value; },
     get logoFailed() { return logoFailed; }, set logoFailed(value) { logoFailed = value; },
     get controlFocused() { return controlFocused; }, set controlFocused(value) { controlFocused = value;resumeFocused=false; },
-    noteActivity, step, togglePlayback,
+    noteActivity, step, retain, togglePlayback,
   };
 }

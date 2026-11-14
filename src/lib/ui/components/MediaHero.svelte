@@ -7,6 +7,7 @@
   import { createHeroPlayback } from '#lib/ui/heroes/playback.svelte.js';
   import { setHeroMuted } from '#lib/playback/client.svelte.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
+  import { provideRetention } from '#lib/ui/retention.js';
   import WorkMenu from './WorkMenu.svelte';
   import Button from './Button.svelte';
 
@@ -33,6 +34,7 @@
     requestable?: boolean;
   } = $props();
   const hero = untrack(() => createHeroPresentation(() => ({ item, items, parents, collection })));
+  provideRetention(hero.retain);
   const playback = untrack(() => createHeroPlayback(() => ({id:hero.active?.id,active:(hero.phase==='artwork'||hero.phase==='trailer')&&hero.attached,size:hero.size})));
 </script>
 
