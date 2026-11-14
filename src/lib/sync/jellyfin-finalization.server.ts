@@ -18,11 +18,26 @@ export async function reconcileJellyfinBatch(tx: Transaction, userId: string, co
         return cursor;
     if (cursor.phase === 'screen') {
         const states = await tx.select().from(trackingState).where(and(eq(trackingState.userId, userId), sql `(${trackingState.favourite} or ${trackingState.watched} or ${trackingState.positionSeconds}>0)`, cursor.workId ? sql `${trackingState.mediaId}>${cursor.workId}::uuid` : sql `true`)).orderBy(asc(trackingState.mediaId)).limit(JELLYFIN_FINALIZATION_BATCH);
+        const watchedIds = states.filter(state => state.watched).map(state => state.mediaId);
+        // An agreed baseline alone can be stale. Skip seeding watched jobs only
+        // when the current scan confirms that every available source is watched.
+        // Explicit intents already in the table still go through the enqueue phase.
+        const alreadyWatched = new Set(watchedIds.length ? (await tx.execute<{id: string}>(sql`
+            select v.media_id as id from sync_values v
+            where v.connection_id=${connectionId} and v.category='history'
+              and v.media_id=any(${`{${watchedIds.join(',')}}`}::uuid[])
+              and not v.conflict and v.agreed='{"value":true}'::jsonb and v.remote=v.agreed
+              and exists(select 1 from availability a where a.user_id=${userId} and a.connection_id=v.connection_id
+                and a.media_id=v.media_id and a.state='available' and a.scan_id=${scanId})
+              and not exists(select 1 from availability a where a.user_id=${userId} and a.connection_id=v.connection_id
+                and a.media_id=v.media_id and a.state='available'
+                and (a.scan_id is distinct from ${scanId}::uuid or a.source->'coastUserData'->'played' is distinct from 'true'::jsonb))
+        `)).map(row => row.id) : []);
         const rows: typeof reconciliationIntents.$inferInsert[] = [];
         for (const state of states) {
             if (state.favourite)
                 rows.push({ connectionId, workId: state.mediaId, category: 'favourite', value: { value: true } });
-            if (state.watched)
+            if (state.watched && !alreadyWatched.has(state.mediaId))
                 rows.push({ connectionId, workId: state.mediaId, category: 'history', value: { value: true } });
             if (state.positionSeconds > 0)
                 rows.push({ connectionId, workId: state.mediaId, category: 'progress', value: { positionSeconds: state.positionSeconds, durationSeconds: state.durationSeconds ?? 0 } });

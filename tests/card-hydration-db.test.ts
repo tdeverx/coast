@@ -37,16 +37,23 @@ run('a full activity page retains sixty singleton episodes plus sixty distinct s
 });
 
 run('shared cards transfer only artwork mapping fields and preserve account access',async()=>{
-  const [server]=await getDb().insert(s.providerInstances).values({provider:'jellyfin',name:'Projection fixture',baseUrl:'https://fixture.invalid'}).returning({id:s.providerInstances.id});
+  const serverName='Projection fixture';
+  const [server]=await getDb().insert(s.providerInstances).values({provider:'jellyfin',name:serverName,baseUrl:'https://fixture.invalid'}).returning({id:s.providerInstances.id});
   const [account]=await getDb().insert(s.providerConnections).values({userId:owner,instanceId:server.id,externalUserId:'fixture'}).returning({id:s.providerConnections.id});
   const [album]=await getDb().insert(s.works).values({category:'music',kind:'album'}).returning({id:s.works.id});
+  const [season]=await getDb().insert(s.media).values({kind:'season',title:'Projection season'}).returning({id:s.media.id});
   try{
     await getDb().insert(s.musicWorks).values({id:album.id,kind:'album',title:'Projection album'});
+    await getDb().insert(s.seasons).values({mediaId:season.id,showId:shows[0],seasonNumber:1});
+    await getDb().update(s.episodes).set({seasonId:season.id}).where(eq(s.episodes.mediaId,episodes[0]));
     const items=await getDb().insert(s.providerItems).values([
       {instanceId:server.id,mediaId:album.id,externalId:'album-fixture',kind:'album',snapshot:{primaryImageTag:'primary',unused:'x'.repeat(65536)}},
       {instanceId:server.id,mediaId:episodes[0],externalId:'episode-fixture',kind:'episode',snapshot:{unused:'x'.repeat(65536)}},
     ]).returning();
     await getDb().insert(s.availability).values(items.map(item=>({userId:owner,connectionId:account.id,mediaId:item.mediaId,providerItemId:item.id})));
+    const scope=[shows[0],season.id,episodes[0],shows[1]];
+    const sourceNames=async()=>(await mediaViewsForIds(owner,scope)).map(card=>card.availableSources);
+    expect(await sourceNames()).toEqual([[serverName],[serverName],[serverName],[]]);
     const session=(getDb() as unknown as {session:{logger:{logQuery:(query:string,params:unknown[])=>void}}}).session;
     const saved=session.logger,queries:{query:string;params:unknown[]}[]=[];
     let cards:Awaited<ReturnType<typeof workCards>>;
@@ -67,10 +74,13 @@ run('shared cards transfer only artwork mapping fields and preserve account acce
     await getSql()`update provider_items set snapshot=snapshot-'unused' where instance_id=${server.id}`;
     expect(await workCards(owner,owner,[episodes[0],album.id])).toEqual(cards);
     await getDb().update(s.providerConnections).set({status:'disconnected'}).where(eq(s.providerConnections.id,account.id));
+    expect(await sourceNames()).toEqual([[],[],[],[]]);
     const disconnected=(await workCards(owner,owner,[album.id]))[0];
     expect(disconnected.poster).toBeUndefined();
     expect('connectionId' in disconnected?disconnected.connectionId:undefined).toBeUndefined();
   }finally{
+    await getDb().update(s.episodes).set({seasonId:null}).where(eq(s.episodes.mediaId,episodes[0]));
+    await getDb().delete(s.media).where(eq(s.media.id,season.id));
     await getDb().delete(s.providerInstances).where(eq(s.providerInstances.id,server.id));
     await getDb().delete(s.works).where(eq(s.works.id,album.id));
   }

@@ -92,6 +92,33 @@ export function hasPermittedMediaSource(userId: string, source = 'all') {
   return sql`${s.media.id} in (select permitted.media_id from (${permittedMediaSources(userId, source)}) permitted)`;
 }
 
+function cardAvailability(userId: string, ids: string[]) {
+  // Start from the selected cards and their episode children. The catalogue
+  // query above starts from every source the viewer can access.
+  const scope = sql`${`{${ids.join(',')}}`}::uuid[]`;
+  return getDb().execute<{ mediaId: string; name: string }>(sql`
+    with targets as (select ${scope} as ids), related(media_id, source_id) as (
+      select id, id from targets cross join lateral unnest(targets.ids) as target(id)
+      union all
+      select e.show_id, e.media_id from targets join episodes e on e.show_id = any(targets.ids)
+      union all
+      select e.season_id, e.media_id from targets join episodes e on e.season_id = any(targets.ids)
+    )
+    select distinct related.media_id as "mediaId", p.name
+    from related
+    -- Keep the indexed lookup per relevant source even when the planner
+    -- estimates that scanning all availability for this user is cheaper.
+    join lateral (
+      select a.connection_id from availability a
+      where a.user_id = ${userId} and a.media_id = related.source_id and a.state = 'available'
+      offset 0
+    ) a on true
+    join provider_connections c on c.id = a.connection_id
+    join provider_instances p on p.id = c.instance_id
+    where c.user_id = ${userId} and c.status = 'connected' and p.enabled
+  `);
+}
+
 /** Mixed work shelves include accessible descendants, such as tracks within albums. */
 export function hasPermittedWorkSource(userId: string, category?: string) {
   const descendants = sql`exists(
@@ -274,15 +301,7 @@ export async function mediaViews(
       .select()
       .from(s.ratings)
       .where(and(eq(s.ratings.userId, userId), inArray(s.ratings.mediaId, ids))),
-    db
-      .execute<{ mediaId: string; name: string }>(
-        sql`
-        select distinct permitted.media_id as "mediaId", permitted.name
-        from (${permittedMediaSources(viewerId)}) permitted
-        where ${inArray(sql`permitted.media_id`, scopeIds)}
-      `
-      )
-      .then((rows) => Array.from(rows)),
+    cardAvailability(viewerId, scopeIds).then((rows) => Array.from(rows)),
     db
       .select({
         ...snapshotColumns,

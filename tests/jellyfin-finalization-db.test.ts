@@ -55,3 +55,38 @@ run('finalization bounds each native batch and rolls back effects before replayi
     expect(await db.transaction(tx => reconcileJellyfinBatch(tx, owner, connection, scan, cursor))).toEqual(cursor);
     expect(await db.select().from(s.outboxActions).where(eq(s.outboxActions.connectionId, connection))).toHaveLength(105);
 });
+
+run('a scan skips freshly confirmed watched fields while keeping stale, missing, divergent and explicit intents', async () => {
+    const db = getDb();
+    const [confirmed, stale, missing, divergent, conflicted, explicit] = ids;
+    const currentScan = crypto.randomUUID();
+    await db.delete(s.outboxActions).where(eq(s.outboxActions.connectionId, connection));
+    await db.delete(s.reconciliationIntents).where(eq(s.reconciliationIntents.connectionId, connection));
+    await db.update(s.availability).set({scanId:currentScan,source:{coastUserData:{played:true}}})
+        .where(inArray(s.availability.mediaId,[confirmed,missing,divergent,conflicted,explicit]));
+    await db.update(s.availability).set({source:{coastUserData:{played:true}}})
+        .where(eq(s.availability.mediaId,stale));
+    await db.update(s.availability).set({source:{}})
+        .where(eq(s.availability.mediaId,missing));
+    const [source] = await db.select({providerItemId:s.availability.providerItemId}).from(s.availability)
+        .where(eq(s.availability.mediaId,divergent));
+    await db.insert(s.availability).values({
+        userId:owner,connectionId:connection,mediaId:divergent,providerItemId:source.providerItemId,
+        sourceId:'another-edition',state:'available',scanId:currentScan,source:{coastUserData:{played:false}},
+    });
+    await db.insert(s.syncValues).values([confirmed,stale,missing,divergent,conflicted,explicit].map(mediaId=>({
+        connectionId:connection,mediaId,category:'history',remote:{value:true},agreed:{value:true},conflict:mediaId===conflicted,
+    })));
+    const [retained] = await db.insert(s.reconciliationIntents).values({
+        connectionId:connection,workId:explicit,category:'history',value:{value:true},
+    }).returning({version:s.reconciliationIntents.version});
+    let cursor: FinalizationCursor = {phase:'screen',workId:null,category:null,processed:0};
+    while (cursor.phase !== 'done') cursor = await db.transaction(tx=>reconcileJellyfinBatch(tx,owner,connection,currentScan,cursor));
+    const jobs = await db.select().from(s.outboxActions).where(eq(s.outboxActions.connectionId,connection));
+    const versions = new Map(jobs.map(job=>[job.payload.mediaId,job.payload.intentVersion]));
+    expect([...versions.keys()].sort()).toEqual([missing,divergent,conflicted,explicit].sort());
+    expect(versions.get(explicit)).toBe(retained.version);
+    const intents = await db.select().from(s.reconciliationIntents).where(eq(s.reconciliationIntents.connectionId,connection));
+    expect(intents.some(intent=>intent.workId===stale)).toBe(true);
+    expect(intents.some(intent=>intent.workId===confirmed)).toBe(false);
+});
