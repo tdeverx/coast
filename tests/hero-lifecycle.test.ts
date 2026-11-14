@@ -120,6 +120,12 @@ test('the mounted shared owner wires full-trailer completion, decoded item trans
   expect(video.writes).toBe(1);expect(video.currentTime).toBe(12);expect(video.paused).toBe(false);
   stub.heroPlayer.playing=false;stub.heroPlayer.paused=true;stub.heroPlayer.outcome='ended';await settle();expect(hero.phase).toBe('after');
   expect(video.src).toBe('');expect(video.loads).toBe(1);
+  const releaseMenu = hero.retain(), releaseDialog = hero.retain();
+  releaseMenu();
+  await tick(12000);
+  expect(hero.active.id).toBe(a.id);expect(images).toHaveLength(0);
+  releaseDialog();
+  await settle();
   await tick(2000);doc.hidden=true;listeners.get('visibilitychange')?.();await settle();await tick(10000);expect(hero.active.id).toBe(a.id);
   doc.hidden=false;listeners.get('visibilitychange')?.();await settle();await tick(2999);expect(hero.active.id).toBe(a.id);
   await tick(1);expect(hero.active.id).toBe(a.id);expect(hero.fading).toBe(false);expect(images.map(image=>image.src)).toEqual(['season-art','season-logo']);
@@ -128,7 +134,13 @@ test('the mounted shared owner wires full-trailer completion, decoded item trans
   images.slice(0,2).forEach(image=>image.resolve());await settle();expect(hero.fading).toBe(false);expect(hero.active.id).toBe(a.id);
   images.slice(2).forEach(image=>image.resolve());await settle();expect(hero.fading).toBe(true);
   await tick(159);expect(hero.active.id).toBe(a.id);
-  await tick(1);expect(hero.active.id).toBe(b.id);expect(hero.phase).toBe('artwork');expect(stub.heroPlayer.visible).toBe(false);
+  const releaseLateDialog = hero.retain();
+  await tick(1);expect(hero.active.id).toBe(a.id);expect(hero.fading).toBe(false);
+  releaseLateDialog();
+  await settle();
+  expect(images.slice(4).map(image=>image.src)).toEqual(['season-art','season-logo']);
+  images.slice(4).forEach(image=>image.resolve());await settle();
+  await tick(160);expect(hero.active.id).toBe(b.id);expect(hero.phase).toBe('artwork');expect(stub.heroPlayer.visible).toBe(false);
   intersection([{isIntersecting:true,intersectionRatio:1}]);await settle();await tick(9999);expect(hero.active.id).toBe(b.id);
   await tick(1);expect(images.at(-1)?.src).toBe('episode-art');dispose();expect(images.at(-1)?.src).toBe('');
   images.at(-1)?.resolve();await tick(1000);expect(hero.active.id).toBe(b.id);expect(hero.fading).toBe(false);expect(timers.size).toBe(0);
