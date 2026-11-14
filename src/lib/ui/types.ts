@@ -25,7 +25,7 @@ export type MediaCardPresentation = Pick<
   | 'logo'
 > & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic' | 'collection'; href: string; connectionId?: string; workId?: string; artistId?: string; favourite?: boolean; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
 /** A server item can be displayed before it has a shared catalogue destination. */
-export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person'|'book'|'comic';href:null};
+export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MediaCardPresentation['kind'];href:null};
 /** Canonical identity presentation without artwork, access or personal state. */
 export type WorkSummary = Pick<MediaCardPresentation, 'id'|'title'|'year'|'attribution'> & {kind: MediaKind|MediaCardPresentation['kind']};
 export type MediaHeroPresentation = MediaCardPresentation &

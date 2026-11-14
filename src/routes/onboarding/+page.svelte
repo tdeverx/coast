@@ -34,6 +34,7 @@
   return()=>{stopped=true;clearInterval(timer);document.removeEventListener('visibilitychange',visible);poll.dispose();};
  });
   reportFailure(()=>(form && 'error' in form ? form.error : '') || deviceError);
+  reportFailure(() => data.imports.map(item => item.error).filter(Boolean).join(' '));
 </script>
 <svelte:head><title>Set up your account · Coast</title></svelte:head>
 <div class="auth-page"><div class="auth-card"><div class="row brand"><Brand /></div>
@@ -48,21 +49,21 @@
  {:else if data.phase==='connections'||data.reconnect||data.imports.some(item=>item.error==='Reconnect Trakt to continue.')}
  <h1>Connect your services.</h1><p>Import your history, progress, favourites and saved titles before you start browsing.</p>
  {#if data.requiredProvider!=='none'}<p>{data.requiredProvider==='either'?'Connect Jellyfin or Trakt to continue.':`Connect ${data.requiredProvider==='jellyfin'?'Jellyfin':'Trakt'} to continue.`}</p>{/if}
- {#if data.provisioning&&!data.linked}<form method="POST" action="?/provision" class="stack" use:enhance><p>Your invitation includes a new account on {data.provisioning.name}, using your Coast username.</p><label class="field">Jellyfin password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"/></label><label class="field">Confirm Jellyfin password<input type="password" name="passwordConfirmation" required autocomplete="new-password"/></label><p class="small">Use uppercase, lowercase and a special character. This password is sent to Jellyfin and is not stored by Coast.</p><Button type="submit" disabled={['creating','uncertain'].includes(data.provisioning.state)}>Create Jellyfin account</Button>{#if ['creating','uncertain'].includes(data.provisioning.state)}<p class="notice">Administrator review is needed before another creation attempt. You can connect an existing reviewed account below.</p>{/if}</form>{/if}
+ {#if data.provisioning&&!data.linked}<form method="POST" action="?/provision" class="stack" use:enhance><p>Your invitation includes a new account on {data.provisioning.name}, using your Coast username.</p><label class="field">Jellyfin password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"/></label><label class="field">Confirm Jellyfin password<input type="password" name="passwordConfirmation" required autocomplete="new-password"/></label><p class="small">Use uppercase, lowercase and a special character. This password is sent to Jellyfin and is not stored by Coast.</p><Button type="submit" disabled={['creating','uncertain'].includes(data.provisioning.state)}>Create Jellyfin account</Button>{#if ['creating','uncertain'].includes(data.provisioning.state)}<p class="small">Administrator review is needed before another creation attempt. You can connect an existing reviewed account below.</p>{/if}</form>{/if}
  {#if data.linked}<p role="status">Jellyfin connected.</p>{:else if data.services.length}
  <form method="POST" action="?/connect" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
  <label class="field">Jellyfin server<select name="instanceId">{#each data.services as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
  <label class="field">Jellyfin username<input name="username" autocomplete="username" required maxlength="250" /></label>
  <label class="field">Jellyfin password<input name="password" type="password" autocomplete="current-password" maxlength="4096" /></label>
  <Button type="submit" disabled={busy}>Connect Jellyfin</Button></form>
- {:else if data.requiredProvider==='jellyfin'}<p class="notice">An administrator needs to enable a Jellyfin server.</p>{/if}
+ {:else if data.requiredProvider==='jellyfin'}<p class="small">An administrator needs to enable a Jellyfin server.</p>{/if}
  {#if data.traktLinked}<p role="status">Trakt connected.</p>{:else if data.traktServices.length}
  {#if device}<p>Enter <strong>{device.userCode}</strong> on <a href={device.verificationUrl} target="_blank" rel="noreferrer">Trakt</a>. Waiting for authorization…</p>
  {/if}<form method="POST" action="?/trakt" class="stack" use:enhance><label class="field">Trakt service<select name="instanceId">{#each data.traktServices as service}<option value={service.id}>{service.name}</option>{/each}</select></label><Button type="submit">{device?'New Trakt code':'Connect Trakt'}</Button></form>
- {:else if data.requiredProvider==='trakt'}<p class="notice">An administrator needs to enable Trakt.</p>{/if}
+ {:else if data.requiredProvider==='trakt'}<p class="small">An administrator needs to enable Trakt.</p>{/if}
  {#if data.phase==='connections'}<Button href="/onboarding?step=picture" disabled={!canContinue}>Continue</Button>{:else}<form method="POST" action="?/begin" use:enhance><Button type="submit" disabled={!canContinue}>Continue import</Button></form>{/if}
  {:else}<h1>Importing your data.</h1><p>You can leave this page and return later. Your account opens when these imports finish.</p>
- {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}{#if item.error}<p class="notice error">{item.error}</p>{/if}</div>{/each}
+ {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}</div>{/each}
  {#if data.imports.some(item=>['failed','cancelled'].includes(item.state))}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form>{/if}
  {/if}
 

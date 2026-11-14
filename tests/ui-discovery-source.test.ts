@@ -121,8 +121,8 @@ test('provider guidance belongs to empty discovery results, not persistent row s
  const {result,dispose,update}=source(null);
  try{
   update({surface:'listen',scoped:true});await result.load();
-  expect(result.notice).toBeUndefined();expect(result.empty).not.toBe('Provider ranking explanation.');
+  expect(result.empty).not.toBe('Provider ranking explanation.');
   client.setDelivery(async()=>({items:[],failure:'',notice:'Connect a provider in Integrations.'}));await result.load();
-  expect(result.notice).toBeUndefined();expect(result.empty).toBe('Connect a provider in Integrations.');
+  expect(result.empty).toBe('Connect a provider in Integrations.');
  }finally{dispose();}
 });

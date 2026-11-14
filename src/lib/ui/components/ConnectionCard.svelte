@@ -187,7 +187,7 @@
   };
 
   reportFailure(()=>error);
-  reportFailure(()=>scanError ? `Could not refresh scan progress: ${scanError}` : '');
+  reportFailure(()=>scanError ? `Could not refresh scan progress: ${scanError}` : scan?.state === 'failed' ? scan.error : '');
 </script>
 
 <section class="panel stack">
@@ -301,9 +301,6 @@
             >{:else if scanning}<span>{scan.processed.toLocaleString()} items processed</span>{/if}
         </div>
         {#if scanning}<OperationProgress label="Activity sync progress" processed={scan.processed} total={scan.total} />{/if}
-        {#if scan.error && scan.state !== 'succeeded'}<p class="small text-danger">
-            {scan.error}
-          </p>{/if}
       </div>
     {/if}
 
@@ -323,7 +320,7 @@
         void connect();
       }}
     >
-      {#if dynamicCollectionExports.length}<p class="notice">Collection export impact: {dynamicCollectionExports.join(', ')} will include this linked source after your access is assessed. Additions and unavailable identities are unresolved until user sync completes. Existing Trakt entries stay until cleanup is reviewed.</p>{/if}
+      {#if dynamicCollectionExports.length}<p class="small">Collection export impact: {dynamicCollectionExports.join(', ')} will include this linked source after your access is assessed. Additions and unavailable identities are unresolved until user sync completes. Existing Trakt entries stay until cleanup is reviewed.</p>{/if}
       <label class="field"
         >Jellyfin username<input bind:value={username} autocomplete="username" required /></label
       ><label class="field"
@@ -336,7 +333,7 @@
       ><Button  type="submit" disabled={busy}
         >{busy ? 'Connecting…' : 'Connect Jellyfin'}</Button
       >
-    </form>{:else if provider.provider === 'steam'}<p class="small">Link your Steam account using Steam’s sign-in page. Game details must be readable for imports; signing in does not override Steam privacy.</p><Button disabled={busy||!provider.configured} onclick={startSteam}>Connect Steam</Button>{:else if provider.provider === 'trakt'}{#if device}<div class="notice">
+    </form>{:else if provider.provider === 'steam'}<p class="small">Link your Steam account using Steam’s sign-in page. Game details must be readable for imports; signing in does not override Steam privacy.</p><Button disabled={busy||!provider.configured} onclick={startSteam}>Connect Steam</Button>{:else if provider.provider === 'trakt'}{#if device}<div>
         <p>
           Open <a class="text-accent" href={device.verificationUrl} target="_blank" rel="noreferrer"
             >Trakt’s activation page</a

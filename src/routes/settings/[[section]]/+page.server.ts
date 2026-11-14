@@ -86,7 +86,7 @@ export const load = (async ({locals, params, depends, url}) => {
       subtitleLanguages: config.subtitleLanguages,
       subtitlesAlways: config.subtitleDefault === 'always',
       subtitlePrompt: false,
-      notificationsSilenced: false,
+      notificationLevel: null,
     },
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     demand: section === 'admin' ? adminDemand(url) : null,

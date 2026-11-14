@@ -1,4 +1,4 @@
-import { onDestroy, untrack } from 'svelte';
+import { onDestroy, untrack, type Snippet } from 'svelte';
 import { message } from './client';
 
 export type FailureSource = string | null | undefined | {text:string|null|undefined;retry?:()=>unknown;actionLabel?:string};
@@ -7,12 +7,14 @@ type ActionNotice = {
   text: string; kind: 'info' | 'error'; undo?: () => Promise<void>; retry?: () => unknown; actionLabel?:string;
   busy: boolean; error: string; owner?: symbol;
 };
+export const temporaryFeedback = (notice: ActionNotice) => notice.kind === 'info' && !notice.owner && !notice.undo;
 /** One delivery channel per client scope. Preview clients never publish into the application. */
 export function createFeedback() {
-  const state = $state<{ notices: ActionNotice[]; hosts: string[] }>({ notices: [], hosts: [] });
+  const state = $state<{ notices: ActionNotice[]; hosts: string[]; notifications?: Snippet }>({ notices: [], hosts: [] });
   const current = () => state.notices.at(-1) ?? null;
   function publish(notice: ActionNotice) {
-    state.notices = [...state.notices.filter(value => value.owner !== notice.owner), notice];
+    state.notices = [...state.notices.filter(value => value.owner !== notice.owner ||
+      !notice.owner && (value.kind !== notice.kind || !!value.undo !== !!notice.undo)), notice];
   }
   function notify(text: string, undo?: () => Promise<void>) { publish({ text, undo, kind: 'info', busy: false, error: '' }); }
   function pending(text: string, owner: symbol) { publish({ text, owner, kind: 'info', busy: true, error: '' }); }
@@ -21,17 +23,19 @@ export function createFeedback() {
     if (owner) state.notices = state.notices.filter(value => value.owner !== owner);
     else state.notices = state.notices.slice(0, -1);
   }
+  function clearAll() { state.notices = []; }
   async function act() {
     const notice = current();
     if (!notice || notice.busy || !(notice.undo || notice.retry)) return;
     notice.busy = true;
     try {
       const result = await (notice.undo ?? notice.retry)!();
-      if (current() === notice && result !== false) {
-        if (notice.undo) notify('Change undone.');
+      if (result !== false) {
+        const wasCurrent = current() === notice;
         // Watched operations own their error lifetime. A retry that returns the
         // same failure must not silently dismiss it (including SSR refreshes).
-        else if (!notice.owner) clear();
+        if (notice.undo || !notice.owner) state.notices = state.notices.filter(value => value !== notice);
+        if (notice.undo && wasCurrent) notify('Change undone.');
       }
     } catch (cause) { notice.error = message(cause); }
     finally { notice.busy = false; }
@@ -60,8 +64,14 @@ export function createFeedback() {
     untrack(() => { state.hosts = [...state.hosts.filter(value => value !== id), id]; });
     return () => { state.hosts = state.hosts.filter(value => value !== id); };
   }
+  function showNotifications(render: Snippet) {
+    state.notifications = render;
+    return () => { if (state.notifications === render) state.notifications = undefined; };
+  }
   return { get current() { return current(); },
-    get activeHost() { return state.hosts.at(-1) ?? null; }, notify, pending, failure, clear, act, watch, host };
+    get activeHost() { return state.hosts.at(-1) ?? null; },
+    get notifications() { return state.notifications; },
+    notify, pending, failure, clear, clearAll, act, watch, host, showNotifications };
 }
 export type Feedback = ReturnType<typeof createFeedback>;
 export const actionFeedback = createFeedback();

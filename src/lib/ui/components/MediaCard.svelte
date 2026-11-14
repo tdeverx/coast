@@ -40,6 +40,7 @@
     artworkStyle = 'auto',
     overlay = 'none',
     artworkPriority,
+    artworkOnly = false,
     onselect,
     social,
     wrapActivity = false,
@@ -59,6 +60,7 @@
     artworkStyle?: MediaCardArtwork;
     overlay?: MediaCardOverlay;
     artworkPriority?: ArtworkPriority;
+    artworkOnly?: boolean;
     onselect?: (item: MediaView) => void;
     wrapActivity?: boolean;
     showActivityContext?: boolean;
@@ -197,6 +199,27 @@
   }
 </script>
 
+{#snippet artworkImage()}
+  {#if artwork}<img
+    use:lazyImage={artwork}
+    alt=""
+    loading="lazy"
+    decoding="async"
+    draggable="false"
+    onload={event => { loadedArtwork = event.currentTarget.getAttribute('src') ?? undefined; }}
+    onerror={() => (imageIndex += 1)}
+  />{/if}
+{/snippet}
+
+{#if artworkOnly}
+  {#if artwork}
+    <div class="media-card" class:loading aria-hidden="true">
+      <div class="art media-surface-edge {shape}">
+        <div class="art-link">{@render artworkImage()}</div>
+      </div>
+    </div>
+  {/if}
+{:else}
 <article
   class="media-card"
   class:loading
@@ -224,15 +247,7 @@
       role={primaryMenu && !showPrimaryAction ? 'button' : undefined} aria-haspopup={primaryMenu && !showPrimaryAction ? 'menu' : undefined}
       onkeydown={event => { if (primaryMenu && !showPrimaryAction && event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
       onclick={event => { if (primaryMenu && !showPrimaryAction) { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); void openMenu({ x: rect.left, y: rect.bottom }); } else select(event); }} draggable="false">
-      {#if artwork}<img
-          use:lazyImage={artwork}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable="false"
-          onload={event => { loadedArtwork = event.currentTarget.getAttribute('src') ?? undefined; }}
-          onerror={() => (imageIndex += 1)}
-        />
+      {#if artwork}{@render artworkImage()}
       {:else if artworkStyle !== 'none'}<div class="fallback">
           <Icon
             name={item.kind === 'artist'
@@ -330,6 +345,7 @@
     </div>
   {/if}
 </article>
+{/if}
 
 <style>
   .caption-status[data-tone='positive'] {color:var(--success);}

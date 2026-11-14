@@ -23,7 +23,6 @@ const notificationBatchSize = 100;
 const notificationDialect = new PgDialect();
 // Delivery policy needs these preferences, never profile artwork or other settings.
 const notificationSettings = sql`jsonb_build_object(
-  'notificationsSilenced', settings -> 'notificationsSilenced',
   'notificationLevel', settings -> 'notificationLevel',
   'social', jsonb_build_object('notifications', settings -> 'social' -> 'notifications'))`;
 async function notificationQuery<T extends Record<string, unknown>>(database: NotificationDatabase, query: SQL): Promise<T[]> {
@@ -34,12 +33,11 @@ async function notificationQuery<T extends Record<string, unknown>>(database: No
 
 function notificationValues(input: NotificationInput, settings: UserSettings, config: CoastConfig) {
   const socialNotifications: Partial<Record<string, boolean>> | undefined = settings.social?.notifications;
-  if (input.data && socialNotifications?.[input.kind] === false) return null;
-  const maySilence = config.allowNotificationSilencing && !input.locked;
-  const userLevel = settings.notificationsSilenced ? 'silent' : settings.notificationLevel;
-  const requestedLevel = maySilence && userLevel && ['silent', 'normal', 'persistent'].includes(userLevel)
-    ? userLevel : input.level || config.notificationLevel;
-  const level = input.locked && requestedLevel === 'silent' ? 'normal' : requestedLevel;
+  if (!input.locked && input.data && socialNotifications?.[input.kind] === false) return null;
+  const preference = config.allowNotificationSilencing && settings.notificationLevel !== 'silent'
+    ? settings.notificationLevel : undefined;
+  const level = input.locked || (input.level ?? preference ?? config.notificationLevel) === 'persistent'
+    ? 'persistent' : 'normal';
   return sql`(${input.userId}::uuid, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null},
     ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data ?? null}::jsonb)`;
 }
@@ -52,7 +50,10 @@ async function writeNotifications(inputs: NotificationInput[], settings: Map<str
     const rows = await notificationQuery<{id: string}>(database, sql`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key, data)
       SELECT proposed.* FROM (VALUES ${sql.join(values, sql`, `)}) AS proposed(user_id,kind,title,body,level,locked,source_key,data)
       WHERE coast_notification_visible(proposed.user_id::uuid,proposed.kind,proposed.data,proposed.source_key)
-      ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data
+      ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data,
+        toast_hidden_at = CASE WHEN EXCLUDED.level = 'persistent' AND notifications.level <> 'persistent' THEN NULL ELSE notifications.toast_hidden_at END,
+        read_at = CASE WHEN EXCLUDED.level = 'persistent' AND notifications.level <> 'persistent' THEN NULL ELSE notifications.read_at END,
+        dismissed_at = CASE WHEN EXCLUDED.level = 'persistent' AND notifications.level <> 'persistent' THEN NULL ELSE notifications.dismissed_at END
       RETURNING id`);
     ids.push(...rows.map(row => row.id)); values.length = 0; keys.clear();
   };
@@ -90,13 +91,14 @@ export async function notify(input: NotificationInput, database: NotificationDat
 export async function resolveNotification(userId: string, sourceKey: string, database = getSql()) {
   await database`DELETE FROM notifications WHERE user_id = ${userId} AND source_key = ${sourceKey}`;
 }
-export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?:string;unread?:boolean}={}) {
+export async function inbox(actor: SessionUser | null, limit = 50, filters:{kind?:string;unread?:boolean;toasts?:boolean;omitContext?:boolean}={}) {
   const user = requireUser(actor);
+  // Each lifetime gets a place in the fetch window so a backlog of either cannot block the other.
   const rows = await getDb()
     .select({
       id: notifications.id,
       kind: notifications.kind,
-      data: notifications.data,
+      data: filters.omitContext ? sql<null>`null` : notifications.data,
       title: notifications.title,
       body: notifications.body,
       level: notifications.level,
@@ -106,8 +108,13 @@ export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
-    .orderBy(desc(notifications.createdAt))
+    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread||filters.toasts?isNull(notifications.readAt):undefined,filters.toasts?isNull(notifications.toastHiddenAt):undefined))
+    .orderBy(...(filters.toasts
+      ? [sql`row_number() over (
+          partition by (${notifications.locked} or ${notifications.level} = 'persistent')
+          order by ${notifications.createdAt}, ${notifications.id}
+        )`, sql`${notifications.locked} desc`, sql`${notifications.createdAt} asc`, sql`${notifications.id} asc`]
+      : [desc(notifications.createdAt), desc(notifications.id)]))
     .limit(Math.max(1, Math.min(200, limit)));
   return rows;
 }
@@ -121,6 +128,7 @@ export async function hideNotificationToasts(actor: SessionUser | null, input: u
     ), hidden AS (
       UPDATE notifications n SET toast_hidden_at = NOW() FROM owned
       WHERE n.id = owned.id AND n.user_id = ${user.id}::uuid AND n.toast_hidden_at IS NULL
+        AND n.level <> 'persistent' AND NOT n.locked
       RETURNING n.id
     ) SELECT id FROM owned`);
   return {ids: rows.map(row => row.id)};

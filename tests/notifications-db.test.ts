@@ -1,9 +1,9 @@
 import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {getSql,getDb} from '../src/lib/server/db';
 import {sql} from 'drizzle-orm';
-import {notificationInbox,notificationUnread,markNotification,markNotificationsRead,markNotificationsSeen} from '../src/lib/server/notifications/inbox';
+import {notificationInbox,notificationToasts,notificationUnread,markNotification,markNotificationsRead,markNotificationsSeen} from '../src/lib/server/notifications/inbox';
 import {incomingFriendRequests} from '../src/lib/social/service.server';
-import {notify,notifyMany,inbox} from '../src/lib/server/notifications';
+import {notify,notifyMany,inbox,hideNotificationToasts} from '../src/lib/server/notifications';
 import type {SessionUser} from '../src/lib/server/auth';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user:SessionUser={id:crypto.randomUUID(),username:'notifications-'+crypto.randomUUID().slice(0,8),email:null,role:'user',settings:{}};
@@ -17,7 +17,7 @@ run('transactional notices share uncommitted preferences and roll back with thei
   await tx.execute(sql`update users set settings='{"notificationsSilenced":true}'::jsonb where id=${user.id}`);
   await notify({userId:user.id,kind:'request',title:'Rolled back notice',sourceKey:key},tx);
   const [notice]=await tx.execute<{level:string}>(sql`select level from notifications where user_id=${user.id} and source_key=${key}`);
-  expect(notice.level).toBe('silent');
+  expect(notice.level).toBe('normal');
   throw new Error('Synthetic page rollback');
  })).rejects.toThrow('Synthetic page rollback');
  expect((await getSql()`select id from notifications where user_id=${user.id} and source_key=${key}`).length).toBe(0);
@@ -46,6 +46,25 @@ run('incoming friend requests belong to Friends, while acceptance remains in not
  await db`delete from friendships where user_a=${a} and user_b=${b}`;
  await db`delete from notifications where user_id=${user.id}`;
 });
+run('toast reads include older unseen notices and re-present an escalated service failure',async()=>{
+ const db=getSql();
+ const sourceKey='toast-escalation-'+crypto.randomUUID();
+ const input={userId:user.id,kind:'external-action',title:'Waiting for a service',sourceKey};
+ const id=await notify(input);
+ try{
+  await db`update notifications set created_at=now()-interval '7 days' where id=${id}`;
+  expect((await inbox(user,50,{toasts:true})).map(n=>n.id)).toContain(id);
+  await hideNotificationToasts(user,{ids:[id]});
+  expect((await inbox(user,50,{toasts:true})).map(n=>n.id)).not.toContain(id);
+  expect((await inbox(user)).find(n=>n.id===id)?.readAt).toBeNull();
+  await markNotification(user,id,'read');
+  expect(await notify({...input,level:'persistent',title:'Service needs attention'})).toBe(id);
+  await hideNotificationToasts(user,{ids:[id]});
+  expect((await inbox(user,50,{toasts:true})).find(n=>n.id===id)).toMatchObject({level:'persistent',readAt:null,toastHiddenAt:null});
+ }finally{
+  await db`delete from notifications where id=${id}`;
+ }
+});
 run('recommendations resolve their media and accepted notices reuse the friend entry',async()=>{
  const db=getSql(),[a,b]=[user.id,other.id].sort();
  await db`insert into friendships(user_a,user_b,requested_by,state) values(${a},${b},${other.id},'accepted')`;
@@ -56,6 +75,13 @@ run('recommendations resolve their media and accepted notices reuse the friend e
   const feed=await notificationInbox(user);
   expect(feed.items.find(n=>n.kind==='recommendation')?.media?.card.id).toBe(work);
   expect(feed.items.find(n=>n.kind==='friend-accepted')?.friend?.username).toBe(other.username);
+  const standardToasts=await notificationToasts(user);
+  const toasts=await notificationToasts(user,true);
+  expect(standardToasts).toEqual(toasts.map(({actor: _actor, media: _media, ...notice}) => notice));
+  expect(toasts.find(n=>n.kind==='recommendation')).toMatchObject({
+   actor:{username:other.username},media:{id:work,title:'Notification fixture'}
+  });
+  expect(toasts.find(n=>n.kind==='friend-accepted')?.media).toBeUndefined();
  }finally{
   await db`delete from notifications where user_id=${user.id}`;
   await db`delete from social_recommendations where id=${rec.id}`;

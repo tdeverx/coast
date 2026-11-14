@@ -8,6 +8,44 @@ import { activityFeed } from '#lib/social/queries.server.js';
 import { friends } from '#lib/social/service.server.js';
 import { statusesForUsers } from '#lib/social/status.server.js';
 import { defaultNotificationFilters,notificationKinds,notificationDestination,type NotificationFilters,type NotificationEntry } from '#lib/notifications/model.js';
+import { inbox } from './index.js';
+import type { ToastNotification } from '#lib/ui/controls/notification-toasts.js';
+
+const socialKinds = ['friend-request','friend-accepted','recommendation','reaction','synced-invite'];
+function notificationActors(userId: string, ids: string[]) {
+ const db = getSql();
+ return ids.length ? db<{id:string;username:string;avatar:string|null}[]>`select u.id,u.username,case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar from users u where u.id in ${db(ids)} and not u.disabled` : [];
+}
+
+export async function notificationToasts(user: SessionUser, rich = false): Promise<ToastNotification[]> {
+ const rows = await inbox(user, 50, {toasts:true,omitContext:!rich});
+ if (!rich) return rows.map(({data: _data, ...notice}) => notice);
+ if (!rows.length) return [];
+ const actorIds = [...new Set(rows.flatMap(row => socialKinds.includes(row.kind) && row.data?.actorId ? [row.data.actorId] : []))];
+ // Older persisted notices can still keep their media identity on the subject.
+ const unresolved = rows.filter(row => !row.data?.workId &&
+  (row.kind === 'availability' || ['recommendation','synced-invite','reaction','request'].includes(row.kind))).map(row => row.id);
+ const db = getSql();
+ const context = unresolved.length ? await db<{id:string;work_id:string|null}[]>`${visible(user.id)} select id,work_id from visible where id=any(${db.array(unresolved,'TEXT')}::uuid[])` : [];
+ const workByNotice = new Map(context.map(row => [row.id, row.work_id]));
+ const workIds = [...new Set(rows.map(row => row.data?.workId ?? workByNotice.get(row.id)).filter((id): id is string => !!id))];
+ const [actors,cards] = await Promise.all([
+  notificationActors(user.id, actorIds),
+  workCards(user.id, user.id, workIds),
+ ]);
+ const byActor = new Map(actors.map(actor => [actor.id, actor]));
+ const byWork = new Map(cards.map(card => [('workId' in card ? card.workId : undefined) ?? card.id, card]));
+ return rows.map(({data,...notice}) => {
+  const actor = data?.actorId && socialKinds.includes(notice.kind) ? byActor.get(data.actorId) : undefined;
+  const workId = data?.workId ?? workByNotice.get(notice.id);
+  const card = workId ? byWork.get(workId) : undefined;
+  return {
+   ...notice,
+   actor: actor && {username:actor.username,avatar:actor.avatar},
+   media: card && {id:card.id,kind:card.kind,title:card.title,poster:card.poster ?? card.artwork?.primary,backdrop:card.backdrop,year:card.year,captionSubtitle:card.captionSubtitle,durationLabel:card.durationLabel},
+  };
+ });
+}
 const uuid=v.pipe(v.string(),v.uuid());
 const filterSchema=v.object({segment:v.optional(v.picklist(['all','social','requests','system']),'all'),kind:v.optional(v.picklist(notificationKinds.map(k=>k.value)),'all'),unread:v.optional(v.boolean(),false),category:v.optional(v.picklist(['all','screen','game','music','reading']),'all'),period:v.optional(v.picklist(['all','week','month']),'all')});
 export function notificationFilters(input:unknown):NotificationFilters {return v.parse(filterSchema,input);}
@@ -51,9 +89,9 @@ async function hydrate(userId:string,rows:any[]):Promise<NotificationEntry[]>{
  const friendIds=[...new Set(rows.flatMap(row=>row.kind==='friend-accepted'&&row.data?.actorId?[String(row.data.actorId)]:[]))];
  const friendCards=friendIds.length?await friends(userId,1,'accepted',friendIds):[];
  const artworkIds=[...new Set([...ids,...friendCards.flatMap(friend=>friend.backgroundWorkId?[friend.backgroundWorkId]:[]),...parents.flatMap(parent=>parent.root_id?[String(parent.root_id)]:[])])];
- const [cards,assessments,actors,statuses,activity,reactions]=await Promise.all([workCards(userId,userId,artworkIds),workAssessments(userId,userId,ids),actorIds.length?db`select u.id,u.username,case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar from users u where u.id in ${db(actorIds)} and not u.disabled`:[],statusesForUsers(userId,actorIds),activityIds.length?activityFeed(userId,{},activityIds):{items:[]},activityIds.length?db`select target_id,user_id,emoji from social_reactions where target_kind='activity' and target_id in ${db(activityIds)}`:[]]);
+ const [cards,assessments,actors,statuses,activity,reactions]=await Promise.all([workCards(userId,userId,artworkIds),workAssessments(userId,userId,ids),notificationActors(userId,actorIds),statusesForUsers(userId,actorIds),activityIds.length?activityFeed(userId,{},activityIds):{items:[]},activityIds.length?db`select target_id,user_id,emoji from social_reactions where target_kind='activity' and target_id in ${db(activityIds)}`:[]]);
  return rows.map(row=>{
-  const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===row.work_id),assessment=assessments.find(a=>a.id===row.work_id),actor=['friend-request','friend-accepted','recommendation','reaction','synced-invite'].includes(row.kind)?actors.find((actor:any)=>actor.id===row.data?.actorId):null;
+  const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===row.work_id),assessment=assessments.find(a=>a.id===row.work_id),actor=socialKinds.includes(row.kind)?actors.find(actor=>actor.id===row.data?.actorId):null;
   const parent=parents.find(parent=>parent.id===row.work_id);
   const specific=['recommendation','reaction','synced-invite'].includes(row.kind);
   const artworkCard=!specific&&parent?.root_id?cards.find(card=>('workId' in card?card.workId??card.id:card.id)===parent.root_id)??card:card;

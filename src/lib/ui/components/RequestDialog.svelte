@@ -102,7 +102,7 @@
     if (!completed) error = operation.error;
   }
 
-  reportFailure(()=>failure);
+  reportFailure(() => open ? {text:failure,retry:error ? undefined : load} : '');
 </script>
 
 <Dialog bind:open title={`Request ${item.title}`}>
@@ -116,8 +116,6 @@
     <p class="small">
       Choose where you’d like to watch. Your request stays here while the server prepares it.
     </p>
-    {#if failure}
-      <Button emphasis="subtle" onclick={load}>Retry</Button>{/if}
     {#if destinations.length}
       <Field label="Destination server"><select bind:value={destination} onchange={chooseDestination}
           >{#each destinations as d}<option value={d.id}>{d.name}</option>{/each}</select

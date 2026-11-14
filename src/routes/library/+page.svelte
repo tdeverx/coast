@@ -37,9 +37,9 @@
   {/key}
   {#if data.owner && data.view !== 'read'}<section class="section">
     <Button emphasis="subtle" href={missingUrl()}>{missing ? 'Hide' : 'Show'} missing and uncertain items</Button>
-    {#if missing}{#await data.missing}<p class="notice">Loading missing items…</p>{:then demand}{#if demand?.total}
+    {#if missing}{#await data.missing}<p class="small" role="status">Loading missing items…</p>{:then demand}{#if demand?.total}
       <ul>{#each demand.items as item}<li><a href={item.href}>{item.neededTitle}</a> · {item.reason} · {item.availability === 'unknown' ? 'Availability uncertain' : 'Missing for you'}{item.dateUnknown ? ' · Release date unknown' : ''}</li>{/each}</ul>
       <Pagination page={demand.page} pages={demand.pages} pageUrl={missingPageUrl} label="Missing demand pages" />
-    {:else}<p class="notice">No missing or uncertain items.</p>{/if}{:catch}<!-- Failure is delivered by the scoped toast. -->{/await}{/if}
+    {:else}<p class="small" role="status">No missing or uncertain items.</p>{/if}{:catch}<!-- Failure is delivered by the scoped toast. -->{/await}{/if}
   </section>{/if}
 </div>

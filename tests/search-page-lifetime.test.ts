@@ -9,6 +9,7 @@ const script = (await componentScript('src/routes/search/+page.svelte')).replace
 const source = compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  export function create(initial,page,go,rankSearch,searchSelectionUrl){
   const cleanups=[],navigation=[],nativeHistory=new EventTarget(),window={location:{href:page.url.href},addEventListener:(...args)=>nativeHistory.addEventListener(...args),removeEventListener:(...args)=>nativeHistory.removeEventListener(...args)},beforeNavigate=fn=>navigation.push(fn),onDestroy=fn=>cleanups.push(fn),onMount=fn=>cleanups.push(fn()),reportFailure=()=>{},goto=go;
+  const notifyAction=()=>{};
   ${script}
   return {select(bucket,kind){submit({bucket,kind});},submit,get busy(){return busy;},get items(){return searchItems;},get rows(){return data.rows;},get pending(){return pendingTargets.size;},get intentHref(){return intent?.href;},edit(value){query=value;},update(next){data=next;},history(url){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));},navigate(type,url){if(type==='popstate'){window.location.href=url.href;nativeHistory.dispatchEvent(new Event('popstate'));}for(const fn of navigation)fn({type,to:{url}});},cleanup(){for(const fn of cleanups)fn();}};
  }`);

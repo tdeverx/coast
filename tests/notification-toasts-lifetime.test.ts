@@ -3,16 +3,29 @@ import {createNotificationToasts,type ToastNotification} from '../src/lib/ui/con
 const now=1_000_000;
 function notice(id:string,overrides:Partial<ToastNotification>={}):ToastNotification{return {id,title:'Notice',body:null,level:'normal',readAt:null,toastHiddenAt:null,createdAt:new Date(now),...overrides};}
 const settle=async()=>{for(let i=0;i<6;i++)await Promise.resolve();};
-function fixture(preview=false,refresh:()=>Promise<void>=async()=>{}){
+function fixture(preview=false,refresh:()=>Promise<void>=async()=>{},frontOnly=false){
  const timers=new Map<number,{run:()=>void;ms:number}>();let next=0;
  const calls:{kind:string;ids:string[];signal:AbortSignal;resolve:()=>void;reject:()=>void}[]=[],failures:string[]=[];let recovered=0;
  const invoke=(kind:string,ids:string[],signal:AbortSignal)=>new Promise<void>((yes,no)=>{
   const resolve=()=>{signal.removeEventListener('abort',reject);yes();},reject=()=>{signal.removeEventListener('abort',reject);no(Error('Offline'));};
   calls.push({kind,ids,signal,resolve,reject});signal.addEventListener('abort',reject,{once:true});
  });
- const owner=createNotificationToasts({preview,hide:(ids,signal)=>invoke('hide',ids,signal),dismiss:(id,signal)=>invoke('dismiss',[id],signal),changed:()=>{},failure:text=>failures.push(text),recovered:()=>{recovered++;},refresh,refreshFailure:()=>failures.push('saved-refresh-failed'),now:()=>now,delay:(run,ms)=>{const id=++next;timers.set(id,{run,ms});return id as unknown as ReturnType<typeof setTimeout>;},cancel:timer=>{timers.delete(timer as unknown as number);}});
+ const owner=createNotificationToasts({preview,frontOnly,hide:(ids,signal)=>invoke('hide',ids,signal),dismiss:(id,signal)=>invoke('dismiss',[id],signal),changed:()=>{},failure:text=>failures.push(text),recovered:()=>{recovered++;},refresh,refreshFailure:()=>failures.push('saved-refresh-failed'),delay:(run,ms)=>{const id=++next;timers.set(id,{run,ms});return id as unknown as ReturnType<typeof setTimeout>;},cancel:timer=>{timers.delete(timer as unknown as number);}});
  return {owner,calls,timers,failures,get recovered(){return recovered;},expire(ms=7000){const [id,timer]=[...timers].find(([,timer])=>timer.ms===ms)!;timers.delete(id);timer.run();}};
 }
+test('only a displayed temporary toast can expire',()=>{
+ const f=fixture(true,async()=>{},true);
+ f.owner.mount([notice('first'),notice('second'),notice('pinned',{level:'persistent'})]);
+ expect(f.timers.size).toBe(0);
+ f.owner.present('first');expect(f.timers.size).toBe(1);
+ f.owner.present('pinned');expect(f.timers.size).toBe(0);
+ f.owner.present('second');expect(f.timers.size).toBe(1);
+ f.expire();expect(f.owner.visible.map(n=>n.id)).toEqual(['first','pinned']);
+ f.owner.present('first');expect(f.timers.size).toBe(1);
+ f.owner.pause('first',true);expect(f.timers.size).toBe(0);
+ f.owner.pause('first',false);f.expire();expect(f.owner.visible.map(n=>n.id)).toEqual(['pinned']);
+ f.owner.dispose();
+});
 test('normal auto and manual hiding share durable writes while persistent dismissal keeps its own command',async()=>{
  const f=fixture();f.owner.mount([notice('auto'),notice('manual'),notice('persistent',{level:'persistent'})]);
  expect(f.owner.visible.map(n=>n.id)).toEqual(['auto','manual','persistent']);expect(f.timers.size).toBe(2);
@@ -22,9 +35,10 @@ test('normal auto and manual hiding share durable writes while persistent dismis
  f.calls[1].resolve();await settle();expect(f.calls[2].kind).toBe('dismiss');expect(f.calls[2].ids).toEqual(['persistent']);
  f.calls[2].resolve();await settle();expect(f.owner.visible).toEqual([]);f.owner.dispose();expect(f.timers.size).toBe(0);
 });
-test('initial-only age suppression, durable reload suppression and window pruning preserve arrival policy',async()=>{
+test('previously unseen, older and inbox-only notices get a toast even after reopening Coast',async()=>{
  const f=fixture();f.owner.mount([notice('old',{createdAt:new Date(now-30_001)}),notice('saved',{toastHiddenAt:new Date(now)}),notice('silent',{level:'silent'})]);
- expect(f.owner.visible).toEqual([]);expect(f.calls[0].ids).toEqual(['old']);f.calls[0].resolve();await settle();
+ expect(f.owner.visible.map(n=>n.id)).toEqual(['old','silent']);expect(f.calls).toHaveLength(0);
+ f.expire();expect(f.calls[0].ids).toEqual(['old']);f.calls[0].resolve();await settle();
  f.owner.update([notice('late-old',{createdAt:new Date(now-60_000)})]);expect(f.owner.visible.map(n=>n.id)).toEqual(['late-old']);expect(f.timers.size).toBe(1);
  f.owner.update([]);expect(f.timers.size).toBe(0);
  f.owner.update([notice('late-old')]);expect(f.timers.size).toBe(1);f.expire();expect(f.calls[1].ids).toEqual(['late-old']);
@@ -39,7 +53,9 @@ test('failed writes retain bounded intent across windows, retry once, and never 
  const again=f.owner.retry();expect(f.owner.visible).toEqual([]);f.calls[3].resolve();await again;f.owner.dispose();
 });
 test('offline backpressure caps admitted IDs, and disposing a viewer fences late failures and timers',async()=>{
- const f=fixture();const batch=Array.from({length:200},(_,i)=>notice(String(i),{createdAt:new Date(now-60_000)}));f.owner.mount(batch);expect(f.calls[0].ids).toHaveLength(200);
+ const f=fixture();const batch=Array.from({length:200},(_,i)=>notice(String(i)));f.owner.mount(batch);
+ for(const n of batch)f.owner.dismiss(n);
+ expect(f.calls[0].ids).toEqual(['0']);
  f.owner.update([notice('overflow')]);f.owner.dismiss(notice('overflow'));expect(f.owner.visible.map(n=>n.id)).toEqual(['overflow']);expect(f.calls).toHaveLength(1);expect(f.failures).toHaveLength(1);
  f.owner.dispose();expect(f.timers.size).toBe(0);const before=f.failures.length;f.calls[0].reject();await settle();expect(f.failures).toHaveLength(before);expect(f.calls).toHaveLength(1);
 });
@@ -55,9 +71,33 @@ test('one request deadline aborts the transport and retries idempotently; refres
  expect(saved.failures).toEqual(['saved-refresh-failed']);expect(saved.owner.visible).toEqual([]);expect(saved.owner.retry()).resolves.toBe(false);expect(saved.calls).toHaveLength(1);saved.owner.dispose();
 });
 test('an auto-expiry refused by backpressure regains a timer when the queued write finishes',async()=>{
- const f=fixture();f.owner.mount(Array.from({length:200},(_,i)=>notice(String(i),{createdAt:new Date(now-60_000)})));
+ const f=fixture();const batch=Array.from({length:200},(_,i)=>notice(String(i)));f.owner.mount(batch);
+ for(const n of batch)f.owner.dismiss(n);
  f.owner.update([notice('later')]);f.expire();expect(f.owner.visible.map(n=>n.id)).toEqual(['later']);expect(f.calls).toHaveLength(1);
- f.calls[0].resolve();await settle();f.expire();expect(f.calls[1].ids).toEqual(['later']);f.owner.dispose();await settle();
+ f.calls[0].resolve();await settle();expect(f.calls[1].ids).toHaveLength(199);f.expire();f.calls[1].resolve();await settle();expect(f.calls[2].ids).toEqual(['later']);f.owner.dispose();await settle();
+});
+test('important notices stay visible while ordinary notices advance and wait for attention',()=>{
+ const f=fixture(true);const important=['a','b','c'].map(id=>notice(id,{locked:true}));
+ f.owner.setForeground(false);f.owner.mount([...important,notice('first'),notice('second')]);
+ expect(f.owner.visible.map(n=>n.id)).toEqual(['a','b','first']);expect(f.timers.size).toBe(0);
+ f.owner.setForeground(true);expect(f.timers.size).toBe(1);
+ f.owner.pause('first',true);expect(f.timers.size).toBe(0);
+ f.owner.pause('first',false);f.expire();
+ expect(f.owner.visible.map(n=>n.id)).toEqual(['a','b','second']);
+ f.expire();expect(f.owner.visible.map(n=>n.id)).toEqual(['a','b','c']);expect(f.timers.size).toBe(0);
+ f.owner.dispose();
+});
+test('escalating a notice restores it even when the ordinary dismissal is still in flight',async()=>{
+ const f=fixture();
+ const ordinary=notice('job');
+ f.owner.mount([ordinary]);
+ f.owner.dismiss(ordinary);
+ const important={...ordinary,level:'persistent'} as const;
+ f.owner.update([important]);
+ expect(f.owner.visible).toEqual([important]);
+ f.calls[0].resolve();await settle();
+ expect(f.owner.visible).toEqual([important]);
+ f.owner.dispose();
 });
 test('initial old read and already-hidden normal notices cause no persistence or timer work',()=>{
  const f=fixture();f.owner.mount([notice('read',{createdAt:new Date(0),readAt:new Date(now)}),notice('hidden',{createdAt:new Date(0),toastHiddenAt:new Date(now)})]);

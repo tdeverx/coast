@@ -1,5 +1,6 @@
 <script lang="ts">
   import { reportFailure } from '#lib/ui/client-context.js';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { rankSearch } from '#lib/search.js';
   import { page } from '$app/state';
   import Shelf from '#lib/ui/components/Shelf.svelte';
@@ -49,8 +50,7 @@
       !read?.items.length &&
       !listen?.failure &&
       !play?.failure &&
-      !read?.failure &&
-      !read?.notice
+      !read?.failure
   );
   $effect(() => {
     const watchPending = data.watch,
@@ -147,6 +147,11 @@
   }
   onDestroy(clearIntent);
   reportFailure(()=>[watchResults.providerUnavailable ? 'Global screen search is temporarily unavailable. Showing your local catalogue.' : '',failures].filter(Boolean).join(' '));
+  const searchNotice = $derived(readingResults.notice ||
+    (watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated ? 'Refine your search for more results.' : ''));
+  $effect(() => {
+    if (searchNotice) untrack(() => notifyAction(searchNotice));
+  });
 </script>
 
 <svelte:head><title>Search · Coast</title></svelte:head>
@@ -223,9 +228,7 @@
             busy: rowBusy(data.rows.unavailable),
             mediums: page.data.user ? {...page.data,features:page.data.capabilities} : {},
             onKindChange: (kind) => submit({ bucket: 'unavailable', kind }),
-            notice: readingResults.notice,
-          truncated: watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated,
-        }} />
+          }} />
       {/key}
     {/if}
   {/if}

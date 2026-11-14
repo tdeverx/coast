@@ -75,6 +75,7 @@
     | 'list-entry';
   let menu = $state<Button>();
   const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change });
+  reportFailure(() => sequenceControl.error);
   const snapshot = createMenuResource<MediaActionData | null>(() => null,
     () => workMenuScope([item.id, item.sequence, item.listContext]), async signal => {
       const target = item;
@@ -832,7 +833,7 @@
       {@render content('root')}
     </Button>
   </div>
-  {#if item.kind === 'collection' || item.sequence}<Dialog bind:open={sequenceControl.open} title={sequenceControl.title} message={sequenceControl.message} alert={!!sequenceControl.error} actions={sequenceControl.actions} />{/if}
+  {#if item.kind === 'collection' || item.sequence}<Dialog bind:open={sequenceControl.open} title={sequenceControl.title} message={sequenceControl.message} actions={sequenceControl.actions} />{/if}
   {#if requestItem}<RequestDialog
       item={requestItem}
       initial4k={request4k}

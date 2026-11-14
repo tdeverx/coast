@@ -6,7 +6,7 @@
   import { reportFailure, useClient } from '#lib/ui/client-context.js';
   import type { BackupStatus } from './model';
 
-  const { api, preview } = useClient();
+  const { api, preview, feedback } = useClient();
   let { initial }: { initial: BackupStatus } = $props();
   let current = $state(untrack(() => initial));
   let policy = $state(untrack(() => ({ ...initial.policy })));
@@ -23,10 +23,15 @@
     const controller = new AbortController();
     request = controller;
     try {
-      current = await api<BackupStatus>('admin/backups',
+      const result = await api<BackupStatus>('admin/backups',
         method === 'PATCH' ? { ...policy } : method === 'POST' ? {} : undefined,
         method, { signal: controller.signal });
-      if (method === 'PATCH') policy = { ...current.policy };
+      if (controller.signal.aborted) return;
+      current = result;
+      if (method === 'PATCH') {
+        policy = { ...current.policy };
+        feedback.notify('Backup settings saved.');
+      }
     } catch (cause) {
       if (!controller.signal.aborted) error = message(cause);
     } finally {
@@ -47,7 +52,7 @@
       request?.abort();
     };
   });
-  reportFailure(() => error);
+  reportFailure(() => error || current.error);
 
   const labels = {
     idle: 'No Coast backups yet',
@@ -68,7 +73,6 @@
         <p class="small">Last successful backup: {new Date(current.latest.completedAt).toLocaleString()} · {(current.latest.bytes / 1024 ** 2).toFixed(1)} MiB</p>
         <p class="small path">coast/backups/{current.latest.name}</p>
       {/if}
-      {#if current.error}<p class="small">{current.error}</p>{/if}
       <div class="row">
         <Button icon="play" disabled={preview || busy || active || dirty || !current.policy.recipient} onclick={() => void update('POST')}>Back up now</Button>
         <Button disabled={preview || busy} onclick={() => void update('GET')}>Refresh status</Button>

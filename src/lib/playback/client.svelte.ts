@@ -8,7 +8,6 @@ export const player = $state({
   session: null as PlaybackView | null,
   audioQueue: [] as {id:string;title:string;availability:string}[],
   audioIndex: -1,
-  audioNotice: '',
   role: 'idle' as 'idle' | 'playback' | 'postplay',
   paused: true,
   controlsVisible: true,
@@ -194,7 +193,7 @@ export async function playMusicQueue(result:{items:{id:string;title:string;avail
   if(intent!==preparationRevision)return;
   if(syncedPlayer.room&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   if(syncedPlayer.room&&!canEditPartyQueue()){syncedPlayer.notice='Only the host can replace this queue.';return;}
-  player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;player.audioNotice='';
+  player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;
   return advanceMusic(1,continuing,true);
 }
 export async function playSavedMusicQueue(){
@@ -216,10 +215,14 @@ export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQu
   while(index>=0&&index<player.audioQueue.length){
     const entry=player.audioQueue[index];player.audioIndex=index;
     if(entry.availability==='available'){
-      try{await playMedia(entry.id,{mediaType:'audio',fromStart:!continuing});player.audioNotice=skipped.length?`Skipped unavailable tracks: ${skipped.join(', ')}`:'';if(player.audioNotice)notifyAction(player.audioNotice);return;}catch(cause){if(cause instanceof PlaybackSavePending)throw cause;skipped.push(entry.title);}
+      try{
+        await playMedia(entry.id,{mediaType:'audio',fromStart:!continuing});
+        if(skipped.length)notifyAction(`Skipped unavailable tracks: ${skipped.join(', ')}`);
+        return;
+      }catch(cause){if(cause instanceof PlaybackSavePending)throw cause;skipped.push(entry.title);}
     }else skipped.push(entry.title);
     index+=direction;
   }
-  await controller?.stop();player.audioNotice=skipped.length?`No playable tracks remain. Skipped: ${skipped.join(', ')}`:'Queue finished.';
-  if(skipped.length)notifyAction(player.audioNotice);
+  await controller?.stop();
+  notifyAction(skipped.length?`No playable tracks remain. Skipped: ${skipped.join(', ')}`:'Queue finished.');
 }

@@ -51,7 +51,6 @@ export interface ShelfSource {
   readonly emptyHref?: string;
   readonly emptyLink?: string;
   readonly retryLabel?: string;
-  readonly notice?: string;
   readonly sequence?: Pick<SequenceContext, 'kind' | 'id'>;
   readonly filterBy?: 'none' | 'type' | 'watched';
   readonly actions?: ShelfAction[];

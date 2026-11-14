@@ -246,7 +246,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     );
     await cancelAction(admin, second);
   });
-  test('administrative notification policy cannot be bypassed by user silencing', async () => {
+  test('ordinary and important notifications both receive toast delivery', async () => {
     await getSql()`UPDATE users SET settings = '{"notificationsSilenced":true}'::jsonb WHERE id = ${member.id}`;
     await notify({ userId: member.id, kind: 'test', title: 'Ordinary', sourceKey: 'ordinary' });
     await notify({
@@ -260,7 +260,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     await updateConfig(admin, { ...defaultConfig, allowNotificationSilencing: false });
     await notify({ userId: member.id, kind: 'test', title: 'Policy', sourceKey: 'policy' });
     const notifications = await inbox(member);
-    expect(notifications.find((notice: any) => notice.title === 'Ordinary')?.level).toBe('silent');
+    expect(notifications.find((notice: any) => notice.title === 'Ordinary')?.level).toBe('normal');
     expect(notifications.find((notice: any) => notice.title === 'Important')?.level).toBe(
       'persistent'
     );

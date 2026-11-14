@@ -71,10 +71,9 @@
     apiGrants = $state<ApiScope[]>(['catalogue:read']);
 
   let error = $state(''),
-    success = $state(''),
     busy = $state(false),
-    prefs = $state(untrack(() => structuredClone({ ...data.defaults, ...page.data.user?.settings }))),
-    policy = $state(untrack(() => data.config ? structuredClone(data.config) : null)),
+    prefs = $state(untrack(() => readPreferences())),
+    policy = $state(untrack(() => readPolicy())),
     deleteId = $state(''),
     resetOpen = $state(false),
     subtitleLanguagesText = $state(untrack(() => prefs.subtitleLanguages.join(', '))),
@@ -121,16 +120,25 @@
       : {}
   });
   const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
+  function readPreferences() {
+    const preferences = structuredClone({ ...data.defaults, ...page.data.user?.settings });
+    if (preferences.notificationLevel === 'silent') preferences.notificationLevel = null;
+    return preferences;
+  }
+  function readPolicy() {
+    const config = data.config ? structuredClone(data.config) : null;
+    if (config?.notificationLevel === 'silent') config.notificationLevel = 'normal';
+    return config;
+  }
   function restoreDraft() {
-    prefs = structuredClone({ ...data.defaults, ...page.data.user?.settings });
-    policy = data.config ? structuredClone(data.config) : null;
+    prefs = readPreferences();
+    policy = readPolicy();
     subtitleLanguagesText = prefs.subtitleLanguages.join(', ');
     policyLanguagesText = policy?.subtitleLanguages.join(', ') ?? '';
     portsText = policy?.allowedProviderPorts.join(', ') ?? '';
     allowlistText = policy?.serverAllowlist.join('\n') ?? '';
     saved = JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields));
     error = '';
-    success = '';
     apiToken = '';
   }
 
@@ -165,28 +173,16 @@
               ? 'Jellyfin sign-in policies saved.'
               : 'Preferences saved.'
       )
-    ) {
-      restoreDraft();
-      success =
-        data.section === 'activity'
-          ? 'Diagnostic logging updated. Changes are active now.'
-          : data.section === 'policies'
-            ? 'System policies saved. Changes are active now.'
-            : data.section === 'users'
-              ? 'Jellyfin sign-in policies saved.'
-              : 'Preferences saved.';
-    }
+    ) restoreDraft();
   }
   async function save(path: string, body: unknown, label = 'Saved.', method = 'POST') {
     if (busy) return false;
     busy = true;
     error = '';
-    success = '';
     apiToken = '';
     try {
       await change(path, body, method);
-      success = label;
-      if (!fields.length) notifyAction(label);
+      notifyAction(label);
       return true;
     } catch (e) {
       error = message(e);
@@ -210,9 +206,7 @@
         >Discard changes</Button
       >
     </div>
-    <p class="small" role="status" aria-live="polite">
-      {busy ? 'Saving your changes…' : dirty ? 'Unsaved changes' : success || 'Up to date'}
-    </p>
+    {#if dirty && !busy}<p class="small" role="status">Unsaved changes</p>{/if}
   </div>
 {/snippet}
 
@@ -479,15 +473,11 @@
             <h3>Notifications</h3>
             <label class="check"><input type="checkbox" bind:checked={prefs.shareDemand} />Share missing demand with administrators</label>
             <p class="small">Administrators can see your needed titles and request status. This does not change profile visibility.</p>
-            <SettingsRow title="Silence optional notifications" description="Keep optional updates in your inbox. Important administrator notices still appear."><input
-                type="checkbox"
-                aria-label="Silence optional notifications"
+            <SettingsRow title="Toast duration" description="Important notices stay visible until dismissed."><select
+                aria-label="Toast duration"
                 disabled={!data.allowNotificationSilencing}
-                bind:checked={prefs.notificationsSilenced}
-              /></SettingsRow>
-            {#if !data.allowNotificationSilencing}<p class="small">
-                Your administrator requires optional notifications to remain visible.
-              </p>{/if}
+                bind:value={prefs.notificationLevel}
+              ><option value={null}>Use installation default</option><option value="normal">Dismiss automatically</option><option value="persistent">Keep until dismissed</option></select></SettingsRow>
           </fieldset>
           {@render saveControls('Save preferences')}
         </form>
@@ -722,7 +712,6 @@
                   if (busy) return;
                   busy = true;
                   error = '';
-                  success = '';
                   try {
                     await change('settings/password', values(form));
                     form.reset();
@@ -1043,12 +1032,11 @@
               >Message<textarea name="body" rows="3" maxlength="2000"></textarea></label
             ><label class="field"
               >Presentation<select name="level"
-                ><option value="normal">Normal — toast and inbox</option><option value="persistent"
-                  >Persistent — requires dismissal</option
-                ><option value="silent">Silent — inbox only</option></select
+                ><option value="normal">Dismiss automatically</option><option value="persistent"
+                  >Keep until dismissed</option></select
               ></label
             ><label class="check"
-              ><input type="checkbox" name="locked" />Prevent silencing this notice</label
+              ><input type="checkbox" name="locked" />Mark as important</label
             ><Button type="submit" disabled={busy}>Send notice</Button>
           </form>
         </div>
@@ -1424,13 +1412,11 @@
             <h3>Notifications</h3>
             <label class="field"
               >Default presentation<select bind:value={policy.notificationLevel}
-                ><option value="silent">Inbox only</option><option value="normal"
-                  >Toast and inbox</option
-                ><option value="persistent">Requires dismissal</option></select
+                ><option value="normal">Dismiss automatically</option
+                ><option value="persistent">Keep until dismissed</option></select
               ></label
             ><label class="check"
-              ><input type="checkbox" bind:checked={policy.allowNotificationSilencing} />Allow users
-              to silence optional notifications</label
+              ><input type="checkbox" bind:checked={policy.allowNotificationSilencing} />Allow personal toast duration preferences</label
             >
           </fieldset>
           {@render saveControls('Save system policies')}
@@ -1534,7 +1520,6 @@
             )
           ) {
             restoreDraft();
-            success = 'Personal preferences restored to installation defaults.';
             resetOpen = false;
           }
         }}

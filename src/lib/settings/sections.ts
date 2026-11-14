@@ -49,7 +49,7 @@ export const preferenceFields = {
   features: ['features'],
   collection: ['collection'],
   privacy:['social'],
-  appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'sanitizeOddReadingPages', 'region', 'notificationsSilenced'],
+  appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'sanitizeOddReadingPages', 'region', 'notificationLevel'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
 } as const;
@@ -72,6 +72,7 @@ export const experimentalPolicies = [
   ['experimentalComics', 'Comics', 'Find comic issues with Comic Vine and track reading progress in Coast. Requires a Comic Vine API key for non-commercial use.'],
   ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
   ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
+  ['experimentalRichToasts', 'Rich toasts', 'Show one toast at a time with stacked edges, glass, and artwork or avatars when available.'],
 ] as const;
 
 export const policyFields = [
@@ -81,7 +82,7 @@ export const policyFields = [
   'registrationProvider',
   'experimentalMusic','experimentalGaming','experimentalParties',
   'experimentalBooks','experimentalComics',
-  'experimentalPlanning','allowPlaybackSharing',
+  'experimentalPlanning','experimentalRichToasts','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',
   'maxBitrateMbps',

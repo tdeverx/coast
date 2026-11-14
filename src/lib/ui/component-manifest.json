@@ -32,6 +32,7 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/SocialControls.svelte",
+      "src/lib/ui/components/Toast.svelte",
       "src/routes/profile/[username]/+page.svelte"
     ],
     "dynamicComposition": false
@@ -124,7 +125,6 @@
       "src/lib/ui/work-menu/ReadingCommands.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/+error.svelte",
-      "src/routes/+layout.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
@@ -427,6 +427,7 @@
       "src/lib/ui/components/ReactionActions.svelte",
       "src/lib/ui/components/RowFilter.svelte",
       "src/lib/ui/components/TextLink.svelte",
+      "src/lib/ui/components/Toast.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
@@ -629,7 +630,7 @@
     "usedBy": [
       "src/routes/+layout.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "OperationProgress": {
     "path": "src/lib/ui/components/OperationProgress.svelte",
@@ -975,13 +976,15 @@
   "Toast": {
     "path": "src/lib/ui/components/Toast.svelte",
     "elements": [
-      "Button"
+      "Avatar",
+      "Button",
+      "Icon"
     ],
     "usedBy": [
       "src/lib/ui/components/Dialog.svelte",
       "src/lib/ui/components/NotificationToasts.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "WorkActions": {
     "path": "src/lib/ui/components/WorkActions.svelte",

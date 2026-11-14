@@ -24,9 +24,8 @@
   import Header from '#lib/ui/components/Header.svelte';
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
-  import Button from '#lib/ui/components/Button.svelte';
   let { data, children } = $props();
-  let expired = $state(false);
+  let expiredViewer = $state<string>();
   let content: HTMLElement;
   const notificationOpen = $derived(!!data.user && (page.state.notificationPopover ?? page.url.searchParams.get('notifications') === 'true'));
   const friendsOpen = $derived(!!data.user && data.capabilities.social && (page.state.friendsPopover ?? page.url.searchParams.get('friends') === 'true'));
@@ -223,11 +222,11 @@
   });
   onMount(() => {
     const stopDiagnostics = data.user ? installBrowserDiagnostics() : () => {};
-    const expire = () => expired = true;
+    const expire = () => expiredViewer = data.user?.id;
     window.addEventListener('coast:auth-expired', expire);
     let polling = false;
-    const timer = setInterval(() => {
-      if (data.expiresAt && Date.now() > new Date(data.expiresAt).getTime()) expired = true;
+    function refreshSession() {
+      if (data.expiresAt && Date.now() > new Date(data.expiresAt).getTime()) expire();
       else if (data.user && !polling && document.visibilityState === 'visible') {
         polling = true;
         void refreshRouteDependencies(['session'])
@@ -236,15 +235,24 @@
             polling = false;
           });
       }
-    }, 60000);
+    }
+    const timer = setInterval(refreshSession, 60000);
+    const visible = () => { if (document.visibilityState === 'visible') refreshSession(); };
+    document.addEventListener('visibilitychange', visible);
     return () => {
       stopDiagnostics();
       window.removeEventListener('coast:auth-expired', expire);
+      document.removeEventListener('visibilitychange', visible);
       clearInterval(timer);
 
     };
   });
   reportFailure(()=>syncedPlayer.notice);
+  reportFailure(() => expiredViewer && expiredViewer === data.user?.id ? {
+    text: 'Your session has expired. Your current page is still here.',
+    actionLabel: 'Sign in again',
+    retry: () => goto(`/login?next=${encodeURIComponent(page.url.pathname + page.url.search)}`),
+  } : '');
 </script>
 
 <svelte:head
@@ -276,15 +284,7 @@
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
   {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
   {#if streamsOpen&&StreamsPanel}<StreamsPanel open={true} onclose={closeStreams}/>{/if}
-  {#key data.user?.id}<NotificationToasts notifications={data.user ? data.notifications : []} initialFailure={typeof page.form?.error==='string'?page.form.error:undefined} />{/key}{#if expired}<div
-      class="session-notice solid-surface"
-      role="alert"
-    >
-      <p>Your session has expired. Your current page is still here.</p>
-      <Button href={`/login?next=${encodeURIComponent(page.url.pathname + page.url.search)}`}
-        >Sign in again</Button
-      >
-    </div>{/if}
+  {#key data.user?.id}<NotificationToasts notifications={data.user ? data.notifications : []} rich={data.experimentalRichToasts} initialFailure={typeof page.form?.error==='string'?page.form.error:undefined} />{/key}
 </div>
 
 <style>
@@ -318,34 +318,9 @@
     position: relative;
     z-index: 1;
   }
-  .session-notice {
-    position: fixed;
-    z-index: 120;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(660px, calc(100% - 32px));
-    border-radius: 18px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-  .session-notice p {
-    font-size: var(--text-sm);
-  }
-  .session-notice :global(.button) {
-    white-space: nowrap;
-  }
-  .player-active .session-notice {
-    bottom: 96px;
-  }
   @media (max-width: 639px) {
     .player-active .page-shell {
       padding-bottom: 156px;
-    }
-    .player-active .session-notice {
-      bottom: 156px;
     }
   }
 </style>
