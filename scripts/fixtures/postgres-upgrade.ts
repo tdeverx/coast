@@ -1,5 +1,5 @@
 // Fresh PostgreSQL clusters only, inside a dedicated Linux fixture container.
-import {mkdirSync, chmodSync, statSync, readFileSync, existsSync, rmSync, renameSync, openSync, closeSync} from 'node:fs';
+import {mkdirSync, chmodSync, statSync, readFileSync, existsSync, rmSync, renameSync, openSync, closeSync, symlinkSync} from 'node:fs';
 import {dirname} from 'node:path';
 const root = dirname(import.meta.path), data = process.env.COAST_UPGRADE_TEST_DATA || root + '/data';
 const {encryptCredential, decryptCredential} = await import(root + '/credentials.ts');
@@ -142,7 +142,24 @@ try {
   assert(readFileSync(data + '/postgres/17/PG_VERSION', 'utf8').trim() === '17', '17 not selected');
   assert(readFileSync(data + '/postgres/15/PG_VERSION', 'utf8').trim() === '15', '15 rollback missing');
   assert(key(data) === originalKey && readFileSync(data + '/secrets/database-password', 'utf8') === password + '\n', 'secrets changed');
+  const currentCluster = data + '/postgres/17';
+  const rollbackVersion = data + '/postgres/15/PG_VERSION';
+  const rollbackOwner = statSync(rollbackVersion);
+  const postgresOwner = statSync(currentCluster);
+  const previousUid = postgresOwner.uid === 54321 ? 54322 : 54321;
+  await run(['chown', '-R', `${previousUid}:${previousUid}`, currentCluster]);
+  // A failed boot on the previous entrypoint already changed the root owner.
+  await run(['chown', 'postgres:postgres', currentCluster]);
+  const linkedPath = currentCluster + '/pg_tblspc/external';
+  symlinkSync(rollbackVersion, linkedPath);
+  await startupRefused(data, 'without symbolic links');
+  assert(statSync(currentCluster + '/PG_VERSION').uid === previousUid, 'refused repair changed cluster file ownership');
+  rmSync(linkedPath);
   await upgrade(data);
+  const configOwner = statSync(currentCluster + '/postgresql.conf');
+  assert(configOwner.uid === postgresOwner.uid && configOwner.gid === postgresOwner.gid, 'existing PG17 cluster ownership was not repaired');
+  assert(statSync(rollbackVersion).ctimeMs === rollbackOwner.ctimeMs, 'ownership repair touched the PG15 rollback cluster');
+  console.log('PASS changed PostgreSQL UID/GID after a partial startup, with linked files refused');
   await start(data + '/postgres/17', pg17);
   assert((await sql('SHOW server_version_num')).startsWith('17'), 'server major not 17');
   assert(await sql('SHOW data_checksums') === 'on', 'upgrade lost source checksums');
