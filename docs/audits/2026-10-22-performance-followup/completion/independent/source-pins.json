@@ -23,7 +23,7 @@
     "src/lib/ui/components/Header.svelte": "c00aadb260ecdccc0de6c0df85febfdf610a736a4a8907defe65fbf6010eae20",
     "src/routes/search/+page.server.ts": "8ff050474443315af765bbca75eaf87aecac8ddcf220d20c646422f88213ce3a",
     "src/routes/search/+page.svelte": "db1b9369b3decd13a338079177454d5764a4d5994c4bf4448df4b9d5d1a1dd5b",
-    "src/routes/ui-preview/prop-manifest.json": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
+    "src/routes/ui-preview/prop-manifest.json": "3b82f7123dcb68f0b72f220ef6919eb896a2116e6f8d19f384772ade9c3f0bfd",
     "tests/action-navigation.test.ts": "a84ba0338f78290d1b530a2a51d4de751d914ad81b87ee8b582da5b2ca6fb371",
     "tests/jellyfin-music-persistence-db.test.ts": "5fe8860604673aa8331fdb0bb98bfae1b55bd13483548ebad1879e3bff8f099b",
     "tests/media-details.test.ts": "06d107d1ea60624254b4de950e093b219f66089de79412bd28ab60074c084175",
@@ -179,6 +179,17 @@
         }
       ],
       "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
+    },
+    {
+      "epoch": "shared-stream-card-actions-2026-11-14",
+      "changes": [
+        {
+          "path": "src/routes/ui-preview/prop-manifest.json",
+          "previousSha256": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
+          "currentSha256": "3b82f7123dcb68f0b72f220ef6919eb896a2116e6f8d19f384772ade9c3f0bfd"
+        }
+      ],
+      "note": "The shared MediaCard exposes a corner menu for playback actions. Chromium preview checks passed on desktop and mobile. Past evidence retains its original scope."
     }
   ]
 }

@@ -91,13 +91,39 @@ run('Links lists only the signed-in owner’s unexpired, unrevoked shares even b
  };
  const own=await get('sharing?active=true&ownerId='+owner,user);
  expect(own.status).toBe(200);
- expect(await own.json()).toEqual([{id:otherLink,target:'website',title:'Sharing fixture',expiresAt:expect.any(String),viewers:0}]);
- expect(await (await get('sharing?active=true',actor)).json()).toEqual([{id:active.id,target:'vrchat',title:'Sharing fixture',expiresAt:active.expiresAt.toISOString(),viewers:0}]);
+ expect(await own.json()).toEqual([expect.objectContaining({id:otherLink,target:'website',title:'Sharing fixture',expiresAt:expect.any(String),viewers:0,card:expect.objectContaining({title:'Sharing fixture'})})]);
+ expect(await (await get('sharing?active=true',actor)).json()).toEqual([expect.objectContaining({id:active.id,target:'vrchat',title:'Sharing fixture',expiresAt:active.expiresAt.toISOString(),viewers:0,card:expect.objectContaining({title:'Sharing fixture'})})]);
  expect(await (await get('sharing/status',actor)).json()).toEqual({expiresAt:active.expiresAt.toISOString()});
  await db`update playback_shares set revoked_at=now() where id=${otherLink}`;
  expect(await (await get('sharing/status',user)).json()).toEqual({expiresAt:null});
  expect((await get('sharing?active=true',null)).status).toBe(401);
  expect((await get('providers/streams?view=history',user)).status).toBe(403);
+});
+run('an admin can stop viewers of one shared link without revoking it',async()=>{
+ const link=await make(),otherLink=await make();
+ const open=async (token:string,agent:string)=>{
+  const variant=await child(await openPublicShare(token,request(publicSharePath(token,'vrchat'),agent),'fixture-address'));
+  return child(await externalStream(variant.split('/')[4],request(variant)));
+ };
+ const a=await open(link.token,'first'), b=await open(link.token,'second');
+ const unaffected=await open(otherLink.token,'first');
+ const stop=(session:Omit<typeof actor,'role'>&{role:'admin'|'user'})=>{
+  const path=`sharing/${link.id}/stop`;
+  const request=new Request('https://coast.test/api/v1/'+path,{method:'POST'});
+  return apiHandler({request,url:new URL(request.url),locals:{user:session},params:{path}} as Parameters<typeof apiHandler>[0]);
+ };
+ expect((await stop({...actor,id:other,role:'user'})).status).toBe(403);
+ failStop=true;
+ expect(await (await stop(actor)).json()).toEqual({stopped:2});
+ expect(await (await stop(actor)).json()).toEqual({stopped:0});
+ for(const segment of [a,b])
+  await expect(externalStream(segment.split('/')[4],request(segment))).rejects.toMatchObject({status:410});
+ expect(await getSql()`select id from playback_sessions where share_id=${link.id} and cleanup_pending`).toHaveLength(2);
+ expect((await externalStream(unaffected.split('/')[4],request(unaffected))).status).toBe(200);
+ failStop=false;
+ await expireSharedViewers();
+ expect(await getSql()`select id from playback_sessions where share_id=${link.id} and cleanup_pending`).toHaveLength(0);
+ expect(await open(link.token,'first')).not.toBe(a);
 });
 run('stale availability cannot share a virtual item, and an existing link reports missing media',async()=>{
  const link=await make();

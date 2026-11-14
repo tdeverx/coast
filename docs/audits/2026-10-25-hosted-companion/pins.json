@@ -34,7 +34,7 @@
     "src/lib/sharing/policy.ts": "1d5afa1edc3eb902244f161f829fb2a236f4ab5436691f68d08063a7260b3384",
     "src/lib/sharing/service.server.ts": "425e135dc07b6f068098bec5a74fdf42ec931e8d8e90812f6cf82805c4002dbb",
     "src/lib/sharing/external.server.ts": "b2435bb29baa726a553c0b1e4f8ef66a2a1d8b4988ab1c628bee9fa7c09c73ba",
-    "src/lib/sharing/leases.server.ts": "5ca14f16136f9b61f6b4b740df6de1d7d5b67e28bb4c499e2ffac169bf60b505",
+    "src/lib/sharing/leases.server.ts": "1b5dac703df26ecb66fee30ac5538b277099b68c28ef26b059c930fd608cfbd4",
     "src/lib/sharing/ShareAction.svelte": "9ba9f0865f7bb3176bbbf5d5c9f8619a4f207a2de1570feb0f31c7acdda98c22",
     "src/lib/providers/contracts.ts": "7394168501d13413ae297234b59bf3c12dade33a6edde707d3b053013372df04",
     "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
@@ -45,7 +45,7 @@
     "src/lib/server/db/schema.ts": "92b97d595a8f3f4b037d5d03be70fa218691a4bccc8c029ef299c503b3c18688",
     "src/routes/settings/[[section]]/+page.svelte": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b",
     "tests/share-profiles.test.ts": "477d4b8caf0a1e54648a5f135bea71ac7277c387b466c9cc5107875ce977a72a",
-    "tests/sharing-db.test.ts": "2d4b55615cfcb39e8479eb5c60bee621562252d27bcfc951f7c890ad81031f46",
+    "tests/sharing-db.test.ts": "375e15b4aca8151e34361c2131f411f4cce9e715f47e13231f29d37059b7af82",
     "tests/sharing.test.ts": "bcfe598a2c8e447c216bc4708fe2c5739e31ebf8322e408324f56d8f84697b6b",
     "drizzle/0066_share_destinations.sql": "7f60940a346f5999d30d3598e2f463056bc50d4d4e16abbab8c967c79b233389",
     "drizzle/meta/_journal.json": "7dbd3adcea4241a8e3981429308a16d3913ffd8d5b2076953aa11d39f0a21bd7",
@@ -512,6 +512,22 @@
         }
       ],
       "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
+    },
+    {
+      "epoch": "shared-stream-card-actions-2026-11-14",
+      "changes": [
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "previousSha256": "5ca14f16136f9b61f6b4b740df6de1d7d5b67e28bb4c499e2ffac169bf60b505",
+          "currentSha256": "1b5dac703df26ecb66fee30ac5538b277099b68c28ef26b059c930fd608cfbd4"
+        },
+        {
+          "path": "tests/sharing-db.test.ts",
+          "previousSha256": "2d4b55615cfcb39e8479eb5c60bee621562252d27bcfc951f7c890ad81031f46",
+          "currentSha256": "375e15b4aca8151e34361c2131f411f4cce9e715f47e13231f29d37059b7af82"
+        }
+      ],
+      "note": "Disposable PostgreSQL verifies admin authorization, stopping both viewers on one link, continued playback on another link, retry after simulated encoder stop failure, and reopening the stopped link. Past device evidence retains its original scope."
     }
   ]
 }

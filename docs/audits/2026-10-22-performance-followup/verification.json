@@ -39,7 +39,7 @@
       "docs/audits/2026-10-22-performance-followup/completion/coverage.json": "d8363dcbbd91579f6888b8af8f26cc087af005b99164b386e9f524380e06ccf2",
       "docs/audits/2026-10-22-performance-followup/completion/README.md": "2500eb6e6af648291cd304aa57dc2962bfc2370d816e8197bd860c0d697c0cb3",
       "docs/audits/2026-10-22-performance-followup/completion/source-pins.json": "d8f4e06dd53cd80a55d6cbabf06c2e92568bc3be01dcb0226b223007e1eb07ca",
-      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "b69248e35085e4b99a0a1d6c000f8d082cec0a539707f1507a28c052f0b93e97",
+      "docs/audits/2026-10-22-performance-followup/completion/evidence-files.json": "8d5accb5270e6c73b626678d2e7f810d41f1f3be3edffe5ab736b91edd2eb84f",
       "src/lib/playback/stop.ts": "3c50221e8e0f118340ecb64f5d87dd7f28a2ba417d8a8b6d50c0c4fca370db02",
       "src/lib/playback/client.svelte.ts": "8125a5e219092ae7f5eaf0aa7e17fe9830eb86e935defc2b3ad3c033014b2a6c",
       "src/lib/ui/components/PersistentPlayer.svelte": "25f492ae65233fb2f266fe0342ff986ae43ebe982849f7614d3e6f7f24b9c3e7",

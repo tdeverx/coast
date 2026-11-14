@@ -1,6 +1,8 @@
 import { getSql } from '#lib/server/db/index.js';
 import { getConfig } from '#lib/server/config.js';
 import { AppError } from '#lib/server/security/errors.js';
+import { requireAdmin, type SessionUser } from '#lib/server/auth/index.js';
+import * as v from 'valibot';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import {logDiagnostic,classifyFailure} from '#lib/server/diagnostics/index.js';
 import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
@@ -118,6 +120,31 @@ export async function releaseViewer(ownerId:string,viewerId:string,{playbackId,v
       or s.revoked_at is not null or s.expires_at<=now())`:db``} returning v.playback_id
   ) update playback_sessions set state='stopped',cleanup_pending=true,updated_at=now() where id in (select playback_id from ended) and user_id=${ownerId} returning id,user_id,connection_id,provider_device_id,provider_session_id`;
   if(session)await stopReleasedSession(session);
+}
+
+export async function stopSharedLinkPlayback(actor: SessionUser | null, linkId: string) {
+  requireAdmin(actor);
+  const id = v.parse(v.pipe(v.string(), v.uuid()), linkId);
+  const sessions = await getSql().begin(async tx => {
+    // Admission takes this same lock before renewing a viewer's reservation.
+    const [link] = await tx`select id from playback_shares where id=${id} for update`;
+    if (!link) return [];
+    return tx<ReleasedSession[]>`
+      with ended as (
+        update share_viewers v set ended_at=now(),desired_bitrate=null
+        from playback_sessions p
+        where v.share_id=${id} and v.ended_at is null and p.id=v.playback_id and p.state<>'stopped'
+        returning v.playback_id
+      )
+      update playback_sessions p set state='stopped',cleanup_pending=true,updated_at=now()
+      from ended where p.id=ended.playback_id
+      returning p.id,p.user_id,p.connection_id,p.provider_device_id,p.provider_session_id
+    `;
+  });
+  // Release the viewer leases atomically. Failed upstream stops keep their durable retry flag.
+  for (let i = 0; i < sessions.length; i += 2)
+    await Promise.allSettled(sessions.slice(i, i + 2).map(stopReleasedSession));
+  return { stopped: sessions.length };
 }
 
 async function revokeInactiveShares() {

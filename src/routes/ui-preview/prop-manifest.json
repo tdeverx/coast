@@ -1954,6 +1954,14 @@
         "nullable": false
       },
       {
+        "name": "cornerMenu",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
         "name": "body",
         "type": "Snippet",
         "optional": true,
