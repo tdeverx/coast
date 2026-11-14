@@ -51,6 +51,7 @@
     activityTrailing,
     activityProgress,
     captionAction,
+    cornerMenu,
     body,
     footer,
     retain,
@@ -70,6 +71,7 @@
     activityTrailing?:import('svelte').Snippet;
     activityProgress?:number|null;
     captionAction?: Snippet;
+    cornerMenu?: Snippet;
     body?: Snippet;
     footer?: Snippet;
     retain?: Retain;
@@ -159,7 +161,7 @@
         })
       : (item.kind === 'book' || item.kind === 'comic') && item.workId && item.available ? 'read' : canPlayMusicCard(item) ? 'play' : 'open'
   );
-  const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<(item.kind==='book'||item.kind==='comic'?1:0.9)?completion:null);
+  const cardProgress=$derived(activityProgress!==undefined||item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<(item.kind==='book'||item.kind==='comic'?1:0.9)?completion:null);
   const primaryLabel = $derived(
     {
       play: 'Play',
@@ -289,7 +291,7 @@
         /></button
       >{/if}
       {#if primaryMenu}<Button menu hideTrigger bind:this={primaryMenuButton} label={`Actions for ${item.title}`}>{@render primaryMenu()}</Button>{/if}
-      {#if item.kind !== 'person'}<div class="card-menu">
+      {#if !cornerMenu && item.kind !== 'person'}<div class="card-menu">
         <button
           class="icon-button"
           aria-label={`Actions for ${item.title}`}
@@ -302,6 +304,13 @@
         {#if active && !('href' in item && item.href === null)}<WorkMenu bind:this={actions} {item} menuOnly />{/if}
       </div>
     {/if}{/if}
+    {#if cornerMenu}
+      <div class="card-menu">
+        <Button menu label={`Actions for ${item.captionTitle ?? item.title}`} iconSize={18}>
+          {@render cornerMenu()}
+        </Button>
+      </div>
+    {/if}
     {#if !loading && !item.captionActor && social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} href={activityHref} label={`View activity for ${item.title}`} /></div>{/if}
     {#if !loading && cardProgress!==null}<div class="card-status">
       <div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>
@@ -507,7 +516,8 @@
     top: 6px;
     z-index: 2;
   }
-  .card-menu > button {
+  .card-menu > button,
+  .card-menu :global(.context > button) {
     width: 32px;
     height: 32px;
   }
@@ -525,7 +535,8 @@
     opacity: 1;
   }
   @media (pointer: coarse) {
-    .card-menu > button {
+    .card-menu > button,
+    .card-menu :global(.context > button) {
       width: 44px;
       height: 44px;
     }

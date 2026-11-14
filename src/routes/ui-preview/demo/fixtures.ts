@@ -38,8 +38,8 @@ export const fixtureFetch: import('#lib/ui/client.js').ApiTransport = async (inp
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
     if(path.endsWith('/sharing')&&url.searchParams.get('active')==='true')return Response.json([
-      {id,target:'vrchat',title:'The Expanse',expiresAt:new Date(Date.now()+3600000).toISOString(),viewers:2},
-      {id:show.id,target:'website',title:'Preview title',expiresAt:new Date(Date.now()+7200000).toISOString(),viewers:0},
+      {id,target:'vrchat',title:'The Expanse',expiresAt:new Date(Date.now()+3600000).toISOString(),viewers:2,card:episode},
+      {id:show.id,target:'website',title:'Preview title',expiresAt:new Date(Date.now()+7200000).toISOString(),viewers:0,card:movie},
     ]);
     if(/\/social\/works\/[^/]+\/friends$/.test(path))return Response.json({items:url.searchParams.get('filter')==='lists'?[]:[{id,kind:'person',title:'Alice',href:'/profile/Alice',poster:'/coast-mark.png',captionSubtitle:'4 / 5'}],page:1,pages:1,total:1});
     if(path.endsWith('/social/friends'))return Response.json(url.searchParams.get('state')==='pending'?[]:[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop}]);
@@ -73,6 +73,8 @@ export const fixtureFetch: import('#lib/ui/client.js').ApiTransport = async (inp
 /** A finite transport per mounted specimen. Nothing falls through to network fetch. */
 export function createPreviewTransport(name: string, scenario: string): import('#lib/ui/client.js').ApiTransport {
   let dismissed = new Set<string>();
+  const revokedLinks = new Set<string>();
+  const stoppedShares = new Set<string>();
   let sharingCreated = false;
   let benchmarkQueued = false;
   return async (input, init) => {
@@ -89,6 +91,17 @@ export function createPreviewTransport(name: string, scenario: string): import('
       await new Promise<never>((_, reject) => signal.addEventListener('abort', () => reject(new DOMException('Preview request cancelled', 'AbortError')), {once: true}));
     }
     if (method !== 'GET') {
+      if (name === 'StreamsPanel' && path.startsWith('sharing/')) {
+        const [, linkId, action] = path.split('/');
+        if (method === 'DELETE' && !action) {
+          revokedLinks.add(linkId);
+          return Response.json({revoked:true});
+        }
+        if (method === 'POST' && action === 'stop') {
+          stoppedShares.add(linkId);
+          return Response.json({stopped:linkId==='preview-share'?2:1});
+        }
+      }
       if (name === 'sharing.action' && path === 'sharing' && method === 'POST') { sharingCreated = true; return Response.json({id, token: 'preview-only-not-a-real-link'}); }
       if (path === `sharing/${id}` && method === 'DELETE' && sharingCreated) { sharingCreated = false; return Response.json({ok: true}); }
       if (path === 'planning' && method === 'POST') return Response.json({id});
@@ -124,6 +137,8 @@ export function createPreviewTransport(name: string, scenario: string): import('
     const response = await fixtureFetch(input, init);
     if (!response.ok) return response;
     const result = await response.json();
+    if (path === 'sharing' && url.searchParams.get('active') === 'true')
+      return Response.json(scenario === 'empty' ? [] : result.filter((link:{id:string}) => !revokedLinks.has(link.id)));
     if (path === 'notifications') {
       result.items = result.items.filter((notice: NotificationEntry) => notice.kind !== 'friend-request' && !dismissed.has(notice.id))
         .map((notice: NotificationEntry) => ({...notice, readAt: scenario === 'read' ? today : null, locked: scenario === 'locked', ...(notice.kind === 'reaction' ? {reaction:'❤️', media:null, activity:{...movie, captionActor:{username:'Preview',avatar:null}, captionSubtitle:'Watched this movie'}} : {})}));
@@ -142,7 +157,7 @@ export function createPreviewTransport(name: string, scenario: string): import('
           {...stream,id:'fixture-viewer-2',client:'External player',device:null,method:'Shared HLS',position:360,progress:360/stream.duration,sharing},
           {...stream,id:'fixture-viewer-3',client:'External player',device:null,method:'Shared HLS',sharing:{...sharing,linkId:'preview-other-share',viewers:1}},
           ...others,
-        ];
+        ].filter(stream => result.view==='history' || !stoppedShares.has(stream.sharing?.linkId));
       }
     }
     if (scenario === 'empty') {

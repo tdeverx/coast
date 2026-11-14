@@ -66,7 +66,7 @@
     "src/routes/ui-preview/+page.svelte": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
     "src/routes/ui-preview/ComponentPlayground.svelte": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
-    "src/routes/ui-preview/prop-manifest.json": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
+    "src/routes/ui-preview/prop-manifest.json": "3b82f7123dcb68f0b72f220ef6919eb896a2116e6f8d19f384772ade9c3f0bfd",
     "src/routes/ui-preview/props.ts": "2c41d2695f77a4e96507c1f3e8894be7fcbf9d9d4d024c0d22c79751e7636067",
     "static/coast-mark.png": "04efcda120c7032ef626f3b9486f75c0a3f98361c98347325affdd1cb8ae12b4",
     "tests/job-task-summary-db.test.ts": "314bb823f730abce104e82acff948f5d26d2f2efe36a3d6f5049c496ca8e5dff",
@@ -257,6 +257,17 @@
         }
       ],
       "note": "The existing Activity header and panel expose owner-scoped active links. Disposable database and UI checks cover the change; historical performance and device observations retain their original scope."
+    },
+    {
+      "epoch": "shared-stream-card-actions-2026-11-14",
+      "changes": [
+        {
+          "path": "src/routes/ui-preview/prop-manifest.json",
+          "previousSha256": "58d945b6c80e4bf79b98231156fa589bf0119bbf912237048c01064f2d0c3357",
+          "currentSha256": "3b82f7123dcb68f0b72f220ef6919eb896a2116e6f8d19f384772ade9c3f0bfd"
+        }
+      ],
+      "note": "The shared MediaCard exposes a corner menu for playback actions. Chromium preview checks passed on desktop and mobile. Past evidence retains its original scope."
     }
   ]
 }
