@@ -88,6 +88,7 @@ export const policyFields = [
   'maxBitrateMbps',
   'allowTranscoding',
   'allowVrchatHevc',
+  'vrchatViewerIdleMinutes',
   'subtitleDefault',
   'subtitleLanguages',
   'metadataSource',

@@ -140,7 +140,7 @@ export async function sharedProgress(token:string|undefined,id:string,input:unkn
  if(!changed&&!stop)throw new AppError(410,'This playback session has stopped. Open the link to play again.');
  if(measure&&(changed?.complete||stop&&!changed))await completeShare(viewer.owner_id,viewer.id,id);
  if(changed&&viewer.host&&viewer.together)await db`update playback_shares set position_seconds=least(${data.positionSeconds},duration_seconds),paused=${paused},updated_at=now() where id=${viewer.id}`;
- if(stop)await releaseViewer(viewer.owner_id,viewer.viewer_id,false,id);
+ if(stop)await releaseViewer(viewer.owner_id,viewer.viewer_id,{playbackId:id});
  return {complete:data.event==='ended'};
 }
 export async function sharedStream(token:string|undefined,id:string,request:Request){

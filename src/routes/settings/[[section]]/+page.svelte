@@ -1360,6 +1360,16 @@
               transcoding</label
             ><SettingsRow title="H.265 VRChat sharing" description="Allow an experimental H.265 / AAC fMP4 HLS option. H.264 remains the default; support depends on the world player and device."><input type="checkbox" aria-label="H.265 VRChat sharing" bind:checked={policy.allowVrchatHevc}/></SettingsRow
             ><label class="field"
+              >VRChat idle timeout (minutes)<input
+                type="number"
+                min="1"
+                max="120"
+                step="1"
+                bind:value={policy.vrchatViewerIdleMinutes}
+                required
+              /><small>How long an idle VRChat viewer keeps its stream and bandwidth reservation. Link expiration and auto-revoke can end it sooner.</small>
+            </label
+            ><label class="field"
               >Default subtitle mode<select bind:value={policy.subtitleDefault}
                 ><option value="off">Off</option><option value="preferred"
                   >Preferred languages</option

@@ -188,7 +188,8 @@ run('a saved stable segment URL moves to a new provider generation after another
  expect(stops[0].device).not.toBe(owner);expect((await getSql()`select provider_session_id from playback_sessions where id=${second.id}`)[0].provider_session_id).toBe(otherBefore.provider_session_id);
 });
 run('admission respects the aggregate budget, and idle viewers release their slot',async()=>{
- const link=await make(),otherLink=await make(),grants=await Promise.all(Array.from({length:4},(_,i)=>claimShare({token:i%2?otherLink.token:link.token},null)));
+ await getSql()`update users set settings=${{sharedBitrateMbps:2,personalBitrateMbps:0.5}} where id=${owner}`;
+ const link=await website(),otherLink=await website(),grants=await Promise.all(Array.from({length:4},(_,i)=>claimShare({token:i%2?otherLink.token:link.token},null)));
  for(let i=0;i<3;i++)await startShared(grants[i].token,{mediaId:work,browser});
  await expect(startShared(grants[3].token,{mediaId:work,browser})).rejects.toThrow('bandwidth is full');
  const unadmitted=await shareViewer(grants[3].token);
@@ -202,6 +203,47 @@ run('admission respects the aggregate budget, and idle viewers release their slo
  expect((await getSql()`select ended_at from share_viewers where id=${old.id}`)[0].ended_at).toBeTruthy();
  await startShared(grants[3].token,{mediaId:work,browser});
  expect((await sharedStreamRows('now')).length).toBe(3);expect((await sharedStreamRows('history')).length).toBe(1);
+});
+run('a paused VRChat viewer retains its HLS URLs and bandwidth slot until the idle timeout',async()=>{
+ const db=getSql(),link=await make(),other=await make();
+ await db`update system_settings set value=value-'vrchatViewerIdleMinutes' where key='coast'`;
+ await db`update users set settings=${{sharedBitrateMbps:1}} where id=${owner}`;
+ const open=(token:string)=>openPublicShare(token,request(publicSharePath(token,'vrchat')),'fixture-address');
+ const variant=await child(await open(link.token));
+ const id=variant.split('/')[4];
+ const segment=await child(await externalStream(id,request(variant)));
+ const initial=await (await externalStream(id,request(segment))).json();
+ expect(initial.session).toBeTruthy();
+
+ await db`update share_viewers set last_seen_at=now()-interval '29 minutes' where playback_id=${id}`;
+ await expireSharedViewers();
+ expect(stops).toHaveLength(0);
+ expect(await sharedStreamRows('now')).toHaveLength(0);
+ await expect(open(other.token)).rejects.toMatchObject({status:429});
+ const resumed=await externalStream(id,request(segment));
+ expect(resumed.status).toBe(200);
+ expect((await resumed.json()).session).toBe(initial.session);
+ expect(playbackRequests).toHaveLength(1);
+
+ await db`update share_viewers set last_seen_at=now()-interval '31 minutes' where playback_id=${id}`;
+ await expireSharedViewers();
+ expect(stops.map(stop=>stop.session)).toEqual([initial.session]);
+ await expect(externalStream(id,request(segment))).rejects.toMatchObject({status:410});
+ expect((await open(other.token)).status).toBe(200);
+});
+run('administrators can change the VRChat idle timeout for existing viewers',async()=>{
+ const db=getSql(),link=await make();
+ const variant=await child(await openPublicShare(link.token,request(publicSharePath(link.token,'vrchat')),'fixture-address'));
+ const id=variant.split('/')[4];
+ await db`update share_viewers set last_seen_at=now()-interval '6 minutes' where playback_id=${id}`;
+ await expect(updateConfig({...actor,id:other,role:'user'},{vrchatViewerIdleMinutes:5})).rejects.toThrow('Administrator');
+ await expect(updateConfig(actor,{vrchatViewerIdleMinutes:0})).rejects.toThrow();
+ await expireSharedViewers();
+ expect(stops).toHaveLength(0);
+ await updateConfig(actor,{vrchatViewerIdleMinutes:5});
+ await expireSharedViewers();
+ expect(stops).toHaveLength(1);
+ await expect(externalStream(id,request(variant))).rejects.toMatchObject({status:410});
 });
 run('only an administrator can set independent personal and shared bandwidth limits',async()=>{
  const user={...actor,id:other,role:'user' as const};

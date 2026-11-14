@@ -62,7 +62,7 @@
     "src/lib/ui/task-control.svelte.ts": "00dd35cc7525fb9a35bc18f27ae4d895e46cc2e456e574fceb3fa898261b6b34",
     "src/lib/ui/task-control/Recovery.svelte": "fa978b6aaf72490290183196bbbada8a12cd42093d6ee07abc777eb4407a750b",
     "src/routes/settings/[[section]]/+page.server.ts": "3685ad881338c8e65b5390ed702e90758c690c65762158c485581abbb44d4d40",
-    "src/routes/settings/[[section]]/+page.svelte": "d5f47a62f1eae094bbda658c4e7de99af2575afbf6bb24f137904ac704346a17",
+    "src/routes/settings/[[section]]/+page.svelte": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b",
     "src/routes/ui-preview/+page.svelte": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
     "src/routes/ui-preview/ComponentPlayground.svelte": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
     "src/routes/ui-preview/Workspace.svelte": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
@@ -228,6 +228,18 @@
         }
       ],
       "note": "The share migration was applied on PostgreSQL 17. Bulk command, job summary, retention and preview input regression checks passed against the updated schema. Historical evidence retains its original scope."
+    },
+    {
+      "epoch": "vrchat-idle-timeout-2026-11-14",
+      "report": "docs/synced-experiences.md",
+      "changes": [
+        {
+          "path": "src/routes/settings/[[section]]/+page.svelte",
+          "previousSha256": "d5f47a62f1eae094bbda658c4e7de99af2575afbf6bb24f137904ac704346a17",
+          "currentSha256": "fe4e80fbe72abf1825f6bdd0f0284aefe73b8d1efc29ba99c19e6b066d2e207b"
+        }
+      ],
+      "note": "The existing Policies form gains a VRChat playback field. Sharing database checks and Svelte diagnostics passed; prior bulk and preview evidence retains its original scope."
     }
   ]
 }

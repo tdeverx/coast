@@ -7,6 +7,11 @@ import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
 import { encodingBitrate, playbackLimits, shareCompletionGraceMinutes, shareIdleMinutes, viewerIdleSeconds } from './policy';
 import {allocateViewers} from './allocation';
 
+// Admission and cleanup use the same cutoff for their joined playback share (s).
+function viewerIdleCutoff(db:ReturnType<typeof getSql>,vrchatMinutes:number) {
+  return db`now()-case when s.target='vrchat' then ${vrchatMinutes}*interval '1 minute' else ${viewerIdleSeconds}*interval '1 second' end`;
+}
+
 /** Short owner-scoped transactions allocate all links together. No provider I/O holds a DB lock. */
 export async function reserveViewer(ownerId:string,viewerId:string,force=false) {
   const db=getSql();
@@ -23,7 +28,9 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
     if(!viewer||!force&&viewer.playback_state==='stopped')throw new AppError(410,'The viewer playback session has expired.');
     if(!force&&viewer.last_seen_at&&!viewer.ended_at&&Date.now()-new Date(viewer.last_seen_at).getTime()<10_000)return {bitrate:viewer.desired_bitrate as number,cleanup:[]};
     const budget=playbackLimits(config.maxBitrateMbps,owner.settings).shared;
-    const active=await tx<{id:string;target:'website'|'vrchat';desired_bitrate:number|null}[]>`select v.id,s.target,v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id where s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second' order by v.created_at,v.id limit 21`;
+    const active=await tx<{id:string;target:'website'|'vrchat';desired_bitrate:number|null}[]>`select v.id,s.target,v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id where s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null
+      and v.last_seen_at>${viewerIdleCutoff(tx,config.vrchatViewerIdleMinutes)}
+      order by v.created_at,v.id limit 21`;
     const rates=allocateViewers(budget,active,viewer,playbackLimits(config.maxBitrateMbps,owner.settings).personal);
     const excess=active.filter(row=>!rates.has(row.id)).map(row=>row.id);
     const cleanup=excess.length?await tx<ReleasedSession[]>`with ended as (
@@ -102,12 +109,13 @@ export async function stopViewerPlayback(ownerId:string,viewerId:string) {
   const [remaining]=await db`select id from playback_sessions where user_id=${ownerId} and share_id is not null and cleanup_pending limit 1`;
   if(remaining)throw new AppError(503,'Previous shared playback is still stopping. Retry shortly.');
 }
-export async function releaseViewer(ownerId:string,viewerId:string,idleOnly=false,playbackId?:string) {
+export async function releaseViewer(ownerId:string,viewerId:string,{playbackId,vrchatIdleMinutes}: {playbackId?:string;vrchatIdleMinutes?:number}={}) {
   const db=getSql();
   const [session]=await db`with ended as (
     update share_viewers v set ended_at=now() from playback_shares s where v.id=${viewerId} and s.id=v.share_id and s.owner_id=${ownerId} and v.ended_at is null
     ${playbackId?db`and v.playback_id=${playbackId}`:db``}
-    ${idleOnly?db`and (v.last_seen_at<now()-interval '90 seconds' or s.revoked_at is not null or s.expires_at<=now())`:db``} returning v.playback_id
+    ${vrchatIdleMinutes!==undefined?db`and (v.last_seen_at<=${viewerIdleCutoff(db,vrchatIdleMinutes)}
+      or s.revoked_at is not null or s.expires_at<=now())`:db``} returning v.playback_id
   ) update playback_sessions set state='stopped',cleanup_pending=true,updated_at=now() where id in (select playback_id from ended) and user_id=${ownerId} returning id,user_id,connection_id,provider_device_id,provider_session_id`;
   if(session)await stopReleasedSession(session);
 }
@@ -130,11 +138,14 @@ async function revokeInactiveShares() {
 /** Lifecycle cleanup, including developer mode. Failed provider stops remain durable and retryable. */
 export async function expireSharedViewers() {
  const db=getSql();
+ const {vrchatViewerIdleMinutes}=await getConfig();
  await db`delete from share_request_leases where id in (select id from share_request_leases where expires_at<=now() limit 200)`;
  await revokeInactiveShares();
- const rows=await db`select v.id,s.owner_id from share_viewers v join playback_shares s on s.id=v.share_id where v.ended_at is null and v.playback_id is not null and (v.last_seen_at<now()-interval '90 seconds' or s.revoked_at is not null or s.expires_at<=now()) order by v.last_seen_at limit 20`;
+ const rows=await db`select v.id,s.owner_id from share_viewers v join playback_shares s on s.id=v.share_id where v.ended_at is null and v.playback_id is not null
+   and (v.last_seen_at<=${viewerIdleCutoff(db,vrchatViewerIdleMinutes)}
+   or s.revoked_at is not null or s.expires_at<=now()) order by v.last_seen_at limit 20`;
  for(const row of rows) {
-  try {await releaseViewer(row.owner_id,row.id,true);} catch { /* The durable cleanup flag is retried below. */ }
+  try {await releaseViewer(row.owner_id,row.id,{vrchatIdleMinutes:vrchatViewerIdleMinutes});} catch { /* The durable cleanup flag is retried below. */ }
  }
  const pending=await db`update playback_sessions set cleanup_attempted_at=now() where id in (select id from playback_sessions where cleanup_pending and state='stopped' order by cleanup_attempted_at nulls first limit 20) returning id,user_id,connection_id,provider_device_id,provider_session_id`;
  for(const session of pending){try{await stopReleasedSession(session);}catch{/* Retain failed stops for the next bounded lifecycle pass. */}}
