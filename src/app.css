@@ -312,6 +312,7 @@ form.stack,
 /* Keep glass edges and grain on the stationary frame while only choices scroll. */
 .menu-content {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   max-height: inherit;
@@ -791,7 +792,7 @@ form.stack,
 
 /* Action menus fit their content while retaining room for labels and rating controls. */
 .menu-surface.menu-panel { max-width: min(288px, calc(100vw - 32px)); }
-.menu-action-label { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.menu-action-label { min-width: 0; flex: 1 1 auto; overflow-wrap: break-word; }
 .menu-row.menu-row-danger, .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { color: var(--danger); }
 .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .menu-row:disabled, .menu-row[aria-disabled="true"] { opacity: .45; cursor: default; }

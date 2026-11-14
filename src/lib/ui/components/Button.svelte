@@ -111,7 +111,8 @@
 <style>
   .context {display:inline-flex;}
   .context.external-trigger {display:contents;}
-  .context.submenu {display:block;width:100%;}
+  .context.submenu {display:grid;min-width:0;}
+  .submenu > .menu-row {width:auto;}
   .context > button[hidden] {display:none;}
   .menu-surface {visibility:visible;pointer-events:auto;}
   .menu-surface.drill-hidden {visibility:hidden;pointer-events:none;}
