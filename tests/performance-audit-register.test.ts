@@ -3,9 +3,24 @@ import { createHash } from 'node:crypto';
 import register from '../docs/audits/2026-10-22-performance-followup/register.json';
 import verification from '../docs/audits/2026-10-22-performance-followup/verification.json';
 import manifest from '../package.json';
+import accountSourceRefresh from '../docs/audits/2026-11-15-invite-accounts/source-refresh.json';
+
+type SourceRefresh = {previous: string; current: string};
+const accountSources: Readonly<Record<string, SourceRefresh>> = accountSourceRefresh.files;
+
+async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
+  const refresh = accountSources[path];
+  // A new receipt names the exact historical pin it supersedes for source
+  // checks. Dated hosted receipts and their artifact checks keep their own epoch.
+  const expected = refresh?.previous === historicalHash ? refresh.current : historicalHash;
+  const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
+  expect(actual, `${path}: ${detail}`).toBe(expected);
+}
 
 test('audit register binds runtime pins and executable owners without promoting open work', async () => {
   expect(register.schemaVersion).toBe(1);
+  const receipt = createHash('sha256').update(await Bun.file(accountSourceRefresh.report).bytes()).digest('hex');
+  expect(receipt).toBe(accountSourceRefresh.reportSha256);
   expect(manifest.packageManager).toBe(`bun@${register.runtime.bun}`);
   const docker = await Bun.file('Dockerfile').text();
   const workflow = await Bun.file('.github/workflows/verify-and-publish-preview.yml').text();
@@ -36,8 +51,7 @@ test('changed audit owners require an explicit evidence and remaining-scope refr
     }
   }
   for (const [path, expected] of Object.entries(verification.source.files)) {
-    const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
-    expect(actual, `${path}: review its registered contract, rerun affected acceptance and refresh verification; do not silently reuse an old evidence epoch.`).toBe(expected);
+    await expectCurrentSource(path,expected,'Review the changed contract and record verification for the new source.');
   }
 });
 
@@ -58,7 +72,7 @@ test('expanded audit binds reviewed receipts and preserves incomplete acceptance
     for(const entry of family.evidence)expect(await Bun.file(root+entry.receipt).exists()).toBe(true);
   }
   for(const[path,expected]of Object.entries(pins.files)){
-    expect(createHash('sha256').update(await Bun.file(path).bytes()).digest('hex'),`${path}: refresh the affected actual-data evidence and remaining scope.`).toBe(expected);
+    await expectCurrentSource(path,expected,'Refresh the affected actual-data evidence and remaining scope.');
   }
   for(const[path,expected]of Object.entries(evidence.files)){
     expect(createHash('sha256').update(await Bun.file(root+path).bytes()).digest('hex'),`${path}: preserve the result or record an explicitly reviewed evidence epoch.`).toBe(expected);
@@ -76,7 +90,7 @@ test('independent continuation binds current owners, real-data receipts and expl
     for(const path of [...finding.owners,...finding.tests])expect(path in pins.files).toBe(true);
   }
   for(const[path,expected]of Object.entries(pins.files)){
-    expect(createHash('sha256').update(await Bun.file(path).bytes()).digest('hex'),`${path}: refresh continuation evidence and boundaries before accepting changed owners.`).toBe(expected);
+    await expectCurrentSource(path,expected,'Refresh continuation evidence and boundaries before accepting changed owners.');
   }
   if(await Bun.file('../coast-plugin/README.md').exists())for(const[path,expected]of Object.entries(pins.companion.files)){
     expect(createHash('sha256').update(await Bun.file('../coast-plugin/'+path).bytes()).digest('hex'),`${path}: rerun affected companion acceptance and refresh its evidence epoch.`).toBe(expected);
@@ -105,7 +119,7 @@ test('selected bulk and preview policies bind their own source and evidence epoc
   expect(finding.contract.length).toBeGreaterThan(20);
   for(const path of [...finding.owners,...finding.tests])expect(path in pins.files).toBe(true);
  }
- for(const [path,expected]of Object.entries(pins.files))expect(createHash('sha256').update(await Bun.file(path).bytes()).digest('hex'),`${path}: rerun the selected-policy contract and retain previous evidence before refreshing pins.`).toBe(expected);
+ for(const [path,expected]of Object.entries(pins.files))await expectCurrentSource(path,expected,'Rerun the selected-policy contract and retain previous evidence before refreshing pins.');
  const root='docs/audits/2026-10-23-bulk-recovery-input-retention/';
  const actual=await Bun.file(root+'receipts/actual-recovery.json').json();
  expect(actual.status).toBe('passed');
@@ -123,7 +137,7 @@ test('hosted companion evidence binds permission repairs without promoting party
  const pins=await Bun.file(root+'pins.json').json() as {epoch:string;blanketAcceptance:boolean;files:Record<string,string>;companion:{files:Record<string,string>};remaining:string[]};
  expect(pins.epoch).toBe('hosted-companion-2026-10-25');
  expect(pins.blanketAcceptance).toBe(false);
- for(const[path,hash]of Object.entries(pins.files))expect(createHash('sha256').update(await Bun.file(path).bytes()).digest('hex'),`${path}: rerun affected hosted acceptance and preserve prior observations before refreshing pins.`).toBe(hash);
+ for(const[path,hash]of Object.entries(pins.files))await expectCurrentSource(path,hash,'Review the changed contract and preserve the original hosted observations.');
  if(await Bun.file('../coast-plugin/README.md').exists())for(const[path,hash]of Object.entries(pins.companion.files))expect(createHash('sha256').update(await Bun.file('../coast-plugin/'+path).bytes()).digest('hex')).toBe(hash);
  const before=await Bun.file(root+'receipts/authorization-before.json').json();
  const after=await Bun.file(root+'receipts/authorization-after.json').json();

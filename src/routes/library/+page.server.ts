@@ -1,13 +1,14 @@
+import { managedLibrary, reconnectManagedLibrary } from '#lib/server/auth/managed-library.server.js';
 import { requestedPageInterval } from '#lib/server/queries/pagination.js';
 import { getFeatureConfig } from '#lib/server/features.js';
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { libraryOptionsSchema } from '#lib/server/queries/library.js';
 import { libraryContent, libraryImportStatus } from '#lib/server/queries/library-content.js';
 import { collectionData, collectionOptionsSchema, collectionParameters } from '#lib/collection/query.server.js';
 import { missingDemand } from '#lib/collection/demand.server.js';
 import { profileUser } from '#lib/server/queries/profile-user.js';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import {resolveAction,actionUrl} from '#lib/actions.js';
 import { libraryBrowseDefaults, libraryTypeOptions, libraryEntityOptions, type LibraryContent } from '#lib/library.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
@@ -66,10 +67,30 @@ const loadLibrary = async ({ locals, url, depends, request }: Parameters<PageSer
 };
 
 export const load = (async (event) => {
-  try { return await loadLibrary(event); }
+  try {
+    if(event.locals.user?.access?.libraryOnly)return {
+      scoped:await managedLibrary(event.locals.user.id,event.url.searchParams),view:'watch' as const,collection:false,username:null,owner:true,
+      filters:{...v.parse(collectionOptionsSchema,{}),genre:'',tracking:'all',scope:'available',kind:'all'},
+      content:null,importStatus:null,missing:null,
+    };
+    return {...await loadLibrary(event),scoped:null};
+  }
   catch (cause) {
     if (cause instanceof AppError) error(cause.status, cause.message);
     if (v.isValiError(cause)) error(400, 'Choose valid Library filters.');
     throw cause;
   }
 }) satisfies PageServerLoad;
+
+
+export const actions: Actions = {
+  reconnect: async ({locals,request}) => {
+    if(!locals.user?.access?.libraryOnly)return fail(403,{error:'This action is available for assigned Jellyfin accounts.'});
+    try {
+      await reconnectManagedLibrary(locals.user.id,(await request.formData()).get('password'));
+      return {reconnected:true};
+    } catch(cause) {
+      return fail(cause instanceof AppError ? cause.status : 400,{error:cause instanceof AppError ? cause.message : 'Could not sign in to your assigned Jellyfin account.'});
+    }
+  },
+};

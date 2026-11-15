@@ -16,7 +16,8 @@ export async function streamArtwork(
   instanceId: string,
   itemId: string,
   type: string,
-  request: Request
+  request: Request,
+  restricted = false
 ) {
   request.signal.throwIfAborted();
   if (!isArtworkType(type) || !/^[-\w]{1,100}$/.test(itemId))
@@ -31,6 +32,10 @@ export async function streamArtwork(
         eq(providerItems.instanceId, instanceId),
         eq(providerItems.externalId, itemId),
         eq(availability.state, 'available'),
+        restricted ? sql`exists(select 1 from coast_managed_catalogue(${userId}::uuid) c
+          where c.connection_id=${availability.connectionId} and c.instance_id=${providerItems.instanceId}
+          and coast_managed_observation(${availability.source},${availability.verifiedAt},c.access_after))
+          and coast_managed_work_visible(${userId}::uuid,${providerItems.mediaId})` : undefined,
         sql`exists(select 1 from works w where w.id=${providerItems.mediaId} and coast_category_enabled(${userId}::uuid,w.category))`
       )
     )

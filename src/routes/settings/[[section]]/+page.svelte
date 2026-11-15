@@ -1,5 +1,8 @@
 <script lang="ts">
   import { reportFailure } from '#lib/ui/client-context.js';
+  import AdminInviteSettings from '#lib/auth/ui/AdminInviteSettings.svelte';
+  import AccountAccessControls from '#lib/auth/ui/AccountAccessControls.svelte';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
   import { featureDefinitions, administratorFeatures, type PersonalFeature } from '#lib/features.js';
   import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
@@ -29,7 +32,7 @@
   import { beforeNavigate, goto } from '$app/navigation';
 
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
-  import { api, change, message, refreshRouteDependencies } from '#lib/ui/client.js';
+  import { change, message, refreshRouteDependencies } from '#lib/ui/client.js';
   import Button from '#lib/ui/components/Button.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
@@ -38,32 +41,8 @@
   import EmptyState from '#lib/ui/components/EmptyState.svelte';
   let { data } = $props();
 
-  let inviteCode = $state(''),
-    inviteConnection = $state(''),
-    inviteFolders = $state<string[]>([]),
-    inviteLibraries = $state<{ ItemId: string; Name?: string }[]>([]),
-    inviteLoading = $state(false);
-
-  $effect(() => {
-    const id = inviteConnection;
-
-    inviteFolders = [];
-    inviteLibraries = [];
-
-    if (!id) return;
-
-    const controller = new AbortController();
-
-    inviteLoading = true;
-
-    void api<typeof inviteLibraries>(`admin/invites/libraries?connectionId=${id}`, undefined, 'GET', { signal: controller.signal }).then((value) => inviteLibraries = value).catch((cause) => {
-      if (!controller.signal.aborted) error = message(cause);
-    }).finally(() => {
-      if (!controller.signal.aborted) inviteLoading = false;
-    });
-
-    return () => controller.abort();
-  });
+  let accountDetail=$state(''),bulkAccess=$state(false),selectedAccounts=$state<string[]>([]);
+  $effect(()=>{data.accounts;selectedAccounts=[];});
 
   let apiToken = $state(''),
     apiName = $state(''),
@@ -1046,191 +1025,43 @@
           experimentalComics={data.config?.experimentalComics ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
+
+          <SegmentedControl label="User management" value={data.usersTab} options={[{value:'users',label:'Users'},{value:'invites',label:'Invites'},{value:'defaults',label:'Defaults'}]}
+            onchange={view=>void goto(view==='users'?'/settings/users':'/settings/users?view='+view)} />
+          {#if data.usersTab!=='users'}
+            {#key data.usersTab}<AdminInviteSettings view={data.usersTab} connections={data.inviteAuthorities} />{/key}
+          {:else}
+          {#if selectedAccounts.length}<div class="row"><Button emphasis="subtle" onclick={()=>bulkAccess=true}>Apply access to {selectedAccounts.length} selected</Button></div>{/if}
           <div class="overflow">
             <table class="table">
-              <thead
-                ><tr
-                  ><th>Username</th><th>Role</th><th>Status</th><th>Email</th><th
-                    >Linked accounts</th
-                  ><th></th></tr
-                ></thead
-              ><tbody
-                >{#each data.users as user}<tr
-                    ><td>{user.username}</td><td>{user.role}</td><td
-                      >{user.disabled ? 'Disabled' : 'Active'}
-                      <p class="small">
-                        {user.hasLocalPassword ? 'Coast password' : 'Jellyfin sign-in'}
-                      </p></td
-                    ><td>{user.email ?? '—'}</td><td
-                      >{#each data.supportConnections.filter((connection) => connection.userId === user.id) as connection}<div
-                        >
-                          <strong>{connection.provider}</strong> · {connection.username ??
-                            'Unlinked'}
-                          <p class="small">
-                            {connection.status} · {new Date(
-                              connection.updatedAt
-                            ).toLocaleDateString()}
-                          </p>
-                        </div>{/each}</td
-                    ><td
-                      ><Button
-                        emphasis="subtle"
-                        disabled={busy}
-                        onclick={() => {
-                          error = '';
-                          editing = {
-                            id: user.id,
-                            username: user.username,
-                            email: user.email ?? '',
-                            role: user.role,
-                            disabled: user.disabled,
-                            password: '',
-                            allowPlaybackSharing: user.settings.allowPlaybackSharing === true,
-                            personalBitrateMbps: user.settings.personalBitrateMbps ?? data.config?.maxBitrateMbps ?? 120,
-                            sharedBitrateMbps: user.settings.sharedBitrateMbps ?? 20,
-                          };
-                        }}>Edit</Button
-                      >{#if user.id !== page.data.user?.id}<Button
-                          emphasis="subtle"
-                          onclick={() => {
-                            error = '';
-                            deleteId = user.id;
-                          }}>Delete</Button
-                        >{/if}</td
-                    ></tr
-                  >{/each}</tbody
-              >
+              <thead><tr><th>Select</th><th>Username</th><th>Role</th><th>Status</th><th>Email</th><th>Actions</th></tr></thead>
+              <tbody>
+                {#each data.accounts.items as user (user.id)}
+                  <tr>
+                    <td>{#if user.role==='user'}<input type="checkbox" bind:group={selectedAccounts} value={user.id} aria-label={'Select '+user.username} disabled={selectedAccounts.length>=20&&!selectedAccounts.includes(user.id)} />{/if}</td>
+                    <td>{user.username}</td><td>{user.role}</td><td>{user.disabled?'Suspended':user.expired?'Expired':'Active'}</td><td>{user.email??'—'}</td>
+                    <td>
+                      <Button emphasis="subtle" onclick={()=>accountDetail=user.id}>Details</Button>
+                      <Button emphasis="subtle" disabled={busy} onclick={()=>{
+                        error='';
+                        editing={id:user.id,username:user.username,email:user.email??'',role:user.role,disabled:user.disabled,password:'',
+                          allowPlaybackSharing:user.settings.allowPlaybackSharing===true,
+                          personalBitrateMbps:user.settings.personalBitrateMbps??data.config?.maxBitrateMbps??120,
+                          sharedBitrateMbps:user.settings.sharedBitrateMbps??20};
+                      }}>Edit</Button>
+                      {#if user.id!==page.data.user?.id}<Button emphasis="subtle" onclick={()=>{error='';deleteId=user.id;}}>Delete</Button>{/if}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
             </table>
           </div>
-          <div class="panel stack form-width">
-            <h3>Invite someone</h3>
-            <p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
-
-            <form
-              class="stack"
-              onsubmit={async (e) => {
-                e.preventDefault();
-
-                if (busy) return;
-
-                busy = true;
-                error = '';
-
-                try {
-                  const form = new FormData(e.currentTarget);
-
-                  const result = await change<{ code: string }>('admin/invites', {
-                    days: Number(form.get('days')),
-                    ...inviteConnection
-                      ? {
-                        provisionConnectionId: inviteConnection,
-                        folders: inviteFolders
-                      }
-                      : {}
-                  });
-
-                  inviteCode = result.code;
-                } catch(cause) {
-                  error = message(cause);
-                } finally {
-                  busy = false;
-                }
-              }}
-            >
-              <label class="field">
-                Expires after
-
-                <select name="days">
-                  <option value="1">1 day</option>
-                  <option value="7" selected>7 days</option>
-                  <option value="30">30 days</option>
-                </select>
-              </label>
-
-              <label class="field">
-                Jellyfin provisioning
-
-                <select bind:value={inviteConnection}>
-                  <option value="">Connect an existing account</option>
-
-                  {#each data.providers.filter((provider) => provider.provider === 'jellyfin' && provider.connection?.status === 'connected') as provider}
-                    <option value={(provider.connection!).id}>{provider.name} · {(provider.connection!).username}</option>
-                  {/each}
-                </select>
-              </label>
-
-              {#if inviteConnection}
-                <fieldset class="stack">
-                  <legend>Permitted libraries</legend>
-
-                  {#if inviteLoading}
-                    <p role="status">Loading libraries…</p>
-                  {/if}{#each inviteLibraries as library}
-                    <label class="check">
-                      <input
-                        type="checkbox"
-                        bind:group={inviteFolders}
-                        value={library.ItemId}
-                      />
-
-                      {library.Name ?? library.ItemId}
-                    </label>
-                  {/each}
-
-                  <small>Only these libraries are granted. An enabled Jellyfin administrator connection is required.</small>
-                </fieldset>
-              {/if}
-
-              <Button
-                type="submit"
-                disabled={busy || inviteLoading || !!inviteConnection && !inviteFolders.length}
-              >Create invite</Button>
-            </form>
-
-            {#if inviteCode}
-              <label class="field">
-                Copy this code — shown once
-
-                <input
-                  readonly
-                  value={inviteCode}
-                  onclick={(e) => e.currentTarget.select()}
-                />
-              </label>
-
-              <label class="field">
-                Invite link
-
-                <input
-                  readonly
-                  value={`${page.url.origin}/register#invite=${inviteCode}`}
-                  onclick={(event) => event.currentTarget.select()}
-                />
-              </label>
-            {/if}
-
-            {#each data.invites as invite}
-              <div class="spread">
-                <span class="small">
-                  {invite.usedAt
-                    ? `Used by ${invite.username || 'deleted account'}`
-                    : invite.revokedAt
-                      ? 'Revoked'
-                      : new Date(invite.expiresAt) <= new Date()
-                        ? 'Expired'
-                        : `Expires ${new Date(invite.expiresAt).toLocaleString()}`}
-                </span>
-
-                {#if !invite.usedAt && !invite.revokedAt}
-                  <Button
-                    emphasis="subtle"
-                    onclick={() => save(`admin/invites/${invite.id}`, {}, 'Invite revoked.', 'DELETE')}
-                  >Revoke</Button>
-                {/if}
-              </div>
-            {/each}
-          </div>
-
+          {#if data.accounts.next}<div class="row"><Button emphasis="subtle" href={'/settings/users?before='+data.accounts.next}>Next page</Button></div>{/if}
+          {#if page.url.searchParams.has('before')}<div class="row"><Button emphasis="subtle" href="/settings/users">First page</Button></div>{/if}
+          {#if accountDetail||bulkAccess}
+            <AccountAccessControls userId={accountDetail||undefined} selection={selectedAccounts}
+              onclose={()=>{accountDetail='';bulkAccess=false;}} onchange={()=>void refreshRouteDependencies(['settings'])} />
+          {/if}
           <div class="panel stack form-width">
             <h3>Create a Coast account</h3>
             <p class="small">
@@ -1284,6 +1115,7 @@
               ><Button type="submit" disabled={busy}>Create account</Button>
             </form>
           </div>
+        {/if}
         </div>
       {:else if data.section === 'policies' && policy}<form
           class="stack form-width"

@@ -5,6 +5,7 @@
       "Field"
     ],
     "usedBy": [
+      "src/routes/invite/+page.svelte",
       "src/routes/register/+page.svelte",
       "src/routes/setup/+page.svelte"
     ],
@@ -56,6 +57,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/ui/components/Header.svelte",
+      "src/routes/invite/+page.svelte",
       "src/routes/login/+page.svelte",
       "src/routes/onboarding/+page.svelte",
       "src/routes/register/+page.svelte",
@@ -69,6 +71,11 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/auth/ui/AccountAccessControls.svelte",
+      "src/lib/auth/ui/AdminInviteSettings.svelte",
+      "src/lib/auth/ui/InviteDefaultsFields.svelte",
+      "src/lib/auth/ui/InviteSecret.svelte",
+      "src/lib/auth/ui/MemberInvites.svelte",
       "src/lib/backups/BackupSettings.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/experiments/PlanAction.svelte",
@@ -128,9 +135,11 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
+      "src/routes/invite/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/login/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/onboarding/+page.svelte",
@@ -231,6 +240,8 @@
       "Toast"
     ],
     "usedBy": [
+      "src/lib/auth/ui/AccountAccessControls.svelte",
+      "src/lib/auth/ui/AdminInviteSettings.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/reading/Reader.svelte",
@@ -270,6 +281,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/auth/ui/MemberInvites.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
@@ -283,6 +295,7 @@
       "src/routes/+error.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/games/+page.svelte",
+      "src/routes/library/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -383,6 +396,9 @@
       "SegmentedControl"
     ],
     "usedBy": [
+      "src/lib/auth/ui/AccountAccessControls.svelte",
+      "src/lib/auth/ui/AdminInviteSettings.svelte",
+      "src/lib/auth/ui/MemberInvites.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/media/PersonDetails.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
@@ -513,6 +529,7 @@
       "src/lib/ui/components/PartyCard.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
+      "src/routes/library/+page.svelte",
       "src/routes/profile/[username]/+page.svelte"
     ],
     "dynamicComposition": true
@@ -871,7 +888,8 @@
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte"
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": false
   },

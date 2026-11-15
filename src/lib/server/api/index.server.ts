@@ -1,3 +1,5 @@
+import {accountDetails,changeMemberAccess,manageAccount,reviewProvisioning} from '#lib/server/auth/account-management.server.js';
+import {createInvite,inviteClaims,inviteOverview,issueMemberInvite,listInvitePresets,listInvites,memberInviteGrant,memberInviteOverview,previewJellyfinDefaults,regenerateInvite,requestMemberInvite,revokeInvite,saveInvitePreset} from '#lib/server/auth/invites.server.js';
 import {progressExperimentData} from '#lib/server/queries/progress-experiment.js';
 import {progressExperimentParameters} from '#lib/progress-experiment.js';
 import {recentLibraryData} from '#lib/server/queries/recent-library.js';
@@ -17,7 +19,7 @@ import { recommendationRows } from '#lib/recommendations/query.server.js';
 import {playbackBackground} from '#lib/media/artwork.js';
 import { uuid, text } from './context.server';
 import * as synced from '#lib/playback/synced/service.server.js';
-import { createInvite, listInvites, revokeInvite } from '#lib/server/auth/onboarding.js';
+
 import { isPublicReadPath } from '#lib/social/public.server.js';
 import { profileAvatarChoices, providerProfileAvatar } from '#lib/core/profile/avatars.server.js';
 import { avatarRequestLimit, streamAvatar } from '#lib/core/profile/avatar-storage.server.js';
@@ -112,11 +114,31 @@ export const handler: RequestHandler = async (event) => {
       url.searchParams.has('username')
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
+    if (path[0]==='admin' && path[1]==='members') {
+      if (method==='POST' && path[2]==='access') return Response.json(await changeMemberAccess(user,await readBody(request)));
+      if (method==='GET' && path.length===3) return Response.json(await accountDetails(user,path[2]));
+      if (method==='POST' && path[3]==='review') return Response.json(await reviewProvisioning(user,path[2],await readBody(request)));
+      if (method==='POST' && path.length===3) return Response.json(await manageAccount(user,path[2],await readBody(request)));
+    }
     if(path[0]==='admin' && path[1]==='invites') {
       if(path.length===3&&path[2]==='libraries'&&method==='GET'){requireAdmin(user);const context=await provisioningAuthority(uid,uuid(url.searchParams.get('connectionId')??''));return Response.json(await context.adapter.virtualFolders());}
-      if(method==='GET')return Response.json(await listInvites(user));
-      if(method==='POST')return Response.json(await createInvite(user,await readBody(request)));
-      if(method==='DELETE'&&path[2]){await revokeInvite(user,uuid(path[2]));return Response.json({revoked:true});}
+      if (method==='GET' && path[2]==='overview') return Response.json(await inviteOverview(user));
+      if (method==='GET' && path[2]==='presets') return Response.json(await listInvitePresets(user));
+      if (method==='POST' && path[2]==='presets') return Response.json(await saveInvitePreset(user,await readBody(request)));
+      if (method==='GET' && path[2]==='preset-preview') return Response.json(await previewJellyfinDefaults(user,url.searchParams.get('connectionId')??'',url.searchParams.get('sourceId')??''));
+      if (method==='POST' && path[2]==='grant' && path[3]) return Response.json(await memberInviteGrant(user,path[3],await readBody(request)));
+      if (method==='GET' && path[3]==='claims') return Response.json(await inviteClaims(user,path[2],url.searchParams.get('before')));
+      if (method==='POST' && path[3]==='regenerate') return Response.json(await regenerateInvite(user,path[2]));
+      if (method==='GET' && path.length===2) return Response.json(await listInvites(user,url.searchParams));
+      if (method==='POST' && path.length===2) return Response.json(await createInvite(user,await readBody(request)));
+      if (method==='DELETE' && path.length===3) {await revokeInvite(user,uuid(path[2]));return Response.json({revoked:true});}
+    }
+    if(path[0]==='member-invites') {
+      await requireFeature(uid,'social');
+      if(method==='GET'&&path.length===1)return Response.json(await memberInviteOverview(user,url.searchParams));
+      if(method==='POST'&&path.length===1)return Response.json(await issueMemberInvite(user,await readBody(request)));
+      if(method==='POST'&&path[1]==='request')return Response.json(await requestMemberInvite(user,await readBody(request)));
+      if(method==='DELETE'&&path.length===2){await revokeInvite(user,path[1],true);return Response.json({revoked:true});}
     }
     if(path[0]==='sharing') {
       if(path.length===1&&method==='GET')return Response.json(url.searchParams.get('active')==='true'?await listActiveShares(user):await listShares(user));
@@ -253,7 +275,7 @@ export const handler: RequestHandler = async (event) => {
       return fallbackArtwork(uuid(path[2]), text(path[3]));
     }
     if (path[0] === 'artwork' && method === 'GET')
-      return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
+      return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request, user.access?.libraryOnly);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request, path[0]==='profile'&&path.length===1&&method==='POST'?avatarRequestLimit:1_048_576) : {};
     const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
     if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getFeatureConfig(uid),work.category);}

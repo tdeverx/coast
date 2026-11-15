@@ -3,7 +3,6 @@ import { resolveFeatures } from '#lib/features.js';
 import {listShares} from '#lib/sharing/service.server.js';
 import {listApiTokens} from '#lib/server/public-api/tokens.server.js';
 import { collectionPreferences } from '#lib/collection/preferences.js';
-import {listInvites} from '#lib/server/auth/onboarding.js';
 import { settingsSections, administratorSettings } from '#lib/settings/sections.js';
 import type { PageServerLoad } from './$types';
 import { getPendingConflicts } from '#lib/sync/conflicts.server.js';
@@ -18,7 +17,6 @@ import {
   mediaRequests,
   media,
   providerInstances,
-  providerConnections,
   users,
 } from '#lib/server/db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -39,35 +37,28 @@ export const load = (async ({locals, params, depends, url}) => {
     }
   }
   const config = await getConfig();
+  const usersTab: 'users'|'invites'|'defaults'=section==='users' && url.searchParams.get('view')==='invites' ? 'invites' :
+    section==='users' && url.searchParams.get('view')==='defaults' ? 'defaults' : 'users';
+  const accounts=section==='users'&&usersTab==='users' ? await listUsers(locals.user,url.searchParams.get('before')) : {items:[],next:null};
+  const inviteAuthorities=section==='users'&&usersTab!=='users' ? await getSql()<{id:string;name:string}[]>`select c.id,i.name||' · '||u.username as name
+    from provider_connections c join users u on u.id=c.user_id and u.role='admin' and not u.disabled
+    join provider_instances i on i.id=c.instance_id and i.provider='jellyfin' and i.enabled
+    where c.status='connected' and c.credentials is not null order by i.name,u.username,c.id limit 40` : [];
   return {
-    section,
+    section,usersTab,accounts,inviteAuthorities,
     featureDecisions: resolveFeatures(config),
     benchmarks:section==='benchmarks'?await listBenchmarks(locals.user,Number(url.searchParams.get('page'))||1):null,
     backups: section === 'backups' ? await (await import('#lib/backups/service.server.js')).backupStatus(locals.user) : null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
-    invites: section==='users'?await listInvites(locals.user):[],
     hasLocalPassword:
       section === 'account'
         ? (
             await getSql()`SELECT password_hash IS NOT NULL AS present FROM users WHERE id = ${locals.user!.id}`
           )[0]?.present === true
         : false,
-    supportConnections:
-      section === 'users'
-        ? await getDb()
-            .select({
-              userId: providerConnections.userId,
-              provider: providerInstances.name,
-              username: providerConnections.username,
-              status: providerConnections.status,
-              updatedAt: providerConnections.updatedAt,
-            })
-            .from(providerConnections)
-            .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
-        : [],
     conflicts: section === 'pending' ? await getPendingConflicts(locals.user!.id) : [],
-    providers: await listProviders(locals.user!.id, admin),
+    providers:section==='users'?[]:await listProviders(locals.user!.id, admin),
     config: admin ? config : null,
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
@@ -90,7 +81,6 @@ export const load = (async ({locals, params, depends, url}) => {
     },
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     demand: section === 'admin' ? adminDemand(url) : null,
-    users: section === 'users' ? await listUsers(locals.user) : [],
     tasteJob:section==='jobs'?await (await import('#lib/social/taste-cache.server.js')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
     taskCommands:section==='jobs'?await listTaskCommands(locals.user):{items:[],more:false},

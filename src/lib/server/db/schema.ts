@@ -76,11 +76,16 @@ export const users = pgTable(
     email: text('email'),
     role: text('role').$type<'admin' | 'user'>().notNull().default('user'),
     settings: jsonb('settings').$type<UserSettings>().notNull().default({}),
+    accessDefaults: jsonb('access_defaults').$type<import('../../auth/invites').CoastAccess>().notNull().default({}),
+    membershipExpiresAt: timestamp('membership_expires_at', { withTimezone: true }),
+    membershipExpiredAt: timestamp('membership_expired_at', { withTimezone: true }),
     disabled: boolean('disabled').notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
     uniqueIndex('users_username_unique').on(sql`lower(${t.username})`),
+    index('users_account_order_idx').on(t.createdAt,t.id),
+    index('users_membership_due_idx').on(t.membershipExpiresAt).where(sql`${t.membershipExpiresAt} is not null and ${t.membershipExpiredAt} is null`),
     check('users_role_check', sql`${t.role} in ('admin', 'user')`),
   ]
 );
@@ -1274,19 +1279,66 @@ export const socialScrobbleDeliveries = pgTable('social_scrobble_deliveries', {
 }, t => [primaryKey({columns:[t.connectionId,t.sessionId]})]);
 
 /** Invite redemption and onboarding are server-owned, never editable user preferences. */
+export const invitePresets = pgTable('invite_presets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  defaults: jsonb('defaults').$type<import('../../auth/invites').InviteDefaults>().notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, t => [uniqueIndex('invite_presets_name_idx').on(sql`lower(${t.name})`)]);
+
 export const registrationInvites = pgTable('registration_invites', {
   id: uuid('id').primaryKey().defaultRandom(),
   tokenHash: text('token_hash').notNull().unique(),
   provisionConnectionId:uuid('provision_connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
   provisionGeneration:uuid('provision_generation'),
   provisionFolders:jsonb('provision_folders').$type<string[]>(),
+  presetId: uuid('preset_id').references(() => invitePresets.id, {onDelete:'set null'}),
+  presetName: text('preset_name'),
+  defaults: jsonb('defaults').$type<import('../../auth/invites').InviteDefaults>(),
+  label: text('label').notNull().default(''),
+  maxUses: integer('max_uses').notNull().default(1),
+  claimCount: integer('claim_count').notNull().default(0),
+  memberIssued: boolean('member_issued').notNull().default(false),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   usedBy: uuid('used_by').references(() => users.id, { onDelete: 'set null' }),
   usedAt: timestamp('used_at', { withTimezone: true }),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   createdAt: createdAt(),
-}, t => [index('registration_invite_expiry_idx').on(t.expiresAt).where(sql`${t.usedAt} is null`), index('registration_invite_revoked_idx').on(t.revokedAt).where(sql`${t.usedAt} is null and ${t.revokedAt} is not null`)]);
+}, t => [index('registration_invite_expiry_idx').on(t.expiresAt).where(sql`${t.usedAt} is null`), index('registration_invite_revoked_idx').on(t.revokedAt).where(sql`${t.usedAt} is null and ${t.revokedAt} is not null`),
+  index('registration_invite_order_idx').on(t.createdAt,t.id),
+  index('registration_invite_issuer_idx').on(t.createdBy,t.createdAt,t.id),
+  check('registration_invite_uses_check',sql`${t.claimCount} between 0 and ${t.maxUses} and ${t.maxUses} between 1 and 50`),
+]);
+export const inviteClaims = pgTable('invite_claims', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  inviteId: uuid('invite_id').notNull().references(() => registrationInvites.id,{onDelete:'cascade'}),
+  userId: uuid('user_id').unique().references(() => users.id,{onDelete:'set null'}),
+  username: text('username').notNull(),
+  addInviter: boolean('add_inviter').notNull().default(false),
+  readyAt: timestamp('ready_at',{withTimezone:true}),
+  createdAt: createdAt(),
+}, t => [index('invite_claims_invite_idx').on(t.inviteId,t.createdAt,t.id)]);
+export const memberInviteGrants = pgTable('member_invite_grants', {
+  userId: uuid('user_id').primaryKey().references(() => users.id,{onDelete:'cascade'}),
+  presetId: uuid('preset_id').notNull().references(() => invitePresets.id,{onDelete:'cascade'}),
+  quota: integer('quota').notNull().default(3),
+}, t => [check('member_invite_quota_check',sql`${t.quota} between 1 and 50`)]);
+export const memberInviteRequests = pgTable('member_invite_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id,{onDelete:'cascade'}),
+  note: text('note').notNull().default(''),
+  state: text('state').$type<'pending'|'approved'|'denied'|'issued'>().notNull().default('pending'),
+  createdAt: createdAt(),
+}, t => [index('member_invite_request_state_idx').on(t.state,t.createdAt,t.id), uniqueIndex('member_invite_request_open_idx').on(t.userId).where(sql`${t.state} in ('pending','approved')`)]);
+export const accountAudit = pgTable('account_audit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id').references(() => users.id,{onDelete:'set null'}),
+  subjectId: uuid('subject_id'),
+  event: text('event').notNull(),
+  createdAt: createdAt(),
+}, t => [index('account_audit_order_idx').on(t.createdAt,t.id), index('account_audit_subject_idx').on(t.subjectId,t.createdAt,t.id)]);
 export const userOnboarding = pgTable('user_onboarding', {
   requiredProvider: text('required_provider').$type<'jellyfin'|'trakt'|'either'|'none'>().notNull().default('jellyfin'),
   importsStartedAt: timestamp('imports_started_at', {withTimezone:true}),
@@ -1381,6 +1433,9 @@ export const onboardingProvisioning = pgTable('onboarding_provisioning',{
  connectionId:uuid('connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
  accountGeneration:uuid('account_generation').notNull(),folders:jsonb('folders').$type<string[]>().notNull(),
  remoteId:text('remote_id'),state:text('state').notNull().default('pending'),updatedAt:updatedAt(),
+ lifecycle: text('lifecycle').notNull().default(''),
+ accessAfter: timestamp('access_after',{withTimezone:true}),
+ activeDefaults: jsonb('active_defaults').$type<import('../../auth/invites').InviteDefaults>(),
 });
 
 export const mediaPlans = pgTable('media_plans',{

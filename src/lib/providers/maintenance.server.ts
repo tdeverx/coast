@@ -1,4 +1,5 @@
 import { pruneUnusedAvatars, stopAvatarSweep } from '#lib/core/profile/avatar-storage.server.js';
+import { expireMemberships } from '#lib/server/auth/account-management.server.js';
 import { pruneTransientRecords } from '#lib/server/storage/retention.server.js';
 import {expireSharedViewers} from '#lib/sharing/leases.server.js';
 import { serviceTasks, maintenanceKinds } from './tasks';
@@ -304,6 +305,7 @@ async function maintenanceTick() {
   }).finally(()=>{sharedCleanup=null;});
   if((await getConfig()).developerMode)return;
   runAvatarCleanup();
+  await expireMemberships();
   await scheduleProviderMaintenance();
   if (Date.now() < retentionDue) return;
   const result = await pruneTransientRecords();

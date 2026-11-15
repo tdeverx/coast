@@ -47,6 +47,11 @@ export function validateRecipeDispatches(recipes: readonly ReferenceRecipe[], di
 
 /** Internal renderers are demonstrated through their owner, not separate public widgets. */
 export const internalReferenceOwners: Record<string, InternalOwner> = {
+  'src/lib/auth/ui/AccountAccessControls.svelte': {owner:'src/routes/settings/[[section]]/+page.svelte',reason:'User management owns member detail and preset previews.'},
+  'src/lib/auth/ui/AdminInviteSettings.svelte': {owner:'src/routes/settings/[[section]]/+page.svelte',reason:'The Users section owns the invitation and defaults tabs.'},
+  'src/lib/auth/ui/InviteDefaultsFields.svelte': {owner:'src/lib/auth/ui/AdminInviteSettings.svelte',reason:'Shared fields for preset editing and per-invite overrides.'},
+  'src/lib/auth/ui/InviteSecret.svelte': {owner:'src/lib/auth/ui/AdminInviteSettings.svelte',reason:'One-time output for issued invites.'},
+  'src/lib/auth/ui/MemberInvites.svelte': {owner:'src/lib/ui/components/FriendsPanel.svelte',reason:'Friends owns the member invitation tab.'},
   'src/lib/ui/task-control/Recovery.svelte': {owner:'src/lib/ui/components/JobsSettings.svelte',reason:'Recoverable bulk commands are owned by the existing Jobs settings surface.'},
   'src/lib/ui/charts/ChartView.svelte': { owner: 'src/routes/ui-preview/charts/ChartGallery.svelte', reason: 'The Charts section owns the selected chart renderer.' },
   'src/lib/ui/charts/StandardChart.svelte': { owner: 'src/lib/ui/charts/ChartView.svelte', reason: 'Demand-loaded standard chart implementation.' },

@@ -4,6 +4,7 @@
  import Dialog from './Dialog.svelte';
  import Heading from './Heading.svelte';
  import Button from './Button.svelte';
+ import MemberInvites from '#lib/auth/ui/MemberInvites.svelte';
  import FriendRoster from './FriendRoster.svelte';
  import PartyCard from './PartyCard.svelte';
  import ActivityHeader from './ActivityHeader.svelte';
@@ -27,7 +28,8 @@
  const clock=useClock('second',()=>!preview&&open&&segment==='party');
  import type {FriendEntry} from '#lib/social/model.js';
  let {open=$bindable(false),onclose,initialView='accepted'}:{open:boolean;onclose?:()=>void;initialView?:'accepted'|'pending'|'party'}=$props();
- let segment=$state<string>(untrack(()=>initialView)),number=$state(1),username=$state(''),busy=$state(false),failure=$state('');
+ const restricted=$derived(page.data.user?.access?.libraryOnly===true);
+ let segment=$state<string>(untrack(()=>restricted?'invites':initialView)),number=$state(1),username=$state(''),busy=$state(false),failure=$state('');
  // Preview panels never observe the signed-in user's party or call its controller.
  const activeRoom=$derived(preview?null:syncedPlayer.room);
  const partyBusy=$derived(!preview&&syncedPlayer.busy);
@@ -57,23 +59,24 @@
   });
   if(result)loadedKey=key;
  }
- $effect(()=>{if(open&&segment!=='party'){segment;number;void load();}});
- $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!roster.busy&&!busy){if(segment==='party')void loadParties();else void load();}},30000);return()=>clearInterval(timer);});
+ $effect(()=>{if(open&&segment!=='party'&&segment!=='invites'){segment;number;void load();}});
+ $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!roster.busy&&!busy){if(segment==='party')void loadParties();else if(segment!=='invites')void load();}},30000);return()=>clearInterval(timer);});
  onDestroy(()=>{roster.dispose();parties.dispose();});
  async function act(path:string,body:unknown){
   if(busy)return;busy=true;failure='';
   try{await change(path,body);if(path==='social/friends'){username='';segment='pending';number=1;}if(segment==='party')await loadParties();else await load();}
   catch(error){failure=message(error);}finally{busy=false;}
  }
-  reportFailure(()=>failure || (open ? segment==='party' ? parties.error : roster.error : ''), ()=>segment==='party'?loadParties():load());
+  reportFailure(()=>failure || (open ? segment==='party' ? parties.error : segment==='invites' ? '' : roster.error : ''), ()=>segment==='party'?loadParties():load());
 </script>
 {#snippet activeParty()}<SyncedControls inline embedded/>{/snippet}
 <Dialog bind:open title="Friends" popover={true} anchor={preview?undefined:"#friends-trigger"} {onclose} footer={activeRoom?activeParty:undefined}>
- {#snippet heading()}<Heading title="Friends">{#snippet heading()}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/snippet}
-  {#snippet actions()}<div class="header-actions"><Button menu label="Friend options"><Button item icon="refresh" text="Refresh" disabled={busy||roster.busy} keepOpen={false} onclick={()=>void (segment==='party'?loadParties():load())}/><Button item icon="settings" href="/settings/privacy">Privacy & social</Button></Button><Button size="icon" icon="close" label="Close friends" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}
+ {#snippet heading()}<Heading title="Friends">{#snippet heading()}<SegmentedControl label="Friends view" value={segment} options={restricted ? [{value:'invites',label:'Invite people'}] : [{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[]),...(!preview?[{value:'invites',label:'Invite people'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/snippet}
+  {#snippet actions()}<div class="header-actions"><Button menu label="Friend options"><Button item icon="refresh" text="Refresh" disabled={busy||roster.busy||segment==='invites'} keepOpen={false} onclick={()=>void (segment==='party'?loadParties():load())}/><Button item icon="settings" href="/settings/privacy">Privacy & social</Button></Button><Button size="icon" icon="close" label="Close friends" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}
  </Heading>{/snippet}
 
- {#if segment==='party'}
+ {#if open&&segment==='invites'}<MemberInvites />
+ {:else if segment==='party'}
   <div class="party-list">
 
    {#each parties.data.filter(room=>room.id!==activeRoom?.id) as room (room.id)}

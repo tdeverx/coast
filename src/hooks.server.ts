@@ -1,6 +1,7 @@
 import { redirect, error, isRedirect, isHttpError } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { getFeatureConfig } from '#lib/server/features.js';
+import {managedRoute} from '#lib/server/auth/managed-library.server.js';
 import {onboardingPending} from '#lib/server/auth/onboarding.js';
 import {isPublicReadPath} from '#lib/social/public.server.js';
 import { context, logDiagnostic, classifyFailure, diagnosticStore } from '#lib/server/diagnostics/index.js';
@@ -51,6 +52,10 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     event.locals.expiresAt = session.expiresAt;
     if (session.token) setSessionCookie(event.cookies, session.token, session.expiresAt, event.url);
   }
+  if (event.locals.user?.access?.libraryOnly && !managedRoute(event.url.pathname,event.request.method)) {
+    if (event.url.pathname.startsWith('/api/')) return Response.json({error:'This route is unavailable to Library-only accounts.'},{status:403});
+    redirect(303,'/library');
+  }
   if (event.url.pathname === '/share' || event.url.pathname.startsWith('/share/') || event.url.pathname.startsWith('/api/share/')) {
     const response=await resolve(event);
     response.headers.set('Cache-Control','private, no-store');
@@ -62,7 +67,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   }
   event.locals.setup = await setupRequired();
   const config = await getFeatureConfig(event.locals.user?.id ?? null);
-  const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
+  const isPublic = ['/login', '/setup', '/register', '/invite'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
       return Response.json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });

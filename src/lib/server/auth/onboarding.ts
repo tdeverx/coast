@@ -1,71 +1,96 @@
-import { provisioningAuthority } from '#lib/providers/jellyfin/provisioning.server.js';
+import { provisionOnboarding } from '#lib/providers/jellyfin/provisioning.server.js';
 import * as v from 'valibot';
 import { getSql } from '../db';
 import { registrationSchema } from '#lib/auth/registration.js';
 import { getConfig } from '../config';
 import { startTraktDevice, finishTraktDevice } from '#lib/providers/trakt/connection.server.js';
-import { hashToken, randomToken, newSession, requireAdmin, checkLoginRate, type SessionUser } from './index';
+import { hashToken, newSession, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { libraryScanProgress } from '#lib/sync/jellyfin.server.js';
 import { jellyfinImportStage } from '#lib/sync/jellyfin-progress.js';
 import { enqueueAction } from '../queue';
+import { findRedeemableInvite, recordAccountEvent } from './invites.server';
+import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
+import { addInviterFriend } from '#lib/social/service.server.js';
 
-export async function listInvites(actor: SessionUser | null) {
-  requireAdmin(actor);
-  return getSql()`SELECT i.id, i.provision_connection_id AS "provisionConnectionId", i.expires_at AS "expiresAt", i.used_at AS "usedAt", i.revoked_at AS "revokedAt", u.username FROM registration_invites i LEFT JOIN users u ON u.id=i.used_by ORDER BY i.created_at DESC LIMIT 100`;
-}
-export async function createInvite(actor: SessionUser | null, input: unknown) {
-  const admin = requireAdmin(actor);
-  const { days,provisionConnectionId,folders } = v.parse(v.strictObject({ days: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30)),provisionConnectionId:v.optional(v.pipe(v.string(),v.uuid())),folders:v.optional(v.pipe(v.array(v.pipe(v.string(),v.regex(/^(?:[a-f0-9]{32}|[a-f0-9-]{36})$/i))),v.maxLength(100)),[]) }), input);
-  const authority=provisionConnectionId?await provisioningAuthority(admin.id,provisionConnectionId):null;
-  if(authority){const known=await authority.adapter.virtualFolders();if(!folders.length||folders.some(id=>!known.some(folder=>folder.ItemId===id)))throw new AppError(400,'Select at least one existing Jellyfin library for the invitation.');}
-
-  const code = randomToken();
-  const expiresAt = new Date(Date.now() + days * 86400000);
-  const [row] = await getSql()`INSERT INTO registration_invites (token_hash,created_by,expires_at,provision_connection_id,provision_generation,provision_folders) VALUES (${await hashToken(code)},${admin.id},${expiresAt},${provisionConnectionId??null},${authority?.connection.accountGeneration??null},${authority?JSON.stringify(folders):null}::text::jsonb) RETURNING id`;
-  return { id: row.id, code, expiresAt };
-}
-export async function revokeInvite(actor: SessionUser | null, id: string) {
-  requireAdmin(actor);
-  await getSql()`UPDATE registration_invites SET revoked_at=NOW() WHERE id=${v.parse(v.pipe(v.string(),v.uuid()),id)} AND used_at IS NULL`;
-}
-export async function registerAccount(input: unknown, client: string) {
+export async function registerAccount(input: unknown, client: string, inviteOnly = false) {
   checkLoginRate(`register:${client}`);
   const data = v.parse(registrationSchema, input);
-  const config=await getConfig();
-  if(config.registrationMode==='invite'&&!/^[A-Za-z0-9_-]{43}$/.test(data.code))throw new AppError(400,'Enter a valid invite code.');
-  const tokenHash = await hashToken(data.code);
-  const passwordHash = await Bun.password.hash(data.password, { algorithm: 'argon2id', memoryCost: 19456, timeCost: 2 });
+  const choices=v.parse(v.object({addInviter:v.optional(v.literal('on')),existingJellyfin:v.optional(v.literal('on'))}),input);
+  const config = await getConfig();
+  if ((inviteOnly || config.registrationMode === 'invite' || data.code) && !/^[A-Za-z0-9_-]{43}$/.test(data.code))
+    throw new AppError(400,'Enter a valid invite code.');
+  const tokenHash = data.code ? await hashToken(data.code) : '';
+  const db = getSql();
+  if (data.code && !await findRedeemableInvite(db,tokenHash)) throw new AppError(400,'This invite code has expired, was used, or is invalid.');
+  const passwordHash = await Bun.password.hash(data.password, { algorithm:'argon2id',memoryCost:19456,timeCost:2 });
+  let registered: {user:SessionUser;provision:boolean};
   try {
-    const user = await getSql().begin(async sql => {
-      const current=await getConfig(sql);
-      const [invite]=data.code?await sql`SELECT * FROM registration_invites WHERE token_hash=${tokenHash} AND used_at IS NULL AND revoked_at IS NULL AND expires_at>NOW() FOR UPDATE`:[];
-      if((data.code||current.registrationMode==='invite')&&!invite)throw new AppError(400,'This invite code has expired, was used, or is invalid.');
-      const [row] = await sql`INSERT INTO users (username,password_hash,role,settings) VALUES (${data.username},${passwordHash},'user',${{profile:{displayName:data.displayName}}}::jsonb) RETURNING id,username,email,role,settings`;
-      await sql`INSERT INTO user_onboarding (user_id,required_provider) VALUES (${row.id},${invite?.provision_generation?'jellyfin':current.registrationProvider})`;
-      if(invite?.provision_generation){if(!invite.provision_connection_id)throw new AppError(409,'This invitation’s provisioning account is unavailable.');await sql`insert into onboarding_provisioning(user_id,connection_id,account_generation,folders) values(${row.id},${invite.provision_connection_id},${invite.provision_generation},${JSON.stringify(invite.provision_folders)}::text::jsonb)`;}
-      if(invite)await sql`UPDATE registration_invites SET used_by=${row.id},used_at=NOW() WHERE id=${invite.id}`;
-      return row as SessionUser;
+    registered = await db.begin(async sql => {
+      const current = await getConfig(sql);
+      const invite = data.code ? await findRedeemableInvite(sql,tokenHash,true) : undefined;
+      if ((data.code || inviteOnly || current.registrationMode === 'invite') && !invite)
+        throw new AppError(400,'This invite code has expired, was used, or is invalid.');
+      if (choices.existingJellyfin && invite?.defaults?.account !== 'choice')
+        throw new AppError(400,'This invite does not allow an existing Jellyfin account.');
+      const defaults = invite?.defaults;
+      const [row] = await sql`insert into users (username,password_hash,role,settings,access_defaults,membership_expires_at)
+        values (${data.username},${passwordHash},'user',${{...defaults?.preferences,profile:{displayName:data.displayName}}}::jsonb,
+        ${defaults?.access ?? {}}::jsonb,now()+${defaults?.membershipDays ?? null}::integer*interval '1 day')
+        returning id,username,email,role,settings,access_defaults`;
+      await sql`insert into user_onboarding(user_id,required_provider)
+        values(${row.id},${invite?.provision_generation ? 'jellyfin' : current.registrationProvider})`;
+      const provision = !!invite?.provision_generation && !choices.existingJellyfin;
+      if (provision) {
+        if (!invite?.provision_connection_id) throw new AppError(409,'This invitation’s provisioning account is unavailable.');
+        await sql`insert into onboarding_provisioning(user_id,connection_id,account_generation,folders)
+          values(${row.id},${invite.provision_connection_id},${invite.provision_generation},${invite.provision_folders}::jsonb)`;
+      }
+      if (invite) {
+        await sql`update registration_invites set claim_count=claim_count+1,used_at=coalesce(used_at,now()),used_by=coalesce(used_by,${row.id})
+          where id=${invite.id}`;
+        await sql`insert into invite_claims(invite_id,user_id,username,add_inviter)
+          values(${invite.id},${row.id},${data.username},${choices.addInviter==='on' && !!invite.inviter})`;
+        await recordAccountEvent(sql,'invite.claimed',row.id,invite.id);
+      }
+      const {access_defaults:access,...user}=row;
+      return {user:{...user,access} as SessionUser,provision};
     });
-    return newSession(user);
   } catch (cause) {
-    if ((cause as { errno?: string }).errno === '23505') throw new AppError(409, 'That username is already in use.');
+    if ((cause as { errno?: string }).errno === '23505') throw new AppError(409,'That username is already in use.');
     throw cause;
   }
+  const session = await newSession(registered.user);
+  if (registered.provision) {
+    try {
+      await provisionOnboarding(registered.user.id,data.password);
+    } catch {
+      // The account and claim are committed. Onboarding presents the stored
+      // recovery state and can accept the original password again if needed.
+    }
+  }
+  return session;
 }
+
 export async function onboardingPending(userId: string) {
   const [row] = await getSql()`SELECT user_id FROM user_onboarding WHERE user_id=${userId} AND completed_at IS NULL`;
   return !!row;
 }
-export async function onboardingServices() {
-  return getSql()`SELECT id,name FROM provider_instances WHERE provider='jellyfin' AND enabled=TRUE AND server_identity IS NOT NULL AND settings->>'approved'='true' ORDER BY name`;
+export async function onboardingServices(userId: string) {
+  return getSql()`select p.id,p.name from provider_instances p where p.provider='jellyfin' and p.enabled
+    and p.server_identity is not null and p.settings->>'approved'='true'
+    and not exists(select 1 from onboarding_provisioning job where job.user_id=${userId} and job.state<>'complete')
+    and not exists(select 1 from invite_claims c join registration_invites i on i.id=c.invite_id
+      where c.user_id=${userId} and i.provision_generation is not null and not exists(
+        select 1 from provider_connections a where a.id=i.provision_connection_id and a.instance_id=p.id and a.account_generation=i.provision_generation))
+    order by p.name`;
 }
 export async function linkOnboarding(userId: string, input: unknown) {
   if (!await onboardingPending(userId)) throw new AppError(409, 'Onboarding is already complete.');
   checkLoginRate(`onboarding:${userId}`);
   const data = v.parse(v.object({ instanceId:v.pipe(v.string(),v.uuid()),username:v.pipe(v.string(),v.minLength(1),v.maxLength(250)),password:v.pipe(v.string(),v.maxLength(4096)) }),input);
-  const instance=(await onboardingServices()).find((entry:{id:string})=>entry.id===data.instanceId);
+  const instance=(await onboardingServices(userId)).find((entry:{id:string})=>entry.id===data.instanceId);
   if(!instance)throw new AppError(403,'Choose an enabled, approved Jellyfin server.');
   const started = new Date();
   const connection = await connectJellyfin(userId,data);
@@ -124,7 +149,8 @@ function requiredConnection(required:string,jellyfin:boolean,trakt:boolean) {
 }
 async function onboardingRow(userId:string) {
  const [row]=await getSql()`select o.*,c.status as connection_status,c.account_generation as current_generation,
- t.status as trakt_status,t.account_generation as current_trakt_generation from user_onboarding o
+ t.status as trakt_status,t.account_generation as current_trakt_generation,case when i.defaults is not null then claim.id end as claim_id from user_onboarding o
+ left join invite_claims claim on claim.user_id=o.user_id left join registration_invites i on i.id=claim.invite_id
  left join provider_connections c on c.id=o.connection_id and c.user_id=o.user_id
  left join provider_connections t on t.id=o.trakt_connection_id and t.user_id=o.user_id where o.user_id=${userId}`;
  return row;
@@ -163,9 +189,16 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
  let ready=true,progress=null;
  if(row.imports_started_at){
   if(row.account_generation){
-   const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-personal' and completed_at>=${row.requested_at} and scan_id is null`;
-   const done=jf&&!!checkpoint;
-   if(!done&&jf){await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.bootstrap',payload:{},compactionKey:'jellyfin.bootstrap'});progress=await libraryScanProgress(userId,row.connection_id,new Date(row.requested_at),true);}
+   let done=jf&&await jellyfinReady(row);
+   if(!done&&jf){
+    const since=new Date(row.requested_at);
+    progress=await libraryScanProgress(userId,row.connection_id,since,true);
+    if(progress?.state==='succeeded')done=await jellyfinReady(row);
+    if(!done&&!row.claim_id&&(!progress||progress.state==='cancelled'||progress.state==='succeeded')){
+     await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.bootstrap',payload:{},compactionKey:'jellyfin.bootstrap'});
+     progress=await libraryScanProgress(userId,row.connection_id,since,true);
+    }
+   }
    jfAuthFailed=!!progress?.authenticationFailed;reconnect||=jfAuthFailed;
    const jfReconnect=!jf||jfAuthFailed;
    imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.stageProcessed??0,total:progress?.stageTotal??null,stage:done?'Complete':jellyfinImportStage(progress?.phase??'scanning'),error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
@@ -179,20 +212,42 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
     const id=row.import_jobs?.[kind];
     const [job]=id?await getSql()`select state,last_error,payload from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
     traktAuthFailed||=job?.payload?._jobFailure?.code==='provider.authentication';reconnect||=traktAuthFailed;
-    const done=trakt&&job?.state==='succeeded';ready&&=done;
+    const done=trakt&&job?.state==='succeeded';ready&&=row.claim_id&&row.account_generation ? !!job : done;
     imports.push({label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,stage:kind==='trakt.import'?'Importing history, progress and favourites':'Importing saved titles and lists',error:trakt?job?.last_error??null:'Reconnect Trakt to continue.'});
    }
   }
   if(ready&&requiredConnection(row.required_provider,jf,trakt)){
-   const completed=await getSql()`update user_onboarding set completed_at=now() where user_id=${userId} and completed_at is null and date_trunc('milliseconds',requested_at)=${row.requested_at} and account_generation is not distinct from ${row.account_generation}::uuid and trakt_account_generation is not distinct from ${row.trakt_account_generation}::uuid and (account_generation is null or exists(select 1 from provider_connections c where c.id=user_onboarding.connection_id and c.account_generation=user_onboarding.account_generation and c.status='connected')) and (trakt_account_generation is null or exists(select 1 from provider_connections c where c.id=user_onboarding.trakt_connection_id and c.account_generation=user_onboarding.trakt_account_generation and c.status='connected')) returning user_id`;
-   if(completed.length)return {...await onboardingStatus(userId)};
+   const outcome=await getSql().begin(async db=>{
+     const [inviter]=await db`select i.created_by from invite_claims c join registration_invites i on i.id=c.invite_id
+       where c.user_id=${userId} and c.add_inviter and c.ready_at is null`;
+     if(inviter?.created_by)for(const id of [userId,String(inviter.created_by)].sort())await lockFeaturePolicyInTransaction(db,id);
+     const completed=await db`update user_onboarding set completed_at=now() where user_id=${userId} and completed_at is null and date_trunc('milliseconds',requested_at)=${row.requested_at} and account_generation is not distinct from ${row.account_generation}::uuid and trakt_account_generation is not distinct from ${row.trakt_account_generation}::uuid and (account_generation is null or exists(select 1 from provider_connections c where c.id=user_onboarding.connection_id and c.account_generation=user_onboarding.account_generation and c.status='connected')) and (trakt_account_generation is null or exists(select 1 from provider_connections c where c.id=user_onboarding.trakt_connection_id and c.account_generation=user_onboarding.trakt_account_generation and c.status='connected')) returning user_id`;
+     if(!completed.length)return false;
+     const [claim]=await db`update invite_claims set ready_at=now() where user_id=${userId} and ready_at is null returning add_inviter,invite_id`;
+     if(claim){
+       await recordAccountEvent(db,'invite.ready',userId,claim.invite_id);
+       if(inviter?.created_by)await addInviterFriend(db,userId,inviter.created_by);
+     }
+     return true;
+   });
+   if(outcome)return onboardingStatus(userId);
   }
  }
  return {complete:false,phase:row.imports_started_at?'importing' as const:'connections' as const,progress,imports,reconnect,linked:jf&&!jfAuthFailed,traktLinked:trakt&&!traktAuthFailed,requiredProvider:row.required_provider};
 }
+async function jellyfinReady(row:Awaited<ReturnType<typeof onboardingRow>>) {
+ const [checkpoint]=row.claim_id
+   ? await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id}
+     and kind='jellyfin-seed' and cursor=${row.account_generation} and completed_at is not null`
+   : await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id}
+     and kind='jellyfin-personal' and completed_at>=${row.requested_at} and scan_id is null`;
+ return !!checkpoint;
+}
+
 export async function retryInitialImports(userId:string) {
- const row=await pendingOnboarding(userId);
+ const row=await onboardingRow(userId);
+ if(!row||row.completed_at)throw new AppError(409,'Onboarding is already complete.');
  for(const id of Object.values(row.import_jobs??{}) as string[])await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
- if(row.connection_id){const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-personal' and completed_at>=${row.requested_at} and scan_id is null`;if(!checkpoint)await retryOnboarding(userId);}
+ if(row.connection_id&&!await jellyfinReady(row))await retryOnboarding(userId);
  return onboardingStatus(userId);
 }
