@@ -149,6 +149,17 @@ run('direct access edits bind confirmation to the exact reviewed draft and recor
   expect(audit.details.access.parties).toEqual({before:null,after:false});
 });
 
+run('a preset can grant ordinary playback sharing and a reviewed access change can revoke it',async()=>{
+  const invite=await createInvite(admin,{defaults:{sharingGrant:true}});
+  const accountOwner=await registerAccount(account(invite.code,'preset-shares'),'shared-grant',true);
+  expect(accountOwner.user.settings.allowPlaybackSharing).toBe(true);
+  const defaults={access:{sharing:false as const}};
+  const review=await changeMemberAccess(admin,{users:[accountOwner.user.id],defaults});
+  expect(review.changes?.[0].sharing).toEqual({before:true,after:false});
+  await changeMemberAccess(admin,{users:[accountOwner.user.id],defaults,confirm:review.versions});
+  expect((await accountDetails(admin,accountOwner.user.id)).sharingGranted).toBe(false);
+});
+
 run('completed onboarding shows and retries only the member’s current initial imports',async()=>{
   const db=getSql(),user=crypto.randomUUID(),source=crypto.randomUUID(),connection=crypto.randomUUID(),generation=crypto.randomUUID();
   const job=crypto.randomUUID(),other=crypto.randomUUID();

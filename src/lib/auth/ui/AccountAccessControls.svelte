@@ -29,6 +29,7 @@
     if(!target)return;
     draft=structuredClone($state.snapshot(target.defaults??emptyInviteDefaults));
     draft.access=structuredClone($state.snapshot(target.access));
+    draft.sharingGrant=target.sharingGranted&&target.access.sharing!==false&&!target.access.libraryOnly ? true : undefined;
     if(target.provisioning==='complete'&&target.authority){
       draft.account='managed';
       draft.connectionId=target.authority;
@@ -163,7 +164,7 @@
         <ul>
           {#each preview.changes as item (item.id)}
             <li><strong>{item.username}</strong>
-              {@render changesList(item.before,item.after)}
+              {@render changesList({...item.before,'Playback sharing grant':item.sharing.before},{...item.after,'Playback sharing grant':item.sharing.after})}
               {#if item.jellyfin}
                 {@render changesList({...item.jellyfin.before,Libraries:item.jellyfin.foldersBefore},{...item.jellyfin.after,Libraries:item.jellyfin.foldersAfter})}
                 {@render changesList(item.jellyfin.preferencesBefore,item.jellyfin.preferencesAfter)}

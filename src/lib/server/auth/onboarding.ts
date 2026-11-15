@@ -37,7 +37,7 @@ export async function registerAccount(input: unknown, client: string, inviteOnly
         throw new AppError(400,'This invite does not allow an existing Jellyfin account.');
       const defaults = invite?.defaults ? v.parse(inviteDefaultsSchema,invite.defaults) : null;
       const [row] = await sql`insert into users (username,password_hash,role,settings,access_defaults,membership_expires_at)
-        values (${data.username},${passwordHash},'user',${{...defaults?.preferences,profile:{displayName:data.displayName}}}::jsonb,
+        values (${data.username},${passwordHash},'user',${{...defaults?.preferences,...defaults?.sharingGrant&&{allowPlaybackSharing:true},profile:{displayName:data.displayName}}}::jsonb,
         ${defaults?.access ?? {}}::jsonb,now()+${defaults?.membershipDays ?? null}::integer*interval '1 day')
         returning id,username,email,role,settings,access_defaults`;
       await sql`insert into user_onboarding(user_id,required_provider)

@@ -15,7 +15,7 @@
   const playbackFlags=Object.entries(jellyfinPlaybackFlags) as [keyof typeof jellyfinPlaybackFlags,string][];
   const permissionFlags=Object.entries(jellyfinPermissionFlags) as [keyof typeof jellyfinPermissionFlags,string][];
   const preferenceFlags=Object.entries(jellyfinPreferenceFlags) as [keyof typeof jellyfinPreferenceFlags,string][];
-  const capabilities=[['requests','Requests'],['sharing','Playback sharing'],['social','Social features'],['parties','Parties']] as const;
+  const capabilities=[['requests','Requests'],['social','Social features'],['parties','Parties']] as const;
   const policyLists=[['BlockedMediaFolders','Blocked library IDs'],['EnabledDevices','Allowed device IDs'],
     ['EnabledChannels','Allowed Live TV channel IDs'],['BlockedChannels','Blocked Live TV channel IDs'],
     ['EnableContentDeletionFromFolders','Libraries where deletion is allowed (IDs)']] as const;
@@ -27,6 +27,9 @@
   const list=(value:string)=>value.split(',').map(item=>item.trim()).filter(Boolean);
   const checkboxValue=(value:string)=>value===''?undefined:value==='true';
   const restricted=$derived(defaults.access.libraryOnly||jellyfinHasFamilyLimits(defaults.jellyfin));
+  $effect(()=>{
+    if(restricted&&defaults.sharingGrant)delete defaults.sharingGrant;
+  });
   const schedule = $derived(defaults.jellyfin.AccessSchedules ?? []);
   $effect(()=>{
     const connection=defaults.account!=='coast' && defaults.connectionId;
@@ -170,6 +173,16 @@
 {/if}
 <fieldset class="stack">
   <legend>Coast permissions</legend>
+  <label class="field">Coast playback sharing<select disabled={restricted} value={defaults.access.sharing===false?'block':defaults.sharingGrant?'grant':''}
+    onchange={event=>{
+      const choice=event.currentTarget.value;
+      if(choice==='block')defaults.access.sharing=false;
+      else delete defaults.access.sharing;
+      if(choice==='grant')defaults.sharingGrant=true;
+      else delete defaults.sharingGrant;
+    }}>
+    <option value="">Use account permission</option><option value="grant">Grant sharing</option><option value="block">Block sharing</option>
+  </select></label>
   {#each capabilities as [key,label] (key)}
     <label class="row"><input type="checkbox" checked={defaults.access[key]===false} disabled={restricted && key!=='social'}
       onchange={event=>{if(event.currentTarget.checked)defaults.access[key]=false;else delete defaults.access[key];}} /> Block {label.toLowerCase()}</label>

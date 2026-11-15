@@ -40,14 +40,26 @@ async function queueRemote(tx:Tx,target:Remote,operation:RemoteOperation,reason:
     compactionKey:'member-policy:'+target.user_id});
 }
 
+function writeAccess(tx:Tx,userId:string,access:CoastAccess,sharingGrant:boolean|null) {
+  return tx.execute(sql`update users set access_defaults=${access}::jsonb,settings=case
+    when ${sharingGrant}::boolean is null then settings
+    else jsonb_set(settings,'{allowPlaybackSharing}',to_jsonb(${sharingGrant}::boolean)) end where id=${userId}`);
+}
+
+function shareGrant(defaults:InviteDefaults) {
+  if(defaults.access.sharing===false)return false;
+  return defaults.sharingGrant??null;
+}
+
 export async function accountDetails(actor:SessionUser|null,userId:string) {
   requireAdmin(actor);
   const db = getSql();
   const [data]=await db<{
     id:string;username:string;role:'admin'|'user';disabled:boolean;access:CoastAccess;expiresAt:Date|null;expired:boolean;provisioning:string|null;
     remote:string|null;remoteState:string|null;setupStarted:Date|null;readyAt:Date|null;inviter:string|null;lastActiveAt:Date|null;
-    memberPreset:string|null;quota:number|null;remoteFailure:boolean;source:string;defaults:InviteDefaults|null;authority:string|null;authorityName:string|null;presetName:string|null;
+    memberPreset:string|null;quota:number|null;remoteFailure:boolean;source:string;defaults:InviteDefaults|null;authority:string|null;authorityName:string|null;presetName:string|null;sharingGranted:boolean;
   }[]>`select u.id,u.username,u.role,u.disabled,u.access_defaults as access,u.membership_expires_at as "expiresAt",
+    coalesce(u.settings->>'allowPlaybackSharing'='true',false) as "sharingGranted",
     coalesce(u.membership_expires_at<=now(),false) as expired,
     p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",p.active_defaults as defaults,p.connection_id as authority,server.name as "authorityName",i.preset_name as "presetName",o.requested_at as "setupStarted",o.completed_at as "readyAt",
     issuer.username as inviter,seen.active_at as "lastActiveAt",g.preset_id as "memberPreset",g.quota,
@@ -188,7 +200,7 @@ export async function executeMemberPolicy(job:OutboxAction) {
       where user_id=${userId} and xmin::text=${version} returning user_id`);
     if(!rows.length)return;
     if (operation==='apply' && defaults) {
-      await tx.execute(sql`update users set access_defaults=${defaults.access}::jsonb where id=${userId}`);
+      await writeAccess(tx,userId,defaults.access,shareGrant(defaults));
       const [member]=await tx.execute<{id:string}>(sql`select c.id from provider_connections c join provider_connections a on a.instance_id=c.instance_id
         where a.id=${job.connectionId} and c.user_id=${userId} and c.status='connected' limit 1`);
       if(member && lifecycle==='active')await enqueueInTransaction(tx,{userId,connectionId:member.id,kind:'jellyfin.sync',
@@ -253,9 +265,9 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
     if(input.presetId&&!preset)throw new AppError(404,'Preset not found.');
     const defaults=input.defaults??v.parse(inviteDefaultsSchema,preset.defaults);
     const revision=draftVersion??preset.version;
-    const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null}>(sql`
+    const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null;sharing_granted:boolean}>(sql`
       select u.id,u.username,u.access_defaults as access,concat(u.xmin::text,'/',p.xmin::text,'/',${revision}::text) as version,
-       p.connection_id as authority,p.lifecycle,coalesce(p.state='complete',false) as managed,p.active_defaults as current
+       p.connection_id as authority,p.lifecycle,coalesce(u.settings->>'allowPlaybackSharing'='true',false) as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
       from users u left join onboarding_provisioning p on p.user_id=u.id
       where u.id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) and u.role='user'
       order by u.id ${input.confirm ? sql`for no key update of u` : sql``}`);
@@ -265,11 +277,15 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
       throw new AppError(409,'Select managed accounts on the Jellyfin authority used by the preset.');
     if(!provider && targets.some(item=>item.lifecycle==='apply-pending'))
       throw new AppError(409,'Wait for the current Jellyfin access change before editing Coast permissions.');
+    if(defaults.sharingGrant&&!provider&&targets.some(item=>item.current?.access.libraryOnly))
+      throw new AppError(409,'This account’s Jellyfin restrictions block playback sharing.');
+    const grant=shareGrant(defaults);
     const versions=Object.fromEntries(targets.map(item=>[item.id,item.version]));
     const changes=targets.map(item=>{
       // A Coast-only edit cannot lift the restrictions of the applied Jellyfin policy.
       const after=!provider && item.current?.access.libraryOnly ? {...defaults.access,libraryOnly:true} : defaults.access;
-      return {id:item.id,username:item.username,before:item.access,after,jellyfin:provider ? {
+      return {id:item.id,username:item.username,before:item.access,after,
+        sharing:{before:item.sharing_granted,after:grant??item.sharing_granted},jellyfin:provider ? {
         before:item.current?.jellyfin??{},after:defaults.jellyfin,foldersBefore:item.current?.folders??[],foldersAfter:defaults.folders,
         preferencesBefore:item.current?.jellyfinConfiguration??{},preferencesAfter:defaults.jellyfinConfiguration??{},
       } : null};
@@ -282,13 +298,13 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
         // Keep all existing restrictions until Jellyfin verifies the requested policy.
         const fenced:CoastAccess={...item.before,...item.after};
         if(item.before.libraryOnly||item.after.libraryOnly)fenced.libraryOnly=true;
-        await tx.execute(sql`update users set access_defaults=${fenced}::jsonb where id=${item.id}`);
+        await writeAccess(tx,item.id,fenced,grant===false ? false : null);
         const [remote]=await remoteInTransaction(tx,item.id);
         await queueRemote(tx,remote,'apply','access',defaults);
       } else {
-        await tx.execute(sql`update users set access_defaults=${item.after}::jsonb where id=${item.id}`);
+        await writeAccess(tx,item.id,item.after,grant);
       }
-      const changesForAudit={preset:preset?.name??null,access:describeChanges(item.before,item.after),
+      const changesForAudit={preset:preset?.name??null,access:describeChanges({...item.before,sharingGrant:item.sharing.before},{...item.after,sharingGrant:item.sharing.after}),
         ...item.jellyfin && {
           jellyfin:describeChanges({...item.jellyfin.before,EnabledFolders:item.jellyfin.foldersBefore},
             {...item.jellyfin.after,EnabledFolders:item.jellyfin.foldersAfter}),

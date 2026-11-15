@@ -27,6 +27,7 @@ export const inviteDefaultsSchema = v.pipe(v.strictObject({
     catch {return false;}
   },'Use a time zone such as Europe/London.'))),
   access: v.optional(accessSchema, {}),
+  sharingGrant: v.optional(v.literal(true)),
   preferences: v.optional(v.strictObject({
     theme: v.optional(v.picklist(['dark', 'light', 'system'])),
     originalTitles: v.optional(v.boolean()),
@@ -43,6 +44,8 @@ export const inviteDefaultsSchema = v.pipe(v.strictObject({
     || input.jellyfin.EnableContentDeletion || input.jellyfin.EnableContentDeletionFromFolders?.length)) return false;
   return input.account === 'coast' || !!input.connectionId && (input.folders.length > 0 || input.jellyfin.EnableAllFolders === true);
 }, 'Choose a Jellyfin administrator and libraries. Restricted accounts need specific libraries and cannot delete media.'),
+v.check(input => !input.sharingGrant || !(input.access.sharing===false || input.access.libraryOnly || jellyfinHasFamilyLimits(input.jellyfin)),
+  'Playback sharing requires a profile that allows sharing.'),
 v.check(input => !(input.jellyfin.AccessSchedules?.length && !input.jellyfinTimeZone), 'Enter the Jellyfin server time zone for access windows.'),
 v.transform(input => {
   if (jellyfinHasFamilyLimits(input.jellyfin)) input.access.libraryOnly = true;
