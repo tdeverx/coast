@@ -44,13 +44,26 @@ export async function startCheckin(userId:string,raw:unknown) {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   await requireFeatureInTransaction(tx,userId,'presence');
   await requireFeatureInTransaction(tx,userId,'screen');
-  const [work]=await tx.execute<{runtime:number|null;kind:string}>(sql`select kind,runtime_minutes as runtime from media where id=${workId}`);
-  if(!work||!['movie','episode'].includes(work.kind)||!work.runtime||work.runtime<=0)throw new AppError(400,'Check-ins need a movie or episode with a known runtime.');
+  const [work]=await tx.execute<{duration:number|null}>(sql`
+   select coalesce(
+    nullif(greatest(m.runtime_minutes,0),0)::double precision * 60,
+    nullif(greatest(e.runtime_minutes,0),0)::double precision * 60,
+    (select a.duration_seconds from availability a
+     join provider_connections c on c.id=a.connection_id and c.user_id=a.user_id and c.status='connected'
+     join provider_instances i on i.id=c.instance_id and i.enabled and i.provider='jellyfin'
+     where a.user_id=${userId} and a.media_id=m.id and a.state='available' and a.duration_seconds>0 and a.duration_seconds<'Infinity'::real
+     order by a.verified_at desc,a.id limit 1),
+    nullif(greatest(series.runtime_minutes,0),0)::double precision * 60
+   ) as duration
+   from media m left join episodes e on e.media_id=m.id left join media series on series.id=e.show_id
+   where m.id=${workId} and m.kind in ('movie','episode')
+  `);
+  if(!work?.duration||!Number.isFinite(work.duration))throw new AppError(400,'Coast could not find a runtime for this movie or episode.');
   const [playing]=await tx.execute(sql`select id from playback_sessions where share_id is null and user_id=${userId} and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'`);
   if(playing)throw new AppError(409,'Stop playback before checking in.');
   const [current]=await tx.select().from(socialCheckins).where(and(eq(socialCheckins.userId,userId),eq(socialCheckins.state,'active'))).for('update');
   if(current){if(current.workId===workId)return current;throw new AppError(409,'Cancel your current check-in first.');}
-  const [row]=await tx.insert(socialCheckins).values({userId,workId,expiresAt:new Date(Date.now()+work.runtime*60000)}).returning();
+  const [row]=await tx.insert(socialCheckins).values({userId,workId,expiresAt:new Date(Date.now()+work.duration*1000)}).returning();
   await queueCheckin(tx,userId,row.id);return row;
  });
 }

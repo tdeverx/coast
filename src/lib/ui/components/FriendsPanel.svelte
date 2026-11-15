@@ -39,6 +39,7 @@
  $effect(()=>{if(open&&segment==='party'){partyId;void loadParties();}});
  const roster=createResource<FriendEntry[]>([]);
  let loadedKey=$state('');
+ const rosterLoading=$derived(open&&loadedKey!==`${segment}:${number}`&&!roster.error);
  async function load(){
   const key=`${segment}:${number}`;
   const result=await roster.load(async signal=>{
@@ -89,7 +90,20 @@
   </div>
  {:else}
  {#if segment==='pending'}<form class="request-form" onsubmit={event=>{event.preventDefault();void act('social/friends',{username});}}><label class="field">Add by username<input bind:value={username} required maxlength="100" autocomplete="off"/></label><Button type="submit" disabled={busy||!username.trim()}>Send request</Button></form>{/if}
- {#if roster.busy&&loadedKey!==`${segment}:${number}`}<div class="loading" aria-label="Loading friends">{#each [0,1,2] as item (item)}<div class="skeleton"></div>{/each}</div>
+ {#if rosterLoading}
+  <div class="loading">
+   <span class="sr-only" role="status">{segment==='pending'?'Loading friend requests…':'Loading friends…'}</span>
+   {#each [0,1,2] as item (item)}
+    <div class="friend-placeholder" aria-hidden="true">
+     <span class="skeleton skeleton-circle avatar-placeholder"></span>
+     <div class="placeholder-copy">
+      <span class="skeleton skeleton-line name-placeholder"></span>
+      <span class="skeleton skeleton-line status-placeholder"></span>
+     </div>
+     <span class="skeleton skeleton-circle action-placeholder"></span>
+    </div>
+   {/each}
+  </div>
  {:else if roster.data.length&&loadedKey===`${segment}:${number}`}<FriendRoster friends={roster.data.slice(0,60)} userId={page.data.user!.id} busy={busy||partyBusy} {act} oninvite={page.data.experimentalParties?inviteFriend:undefined} inviteDisabled={preview||!canInviteToParty()}/>
  {:else if !roster.error}<EmptyState title={segment==='pending'?'No friend requests':'Add your first friend'} description={segment==='pending'?'Incoming and sent requests appear here.':'Exchange usernames in Requests to connect.'} icon="user"/>{/if}
  {#if number>1||roster.data.length>60}<div class="paging"><Button emphasis="subtle" disabled={number===1||roster.busy} onclick={()=>number--}>Previous</Button><span class="small quiet">Page {number}</span><Button emphasis="subtle" disabled={roster.data.length<=60||roster.busy} onclick={()=>number++}>Next</Button></div>{/if}
@@ -103,5 +117,10 @@
  .request-form .field{flex:1;min-width:160px;}
  .paging{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
  .loading{display:grid;gap:12px;}
- .skeleton{height:66px;border-radius:12px;}
+ .friend-placeholder{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;}
+ .placeholder-copy{display:grid;gap:4px;flex:1;min-width:0;}
+ .avatar-placeholder{width:40px;}
+ .name-placeholder{width:min(65%,160px);height:calc(var(--text-md) * var(--leading-normal));}
+ .status-placeholder{width:min(45%,110px);height:calc(var(--text-sm) * var(--leading-normal));}
+ .action-placeholder{width:var(--control-height);}
 </style>

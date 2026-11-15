@@ -238,7 +238,7 @@
       occurredAt:
         when === 'release' && !isMediaGroup(target)
           ? `${data!.releaseDate}T00:00:00.000Z`
-          : (at ?? new Date().toISOString()),
+          : at,
       rewatch: recordAgain,
       onReleaseDate: when === 'release',
       includeSpecials: when === 'date' && includeSpecials,
@@ -579,7 +579,7 @@
     {#if page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
     {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
     <WorkActions section="social" workId={active.id} disabled={busy||loading} />
-    {#if page.data.capabilities?.presence!==false && ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</Button>{/if}
+    {#if page.data.capabilities?.presence!==false && ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading} onclick={checkIn}>Check in</Button>{/if}
     <div class="menu-divider" role="separator"></div>
     {@render branch(language.mark, 'watched', 'check')}
     {@render branch('Rewatch', 'rewatch', 'refresh')}

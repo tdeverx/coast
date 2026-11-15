@@ -213,10 +213,15 @@
   />{/if}
 {/snippet}
 
+{#snippet artworkPlaceholder()}
+  {#if loading}<span class="skeleton artwork-loading" aria-hidden="true"></span>{/if}
+{/snippet}
+
 {#if artworkOnly}
   {#if artwork}
     <div class="media-card" class:loading aria-hidden="true">
       <div class="art media-surface-edge {shape}">
+        {@render artworkPlaceholder()}
         <div class="art-link">{@render artworkImage()}</div>
       </div>
     </div>
@@ -244,7 +249,7 @@
     title={artworkHint}
   >
     <span class="hover-stroke" aria-hidden="true"></span>
-    {#if loading}<span class="skeleton artwork-loading" aria-hidden="true"></span>{/if}
+    {@render artworkPlaceholder()}
     <a class="art-link" {href} aria-label={primaryMenu && !showPrimaryAction ? `Actions for ${item.title}` : item.title}
       role={primaryMenu && !showPrimaryAction ? 'button' : undefined} aria-haspopup={primaryMenu && !showPrimaryAction ? 'menu' : undefined}
       onkeydown={event => { if (primaryMenu && !showPrimaryAction && event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
@@ -390,7 +395,7 @@
     flex:none;
     min-height:0;
     aspect-ratio: 2/3;
-    border-radius: 12px;
+    border-radius: var(--media-card-radius);
     isolation: isolate;
     background: var(--surface);
     transition: transform var(--fast) var(--ease);

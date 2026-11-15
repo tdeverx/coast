@@ -38,7 +38,7 @@
     "src/lib/sharing/ShareAction.svelte": "65bb1ae28ad4603c1b492cc542526a3d3f40bc3cdb479e29328cf2eaa71deb83",
     "src/lib/providers/contracts.ts": "22291920a405d28760a350469c8377f7fb84692ef2780e81aa7748319882710b",
     "src/lib/playback/service.server.ts": "289a553bd449ae7644334c4bcdeee99c80a9904b530402f12691fd1e5f167561",
-    "src/lib/ui/work-menu/ScreenActions.svelte": "e8f35e0fdbcaaf014af3bc105dcf8f1b90a4390d097fed806e642e4d0448b57c",
+    "src/lib/ui/work-menu/ScreenActions.svelte": "7d316cda5fd8ad7dc5334e64c8ca55287784e24703ddfd07c991e8f75175938b",
     "src/routes/+layout.server.ts": "6ac055995e1f08afdfd7f475d70516713db1dea964ac2aa0a67f693e1daeb7f2",
     "src/lib/settings/sections.ts": "137b289163f03468ae47f4928f6bde09a3e02e7ef601f2ae0ed896ea7a9e8cfc",
     "src/lib/server/config.ts": "8c7d61d98bb2556b566227ba565a257b112bd0bcf13707f161394fe135abf3c8",
@@ -581,6 +581,17 @@
         }
       ],
       "note": "The additive migration and encrypted owner-only retrieval passed the isolated sharing database suite. Existing sharing and preview controls were exercised locally. Historical receipts retain their recorded source fingerprints."
+    },
+    {
+      "epoch": "screen-watch-and-check-in-2026-11-15",
+      "changes": [
+        {
+          "path": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "previousSha256": "e8f35e0fdbcaaf014af3bc105dcf8f1b90a4390d097fed806e642e4d0448b57c",
+          "currentSha256": "7d316cda5fd8ad7dc5334e64c8ca55287784e24703ddfd07c991e8f75175938b"
+        }
+      ],
+      "note": "The screen menu resolves Right now on the server and leaves runtime admission to the Check in service. Isolated tests verify file and series duration fallback. The hosted sharing receipts retain their original source fingerprints."
     }
   ]
 }

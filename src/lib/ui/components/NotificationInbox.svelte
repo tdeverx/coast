@@ -119,7 +119,25 @@
  {#snippet inboxContent()}
  {#if preview}<p class="small quiet" data-design-status="non-approved">Non-approved · Notification popover treatment</p>{/if}
 
- {#if resource.busy&&!resource.ready}<div class="loading" aria-label="Loading notifications">{#each [1,2,3,4] as _}<div class="skeleton"></div>{/each}</div>
+ {#if open&&!resource.ready&&!resource.error}
+  <div class="loading">
+   <span class="sr-only" role="status">Loading notifications…</span>
+   {#each [1,2,3] as row (row)}
+    <article aria-hidden="true">
+     <div class="notice-copy">
+      <div class="notice-heading">
+       <span class="skeleton skeleton-circle prefix-placeholder"></span>
+       <div class="notice-text placeholder-copy">
+        <span class="skeleton skeleton-line title-placeholder"></span>
+        <span class="skeleton skeleton-line details-placeholder"></span>
+       </div>
+       <span class="skeleton skeleton-line time-placeholder"></span>
+      </div>
+      <span class="skeleton skeleton-line dismiss-placeholder"></span>
+     </div>
+    </article>
+   {/each}
+  </div>
  {:else if !resource.data.items.length&&!resource.error}<EmptyState title="You’re all caught up." description={criteria.unread?'No unread notifications match these criteria.':'No notifications match these criteria.'} icon="bell" />
  {:else}<div class="notification-inbox" use:readWhenVisible={{items:resource.data.items,open}} data-design-status="non-approved" aria-busy={resource.busy}>
  {#each resource.data.items as notice(notice.id)}
@@ -181,8 +199,12 @@
 
  time{white-space:nowrap;color:var(--quiet);font-size:var(--text-sm);}
 
- .loading{display:grid;gap:12px;}
- .skeleton{height:112px;border-radius:8px;}
+ .placeholder-copy{display:grid;gap:6px;}
+ .prefix-placeholder{width:20px;}
+ .title-placeholder{width:min(55%,140px);height:calc(var(--text-md) * var(--leading-normal));}
+ .details-placeholder{width:min(90%,240px);}
+ .time-placeholder{width:48px;margin-top:4px;}
+ .dismiss-placeholder{width:64px;height:var(--control-height);border-radius:8px;justify-self:end;}
 
 
  @media(max-width:479px){.notice-row{gap:8px;}}

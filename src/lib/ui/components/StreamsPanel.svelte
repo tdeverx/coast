@@ -32,6 +32,10 @@
  const empty=(view:'now'|'history'):StreamsSnapshot=>({streams:[],issues:[],scanning:false,checkedAt:null,nextCursor:null,view});
  const resource=createResource<StreamsSnapshot>(empty('now'));
  const links=createResource<Link[]>([]);
+ const linksLoading=$derived(open&&!links.ready&&!links.error);
+ const streamViewReady=$derived(resource.ready&&resource.data.view===selectedView);
+ const streamsLoading=$derived(open&&!resource.error&&
+  (!streamViewReady||resource.data.scanning&&!resource.data.streams.length));
  const expiration=new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'});
  const visibleStreams=$derived.by(()=>{
   const shown=new Set<string>();
@@ -119,10 +123,7 @@
   const selected=selectedView;
   if(!open)return;
   const current=selected==='links'?links:resource;
-  untrack(()=>{
-   if(selected!=='links')resource.replace(empty(selected));
-   void load();
-  });
+  untrack(()=>{void load();});
   if(preview)return()=>current.cancel();
   const timer=setInterval(()=>{
    if(document.hidden||current.busy)return;
@@ -161,9 +162,19 @@
    {/snippet}
   </Heading>
  {/snippet}
- {#if selectedView==='links'}
-  <div class="streams" aria-busy={links.busy}>
-   {#if !links.ready&&links.busy}<div class="skeleton loading" role="status" aria-label="Loading shared links"></div>{/if}
+ <div class="streams" aria-busy={selectedView==='links'?links.busy||linksLoading:resource.busy||streamsLoading}>
+  {#if selectedView==='links'?linksLoading:streamsLoading}
+   <span class="sr-only" role="status">{selectedView==='links'?'Loading shared links…':'Loading server streams…'}</span>
+   {#each [0,1] as item (item)}
+    <div class="stream-placeholder" aria-hidden="true">
+     <span class="skeleton artwork-placeholder"></span>
+     <span class="skeleton skeleton-line title-placeholder"></span>
+     <span class="skeleton skeleton-line detail-placeholder"></span>
+     <span class="skeleton skeleton-line footer-placeholder"></span>
+    </div>
+   {/each}
+  {/if}
+  {#if selectedView==='links'}
    {#each links.data as link (link.id)}
     <MediaCard item={{...link.card,captionTitle:link.title,captionSubtitle:link.target==='vrchat'?'VRChat':'Website',rating:null}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} activityProgress={null}>
      {#snippet cornerMenu()}
@@ -175,11 +186,7 @@
     </MediaCard>
    {/each}
    {#if links.ready&&!links.busy&&!links.error&&!links.data.length}<div class="full"><EmptyState title="No active links" description="Links appear here until they expire or you revoke them." icon="play"/></div>{/if}
-  </div>
- {:else}
- <div class="streams" aria-busy={resource.busy}>
-
-  {#if !resource.data.streams.length&&(resource.busy||resource.data.scanning&&!resource.error)}<div class="skeleton loading" role="status" aria-label="Loading server streams"></div><div class="skeleton loading" aria-hidden="true"></div>{/if}
+  {:else if streamViewReady}
   {#each visibleStreams as {key,stream,grouped} (key)}
    <MediaCard item={{...stream.card,captionTitle:stream.title,captionActor:stream.actor,captionActivity:undefined,captionSubtitle:[view==='history'?'Ended':grouped?'Shared stream':stream.mediaType==='Book'?'Reading':stream.paused?'Paused':'Playing',stream.episode].filter(Boolean).join(' · ')}} shape="fanart" artworkStyle="thumb" wrapActivity showPrimaryAction={false} activityProgress={grouped?null:stream.progress} footer={grouped?undefined:position} cornerMenu={view==='now'&&stream.sharing?sharedMenu:undefined}>
     {#snippet activityTrailing()}{#if view==='history'}<time datetime={stream.lastSeenAt} title={`Last observed ${new Date(stream.lastSeenAt).toLocaleString()}; first observed ${new Date(stream.firstSeenAt).toLocaleString()}`}>{activityDateLabel(stream.lastSeenAt,clock.now)}</time>{/if}{/snippet}
@@ -192,10 +199,10 @@
    {/snippet}
    {#snippet position()}<span>{stream.mediaType==='Book'?readingLocationLabel(stream.reading??null):`${playbackTime(stream.position)}${stream.duration?` / ${playbackTime(stream.duration)}`:''}`}</span>{/snippet}
   {/each}
-  {#if resource.ready&&!resource.busy&&!resource.error&&!resource.data.scanning&&!resource.data.streams.length&&!resource.data.issues.length}<div class="full"><EmptyState title={view==='history'?'No recorded sessions':'No active streams'} description={view==='history'?'Sessions appear here after a successful scan confirms they have ended.':'No playback was found in the last server scan.'} icon="play"/></div>{/if}
+  {#if !streamsLoading&&!resource.error&&!resource.data.streams.length&&!resource.data.issues.length}<div class="full"><EmptyState title={view==='history'?'No recorded sessions':'No active streams'} description={view==='history'?'Sessions appear here after a successful scan confirms they have ended.':'No playback was found in the last server scan.'} icon="play"/></div>{/if}
   {#if resource.data.nextCursor}<div class="full"><Button disabled={resource.busy} onclick={()=>void load(true)}>More</Button></div>{/if}
+  {/if}
  </div>
- {/if}
 <Dialog open={!!copyUrl} title="Copy link" onclose={()=>{copyUrl='';}}>
  <label class="field">Invitation link<input readonly value={copyUrl} onfocus={event=>event.currentTarget.select()}/></label>
  {#snippet footer()}<Button onclick={()=>{copyUrl='';}}>Done</Button>{/snippet}
@@ -214,5 +221,9 @@
  .actions{display:flex;gap:8px;}
  .streams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
  .full{grid-column:1/-1;}
- .loading{height:140px;border-radius:12px;}
+ .stream-placeholder{display:grid;align-content:start;gap:8px;min-width:0;}
+ .artwork-placeholder{aspect-ratio:16/9;border-radius:var(--media-card-radius);}
+ .title-placeholder{width:75%;height:calc(var(--text-md) * var(--leading-normal));}
+ .detail-placeholder{width:55%;}
+ .footer-placeholder{width:65%;}
 </style>

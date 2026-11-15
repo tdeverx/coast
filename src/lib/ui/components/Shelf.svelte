@@ -150,7 +150,9 @@
   }));
   const displayItems = $derived(continuation.items);
   const count = $derived(panels?.length ?? itemCount ?? (children ? null : journal ? journal.runs.length : displayItems.length));
-  const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
+  const loading = $derived(count === 0 && !displayError && (displayBusy || !!adapter && !adapter.ready));
+  const gridPlaceholders = Array.from({length: 18}, (_, index) => index);
+  const rowPlaceholders = gridPlaceholders.slice(0, 12);
   const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
   // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
   const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
@@ -342,7 +344,27 @@
   >
     {#if loading || emptyRow}
     {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
-    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">{#if activitySkeleton}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if activitySkeleton}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+    {#each displayLayout === 'grid' ? gridPlaceholders : rowPlaceholders as placeholder (placeholder)}
+      <div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">
+        {#if activitySkeleton}
+          <div class="activity-placeholder">
+            <div class="skeleton skeleton-circle avatar-placeholder"></div>
+            <div class="skeleton skeleton-line name-placeholder"></div>
+            <div class="skeleton skeleton-line time-placeholder"></div>
+          </div>
+        {/if}
+        <div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div>
+        {#if rail.size !== 'panel'}
+          <div class="placeholder-caption">
+            <div class="placeholder-copy">
+              <div class="placeholder-line"><div class="skeleton skeleton-line" style:width={`${65 + placeholder % 3 * 10}%`}></div></div>
+              <div class="placeholder-line short"><div class="skeleton skeleton-line" style:width={`${35 + placeholder % 4 * 8}%`}></div></div>
+            </div>
+            {#if activitySkeleton}<div class="skeleton skeleton-circle reaction-placeholder"></div>{/if}
+          </div>
+        {/if}
+      </div>
+    {/each}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
   {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
@@ -366,14 +388,14 @@
 <style>
   .detail-section {margin-top:0;}
   .activity-placeholder{display:flex;align-items:center;gap:8px;margin-bottom:8px;height:24px;}
-  .avatar-placeholder{width:20px;height:20px;border-radius:50%;flex-shrink:0;}
-  .name-placeholder{height:12px;width:40%;border-radius:4px;}
-  .time-placeholder{height:12px;width:20%;border-radius:4px;margin-left:auto;}
+  .avatar-placeholder{width:20px;}
+  .name-placeholder{width:40%;}
+  .time-placeholder{width:20%;margin-left:auto;}
   .placeholder-caption{display:flex;align-items:center;gap:8px;margin-top:8px;}
   .placeholder-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
   .placeholder-line{display:flex;align-items:center;height:calc(var(--text-md) * var(--leading-relaxed));}
   .placeholder-line.short{height:calc(var(--text-sm) * var(--leading-relaxed));}
-  .reaction-placeholder{width:28px;height:28px;border-radius:50%;}
+  .reaction-placeholder{width:28px;}
   .content-row[hidden] { display:none; }
   .rail-shell {position:relative;}
   .mixed-shell {container-type:inline-size;}
@@ -381,10 +403,9 @@
   .empty-row :global(.skeleton) {animation:none;opacity:.5;}
   .empty-label {position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
   .empty-badge {padding:8px 16px;border-radius:999px;color:var(--ink);font-size:var(--text-md);font-weight:var(--weight-semibold);}
-  .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:8px; }
+  .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:var(--media-card-radius); }
   .artwork-placeholder.round { border-radius:50%; }
   .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
-  .text-placeholder { height:var(--text-sm);width:80%;border-radius:4px; }
   .journal { min-width:0; }
   .journal :global(.content-row:first-child) { margin-top:0; }
   .load-more { display:grid; justify-items:center; gap:10px; padding-block:18px; }
@@ -462,6 +483,9 @@
     grid-column: 1 / -1;
   }
   @media (max-width: 500px) {
+    .grid-layout .shelf-skeleton:nth-of-type(n + 7) {
+      display: none;
+    }
     .rail {
       gap: 14px;
       --row-gap: 14px;
