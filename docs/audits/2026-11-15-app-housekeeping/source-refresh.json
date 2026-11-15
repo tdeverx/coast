@@ -1,0 +1,14 @@
+{
+  "files": {
+    "src/lib/ui/components/Header.svelte": {
+      "current": "e482156e603149f7a758029a0976fc0021e5cfef035075fbc16829b6b2b34ee6",
+      "previous": "c941c142b38da363c46fcf4ccd10e862e350d3f360a45426ea4031873823e0ba"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "94ed27544f8655afda094e4e3837c080ce9f2cc8eaa920e5904d7ba36386056c",
+      "previous": "73999cb3b88e379cf6fe4a21192d9e9fca06cc0d3a8568019266fe63e7fd1ade"
+    }
+  },
+  "report": "docs/audits/2026-11-15-app-housekeeping/verification.md",
+  "reportSha256": "2f5a5195ce71de7ee9b9afe97a003ac417181d2e2aebc3962a92813d7be1954d"
+}

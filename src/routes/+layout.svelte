@@ -322,8 +322,10 @@
   <div class="page-shell" class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
     <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
   </div>
-  {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
-  {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
+  {#key `${data.user?.id}:${data.user?.access?.libraryOnly===true}`}
+    {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
+    {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
+  {/key}
   {#if streamsOpen&&StreamsPanel}
     {#key data.user?.id}<StreamsPanel open={true} isAdmin={data.user?.role==='admin'} onclose={closeStreams}/>{/key}
   {/if}

@@ -1,0 +1,8 @@
+# App housekeeping verification
+
+This pass checked the shared header and panels, account connections, guest playback, and the browse and settings entry points. The published audit receipts retain their original source epochs. The [current source refresh](source-refresh.json) records the changed owner pins.
+
+- Desktop Chromium at 1440 × 900 opened For You, Library, Discover, Search, Connections, Integrations, Jobs, Invites, and Defaults. The connected Jellyfin scan endpoint responded on Connections. Switching the Friends panel to Requests made one roster request and skipped the live-activity request. The Notifications panel displayed the original invitation-friendship message. Mobile Chromium at 390 × 844 opened and closed the Library-only Invite people panel. These flows reported zero page errors.
+- Compiled Svelte controller tests observed cancellation of both in-flight accepted-friend reads on a tab switch, cancellation of the pending roster when entering invites, and withdrawal of scan status when the Jellyfin account generation changes or disconnects. Matching connection refreshes reused the current read. Notifications and Friends remount when the viewer or Library-only access mode changes.
+- Shared-playback controller fixtures verified recovery after network, gateway, and temporary server failures. An explicit revoked response stopped playback and retired status polling. Playback verification used controller fixtures.
+- PostgreSQL 17 fixtures passed the 12 notification and 11 invitation tests. Code and UI inventories, source style, Svelte type checking, and the production build passed. The unit run passed 1,049 tests.

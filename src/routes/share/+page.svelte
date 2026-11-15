@@ -5,7 +5,7 @@
  import Heading from '#lib/ui/components/Heading.svelte';
  import Button from '#lib/ui/components/Button.svelte';
  import { playMedia, player, alignPlayback, stopPlayback } from '#lib/playback/client.svelte.js';
- import { message, setPlaybackApi } from '#lib/ui/client.js';
+ import { ApiError, message, setPlaybackApi } from '#lib/ui/client.js';
  import type { PageData } from './$types';
  let { data }: { data: PageData } = $props();
  let shared = $state<PageData['shared']>(untrack(()=>data.shared)), token = $state(''), busy = $state(false), error = $state('');
@@ -15,7 +15,13 @@
  async function request<T>(path:string,body?:unknown):Promise<T> {
   lifetime.signal.throwIfAborted();
   const response = await fetch(`/api/share/${path}`,{signal:lifetime.signal,method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
-  const value=await response.json(); lifetime.signal.throwIfAborted(); if(!response.ok)throw new Error(value.error); return value;
+  const value = await response.json().catch(() => undefined);
+  lifetime.signal.throwIfAborted();
+  if (!response.ok || !value || typeof value !== 'object') {
+   const hasMessage = typeof value?.error === 'string';
+   throw new ApiError(hasMessage ? value.error : 'Playback status could not be checked. Please try again.', hasMessage ? response.status : 502);
+  }
+  return value;
  }
  async function open() {
   if(lifetime.signal.aborted)return;
@@ -34,9 +40,25 @@
   if(token||page.url.searchParams.has('id'))shared=null;
   if(location.hash)history.replaceState(history.state,'',location.pathname+location.search);
   const timer=setInterval(async()=>{
-   if(lifetime.signal.aborted||!shared||polling)return;polling=true;
-   try {const next=await request<PageData['shared']>('state');if(lifetime.signal.aborted)return;shared=next;if(shared?.together&&!shared.host&&player.session){const elapsed=shared.paused?0:Math.max(0,(Date.now()-Date.parse(String(shared.updatedAt)))/1000);alignPlayback({positionSeconds:Math.min(shared.durationSeconds,shared.positionSeconds+elapsed),paused:shared.paused});}}
-   catch(cause){if(lifetime.signal.aborted)return;error=message(cause);await stopPlayback();if(!lifetime.signal.aborted)shared=null;}finally{polling=false;}
+   if (lifetime.signal.aborted || !shared || polling) return;
+   polling = true;
+   try {
+    const next = await request<PageData['shared']>('state');
+    if (lifetime.signal.aborted) return;
+    shared = next;
+    if (shared?.together && !shared.host && player.session) {
+     const elapsed = shared.paused ? 0 : Math.max(0, (Date.now() - Date.parse(String(shared.updatedAt))) / 1000);
+     alignPlayback({positionSeconds:Math.min(shared.durationSeconds,shared.positionSeconds+elapsed),paused:shared.paused});
+    }
+   } catch (cause) {
+    // A temporary status failure leaves the granted stream and its buffer usable.
+    if (lifetime.signal.aborted || !(cause instanceof ApiError) || (cause.status !== 401 && cause.status !== 410)) return;
+    error = message(cause);
+    await stopPlayback();
+    if (!lifetime.signal.aborted) shared = null;
+   } finally {
+    polling = false;
+   }
   },2000);
   return ()=>{lifetime.abort();clearInterval(timer);void stopPlayback().finally(()=>releasePlaybackApi?.());};
  });

@@ -3,7 +3,7 @@ const deferred=<T=unknown>()=>{let resolve!:(value:T)=>void,reject!:(cause:unkno
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
 const source=await Bun.file(new URL('../src/routes/share/+page.svelte',import.meta.url)).text();
 const script=source.slice(source.indexOf('<script lang="ts">')+18,source.indexOf('</script>')).replace(/^\s*import .*;$/gm,'');
-const compiled=new Bun.Transpiler({loader:'ts'}).transformSync('const reportFailure=()=>{};'+script);
+const compiled=new Bun.Transpiler({loader:'ts'}).transformSync('const reportFailure=()=>{}; class ApiError extends Error {constructor(message,status){super(message);this.status=status;}}'+script);
 function route(options:{shared?:unknown;stop?:()=>Promise<void>;fetch?:(input:RequestInfo|URL,init?:RequestInit)=>Promise<Response>}={}){
  let mount!:()=>()=>void,tick!:()=>Promise<void>,authority=false,revision=0;
  const calls:{stops:string[];alignments:string[];plays:string[];signals:AbortSignal[];cleared:number}={stops:[],alignments:[],plays:[],signals:[],cleared:0};
@@ -42,4 +42,38 @@ test('an invitation claim completing after disposal cannot fetch state or start 
  const opening=fixture.open();await settle();expect(fixture.calls.signals).toHaveLength(1);fixture.cleanup();
  response.resolve(Response.json({ok:true}));await opening;await settle();
  expect(fixture.calls.signals).toHaveLength(1);expect(fixture.calls.plays).toEqual([]);expect(fixture.authority).toBe(false);
+});
+
+
+test('an intermittent share status failure preserves playback and the next poll can recover',async()=>{
+ const outcomes=[
+  new Error('network unavailable'),
+  new Response('<html>Gateway error</html>',{status:404}),
+  Response.json({error:'Playback is currently unavailable.'},{status:503}),
+  Response.json({workId:'work',together:true,host:false,paused:true,positionSeconds:30,durationSeconds:100}),
+ ];
+ const fixture=route({fetch:async()=>{
+  const outcome=outcomes.shift();
+  if(outcome instanceof Error)throw outcome;
+  return outcome!;
+ }});
+ try{
+  await settle();
+  for(let index=0;index<4;index++)await fixture.tick();
+  expect(fixture.calls.signals).toHaveLength(4);
+  expect(fixture.calls.stops).toEqual(['shared']);
+  expect(fixture.calls.alignments).toEqual(['shared']);
+ }finally{fixture.cleanup();await settle();}
+});
+
+test('an explicitly revoked share stops playback and retires its status polling',async()=>{
+ const fixture=route({fetch:async()=>Response.json({error:'This playback invitation has expired or was revoked.'},{status:410})});
+ try{
+  await settle();
+  await fixture.tick();
+  await fixture.tick();
+  expect(fixture.calls.signals).toHaveLength(1);
+  expect(fixture.calls.stops).toEqual(['shared','shared']);
+  expect(fixture.calls.alignments).toEqual([]);
+ }finally{fixture.cleanup();await settle();}
 });

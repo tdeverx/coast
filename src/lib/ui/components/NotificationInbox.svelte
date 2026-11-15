@@ -18,6 +18,7 @@
  import EmptyState from './EmptyState.svelte';
  import {useClient} from '#lib/ui/client-context.js';
  import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
+ import {useClock} from '#lib/ui/clock.svelte.js';
  import {createOperation} from '#lib/ui/operation.svelte.js';
  import {activityDateLabel} from '#lib/social/model.js';
  import {notificationKinds,notificationSegments,defaultNotificationFilters,type NotificationEntry,type NotificationResult,type NotificationFilters} from '#lib/notifications/model.js';
@@ -26,7 +27,8 @@
  let criteria=$state<NotificationFilters>(untrack(()=>({...defaultNotificationFilters,kind:notificationKinds.some(k=>k.value===initialKind)?initialKind:'all',...initialFilters})));
  const resource=createResource<NotificationResult>({items:[],hasMore:false,next:null,unread:0,snapshot:''});
  const operation=createOperation(useRetention());
- let clock=$state(Date.now());
+ const clock=useClock('minute',()=>open&&!preview);
+ const previewTime=Date.now();
  let seenAt=$state<Record<string,string>>({});
  const reading=new Set<string>();
  function readWhenVisible(node:HTMLElement,options:{items:NotificationEntry[];open:boolean}){
@@ -75,7 +77,7 @@
   });
  }
  async function markAll(){await operation.run(async()=>{await change('notifications/read-all',{...criteria,snapshot:resource.data.snapshot});await load();});}
- $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{clock=Date.now();if(document.visibilityState==='visible'&&!resource.busy&&!operation.busy&&resource.data.items.length<=60)void load();},60000);return()=>clearInterval(timer);});
+ $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!resource.busy&&!operation.busy&&resource.data.items.length<=60)void load();},60000);return()=>clearInterval(timer);});
  onDestroy(resource.dispose);
  function availability(notice:NotificationEntry){return notice.media?.stale?'Last known availability':({available:'Available to you',partial:'Partly available',unavailable:'Not available to you',unknown:'Availability not confirmed'} as Record<string,string>)[notice.media?.availability??'unknown'];}
  function headline(notice:NotificationEntry){
@@ -87,7 +89,6 @@
   const event=notice.kind==='recommendation'?'Recommended this to you.':
    notice.kind==='reaction'?`Reacted${notice.reaction?' '+notice.reaction:''} to your activity.`:
    notice.kind==='synced-invite'?'Invited you to a party.':
-   notice.kind==='friend-accepted'?'Accepted your friend request.':
    notice.kind==='availability'?'A title on your watchlist is now available.':
    notice.kind==='request'?({pending:'Your request is pending.',approved:'Approved and being prepared.',available:'Your request is ready to watch.',declined:'Your request was declined.',failed:'Your request could not be completed.'} as Record<string,string>)[notice.requestState??'']??notice.title:notice.title;
   const parts=[event,notice.body];
@@ -96,8 +97,6 @@
   if(notice.locked)parts.push('Important notice');
   return [...new Set(parts.filter(Boolean))].join(' · ');
  }
-
-
 
 
   reportFailure(()=>open ? {text:resource.error,retry:()=>load()} : '');
@@ -148,7 +147,7 @@
       <div class="notice-text"><h3>{#if notice.actor}<a class="notice-prefix" href={`/profile/${encodeURIComponent(notice.actor.username)}`} aria-label={`${notice.actor.username}'s profile`}><Avatar name={notice.actor.username} src={notice.actor.avatar} status={notice.actor.status} size={20}/></a>{:else}<span class="notice-prefix" title={notice.sourceLabel??'Coast'}><Icon name={notice.kind==='administrator'?'shield':notice.kind==='request'?'request':'bell'} size={18}/></span>{/if}{#if notice.actor}<a href={`/profile/${encodeURIComponent(notice.actor.username)}`}>{headline(notice)}</a>{:else}{headline(notice)}{/if}</h3>
      {#if detail(notice)}<p>{detail(notice)}</p>{/if}
       </div>
-      <time class:unread-time={!notice.readAt&&!seenAt[notice.id]} datetime={notice.createdAt}>{activityDateLabel(notice.createdAt,clock)}</time>
+      <time class:unread-time={!notice.readAt&&!seenAt[notice.id]} datetime={notice.createdAt}>{activityDateLabel(notice.createdAt,preview?previewTime:clock.now)}</time>
      </div>
 
      <div class="notice-content" class:has-media={!!(notice.activity||notice.media)} class:has-friend={!!notice.friend}>
