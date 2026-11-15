@@ -5,9 +5,10 @@ import verification from '../docs/audits/2026-10-22-performance-followup/verific
 import manifest from '../package.json';
 import accountSourceRefresh from '../docs/audits/2026-11-15-invite-accounts/source-refresh.json';
 import inviteFollowupSourceRefresh from '../docs/audits/2026-11-15-invite-accounts/followup-source-refresh.json';
+import housekeepingSourceRefresh from '../docs/audits/2026-11-15-app-housekeeping/source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {

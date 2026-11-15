@@ -4,7 +4,8 @@
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import type {SourceImpact} from '#lib/collection/source-changes.server.js';
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
-  import { onMount, untrack } from 'svelte';
+  import { untrack } from 'svelte';
+  import { createResource } from '#lib/ui/resource.svelte.js';
   import { message } from '#lib/ui/client.js';
   import { useClient } from '#lib/ui/client-context.js';
   import Button from './Button.svelte';
@@ -53,51 +54,43 @@
     error: string | null;
     attempts: number;
   };
-  let scan = $state<Scan | null>(null);
-  let scanError = $state('');
+  const scanStatus = createResource<Scan | null>(null);
+  const scan = $derived(scanStatus.data);
+  const sourceId = $derived(provider.provider === 'jellyfin' && provider.connection?.status === 'connected'
+    ? provider.connection.id : undefined);
+  const sourceGeneration = $derived(sourceId ? provider.connection?.accountGeneration : undefined);
   let sourceImpact=$state<SourceImpact|null>(null);
   async function prepareDisconnect(){sourceImpact=null;error='';busy=true;try{if(provider.provider==='jellyfin')sourceImpact=await api(`providers/${provider.connection!.id}/source-preview`,undefined,'GET');disconnect=true;}catch(e){error=message(e);}finally{busy=false;}}
   const scanning = $derived(scan?.state === 'pending' || scan?.state === 'running');
   const scanPercent = $derived(
     scan?.total ? Math.min(100, Math.floor((scan.processed / scan.total) * 100)) : null
   );
-  let scanController: AbortController | undefined;
-  async function refreshScan() {
-    if (provider.provider !== 'jellyfin' || provider.connection?.status !== 'connected') return;
-    scanController?.abort();
-    const controller = new AbortController();
-    scanController = controller;
-    try {
-      const result = await api<Scan | null>(`providers/${provider.connection.id}/scan`, undefined, 'GET', {signal: controller.signal});
-      if (controller.signal.aborted) return;
-      scan = result;
-      scanError = '';
-    } catch (e) {
-      if (!controller.signal.aborted) scanError = message(e);
-    }
-  }
+
   $effect(() => {
-    provider.connection?.id;
-    provider.connection?.accountGeneration;
-    return () => scanController?.abort();
-  });
-  onMount(() => {
-    let lastRefresh = 0;
-    let refreshing = false;
+    const connectionId = sourceId;
+    sourceGeneration;
+    untrack(() => scanStatus.replace(null));
+    if (!connectionId) return;
+
+    let lastRefresh = -Infinity;
     async function poll() {
-      if (refreshing || document.hidden || (!scanning && Date.now() - lastRefresh < 15000)) return;
-      refreshing = true;
+      if (document.hidden || scanStatus.busy || (!scanning && Date.now() - lastRefresh < 15000)) return;
       try {
-        await refreshScan();
-        lastRefresh = Date.now();
+        await scanStatus.load(signal => api<Scan | null>(`providers/${connectionId}/scan`, undefined, 'GET', { signal }));
       } finally {
-        refreshing = false;
+        lastRefresh = Date.now();
       }
     }
-    void poll();
-    if (preview) return () => scanController?.abort();
+
+    untrack(() => void poll());
+    if (preview) return scanStatus.cancel;
     const timer = setInterval(poll, 2000);
-    return () => { clearInterval(timer); scanController?.abort(); };
+    document.addEventListener('visibilitychange', poll);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', poll);
+      scanStatus.cancel();
+    };
   });
   let initialized = '';
   const defaultSync = {
@@ -187,7 +180,7 @@
   };
 
   reportFailure(()=>error);
-  reportFailure(()=>scanError ? `Could not refresh scan progress: ${scanError}` : scan?.state === 'failed' ? scan.error : '');
+  reportFailure(()=>scanStatus.error ? `Could not refresh scan progress: ${scanStatus.error}` : scan?.state === 'failed' ? scan.error : '');
 </script>
 
 <section class="panel stack">

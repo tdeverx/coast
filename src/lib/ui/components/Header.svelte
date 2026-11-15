@@ -16,14 +16,6 @@
     if (!preview) return sharePresence(!status.sharePresence);
     status.sharePresence = !status.sharePresence;
   }
-  let streamCount=$state<number|null>(null);
-  $effect(()=>{
-    if(preview||user?.role!=='admin'){streamCount=null;return;}
-    const controller=new AbortController();let busy=false;
-    async function readCount(){if(busy||document.hidden)return;busy=true;try{const result=await api<{active:number|null}>('providers/streams/count',undefined,'GET',{signal:controller.signal});if(!controller.signal.aborted)streamCount=result.active;}catch{if(!controller.signal.aborted)streamCount=null;}finally{busy=false;}}
-    void readCount();const timer=setInterval(()=>void readCount(),15000);
-    return ()=>{clearInterval(timer);controller.abort();};
-  });
   import {openNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import {openFriends} from '#lib/ui/panels/friends.svelte.js';
   import {openStreams} from '#lib/ui/panels/streams.svelte.js';
@@ -43,6 +35,33 @@
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   let { user, unread = 0, friendRequests = 0, publicBrowse = true, hasActiveLinks = false }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings; access?:import('#lib/auth/invites.js').CoastAccess } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean; hasActiveLinks?:boolean } =
     $props();
+  let streamCount=$state<number|null>(null);
+  const streamOwner = $derived(!preview && user?.role === 'admin' ? page.data.user?.id ?? user.username : null);
+  $effect(() => {
+    const owner = streamOwner;
+    streamCount = null;
+    if (!owner) return;
+    const controller = new AbortController();
+    let busy = false;
+    async function readCount() {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const result = await api<{active:number|null}>('providers/streams/count', undefined, 'GET', {signal:controller.signal});
+        if (!controller.signal.aborted) streamCount = result.active;
+      } catch {
+        if (!controller.signal.aborted) streamCount = null;
+      } finally {
+        busy = false;
+      }
+    }
+    void readCount();
+    const timer = setInterval(readCount, 15000);
+    return () => {
+      clearInterval(timer);
+      controller.abort();
+    };
+  });
   const actions=$derived(actionOptions({...page.data,features:page.data.capabilities}).filter(option=>!!user||option.value==='watch'));
   const action=$derived(user?resolveAction(page.url.searchParams,user?.settings?.action,{...page.data,features:page.data.capabilities}):'watch');
   let changingAction=$state(false);
@@ -119,7 +138,7 @@
           {#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}
         </Button>
       {/if}
-      {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
+      {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={user.access?.libraryOnly?"Invite people":friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
       <Button size="icon"
         id={preview?`${previewId}-notifications`:"notification-trigger"}
         class="notification"
