@@ -15,6 +15,7 @@
   --control-compact-height: 32px;
   --control-hero-height: 44px;
   --media-surface-hover-scale: 1.02;
+  --media-card-radius: 12px;
   --media-surface-edge-width: 1.5px;
   --media-surface-edge-opacity: 0.5;
   --icon-inline: 16px;
@@ -808,6 +809,8 @@ form.stack,
 
 /* Shared loading treatment for shelves and popovers; geometry belongs to the consumer. */
 .skeleton { background:var(--surface);animation:coast-loading 1.5s ease-in-out infinite alternate; }
+.skeleton-line { display:block; height:var(--text-sm); border-radius:4px; }
+.skeleton-circle { display:block; flex:none; aspect-ratio:1; border-radius:50%; }
 @keyframes coast-loading { to { opacity:.5; } }
 @media(prefers-reduced-motion:reduce) { .skeleton { animation:none; } }
 

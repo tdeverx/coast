@@ -95,6 +95,34 @@ run('check-in cancellation and repeated completion cannot manufacture extra watc
  await Promise.all([completeCheckin(ids[2],next.id),completeCheckin(ids[2],next.id)]);
  expect((await getSql()`select id from tracking_events where user_id=${ids[2]} and action='watch'`)).toHaveLength(1);
 });
+run('check-in uses an accessible Jellyfin file duration before falling back to the show runtime',async()=>{
+ const db=getSql(),show=crypto.randomUUID(),episode=crypto.randomUUID(),instance=crypto.randomUUID(),
+  connection=crypto.randomUUID(),providerItem=crypto.randomUUID();
+ await db`insert into media(id,kind,title,runtime_minutes) values(${show},'show','Runtime fixture',42),(${episode},'episode','Runtime episode',null)`;
+ await db`insert into shows(media_id) values(${show})`;
+ await db`insert into episodes(media_id,show_id,season_number,episode_number) values(${episode},${show},1,1)`;
+ await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Runtime fixture','https://runtime.invalid')`;
+ await db`insert into provider_connections(id,user_id,instance_id,status,external_user_id) values(${connection},${ids[2]},${instance},'connected','runtime-fixture')`;
+ await db`insert into provider_items(id,instance_id,media_id,external_id,kind) values(${providerItem},${instance},${episode},'episode','episode')`;
+ await db`insert into availability(user_id,connection_id,media_id,provider_item_id,duration_seconds) values(${ids[2]},${connection},${episode},${providerItem},1950)`;
+ try {
+  for(const [viewer,seconds] of [[ids[2],1950],[ids[1],2520]] as const){
+   const before=Date.now();
+   const checkin=await startCheckin(viewer,{workId:episode});
+   expect(checkin.expiresAt.getTime()).toBeGreaterThanOrEqual(before+seconds*1000);
+   expect(checkin.expiresAt.getTime()).toBeLessThanOrEqual(Date.now()+seconds*1000);
+   await cancelCheckin(viewer,checkin.id);
+  }
+  await db`update media set runtime_minutes=null where id=${show}`;
+  await db`update provider_connections set status='disconnected' where id=${connection}`;
+  await expect(startCheckin(ids[2],{workId:episode})).rejects.toMatchObject({status:400});
+ } finally {
+  await db`delete from social_checkins where work_id=${episode}`;
+  await db`delete from provider_instances where id=${instance}`;
+  await db`delete from works where id=${episode}`;
+  await db`delete from works where id=${show}`;
+ }
+});
 run('imported watches remain ordinary dated activity without exposing private members',async()=>{
  const db=getSql(),batch='social-import-'+crypto.randomUUID();
  for(let i=0;i<21;i++)await db`insert into social_activity(user_id,work_id,source_key,event_kind,section,source,batch_key,occurred_at) values(${ids[0]},${work},${batch+':'+i},'watch','activity','trakt',${batch},now()-interval '2 years')`;
