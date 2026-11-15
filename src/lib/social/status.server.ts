@@ -4,14 +4,25 @@ import { getSql } from '#lib/server/db/index.js';
 import { audiences } from './model';
 import { activityStatus, statusPreferences, type StatusPreference } from './status';
 
-// u/up are the user and presence aliases in the bounded friend roster query.
+// social_visible also checks presence capability for both accounts.
+function friendPresenceVisibleSql(viewerId: string) {
+ return getSql()`social_visible(u.id,${viewerId}::uuid,'presence') and coalesce(u.settings->>'activityStatus','automatic')<>'invisible'`;
+}
+
+// u/up are the user and presence aliases in the status and friend roster queries.
 export function friendStatusSql(viewerId: string) {
  return getSql()`case
- when not coast_feature_enabled(u.id,'presence') or not coast_feature_enabled(${viewerId}::uuid,'presence') or not social_visible(u.id,${viewerId}::uuid,'presence') or coalesce(u.settings->>'activityStatus','automatic')='invisible'
- or up.heartbeat_at is null or up.heartbeat_at<=now()-interval '90 seconds' then 'offline'
+ when up.heartbeat_at is null or up.heartbeat_at<=now()-interval '90 seconds' or not (${friendPresenceVisibleSql(viewerId)}) then 'offline'
  when u.settings->>'activityStatus' in ('away','busy') then u.settings->>'activityStatus'
  when up.active_at>now()-interval '5 minutes' then 'online' else 'away' end`;
 }
+
+export function friendLastActiveSql(viewerId: string) {
+ return getSql()`case when f.state='accepted' and up.active_at is not null
+ and up.heartbeat_at<=now()-interval '90 seconds' and ${friendPresenceVisibleSql(viewerId)}
+ then up.active_at end`;
+}
+
 async function ownStatus(userId: string) {
  const [row] = await getSql()`select coalesce(u.settings->>'activityStatus','automatic') as preference,coast_feature_enabled(u.id,'presence') as enabled,u.settings,up.heartbeat_at,up.active_at
  from users u left join user_presence up on up.user_id=u.id where u.id=${userId}`;

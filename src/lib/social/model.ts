@@ -72,6 +72,7 @@ export function activityDateLabel(date:string,now:number,locale?:string) {
 export type FriendEntry = {
  id:string;state:'pending'|'accepted';requestedBy:string;userId:string;username:string;
  avatar:string|null;canCompare:boolean;activityStatus:import('./status').ActivityStatus;
+ lastActiveAt?:string|null;
  activity?:{title:string;href:string;label:string;artwork?:string;progress?:number|null};
  backgroundWorkId?:string|null;backgroundArtwork?:string;
 };
