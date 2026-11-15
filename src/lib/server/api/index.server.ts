@@ -1,5 +1,5 @@
 import {accountDetails,changeMemberAccess,manageAccount,reviewProvisioning} from '#lib/server/auth/account-management.server.js';
-import {createInvite,inviteClaims,inviteOverview,issueMemberInvite,listInvitePresets,listInvites,memberInviteGrant,memberInviteOverview,previewJellyfinDefaults,regenerateInvite,requestMemberInvite,revokeInvite,saveInvitePreset} from '#lib/server/auth/invites.server.js';
+import {createInvite,inviteJellyfinAuthority,inviteClaims,inviteOverview,issueMemberInvite,listInvitePresets,listInvites,memberInviteGrant,memberInviteOverview,previewJellyfinDefaults,regenerateInvite,requestMemberInvite,revokeInvite,saveInvitePreset} from '#lib/server/auth/invites.server.js';
 import {progressExperimentData} from '#lib/server/queries/progress-experiment.js';
 import {progressExperimentParameters} from '#lib/progress-experiment.js';
 import {recentLibraryData} from '#lib/server/queries/recent-library.js';
@@ -9,7 +9,6 @@ import { readJsonBody as readBody } from '#lib/server/security/request-body.js';
 import {databaseReady} from '#lib/server/readiness.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { providerApiError } from '#lib/server/security/provider-api-error.js';
-import { provisioningAuthority } from '#lib/providers/jellyfin/provisioning.server.js';
 import { createShare,listShares,revokeShare } from '#lib/sharing/service.server.js';
 import { activeShareExpiry, copySharePath, listActiveShares } from '#lib/sharing/links.server.js';
 import { stopSharedLinkPlayback } from '#lib/sharing/leases.server.js';
@@ -121,7 +120,7 @@ export const handler: RequestHandler = async (event) => {
       if (method==='POST' && path.length===3) return Response.json(await manageAccount(user,path[2],await readBody(request)));
     }
     if(path[0]==='admin' && path[1]==='invites') {
-      if(path.length===3&&path[2]==='libraries'&&method==='GET'){requireAdmin(user);const context=await provisioningAuthority(uid,uuid(url.searchParams.get('connectionId')??''));return Response.json(await context.adapter.virtualFolders());}
+      if(path.length===3&&path[2]==='libraries'&&method==='GET'){const context=await inviteJellyfinAuthority(user,url.searchParams.get('connectionId')??'');return Response.json(await context.adapter.virtualFolders());}
       if (method==='GET' && path[2]==='overview') return Response.json(await inviteOverview(user));
       if (method==='GET' && path[2]==='presets') return Response.json(await listInvitePresets(user));
       if (method==='POST' && path[2]==='presets') return Response.json(await saveInvitePreset(user,await readBody(request)));

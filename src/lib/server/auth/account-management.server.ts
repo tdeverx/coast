@@ -2,14 +2,15 @@ import * as v from 'valibot';
 import { sql } from 'drizzle-orm';
 import { getDb, getSql, type Database } from '../db';
 import { AppError } from '../security/errors';
-import { requireAdmin, type SessionUser } from './index';
+import { hashToken, requireAdmin, type SessionUser } from './index';
 import { inviteDefaultsSchema, inviteLimit, jellyfinUserId, uuid, type CoastAccess, type InviteDefaults } from '#lib/auth/invites.js';
 import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
-import { provisionPolicy, provisioningAuthority, verifyProvisionPolicy } from '#lib/providers/jellyfin/provisioning.server.js';
+import { applyJellyfinPreset, provisioningAuthority, validatePresetLibraries } from '#lib/providers/jellyfin/provisioning.server.js';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import type { OutboxAction } from '../queue';
 import { assertJobLease } from '../queue/execution';
 import { recordAccountEvent } from './invites.server';
+import { notifyMany } from '../notifications';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Remote = {user_id:string;connection_id:string|null;account_generation:string;remote_id:string|null;lifecycle:string;admin_id:string|null;version:string};
@@ -39,16 +40,28 @@ async function queueRemote(tx:Tx,target:Remote,operation:RemoteOperation,reason:
     compactionKey:'member-policy:'+target.user_id});
 }
 
+function writeAccess(tx:Tx,userId:string,access:CoastAccess,sharingGrant:boolean|null) {
+  return tx.execute(sql`update users set access_defaults=${access}::jsonb,settings=case
+    when ${sharingGrant}::boolean is null then settings
+    else jsonb_set(settings,'{allowPlaybackSharing}',to_jsonb(${sharingGrant}::boolean)) end where id=${userId}`);
+}
+
+function shareGrant(defaults:InviteDefaults) {
+  if(defaults.access.sharing===false)return false;
+  return defaults.sharingGrant??null;
+}
+
 export async function accountDetails(actor:SessionUser|null,userId:string) {
   requireAdmin(actor);
   const db = getSql();
   const [data]=await db<{
     id:string;username:string;role:'admin'|'user';disabled:boolean;access:CoastAccess;expiresAt:Date|null;expired:boolean;provisioning:string|null;
     remote:string|null;remoteState:string|null;setupStarted:Date|null;readyAt:Date|null;inviter:string|null;lastActiveAt:Date|null;
-    memberPreset:string|null;quota:number|null;remoteFailure:boolean;source:string;
+    memberPreset:string|null;quota:number|null;remoteFailure:boolean;source:string;defaults:InviteDefaults|null;authority:string|null;authorityName:string|null;presetName:string|null;sharingGranted:boolean;
   }[]>`select u.id,u.username,u.role,u.disabled,u.access_defaults as access,u.membership_expires_at as "expiresAt",
+    coalesce(u.settings->>'allowPlaybackSharing'='true',false) as "sharingGranted",
     coalesce(u.membership_expires_at<=now(),false) as expired,
-    p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",o.requested_at as "setupStarted",o.completed_at as "readyAt",
+    p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",p.active_defaults as defaults,p.connection_id as authority,server.name as "authorityName",i.preset_name as "presetName",o.requested_at as "setupStarted",o.completed_at as "readyAt",
     issuer.username as inviter,seen.active_at as "lastActiveAt",g.preset_id as "memberPreset",g.quota,
     case when claim.id is not null then 'Invitation' when o.user_id is not null then 'Registration' else 'Administrator' end as source,
     exists(select 1 from outbox_actions task where task.user_id=authority.user_id and task.connection_id=p.connection_id
@@ -56,6 +69,7 @@ export async function accountDetails(actor:SessionUser|null,userId:string) {
       and task.payload->>'version'=p.xmin::text) as "remoteFailure"
     from users u left join user_onboarding o on o.user_id=u.id left join onboarding_provisioning p on p.user_id=u.id
     left join provider_connections authority on authority.id=p.connection_id
+    left join provider_instances server on server.id=authority.instance_id
     left join user_presence seen on seen.user_id=u.id
     left join invite_claims claim on claim.user_id=u.id left join registration_invites i on i.id=claim.invite_id left join users issuer on issuer.id=i.created_by
     left join member_invite_grants g on g.user_id=u.id where u.id=${v.parse(uuid,userId)}`;
@@ -87,7 +101,10 @@ export async function manageAccount(actor:SessionUser|null,userId:string,raw:unk
       const [remote]=await remoteInTransaction(tx,userId);
       if(action==='membership') {
         if(expiresAt===undefined)throw new AppError(400,'Choose an expiry date, or clear expiry.');
-        await tx.execute(sql`update users set membership_expires_at=${expiresAt}::timestamptz,membership_expired_at=null where id=${userId}`);
+        const changed=await tx.execute(sql`update users set membership_expires_at=${expiresAt}::timestamptz,membership_expired_at=null
+          where id=${userId} and membership_expires_at is distinct from ${expiresAt}::timestamptz returning id`);
+        if(!changed.length)return;
+        await tx.execute(sql`delete from notifications where user_id=${userId} and kind='membership-expiry'`);
         if(user.expired||user.applied)await stopLocalSessions(tx,userId);
         if(remote && (user.expired||user.applied)){
           const [pending]=remote.lifecycle==='disable-pending' ? await tx.execute<{eligible:boolean}>(sql`select true as eligible from outbox_actions
@@ -111,6 +128,15 @@ export async function expireMemberships() {
   await getDb().transaction(async tx=>{
     const [sweep]=await tx.execute<{locked:boolean}>(sql`select pg_try_advisory_xact_lock(hashtextextended('coast:membership-expiry',0)) as locked`);
     if(!sweep.locked)return;
+    const approaching=await tx.execute<{id:string;key:string}>(sql`
+      select id,'membership-expiry:'||extract(epoch from membership_expires_at)::text as key
+      from users where membership_expires_at>now() and membership_expires_at<=now()+interval '7 days'
+        and membership_expired_at is null and not disabled and not exists(
+          select 1 from notifications where user_id=users.id
+            and source_key='membership-expiry:'||extract(epoch from users.membership_expires_at)::text)
+      order by membership_expires_at,id limit 20 for no key update of users skip locked`);
+    await notifyMany(approaching.map(({id,key})=>({userId:id,sourceKey:key,kind:'membership-expiry',
+      title:'Your Coast membership expires soon',body:'Ask a Coast administrator to renew your membership.',level:'persistent'})),tx);
     const rows=await tx.execute<{id:string}>(sql`select id from users where membership_expires_at<=now() and membership_expired_at is null
       order by membership_expires_at,id limit 20 for no key update skip locked`);
     for (const {id} of rows) {
@@ -161,12 +187,9 @@ export async function executeMemberPolicy(job:OutboxAction) {
       await authority.adapter.setProvisionPolicy(target.remote_id,{...remote.Policy,IsDisabled:false});
     else if(wasDisabled)lifecycle='disabled-external';
   } else if(defaults) {
-    const folders=new Set((await authority.adapter.virtualFolders()).map(folder=>folder.ItemId));
-    if(defaults.folders.some(folder=>!folders.has(folder)))throw new AppError(409,'A selected Jellyfin library no longer exists.');
-    const expected={...provisionPolicy(remote.Policy,defaults.folders,defaults.jellyfin),IsDisabled:remote.Policy.IsDisabled===true};
-    await authority.adapter.setProvisionPolicy(target.remote_id,expected);
-    verifyProvisionPolicy((await authority.adapter.userForProvisioning(target.remote_id)).Policy,expected,defaults.jellyfin);
-    if(expected.IsDisabled)lifecycle='disabled-external';
+    await validatePresetLibraries(authority.adapter,defaults.folders,defaults.jellyfin);
+    await applyJellyfinPreset(authority.adapter,target.remote_id,remote,defaults,userId,remote.Policy.IsDisabled===true);
+    if(remote.Policy.IsDisabled===true)lifecycle='disabled-external';
   }
   await getDb().transaction(async tx=>{
     await assertJobLease(tx,true);
@@ -177,7 +200,7 @@ export async function executeMemberPolicy(job:OutboxAction) {
       where user_id=${userId} and xmin::text=${version} returning user_id`);
     if(!rows.length)return;
     if (operation==='apply' && defaults) {
-      await tx.execute(sql`update users set access_defaults=${defaults.access}::jsonb where id=${userId}`);
+      await writeAccess(tx,userId,defaults.access,shareGrant(defaults));
       const [member]=await tx.execute<{id:string}>(sql`select c.id from provider_connections c join provider_connections a on a.instance_id=c.instance_id
         where a.id=${job.connectionId} and c.user_id=${userId} and c.status='connected' limit 1`);
       if(member && lifecycle==='active')await enqueueInTransaction(tx,{userId,connectionId:member.id,kind:'jellyfin.sync',
@@ -226,41 +249,75 @@ export async function reviewProvisioning(actor:SessionUser|null,userId:string,ra
   });
 }
 
-const accessRequest = v.strictObject({users:idBatch,presetId:uuid,confirm:v.optional(v.record(uuid,v.string()))});
+const accessRequest = v.pipe(v.strictObject({users:idBatch,presetId:v.optional(uuid),defaults:v.optional(inviteDefaultsSchema),
+  confirm:v.optional(v.record(uuid,v.string()))}),
+  v.check(input=>!!input.presetId!==!!input.defaults, 'Choose a preset or edit the account directly.'));
 export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
   const admin=requireAdmin(actor);
   const input=v.parse(accessRequest,raw);
   const ids=[...new Set(input.users)].sort();
   if(ids.includes(admin.id))throw new AppError(400,'Choose other accounts.');
+  if(input.defaults&&ids.length!==1)throw new AppError(400,'Edit one account or use a saved preset for bulk changes.');
+  const draftVersion=input.defaults ? await hashToken(JSON.stringify(input.defaults)) : null;
   return getDb().transaction(async tx=>{
-    const [preset]=await tx.execute<{defaults:InviteDefaults;name:string;version:string}>(sql`select defaults,name,xmin::text as version from invite_presets where id=${input.presetId}`);
-    if(!preset)throw new AppError(404,'Preset not found.');
-    const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null}>(sql`
-      select u.id,u.username,u.access_defaults as access,concat(u.xmin::text,'/',p.xmin::text,'/',${preset.version}::text) as version,
-       p.connection_id as authority,p.lifecycle,coalesce(p.state='complete',false) as managed,p.active_defaults as current
+    const [preset]=input.presetId ? await tx.execute<{defaults:InviteDefaults;name:string;version:string}>(sql`
+      select defaults,name,xmin::text as version from invite_presets where id=${input.presetId}`) : [];
+    if(input.presetId&&!preset)throw new AppError(404,'Preset not found.');
+    const defaults=input.defaults??v.parse(inviteDefaultsSchema,preset.defaults);
+    const revision=draftVersion??preset.version;
+    const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null;sharing_granted:boolean}>(sql`
+      select u.id,u.username,u.access_defaults as access,concat(u.xmin::text,'/',p.xmin::text,'/',${revision}::text) as version,
+       p.connection_id as authority,p.lifecycle,coalesce(u.settings->>'allowPlaybackSharing'='true',false) as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
       from users u left join onboarding_provisioning p on p.user_id=u.id
       where u.id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) and u.role='user'
       order by u.id ${input.confirm ? sql`for no key update of u` : sql``}`);
     if(targets.length!==ids.length)throw new AppError(409,'Choose current member accounts.');
-    const defaults=preset.defaults;
-    const versions=Object.fromEntries(targets.map(item=>[item.id,item.version]));
     const provider=defaults.account!=='coast';
     if(provider && targets.some(item=>!item.managed||item.authority!==defaults.connectionId||!['','active','apply-pending'].includes(item.lifecycle??'')))
       throw new AppError(409,'Select managed accounts on the Jellyfin authority used by the preset.');
-    if(!input.confirm)return {versions,changes:targets.map(item=>({id:item.id,username:item.username,
-      before:item.access,after:defaults.access,jellyfin:provider ? {before:item.current?.jellyfin??{},after:defaults.jellyfin,
-      foldersBefore:item.current?.folders??[],foldersAfter:defaults.folders} : null}))};
+    if(!provider && targets.some(item=>item.lifecycle==='apply-pending'))
+      throw new AppError(409,'Wait for the current Jellyfin access change before editing Coast permissions.');
+    if(defaults.sharingGrant&&!provider&&targets.some(item=>item.current?.access.libraryOnly))
+      throw new AppError(409,'This account’s Jellyfin restrictions block playback sharing.');
+    const grant=shareGrant(defaults);
+    const versions=Object.fromEntries(targets.map(item=>[item.id,item.version]));
+    const changes=targets.map(item=>{
+      // A Coast-only edit cannot lift the restrictions of the applied Jellyfin policy.
+      const after=!provider && item.current?.access.libraryOnly ? {...defaults.access,libraryOnly:true} : defaults.access;
+      return {id:item.id,username:item.username,before:item.access,after,
+        sharing:{before:item.sharing_granted,after:grant??item.sharing_granted},jellyfin:provider ? {
+        before:item.current?.jellyfin??{},after:defaults.jellyfin,foldersBefore:item.current?.folders??[],foldersAfter:defaults.folders,
+        preferencesBefore:item.current?.jellyfinConfiguration??{},preferencesAfter:defaults.jellyfinConfiguration??{},
+      } : null};
+    });
+    if(!input.confirm)return {versions,changes};
     if(ids.some(id=>input.confirm?.[id]!==versions[id])||Object.keys(input.confirm).length!==ids.length)
       throw new AppError(409,'The accounts or preset changed. Preview the changes again.');
-    for(const item of targets) {
-      const access=provider ? {...item.access,...defaults.access,libraryOnly:item.access.libraryOnly===true||defaults.access.libraryOnly===true} : defaults.access;
-      await tx.execute(sql`update users set access_defaults=${access}::jsonb where id=${item.id}`);
+    for(const item of changes) {
       if(provider){
+        // Keep all existing restrictions until Jellyfin verifies the requested policy.
+        const fenced:CoastAccess={...item.before,...item.after};
+        if(item.before.libraryOnly||item.after.libraryOnly)fenced.libraryOnly=true;
+        await writeAccess(tx,item.id,fenced,grant===false ? false : null);
         const [remote]=await remoteInTransaction(tx,item.id);
         await queueRemote(tx,remote,'apply','access',defaults);
+      } else {
+        await writeAccess(tx,item.id,item.after,grant);
       }
-      await tx.execute(sql`insert into account_audit(event,actor_id,subject_id) values('account.access-updated',${admin.id},${item.id})`);
+      const changesForAudit={preset:preset?.name??null,access:describeChanges({...item.before,sharingGrant:item.sharing.before},{...item.after,sharingGrant:item.sharing.after}),
+        ...item.jellyfin && {
+          jellyfin:describeChanges({...item.jellyfin.before,EnabledFolders:item.jellyfin.foldersBefore},
+            {...item.jellyfin.after,EnabledFolders:item.jellyfin.foldersAfter}),
+          preferences:describeChanges(item.jellyfin.preferencesBefore,item.jellyfin.preferencesAfter),
+        }};
+      await tx.execute(sql`insert into account_audit(event,actor_id,subject_id,details)
+        values('account.access-updated',${admin.id},${item.id},${changesForAudit}::jsonb)`);
     }
     return {ok:true};
   });
+}
+
+function describeChanges(before:Record<string,unknown>,after:Record<string,unknown>) {
+  return Object.fromEntries([...new Set([...Object.keys(before),...Object.keys(after)])].flatMap(key=>
+    JSON.stringify(before[key])===JSON.stringify(after[key]) ? [] : [[key,{before:before[key]??null,after:after[key]??null}]]));
 }

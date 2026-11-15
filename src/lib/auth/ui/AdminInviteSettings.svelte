@@ -92,7 +92,7 @@
   <div class="stack">
     <Heading title="Invitations" />
     <form class="row" onsubmit={event=>{event.preventDefault();before='';cursorStack=[];void loadInvites();}}>
-      <label class="field">Status<select bind:value={status}><option value="">All</option><option value="active">Active</option><option value="claimed">Claimed</option><option value="expired">Expired</option><option value="revoked">Revoked</option></select></label>
+      <label class="field">Status<select bind:value={status}><option value="">All</option><option value="active">Active</option><option value="claimed">Claimed</option><option value="setup-failed">Setup failed</option><option value="expired">Expired</option><option value="revoked">Revoked</option></select></label>
       <label class="field">Issuer<input bind:value={issuer} maxlength="60" /></label>
       <label class="field">Preset<select bind:value={filterPreset}><option value="">All</option>{#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}</select></label>
       <label class="field">Expiry<select bind:value={expiry}><option value="">Any date</option><option value="week">Next seven days</option></select></label>
@@ -101,7 +101,7 @@
     <div class="overflow"><table class="table">
       <thead><tr><th>Invite</th><th>Issued by</th><th>Status</th><th>Uses</th><th>Expiry</th><th>Actions</th></tr></thead>
       <tbody>{#each invites.data.items as item (item.id)}
-        <tr><td>{item.label||item.presetName||'Invitation'}</td><td>{item.issuer??'—'}</td><td>{item.status}</td>
+        <tr><td>{item.label||item.presetName||'Invitation'}</td><td>{item.issuer??'—'}</td><td>{item.hasSetupFailure?'Setup failed':item.status}</td>
           <td>{item.claimCount} / {item.maxUses}</td><td>{new Date(item.expiresAt).toLocaleDateString()}</td>
           <td>
             {#if item.claimCount}<Button emphasis="subtle" onclick={()=>showClaims(item.id)}>Claims</Button>{/if}
@@ -123,9 +123,10 @@
     <div class="stack">
       <Heading title="Invite activity" description="Last 30 days" />
       <p>{summary.data.funnel.find(row=>row.event==='invite.issued')?.total??0} issued · {summary.data.funnel.find(row=>row.event==='invite.claimed')?.total??0} claimed · {summary.data.funnel.find(row=>row.event==='invite.ready')?.total??0} ready · {summary.data.funnel.find(row=>row.event==='invite.provisioning-failed')?.total??0} failed attempts</p>
-      <details><summary>Recent changes</summary><ul>{#each summary.data.audit as row (row.id)}<li>{new Date(row.createdAt).toLocaleString()} · {row.actor??'Coast'} · {row.event}</li>{/each}</ul></details>
+      <details><summary>Recent changes</summary><ul>{#each summary.data.audit as row (row.id)}<li>{new Date(row.createdAt).toLocaleString()} · {row.actor??'Coast'} · {row.event}{row.subjectName?' · '+row.subjectName:''}
+        {#if row.details}<details><summary>Changes</summary><pre class="wrap">{JSON.stringify(row.details,null,2)}</pre></details>{/if}</li>{/each}</ul></details>
       <Heading title="Member invite requests" />
-      {#if summary.data.requests.length}<label class="field">Preset for approved requests<select bind:value={requestPreset}><option value="">Choose a preset</option>
+      {#if summary.data.requests.length}<label class="field">Preset for the approved invite<select bind:value={requestPreset}><option value="">Choose a preset</option>
         {#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}</select></label>{/if}
       {#each summary.data.requests as request (request.id)}
         <div class="row"><span>{request.username} {request.note}</span>
@@ -138,7 +139,7 @@
     </div>
   {/if}
   <Dialog bind:open={claimOpen} title="Invite claims" onclose={()=>claims.cancel()}>
-    <ul>{#each claims.data.items as claim (claim.id)}<li>{claim.username} · {claim.readyAt?'Ready':claim.provisioning==='uncertain'?'Needs review':claim.userId?'Setting up':'Account removed'}</li>{/each}</ul>
+    <ul>{#each claims.data.items as claim (claim.id)}<li>{claim.username} · {claim.readyAt?'Ready':claim.provisioning==='uncertain'?'Needs review':claim.failed?'Setup failed':claim.userId?'Setting up':'Account removed'}</li>{/each}</ul>
     {#if claims.data.next}<Button emphasis="subtle" onclick={()=>showClaims(activeClaim,claims.data.next??'')}>Next</Button>{/if}
   </Dialog>
 {/if}

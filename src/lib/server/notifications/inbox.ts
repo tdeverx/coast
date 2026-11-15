@@ -26,7 +26,7 @@ export async function notificationToasts(user: SessionUser, rich = false): Promi
  const unresolved = rows.filter(row => !row.data?.workId &&
   (row.kind === 'availability' || ['recommendation','synced-invite','reaction','request'].includes(row.kind))).map(row => row.id);
  const db = getSql();
- const context = unresolved.length ? await db<{id:string;work_id:string|null}[]>`${visible(user.id)} select id,work_id from visible where id=any(${db.array(unresolved,'TEXT')}::uuid[])` : [];
+ const context = unresolved.length ? await db<{id:string;work_id:string|null}[]>`${visible(user)} select id,work_id from visible where id=any(${db.array(unresolved,'TEXT')}::uuid[])` : [];
  const workByNotice = new Map(context.map(row => [row.id, row.work_id]));
  const workIds = [...new Set(rows.map(row => row.data?.workId ?? workByNotice.get(row.id)).filter((id): id is string => !!id))];
  const [actors,cards] = await Promise.all([
@@ -50,7 +50,8 @@ const uuid=v.pipe(v.string(),v.uuid());
 const filterSchema=v.object({segment:v.optional(v.picklist(['all','social','requests','system']),'all'),kind:v.optional(v.picklist(notificationKinds.map(k=>k.value)),'all'),unread:v.optional(v.boolean(),false),category:v.optional(v.picklist(['all','screen','game','music','reading']),'all'),period:v.optional(v.picklist(['all','week','month']),'all')});
 export function notificationFilters(input:unknown):NotificationFilters {return v.parse(filterSchema,input);}
 export function notificationParameters(url:URL){return {...Object.fromEntries(['segment','kind','category','period','before','beforeId'].flatMap(key=>url.searchParams.has(key)?[[key,url.searchParams.get(key)]]:[])),unread:url.searchParams.get('unread')==='true'};}
-function visible(userId:string,filters:NotificationFilters=defaultNotificationFilters){
+function visible(user:SessionUser,filters:NotificationFilters=defaultNotificationFilters){
+ const userId=user.id;
  return getSql()`with context as (
  select n.*,coalesce(case when n.data->>'workId'~'^[0-9a-fA-F-]{36}$' then (n.data->>'workId')::uuid end,
  room.media_id,recommendation.work_id,request.media_id,case when job.payload->>'mediaId'~'^[0-9a-fA-F-]{36}$' then (job.payload->>'mediaId')::uuid end,case when n.source_key~'^available:[0-9a-fA-F-]{36}$' then substring(n.source_key from 11)::uuid end) as work_id,
@@ -62,7 +63,7 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true
- where n.user_id=${userId} and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
+ where n.user_id=${userId} and (not ${user.access?.libraryOnly===true} or n.kind='membership-expiry') and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
  and (job.id is null or job.state not in ('cancelled','succeeded'))
  ), visible as (
  select n.*,w.category
@@ -75,7 +76,7 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  )`;
 }
 async function notificationSummary(actor:SessionUser|null){
- const user=requireUser(actor);const [row]=await getSql()`${visible(user.id)} select count(*) filter(where read_at is null)::int as count,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from visible`;
+ const user=requireUser(actor);const [row]=await getSql()`${visible(user)} select count(*) filter(where read_at is null)::int as count,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from visible`;
  return {unread:Number(row.count),snapshot:String(row.snapshot)};
 }
 export async function notificationUnread(actor:SessionUser|null){return (await notificationSummary(actor)).unread;}
@@ -112,9 +113,9 @@ export async function notificationInbox(actor:SessionUser|null,input:unknown={})
  const user=requireUser(actor),filters=notificationFilters(input);
  const cursor=v.parse(v.object({before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)}),input);
  if(!!cursor.before!==!!cursor.beforeId)throw new AppError(400,'Choose a complete notification cursor.');
- const [summaryRow]=await getSql()`${visible(user.id,filters)} select count(*) filter(where read_at is null)::int as unread,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from visible`;
+ const [summaryRow]=await getSql()`${visible(user,filters)} select count(*) filter(where read_at is null)::int as unread,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from visible`;
  const summary={unread:Number(summaryRow.unread),snapshot:String(summaryRow.snapshot)};
- const rows=await getSql()`${visible(user.id,filters)}
+ const rows=await getSql()`${visible(user,filters)}
  select n.*,to_char(n.created_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_at from visible n
  where (${cursor.before??null}::timestamptz is null or (n.created_at,n.id)<(${cursor.before??null}::timestamptz,${cursor.beforeId??null}::uuid)) order by n.created_at desc,n.id desc limit 61`;
  const page=Array.from(rows).slice(0,60) as any[],last=page.at(-1);
@@ -122,7 +123,7 @@ export async function notificationInbox(actor:SessionUser|null,input:unknown={})
 }
 export async function markNotification(actor:SessionUser|null,id:string,action:'read'|'dismiss'){
  const user=requireUser(actor);v.parse(uuid,id);
- const rows=await getSql()`${visible(user.id)} update notifications n set read_at=coalesce(n.read_at,now()),dismissed_at=case when ${action}='dismiss' then now() else n.dismissed_at end
+ const rows=await getSql()`${visible(user)} update notifications n set read_at=coalesce(n.read_at,now()),dismissed_at=case when ${action}='dismiss' then now() else n.dismissed_at end
  where n.user_id=${user.id} and n.id=${id} and n.id in(select id from visible) returning n.id`;
  if(!rows.length)throw new AppError(404,'Notification no longer available.');
  return {updated:rows.length};
@@ -130,12 +131,12 @@ export async function markNotification(actor:SessionUser|null,id:string,action:'
 export async function markNotificationsRead(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),filters=notificationFilters(input);
  const {snapshot}=v.parse(v.object({snapshot:v.pipe(v.string(),v.isoTimestamp())}),input);
- const rows=await getSql()`${visible(user.id,filters)} update notifications n set read_at=now() where n.user_id=${user.id} and n.id in(select id from visible where read_at is null and created_at<=${snapshot}::timestamptz) returning n.id`;
+ const rows=await getSql()`${visible(user,filters)} update notifications n set read_at=now() where n.user_id=${user.id} and n.id in(select id from visible where read_at is null and created_at<=${snapshot}::timestamptz) returning n.id`;
  return {updated:rows.length};
 }
 
 export async function markNotificationsSeen(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),{ids}=v.parse(v.object({ids:v.pipe(v.array(uuid),v.minLength(1),v.maxLength(60))}),input);
- const rows=await getSql()`${visible(user.id)} update notifications n set read_at=coalesce(n.read_at,now()) where n.user_id=${user.id} and n.id in(select id from visible where id=any(${getSql().array(ids,'TEXT')}::uuid[])) returning n.id`;
+ const rows=await getSql()`${visible(user)} update notifications n set read_at=coalesce(n.read_at,now()) where n.user_id=${user.id} and n.id in(select id from visible where id=any(${getSql().array(ids,'TEXT')}::uuid[])) returning n.id`;
  return {ids:rows.map((row:{id:string})=>row.id)};
 }

@@ -4,23 +4,25 @@ import register from '../docs/audits/2026-10-22-performance-followup/register.js
 import verification from '../docs/audits/2026-10-22-performance-followup/verification.json';
 import manifest from '../package.json';
 import accountSourceRefresh from '../docs/audits/2026-11-15-invite-accounts/source-refresh.json';
+import inviteFollowupSourceRefresh from '../docs/audits/2026-11-15-invite-accounts/followup-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const accountSources: Readonly<Record<string, SourceRefresh>> = accountSourceRefresh.files;
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh];
+const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
-  const refresh = accountSources[path];
-  // A new receipt names the exact historical pin it supersedes for source
-  // checks. Dated hosted receipts and their artifact checks keep their own epoch.
-  const expected = refresh?.previous === historicalHash ? refresh.current : historicalHash;
+  // Walk only exact predecessor pins. Dated hosted receipts keep their own epoch.
+  const expected = sourceRefreshes.reduce((hash, files) => files[path]?.previous === hash ? files[path].current : hash, historicalHash);
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
 
 test('audit register binds runtime pins and executable owners without promoting open work', async () => {
   expect(register.schemaVersion).toBe(1);
-  const receipt = createHash('sha256').update(await Bun.file(accountSourceRefresh.report).bytes()).digest('hex');
-  expect(receipt).toBe(accountSourceRefresh.reportSha256);
+  for (const receipt of sourceReceipts) {
+    const actual = createHash('sha256').update(await Bun.file(receipt.report).bytes()).digest('hex');
+    expect(actual).toBe(receipt.reportSha256);
+  }
   expect(manifest.packageManager).toBe(`bun@${register.runtime.bun}`);
   const docker = await Bun.file('Dockerfile').text();
   const workflow = await Bun.file('.github/workflows/verify-and-publish-preview.yml').text();

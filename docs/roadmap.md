@@ -48,7 +48,7 @@ Playback Stop semantics are selected and implemented: close immediately, wait fo
 
 ## Account and invitation follow-ups
 
-- Recipient-bound invites with email address verification and delivery.
+- Recipient-bound invites (#17) with email ownership verification before the code can be claimed, plus delivery through a configured mail service.
 - Shared Jellyfin and Coast password change and recovery for managed accounts.
 - Optional Jellyfin-backed Coast sign-in with explicit session and outage behavior.
 

@@ -8,6 +8,8 @@
   import Button from '#lib/ui/components/Button.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
+  import {emptyInviteDefaults,type InviteDefaults} from '#lib/auth/invites.js';
+  import InviteDefaultsFields from './InviteDefaultsFields.svelte';
 
   let {userId,selection=[],onclose,onchange}:{userId?:string;selection?:string[];onclose:()=>void;onchange:()=>void}=$props();
   const detail=createResource<Awaited<ReturnType<typeof accountDetails>>|null>(null);
@@ -16,6 +18,34 @@
   let preview=$state<Preview|null>(null);
   let opened=$state(true),busy=$state(false),expiry=$state(''),remoteId=$state(''),preset=$state(''),memberPreset=$state(''),quota=$state(3);
   const target=$derived(detail.data);
+  let draft=$state<InviteDefaults>(structuredClone(emptyInviteDefaults));
+  let custom=$state(false);
+  type AccessInput={users:string[];presetId?:string;defaults?:InviteDefaults};
+  let reviewed=$state<AccessInput|null>(null);
+  const draftSignature=$derived(JSON.stringify(draft));
+  const reviewMatches=$derived(!custom || JSON.stringify(reviewed?.defaults)===draftSignature);
+
+  function editDirectly() {
+    if(!target)return;
+    draft=structuredClone($state.snapshot(target.defaults??emptyInviteDefaults));
+    draft.access=structuredClone($state.snapshot(target.access));
+    draft.sharingGrant=target.sharingGranted&&target.access.sharing!==false&&!target.access.libraryOnly ? true : undefined;
+    if(target.provisioning==='complete'&&target.authority){
+      draft.account='managed';
+      draft.connectionId=target.authority;
+    }
+    preview=null;
+    custom=true;
+  }
+
+  function accessChanges(before:Record<string,unknown>,after:Record<string,unknown>) {
+    return [...new Set([...Object.keys(before),...Object.keys(after)])]
+      .filter(key=>JSON.stringify(before[key])!==JSON.stringify(after[key]))
+      .map(key=>({key,before:before[key],after:after[key]}));
+  }
+
+  const displayValue=(value:unknown)=>value==null?'Default':Array.isArray(value)?value.map(item=>
+    typeof item==='object'?JSON.stringify(item):String(item)).join(', ')||'None':String(value);
   const load=async (id:string) => {
     const result=await detail.load(signal=>api('admin/members/'+id,undefined,'GET',{signal}));
     if(!result)return;
@@ -44,7 +74,12 @@
   async function previewAccess(){
     if(busy)return;
     busy=true;preview=null;
-    try{preview=await api<Preview>('admin/members/access',{users:userId?[userId]:selection,presetId:preset},'POST');}
+    const input:AccessInput={users:userId?[userId]:[...selection],
+      ...(custom ? {defaults:$state.snapshot(draft)} : {presetId:preset})};
+    try{
+      preview=await api<Preview>('admin/members/access',input,'POST');
+      reviewed=input;
+    }
     catch(cause){actionFeedback.failure(message(cause));}
     finally{busy=false;}
   }
@@ -54,6 +89,7 @@
   {#if target}
     <div class="stack">
       <p>{target.source}{target.inviter? ' · Invited by '+target.inviter : ''} · {target.role} · {target.disabled?'Suspended':target.expired?'Expired':'Active'}</p>
+      {#if target.presetName}<p>Issued with {target.presetName}</p>{/if}
       <p>Last active {target.lastActiveAt ? new Date(target.lastActiveAt).toLocaleString() : 'unknown'}</p>
       {#if target.setupStarted}<p>Onboarding {target.readyAt?'complete':'in progress'}</p>{/if}
       {#if target.provisioning}
@@ -62,6 +98,12 @@
       {#each target.connections as connection}
         <p>{connection.name} · {connection.username??'Unlinked'} · {connection.status}</p>
       {/each}
+      {#if target.defaults}
+        <details><summary>Jellyfin settings applied in Coast</summary>
+          <p>{target.defaults.jellyfin.EnableAllFolders?'All libraries':target.defaults.folders.length+' assigned libraries'}</p>
+          <ul>{#each Object.entries(target.defaults.jellyfin) as [key,value] (key)}<li>{key} · {displayValue(value)}</li>{/each}</ul>
+        </details>
+      {/if}
       {#if Object.keys(target.access).length}<p>Coast access · {Object.entries(target.access).map(([key,value])=>key+' '+(value?'on':'off')).join(', ')}</p>{/if}
       <div class="row"><Button emphasis="subtle" disabled={busy} onclick={()=>action('revoke-sessions')}>Revoke Coast sessions and tokens</Button></div>
       {#if target.role==='user'}
@@ -101,42 +143,51 @@
     <div class="stack">
       <Heading title="Apply access" />
       {#if !userId}<p>{selection.length} selected accounts</p>{/if}
-      <form class="row" onsubmit={event=>{event.preventDefault();void previewAccess();}}>
-        <label class="field">Preset<select bind:value={preset} onchange={()=>preview=null} required>
-          <option value="">Choose a preset</option>{#each presets.data as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
-        </select></label>
-        <Button type="submit" disabled={busy||!preset}>Preview changes</Button>
+      {#if userId}
+        <div class="row">
+          {#if custom}<Button emphasis="subtle" onclick={()=>{custom=false;preview=null;}}>Use a preset</Button>
+          {:else}<Button emphasis="subtle" onclick={editDirectly}>Edit access directly</Button>{/if}
+        </div>
+      {/if}
+      <form class="stack" onsubmit={event=>{event.preventDefault();void previewAccess();}}>
+        {#if custom}
+          <InviteDefaultsFields bind:defaults={draft} accessOnly />
+        {:else}
+          <label class="field">Preset<select bind:value={preset} onchange={()=>preview=null} required>
+            <option value="">Choose a preset</option>{#each presets.data as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
+          </select></label>
+        {/if}
+        <div class="row"><Button type="submit" disabled={busy||!custom&&!preset}>Preview changes</Button></div>
       </form>
       {#if preview}
+        {#if preview.changes.some(item=>item.jellyfin)}<p>Jellyfin access changes take effect after verification.</p>{/if}
         <ul>
-        {#each preview.changes as item (item.id)}
-          <li><strong>{item.username}</strong>
-            <ul>
-              {#each [...new Set([...Object.keys(item.before),...Object.keys(item.after)])] as key}
-                {@const permission=key as keyof typeof item.before}
-                {#if item.before[permission]!==item.after[permission]}<li>{key} · {String(item.before[permission]??'default')} → {String(item.after[permission]??'default')}</li>{/if}
-              {/each}
+          {#each preview.changes as item (item.id)}
+            <li><strong>{item.username}</strong>
+              {@render changesList({...item.before,'Playback sharing grant':item.sharing.before},{...item.after,'Playback sharing grant':item.sharing.after})}
               {#if item.jellyfin}
-                {#if JSON.stringify(item.jellyfin.foldersBefore)!==JSON.stringify(item.jellyfin.foldersAfter)}
-                  <li>Library IDs · {item.jellyfin.foldersBefore.join(', ')||'default'} → {item.jellyfin.foldersAfter.join(', ')}</li>
-                {/if}
-                {#each [...new Set([...Object.keys(item.jellyfin.before),...Object.keys(item.jellyfin.after)])] as key}
-                  {@const field=key as keyof typeof item.jellyfin.before}
-                  {#if JSON.stringify(item.jellyfin.before[field])!==JSON.stringify(item.jellyfin.after[field])}
-                    <li>{key} · {JSON.stringify(item.jellyfin.before[field])??'default'} → {JSON.stringify(item.jellyfin.after[field])??'default'}</li>
-                  {/if}
-                {/each}
+                {@render changesList({...item.jellyfin.before,Libraries:item.jellyfin.foldersBefore},{...item.jellyfin.after,Libraries:item.jellyfin.foldersAfter})}
+                {@render changesList(item.jellyfin.preferencesBefore,item.jellyfin.preferencesAfter)}
               {/if}
-            </ul>
-          </li>
-        {/each}
+            </li>
+          {/each}
         </ul>
-        <div class="row"><Button disabled={busy} onclick={()=>mutate(async()=>{
-          const current=preview;if(!current)return;
-          await api('admin/members/access',{users:current.changes.map(item=>item.id),presetId:preset,confirm:current.versions},'POST');
+        <div class="row"><Button disabled={busy||!reviewMatches} onclick={()=>mutate(async()=>{
+          if(!preview||!reviewed||!reviewMatches)return;
+          await api('admin/members/access',{...$state.snapshot(reviewed),confirm:preview.versions},'POST');
           preview=null;
-        },'Access changes saved.')}>Apply changes</Button></div>
+        },'Access changes saved.')}>Apply reviewed changes</Button></div>
       {/if}
     </div>
   {/if}
 </Dialog>
+
+
+{#snippet changesList(before:Record<string,unknown>,after:Record<string,unknown>)}
+  {@const changes=accessChanges(before,after)}
+  {#if changes.length}
+    <ul>{#each changes as change (change.key)}
+      <li>{change.key} · {displayValue(change.before)} → {displayValue(change.after)}</li>
+    {/each}</ul>
+  {/if}
+{/snippet}
