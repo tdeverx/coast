@@ -9,7 +9,7 @@ import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction
 import {notify,resolveNotification} from '#lib/server/notifications/index.js';
 import {AppError} from '#lib/server/security/errors.js';
 import {emojis} from './model';
-import {friendStatusSql} from './status.server';
+import {friendLastActiveSql,friendStatusSql} from './status.server';
 import {categoryEnabled} from '#lib/experimental.js';
 import {enabledCategories} from '#lib/server/experimental.js';
 const uuid=v.pipe(v.string(),v.uuid());
@@ -20,6 +20,7 @@ export async function incomingFriendRequests(userId:string){
 export async function friends(userId:string,page=1,state:'all'|'accepted'|'pending'='all',userIds?:string[]):Promise<import('./model').FriendEntry[]> {
  return await getSql()`select f.id,f.state,f.requested_by as "requestedBy",f.created_at as "createdAt",u.id as "userId",u.username,
  case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar, (coast_feature_enabled(u.id,'personalisation') and coast_feature_enabled(${userId}::uuid,'personalisation') and social_visible(u.id,${userId}::uuid,'insights')) as "canCompare", ${friendStatusSql(userId)} as "activityStatus",
+ ${friendLastActiveSql(userId)} as "lastActiveAt",
  case when social_visible(u.id,${userId}::uuid,'details') then case when coalesce(u.settings->'profile'->>'backgroundMode',case when u.settings->'profile'->>'backgroundMediaId' is not null then 'fixed' else 'activity' end)='activity' then
  (select a.work_id::text from social_activity a join works w on w.id=a.work_id where a.user_id=u.id and a.date_known and a.event_kind in ('watch','listen','play','played','session','reading-reading','reading-completed') and a.occurred_at<=now() and social_visible(u.id,${userId}::uuid,a.section,w.category) and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) order by a.occurred_at desc,a.id desc limit 1)
  else u.settings->'profile'->>'backgroundMediaId' end end as "backgroundWorkId"
