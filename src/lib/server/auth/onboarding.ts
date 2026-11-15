@@ -1,6 +1,7 @@
 import { provisionOnboarding } from '#lib/providers/jellyfin/provisioning.server.js';
 import * as v from 'valibot';
 import { getSql } from '../db';
+import { inviteDefaultsSchema } from '#lib/auth/invites.js';
 import { registrationSchema } from '#lib/auth/registration.js';
 import { getConfig } from '../config';
 import { startTraktDevice, finishTraktDevice } from '#lib/providers/trakt/connection.server.js';
@@ -8,7 +9,7 @@ import { hashToken, newSession, checkLoginRate, type SessionUser } from './index
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { libraryScanProgress } from '#lib/sync/jellyfin.server.js';
-import { jellyfinImportStage } from '#lib/sync/jellyfin-progress.js';
+import { jellyfinImportStage, jellyfinScanProgressSchema } from '#lib/sync/jellyfin-progress.js';
 import { enqueueAction } from '../queue';
 import { findRedeemableInvite, recordAccountEvent } from './invites.server';
 import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
@@ -34,7 +35,7 @@ export async function registerAccount(input: unknown, client: string, inviteOnly
         throw new AppError(400,'This invite code has expired, was used, or is invalid.');
       if (choices.existingJellyfin && invite?.defaults?.account !== 'choice')
         throw new AppError(400,'This invite does not allow an existing Jellyfin account.');
-      const defaults = invite?.defaults;
+      const defaults = invite?.defaults ? v.parse(inviteDefaultsSchema,invite.defaults) : null;
       const [row] = await sql`insert into users (username,password_hash,role,settings,access_defaults,membership_expires_at)
         values (${data.username},${passwordHash},'user',${{...defaults?.preferences,profile:{displayName:data.displayName}}}::jsonb,
         ${defaults?.access ?? {}}::jsonb,now()+${defaults?.membershipDays ?? null}::integer*interval '1 day')
@@ -250,4 +251,56 @@ export async function retryInitialImports(userId:string) {
  for(const id of Object.values(row.import_jobs??{}) as string[])await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
  if(row.connection_id&&!await jellyfinReady(row))await retryOnboarding(userId);
  return onboardingStatus(userId);
+}
+
+// Only a member explicitly viewing their initial imports reads these three task slots.
+async function backgroundImportRows(db:ReturnType<typeof getSql>,userId:string) {
+  return db<{id:string|null;kind:string;state:string;progress:unknown;startedAt:Date|null;canRetry:boolean}[]>`
+    select j.id,j.kind,j.state,j.progress,j."startedAt",j."canRetry"
+    from user_onboarding o cross join lateral (
+      select bootstrap.id,'jellyfin.bootstrap' as kind,case when c.status='connected' then coalesce(bootstrap.state,'succeeded') else 'reconnect' end as state,
+        c.settings->'initialSync' as progress,bootstrap.created_at as "startedAt",
+        c.status='connected' and bootstrap.state in ('failed','cancelled') as "canRetry"
+      from provider_connections c left join lateral (
+        select q.id,q.state,q.created_at from outbox_actions q where q.user_id=o.user_id and q.connection_id=c.id
+          and q.account_generation=o.account_generation and q.kind='jellyfin.bootstrap' and q.created_at>=o.requested_at
+        order by q.created_at desc,q.id desc limit 1
+      ) bootstrap on true
+      where c.id=o.connection_id and c.user_id=o.user_id and c.account_generation=o.account_generation
+      union all
+      select job.id,requested.kind,case when c.status='connected' then coalesce(job.state,'succeeded') else 'reconnect' end,
+        null::jsonb,null::timestamptz,c.status='connected' and job.state in ('failed','cancelled')
+      from (values ('trakt.import'),('trakt.lists-import')) requested(kind)
+      join provider_connections c on c.id=o.trakt_connection_id and c.user_id=o.user_id and c.account_generation=o.trakt_account_generation
+      left join outbox_actions job on job.id=(o.import_jobs->>requested.kind)::uuid and job.account_generation=c.account_generation
+        and job.user_id=o.user_id and job.connection_id=c.id and job.kind=requested.kind
+      where o.import_jobs ? requested.kind
+    ) j where o.user_id=${userId} and o.completed_at is not null`;
+}
+
+export async function backgroundOnboardingImports(userId:string) {
+  const rows=await backgroundImportRows(getSql(),userId);
+  return rows.map(row=>{
+    const label=row.kind==='jellyfin.bootstrap'?'Jellyfin':row.kind==='trakt.import'?'Trakt tracking':'Trakt lists';
+    const parsed=v.safeParse(jellyfinScanProgressSchema,row.progress);
+    const current=parsed.success&&row.startedAt&&new Date(parsed.output.startedAt)>=row.startedAt?parsed.output:null;
+    return {label,state:row.state,canRetry:row.canRetry===true,
+      stage:current ? jellyfinImportStage(current.phase) : 'Importing',
+      processed:current?.stageProcessed??current?.processed??0,total:current?.stageTotal===undefined?current?.total??null:current.stageTotal,error:null};
+  });
+}
+
+export async function retryBackgroundOnboardingImports(userId:string) {
+  await getSql().begin(async db=>{
+    await db`select pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
+    const jobs=(await backgroundImportRows(db,userId)).flatMap(row=>row.canRetry&&row.id?[row.id]:[]);
+    if(!jobs.length)return;
+    await db`update outbox_actions q set state='pending',next_attempt_at=now(),last_error=null,updated_at=now()
+      from provider_connections c where q.id=any(${db.array(jobs,'UUID')}::uuid[]) and q.user_id=${userId}
+      and q.connection_id=c.id and q.account_generation=c.account_generation and c.status='connected'
+      and q.state in ('failed','cancelled') and not exists (
+        select 1 from outbox_actions active where active.user_id=q.user_id and active.connection_id=q.connection_id
+          and active.account_generation=q.account_generation and active.kind=q.kind and active.state in ('pending','running')
+      )`;
+  });
 }

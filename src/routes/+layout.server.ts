@@ -10,7 +10,8 @@ export const load = (async ({ locals, depends,params,url }) => {
   const config=await getFeatureConfig(locals.user?.id??null);
   const viewedUsername=params.username??url.searchParams.get('username');
   const regularUser=locals.user?.role==='user'?locals.user:null;
-  const [notifications,unreadNotifications,friendRequestCount,revision,activeShareUntil]=locals.user&&!locals.user.access?.libraryOnly?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername),regularUser?activeShareExpiry(regularUser):null]):[[],0,0,null,null];
+  const membershipToasts=locals.user?.access?.libraryOnly ? await notificationToasts(locals.user) : [];
+  const [notifications,unreadNotifications,friendRequestCount,revision,activeShareUntil]=locals.user&&!locals.user.access?.libraryOnly?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername),regularUser?activeShareExpiry(regularUser):null]):[membershipToasts,membershipToasts.length,0,null,null];
   return {
     action:resolveAction(url.searchParams,locals.user?.settings.action,config),
     capabilities:config.features,

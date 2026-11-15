@@ -120,13 +120,13 @@
         </Button>
       {/if}
       {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
-      {#if !user.access?.libraryOnly}<Button size="icon"
+      <Button size="icon"
         id={preview?`${previewId}-notifications`:"notification-trigger"}
         class="notification"
         onclick={()=>{if(!preview)openNotifications();}}
         label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</Button
-      >{/if}<Button menu label="Account menu"
+      ><Button menu label="Account menu"
         >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={page.data.capabilities?.presence===false?'offline':status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
           {#if !user.access?.libraryOnly&&page.data.capabilities?.presence!==false}<Button menu label="Activity status">

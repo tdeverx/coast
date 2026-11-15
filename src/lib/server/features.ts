@@ -17,7 +17,7 @@ export async function getFeatureConfig(userId: string | null, database?: ReturnT
   const user = database?(snapshot.id?snapshot:undefined):userId?await featureSubject(userId):undefined;
   const features = featureValues(config, user?.settings?.features);
   if (userId && (!user || user.disabled)) for (const key of Object.keys(features) as Feature[]) features[key] = false;
-  for (const key of ['sharing','requests','social'] as const) if (user?.access_defaults?.[key]===false) features[key]=false;
+  for (const key of ['sharing','requests','social','parties'] as const) if (user?.access_defaults?.[key]===false) features[key]=false;
   if (user?.access_defaults?.libraryOnly)
     for (const key of ['sharing','requests','api','personalisation','parties','planning','game'] as const) features[key]=false;
   if (!features.social) {features.presence=false;features.parties=false;}

@@ -108,7 +108,7 @@ export async function inbox(actor: SessionUser | null, limit = 50, filters:{kind
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread||filters.toasts?isNull(notifications.readAt):undefined,filters.toasts?isNull(notifications.toastHiddenAt):undefined))
+    .where(and(eq(notifications.userId, user.id),user.access?.libraryOnly?eq(notifications.kind,'membership-expiry'):undefined,sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread||filters.toasts?isNull(notifications.readAt):undefined,filters.toasts?isNull(notifications.toastHiddenAt):undefined))
     .orderBy(...(filters.toasts
       ? [sql`row_number() over (
           partition by (${notifications.locked} or ${notifications.level} = 'persistent')
@@ -124,6 +124,7 @@ export async function hideNotificationToasts(actor: SessionUser | null, input: u
   const { ids } = v.parse(v.strictObject({ids: v.pipe(v.array(v.pipe(v.string(),v.uuid())), v.minLength(1), v.maxLength(200))}), input);
   const rows = await notificationQuery<{id: string}>(database ?? getSql(), sql`WITH owned AS MATERIALIZED (
       SELECT id FROM notifications WHERE user_id = ${user.id}::uuid
+        AND (not ${user.access?.libraryOnly===true} or kind='membership-expiry')
         AND id IN (${sql.join([...new Set(ids)].map(id => sql`${id}::uuid`), sql`, `)})
     ), hidden AS (
       UPDATE notifications n SET toast_hidden_at = NOW() FROM owned

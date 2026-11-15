@@ -1,0 +1,42 @@
+{
+  "files": {
+    "docs/roadmap.md": {
+      "current": "3d3da68f46576bf6fc43705d68198e5ec268a86acad4e41de87a0da900b20280",
+      "previous": "0ae8d9545b60d7b6fa5f3563b835e99e877e3834db8b8b54bc5302380ce758ee"
+    },
+    "drizzle/meta/_journal.json": {
+      "current": "b555922b92402c26420432f70eb7980055de5e9c955ed01d487c2b00c04707b2",
+      "previous": "bcc8073089beba1ea8d04f9980f2a941b0f9ec152dac12c01173bb1701aa29b3"
+    },
+    "src/lib/providers/jellyfin/adapter.server.ts": {
+      "current": "3fe372273136edb3d635906e5e86f5bd28c589db9c44afa8aaf6f33f02c03e4a",
+      "previous": "e5806da45abd0a38a7859ab9bd24c0a09d2f56612e42ca7cb6b053b7cf2dac46"
+    },
+    "src/lib/server/db/schema.ts": {
+      "current": "9ed96c27357dd24f7b1a34bd0a0009c6b85b6bcc71f656aab6704e670c680e94",
+      "previous": "54f3a91b6afd8d5bf87dd935f45065b3ea51da79d65821e728b517acb778c83f"
+    },
+    "src/lib/ui/components/Header.svelte": {
+      "current": "c941c142b38da363c46fcf4ccd10e862e350d3f360a45426ea4031873823e0ba",
+      "previous": "41e21069367f0a3fcc24a2c1b894940a8b4150b00e85dbf8f62406df57c6d915"
+    },
+    "src/routes/+layout.server.ts": {
+      "current": "246ad9e312d284b73cc3285ea6c9f028fff7969f02b7e497d5fe28f605649cdc",
+      "previous": "7cb536328903c1f78680e9982eeb634883a9cf4683a073a3ea8951fecac35cf8"
+    },
+    "src/routes/settings/[[section]]/+page.server.ts": {
+      "current": "51f29e3f392f8c512e4be0788a5fefbdb156ecf4734999020e26f6792421f9d3",
+      "previous": "7c8eb456cd66a247afbdf7ba1b8c83e5f2e3969a35de1e1c40297a1d9d99e645"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "current": "a5abe14c07ec85ee2006bcca80962b5db97e063a01b4e651c29a9caba2e6e04b",
+      "previous": "dd1689ab0060650eeed0c8a47b06165a631619615536aca23100dbc48b673a02"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "73999cb3b88e379cf6fe4a21192d9e9fca06cc0d3a8568019266fe63e7fd1ade",
+      "previous": "7b88b11f0794c0b80aed4192942c66f40b973b5b894c42035ce62172e5dc69b4"
+    }
+  },
+  "report": "docs/audits/2026-11-15-invite-accounts/followup-verification.md",
+  "reportSha256": "0486acba04873bddbb1fb032d399fbddee8c67ed011fd24aac0e46d29208cc3f"
+}

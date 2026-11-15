@@ -44,6 +44,11 @@ export const load = (async ({locals, params, depends, url}) => {
     from provider_connections c join users u on u.id=c.user_id and u.role='admin' and not u.disabled
     join provider_instances i on i.id=c.instance_id and i.provider='jellyfin' and i.enabled
     where c.status='connected' and c.credentials is not null order by i.name,u.username,c.id limit 40` : [];
+  const accountState=section==='account'
+    ? (await getSql()<{hasLocalPassword:boolean;initialImports:boolean}[]>`select password_hash is not null as "hasLocalPassword",
+      exists(select 1 from user_onboarding where user_id=users.id and completed_at is not null
+        and (connection_id is not null or trakt_connection_id is not null)) as "initialImports"
+      from users where id=${locals.user!.id}`)[0] : null;
   return {
     section,usersTab,accounts,inviteAuthorities,
     featureDecisions: resolveFeatures(config),
@@ -51,12 +56,8 @@ export const load = (async ({locals, params, depends, url}) => {
     backups: section === 'backups' ? await (await import('#lib/backups/service.server.js')).backupStatus(locals.user) : null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
-    hasLocalPassword:
-      section === 'account'
-        ? (
-            await getSql()`SELECT password_hash IS NOT NULL AS present FROM users WHERE id = ${locals.user!.id}`
-          )[0]?.present === true
-        : false,
+    hasLocalPassword:accountState?.hasLocalPassword??false,
+    initialImports:accountState?.initialImports??false,
     conflicts: section === 'pending' ? await getPendingConflicts(locals.user!.id) : [],
     providers:section==='users'?[]:await listProviders(locals.user!.id, admin),
     config: admin ? config : null,

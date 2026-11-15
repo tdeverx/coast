@@ -6,7 +6,7 @@ import {getSql,getDb} from '#lib/server/db/index.js';
 import {socialRecommendations,friendships,notifications,works} from '#lib/server/db/schema.js';
 import {trackInTransaction} from '#lib/core/tracking/service.server.js';
 import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction} from '#lib/sync/changes.server.js';
-import {notify,resolveNotification} from '#lib/server/notifications/index.js';
+import {notify,notifyMany,resolveNotification} from '#lib/server/notifications/index.js';
 import {AppError} from '#lib/server/security/errors.js';
 import {emojis} from './model';
 import {friendLastActiveSql,friendStatusSql} from './status.server';
@@ -162,6 +162,10 @@ export async function addInviterFriend(db:ReturnType<typeof getSql>, userId:stri
   await db`select pg_advisory_xact_lock(hashtextextended(${a+':'+b},0))`;
   const [friend]=await db`insert into friendships(user_a,user_b,requested_by,state) values(${a},${b},${userId},'accepted')
     on conflict(user_a,user_b) do nothing returning id`;
-  if(friend)await notify({userId:inviterId,kind:'friend-accepted',title:'Your invitee joined Coast',sourceKey:'friend-accepted:'+friend.id,
-    data:{actorId:userId,subjectId:friend.id,destination:'/for-you?friends=true'}},db);
+  if(friend)await notifyMany([
+    {userId:inviterId,kind:'friend-accepted',title:'Your invitee joined Coast',sourceKey:'friend-accepted:'+friend.id,
+      data:{actorId:userId,subjectId:friend.id,destination:'/for-you?friends=true'}},
+    {userId,kind:'friend-accepted',title:'You and your inviter are now friends',sourceKey:'friend-accepted:'+friend.id,
+      data:{actorId:inviterId,subjectId:friend.id,destination:'/for-you?friends=true'}},
+  ],db);
 }

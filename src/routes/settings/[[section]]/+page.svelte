@@ -677,6 +677,7 @@
                 ? 'Administrator'
                 : 'Coast account'}
             </p>
+            {#if data.initialImports}<Button href="/onboarding?step=imports" emphasis="subtle">Initial imports</Button>{/if}
           </div>
           <div class="panel stack">
             {#if data.hasLocalPassword}<h3>Change password</h3>

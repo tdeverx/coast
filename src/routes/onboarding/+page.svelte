@@ -26,7 +26,7 @@
       if(result?.type==='success'&&result.data?.pending===false)await refreshRouteDependencies(['onboarding']);
      }
     }
-    if(!stopped&&!document.hidden&&data.phase==='importing')await refreshRouteDependencies(['onboarding']);
+    if(!stopped&&!document.hidden&&(data.phase==='importing'||data.background&&data.imports.some(item=>item.state==='running'||item.state==='pending')))await refreshRouteDependencies(['onboarding']);
    }catch{if(!stopped)deviceError='Connection interrupted. Try connecting again.';}finally{pending=false;}
   };
   const visible=()=>{if(!document.hidden)void refresh();};
@@ -36,9 +36,17 @@
   reportFailure(()=>(form && 'error' in form ? form.error : '') || deviceError);
   reportFailure(() => data.imports.map(item => item.error).filter(Boolean).join(' '));
 </script>
-<svelte:head><title>Set up your account · Coast</title></svelte:head>
+<svelte:head><title>{data.background?'Initial imports':'Set up your account'} · Coast</title></svelte:head>
 <div class="auth-page"><div class="auth-card"><div class="row brand"><Brand /></div>
- {#if data.picture&&data.phase==='connections'}
+ {#if data.background}
+ <h1>Initial imports</h1>
+ {#if !data.imports.length}<p>No initial imports are available for this account.</p>{/if}
+ {@render importRows()}
+ {#if data.imports.some(item=>'canRetry' in item&&item.canRetry)}
+   <form method="POST" action="?step=imports&/retryBackground" use:enhance><Button type="submit">Retry imports</Button></form>
+ {/if}
+ <Button href="/library" emphasis="subtle">Back to Library</Button>
+ {:else if data.picture&&data.phase==='connections'}
  <h1>Choose your profile picture.</h1><p>Upload an image, use one from a connected service, or continue without one.</p>
  <form method="POST" action="?/picture" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
  <AvatarPicker bind:avatar bind:reading name={data.profile.displayName??data.username} disabled={busy} choices={data.avatarChoices} />
@@ -49,7 +57,7 @@
  {:else if data.phase==='connections'||data.reconnect||data.imports.some(item=>item.error==='Reconnect Trakt to continue.')}
  <h1>Connect your services.</h1><p>Import your history, progress, favourites and saved titles before you start browsing.</p>
  {#if data.requiredProvider!=='none'}<p>{data.requiredProvider==='either'?'Connect Jellyfin or Trakt to continue.':`Connect ${data.requiredProvider==='jellyfin'?'Jellyfin':'Trakt'} to continue.`}</p>{/if}
- {#if data.provisioning&&!data.linked}<form method="POST" action="?/provision" class="stack" use:enhance><p>Your invitation includes a new account on {data.provisioning.name}, using your Coast username.</p><label class="field">Coast password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="current-password"/></label><Button type="submit" disabled={!data.provisioning.canRetry&&['creating','uncertain'].includes(data.provisioning.state)}>Create Jellyfin account</Button>{#if !data.provisioning.canRetry&&['creating','uncertain'].includes(data.provisioning.state)}<p class="small">Contact an administrator to review this account before retrying.</p>{/if}</form>{/if}
+ {#if data.provisioning&&!data.linked}<form method="POST" action="?/provision" class="stack" use:enhance><p>Your invitation includes a new account on {data.provisioning.name}, using your Coast username.</p><label class="field">Coast password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="current-password"/></label><Button type="submit" disabled={!data.provisioning.canRetry&&['creating','uncertain'].includes(data.provisioning.state)}>{data.provisioning.state==='configuring'?'Finish Jellyfin setup':data.provisioning.failed?'Retry Jellyfin setup':'Create Jellyfin account'}</Button>{#if !data.provisioning.canRetry&&['creating','uncertain'].includes(data.provisioning.state)}<p class="small">Contact an administrator to review this account before retrying.</p>{/if}</form>{/if}
  {#if data.linked}<p role="status">Jellyfin connected.</p>{:else if data.services.length}
  <form method="POST" action="?/connect" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
  <label class="field">Jellyfin server<select name="instanceId">{#each data.services as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
@@ -63,9 +71,13 @@
  {:else if data.requiredProvider==='trakt'}<p class="small">An administrator needs to enable Trakt.</p>{/if}
  {#if data.phase==='connections'}<Button href="/onboarding?step=picture" disabled={!canContinue}>Continue</Button>{:else}<form method="POST" action="?/begin" use:enhance><Button type="submit" disabled={!canContinue}>Continue import</Button></form>{/if}
  {:else}<h1>Importing your data.</h1><p>You can leave this page and return later. Library opens when your account is ready. Some imports can continue in the background.</p>
- {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}</div>{/each}
+ {@render importRows()}
  {#if data.imports.some(item=>['failed','cancelled'].includes(item.state))}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form>{/if}
  {/if}
 
  <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" emphasis="subtle">Sign out</Button></form></div>
 </div></div>
+
+{#snippet importRows()}
+ {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='reconnect'?'Reconnect this account to continue':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}</div>{/each}
+{/snippet}

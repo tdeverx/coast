@@ -1300,6 +1300,7 @@ export const registrationInvites = pgTable('registration_invites', {
   maxUses: integer('max_uses').notNull().default(1),
   claimCount: integer('claim_count').notNull().default(0),
   memberIssued: boolean('member_issued').notNull().default(false),
+  approvalIssued: boolean('approval_issued').notNull().default(false),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   usedBy: uuid('used_by').references(() => users.id, { onDelete: 'set null' }),
@@ -1318,6 +1319,7 @@ export const inviteClaims = pgTable('invite_claims', {
   username: text('username').notNull(),
   addInviter: boolean('add_inviter').notNull().default(false),
   readyAt: timestamp('ready_at',{withTimezone:true}),
+  setupFailedAt: timestamp('setup_failed_at',{withTimezone:true}),
   createdAt: createdAt(),
 }, t => [index('invite_claims_invite_idx').on(t.inviteId,t.createdAt,t.id)]);
 export const memberInviteGrants = pgTable('member_invite_grants', {
@@ -1328,6 +1330,7 @@ export const memberInviteGrants = pgTable('member_invite_grants', {
 export const memberInviteRequests = pgTable('member_invite_requests', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id,{onDelete:'cascade'}),
+  presetId: uuid('preset_id').references(() => invitePresets.id,{onDelete:'restrict'}),
   note: text('note').notNull().default(''),
   state: text('state').$type<'pending'|'approved'|'denied'|'issued'>().notNull().default('pending'),
   createdAt: createdAt(),
@@ -1337,6 +1340,7 @@ export const accountAudit = pgTable('account_audit', {
   actorId: uuid('actor_id').references(() => users.id,{onDelete:'set null'}),
   subjectId: uuid('subject_id'),
   event: text('event').notNull(),
+  details: jsonb('details').$type<Record<string,unknown>>(),
   createdAt: createdAt(),
 }, t => [index('account_audit_order_idx').on(t.createdAt,t.id), index('account_audit_subject_idx').on(t.subjectId,t.createdAt,t.id)]);
 export const userOnboarding = pgTable('user_onboarding', {
