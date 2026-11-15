@@ -217,7 +217,7 @@ export class JellyfinAdapter {
     return v.parse(companionPageSchema,await this.call(`/Coast/Changes?${query}`));
   }
   async createUser(name:string,password:string){return v.parse(v.object({Id:v.string()}),await this.call('/Users/New',{method:'POST',body:JSON.stringify({Name:name,Password:password})}));}
-  async userForProvisioning(id:string){const user=v.parse(v.object({Id:v.string(),Name:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call(`/Users/${encodeURIComponent(id)}`));if(user.Id!==id)throw new ProviderActionError('Jellyfin returned an unexpected user.','identity');return user;}
+  async userForProvisioning(id:string){const user=v.parse(v.object({Id:v.string(),Name:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call(`/Users/${encodeURIComponent(id)}`));if(jellyfinItemKey(user.Id)!==jellyfinItemKey(id))throw new ProviderActionError('Jellyfin returned an unexpected user.','identity');return user;}
   async setProvisionPolicy(id:string,policy:Record<string,unknown>){await this.call(`/Users/${encodeURIComponent(id)}/Policy`,{method:'POST',body:JSON.stringify(policy)});}
   async setProvisionPassword(id:string,password:string){await this.call(`/Users/Password?userId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({NewPw:password,ResetPassword:false})});}
   async virtualFolders(){return v.parse(v.array(v.object({ItemId:v.string(),Name:v.optional(v.string())})),await this.call('/Library/VirtualFolders'));}
@@ -333,7 +333,7 @@ export class JellyfinAdapter {
       }),
       await this.call(`/Users/${encodeURIComponent(userId)}`)
     );
-    if (user.Id !== userId)
+    if (jellyfinItemKey(user.Id) !== jellyfinItemKey(userId))
       throw new ProviderActionError('Jellyfin returned an unexpected user identity.', 'identity');
     return { administrator: user.Policy.IsAdministrator, disabled: user.Policy.IsDisabled };
   }

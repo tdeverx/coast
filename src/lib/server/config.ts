@@ -142,7 +142,9 @@ export async function refreshDiagnosticConfig() {
 
 /** Read-model snapshots are shared only inside this request; transactions bypass them. */
 export function featureSubject(userId:string) {
-  const read=async()=>{const [user]=await getSql()`select settings,disabled from users where id=${userId}`;return user as {settings:import('./db/schema').UserSettings;disabled:boolean}|undefined;};
+  const read=async()=>{const [user]=await getSql()`select u.settings,u.access_defaults,u.disabled or not coalesce(u.membership_expires_at>now(),true) as disabled,
+    nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id),'0')::integer as managed_bitrate
+    from users u where u.id=${userId}`;return user as {settings:import('./db/schema').UserSettings;access_defaults:import('../auth/invites').CoastAccess;disabled:boolean;managed_bitrate:number|null}|undefined;};
   const current=requestConfig.getStore();
   if(!current?.active)return read();
   current.subjects??=new Map();

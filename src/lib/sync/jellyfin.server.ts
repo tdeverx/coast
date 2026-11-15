@@ -18,8 +18,8 @@ import { jellyfinScanProgressSchema, type JellyfinScanProgress } from './jellyfi
 import { jobCheckpoint, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 import { artworkKeys } from '#lib/artwork.js';
 import * as v from 'valibot';
-import { and, eq, isNull, ne, or, sql, desc, inArray, lte } from 'drizzle-orm';
-import { getDb, type Database } from '#lib/server/db/index.js';
+import { and, eq, isNull, ne, or, sql, inArray, lte } from 'drizzle-orm';
+import { getDb, getSql, type Database } from '#lib/server/db/index.js';
 import {
   availability,
   providerItems,
@@ -27,12 +27,12 @@ import {
   seasons,
   providerConnections,
   trackingState,
-  outboxActions,
   providerInstances,
   media,
   users,
   works, musicProgress, reconciliationIntents, syncValues,
 } from '#lib/server/db/schema.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { notify } from '#lib/server/notifications/index.js';
@@ -53,38 +53,27 @@ async function jellyfinContext(userId:string,connectionId:string,provided?:Jelly
 }
 
 export async function libraryScanProgress(userId: string, connectionId: string, since?:Date, personal = false) {
-  const { connection } = await getJellyfin(userId, connectionId);
-  const [job] = await getDb()
-    .select()
-    .from(outboxActions)
-    .where(
-      and(
-        eq(outboxActions.userId, userId),
-        eq(outboxActions.connectionId, connectionId),
-        eq(outboxActions.kind, personal ? 'jellyfin.bootstrap' : 'jellyfin.sync'),
-        since ? sql`${outboxActions.createdAt} >= ${since}` : undefined
-      )
-    )
-    .orderBy(desc(outboxActions.createdAt))
-    .limit(1);
-  if (!job) return null;
-  const parsed = v.safeParse(jellyfinScanProgressSchema, personal ? connection.settings.initialSync : connection.settings.userSync);
-  const current =
-    parsed.success && new Date(parsed.output.startedAt) >= job.createdAt ? parsed.output : null;
-  const [checkpoint] = current
-    ? []
-    : await getDb()
-        .select()
-        .from(syncCheckpoints)
-        .where(
-          and(
-            eq(syncCheckpoints.connectionId, connectionId),
-            eq(syncCheckpoints.kind, personal ? 'jellyfin-personal' : 'jellyfin-user')
-          )
-        )
-        .limit(1);
-  const checkpointCount =
-    checkpoint && checkpoint.updatedAt >= job.createdAt ? Number(checkpoint.cursor ?? 0) : 0;
+  const db = getSql();
+  const [job] = await db<{
+    progress: unknown; state: string | null; created_at: Date | null; attempts: number;
+    error: string | null; failure_code: string | null; cursor: string | null; checkpoint_at: Date | null;
+  }[]>`select c.settings->${personal ? 'initialSync' : 'userSync'}::text as progress,job.state,job.created_at,job.attempts,job.last_error as error,
+    job.payload->'_jobFailure'->>'code' as failure_code,checkpoint.cursor,checkpoint.updated_at as checkpoint_at
+    from provider_connections c join provider_instances i on i.id=c.instance_id and i.provider='jellyfin' and i.enabled
+    left join lateral (
+      select state,created_at,attempts,last_error,payload from outbox_actions
+      where user_id=c.user_id and connection_id=c.id and account_generation=c.account_generation
+        and kind=${personal ? 'jellyfin.bootstrap' : 'jellyfin.sync'}
+        and (${since ?? null}::timestamptz is null or created_at>=${since ?? null})
+      order by created_at desc,id desc limit 1
+    ) job on true
+    left join sync_checkpoints checkpoint on checkpoint.connection_id=c.id and checkpoint.kind=${personal ? 'jellyfin-personal' : 'jellyfin-user'}
+    where c.id=${connectionId} and c.user_id=${userId} and c.status='connected' and c.credentials is not null`;
+  if (!job) throw new AppError(404,'Connect your account in Settings to continue.','not_found');
+  if (!job.state || !job.created_at) return null;
+  const parsed = v.safeParse(jellyfinScanProgressSchema, job.progress);
+  const current = parsed.success && new Date(parsed.output.startedAt) >= job.created_at ? parsed.output : null;
+  const checkpointCount = job.checkpoint_at && job.checkpoint_at >= job.created_at ? Number(job.cursor ?? 0) : 0;
   return {
     state: job.state,
     processed: current?.processed ?? (Number.isSafeInteger(checkpointCount) ? checkpointCount : 0),
@@ -92,8 +81,8 @@ export async function libraryScanProgress(userId: string, connectionId: string, 
     phase: current?.phase ?? 'scanning',
     stageProcessed: current?.stageProcessed ?? current?.processed ?? 0,
     stageTotal: current?.stageTotal === undefined ? current?.total ?? null : current.stageTotal,
-    error: job.lastError,
-    authenticationFailed: (job.payload._jobFailure as {code?:string}|undefined)?.code==='provider.authentication',
+    error: job.error,
+    authenticationFailed: job.failure_code==='provider.authentication',
     attempts: job.attempts,
   };
 }
@@ -118,23 +107,38 @@ export async function syncJellyfinUser(
   return runJellyfinScan(userId, connectionId, 'user', true, onStage,provided);
 }
 
-/** Import only personal state before onboarding opens. Full availability follows at background priority. */
+/** Seed invited accounts and import personal state. The full availability scan runs separately. */
 export async function bootstrapJellyfinUser(userId: string, connectionId: string,
   onStage?: (stage: string) => void, provided?: JellyfinSyncContext) {
-  const [ready] = await getDb().execute(sql`select c.connection_id from sync_checkpoints c
-    join provider_connections p on p.id=c.connection_id
-    join users u on u.id=p.user_id and not u.disabled
-    join provider_instances i on i.id=p.instance_id and i.enabled
-    left join user_onboarding o on o.user_id=p.user_id and o.completed_at is null
-    where p.id=${connectionId} and p.user_id=${userId} and p.status='connected'
-      ${provided ? sql`and p.account_generation=${provided.connection.accountGeneration}::uuid` : sql``}
-      and p.settings->'initialSync'->>'accountGeneration'=p.account_generation::text
-      and c.kind='jellyfin-personal' and c.scan_id is null and c.completed_at is not null
-      and (o.requested_at is null or c.completed_at>=o.requested_at)`);
-  if (ready) return {checked: 0, count: 0, full: false};
+  const db = getSql();
+  const [status] = await db<{personal_ready:boolean;needs_seed:boolean;restricted:boolean}[]>`
+    select exists (
+      select 1 from sync_checkpoints p where p.connection_id=c.id and p.kind='jellyfin-personal'
+        and p.scan_id is null and p.completed_at is not null
+        and (o.requested_at is null or p.completed_at>=o.requested_at)
+        and c.settings->'initialSync'->>'accountGeneration'=c.account_generation::text
+    ) as personal_ready,
+    (i.defaults is not null or u.access_defaults->>'libraryOnly'='true') and not exists (
+      select 1 from sync_checkpoints seed where seed.connection_id=c.id and seed.kind='jellyfin-seed'
+        and seed.cursor=c.account_generation::text and seed.completed_at is not null
+    ) as needs_seed,
+    coalesce(u.access_defaults->>'libraryOnly'='true',false) as restricted
+    from provider_connections c join users u on u.id=c.user_id and not u.disabled
+    join provider_instances provider on provider.id=c.instance_id and provider.enabled and provider.provider='jellyfin'
+    left join user_onboarding o on o.user_id=u.id and o.completed_at is null
+    left join invite_claims claim on claim.user_id=u.id
+    left join registration_invites i on i.id=claim.invite_id
+    where c.id=${connectionId} and c.user_id=${userId} and c.status='connected'
+      ${provided ? db`and c.account_generation=${provided.connection.accountGeneration}` : db``}`;
+  if (status?.personal_ready && !status.needs_seed) return {checked: 0, count: 0, full: false};
   const context=await jellyfinContext(userId,connectionId,provided);
+  if(status?.needs_seed){
+    onStage?.('library-page');
+    const seed = await runJellyfinScan(userId,connectionId,'user',true,onStage,context,undefined,true);
+    if(status.personal_ready)return seed;
+  }
   onStage?.('cached-library-access');
-  if((await getFeatureConfig(userId)).features.screen)await tryReuseScreenAccess(context);
+  if(!status?.restricted&&(await getFeatureConfig(userId)).features.screen)await tryReuseScreenAccess(context);
   return runJellyfinScan(userId, connectionId, 'personal', true, onStage, context);
 }
 
@@ -153,7 +157,8 @@ async function runJellyfinScan(
   full = true,
   onStage?: (stage: string) => void,
   provided?: JellyfinSyncContext,
-  changes?: {video:string[];music:string[];reading?:string[]}
+  changes?: {video:string[];music:string[];reading?:string[]},
+  seed = false,
 ) {
   onStage?.('connection');
   const { adapter, connection, instance } = await jellyfinContext(userId, connectionId,provided);
@@ -170,13 +175,13 @@ async function runJellyfinScan(
   const filters = ['IsPlayed', 'IsResumable', 'IsFavorite'] as const;
   const filterPhases = ['watched', 'resume', 'favourites'] as const;
   let filterIndex = 0;
-  const [checkpoint] = changes ? [] : await db
+  const [checkpoint] = changes || seed ? [] : await db
     .select()
     .from(syncCheckpoints)
     .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
   let scanId = checkpoint?.scanId ?? crypto.randomUUID();
   const accessContext={adapter,connection,instance};
-  let inventoryProof=featureConfig.features.screen&&!changes&&scope!=='personal'&&full?await captureScreenAccessProof(accessContext):null;
+  let inventoryProof=featureConfig.features.screen&&!changes&&!seed&&scope!=='personal'&&full?await captureScreenAccessProof(accessContext):null;
   let libraryIndex=0,libraryCompleted=0,libraryTotal:number|null=null;
   let offset = 0;
   if (checkpoint?.scanId && checkpoint.cursor) {
@@ -244,13 +249,13 @@ async function runJellyfinScan(
   // cannot leave earlier negative observations looking like current coverage.
   const screenCursor=(nextOffset:number)=>inventoryProof?JSON.stringify({libraryIndex,offset:nextOffset,completed:libraryCompleted,total:libraryTotal,proof:inventoryProof}):String(nextOffset);
   const initialCursor=scope === 'personal' ? JSON.stringify({filter:filterIndex,offset}) : screenCursor(offset);
-  if(!changes)await db.transaction(async tx=>{
+  if(!changes&&!seed)await db.transaction(async tx=>{
     await ensureConnected(tx,true);
     await tx.insert(syncCheckpoints).values({connectionId,kind,cursor:initialCursor,scanId,updatedAt:new Date()})
       .onConflictDoUpdate({target:[syncCheckpoints.connectionId,syncCheckpoints.kind],set:{cursor:initialCursor,scanId,updatedAt:new Date()}});
   });
   if (phase === 'complete') phase = scope === 'personal' ? 'watched' : 'scanning';
-  if(!changes)await report(resume?.processed ?? offset, resume?.total ?? null, phase, {
+  if(!changes&&!seed)await report(resume?.processed ?? offset, resume?.total ?? null, phase, {
     readingOffset:resume?.readingOffset, playbackCursor: resume?.playbackCursor, musicOffset: resume?.musicOffset, musicFilter: resume?.musicFilter,
     musicPlaybackCursor:resume?.musicPlaybackCursor, traversalTotal:resume?.traversalTotal,
     stageProcessed: resume?.stageProcessed, stageTotal: resume?.stageTotal,
@@ -637,7 +642,17 @@ async function runJellyfinScan(
   // Publish positive reading access before unrelated playback reconciliation.
   // Keep its finite cursor in this job; the original multi-medium census/negative
   // publication still completes under the existing scan/reset/generation fence.
-  if(scope!=='personal'&&(featureConfig.experimentalBooks||featureConfig.experimentalComics)){
+  async function publishSeed() {
+    await db.transaction(async tx=>{
+      await ensureConnected(tx,true);
+      const values={connectionId,kind:'jellyfin-seed',cursor:connection.accountGeneration,completedAt:new Date()};
+      await tx.insert(syncCheckpoints).values(values).onConflictDoUpdate({
+        target:[syncCheckpoints.connectionId,syncCheckpoints.kind],set:{cursor:values.cursor,completedAt:values.completedAt},
+      });
+    });
+    return {checked:count,count,full:false,deferred:0};
+  }
+  if(!seed&&scope!=='personal'&&(featureConfig.experimentalBooks||featureConfig.experimentalComics)){
     const saved=await readJobCheckpoint();
     const point=v.safeParse(v.object({task:v.literal('jellyfin-reading-access'),scanId:v.pipe(v.string(),v.uuid()),
       offset:v.pipe(v.number(),v.integer(),v.minValue(0)),total:v.nullable(v.pipe(v.number(),v.integer(),v.minValue(0))),done:v.boolean()}),saved);
@@ -662,6 +677,10 @@ async function runJellyfinScan(
   let count = 0,
     processed = resume?.processed ?? offset,
     total: number | null = resume?.total ?? null;
+  if(seed&&!featureConfig.features.screen){
+    await adapter.accessIdentity(connection.externalUserId!);
+    return publishSeed();
+  }
   while (featureConfig.features.screen && (phase === 'scanning' || phase === 'watched' || phase === 'resume' || phase === 'favourites')) {
     if(inventoryProof&&libraryIndex>=inventoryProof.libraryIds.length){processed=libraryCompleted;total=libraryCompleted;await report(processed,total,'reconciling');break;}
     onStage?.('library-page');
@@ -719,15 +738,16 @@ async function runJellyfinScan(
       }
     }
     total = page.total;
-    await report(offset, page.total, scope === 'personal' ? filterPhases[filterIndex] : 'scanning');
+    if(!seed)await report(offset, page.total, scope === 'personal' ? filterPhases[filterIndex] : 'scanning');
     onStage?.('item-import');
     for (const [index, item] of page.items.entries()) {
       await importItem(item);
       count++;
-      if ((index + 1) % 25 === 0 || index === page.items.length - 1)
+      if (!seed && ((index + 1) % 25 === 0 || index === page.items.length - 1))
         await report(offset + index + 1, page.total, scope === 'personal' ? filterPhases[filterIndex] : 'scanning');
     }
     await flushPage();
+    if(seed)return publishSeed();
     if(inventoryProof) {
       try {await observeScreenLibraryPage(accessContext,inventoryProof,inventoryProof.libraryIds[libraryIndex],scanId,page.items,offset);}
       catch(error) {

@@ -115,7 +115,7 @@
   {/if}
 {:else if name === 'secret-output'}
   <div class="panel stack form-width">
-    {#if revealed}<p role="status">{scenario === 'invite' ? 'Copy this code — shown once' : 'Copy this token now. It will not be shown again.'}</p><Field label={scenario === 'invite' ? 'Invite link' : 'API token'}><input readonly autocomplete="off" spellcheck={false} value={scenario === 'invite' ? 'https://coast.example/register#invite=synthetic-invite' : 'coast_preview_only_not_a_real_token'} onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
+    {#if revealed}<p role="status">{scenario === 'invite' ? 'Copy this code — shown once' : 'Copy this token now. It will not be shown again.'}</p><Field label={scenario === 'invite' ? 'Invite link' : 'API token'}><input readonly autocomplete="off" spellcheck={false} value={scenario === 'invite' ? 'https://coast.example/invite#invite=synthetic-invite' : 'coast_preview_only_not_a_real_token'} onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
   </div>
 {:else if name === 'backups'}
   {#await import('#lib/backups/BackupSettings.svelte') then { default: BackupSettings }}

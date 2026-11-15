@@ -151,3 +151,17 @@ export async function respondRecommendation(userId:string,id:string,raw:unknown)
   return {state:action==='save'?'saved':'dismissed'};
  });
 }
+
+/** The inviter grants consent by issuing the invite. Only act on fresh claims. */
+export async function addInviterFriend(db:ReturnType<typeof getSql>, userId:string, inviterId:string) {
+  if(userId===inviterId)return;
+  const [a,b]=[userId,inviterId].sort();
+  const [eligible]=await db`select count(*)::int as count from users where id in (${a},${b})
+    and coast_feature_enabled(id,'social')`;
+  if(eligible.count!==2)return;
+  await db`select pg_advisory_xact_lock(hashtextextended(${a+':'+b},0))`;
+  const [friend]=await db`insert into friendships(user_a,user_b,requested_by,state) values(${a},${b},${userId},'accepted')
+    on conflict(user_a,user_b) do nothing returning id`;
+  if(friend)await notify({userId:inviterId,kind:'friend-accepted',title:'Your invitee joined Coast',sourceKey:'friend-accepted:'+friend.id,
+    data:{actorId:userId,subjectId:friend.id,destination:'/for-you?friends=true'}},db);
+}

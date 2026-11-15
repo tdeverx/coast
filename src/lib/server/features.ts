@@ -6,16 +6,22 @@ import { AppError } from './security/errors';
 import { featureDefinitions, featureValues, type Feature, type FeatureChoices, type FeatureValues } from '#lib/features.js';
 
 export const featureChoicesSchema = v.partial(v.object(Object.fromEntries(featureDefinitions.filter(([key]) => key !== 'api').map(([key]) => [key, v.boolean()])) as Record<keyof FeatureChoices, v.BooleanSchema<undefined>>));
-export type FeatureConfig = CoastConfig & { features: FeatureValues };
+export type FeatureConfig = CoastConfig & { features: FeatureValues; libraryOnly?:boolean; managedBitrate?:number };
 /** An explicit subject: never project one request actor's choices onto another owner or a shared job. */
 export async function getFeatureConfig(userId: string | null, database?: ReturnType<typeof getSql>): Promise<FeatureConfig> {
   // Fresh command checks use one statement/snapshot, not two pool round trips.
-  const [snapshot]=database?await database`select (select value from system_settings where key='coast') as config,u.id,u.settings,u.disabled from (select ${userId}::uuid as id) subject left join users u on u.id=subject.id`:[];
+  const [snapshot]=database?await database`select (select value from system_settings where key='coast') as config,u.id,u.settings,u.access_defaults,
+    nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id),'0')::integer as managed_bitrate,
+    u.disabled or not coalesce(u.membership_expires_at>now(),true) as disabled from (select ${userId}::uuid as id) subject left join users u on u.id=subject.id`:[];
   const config = database?parseConfig(snapshot.config):await getConfig();
   const user = database?(snapshot.id?snapshot:undefined):userId?await featureSubject(userId):undefined;
   const features = featureValues(config, user?.settings?.features);
   if (userId && (!user || user.disabled)) for (const key of Object.keys(features) as Feature[]) features[key] = false;
-  return {...config, features, experimentalMusic:features.music, experimentalGaming:features.game,
+  for (const key of ['sharing','requests','social'] as const) if (user?.access_defaults?.[key]===false) features[key]=false;
+  if (user?.access_defaults?.libraryOnly)
+    for (const key of ['sharing','requests','api','personalisation','parties','planning','game'] as const) features[key]=false;
+  if (!features.social) {features.presence=false;features.parties=false;}
+  return {...config, features, libraryOnly:user?.access_defaults?.libraryOnly===true, managedBitrate:user?.managed_bitrate??undefined, experimentalMusic:features.music, experimentalGaming:features.game,
     experimentalBooks:features.book, experimentalComics:features.comic, experimentalParties:features.parties,
     experimentalPlanning:features.planning,
     allowPlaybackSharing:features.sharing, enableRequests:features.requests};

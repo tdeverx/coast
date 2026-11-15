@@ -8,14 +8,14 @@ import {AppError} from '#lib/server/security/errors.js';
 import type {Actions,PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,depends,url})=>{
  depends('coast:onboarding');const status=await onboardingStatus(requireUser(locals.user).id);
- if(status.complete)redirect(303,'/for-you');
+ if(status.complete)redirect(303,'/library');
  const canContinue=status.requiredProvider==='none'||status.requiredProvider==='jellyfin'&&status.linked||status.requiredProvider==='trakt'&&status.traktLinked||status.requiredProvider==='either'&&(status.linked||status.traktLinked);
  if(url.searchParams.get('step')==='picture'&&!canContinue)redirect(303,'/onboarding');
- return {...status,provisioning:await provisioningOffer(requireUser(locals.user).id),picture:url.searchParams.get('step')==='picture',avatarChoices:url.searchParams.get('step')==='picture'?await profileAvatarChoices(requireUser(locals.user).id):[],profile:requireUser(locals.user).settings.profile??{},username:requireUser(locals.user).username,services:await onboardingServices(),traktServices:await onboardingTraktServices()};
+ return {...status,provisioning:await provisioningOffer(requireUser(locals.user).id),picture:url.searchParams.get('step')==='picture',avatarChoices:url.searchParams.get('step')==='picture'?await profileAvatarChoices(requireUser(locals.user).id):[],profile:requireUser(locals.user).settings.profile??{},username:requireUser(locals.user).username,services:await onboardingServices(requireUser(locals.user).id),traktServices:await onboardingTraktServices()};
 };
 function failure(cause:unknown){return fail(cause instanceof AppError?cause.status:400,{error:cause instanceof Error?cause.message:'Could not complete this step.'});}
 export const actions:Actions={
- provision:async({locals,request})=>{try{await provisionOnboarding(requireUser(locals.user).id,Object.fromEntries(await request.formData()));return {success:true};}catch(cause){return failure(cause);}},
+ provision:async({locals,request})=>{try{await provisionOnboarding(requireUser(locals.user).id,(await request.formData()).get('password'));return {success:true};}catch(cause){return failure(cause);}},
  connect:async({locals,request})=>{try{await linkOnboarding(requireUser(locals.user).id,Object.fromEntries(await request.formData()));return {success:true};}catch(cause){return failure(cause);}},
  trakt:async({locals,request})=>{try{return {device:await startOnboardingTrakt(requireUser(locals.user).id,Object.fromEntries(await request.formData()))};}catch(cause){return failure(cause);}},
  poll:async({locals,request})=>{try{return await pollOnboardingTrakt(requireUser(locals.user).id,Object.fromEntries(await request.formData()));}catch(cause){return failure(cause);}},

@@ -44,7 +44,7 @@ export async function authenticateApiToken(request:Request) {
   if(!/^Bearer coast_[A-Za-z0-9_-]{43}$/.test(authorization)) throw new AppError(401,'Supply a valid Bearer token.','invalid_token');
   const hash=await hashToken(authorization.slice(7));
   const [row]=await getSql()`select t.id,t.user_id as "userId",t.scopes,u.username from api_tokens t join users u on u.id=t.user_id
-    where t.token_hash=${hash} and t.revoked_at is null and t.expires_at>now() and not u.disabled`;
+    where t.token_hash=${hash} and t.revoked_at is null and t.expires_at>now() and not u.disabled and coalesce(u.membership_expires_at>now(),true)`;
   if(!row) throw new AppError(401,'This token is invalid or expired.','invalid_token');
   await requireFeature(row.userId,'api');
   if(await onboardingPending(row.userId)) throw new AppError(403,'Complete onboarding first.','onboarding_required');

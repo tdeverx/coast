@@ -1,3 +1,5 @@
+import { managedDetails } from '#lib/server/auth/managed-library.server.js';
+import { AppError } from '#lib/server/security/errors.js';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
@@ -13,6 +15,10 @@ export const load = (async (event) => {
   depends('coast:tracking');
 
   if (!v.is(v.pipe(v.string(), v.uuid()), params.id)) error(400, 'Check the media identifier.');
+  if(locals.user?.access?.libraryOnly) {
+    try { return {scoped:await managedDetails(locals.user.id,params.id,event.url.searchParams.get('after'))}; }
+    catch(cause) { if(cause instanceof AppError)error(cause.status,cause.message); throw cause; }
+  }
   const [reading] = await getDb().select({ kind: readingWorks.kind }).from(readingWorks).where(eq(readingWorks.id, params.id));
   if (reading) return { reading: await readingDetailLoad(reading.kind)(event) };
 

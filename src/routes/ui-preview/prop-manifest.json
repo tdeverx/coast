@@ -1312,7 +1312,7 @@
     "props": [
       {
         "name": "user",
-        "type": "{ username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null",
+        "type": "{ username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings; access?:import('#lib/auth/invites.js').CoastAccess } | null",
         "optional": false,
         "bindable": false,
         "kind": "data",

@@ -46,6 +46,12 @@ Playback Stop semantics are selected and implemented: close immediately, wait fo
 
 - Feature controls: audit normal administrator Features settings and user opt-outs separately from Experiments. Define effective policy, dependencies, existing-data preservation and enforcement across navigation, menus, APIs, provider jobs, active sessions and public/share access. See the [feature-gating audit and implementation plan](audits/2026-10-15-feature-gating.md). Normal administrator/user feature toggles remain planning work; the unified menus consume the current role, experiment, read-only and provider rules.
 
+## Account and invitation follow-ups
+
+- Recipient-bound invites with email address verification and delivery.
+- Shared Jellyfin and Coast password change and recovery for managed accounts.
+- Optional Jellyfin-backed Coast sign-in with explicit session and outage behavior.
+
 ## Product and metadata follow-ups
 
 - New-user Library experience: explain connected libraries versus personal Collection, guide users during initial imports, and make an empty Collection useful without hiding the server catalogue.

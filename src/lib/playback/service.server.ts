@@ -163,6 +163,18 @@ async function resourceUrl(sessionId: string, path: string, expiresAt: Date) {
   return `/api/v1/playback/${sessionId}/stream?resource=${encodeURIComponent(token)}`;
 }
 type PlaybackShare = {id:string;viewerId:string;connectionId:string;expiresAt:Date;sourceId?:string;maxBitrate:number;vrchatCodec?:VrchatVideoCodec};
+function managedPlaybackFence(userId:string,workId:string,connectionId?:string,itemId?:string|null) {
+  return sql`exists(select 1 from coast_managed_catalogue(${userId}::uuid) c
+    join availability a on a.connection_id=c.connection_id and a.user_id=${userId}
+    where a.media_id=${workId} and a.state='available' and coast_managed_observation(a.source,a.verified_at,c.access_after)
+      and (${connectionId??null}::uuid is null or a.connection_id=${connectionId??null}::uuid)
+      and (${itemId??null}::uuid is null or a.provider_item_id=${itemId??null}::uuid))`;
+}
+async function managedPlaybackAccess(userId:string,workId:string,connectionId?:string,itemId?:string|null) {
+  const [allowed]=await getDb().execute<{available:boolean}>(sql`select ${managedPlaybackFence(userId,workId,connectionId,itemId)} as available`);
+  return !!allowed?.available;
+}
+
 export async function startPlayback(userId: string,input: unknown,
   share?: PlaybackShare, signal?:AbortSignal) {
   return requestPriority.run(0,()=>preparePlayback(userId,input,share,signal));
@@ -178,6 +190,9 @@ async function preparePlayback(
   void logDiagnostic('debug', 'playback.start');
   const data = v.parse(playbackInput, input),
     config = await requireFeature(userId, 'playback');
+  const restricted = config.libraryOnly;
+  if (restricted && (share || data.sequence || !await managedPlaybackAccess(userId,data.mediaId)))
+    throw new AppError(404,'This title is unavailable in your library.');
   const [screen] = await getDb().select().from(media).where(eq(media.id,data.mediaId));
   const [music] = screen ? [] : await getDb().select().from(musicWorks).where(eq(musicWorks.id,data.mediaId));
   const item=screen??(music?{...music,runtimeMinutes:(music.durationSeconds??0)/60}:undefined);
@@ -211,7 +226,10 @@ async function preparePlayback(
       and(
         eq(availability.userId, userId),
         eq(availability.mediaId, data.mediaId),
-        eq(availability.state, 'available')
+        eq(availability.state, 'available'),
+        restricted ? sql`exists(select 1 from coast_managed_catalogue(${userId}::uuid) c
+          where c.connection_id=${availability.connectionId} and c.instance_id=${providerItems.instanceId}
+          and coast_managed_observation(${availability.source},${availability.verifiedAt},c.access_after))` : undefined
       )
     );
   const rows = available.filter(
@@ -236,7 +254,7 @@ async function preparePlayback(
   }[] = [];
   const queried = new Set<string>();
   const [account] = await getDb().select({settings:users.settings}).from(users).where(eq(users.id,userId));
-  const maximum = Math.min(share?.maxBitrate ?? Infinity,playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity,fallback?.maxBitrate ?? Infinity);
+  const maximum = Math.min(config.managedBitrate ?? Infinity,share?.maxBitrate ?? Infinity,playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity,share?.vrchatCodec?vrchatMaximumBitrate:Infinity,fallback?.maxBitrate ?? Infinity);
   if(share&&maximum<minimumSharedBitrate)throw new Error('Shared playback requires a bitrate limit of at least 0.5 Mbps.');
   const providerDeviceId = share ? crypto.randomUUID() : userId;
   let providerBusy: ProviderQueueBusyError | undefined;
@@ -536,7 +554,9 @@ export async function progressPlayback(userId: string, sessionId: string, input:
         )
       );
     if (!session || session.shareId) throw new Error('This playback session has expired.');
-    const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,'playback') and coast_feature_enabled(${userId}::uuid,${session.mediaType==='audio'?'music':'screen'}) as allowed`);
+    const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,'playback') and coast_feature_enabled(${userId}::uuid,${session.mediaType==='audio'?'music':'screen'})
+      and (not coalesce((select access_defaults->>'libraryOnly'='true' from users where id=${userId}),false)
+        or ${managedPlaybackFence(userId,session.mediaId,session.connectionId,session.providerItemId)}) as allowed`);
     if(!admission.allowed){
       if(session.state!=='stopped'){
         await enqueuePlaybackActionsInTransaction(tx,userId,{sessionId,connectionId:session.connectionId,mediaId:session.mediaId,jellyfinEvent:'stop',positionSeconds:session.positionSeconds,durationSeconds:session.durationSeconds??0,paused:true,operationalOnly:true});
@@ -686,6 +706,8 @@ export async function streamPlayback(
   if (!session || (session.shareId ?? undefined) !== shareId || session.state === 'stopped')
     return new Response('Playback session expired.', { status: 410 });
   const policy=await requireFeature(userId,'playback');
+  if(policy.libraryOnly && !await managedPlaybackAccess(userId,session.mediaId,session.connectionId,session.providerItemId))
+    return new Response('This title is unavailable in your library.',{status:404});
   requireEnabledCategory(policy,session.mediaType==='audio'?'music':'screen');
   context.enterWith(session.correlationId);
   void logDiagnostic('trace', 'playback.timing', { sessionId: session.id });

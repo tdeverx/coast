@@ -1,3 +1,5 @@
+import { AppError } from '#lib/server/security/errors.js';
+import { jellyfinItemKey } from './paging';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
@@ -12,7 +14,8 @@ const uuid = v.pipe(v.string(), v.uuid());
 
 export async function connectJellyfin(
   userId: string,
-  input: { instanceId: string; username: string; password: string }
+  input: { instanceId: string; username: string; password: string },
+  expectedId?: string
 ) {
   const instance = await getInstance(v.parse(uuid, input.instanceId), 'jellyfin');
   const account = await new JellyfinAdapter(instanceTransport(instance), userId).authenticate(
@@ -20,9 +23,10 @@ export async function connectJellyfin(
     input.password,
     instance.serverIdentity || undefined
   );
+  if (expectedId && jellyfinItemKey(expectedId)!==jellyfinItemKey(account.id)) throw new AppError(409,'Jellyfin returned a different account.');
   const connection = await saveConnection(userId, instance.id, account.id, account.username, {
     accessToken: account.accessToken,
-  });
+  }, {}, true);
   await enqueueAction({
     userId,
     connectionId: connection.id,

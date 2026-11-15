@@ -14,5 +14,5 @@
   <Field label="Username"><input name="username" autocomplete="username" required maxlength="32" /></Field>
   <Field label="Password"><input name="password" type="password" autocomplete="current-password" required maxlength="128" /></Field>
   <Button type="submit" disabled={busy}>{busy?'Signing in…':'Sign in'}</Button>
- </form><div class="auth-footer"><a href="/register">Create an account</a></div>
+ </form><div class="auth-footer"><a href="/register">Create an account</a> · <a href="/invite">Use an invite code</a></div>
 </div></div>

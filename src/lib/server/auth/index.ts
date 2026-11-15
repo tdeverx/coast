@@ -4,11 +4,12 @@ import { featureValues, hasWithdrawnFeatures } from '#lib/features.js';
 import { invalidateFeatureSubject } from '#lib/server/config.js';
 import { queueFeatureTransition } from '#lib/application/feature-transition.server.js';
 import { featureChoicesSchema } from '#lib/server/features.js';
+import type { CoastAccess } from '#lib/auth/invites.js';
 import { usernameSchema, passwordSchema } from '#lib/auth/registration.js';
 import { collectionPreferencesSchema } from '#lib/collection/preferences.js';
 import { socialSettingsSchema } from '#lib/social/model.js';
 import * as v from 'valibot';
-import { asc, and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { users, providerConnections, providerInstances, type UserSettings } from '../db/schema';
 import { getConfig } from '../config';
@@ -20,6 +21,7 @@ export interface SessionUser {
   email: string | null;
   role: 'admin' | 'user';
   settings: UserSettings;
+  access?: CoastAccess;
 }
 export interface SessionResult {
   user: SessionUser;
@@ -74,7 +76,7 @@ export function randomToken() {
   return Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url');
 }
 function publicUser(
-  row: Pick<typeof users.$inferSelect, 'id' | 'username' | 'email' | 'role' | 'settings'>
+  row: Pick<typeof users.$inferSelect, 'id' | 'username' | 'email' | 'role' | 'settings'> & {access_defaults?: CoastAccess}
 ): SessionUser {
   return {
     id: row.id,
@@ -82,6 +84,7 @@ function publicUser(
     email: row.email ?? null,
     role: row.role,
     settings: row.settings || {},
+    access: row.access_defaults,
   };
 }
 export function requireUser(actor: SessionUser | null | undefined): SessionUser {
@@ -131,7 +134,7 @@ export async function login(input: unknown, clientKey = 'local'): Promise<Sessio
   const account = v.parse(loginSchema, input);
   checkLoginRate(`account:${account.username}`);
   const [row] =
-    await getSql()`SELECT * FROM users WHERE username = ${account.username} AND disabled = FALSE`;
+    await getSql()`SELECT * FROM users WHERE username = ${account.username} AND disabled = FALSE AND coalesce(membership_expires_at>now(),true)`;
   // Warm the same cached dummy for either branch, then spend one verification cost.
   const dummy = await (dummyPasswordHash ??= Bun.password.hash('coast-nonexistent-account-dummy', {
     algorithm: 'argon2id',
@@ -152,8 +155,8 @@ export async function authenticateSession(
   const tokenHash = await hashToken(token);
   // Ordinary requests need a fresh authentication snapshot, not an exclusive
   // session mutex. A committed logout/disable is visible in this same statement.
-  const [current] = await getSql()`SELECT s.*, u.username, u.email, u.role, u.settings
-    FROM sessions s JOIN users u ON u.id = s.user_id AND NOT u.disabled
+  const [current] = await getSql()`SELECT s.*, u.username, u.email, u.role, u.settings, u.access_defaults
+    FROM sessions s JOIN users u ON u.id = s.user_id AND NOT u.disabled AND coalesce(u.membership_expires_at>now(),true)
     WHERE s.expires_at > NOW() AND (s.token_hash = ${tokenHash}
       OR (s.previous_token_hash = ${tokenHash} AND s.previous_valid_until > NOW()))`;
   if (!current || new Date(current.expires_at).getTime() <= Date.now()) return null;
@@ -167,7 +170,7 @@ export async function authenticateSession(
     const [session] = await sql`SELECT * FROM sessions WHERE token_hash = ${tokenHash}
       OR (previous_token_hash = ${tokenHash} AND previous_valid_until > NOW()) FOR UPDATE`;
     if (!session || new Date(session.expires_at).getTime() <= Date.now()) return null;
-    const [row] = await sql`SELECT * FROM users WHERE id = ${session.user_id} AND disabled = FALSE`;
+    const [row] = await sql`SELECT * FROM users WHERE id = ${session.user_id} AND disabled = FALSE AND coalesce(membership_expires_at>now(),true)`;
     if (!row) return null;
     const user = publicUser(row);
     if (
@@ -231,21 +234,18 @@ export async function updatePassword(
   });
 }
 
-export async function listUsers(actor: SessionUser | null) {
+export async function listUsers(actor: SessionUser | null, before:string|null = null) {
   requireAdmin(actor);
-  return getDb()
-    .select({
-      id: users.id,
-      username: users.username,
-      email: users.email,
-      role: users.role,
-      settings: users.settings,
-      disabled: users.disabled,
-      hasLocalPassword: sql<boolean>`${users.passwordHash} is not null`,
-      createdAt: users.createdAt,
-    })
-    .from(users)
-    .orderBy(asc(users.createdAt));
+  const parsed=v.safeParse(v.pipe(v.string(),v.uuid()),before);
+  const cursor=parsed.success ? parsed.output : null;
+  const rows=await getSql()<{
+    id:string;username:string;email:string|null;role:SessionUser['role'];settings:UserSettings;
+    disabled:boolean;expired:boolean;hasLocalPassword:boolean;createdAt:Date;
+  }[]>`select u.id,u.username,u.email,u.role,u.settings,u.disabled,coalesce(u.membership_expires_at<=now(),false) as expired,
+    (u.password_hash is not null) as "hasLocalPassword",u.created_at as "createdAt"
+    from users u where (${cursor}::uuid is null or (u.created_at,u.id)<(select created_at,id from users where id=${cursor}))
+    order by u.created_at desc,u.id desc limit 31`;
+  return {items:rows.slice(0,30),next:rows.length>30 ? rows[29].id : null};
 }
 
 export async function deleteUser(actor: SessionUser | null, userId: string): Promise<void> {
@@ -262,6 +262,7 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
       if (count.total <= 1) throw new AppError(409, 'Keep at least one administrator account.');
     }
     // Provider account deletion is deliberately a separate, explicit adapter operation.
+    await sql`insert into account_audit(event,actor_id,subject_id) values('account.deleted',${admin.id},${userId})`;
     await sql`DELETE FROM users WHERE id = ${userId}`;
     return target.avatar as string|null;
   });
@@ -313,6 +314,15 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
     }
     const [row] =
       await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing}),...(patch.personalBitrateMbps===undefined?{}:{personalBitrateMbps:patch.personalBitrateMbps}),...(patch.sharedBitrateMbps===undefined?{}:{sharedBitrateMbps:patch.sharedBitrateMbps})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
+    if (role === 'admin' && target.membership_expires_at)
+      throw new AppError(409,'Clear membership expiry before granting administrator access.');
+    if(disabled && !target.disabled){
+      await transaction`UPDATE registration_invites SET revoked_at=NOW()
+        WHERE created_by=${userId} AND member_issued AND revoked_at IS NULL AND claim_count<max_uses`;
+      await transaction`UPDATE playback_sessions SET state='stopped',cleanup_pending=true
+        WHERE user_id=${userId} AND state IN ('active','paused','prepared') AND expires_at>now()`;
+    }
+    await transaction`insert into account_audit(event,actor_id,subject_id) values(${disabled!==target.disabled ? disabled ? 'account.suspended' : 'account.restored' : 'account.updated'},${admin.id},${userId})`;
     if (role !== target.role || disabled !== target.disabled || hash) {
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
       await transaction`UPDATE api_tokens SET revoked_at=now() WHERE user_id=${userId} AND revoked_at IS NULL`;

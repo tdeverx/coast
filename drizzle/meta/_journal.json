@@ -484,6 +484,13 @@
       "when": 1794662165495,
       "tag": "0068_copy_share_link",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1794771227126,
+      "tag": "0069_user_invite_management",
+      "breakpoints": true
     }
   ]
 }

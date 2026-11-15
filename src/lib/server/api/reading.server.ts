@@ -1,3 +1,4 @@
+import { managedReadingSource, requireManagedReadingSession } from '#lib/server/auth/managed-library.server.js';
 import { readingManifest, readingPage } from '#lib/reading/delivery.server.js';
 
 import { addReading } from '#lib/application/reading.server.js';
@@ -9,8 +10,10 @@ import { uuid, type ApiContext } from './context.server';
 import {readingCredits,readingCommunity,relatedReading} from '#lib/reading/detail.server.js';
 import { touchReading, prepareReading, moveReading, closeReading, streamReading, readingSources, readingConnections, linkedReadingSources, matchingReading } from '#lib/reading/sessions.server.js';
 
-export async function handleReading({ uid, path, method, body, url, request }: ApiContext): Promise<Response | undefined> {
+export async function handleReading({ uid, path, method, body, url, request,user }: ApiContext): Promise<Response | undefined> {
   if (path[0] !== 'reading') return;
+  if (user.access?.libraryOnly && path[1]==='sessions' && path[3]!=='close')
+    await requireManagedReadingSession(uid,uuid(path[2]));
   if(path[1]==='collections'&&path.length===3&&method==='GET')return Response.json(await readingGroupData(uid,uuid(path[2]),Number(url.searchParams.get('page')??1)));
   if(path[1]==='sessions'&&path[3]==='pages'&&path.length===5&&method==='GET')return readingPage(uid,uuid(path[2]),path[4],request);
   if(path[1]==='sessions'&&path.length===4){
@@ -33,7 +36,7 @@ export async function handleReading({ uid, path, method, body, url, request }: A
     if(path[2]==='community'&&method==='GET')return Response.json(await readingCommunity(uid,id));
     if(path[2]==='related'&&method==='GET')return Response.json(await relatedReading(uid,id,Number(url.searchParams.get('page')??1)));
     if(path[2]==='matching'&&method==='POST')return Response.json(await matchingReading(uid,id,String(body.edition??'')));
-    if(path[2]==='session'&&method==='POST')return Response.json(await prepareReading(uid,id,body,request.signal));
+    if(path[2]==='session'&&method==='POST')return Response.json(await prepareReading(uid,id,user.access?.libraryOnly ? await managedReadingSource(uid,id) : body,request.signal));
     if(path[2]==='connections'&&method==='GET')return Response.json(await readingConnections(uid,id));
     if(path[2]==='linked'&&method==='GET')return Response.json(await linkedReadingSources(uid,id));
     if(path[2]==='issues'&&method==='GET')return Response.json(await readingIssuesForWork(uid,id,Number(url.searchParams.get('page')??1)));

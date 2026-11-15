@@ -4,7 +4,7 @@ import {getDb, getSql} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
-import {bootstrapJellyfinUser, syncJellyfinUser, type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
+import {bootstrapJellyfinUser, libraryScanProgress, syncJellyfinUser, type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
 import {unchangedJellyfinPlayback, seedEmptyJellyfinPlayback, type JellyfinPlaybackObservation} from '../src/lib/sync/jellyfin-playback.server';
 import {onboardingStatus} from '../src/lib/server/auth/onboarding';
 import {enqueueAction, runQueueOnce, registerActionHandler} from '../src/lib/server/queue';
@@ -59,6 +59,15 @@ async function fixture(count = 1) {
   return {user, instance, connection, context, titles, mappings, items, requests,
     visible: (rows: RemoteItem[]) => {visible = rows;}, music: (rows: Record<string, any>[]) => {music = rows;}, fail: (filter: string | null) => {failure = filter;}};
 }
+
+run('progress polls ignore a newer job from an old Jellyfin account generation',async()=>{
+  const f=await fixture();
+  const [job]=await getDb().insert(s.outboxActions).values({userId:f.user.id,connectionId:f.connection.id,kind:'jellyfin.bootstrap',state:'running',payload:{}}).returning();
+  const [obsolete]=await getDb().insert(s.outboxActions).values({userId:f.user.id,connectionId:f.connection.id,kind:'jellyfin.bootstrap',state:'failed',payload:{_jobFailure:{code:'provider.authentication'}},createdAt:new Date(Date.now()+1000)}).returning();
+  await getSql()`update outbox_actions set account_generation=${crypto.randomUUID()} where id=${obsolete.id}`;
+  await getSql()`update provider_connections set credentials='unreadable test credential' where id=${f.connection.id}`;
+  expect(await libraryScanProgress(f.user.id,f.connection.id,job.createdAt,true)).toMatchObject({state:'running',authenticationFailed:false});
+});
 
 run('personal bootstrap opens onboarding without a full inventory and grants no unseen titles', async () => {
   const f = await fixture(130);
