@@ -486,14 +486,15 @@ export async function persistScreenListings(items: readonly Metadata[], signal?:
 }
 
 export async function discoverMedia(userId: string | null, section?: DiscoverySection, signal: AbortSignal = new AbortController().signal) {
-  if(!(await getFeatureConfig(userId)).features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
+  const {features}=await getFeatureConfig(userId);
+  if(!features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
   const names: DiscoverySection[] = section ? [section] : ['trending','recent'];
   const results = await Promise.all(names.map(async name=>{
     const result = await screenListings('all',name,undefined,signal);
     let {items,configured,failed} = result;
     // Seerr mirrors TMDB's trending list. Use the admitted linked account only
     // as a fallback when the public listing sources couldn't supply it.
-    if (!items.length && name==='trending' && userId) {
+    if (!items.length && name==='trending' && userId && features.requests) {
       const adapter = await seerrDiscovery(userId,signal);
       configured ||= !!adapter;
       if (adapter) try { items=(await adapter.trending()).slice(0,20); }

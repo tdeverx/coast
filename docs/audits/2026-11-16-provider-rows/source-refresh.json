@@ -9,7 +9,7 @@
       "previous": "3eddaac9c7aa5a6cb3c29b28d6d042bdf644347a700f3f2954d2e18253771139"
     },
     "src/lib/catalogue/service.server.ts": {
-      "current": "076ea2a81903cd1d0d9c7491d9afb4dd713629c22ad8b8b3c7c4bf9ff1daf69e",
+      "current": "31c1b89667404d88ffe6d3918ad504f9a86612cbe497d83bd130d515cf2bcd4f",
       "previous": "f5e6e596ca03a6cd766909f733e9df2c0ce83b21e938f46d408698af568a7569"
     },
     "src/lib/providers/comic-vine/adapter.server.ts": {
@@ -38,5 +38,5 @@
     }
   },
   "report": "docs/audits/2026-11-16-provider-rows/verification.md",
-  "reportSha256": "67d275dc4be42562ffeaf6c7f5f9cc8ca35a195d5df2c2c9ce992ffd22f2e314"
+  "reportSha256": "2d611afccfcce5b71876d6a0166b0dd3e27d2583a2ed4f5bcbd8c96cf1d2ed9f"
 }

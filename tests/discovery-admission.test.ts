@@ -9,9 +9,9 @@ async function owner(){
  const start=source.indexOf('export async function discoverMedia('),end=source.indexOf('/** Explicit shelf membership',start);
  if(start<0||end<0)throw Error('Discovery owner was not found.');
  return import(moduleUrl(`export const harnessId=${generation++};
- export const state={enabled:true,tmdb:true,seerr:false,fail:'',calls:[],adapters:0,resolutions:0};
+ export const state={enabled:true,requests:true,tmdb:true,seerr:false,fail:'',calls:[],adapters:0,resolutions:0};
  const adapter={trending:async()=>{state.calls.push('seerr');return [];}};
- const getFeatureConfig=async()=>({features:{screen:state.enabled}});
+ const getFeatureConfig=async()=>({features:{screen:state.enabled,requests:state.requests}});
  const screenListings=async(_kind,section)=>{state.adapters++;if(state.tmdb)state.calls.push(section);return {items:[],configured:state.tmdb,failed:state.fail===section};};
  const seerrDiscovery=async()=>state.seerr?adapter:null;
  const persistScreenListings=async items=>{if(items.length)throw Error('No provider content is invented by this admission test');return [];};
@@ -49,6 +49,15 @@ test('Seerr fallback has no recent feed and does not request trending for a rece
  const {state,discoverMedia}=await owner();state.tmdb=false;state.seerr=true;
  const result=await discoverMedia('unit-viewer','recent');
  expect(state.calls).toEqual([]);expect(result.configured).toBe(false);expect(result.providerUnavailable).toBe(false);
+});
+
+test('the linked Seerr fallback respects the viewer requests setting and never runs for guests',async()=>{
+ const {state,discoverMedia}=await owner();state.tmdb=false;state.seerr=true;
+ await discoverMedia(null,'trending');
+ state.requests=false;await discoverMedia('unit-viewer','trending');
+ expect(state.calls).toEqual([]);
+ state.requests=true;await discoverMedia('unit-viewer','trending');
+ expect(state.calls).toEqual(['seerr']);
 });
 
 test('disabled discovery admits no adapters or fallback catalogue query',async()=>{
