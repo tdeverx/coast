@@ -16,8 +16,7 @@ import { OpenLibraryAdapter, OPEN_LIBRARY_BASE_URL } from './openlibrary/adapter
 import { ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
 import { readingKinds, readingReferenceSchema, readingProviderForId, READING_PROVIDER_PAGE_LIMIT, type ReadingKind, type ReadingMetadata, type ReadingPage } from '#lib/reading/model.js';
 
-const discoveries = providerCache<ReadingPage>(60, 60 * 60_000);
-const discoveryFlight = providerSingleFlight<ReadingPage>('reading-discovery');
+const discoveries = providerRowCache<ReadingPage>(60, 60 * 60_000);
 const searches = providerCache<ReadingPage>(100, 15 * 60_000);
 const details = providerCache<ReadingMetadata>(200, 24 * 60 * 60_000);
 const searchFlight = providerSingleFlight<ReadingPage>('reading-search');
@@ -93,13 +92,14 @@ export async function searchReading(kind: ReadingKind, query: string, page = 1, 
 }
 
 /** Bounded metadata-only discovery; no catalogue ingestion or per-card requests. */
-export async function discoverReading(kind: ReadingKind, section: 'trending' | 'recent', page = 1) {
+export async function discoverReading(kind: ReadingKind, section: 'trending' | 'recent', page: number, signal: AbortSignal) {
+  signal.throwIfAborted();
   v.parse(kindSchema, kind);
   v.parse(v.picklist(['trending', 'recent']), section);
   v.parse(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(READING_PROVIDER_PAGE_LIMIT)), page);
   const { key, adapter } = await source(kind);
   const identity = JSON.stringify([key, section, page, section === 'recent' ? new Date().toISOString().slice(0, 10) : '']);
-  return discoveryFlight(identity, () => discoveries(identity, () => adapter.discover(section, page)));
+  return discoveries(identity, signal, upstream => adapter.discover(section, page, upstream));
 }
 
 export async function readingProviderDetails(kind: ReadingKind, externalId: string) {

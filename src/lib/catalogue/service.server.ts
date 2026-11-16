@@ -2,7 +2,7 @@ import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
 import { mapConcurrent } from '#lib/server/utils/async.js';
 import { searchFallback, searchScore } from '#lib/search.js';
 import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
-import { and, eq, inArray, isNull, or, sql, desc } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import {
@@ -487,7 +487,7 @@ export async function persistScreenListings(items: readonly Metadata[], signal?:
 
 export async function discoverMedia(userId: string | null, section?: DiscoverySection, signal: AbortSignal = new AbortController().signal) {
   const {features}=await getFeatureConfig(userId);
-  if(!features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
+  if(!features.screen)return {trending:[],recent:[],configured:true,providerUnavailable:false};
   const names: DiscoverySection[] = section ? [section] : ['trending','recent'];
   const results = await Promise.all(names.map(async name=>{
     const result = await screenListings('all',name,undefined,signal);
@@ -505,25 +505,5 @@ export async function discoverMedia(userId: string | null, section?: DiscoverySe
   }));
   const trending=results.find(result=>result.name==='trending')?.ids??[];
   const recent=results.find(result=>result.name==='recent')?.ids??[];
-  const items = await resolveDiscoveryItems([...trending, ...recent]);
-  return {items,trending,recent,configured:results.some(result=>result.configured),providerUnavailable:results.some(result=>result.failed)};
-}
-
-/** Explicit shelf membership survives unrelated catalogue writes during discovery ingestion. */
-export async function resolveDiscoveryItems(bucketIds: string[]) {
-  const selectedIds = [...new Set(bucketIds)];
-  if (selectedIds.length) {
-    const selected = await getDb().select().from(media).where(inArray(media.id, selectedIds));
-    const selectedById = new Map(selected.map((item) => [item.id, item]));
-    return selectedIds.flatMap((id) => {
-      const item = selectedById.get(id);
-      return item ? [item] : [];
-    });
-  }
-  return getDb()
-    .select()
-    .from(media)
-    .where(or(eq(media.kind, 'movie'), eq(media.kind, 'show')))
-    .orderBy(desc(media.updatedAt))
-    .limit(80);
+  return {trending,recent,configured:results.some(result=>result.configured),providerUnavailable:results.some(result=>result.failed)};
 }

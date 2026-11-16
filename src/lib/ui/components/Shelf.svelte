@@ -120,7 +120,13 @@
     return {update,destroy(){stop();if(current)mark(current.key,false);}};
   }
 
-  const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
+  let refreshVisible = $state(false);
+  function observeRefreshDemand(node: HTMLElement) {
+    if (!appendWhenReady) return;
+    const stop = observeVisibility(node, visible => { refreshVisible = visible; });
+    return { destroy() { stop(); refreshVisible = false; } };
+  }
+  const adapter = untrack(() => source ? createShelfSource(() => source!, appendWhenReady ? () => refreshVisible : undefined) : undefined);
   const displayEnrichSocial=$derived(enrichSocial&&(adapter?.enrichSocial??true));
   const activitySkeleton=$derived(source?.type==='social'&&source.surface!=='popular'||source?.type==='library-feed'&&source.feature==='requests'&&page.data.user?.role==='admin');
   $effect(() => {
@@ -250,7 +256,7 @@
  {@render customControls?.()}
 {/snippet}
 {#if !appendWhenReady || !hidden}
-<div data-shelf use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
+<div data-shelf use:observeRefreshDemand use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
     {#each entries as entry (entry.key)}{@const item = entry.item}{@const cardStyle = itemStyle(item, style)}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} style:--mixed-card-ratio={displayMixed ? cardAspectRatio(cardStyle.shape) : undefined} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:displayEnrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>

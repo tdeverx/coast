@@ -9,6 +9,7 @@ import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { readingTypeOptions } from '#lib/ui/filter-options.js';
 import { discoverySegments, discoveryTitles, type DiscoveryContent, type DiscoverySurface, type DiscoverySection } from '#lib/discovery.js';
 import type { ShelfSource, ShelfControl, ShelfPagination } from './types';
+import { createShelfRefresh } from './refresh.svelte.js';
 export type DiscoveryOptions = {
   scoped?:boolean;
   type: 'discovery';
@@ -20,7 +21,7 @@ export type DiscoveryOptions = {
   mediums?: import('#lib/experimental.js').MediumFeatures;
   layout?: 'row' | 'grid';
 };
-export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource {
+export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisible?: () => boolean): ShelfSource {
  const location=useShelfLocation();
   const { api, preview } = useClient();
   const initial = untrack(get);
@@ -55,7 +56,9 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     params.delete('surface');
     return `/discover?${params}`;
   }
+  const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number=get().layout==='grid'?currentPage:1,append=false) {
+    refresh.clear();
     currentPage=number;
     if(!surfaceAvailable(surface)){
       resource.replace({items:[],failure:''});
@@ -77,9 +80,10 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   }
   function restoreOrLoad() {
     const previous = cached.get(cacheKey());
-    if (previous)
+    if (previous) {
+      refresh.clear();
       resource.replace(previous, previous.failure);
-    else
+    } else
       void load();
   }
   function surfaceAvailable(value:string) {
@@ -109,12 +113,14 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     resource.replace({ items: [], failure: '' });
     restoreOrLoad();
   }
-  const refreshKey = $derived(JSON.stringify([
-    contentRevisionKey(page.data, ['tracking', 'social']), get().section,
+  const scopeKey = $derived(JSON.stringify([
+    page.data.user?.id, get().section,
     get().mediums?.experimentalMusic, get().mediums?.experimentalGaming,
     get().mediums?.experimentalBooks, get().mediums?.experimentalComics,
     get().mediums?.features,
   ]));
+  const refreshKey = $derived(contentRevisionKey(page.data, ['tracking', 'social']));
+  let previousScope = untrack(() => scopeKey);
   let previousRefresh = untrack(() => refreshKey);
   let previousInitial = initial.initial;
   let previousSelection = JSON.stringify([initial.surface ?? 'watch', initial.kind ?? 'all', initial.page ?? 1]);
@@ -122,6 +128,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     const option = get();
     const current = option.initial;
     const key = refreshKey;
+    const scope = scopeKey;
     const selection = JSON.stringify([option.surface ?? 'watch', option.kind ?? 'all', option.page ?? 1]);
     // Inline option objects can be recreated by an unchanged session update.
     // The actual SSR items and scalar result fields define replacement data.
@@ -132,7 +139,8 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
       || current?.pages !== previousInitial?.pages
       || current?.total !== previousInitial?.total;
     untrack(() => {
-      const changed = key !== previousRefresh || initialChanged || selection !== previousSelection;
+      const scopeChanged = scope !== previousScope || selection !== previousSelection;
+      const changed = key !== previousRefresh || initialChanged || scopeChanged;
       if (selection !== previousSelection) {
         surface = option.surface ?? 'watch';
         kind = option.kind ?? 'all';
@@ -140,11 +148,13 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
         available = false;
       }
       previousRefresh = key;
+      previousScope = scope;
       previousInitial = current;
       previousSelection = selection;
       const withdrawn = !surfaceAvailable(surface);
       if(withdrawn&&option.scoped){
         cached.clear();
+        refresh.clear();
         resource.replace({items:[],failure:''});
         return;
       }
@@ -168,16 +178,16 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
 
       const activated = resource.activated || resource.ready;
       cached.clear();
-      resource.cancel();
       if (
         initialChanged && current && surface === (option.surface ?? 'watch')
         && (surface !== 'read' || kind === (option.kind ?? 'all') && currentPage === (option.page ?? 1))
       ) {
+        refresh.clear();
         resource.replace(current, current.failure);
         remember(current);
       } else if (activated) {
-        resource.replace({ items: [], failure: '' });
-        void load();
+        if (!refreshVisible || scopeChanged || withdrawn || kindWithdrawn) resource.replace({ items: [], failure: '' });
+        refresh.invalidate();
       }
     });
   });

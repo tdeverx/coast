@@ -167,16 +167,16 @@ export class ComicVineAdapter {
     } catch (error) { providerError(error); }
   }
   /** Comic Vine lists expose release dates, not a popularity ranking. */
-  async discover(section: 'trending' | 'recent', page = 1): Promise<ReadingPage> {
+  async discover(section: 'trending' | 'recent', page = 1, signal?: AbortSignal): Promise<ReadingPage> {
     v.parse(v.picklist(['trending', 'recent']), section);
     v.parse(pageSchema, page);
     if (section === 'trending') throw new AppError(409, 'Comic Vine does not provide a trending feed. Browse Recently released for new comics.', 'discovery_unsupported');
     try {
       const today = new Date().toISOString().slice(0, 10);
       const params = new URLSearchParams({ sort: 'store_date:desc', filter: `store_date:1900-01-01|${today}`, limit: String(COMIC_VINE_PAGE_SIZE), offset: String((page - 1) * COMIC_VINE_PAGE_SIZE) });
-      const result = v.parse(searchSchema, await this.read('/api/issues/', params));
+      const result = v.parse(searchSchema, await this.read('/api/issues/', params, fields, signal));
       return { items: result.results.map(mapIssue), total: result.number_of_total_results, page, nextPage: page < READING_PROVIDER_PAGE_LIMIT && result.results.length > 0 && page * COMIC_VINE_PAGE_SIZE < result.number_of_total_results ? page + 1 : null };
-    } catch (error) { providerError(error); }
+    } catch (error) { signal?.throwIfAborted(); providerError(error); }
   }
   async details(id: string): Promise<ReadingMetadata> {
     v.parse(comicVineIdSchema, id);

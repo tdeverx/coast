@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
 import { AppError } from '../../server/security/errors';
 import { createProviderTransport, ProviderHttpError } from '../../server/security/provider-fetch';
+import { createSharedFlights } from '#lib/server/utils/shared-flights.js';
 
 export const IGDB_BASE_URL = 'https://api.igdb.com';
 export const TWITCH_BASE_URL = 'https://id.twitch.tv';
@@ -83,7 +84,7 @@ function providerError(error: unknown): never {
 export class IgdbAdapter {
   private credentials: v.InferOutput<typeof igdbCredentialsSchema>;
   private token?: { value: string; expiresAt: number };
-  private tokenRequest?: Promise<string>;
+  private tokenRequests = createSharedFlights<string>();
   constructor(
     credentials: unknown,
     private request: ProviderTransport = createProviderTransport({ baseUrl: IGDB_BASE_URL, provider: 'igdb', approved: true, allowedPorts: [443] }),
@@ -91,22 +92,22 @@ export class IgdbAdapter {
   ) {
     this.credentials = v.parse(igdbCredentialsSchema, credentials);
   }
-  private async accessToken() {
+  private async accessToken(signal = new AbortController().signal) {
+    signal.throwIfAborted();
     if (this.token && this.token.expiresAt > Date.now()) return this.token.value;
-    if (this.tokenRequest) return this.tokenRequest;
-    this.tokenRequest = (async () => {
+    return this.tokenRequests.run('oauth', signal, async upstream => {
       const response = v.parse(tokenSchema, await this.oauth('/oauth2/token', {
-        method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+        method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' }, signal:upstream,
         body: new URLSearchParams({ client_id: this.credentials.clientId, client_secret: this.credentials.clientSecret, grant_type: 'client_credentials' }).toString(),
       }));
+      upstream.throwIfAborted();
       this.token = { value: response.access_token, expiresAt: Date.now() + response.expires_in * 1000 - Math.min(60_000, response.expires_in * 100) };
       return this.token.value;
-    })();
-    try { return await this.tokenRequest; } finally { this.tokenRequest = undefined; }
+    });
   }
   private async requestQuery(body: string, endpoint: string, signal?: AbortSignal) {
     try {
-      let token = await this.accessToken();
+      let token = await this.accessToken(signal);
       signal?.throwIfAborted();
       // The common origin lane supplies priority, cooldown and IGDB's 260ms spacing.
       const send = () => this.request(`/v4/${endpoint}`, {
@@ -116,7 +117,8 @@ export class IgdbAdapter {
       try { raw = await send(); } catch (error) {
         if (!(error instanceof ProviderHttpError) || error.status !== 401) throw error;
         if (this.token?.value === token) this.token = undefined;
-        token = await this.accessToken();
+        token = await this.accessToken(signal);
+        signal?.throwIfAborted();
         raw = await send();
       }
       return raw;
@@ -132,14 +134,15 @@ export class IgdbAdapter {
     const genreFilter = genre ? ` & genres.name = ${JSON.stringify(genre)}` : '';
     return this.query(`fields ${cardFields}; where version_parent = null & parent_game = null & themes != (42) & first_release_date != null & first_release_date <= ${through}${filter}${genreFilter}; sort ${sort}; limit ${IGDB_PAGE_SIZE};`,signal);
   }
-  async discover(section: 'trending' | 'recent') {
-    if(section==='recent')return this.query(`fields ${expandedFields}; where version_parent = null & first_release_date != null & first_release_date <= ${Math.floor(Date.now()/1000)}; sort first_release_date desc; limit ${IGDB_PAGE_SIZE};`);
-    const parsed=v.safeParse(v.pipe(v.array(v.object({game_id:v.pipe(v.number(),v.integer(),v.minValue(1))})),v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(`fields game_id; where popularity_type = 1; sort value desc; limit ${IGDB_PAGE_SIZE};`,'popularity_primitives'));
+  async discover(section: 'trending' | 'recent', signal?: AbortSignal) {
+    if(section==='recent')return this.query(`fields ${expandedFields}; where version_parent = null & first_release_date != null & first_release_date <= ${Math.floor(Date.now()/1000)}; sort first_release_date desc; limit ${IGDB_PAGE_SIZE};`,signal);
+    const parsed=v.safeParse(v.pipe(v.array(v.object({game_id:v.pipe(v.number(),v.integer(),v.minValue(1))})),v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(`fields game_id; where popularity_type = 1; sort value desc; limit ${IGDB_PAGE_SIZE};`,'popularity_primitives',signal));
+    signal?.throwIfAborted();
     if(!parsed.success)throw new AppError(502,'IGDB returned invalid popularity data.','igdb_unavailable');
     const popularity=parsed.output;
     const ids=[...new Set(popularity.map(p=>p.game_id))];
     if(!ids.length)return [];
-    const games=await this.query(`fields ${expandedFields}; where id = (${ids.join(',')}); limit ${IGDB_PAGE_SIZE};`);
+    const games=await this.query(`fields ${expandedFields}; where id = (${ids.join(',')}); limit ${IGDB_PAGE_SIZE};`,signal);
     const byId=new Map(games.map(g=>[Number(g.externalId),g]));
     return ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]);
   }

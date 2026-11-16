@@ -11,6 +11,7 @@ import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { ApiError } from '#lib/ui/client.js';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
+import { createShelfRefresh } from './refresh.svelte.js';
 
 export type RecommendationOptions = {
   type: 'recommendation';
@@ -28,7 +29,7 @@ export type RecommendationOptions = {
   layout?: 'row' | 'grid'
  };
 
-export function createRecommendationSource(get: () => RecommendationOptions): ShelfSource {
+export function createRecommendationSource(get: () => RecommendationOptions, refreshVisible?: () => boolean): ShelfSource {
   const location = useShelfLocation();
   const { api, preview } = useClient();
   const orderSeed = untrack(() => get().seed ?? location.url.searchParams.get('seed') ?? Math.random().toString(36).slice(2));
@@ -80,8 +81,10 @@ export function createRecommendationSource(get: () => RecommendationOptions): Sh
       : generic || page.data.capabilities?.personalisation !== false) && categoryEnabled({ ...page.data, features: page.data.capabilities }, category) && (get().kind !== 'book' || page.data.experimentalBooks) && (get().kind !== 'comic' || page.data.experimentalComics) && (get().feature !== 'upcoming' || page.data.experiments.planning);
   }
 
+  const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number?: number, append = false) {
     if (append && resource.busy) return;
+    refresh.clear();
     if (!get().category && !categoryEnabled({ ...page.data, features: page.data.capabilities }, category)) category = mediumOptions({ ...page.data, features: page.data.capabilities })[0]?.value ?? category;
 
     if (!enabled()) {
@@ -149,12 +152,7 @@ export function createRecommendationSource(get: () => RecommendationOptions): Sh
 
     return result;
   }
- const refreshKey=$derived(JSON.stringify([
-  contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:generic?['tracking']:['tracking','social']),
-  page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
-  get().feature==='upcoming'&&page.data.experiments.planning,
-  get().mode,get().feature,get().variant,get().genre,get().kind,get().reason,get().workId,get().category,
-  ]));
+ const refreshKey=$derived(contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:generic?['tracking']:['tracking','social']));
  const scopeKey=$derived(JSON.stringify([
   page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
   get().feature==='upcoming'&&page.data.experiments.planning,
@@ -162,11 +160,14 @@ export function createRecommendationSource(get: () => RecommendationOptions): Sh
   ]));
  const selectionKey=$derived(JSON.stringify([scopeKey,category,available]));
  let previousScope=untrack(()=>scopeKey);
- $effect(()=>{refreshKey;const scope=scopeKey;untrack(()=>{
-  const changed=scope!==previousScope;previousScope=scope;
+ let previousRefresh=untrack(()=>refreshKey);
+ $effect(()=>{const scope=scopeKey,key=refreshKey;untrack(()=>{
+  const changed=scope!==previousScope;
+  if(!changed&&key===previousRefresh)return;
+  previousScope=scope;previousRefresh=key;
   const activated=resource.activated||resource.ready;
   if(changed){if(get().category!==undefined)category=get().category!;if(activated)resource.replace(empty());}
-  if(activated)void load();
+  if(activated)refresh.invalidate();
  });});
   onDestroy(resource.dispose);
  const selectMedium=(value:string)=>{category=value;void load(1);};

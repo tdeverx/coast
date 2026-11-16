@@ -20,8 +20,8 @@ import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { providerApiError } from '#lib/server/security/provider-api-error.js';
 import { surfaceEnabled } from '#lib/experimental.js';
 import { pageNumberSchema } from './pagination';
-export async function discoveryContent(userId:string|null,raw:unknown,signal?:AbortSignal):Promise<DiscoveryContent>{
-  signal?.throwIfAborted();
+export async function discoveryContent(userId:string|null,raw:unknown,signal = new AbortController().signal):Promise<DiscoveryContent>{
+  signal.throwIfAborted();
   const input=v.parse(v.object({surface:v.picklist(['watch','play','listen','read']),section:v.picklist(['trending','recent']),kind:v.optional(v.picklist(['all','book','comic']),'all'),page:v.optional(pageNumberSchema,1)}),raw);
   const config=await getFeatureConfig(userId);
   signal?.throwIfAborted();
@@ -37,9 +37,10 @@ export async function discoveryContent(userId:string|null,raw:unknown,signal?:Ab
       if (kind === 'comic' && input.section === 'trending') return { ...empty, notice: 'Comic Vine does not provide a trending feed. Browse Recently released for new comics.' };
       try {
         if (!await readingProviderConfigured(kind)) return { ...empty, notice: 'Connect Comic Vine in Integrations to discover comics.' };
-        const result = await discoverReading(kind, input.section, input.page);
+        const result = await discoverReading(kind, input.section, input.page, signal);
         return { ...result, pages: Math.max(input.page, Math.min(READING_PROVIDER_PAGE_LIMIT, Math.ceil(result.total / (kind === 'book' ? 20 : 10)))), failure: '', notice: kind === 'book' ? input.section === 'trending' ? 'Trending on Open Library.' : 'Books ordered by first publication year on Open Library.' : 'Comic releases from Comic Vine, ordered by store date.' };
       } catch (cause) {
+        signal.throwIfAborted();
         return { ...empty, failure: cause instanceof AppError ? cause.message : cause instanceof ProviderHttpError ? providerApiError(cause).body.error : 'Reading discovery could not be loaded. Please try again.' };
       }
     }));
@@ -74,15 +75,15 @@ export async function discoveryHero(userId:string|null){
     order by (m.backdrop_path is not null) desc,m.updated_at desc,m.id limit 5`);
   return discoveryScreenCards(userId,rows.map(row=>row.id));
 }
-async function gameDiscovery(userId:string,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
+async function gameDiscovery(userId:string,section:DiscoverySection,signal:AbortSignal):Promise<DiscoveryContent>{
   const [instance]=await getDb().select().from(providerInstances).where(and(eq(providerInstances.provider,'igdb'),eq(providerInstances.enabled,true),sql`${providerInstances.credentials} is not null`)).limit(1);
   if(!instance)return {items:[],failure:'',notice:'Connect IGDB in Integrations to discover games.'};
-  signal?.throwIfAborted();
+  signal.throwIfAborted();
   try{
-    const remote=await discoverIgdb(instance.id,section);
-    signal?.throwIfAborted();
+    const remote=await discoverIgdb(instance.id,section,signal);
+    signal.throwIfAborted();
     return {items:await providerGameCards(userId,remote.map(item=>({...item,instanceId:instance.id}))),failure:'',notice:section==='trending'?'Trending by IGDB popularity.':undefined};
-  }catch(cause){signal?.throwIfAborted();if(cause instanceof AppError&&cause.status===404)throw cause;return {items:[],failure:'Game discovery could not be loaded. Please try again.'};}
+  }catch(cause){signal.throwIfAborted();if(cause instanceof AppError&&cause.status===404)throw cause;return {items:[],failure:'Game discovery could not be loaded. Please try again.'};}
 }
 async function musicDiscovery(userId:string,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
   // Popularity uses visible activity only; a shared catalogue never grants access.

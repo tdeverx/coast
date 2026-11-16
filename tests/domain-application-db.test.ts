@@ -18,7 +18,8 @@ import { requestList } from '../src/lib/server/queries/requests';
 import { bulkTrack, track } from '../src/lib/core/tracking/service.server';
 import { moveListItem } from '../src/lib/core/lists/service.server';
 import { savePresentationPreference } from '../src/lib/catalogue/overrides/service.server';
-import { searchMedia, resolveDiscoveryItems } from '../src/lib/catalogue/service.server';
+import { searchMedia } from '../src/lib/catalogue/service.server';
+import { discoveryScreenCards } from '../src/lib/server/queries/discovery';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = databaseUrl ? describe : describe.skip;
@@ -1146,19 +1147,8 @@ suite('application PostgreSQL read models', () => {
       .values([...discovered, ...scanned].map((mediaId) => ({ mediaId })));
     const trending = [discovered[1], discovered[0]],
       recent = [discovered[2], discovered[0]];
-    const items = await resolveDiscoveryItems([...trending, ...recent]);
-    expect(items).toHaveLength(3);
-    expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
-    const views = await mediaViews(a, { ids: items.map((item) => item.id) });
-    // Match the route's per-user projection and ordered bucket resolution.
-    const projectShelf = (shelf: string[]) =>
-      shelf.flatMap((id) =>
-        views.find((item) => item.id === id) ? [views.find((item) => item.id === id)!.id] : []
-      );
-    expect(projectShelf(trending)).toEqual(trending);
-    expect(projectShelf(recent)).toEqual(recent);
-    const offline = await resolveDiscoveryItems([]);
-    expect(offline).toHaveLength(80);
-    expect(offline.every((item) => scanned.includes(item.id))).toBe(true);
+    expect((await discoveryScreenCards(a,trending)).map(item=>item.id)).toEqual(trending);
+    expect((await discoveryScreenCards(a,recent)).map(item=>item.id)).toEqual(recent);
+    expect(await discoveryScreenCards(a,[])).toEqual([]);
   });
 });

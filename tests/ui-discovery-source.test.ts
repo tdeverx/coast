@@ -13,6 +13,7 @@ const revisionUrl = moduleUrl(await compile('../src/lib/ui/content-revision.svel
 const clientUrl = moduleUrl('export let delivery; export const setDelivery=next=>delivery=next; export const useClient=()=>({api:(...args)=>delivery(...args)});');
 const client = await import(clientUrl);
 const lifecycleUrl = moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))}; export const onDestroy=()=>{};`);
+const refreshUrl = moduleUrl((await compile('../src/lib/ui/shelves/refresh.svelte.ts')).replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`));
 const routeUrl = moduleUrl(`export const page={data:{user:{id:'viewer'},contentRevision:{tracking:'one',social:'one'}}};`);
 const navigationUrl = moduleUrl('export const replaceState=()=>{}; export const goto=async()=>{};');
 const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
@@ -21,6 +22,7 @@ const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
  .replaceAll('$app/state', routeUrl).replaceAll('$app/navigation', navigationUrl)
   .replaceAll('#lib/ui/client-context.js', clientUrl).replaceAll('#lib/ui/resource.svelte.js', resourceUrl)
   .replaceAll('#lib/ui/content-revision.svelte.js', revisionUrl)
+  .replaceAll('./refresh.svelte.js', refreshUrl)
   .replaceAll('#lib/ui/filter-options.js', import.meta.resolve('../src/lib/ui/filter-options'))
   .replaceAll('#lib/discovery.js', import.meta.resolve('../src/lib/discovery'));
 const { createDiscoverySource }: typeof import('../src/lib/ui/shelves/discovery.svelte') = await import(moduleUrl(code));
@@ -28,10 +30,10 @@ const { invalidateContentRevision } = await import(revisionUrl);
 const watch: DiscoveryContent = { items: [{id:'watch',kind:'movie',title:'Screen',href:'/media/watch',available:true} as any], failure:'' };
 const content = (id: string, available=true): DiscoveryContent => ({items:[{id,kind:'album',title:id,href:'/music/'+id,available}],failure:''});
 const settle = async () => { for (let i=0;i<8;i++) { runtime.flush(); await Promise.resolve(); } };
-function source(initial: DiscoveryContent | null = watch) {
+function source(initial: DiscoveryContent | null = watch, visible?: () => boolean) {
   const options = runtime.state({type:'discovery',section:'trending',surface:'watch',initial:initial ?? undefined,mediums:{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}} as DiscoveryOptions);
   let result!: ReturnType<typeof createDiscoverySource>;
-  const dispose = runtime.effect_root(()=>{result=createDiscoverySource(()=>runtime.get(options));});
+  const dispose = runtime.effect_root(()=>{result=createDiscoverySource(()=>runtime.get(options),visible);});
   runtime.flush();
   return { result, dispose, update: (patch: Partial<DiscoveryOptions>) => {runtime.set(options,{...runtime.get(options),...patch});runtime.flush();} };
 }
@@ -85,6 +87,21 @@ test('revision changes leave never-activated rows lazy',async()=>{
   let requests=0;client.setDelivery(async()=>{requests++;return watch;});
   const {result,dispose}=source(null);
   try {invalidateContentRevision(['tracking']);await settle();expect(requests).toBe(0);expect(result.ready).toBe(false);}finally{dispose();}
+});
+
+test('offscreen Trending retains its cards and fetches one refresh when revisited',async()=>{
+  const visible=runtime.state(false);
+  let requests=0;
+  client.setDelivery(async()=>content(String(++requests)));
+  const {result,dispose}=source(null,()=>runtime.get(visible));
+  try{
+    await result.load();
+    invalidateContentRevision(['tracking']);await settle();
+    invalidateContentRevision(['social']);await settle();
+    expect(requests).toBe(1);expect(result.items[0].id).toBe('1');
+    runtime.set(visible,true);await settle();
+    expect(requests).toBe(2);expect(result.items[0].id).toBe('2');
+  }finally{dispose();}
 });
 
 test('reading discovery rows append native pages without resetting their scroll scope',async()=>{

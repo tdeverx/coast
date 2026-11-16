@@ -7,13 +7,15 @@ import { AppError } from '../../server/security/errors';
 import { decryptCredential } from '../../server/security/credentials';
 import { createProviderTransport } from '../../server/security/provider-fetch';
 import { instanceFetchConfig } from '../instances.server';
-import { IgdbAdapter, igdbCredentialsSchema } from './adapter.server';
+import { IgdbAdapter, igdbCredentialsSchema, type IgdbGame } from './adapter.server';
 import { importIgdbMetadata } from '../../core/games/service.server';
+import { providerRowCache } from '#lib/recommendations/provider-read.server.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 // Keep app tokens in memory, separate from persisted encrypted application credentials.
 const adapters = new Map<string, { credentials: string; adapter: IgdbAdapter; cacheScope: string }>();
-export async function igdbSource(instanceId: string) {
+const listings = providerRowCache<IgdbGame[]>();
+async function igdbSource(instanceId: string) {
   v.parse(uuid, instanceId);
   const [instance] = await getDb().select().from(providerInstances).where(and(
     eq(providerInstances.id, instanceId), eq(providerInstances.provider, 'igdb'), eq(providerInstances.enabled, true),
@@ -50,8 +52,17 @@ export async function igdbSteamMatches(instanceId:string,ids:string[]) {
   return (await igdbAdapter(instanceId)).steamMatches(ids);
 }
 
-export async function discoverIgdb(instanceId:string,section:'trending'|'recent') {
-  return (await igdbAdapter(instanceId)).discover(section);
+export async function discoverIgdb(instanceId:string,section:'trending'|'recent',signal:AbortSignal) {
+  signal.throwIfAborted();
+  const {adapter,cacheScope}=await igdbSource(instanceId);
+  const day = section==='recent' ? new Date().toISOString().slice(0,10) : '';
+  return listings(JSON.stringify([cacheScope,'discover',section,day]),signal,upstream=>adapter.discover(section,upstream));
+}
+export async function browseIgdb(instanceId:string,order: 'popular'|'rated'|'upcoming',from:number,through:number,genre:string|undefined,signal:AbortSignal) {
+  signal.throwIfAborted();
+  const {adapter,cacheScope}=await igdbSource(instanceId);
+  return listings(JSON.stringify([cacheScope,'browse',order,from,through,genre]),signal,
+    upstream=>adapter.browse(order,from,through,genre,upstream));
 }
 export async function igdbRecommendations(instanceId:string,id:string){
   return (await igdbAdapter(instanceId)).recommendations(id);

@@ -7,14 +7,11 @@ import { readingProviderCards } from '#lib/reading/query.server.js';
 import { AppError } from '#lib/server/security/errors.js';
 import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
 import { screenListings, releaseWindow } from '#lib/providers/screen-discovery.server.js';
-import { igdbSource } from '#lib/providers/igdb/service.server.js';
-import type { IgdbGame } from '#lib/providers/igdb/adapter.server.js';
+import { browseIgdb } from '#lib/providers/igdb/service.server.js';
 import { browseBooks, upcomingComics } from '#lib/providers/reading.server.js';
 import type { BrowseVariant, DynamicKind } from './model';
 import { getProviderGenre } from './row-catalog';
-import { providerRowCache } from './provider-read.server';
 
-const games = providerRowCache<IgdbGame[]>();
 type RowCard = MediaView | MediaCardPresentation;
 
 export async function providerCards(userId: string | null, kind: DynamicKind, variant: BrowseVariant, genre: string | undefined,
@@ -30,11 +27,9 @@ export async function providerCards(userId: string | null, kind: DynamicKind, va
   const tag = getProviderGenre(genre);
   const dates = releaseWindow();
   if (kind==='game' && igdbId) {
-    const source = await igdbSource(igdbId);
-    const key = JSON.stringify([source.cacheScope,variant,genre,dates.today]);
     const from = Date.parse(dates.from)/1000;
     const through = Date.parse(order==='upcoming'?dates.through:dates.today)/1000+86399;
-    const matches = await games(key,signal,upstream=>source.adapter.browse(order,from,through,tag?.game,upstream));
+    const matches = await browseIgdb(igdbId,order,from,through,tag?.game,signal);
     signal.throwIfAborted();
     return providerGameCards(userId,matches.map(item=>({...item,instanceId:igdbId})));
   }

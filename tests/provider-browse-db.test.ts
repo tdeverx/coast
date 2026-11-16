@@ -6,11 +6,14 @@ import { getConfig } from '../src/lib/server/config';
 import { encryptCredential } from '../src/lib/server/security/credentials';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
+import { IgdbAdapter } from '../src/lib/providers/igdb/adapter.server';
+import { OpenLibraryAdapter } from '../src/lib/providers/openlibrary/adapter.server';
+import { ComicVineAdapter } from '../src/lib/providers/comic-vine/adapter.server';
 import { browseRows, genericFeed } from '../src/lib/recommendations/generic.server';
 import { dynamicFeed } from '../src/lib/recommendations/feed.server';
 import { discoveryHero } from '../src/lib/server/queries/discovery';
 import { handler } from '../src/lib/server/api/index.server';
-import type { Metadata } from '../src/lib/providers/contracts';
+import type { Metadata, ProviderTransport } from '../src/lib/providers/contracts';
 
 const run = process.env.COAST_DB_TEST==='1' ? test : test.skip;
 const signal = new AbortController().signal;
@@ -93,4 +96,60 @@ run('only public browsing admits the guest screen routes and never opens the lib
   const config={...await getConfig(),siteAccess:'public-profiles' as const};
   await getDb().update(s.systemSettings).set({value:config}).where(eq(s.systemSettings.key,'coast'));
   expect((await get('discover/feed','category=screen')).status).toBe(401);
+});
+
+run('leaving game, book, or comic discovery aborts the upstream transport and a revisit can retry',async()=>{
+  const db=getDb(), config={...await getConfig(),experimentalGaming:true,experimentalBooks:true,experimentalComics:true};
+  await db.update(s.systemSettings).set({value:config}).where(eq(s.systemSettings.key,'coast'));
+  await db.insert(s.providerInstances).values([
+    {provider:'igdb',name:'IGDB fixture',baseUrl:'https://api.igdb.com',credentials:await encryptCredential(JSON.stringify({clientId:'fixture',clientSecret:'fixture'}))},
+    {provider:'comic-vine',name:'Comic Vine fixture',baseUrl:'https://comicvine.gamespot.com',credentials:await encryptCredential(JSON.stringify({apiKey:'fixture'}))},
+  ]);
+
+  function transport(reply: (path:string)=>unknown) {
+    const started=Promise.withResolvers<AbortSignal>();
+    const paths:string[]=[];
+    const fetch:ProviderTransport=(path,init)=>{
+      paths.push(path);
+      if(paths.length>1)return Promise.resolve(reply(path));
+      const upstream=init?.signal;
+      if(!upstream)throw new Error('The provider transport did not receive a signal');
+      return new Promise((_,reject)=>{
+        upstream.addEventListener('abort',()=>reject(upstream.reason),{once:true});
+        started.resolve(upstream);
+      });
+    };
+    return {fetch,started:started.promise,paths};
+  }
+
+  const games=transport(path=>path==='/v4/popularity_primitives'?[{game_id:42}]:[{id:42,name:'Fixture game'}]);
+  const books=transport(()=>({docs:[],numFound:0}));
+  const comics=transport(()=>({status_code:1,number_of_total_results:0,results:[]}));
+  const gameAdapter=new IgdbAdapter({clientId:'fixture',clientSecret:'fixture'},games.fetch,
+    async()=>({access_token:'fixture',expires_in:3600,token_type:'bearer'}));
+  const bookAdapter=new OpenLibraryAdapter(books.fetch),comicAdapter=new ComicVineAdapter('fixture',comics.fetch);
+  const discoverGames=gameAdapter.discover.bind(gameAdapter),discoverBooks=bookAdapter.discover.bind(bookAdapter),discoverComics=comicAdapter.discover.bind(comicAdapter);
+  const gameAdapterMock=spyOn(IgdbAdapter.prototype,'discover').mockImplementation(discoverGames);
+  const bookAdapterMock=spyOn(OpenLibraryAdapter.prototype,'discover').mockImplementation(discoverBooks);
+  const comicAdapterMock=spyOn(ComicVineAdapter.prototype,'discover').mockImplementation(discoverComics);
+  try{
+    for(const {params,provider,retryCalls} of [
+      {params:'surface=play&section=trending',provider:games,retryCalls:2},
+      {params:'surface=read&section=recent&kind=book',provider:books,retryCalls:1},
+      {params:'surface=read&section=recent&kind=comic',provider:comics,retryCalls:1},
+    ]){
+      const url=new URL(`https://coast.test/api/v1/discover?${params}`);
+      const open=async(signal?:AbortSignal)=>handler({request:new Request(url,{signal}),url,
+        locals:{user:{id:viewer,username:'viewer',role:'user',email:null,settings:{}}},params:{path:'discover'}} as Parameters<typeof handler>[0]);
+      const controller=new AbortController();
+      const pending=open(controller.signal);
+      const upstream=await Promise.race([provider.started,pending.then(async response=>{throw new Error(`Discovery finished before the provider started: ${response.status} ${await response.text()}`);})]);
+      controller.abort();
+      expect((await pending).status).toBe(499);
+      expect(upstream.aborted).toBe(true);
+      expect(provider.paths).toHaveLength(1);
+      expect((await open()).status).toBe(200);
+      expect(provider.paths).toHaveLength(1+retryCalls);
+    }
+  }finally{gameAdapterMock.mockRestore();bookAdapterMock.mockRestore();comicAdapterMock.mockRestore();}
 });

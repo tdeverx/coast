@@ -6,17 +6,16 @@ let generation=0;
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(new Bun.Transpiler({loader:'ts'}).transformSync(source)).toString('base64')}`;
 async function owner(){
  const source=await Bun.file(new URL('../src/lib/catalogue/service.server.ts',import.meta.url)).text();
- const start=source.indexOf('export async function discoverMedia('),end=source.indexOf('/** Explicit shelf membership',start);
- if(start<0||end<0)throw Error('Discovery owner was not found.');
+ const start=source.indexOf('export async function discoverMedia(');
+ if(start<0)throw Error('Discovery owner was not found.');
  return import(moduleUrl(`export const harnessId=${generation++};
- export const state={enabled:true,requests:true,tmdb:true,seerr:false,fail:'',calls:[],adapters:0,resolutions:0};
+ export const state={enabled:true,requests:true,tmdb:true,seerr:false,fail:'',calls:[],adapters:0,items:[]};
  const adapter={trending:async()=>{state.calls.push('seerr');return [];}};
  const getFeatureConfig=async()=>({features:{screen:state.enabled,requests:state.requests}});
- const screenListings=async(_kind,section)=>{state.adapters++;if(state.tmdb)state.calls.push(section);return {items:[],configured:state.tmdb,failed:state.fail===section};};
+ const screenListings=async(_kind,section)=>{state.adapters++;if(state.tmdb)state.calls.push(section);return {items:state.items,configured:state.tmdb,failed:state.fail===section};};
  const seerrDiscovery=async()=>state.seerr?adapter:null;
- const persistScreenListings=async items=>{if(items.length)throw Error('No provider content is invented by this admission test');return [];};
- const resolveDiscoveryItems=async ids=>{state.resolutions++;return ids;};
- ${source.slice(start,end)}`));
+ const persistScreenListings=async items=>items.map(item=>item.id);
+ ${source.slice(start)}`));
 }
 
 test('each named discovery bucket admits only its provider feed and ignores unrelated failures',async()=>{
@@ -27,9 +26,11 @@ test('each named discovery bucket admits only its provider feed and ignores unre
  }
 });
 
-test('the combined discovery owner keeps both feeds and resolves their result',async()=>{
- const {state,discoverMedia}=await owner();const result=await discoverMedia(null);
- expect(state.calls).toEqual(['trending','recent']);expect(state.resolutions).toBe(1);expect(result.providerUnavailable).toBe(false);
+test('the combined discovery owner returns ordered IDs from both feeds without projecting cards',async()=>{
+ const {state,discoverMedia}=await owner();state.items=[{id:'second'},{id:'first'}];
+ const result=await discoverMedia(null);
+ expect(state.calls).toEqual(['trending','recent']);
+ expect(result).toEqual({trending:['second','first'],recent:['second','first'],configured:true,providerUnavailable:false});
 });
 
 test('requested failures keep the existing discovery failure contract',async()=>{
@@ -62,12 +63,12 @@ test('the linked Seerr fallback respects the viewer requests setting and never r
 
 test('disabled discovery admits no adapters or fallback catalogue query',async()=>{
  const {state,discoverMedia}=await owner();state.enabled=false;const result=await discoverMedia(null,'trending');
- expect(state.adapters).toBe(0);expect(state.resolutions).toBe(0);expect(result.items).toEqual([]);
+ expect(state.adapters).toBe(0);expect(result).toMatchObject({trending:[],recent:[]});
 });
 
-test('missing providers preserve unconfigured fallback behavior',async()=>{
+test('missing providers return empty IDs without a fallback catalogue read',async()=>{
  const {state,discoverMedia}=await owner();state.tmdb=false;const result=await discoverMedia(null,'recent');
- expect(state.calls).toEqual([]);expect(state.resolutions).toBe(1);expect(result.configured).toBe(false);
+ expect(state.calls).toEqual([]);expect(result).toMatchObject({recent:[],configured:false});
 });
 
 test('the shared screen query forwards each selected bucket to the catalogue owner',async()=>{

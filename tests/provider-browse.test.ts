@@ -97,3 +97,25 @@ test('concurrent provider reads share upstream work and stop it when the last re
   const retry=read('upcoming',b.signal,loader);await Promise.resolve();finish('new');
   expect(await retry).toBe('new');expect(calls).toBe(3);
 });
+
+test('leaving IGDB discovery during OAuth cancels the token request before it starts a listing',async()=>{
+  const transportStarted=Promise.withResolvers<AbortSignal>();
+  let tokenRequests=0,listRequests=0;
+  const adapter=new IgdbAdapter({clientId:'fixture',clientSecret:'fixture'},async()=>{listRequests++;return [];},async(_path,init)=>{
+    if(++tokenRequests>1)return {access_token:'fixture',expires_in:3600,token_type:'bearer'};
+    const upstream=init?.signal;
+    if(!upstream)throw new Error('OAuth transport did not receive a signal');
+    return new Promise((_,reject)=>{
+      upstream.addEventListener('abort',()=>reject(upstream.reason),{once:true});
+      transportStarted.resolve(upstream);
+    });
+  });
+  const controller=new AbortController();
+  const pending=adapter.discover('trending',controller.signal);
+  const upstream=await Promise.race([transportStarted.promise,pending.then(()=>{throw new Error('Discovery completed before OAuth');})]);
+  controller.abort();
+  await expect(pending).rejects.toThrow();
+  expect(upstream.aborted).toBe(true);expect(listRequests).toBe(0);
+  expect(await adapter.discover('trending')).toEqual([]);
+  expect(tokenRequests).toBe(2);expect(listRequests).toBe(1);
+});

@@ -23,15 +23,15 @@ export type ShelfConfig =
   | ({ type: 'list' } & ListSourceOptions)
   | ({ type: 'credits' } & CreditsOptions)
   | ({ type: 'library' } & LibrarySourceOptions);
-export function createShelfSource(get: () => ShelfConfig) {
+export function createShelfSource(get: () => ShelfConfig, refreshVisible?: () => boolean) {
   // The source type is fixed for a mounted shelf; changing features mounts a new shelf.
   switch (get().type) {
     case 'library-feed':return createLibraryFeedSource(()=>get() as LibraryFeedOptions);
     case 'progress-experiment':return createProgressExperimentSource(()=>get() as ProgressExperimentSourceOptions);
     case 'detail':return createDetailSource(()=>get() as DetailSourceOptions);
-    case 'recommendation':return createRecommendationSource(()=>get() as RecommendationOptions);
-    case 'discovery':return createDiscoverySource(()=>get() as DiscoveryOptions);
-    case 'social':return createSocialSource(()=>get() as SocialShelfOptions);
+    case 'recommendation':return createRecommendationSource(()=>get() as RecommendationOptions, refreshVisible);
+    case 'discovery':return createDiscoverySource(()=>get() as DiscoveryOptions, refreshVisible);
+    case 'social':return createSocialSource(()=>get() as SocialShelfOptions, refreshVisible);
     case 'journal': return createJournalSource(() => get() as Extract<ShelfConfig,{type:'journal'}>);
     case 'search': return createSearchSource(() => get() as Extract<ShelfConfig, { type: 'search' }>);
     case 'progress': return createProgressSource(() => get() as Extract<ShelfConfig, { type: 'progress' }>);

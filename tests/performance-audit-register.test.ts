@@ -8,9 +8,10 @@ import inviteFollowupSourceRefresh from '../docs/audits/2026-11-15-invite-accoun
 import housekeepingSourceRefresh from '../docs/audits/2026-11-15-app-housekeeping/source-refresh.json';
 import recommendationSourceRefresh from '../docs/audits/2026-11-16-recommendation-feeds/source-refresh.json';
 import providerRowsSourceRefresh from '../docs/audits/2026-11-16-provider-rows/source-refresh.json';
+import viewportSourceRefresh from '../docs/audits/2026-11-16-provider-rows/viewport-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {

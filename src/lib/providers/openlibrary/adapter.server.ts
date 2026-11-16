@@ -102,16 +102,16 @@ export class OpenLibraryAdapter {
     } catch (error) { providerError(error); }
   }
   /** Official search sorts: current attention, or first publication year (not edition additions). */
-  async discover(section: 'trending' | 'recent', page = 1): Promise<ReadingPage> {
+  async discover(section: 'trending' | 'recent', page = 1, signal?: AbortSignal): Promise<ReadingPage> {
     v.parse(v.picklist(['trending', 'recent']), section);
     v.parse(pageSchema, page);
     try {
       const query = section === 'trending' ? 'trending_z_score:[1 TO *]' : `first_publish_year:[1 TO ${new Date().getUTCFullYear()}]`;
-      const result = await this.searchRequest(query, page, OPEN_LIBRARY_PAGE_SIZE, section === 'trending' ? 'trending' : 'new');
+      const result = await this.searchRequest(query, page, OPEN_LIBRARY_PAGE_SIZE, section === 'trending' ? 'trending' : 'new', signal);
       const count = result.numFound ?? result.num_found;
       if (count === undefined) throw new AppError(502, 'Open Library returned invalid discovery pagination.', 'openlibrary_unavailable');
       return { items: result.docs.map(mapDocument), total: count, page, nextPage: page < READING_PROVIDER_PAGE_LIMIT && result.docs.length > 0 && page * OPEN_LIBRARY_PAGE_SIZE < count ? page + 1 : null };
-    } catch (error) { providerError(error); }
+    } catch (error) { signal?.throwIfAborted(); providerError(error); }
   }
   async workForEdition(id:string):Promise<string|null> {
     const identifier=v.parse(v.pipe(v.string(),v.regex(/^(?:OL[1-9][0-9]{0,19}M|[0-9]{9}[0-9X]|[0-9]{13})$/)),id);
