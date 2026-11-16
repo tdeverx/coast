@@ -1,6 +1,6 @@
 import {createProgressExperimentSource,type ProgressExperimentSourceOptions} from './progress-experiment.svelte';
 import {createLibraryFeedSource,type LibraryFeedOptions} from './library-feed.svelte';
-import {createForYouSource,type ForYouOptions} from './for-you.svelte';
+import {createRecommendationSource,type RecommendationOptions} from './for-you.svelte';
 import {createDiscoverySource,type DiscoveryOptions} from './discovery.svelte';
 import {createSocialSource,type SocialShelfOptions} from './social.svelte';
 import { createJournalSource, type JournalOptions } from './journal.svelte';
@@ -14,7 +14,7 @@ export type ShelfConfig =
   | LibraryFeedOptions
   | ProgressExperimentSourceOptions
   | DetailSourceOptions
-  | ForYouOptions
+  | RecommendationOptions
   | DiscoveryOptions
   | SocialShelfOptions
   | ({type:'journal'} & JournalOptions)
@@ -29,7 +29,7 @@ export function createShelfSource(get: () => ShelfConfig) {
     case 'library-feed':return createLibraryFeedSource(()=>get() as LibraryFeedOptions);
     case 'progress-experiment':return createProgressExperimentSource(()=>get() as ProgressExperimentSourceOptions);
     case 'detail':return createDetailSource(()=>get() as DetailSourceOptions);
-    case 'for-you':return createForYouSource(()=>get() as ForYouOptions);
+    case 'recommendation':return createRecommendationSource(()=>get() as RecommendationOptions);
     case 'discovery':return createDiscoverySource(()=>get() as DiscoveryOptions);
     case 'social':return createSocialSource(()=>get() as SocialShelfOptions);
     case 'journal': return createJournalSource(() => get() as Extract<ShelfConfig,{type:'journal'}>);

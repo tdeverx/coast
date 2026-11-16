@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
 import { mapConcurrent } from '#lib/server/utils/async.js';
 import { searchFallback, searchScore } from '#lib/search.js';
 import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
 import { and, eq, inArray, isNull, or, sql, desc } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import {
   media,
   movies,
@@ -19,50 +19,12 @@ import {
   users,
 } from '#lib/server/db/schema.js';
 import { mediaViews } from '#lib/server/queries/media.js';
-import { createProviderTransport } from '#lib/server/security/provider-fetch.js';
-import { decryptCredential } from '#lib/server/security/credentials.js';
-import { TmdbAdapter } from '#lib/providers/tmdb/adapter.server.js';
+import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
+import { screenListings } from '#lib/providers/screen-discovery.server.js';
+import { screenListingIds } from '#lib/recommendations/screen-ranking.js';
 import type { DiscoverKind, Metadata } from '#lib/providers/contracts.js';
 import type { DiscoverySection } from '#lib/discovery.js';
 
-export async function getTmdb(language = 'en-US', region = 'GB', instanceId?:string) {
-  const [instance] = await getDb()
-    .select()
-    .from(providerInstances)
-    .where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true),instanceId?eq(providerInstances.id,instanceId):undefined))
-    .limit(1);
-  if (!instance?.credentials) return null;
-  const credentials = JSON.parse(await decryptCredential(instance.credentials)) as {
-    apiKey?: string;
-    accessToken?: string;
-  };
-  const request = createProviderTransport({
-    provider: 'tmdb',
-    baseUrl: 'https://api.themoviedb.org',
-    approved: true,
-    allowedPorts: [443],
-  });
-  return new TmdbAdapter(
-    (path, init = {}) =>
-      request(
-        credentials.apiKey
-          ? `${path}${path.includes('?') ? '&' : '?'}api_key=${encodeURIComponent(credentials.apiKey)}`
-          : path,
-        {
-          ...init,
-          headers: {
-            ...init.headers,
-            ...(credentials.accessToken
-              ? { Authorization: `Bearer ${credentials.accessToken}` }
-              : {}),
-          },
-        }
-      ),
-    language,
-    region,
-    `${instance.id}:${createHash('sha256').update(instance.credentials).digest('hex')}`
-  );
-}
 function snapshotValues(metadata: Metadata) {
   return {
     title: metadata.title,
@@ -462,7 +424,7 @@ export async function ensureDetails(userId: string, id: string) {
   });
   return true;
 }
-async function seerrDiscovery(userId: string) {
+async function seerrDiscovery(userId: string, signal?: AbortSignal) {
   const instances = await getDb()
     .select()
     .from(providerInstances)
@@ -470,8 +432,8 @@ async function seerrDiscovery(userId: string) {
   const { getSeerr } = await import('#lib/providers/seerr/connection.server.js');
   for (const instance of instances)
     try {
-      return (await getSeerr(userId, instance.id)).adapter;
-    } catch {}
+      return (await getSeerr(userId, instance.id,undefined,signal)).adapter;
+    } catch { signal?.throwIfAborted(); }
   return null;
 }
 export async function searchMedia(userId: string, query: string) {
@@ -495,32 +457,55 @@ export async function searchMedia(userId: string, query: string) {
   const items = await mediaViews(userId, { query: needle, availableFirst: true, limit: 101 });
   return { items: items.slice(0, 100), providerUnavailable, truncated: items.length > 100 };
 }
-export async function discoverMedia(userId: string | null, section?: DiscoverySection) {
+const importListing = providerSingleFlight<string>('screen-discovery-import');
+/** Resolve the whole provider page by verified aliases before importing. Normal
+ * revisits perform one lookup and hydrate cards without rewriting snapshots. */
+export async function persistScreenListings(items: readonly Metadata[], signal?: AbortSignal) {
+  if (!items.length) return [];
+  const candidates = items.slice(0,60).map(item=>({item,aliases:screenListingIds(item)}));
+  const aliases = candidates.flatMap(({item,aliases})=>aliases.map(([provider,external_id])=>({provider,external_id,kind:item.kind})));
+  const stored = await withReadCancellation(signal,async()=>getDb().execute<{provider:string;external_id:string;kind:string;media_id:string}>(sql`
+    select x.provider,x.external_id,x.media_kind as kind,x.media_id from external_ids x
+    join jsonb_to_recordset(${JSON.stringify(aliases)}::text::jsonb) as identity(provider text,external_id text,kind text)
+      on (x.provider,x.external_id,x.media_kind) = (identity.provider,identity.external_id,identity.kind)`));
+  signal?.throwIfAborted();
+  const known = new Map(stored.map(row=>[`${row.kind}:${row.provider}:${row.external_id}`,row.media_id]));
+  const resolved = await mapConcurrent(candidates,4,async ({item,aliases})=>{
+    signal?.throwIfAborted();
+    if (!aliases.length) return;
+    const keys = aliases.map(([provider,id])=>`${item.kind}:${provider}:${id}`);
+    const ids = new Set(keys.flatMap(key=>known.has(key)?[known.get(key)!]:[]));
+    if (ids.size>1) return; // An ambiguous provider result cannot merge canonical works.
+    if (ids.size===1 && aliases.some(([provider,id])=>(provider==='tmdb'||provider==='trakt') && known.has(`${item.kind}:${provider}:${id}`)))
+      return ids.values().next().value;
+    const identity = keys.find(key=>key.startsWith(`${item.kind}:tmdb:`)) ?? keys[0];
+    return importListing(identity,async ()=>(await ingestMetadata({...item,externalIds:Object.fromEntries(aliases)})).id);
+  });
+  signal?.throwIfAborted();
+  return [...new Set(resolved.filter((id):id is string=>!!id))];
+}
+
+export async function discoverMedia(userId: string | null, section?: DiscoverySection, signal: AbortSignal = new AbortController().signal) {
   if(!(await getFeatureConfig(userId)).features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
-  const tmdb = await getTmdb();
-  const adapter = tmdb || (userId ? await seerrDiscovery(userId) : null);
-  let providerUnavailable = false;
-  const trending: string[] = [],
-    recent: string[] = [];
-  if (adapter) {
-    await Promise.all(
-      (
-        [
-          ['trending', trending, () => adapter.trending()],
-          ['recent', recent, () => (tmdb ? tmdb.recent('movie') : Promise.resolve([]))],
-        ] as const
-      ).filter(([name]) => !section || name === section).map(async ([, bucket, fetcher]) => {
-        try {
-          const saved = await mapConcurrent(await fetcher(), 4, (item) => ingestMetadata(item));
-          bucket.push(...saved.map((item) => item.id));
-        } catch {
-          providerUnavailable = true;
-        }
-      })
-    );
-  }
+  const names: DiscoverySection[] = section ? [section] : ['trending','recent'];
+  const results = await Promise.all(names.map(async name=>{
+    const result = await screenListings('all',name,undefined,signal);
+    let {items,configured,failed} = result;
+    // Seerr mirrors TMDB's trending list. Use the admitted linked account only
+    // as a fallback when the public listing sources couldn't supply it.
+    if (!items.length && name==='trending' && userId) {
+      const adapter = await seerrDiscovery(userId,signal);
+      configured ||= !!adapter;
+      if (adapter) try { items=(await adapter.trending()).slice(0,20); }
+      catch { signal.throwIfAborted(); failed=true; }
+    }
+    try { return {name,ids:await persistScreenListings(items,signal),configured,failed}; }
+    catch { signal.throwIfAborted(); return {name,ids:[],configured,failed:true}; }
+  }));
+  const trending=results.find(result=>result.name==='trending')?.ids??[];
+  const recent=results.find(result=>result.name==='recent')?.ids??[];
   const items = await resolveDiscoveryItems([...trending, ...recent]);
-  return { items, trending, recent, configured: !!adapter, providerUnavailable };
+  return {items,trending,recent,configured:results.some(result=>result.configured),providerUnavailable:results.some(result=>result.failed)};
 }
 
 /** Explicit shelf membership survives unrelated catalogue writes during discovery ingestion. */

@@ -70,12 +70,19 @@ function providerError(error: unknown): never {
 
 export class OpenLibraryAdapter {
   constructor(private request: ProviderTransport, private userAgent = 'Coast (+https://github.com/tdeverx/coast)') {}
-  private async searchRequest(query: string, page: number, limit = OPEN_LIBRARY_PAGE_SIZE, sort?: string) {
-    const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit), fields });
+  private async searchRequest(query: string, page: number, limit = OPEN_LIBRARY_PAGE_SIZE, sort?: string, signal?: AbortSignal, projection = fields) {
+    const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit), fields:projection });
     if (sort) params.set('sort', sort);
     return v.parse(searchSchema, await this.request(`/search.json?${params}`, {
-      headers: { accept: 'application/json', 'User-Agent': this.userAgent },
+      headers: { accept: 'application/json', 'User-Agent': this.userAgent }, signal,
     }));
+  }
+  async browseSubject(subject: string, signal?: AbortSignal): Promise<ReadingMetadata[]> {
+    v.parse(v.pipe(v.string(),v.regex(/^[a-z ]{1,50}$/)),subject);
+    try {
+      const result = await this.searchRequest(`subject:"${subject}"`,1,OPEN_LIBRARY_PAGE_SIZE,'trending',signal,'key,title,author_name,subject,first_publish_year,cover_i');
+      return result.docs.map(mapDocument).filter(item=>item.kind==='book');
+    } catch (cause) { signal?.throwIfAborted(); providerError(cause); }
   }
   async search(query: string, page = 1): Promise<ReadingPage> {
     const search = v.parse(querySchema, query);

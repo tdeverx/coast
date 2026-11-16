@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { createHash } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { providerInstances, providerConnections, syncAccounts, users } from '#lib/server/db/schema.js';
@@ -57,6 +58,7 @@ export async function getTraktCommunity() {
   const app = await traktApp(instance);
   return {
     instanceId: instance.id,
+    cacheScope: `${instance.id}:${createHash('sha256').update(instance.credentials).digest('hex')}`,
     adapter: new TraktAdapter(instanceTransport(instance), app.clientId, app.clientSecret),
   };
 }

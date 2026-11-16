@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { ProviderTransport, SyncCategory } from '../contracts';
+import type { DiscoverKind, Metadata, ProviderTransport, SyncCategory } from '../contracts';
 const ids = v.object({
   trakt: v.number(),
   slug: v.optional(v.string()),
@@ -13,6 +13,8 @@ const title = v.object({
   runtime: v.nullish(v.number()),
   ids,
 });
+const publicTitle = v.object({ ...title.entries, overview: v.nullish(v.string()), released: v.nullish(v.string()),
+  first_aired: v.nullish(v.string()), genres: v.optional(v.array(v.string()), []), });
 const episode = v.object({
   season: v.number(),
   number: v.number(),
@@ -76,6 +78,19 @@ export class TraktAdapter {
         ...init.headers,
       },
     });
+  }
+  async browse(kind: DiscoverKind, order: 'trending' | 'popular' | 'anticipated', genre?: string, signal?: AbortSignal): Promise<Metadata[]> {
+    const params = new URLSearchParams({page:'1',limit:'20',extended:'full'});
+    if (genre) params.set('genres',genre);
+    const path = `/${kind === 'movie' ? 'movies' : 'shows'}/${order}?${params}`;
+    const items = order === 'popular' ? v.parse(v.array(publicTitle),await this.call(path,{signal}))
+      : v.parse(v.array(v.object({[kind]:publicTitle})),await this.call(path,{signal})).map(entry=>entry[kind]);
+    return items.slice(0,20).filter(item=>Number.isSafeInteger(item.ids.trakt)&&item.ids.trakt>0).map(item => ({
+      kind, provider:'trakt', externalId:String(item.ids.trakt), title:item.title, overview:item.overview??undefined,
+      releaseDate:(item.released || item.first_aired)?.slice(0,10), runtimeMinutes:item.runtime??undefined, genres:item.genres,
+      externalIds:{...(item.ids.tmdb ? {tmdb:String(item.ids.tmdb)} : {}), ...(item.ids.imdb ? {imdb:item.ids.imdb} : {}),
+        ...(kind==='show' && item.ids.tvdb ? {tvdb:String(item.ids.tvdb)} : {})},
+    }));
   }
   private async readPages<T>(path: string, parse: (value: unknown) => T[]): Promise<T[]> {
     const result: T[] = [];

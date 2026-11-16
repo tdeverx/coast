@@ -3,7 +3,8 @@ import {librarySegmentValues,librarySortValues,type LibrarySegment,type LibraryS
 import {progressExperimentParameters,progressExperimentSchema} from '#lib/progress-experiment.js';
 import * as v from 'valibot';
 import type {ShelfConfig} from './shelves';
-import {dynamicKind} from '#lib/recommendations/model.js';
+import {recommendationSectionSource} from '#lib/recommendations/section.js';
+import type {DynamicMedium} from '#lib/recommendations/model.js';
 import type {ProgressOptions} from '#lib/progress.js';
 import {validPageInterval} from '#lib/page-window.js';
 import {activityFiltersSchema} from '#lib/social/model.js';
@@ -43,13 +44,14 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
    const filters=v.safeParse(activityFiltersSchema,{...Object.fromEntries(p),audience:get('audience','friends')});if(section==='activity'&&!filters.success)return null;
    source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:!action,layout:'grid',...(section==='activity'&&filters.success?filters.output:{})};
   }
-  else if(['upcoming','recommendations','dynamic'].includes(section)){
-   const kind=dynamicKind(p.get('kind')),reason=get('reason');
-   source={type:'for-you',feature:section==='dynamic'?'row':section as 'upcoming'|'recommendations',layout:'grid',category:category as 'screen'|'game'|'music'|'reading',genre:get('genre')||undefined,workId:get('work')||undefined,seed:get('seed')||undefined,...(kind?{kind}:{}),...(['liked','watched','saved','explore'].includes(reason)?{reason:reason as 'liked'|'watched'|'saved'|'explore'}:{})};
-  }
- }else if(url.pathname==='/discover'&&['trending','recent'].includes(get('section'))){
-  const surface=get('view',get('surface','watch')),kind=get('kind','all');if(!['watch','listen','play','read'].includes(surface)||!['all','book','comic'].includes(kind))return null;
-  source={type:'discovery',scoped:p.has('view'),section:get('section') as 'trending'|'recent',surface:surface as 'watch'|'listen'|'play'|'read',kind:kind as 'all'|'book'|'comic',layout:'grid'};
+  else source=recommendationSectionSource(url,category as DynamicMedium,'personal');
+ }else if(url.pathname==='/discover'){
+  const surface=actionValues.find(value=>value===get('view',get('surface','watch')));
+  if(!surface)return null;
+  const section=get('section'),kind=get('kind','all');
+  if((section==='trending'||section==='recent')&&['all','book','comic'].includes(kind))
+   source={type:'discovery',scoped:p.has('view'),section,surface,kind:kind as 'all'|'book'|'comic',layout:'grid'};
+  else source=recommendationSectionSource(url,actionCategories[surface],'generic');
  }else if(/^\/profile\/[^/]+$/.test(url.pathname)){
   let username:string;try{username=decodeURIComponent(url.pathname.split('/')[2]);}catch{return null;}
   const view=get('section',get('view','overview')),period=get('period','all');

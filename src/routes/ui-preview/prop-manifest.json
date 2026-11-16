@@ -3952,6 +3952,16 @@
         "nullable": false
       },
       {
+        "name": "appendWhenReady",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
         "name": "onactivate",
         "type": "() => void",
         "optional": true,

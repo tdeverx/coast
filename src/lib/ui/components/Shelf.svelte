@@ -46,7 +46,7 @@
     title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', mixed = false, overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
     mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
-    url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
+    url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, appendWhenReady = false, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
   }: {
     filterBy?: 'none' | 'type' | 'watched';
     availability?: boolean;
@@ -95,6 +95,7 @@
     onpage?: (page: number) => void;
     pageUrl?: (page: number) => string;
     onsettled?: () => void;
+    appendWhenReady?: boolean;
     onactivate?: () => void;
   } = $props();
   const sectionHost=useDetailSection(),sectionId=$props.id();
@@ -122,7 +123,12 @@
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
   const displayEnrichSocial=$derived(enrichSocial&&(adapter?.enrichSocial??true));
   const activitySkeleton=$derived(source?.type==='social'&&source.surface!=='popular'||source?.type==='library-feed'&&source.feature==='requests'&&page.data.user?.role==='admin');
-  $effect(() => { if(adapter && (adapter.ready || adapter.error))untrack(()=>onsettled?.()); });
+  $effect(() => {
+    if (appendWhenReady && adapter && !adapter.ready && !adapter.activated) untrack(() => void adapter.load());
+  });
+  $effect(() => {
+    if (adapter && (adapter.ready || adapter.error)) untrack(() => onsettled?.());
+  });
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
   const displayTitle = $derived(adapter?.title ?? title);
@@ -154,8 +160,13 @@
   const gridPlaceholders = Array.from({length: 18}, (_, index) => index);
   const rowPlaceholders = gridPlaceholders.slice(0, 12);
   const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
-  // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
-  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
+  // A feed row prepares below the current rows. Once shown, retain its slot
+  // through content refreshes so an empty result cannot pull the reader upward.
+  let shown = $state(false);
+  $effect(() => { if (appendWhenReady && ((count ?? 0) > 0 || displayError)) shown = true; });
+  const preparing = $derived(appendWhenReady && !!adapter && !adapter.ready && !displayError);
+  // Keep failed rows and user-selected empty filters reachable.
+  const hidden = $derived(preparing || !shown && hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
@@ -238,6 +249,7 @@
  {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
  {@render customControls?.()}
 {/snippet}
+{#if !appendWhenReady || !hidden}
 <div data-shelf use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
@@ -385,6 +397,7 @@
 {#if !sectionCandidate && (pagination?.kind === 'pages' && ['footer','both'].includes(pagination.controls) || pageUrl) && displayLayout === 'grid'}<Pagination page={displayPageNumber} pages={displayPages}
   busy={displayBusy} onchange={(pagination?.kind === 'pages' ? pagination.url : undefined) || pageUrl ? undefined : adapter?.load} pageUrl={(pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl} label={`${displayTitle} pages`} />{/if}
 </div>
+{/if}
 <style>
   .detail-section {margin-top:0;}
   .activity-placeholder{display:flex;align-items:center;gap:8px;margin-bottom:8px;height:24px;}

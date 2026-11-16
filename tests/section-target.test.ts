@@ -5,9 +5,11 @@ const source=(href:string)=>{const target=sectionTarget(href,base);return target
 test('linked row targets preserve source identity and selections across media',()=>{
  expect(source('/progress?view=watching&category=reading&kind=comic&scope=available')).toMatchObject({type:'progress',filters:{view:'watching',category:'reading',kind:'comic',scope:'available'}});
  expect(source('/library?view=read&collection=true&kind=comic&username=alice')).toMatchObject({type:'library',surface:'read',collection:true,initialKind:'comic',username:'alice'});
- expect(source('/for-you?section=dynamic&genre=Drama&seed=stable&reason=liked')).toMatchObject({type:'for-you',feature:'row',genre:'Drama',seed:'stable',reason:'liked'});
+ expect(source('/for-you?section=dynamic&genre=Drama&seed=stable&reason=liked')).toMatchObject({type:'recommendation',feature:'row',genre:'Drama',seed:'stable',reason:'liked'});
  expect(source('/for-you?section=activity&category=music')).toMatchObject({type:'social',category:'music'});
  expect(source('/discover?section=recent&surface=read&kind=book')).toMatchObject({type:'discovery',section:'recent',surface:'read',kind:'book'});
+ expect(source('/discover?section=browse&view=play&variant=provider-rated&kind=game&seed=row')).toMatchObject({type:'recommendation',mode:'generic',feature:'browse',category:'game',variant:'provider-rated',kind:'game',seed:'row'});
+ expect(source('/for-you?section=browse&view=watch&variant=provider-genre&genre=scifi&kind=movie')).toMatchObject({type:'recommendation',mode:'personal',feature:'browse',category:'screen',genre:'scifi'});
  expect(source('/music?kind=album')).toMatchObject({type:'library',surface:'listen',initialSelection:'album'});
  expect(source('/games?state=in-progress&personal=true')).toMatchObject({type:'library',surface:'play',initialSelection:'in-progress',collection:true});
  expect(source('/profile/alice?view=history&type=episode&period=month')).toMatchObject({type:'journal',filters:{username:'alice',activityKind:'episode',period:'month'}});
@@ -23,4 +25,5 @@ test('linked row targets preserve source identity and selections across media',(
 });
 test('unrelated, action and unsafe destinations cannot become row views',()=>{
  for(const href of ['/settings','/for-you','/profile/alice','/lists','/discover','/progress?view=invalid','/library?view=invalid','/for-you?section=activity&category=invalid','/progress?action=delete','/progress?view=watching&view=next','/progress#activity','https://elsewhere.invalid/progress','https://user:secret@coast.invalid/progress'])expect(sectionTarget(href,base)).toBeNull();
+ expect(sectionTarget('/discover?section=browse&variant=unknown&kind=movie',base)).toBeNull();
 });

@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import {compileModule} from 'svelte/compiler';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
-import type {ForYouOptions} from '../src/lib/ui/shelves/for-you.svelte';
+import type {RecommendationOptions} from '../src/lib/ui/shelves/for-you.svelte';
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const compile=async(path:string)=>compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL(path,import.meta.url)).text()),{filename:'fixture.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'));
 const resourceUrl=moduleUrl(await compile('../src/lib/ui/resource.svelte.ts'));
@@ -12,7 +12,7 @@ const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta
 const clientUrl=moduleUrl('export let delivery;export const setDelivery=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}');
 const navigationUrl=moduleUrl('export const goto=async()=>{};');
 const client=await import(clientUrl),{page}=await import(routeUrl),lifecycle=await import(lifecycleUrl);
-const {createForYouSource}:typeof import('../src/lib/ui/shelves/for-you.svelte')=await import(moduleUrl((await compile('../src/lib/ui/shelves/for-you.svelte.ts'))
+const {createRecommendationSource}:typeof import('../src/lib/ui/shelves/for-you.svelte')=await import(moduleUrl((await compile('../src/lib/ui/shelves/for-you.svelte.ts'))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
@@ -22,13 +22,13 @@ const {createForYouSource}:typeof import('../src/lib/ui/shelves/for-you.svelte')
  .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental'))));
 const settle=async()=>{for(let index=0;index<10;index++){runtime.flush();await Promise.resolve();}};
 const content=(id='old')=>({items:[{id,title:id,kind:'album'} as any],total:1,page:1,pages:1,title:undefined});
-function fixture(option:Partial<ForYouOptions>={}){
+function fixture(option:Partial<RecommendationOptions>={}){
  page.data.user={id:'viewer'};page.data.contentRevision={tracking:'one',social:'one',planning:'one'};
  page.data.experimentalMusic=true;page.data.experimentalBooks=true;page.data.experimentalComics=true;page.data.experiments.planning=true;
- const options=runtime.state({type:'for-you',feature:'recommendations',category:'music',...option} as ForYouOptions);
- let source!:ReturnType<typeof createForYouSource>;
- const dispose=runtime.effect_root(()=>source=createForYouSource(()=>runtime.get(options)));runtime.flush();
- return {source,update:(patch:Partial<ForYouOptions>)=>{runtime.set(options,{...runtime.get(options),...patch});runtime.flush();},dispose:()=>{lifecycle.destroy();dispose();}};
+ const options=runtime.state({type:'recommendation',feature:'recommendations',category:'music',...option} as RecommendationOptions);
+ let source!:ReturnType<typeof createRecommendationSource>;
+ const dispose=runtime.effect_root(()=>source=createRecommendationSource(()=>runtime.get(options)));runtime.flush();
+ return {source,update:(patch:Partial<RecommendationOptions>)=>{runtime.set(options,{...runtime.get(options),...patch});runtime.flush();},dispose:()=>{lifecycle.destroy();dispose();}};
 }
 test('For You clears prior viewers immediately and cannot retain them after failed replacement or late delivery',async()=>{
  client.setDelivery(async()=>content());const {source,dispose}=fixture();

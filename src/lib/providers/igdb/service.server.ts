@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { createHash } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../../server/db';
 import { providerInstances } from '../../server/db/schema';
@@ -11,8 +12,8 @@ import { importIgdbMetadata } from '../../core/games/service.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
 // Keep app tokens in memory, separate from persisted encrypted application credentials.
-const adapters = new Map<string, { credentials: string; adapter: IgdbAdapter }>();
-async function igdbAdapter(instanceId: string) {
+const adapters = new Map<string, { credentials: string; adapter: IgdbAdapter; cacheScope: string }>();
+export async function igdbSource(instanceId: string) {
   v.parse(uuid, instanceId);
   const [instance] = await getDb().select().from(providerInstances).where(and(
     eq(providerInstances.id, instanceId), eq(providerInstances.provider, 'igdb'), eq(providerInstances.enabled, true),
@@ -23,14 +24,16 @@ async function igdbAdapter(instanceId: string) {
   }
   const config = await instanceFetchConfig(instance);
   const cached = adapters.get(instanceId);
-  if (cached?.credentials === instance.credentials) return cached.adapter;
+  if (cached?.credentials === instance.credentials) return cached;
   const credentials = v.safeParse(igdbCredentialsSchema, JSON.parse(await decryptCredential(instance.credentials)));
   if (!credentials.success) throw new AppError(409, 'Configure the Twitch application credentials for IGDB.', 'igdb_not_configured');
   const adapter = new IgdbAdapter(credentials.output, createProviderTransport(config));
   if (adapters.size >= 32) adapters.delete(adapters.keys().next().value!);
-  adapters.set(instanceId, { credentials: instance.credentials, adapter });
-  return adapter;
+  const source = {credentials:instance.credentials,adapter,cacheScope:`${instanceId}:${createHash('sha256').update(instance.credentials).digest('hex')}`};
+  adapters.set(instanceId, source);
+  return source;
 }
+const igdbAdapter = async (instanceId: string) => (await igdbSource(instanceId)).adapter;
 export async function searchIgdb(instanceId: string, query: string, page = 1) {
   return (await igdbAdapter(instanceId)).search(query, page);
 }

@@ -1,0 +1,18 @@
+{
+  "files": {
+    "docs/performance.md": {
+      "current": "984b6f041a0f32b5c3791beb32e846d78000b1e49b6505d8eb683f715e87ec5c",
+      "previous": "7e0919ef3192841e931d9f191b436e20d852c4adaf546d1dc72667e6092df79d"
+    },
+    "src/routes/ui-preview/prop-manifest.json": {
+      "current": "35c7602ec85409cf3557bc422ce13d578963ab4b93e580745598eb1179a4389a",
+      "previous": "02b441b0098e79a811d83af0b7287c7abbf1923fc52cc30da63cf64b9df6d34e"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "341b3013f5b7e0fb3b135342126dd1054922c57ca2ca361c3fbb3ae608f585bb",
+      "previous": "94ed27544f8655afda094e4e3837c080ce9f2cc8eaa920e5904d7ba36386056c"
+    }
+  },
+  "report": "docs/audits/2026-11-16-recommendation-feeds/verification.md",
+  "reportSha256": "db58bd855730547196d7b9b0d3a84a0344b4b56d43f1da7a30d9a7d8f2eabbd1"
+}

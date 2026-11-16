@@ -10,6 +10,7 @@ import { createProviderTransport } from '#lib/server/security/provider-fetch.js'
 import { AppError } from '#lib/server/security/errors.js';
 import { providerCache } from '#lib/server/utils/provider-cache.js';
 import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
+import { providerRowCache } from '#lib/recommendations/provider-read.server.js';
 import { instanceFetchConfig } from './instances.server';
 import { OpenLibraryAdapter, OPEN_LIBRARY_BASE_URL } from './openlibrary/adapter.server';
 import { ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
@@ -22,6 +23,7 @@ const details = providerCache<ReadingMetadata>(200, 24 * 60 * 60_000);
 const searchFlight = providerSingleFlight<ReadingPage>('reading-search');
 const detailFlight = providerSingleFlight<ReadingMetadata>('reading-detail');
 const kindSchema = v.picklist(readingKinds);
+const browse = providerRowCache<ReadingMetadata[]>();
 const comicVineSourceFilter = and(eq(providerInstances.provider, 'comic-vine'), eq(providerInstances.enabled, true));
 
 /** The same deterministic source selection as metadata reads, without account/schedule hydration. */
@@ -58,6 +60,18 @@ async function source(kind: ReadingKind, provider = kind === 'book' ? 'openlibra
     ...await instanceFetchConfig(instance), maxResponseBytes: 2 * 1024 ** 2,
   }), undefined, key);
   return { key, adapter };
+}
+
+export async function browseBooks(subject: string, signal: AbortSignal) {
+  const { key, adapter } = await source('book');
+  if (!(adapter instanceof OpenLibraryAdapter)) return [];
+  return browse(JSON.stringify([key,'subject',subject]),signal,upstream=>adapter.browseSubject(subject,upstream));
+}
+
+export async function upcomingComics(from: string, through: string, signal: AbortSignal) {
+  const { key, adapter } = await source('comic');
+  if (!(adapter instanceof ComicVineAdapter)) return [];
+  return browse(JSON.stringify([key,'upcoming',from,through]),signal,upstream=>adapter.upcoming(from,through,upstream));
 }
 
 export async function searchReading(kind: ReadingKind, query: string, page = 1, stage: 'primary' | 'complete' = 'complete') {

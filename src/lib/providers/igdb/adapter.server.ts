@@ -36,6 +36,7 @@ const gameFields = {
 };
 const remoteGame=v.object({...gameFields,parent_game:v.optional(v.object(gameFields)),version_parent:v.optional(v.object(gameFields))});
 const fields = 'external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,keywords.id,keywords.name,themes.id,themes.name,game_modes.id,game_modes.name,player_perspectives.id,player_perspectives.name,franchises.id,franchises.name';
+const cardFields = 'name,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name';
 const expandedFields=fields+',parent_game.'+fields.split(',').join(',parent_game.')+',version_parent.'+fields.split(',').join(',version_parent.');
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000));
 export const IGDB_PAGE_SIZE = 60;
@@ -103,12 +104,13 @@ export class IgdbAdapter {
     })();
     try { return await this.tokenRequest; } finally { this.tokenRequest = undefined; }
   }
-  private async requestQuery(body: string, endpoint: string) {
+  private async requestQuery(body: string, endpoint: string, signal?: AbortSignal) {
     try {
       let token = await this.accessToken();
+      signal?.throwIfAborted();
       // The common origin lane supplies priority, cooldown and IGDB's 260ms spacing.
       const send = () => this.request(`/v4/${endpoint}`, {
-        method: 'POST', headers: { 'Client-ID': this.credentials.clientId, Authorization: `Bearer ${token}`, accept: 'application/json', 'content-type': 'text/plain' }, body,
+        method: 'POST', headers: { 'Client-ID': this.credentials.clientId, Authorization: `Bearer ${token}`, accept: 'application/json', 'content-type': 'text/plain' }, body, signal,
       });
       let raw: unknown;
       try { raw = await send(); } catch (error) {
@@ -118,10 +120,17 @@ export class IgdbAdapter {
         raw = await send();
       }
       return raw;
-    } catch (error) { providerError(error); }
+    } catch (error) { signal?.throwIfAborted(); providerError(error); }
   }
-  private async query(body: string) {
-    try {return v.parse(v.pipe(v.array(remoteGame), v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(body,'games')).map(mapIgdbGame);} catch(error){providerError(error);}
+  private async query(body: string, signal?: AbortSignal) {
+    try {return v.parse(v.pipe(v.array(remoteGame), v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(body,'games',signal)).map(mapIgdbGame);} catch(error){signal?.throwIfAborted();providerError(error);}
+  }
+  async browse(order: 'popular' | 'rated' | 'upcoming', from: number, through: number, genre?: string, signal?: AbortSignal) {
+    const filter = order === 'upcoming' ? ` & first_release_date >= ${from}`
+      : ` & total_rating_count >= ${order === 'rated' ? 30 : 5}`;
+    const sort = order === 'upcoming' ? 'first_release_date asc' : order === 'rated' ? 'total_rating desc' : 'total_rating_count desc';
+    const genreFilter = genre ? ` & genres.name = ${JSON.stringify(genre)}` : '';
+    return this.query(`fields ${cardFields}; where version_parent = null & parent_game = null & themes != (42) & first_release_date != null & first_release_date <= ${through}${filter}${genreFilter}; sort ${sort}; limit ${IGDB_PAGE_SIZE};`,signal);
   }
   async discover(section: 'trending' | 'recent') {
     if(section==='recent')return this.query(`fields ${expandedFields}; where version_parent = null & first_release_date != null & first_release_date <= ${Math.floor(Date.now()/1000)}; sort first_release_date desc; limit ${IGDB_PAGE_SIZE};`);

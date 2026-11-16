@@ -45,6 +45,7 @@ const querySchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(250
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(READING_PROVIDER_PAGE_LIMIT));
 const volumeSearches = providerCache<v.InferOutput<typeof volumesSchema>>(100, 15 * 60_000);
 const fields = 'id,name,issue_number,deck,description,cover_date,store_date,image,volume,person_credits,resource_type,site_detail_url';
+const cardFields = 'id,name,issue_number,store_date,image,volume,site_detail_url';
 
 function coverUrl(raw: string | null | undefined): string | undefined {
   if (!raw) return undefined;
@@ -93,16 +94,23 @@ export class ComicVineAdapter {
   constructor(key: string, private request: ProviderTransport, private userAgent = 'Coast experimental comic discovery', private scope?: string) {
     this.apiKey = v.parse(apiKey, key);
   }
-  private async read(path: string, params: URLSearchParams, requestedFields = fields) {
+  private async read(path: string, params: URLSearchParams, requestedFields = fields, signal?: AbortSignal) {
     params.set('api_key', this.apiKey);
     params.set('format', 'json');
     params.set('field_list', requestedFields);
-    const raw = await this.request(`${path}?${params}`, { headers: { accept: 'application/json', 'User-Agent': this.userAgent } });
+    const raw = await this.request(`${path}?${params}`, { headers: { accept: 'application/json', 'User-Agent': this.userAgent },signal });
     const response = v.parse(envelope, raw);
     if (response.status_code === 100) throw new AppError(502, 'Comic Vine rejected its API key.', 'comic_vine_authentication');
     if (response.status_code === 101) throw new AppError(404, 'Comic Vine issue not found.', 'not_found');
     if (response.status_code !== 1) throw new AppError(502, 'Comic Vine could not complete this metadata request.', 'comic_vine_unavailable');
     return raw;
+  }
+  async upcoming(from: string, through: string, signal?: AbortSignal): Promise<ReadingMetadata[]> {
+    try {
+      const params = new URLSearchParams({sort:'store_date:asc',filter:`store_date:${from}|${through}`,limit:String(COMIC_VINE_PAGE_SIZE)});
+      const result = v.parse(searchSchema,await this.read('/api/issues/',params,cardFields,signal));
+      return result.results.map(mapIssue).filter(item=>item.releaseDate && item.releaseDate>=from && item.releaseDate<=through);
+    } catch (cause) { signal?.throwIfAborted(); providerError(cause); }
   }
   /** The primary issue page can publish before optional series enrichment. */
   async searchIssues(query: string, page = 1): Promise<ReadingPage> {

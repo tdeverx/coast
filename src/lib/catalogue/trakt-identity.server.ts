@@ -3,7 +3,8 @@ import { getDb } from '#lib/server/db/index.js';
 import { media, externalIds, seasons } from '#lib/server/db/schema.js';
 import { traktEntry } from '#lib/sync/trakt-identity.server.js';
 import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
-import { ingestMetadata, importTmdb, getTmdb } from './service.server';
+import { ingestMetadata, importTmdb } from './service.server';
+import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
 
 export async function resolveTrakt(
   record: TraktRecord

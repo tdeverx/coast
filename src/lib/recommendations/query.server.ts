@@ -9,7 +9,7 @@ import {tasteRevisionSql} from '#lib/social/taste-cache.server.js';
 import {getDb} from '#lib/server/db/index.js';
 import {sql as drizzleSql} from 'drizzle-orm';
 import {interestWorks} from './interests.server';
-import {genreRowTitle,relatedRowTitle,recommendationRowTitle} from './row-titles';
+import {browseRowTitle,genreRowTitle,relatedRowTitle,recommendationRowTitle} from './row-titles';
 import {genreReason} from './row-ranking';
 import {dynamicKinds,type GenreReason} from './model';
 /** Provider suggestions are read from cache; page reads never perform remote requests. */
@@ -18,7 +18,7 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
  if(!config.features.personalisation)throw new AppError(403,'Personalisation is turned off.','feature_disabled');if(feature!=='row'&&feature!=='recommendations')throw new AppError(404,'Unknown recommendation source.');
  const category=v.parse(v.picklist(['screen','game','music','reading']),url.searchParams.get('category')??'screen');
  const workId=feature==='row'&&url.searchParams.has('work')?v.parse(v.pipe(v.string(),v.uuid()),url.searchParams.get('work')):null;
- const kind=feature==='row'&&url.searchParams.has('kind')?v.parse(v.picklist(dynamicKinds),url.searchParams.get('kind')):null;
+ const kind=url.searchParams.has('kind')?v.parse(v.picklist(dynamicKinds),url.searchParams.get('kind')):null;
  const genre=feature==='row'&&!workId?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(100)),url.searchParams.get('genre')):null;
  const reason=v.parse(v.picklist(['liked','watched','saved','explore']),url.searchParams.get('reason')??'saved') as GenreReason;
  const orderSeed=url.searchParams.has('seed')?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(64),v.regex(/^[a-zA-Z0-9-]+$/)),url.searchParams.get('seed')):`${userId}:${new Date().toISOString().slice(0,10)}`;
@@ -43,6 +43,12 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
   left join evidence e on e.id=s.seed_id left join provider_connections c on c.id=s.connection_id and c.status='connected' and c.account_generation=s.account_generation
   cross join lateral unnest(s.items) with ordinality item(id,position)
   where (s.connection_id is null and e.id is not null or ${workId}::uuid is null and c.user_id=${userId} and ${config.enableTrakt}) group by item.id
+ ), available_works as (
+  ${available ? sql`select coalesce(e.show_id,av.media_id) as id from availability av
+    join provider_connections pc on pc.id=av.connection_id join provider_instances pi on pi.id=pc.instance_id
+    left join episodes e on e.media_id=av.media_id
+    where av.user_id=${userId} and pc.user_id=${userId} and av.state='available' and pc.status='connected' and pi.enabled
+      and (pi.provider='jellyfin' or (pi.provider='steam' and av.source_id='steam-owned'))` : sql`select null::uuid as id where false`}
  ), candidates as (
   select w.id,coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) as genres,coalesce(b.authors,'{}'::text[]) as authors,b.series_title as series,coalesce(p.score,0) as provider_score,case when ts.revision=${revision?.revision??''} then coalesce((ts.score-50)*ts.confidence/100*.6,0) else 0 end as taste_score
   from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id left join provider_matches p on p.id=w.id left join user_taste_scores ts on ts.user_id=${userId} and ts.work_id=w.id
@@ -58,7 +64,7 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
     or coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) && array(select distinct unnest(e.genres) from evidence e)
     or coalesce(b.authors,'{}'::text[]) && array(select distinct unnest(e.authors) from evidence e)
     or b.series_title in (select e.series from evidence e where e.series is not null))
-  and (not ${available} or exists(select 1 from availability av join provider_connections pc on pc.id=av.connection_id join provider_instances pi on pi.id=pc.instance_id where av.media_id=w.id and av.user_id=${userId} and av.state='available' and pc.status='connected' and pi.enabled))
+  and (not ${available} or w.id in(select id from available_works))
   and (m.release_date is null or m.release_date<=current_date) and (g.release_date is null or g.release_date<=current_date) and (a.release_date is null or a.release_date<=current_date) and (b.release_date is null or b.release_date<=current_date)
   order by coalesce(p.score,0)+case when ts.revision=${revision?.revision??''} then coalesce((ts.score-50)*ts.confidence/100*.6,0) else 0 end desc,w.id limit 2000
  ), scored as (
@@ -66,5 +72,5 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
  ), selected as(select * from scored where score>0), totals as(select count(*)::int as total from selected)
  select total,coalesce((select jsonb_agg(row_to_json(p)) from(select id,score from selected order by score desc,case when ${feature}='row' then md5(${orderSeed}||coalesce(${genre}::text,${workId}::text,'')||id::text) else id::text end,id limit ${PAGE_SIZE} offset (least(${requested},greatest(1,ceil(total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE})p),'[]'::jsonb) as candidates from totals`;
  const candidates=result.candidates as {id:string;score:number}[];
- return {...pagination(result.total,requested),total:result.total,title:workId&&positive[0]?relatedRowTitle(positive[0].title,genreReason(Number(positive[0].consumed),Number(positive[0].positive)),orderSeed):genre?genreRowTitle(category,genre,kind??undefined,reason,orderSeed):recommendationRowTitle(category,orderSeed),items:await workCards(userId,userId,candidates.map(item=>item.id))};
+ return {...pagination(result.total,requested),total:result.total,title:workId&&positive[0]?relatedRowTitle(positive[0].title,genreReason(Number(positive[0].consumed),Number(positive[0].positive)),orderSeed):available&&kind?browseRowTitle(kind,'library',genre):genre?genreRowTitle(category,genre,kind??undefined,reason,orderSeed):recommendationRowTitle(category,orderSeed),items:await workCards(userId,userId,candidates.map(item=>item.id))};
 }

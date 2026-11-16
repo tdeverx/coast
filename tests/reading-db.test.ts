@@ -434,7 +434,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
       await expect(loadSearchPage(event('/search?type=not-a-medium') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 400 });
       const discover = await loadDiscoverPage(event('/discover?surface=read&kind=comic&section=recent') as Parameters<typeof loadDiscoverPage>[0]);
       expect(discover.selected?.items.map(item => item.id)).toEqual([comicId]);
-      expect(discover.items).toEqual([]); expect(discover.providerUnavailable).toBe(false);
+      expect(discover.featured).toEqual([]); expect(discover.selected?.failure).toBe('');
       await expect(loadSearchPage(event('/search?view=read&scope=providers&page=1001') as Parameters<typeof loadSearchPage>[0])).rejects.toMatchObject({ status: 400 });
       await expect(loadDiscoverPage(event('/discover?surface=read&page=0') as Parameters<typeof loadDiscoverPage>[0])).rejects.toMatchObject({ status: 400 });
       await saveConfig({ ...config, experimentalBooks: true, experimentalComics: false });

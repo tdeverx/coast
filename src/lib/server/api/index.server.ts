@@ -13,6 +13,7 @@ import { createShare,listShares,revokeShare } from '#lib/sharing/service.server.
 import { activeShareExpiry, copySharePath, listActiveShares } from '#lib/sharing/links.server.js';
 import { stopSharedLinkPlayback } from '#lib/sharing/leases.server.js';
 import { planningData,createPlan,cancelPlan,completePlan } from '#lib/experiments/planning.server.js';
+import { browseRows, genericFeed, genericRecommendationRows } from '#lib/recommendations/generic.server.js';
 import { dynamicFeed } from '#lib/recommendations/feed.server.js';
 import { recommendationRows } from '#lib/recommendations/query.server.js';
 import {playbackBackground} from '#lib/media/artwork.js';
@@ -20,6 +21,7 @@ import { uuid, text } from './context.server';
 import * as synced from '#lib/playback/synced/service.server.js';
 
 import { isPublicReadPath } from '#lib/social/public.server.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { profileAvatarChoices, providerProfileAvatar } from '#lib/core/profile/avatars.server.js';
 import { avatarRequestLimit, streamAvatar } from '#lib/core/profile/avatar-storage.server.js';
 import * as social from '#lib/social/service.server.js';
@@ -94,6 +96,17 @@ export const handler: RequestHandler = async (event) => {
     }
     if(path[0]==='profile'&&path[1]==='avatar'&&path.length===4&&method==='GET')
       return await streamAvatar(uuid(path[2]),path[3],locals.user?.id??null);
+    if (method === 'GET' && path[0] === 'discover' && (path.length === 1 || path.length === 2 &&
+        (path[1] === 'feed' || path[1] === 'row' || path[1] === 'recommendations' || path[1] === 'browse'))) {
+      if (!locals.user && !isPublicReadPath(url.pathname,(await getConfig()).siteAccess)) requireUser(locals.user);
+      const viewer = locals.user?.id ?? null;
+      const feature = path[1];
+      if (path.length === 1) return Response.json(await discoveryContent(viewer,discoveryParameters(url),request.signal));
+      if (feature === 'browse') return Response.json(await browseRows(viewer,'generic',url,request.signal));
+      if (feature === 'feed') return Response.json(await withReadCancellation(request.signal,()=>genericFeed(viewer,url,request.signal)));
+      if (feature === 'row' || feature === 'recommendations')
+        return Response.json(await withReadCancellation(request.signal,()=>genericRecommendationRows(viewer,feature,url,request.signal)));
+    }
     if(!locals.user && method==='GET' && isPublicReadPath(url.pathname,'public-read-only') && isPublicReadPath(url.pathname,(await getConfig()).siteAccess)) {
       if(path[0]==='artwork'&&path[1]==='tmdb')return streamTmdbArtwork(path[2],path[3],request);
       if(path[0]==='profile' && ['section','activity'].includes(path[1]) && url.searchParams.has('username')) {
@@ -149,7 +162,10 @@ export const handler: RequestHandler = async (event) => {
       if(path.length===2&&path[1]==='sources'&&method==='GET'){await requireFeature(uid,'sharing');const workId=uuid(url.searchParams.get('workId')??'');return Response.json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled and exists(select 1 from works where id=${workId}::uuid and coast_category_enabled(${uid}::uuid,category))`);}
     }
     if(path[0]==='planning'){if(method==='POST'&&path.length===3&&path[2]==='complete')return Response.json(await completePlan(uid,path[1]));if(path.length===1&&method==='GET')return Response.json(await planningData(uid,url));if(path.length===1&&method==='POST')return Response.json(await createPlan(uid,await readBody(request)));if(method==='DELETE'&&path.length===2)return Response.json(await cancelPlan(uid,path[1]));}
-    if(path[0]==='experiments'&&path.length===2&&method==='GET')return Response.json(await (path[1]==='feed'?dynamicFeed(uid,url):recommendationRows(uid,path[1],url)));
+    if(path[0]==='experiments'&&path.length===2&&method==='GET') {
+      if (path[1]==='browse') return Response.json(await browseRows(uid,'personal',url,request.signal));
+      return Response.json(await (path[1]==='feed'?dynamicFeed(uid,url):recommendationRows(uid,path[1],url)));
+    }
     if(path[0]==='synced') {
       if(path.length===1&&method==='GET'){
         const rooms=await synced.listRooms(uid),hosts=await social.friends(uid,1,'accepted',[...new Set(rooms.filter(room=>room.hostId!==uid).map(room=>room.hostId))]);
@@ -243,7 +259,6 @@ export const handler: RequestHandler = async (event) => {
         ),
       });
     }
-    if(path[0]==='discover' && path.length===1 && method==='GET')return Response.json(await discoveryContent(uid,discoveryParameters(url),request.signal));
     if (path[0] === 'library' && path.length === 1 && method === 'GET')
       return Response.json(await libraryContent(uid, url,request.signal));
     if(path[0]==='library'&&path[1]==='recent'&&path.length===2&&method==='GET')
