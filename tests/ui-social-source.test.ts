@@ -4,6 +4,8 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,resourceUrl} from './fixtures/ui-script';
 const routeUrl=moduleUrl(compileRunes(`export const page=$state({url:new URL('http://fixture/for-you'),data:{user:{id:'viewer'},capabilities:{social:true},experimentalBooks:true,experimentalComics:true,contentRevision:{social:'one'}}});`));
 const lifecycleUrl=moduleUrl(`export {untrack} from '${import.meta.resolve('svelte/internal/client')}';const hooks=[];export const onDestroy=fn=>hooks.push(fn);export const destroy=()=>hooks.splice(0).forEach(fn=>fn());`);
+const refreshUrl=moduleUrl(compileRunes(await Bun.file(new URL('../src/lib/ui/shelves/refresh.svelte.ts',import.meta.url)).text())
+ .replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
 const clientUrl=moduleUrl(`export let delivery;export const set=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});`);
 const client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/social.svelte.ts',import.meta.url)).text())
@@ -12,6 +14,7 @@ const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/social.sv
  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl('export const useShelfLocation=()=>({embedded:true});'))
  .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))
  .replaceAll('#lib/ui/content-revision.svelte.js',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.social;'))
+ .replaceAll('./refresh.svelte.js',refreshUrl)
  .replaceAll('#lib/social/model.js',import.meta.resolve('../src/lib/social/model'))
  .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental')).replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
 const {createSocialSource}:typeof import('../src/lib/ui/shelves/social.svelte')=await import(moduleUrl(code));

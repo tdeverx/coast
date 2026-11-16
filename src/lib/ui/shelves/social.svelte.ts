@@ -10,9 +10,10 @@ import { useClient } from '#lib/ui/client-context.js';
 import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
+import { createShelfRefresh } from './refresh.svelte.js';
 type Feed = { scope?:string; emptyAllMedia?:boolean; items: ShelfItem[]; hasMore: boolean; next: { before: string; beforeId: string; beforeKnown?:string;beforeRelationship?:string } | null };
 export type SocialShelfOptions = Partial<ActivityFilters> & { type: 'social'; layout?: 'row' | 'grid'; initial?: Feed; category?: string; title?:string; mediums?:boolean; surface?:'activity'|'popular';workId?:string;artistId?:string;readingGroupId?:string;href?:string;relationship?:WorkFriendFilter;relationshipKind?:string };
-export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
+export function createSocialSource(get: () => SocialShelfOptions, refreshVisible?: () => boolean): ShelfSource {
   const { api, preview } = useClient(),location=useShelfLocation();
 
  let category=$state(untrack(()=>get().category??(get().mediums?'screen':'all')));
@@ -22,7 +23,10 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
  const targetKey=()=>JSON.stringify([page.data.user?.id,page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,category,get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship!==undefined?relationship:undefined,audience,mediaKind,period,activityType]);
  const initial = untrack(() => get().initial);
  const resource = createResource<Feed>(initial ? {...initial,scope:untrack(targetKey)} : { items: [], hasMore: false, next: null }, !!initial);
+ const refresh = createShelfRefresh(() => load(), refreshVisible);
  async function load(_page = 1, append = false) {
+  if (append && resource.busy) return;
+  refresh.clear();
   if(page.data.capabilities?.social===false){resource.replace({items:[],hasMore:false,next:null});return;}
   if(category!=='all'&&!categoryEnabled({...page.data,features:page.data.capabilities},category)){
     if(get().category){resource.replace({items:[],hasMore:false,next:null});return;}
@@ -30,7 +34,6 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
     if(!next){resource.replace({items:[],hasMore:false,next:null});return;}
     category=next;
   }
-  if (append && resource.busy) return;
   if(resource.data.scope!==targetKey())append=false;
   const requestedWork=targetKey(),scoped=!!(get().workId||get().artistId||get().readingGroupId);
   const query = new URLSearchParams({ category,...(filtersEnabled?{audience,mediaKind,period,activityType}:{}), ...(get().relationship!==undefined?{relationship}:{}),...(get().workId?{workId:get().workId!}:{}),...(get().artistId?{artistId:get().artistId!}:{}),...(get().readingGroupId?{readingGroupId:get().readingGroupId!}:{}), ...(append && resource.data.next ? resource.data.next : {}) });
@@ -39,22 +42,28 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
   });
  }
  const suppliedCategory=$derived(get().category??(get().mediums?'screen':'all'));
- const refreshKey=$derived(JSON.stringify([page.data.user?.id,contentRevisionKey(page.data,['social']),get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities]));
+ const scopeKey=$derived(JSON.stringify([page.data.user?.id,get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities]));
+ const refreshKey=$derived(contentRevisionKey(page.data,['social']));
  let previousRelationship=untrack(()=>get().relationship);
  let previousCategory=untrack(()=>suppliedCategory);
  let previousRefresh=untrack(()=>refreshKey);
+ let previousScope=untrack(()=>scopeKey);
  const suppliedFilters=()=>JSON.stringify([get().audience,get().mediaKind,get().period,get().activityType]);
  let previousFilters=untrack(suppliedFilters);
  $effect(() => {
-  const nextCategory=suppliedCategory,key=refreshKey,requestedRelationship=get().relationship,filters=suppliedFilters();
+  const nextCategory=suppliedCategory,key=refreshKey,scope=scopeKey,requestedRelationship=get().relationship,filters=suppliedFilters();
   untrack(() => {
-   const changed=key!==previousRefresh||nextCategory!==previousCategory||requestedRelationship!==previousRelationship||filters!==previousFilters;
+   const scopeChanged=scope!==previousScope||nextCategory!==previousCategory||requestedRelationship!==previousRelationship||filters!==previousFilters;
    if(filters!==previousFilters){audience=get().audience??'all';mediaKind=get().mediaKind??'all';period=get().period??'all';activityType=get().activityType??'all';previousFilters=filters;}
    if(requestedRelationship!==previousRelationship)relationship=requestedRelationship??'all';
    previousRelationship=requestedRelationship;
    if(nextCategory!==previousCategory)category=nextCategory;
-   previousCategory=nextCategory;previousRefresh=key;
-   if(changed&&(resource.activated||resource.ready))void load();
+   previousCategory=nextCategory;
+   if((scopeChanged||key!==previousRefresh)&&(resource.activated||resource.ready)){
+    if(scopeChanged&&refreshVisible)resource.replace({items:[],hasMore:false,next:null});
+    refresh.invalidate();
+   }
+   previousScope=scope;previousRefresh=key;
   });
  });
  function selectFilters(patch:Partial<ActivityFilters>){

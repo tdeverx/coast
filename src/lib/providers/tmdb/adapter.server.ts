@@ -136,23 +136,37 @@ export class TmdbAdapter implements MetadataProvider {
       .filter((x) => x.media_type === 'movie' || x.media_type === 'tv')
       .map((x) => mapItem(x, x.media_type === 'tv' ? 'show' : 'movie', this.language, this.region));
   }
-  async trending(page = 1) {
-    const data = v.parse(result, await this.request(this.path('/3/trending/all/week', { page })));
+  async trending(page = 1, signal?: AbortSignal) {
+    const data = v.parse(result, await this.request(this.path('/3/trending/all/week', { page }), { signal }));
     return data.results
       .filter((x) => x.media_type === 'movie' || x.media_type === 'tv')
       .map((x) => mapItem(x, x.media_type === 'tv' ? 'show' : 'movie', this.language, this.region));
   }
-  async recent(kind: DiscoverKind, page = 1) {
+  async recent(kind: DiscoverKind, page = 1, signal?: AbortSignal) {
     const data = v.parse(
       result,
       await this.request(
         this.path(`/3/${kind === 'show' ? 'tv/on_the_air' : 'movie/now_playing'}`, {
           page,
           region: this.region,
-        })
+        }), { signal }
       )
     );
     return data.results.map((x) => mapItem(x, kind, this.language, this.region));
+  }
+  async browse(kind: DiscoverKind, order: 'popular' | 'rated' | 'upcoming', from: string, through: string, genre?: number, signal?: AbortSignal) {
+    const date = kind === 'movie' ? 'primary_release_date' : 'first_air_date';
+    const params: Record<string, string | number> = {
+      page: 1, include_adult: 'false',
+      sort_by: order === 'rated' ? 'vote_average.desc' : order === 'upcoming' ? `${date}.asc` : 'popularity.desc',
+      [`${date}.lte`]: through,
+    };
+    if (kind === 'movie') params.region = this.region;
+    if (order === 'upcoming') params[`${date}.gte`] = from;
+    if (order === 'rated') params['vote_count.gte'] = 200;
+    if (genre) params.with_genres = genre;
+    const data = v.parse(result, await this.request(this.path(`/3/discover/${kind === 'movie' ? 'movie' : 'tv'}`,params), { signal }));
+    return data.results.slice(0,20).map(item => mapItem(item,kind,this.language,this.region));
   }
   async recommendations(kind: DiscoverKind, id: string) {
     const data = v.parse(

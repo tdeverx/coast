@@ -1,4 +1,5 @@
-import type {GenreReason,DynamicMedium,DynamicKind} from './model';
+import type {BrowseVariant,GenreReason,DynamicMedium,DynamicKind} from './model';
+import { getProviderGenre } from './row-catalog';
 
 /** Wording varies; the evidence and selection behind a row do not. */
 export const genreTitlePatterns:Record<GenreReason,readonly string[]> = {
@@ -107,4 +108,23 @@ export function relatedRowTitle(title:string,reason:GenreReason='saved',seed='')
 export function popularRowTitle(category:DynamicMedium,seed='') {
   const items=category==='screen'?'movies and shows':category==='game'?'games':category==='reading'?'books and comics':'music';
   return choose(popularTitlePatterns,seed,`popular:${category}`).replaceAll('{Items}',capitalize(items)).replaceAll('{items}',items);
+}
+
+const kindNames: Record<DynamicKind, string> = {movie:'movies', show:'TV shows', game:'games', album:'albums', book:'books', comic:'comics'};
+export function catalogueRowTitle(kind: DynamicKind, genre?: string | null) {
+  return genre ? `${capitalize(genreName(genre))} ${kindNames[kind]}` : `Explore ${kindNames[kind]}`;
+}
+export function browseRowTitle(kind: DynamicKind, variant: BrowseVariant, genre?: string | null) {
+  const items = kindNames[kind];
+  const providerGenre = kind === 'show' && genre === 'scifi' ? 'sci-fi and fantasy' : kind === 'show' && genre === 'action' ? 'action and adventure'
+    : getProviderGenre(genre)?.label.toLowerCase();
+  const providerItems = providerGenre ? `${providerGenre} ${items}` : items;
+  switch (variant) {
+    case 'library': return genre ? `${capitalize(genreName(genre))} ${items} in your library` : `${capitalize(items)} in your library`;
+    case 'upcoming': return `Upcoming ${items} in the catalogue`;
+    case 'provider-genre': return `Discover ${providerItems}`;
+    case 'provider-popular': return `Popular ${items}`;
+    case 'provider-rated': return `Top-rated ${providerItems}`;
+    case 'provider-upcoming': return `${capitalize(providerItems)} coming soon`;
+  }
 }

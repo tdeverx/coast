@@ -12,14 +12,14 @@ const clientUrl=moduleUrl('export let delivery;export const setDelivery=next=>de
 const {page}=await import(routeUrl),client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 // Compile the actual component script; only browser/context boundaries are
 // injected. The bottom observer still owns calling load in the rendered app.
-const source=(await Bun.file(new URL('../src/lib/recommendations/DynamicFeed.svelte',import.meta.url)).text()).split('<script lang="ts">')[1].split('</script>')[0].replace(/^\s*import .*?;\s*$/gm,'').replace(/let \{category\}:[^;]+?=\$props\(\);/, 'const category=undefined;');
+const source=(await Bun.file(new URL('../src/lib/recommendations/DynamicFeed.svelte',import.meta.url)).text()).split('<script lang="ts">')[1].split('</script>')[0].replace(/^\s*import .*?;\s*$/gm,'').replace(/^\s*let \{category,mode=.*\$props\(\);$/m, '');
 const imports=`import {onDestroy,untrack} from ${JSON.stringify(lifecycleUrl)};import {page} from ${JSON.stringify(routeUrl)};import {useClient} from ${JSON.stringify(clientUrl)};import {createResource} from ${JSON.stringify(resourceUrl)};`;
-const {createFeed}=await import(moduleUrl(compile(`${imports}export function createFeed(){const reportFailure=()=>{};${source};return {load,settled,get data(){return {rows};},get complete(){return complete;},get pending(){return pendingKey;},get seed(){return seed;}};}`)));
+const {createFeed}=await import(moduleUrl(compile(`${imports}export function createFeed(mode,category){const reportFailure=()=>{};${source};return {load,settled,get data(){return {rows};},get complete(){return complete;},get pending(){return pendingKey;},get seed(){return seed;}};}`)));
 type Feed={load:()=>Promise<void>;settled:(key:string)=>void;data:{rows:DynamicRow[]};complete:boolean;pending:string|undefined;seed:string};
 const settle=async()=>{for(let index=0;index<6;index++){runtime.flush();await Promise.resolve();}};
-function fixture(){
+function fixture(mode='personal',category?:string){
  page.data.user={id:'viewer'};page.data.contentRevision={tracking:'one',social:'one'};page.data.experimentalMusic=true;page.data.experimentalGaming=true;page.data.experimentalBooks=true;page.data.experimentalComics=true;
- let feed!:Feed;const dispose=runtime.effect_root(()=>feed=createFeed());runtime.flush();
+ let feed!:Feed;const dispose=runtime.effect_root(()=>feed=createFeed(mode,category));runtime.flush();
  return {feed,dispose:()=>{lifecycle.destroy();dispose();}};
 }
 const row=(index:number):DynamicRow=>({key:`row-${index}`,category:'screen',surface:'recommendations',title:`Row ${index}`});
@@ -63,4 +63,16 @@ test('failed census retries and an empty or completed visit stays settled after 
  const {feed,dispose}=fixture();
  try{await feed.load();expect(feed.complete).toBe(false);await feed.load();expect(feed.complete).toBe(true);page.data.contentRevision.tracking='finished';await settle();await feed.load();expect(requests).toBe(2);}
  finally{dispose();}
+});
+test('Discover uses its own census and changes in unrelated media leave the visit intact',async()=>{
+ const paths:string[]=[];
+ client.setDelivery(async(path:string)=>{paths.push(path);return {rows:[row(0)]};});
+ const {feed,dispose}=fixture('generic','screen');
+ try{
+  await feed.load();feed.settled('row-0');
+  expect(paths).toEqual([`discover/feed?seed=${feed.seed}&category=screen`]);
+  page.data.experimentalComics=false;await settle();
+  expect(feed.data.rows).toEqual([row(0)]);
+  expect(feed.complete).toBe(true);
+ }finally{dispose();}
 });

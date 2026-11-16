@@ -1,7 +1,7 @@
 import {actionFromCategory} from '#lib/actions.js';
 import { useShelfLocation } from '#lib/ui/detail-section.svelte.js';
-import type { GenreReason, DynamicKind } from '#lib/recommendations/model.js';
-import { genreRowTitle, recommendationRowTitle } from '#lib/recommendations/row-titles.js';
+import type { BrowseVariant, GenreReason, DynamicKind } from '#lib/recommendations/model.js';
+import { browseRowTitle, catalogueRowTitle, genreRowTitle, recommendationRowTitle } from '#lib/recommendations/row-titles.js';
 import { categoryEnabled, mediumOptions } from '#lib/experimental.js';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
@@ -11,13 +11,17 @@ import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { ApiError } from '#lib/ui/client.js';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
+import { createShelfRefresh } from './refresh.svelte.js';
 
-export type ForYouOptions = {
-  type: 'for-you';
-  feature: 'row' | 'recommendations' | 'upcoming';
+export type RecommendationOptions = {
+  type: 'recommendation';
+  mode?: 'personal' | 'generic';
+  feature: 'row' | 'recommendations' | 'upcoming' | 'browse';
   category?: 'screen' | 'game' | 'music' | 'reading';
   genre?: string;
   kind?: DynamicKind;
+  variant?: BrowseVariant;
+  available?: boolean;
   reason?: GenreReason;
   workId?: string;
   title?: string;
@@ -25,7 +29,7 @@ export type ForYouOptions = {
   layout?: 'row' | 'grid'
  };
 
-export function createForYouSource(get: () => ForYouOptions): ShelfSource {
+export function createRecommendationSource(get: () => RecommendationOptions, refreshVisible?: () => boolean): ShelfSource {
   const location = useShelfLocation();
   const { api, preview } = useClient();
   const orderSeed = untrack(() => get().seed ?? location.url.searchParams.get('seed') ?? Math.random().toString(36).slice(2));
@@ -34,7 +38,8 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     ? location.url.searchParams.get('category') ?? 'screen'
     : 'screen'));
 
-  let available = $state(get().feature !== 'upcoming' && get().layout === 'grid' && location.url.searchParams.get('available') === 'true');
+  let available = $state(get().available === true || get().feature !== 'upcoming' && get().feature !== 'browse' && get().layout === 'grid'
+    && (get().mode !== 'generic' || !!page.data.user) && location.url.searchParams.get('available') === 'true');
 
   const resource = createResource(
     {
@@ -57,14 +62,29 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     title: undefined as string | undefined
   });
 
+  const generic = $derived(get().mode === 'generic');
+  const title = $derived.by(() => {
+    const config = get(), loaded = config.title ?? resource.data.title;
+    if (loaded !== undefined) return loaded;
+    if (config.feature === 'upcoming') return 'Upcoming';
+    if (config.feature === 'browse' && config.variant && config.kind) return browseRowTitle(config.kind,config.variant,config.genre);
+    if (generic) return config.kind ? catalogueRowTitle(config.kind, config.genre) : 'Discover';
+    if (available && config.kind) return browseRowTitle(config.kind,'library',config.genre);
+    const medium = category as 'screen' | 'game' | 'music' | 'reading';
+    return config.feature === 'row' && config.genre
+      ? genreRowTitle(medium, config.genre, config.kind, config.reason, orderSeed)
+      : recommendationRowTitle(medium, orderSeed);
+  });
   function enabled() {
     return (get().feature === 'upcoming'
       ? page.data.capabilities?.planning !== false
-      : page.data.capabilities?.personalisation !== false) && categoryEnabled({ ...page.data, features: page.data.capabilities }, category) && (get().kind !== 'book' || page.data.experimentalBooks) && (get().kind !== 'comic' || page.data.experimentalComics) && (get().feature !== 'upcoming' || page.data.experiments.planning);
+      : generic || page.data.capabilities?.personalisation !== false) && categoryEnabled({ ...page.data, features: page.data.capabilities }, category) && (get().kind !== 'book' || page.data.experimentalBooks) && (get().kind !== 'comic' || page.data.experimentalComics) && (get().feature !== 'upcoming' || page.data.experiments.planning);
   }
 
+  const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number?: number, append = false) {
     if (append && resource.busy) return;
+    refresh.clear();
     if (!get().category && !categoryEnabled({ ...page.data, features: page.data.capabilities }, category)) category = mediumOptions({ ...page.data, features: page.data.capabilities })[0]?.value ?? category;
 
     if (!enabled()) {
@@ -86,7 +106,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
 
       url.searchParams.set('category', category);
 
-      if (get().feature === 'upcoming') url.searchParams.delete('available'); else url.searchParams.set('available', String(available));
+      if (get().feature === 'upcoming' || get().feature === 'browse') url.searchParams.delete('available'); else url.searchParams.set('available', String(available));
 
       url.searchParams.set('page', String(number));
       goto(url, { shallow: true, replace: true, reset: false, state: page.state });
@@ -98,13 +118,14 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
     if (get().genre) params.set('genre', get().genre!);
     if (get().workId) params.set('work', get().workId!);
     if (get().kind) params.set('kind', get().kind!);
-    if (get().reason) params.set('reason', get().reason!);
+    if (get().variant) params.set('variant', get().variant!);
+    if (!generic && get().reason) params.set('reason', get().reason!);
     if (get().feature !== 'upcoming') params.set('seed', orderSeed);
 
     const result = await resource.load(
       async (signal) => {
         try {
-          const result = await api<typeof resource.data>(`${get().feature === 'upcoming' ? 'planning' : 'experiments/' + get().feature}?${params}`, undefined, 'GET', { signal });
+          const result = await api<typeof resource.data>(`${get().feature === 'upcoming' ? 'planning' : (generic ? 'discover/' : 'experiments/') + get().feature}?${params}`, undefined, 'GET', { signal });
           return {...result, scope: requestedScope};
         } catch(cause) {
           if (!signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status)) resource.replace(empty(), cause.message);
@@ -131,39 +152,38 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
 
     return result;
   }
- const refreshKey=$derived(JSON.stringify([
-  contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:['tracking','social']),
-  page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
-  get().feature==='upcoming'&&page.data.experiments.planning,
-  get().feature,get().genre,get().kind,get().reason,get().workId,get().category,
-  ]));
+ const refreshKey=$derived(contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:generic?['tracking']:['tracking','social']));
  const scopeKey=$derived(JSON.stringify([
   page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
   get().feature==='upcoming'&&page.data.experiments.planning,
-  get().feature,get().genre,get().kind,get().reason,get().workId,get().category,
+  get().mode,get().feature,get().variant,get().genre,get().kind,get().reason,get().workId,get().category,
   ]));
  const selectionKey=$derived(JSON.stringify([scopeKey,category,available]));
  let previousScope=untrack(()=>scopeKey);
- $effect(()=>{refreshKey;const scope=scopeKey;untrack(()=>{
-  const changed=scope!==previousScope;previousScope=scope;
+ let previousRefresh=untrack(()=>refreshKey);
+ $effect(()=>{const scope=scopeKey,key=refreshKey;untrack(()=>{
+  const changed=scope!==previousScope;
+  if(!changed&&key===previousRefresh)return;
+  previousScope=scope;previousRefresh=key;
   const activated=resource.activated||resource.ready;
   if(changed){if(get().category!==undefined)category=get().category!;if(activated)resource.replace(empty());}
-  if(activated)void load();
+  if(activated)refresh.invalidate();
  });});
   onDestroy(resource.dispose);
  const selectMedium=(value:string)=>{category=value;void load(1);};
   return {
-  get title(){return get().title??resource.data.title??(get().feature==='upcoming'?'Upcoming':get().feature==='row'&&get().genre?genreRowTitle(category as 'screen'|'game'|'music'|'reading',get().genre!,get().kind,get().reason,orderSeed):recommendationRowTitle(category as 'screen'|'game'|'music'|'reading',orderSeed));},
+    get title() { return title; },
   get href(){
    if(get().layout==='grid')return undefined;
    const params=new URLSearchParams({section:get().feature==='row'?'dynamic':get().feature,category,view:actionFromCategory(category)});
    if(get().genre)params.set('genre',get().genre!);
    if(get().workId)params.set('work',get().workId!);
    if(get().kind)params.set('kind',get().kind!);
-  if(get().reason)params.set('reason',get().reason!);
+   if(get().variant)params.set('variant',get().variant!);
+   if(!generic && get().reason)params.set('reason',get().reason!);
    if(get().feature!=='upcoming')params.set('seed',orderSeed);
-   if(get().feature!=='upcoming')params.set('available',String(available));
-      return `/for-you?${params}`;
+   if(get().feature!=='upcoming'&&get().feature!=='browse')params.set('available',String(available));
+      return `${generic?'/discover':'/for-you'}?${params}`;
     },
 
     get items() {
@@ -238,7 +258,7 @@ export function createForYouSource(get: () => ForYouOptions): ShelfSource {
             }
           ],
 
-        ...get().feature !== 'upcoming'
+        ...get().feature !== 'upcoming' && get().feature !== 'browse' && !get().available && (!generic || !!page.data.user)
           ? [
             {
               type: 'availability' as const,

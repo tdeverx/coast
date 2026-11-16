@@ -1,0 +1,42 @@
+{
+  "files": {
+    "docs/performance.md": {
+      "current": "2f50b04fe3ac4e31f0a18526f9e147011eb3d5159d677e8bae2b15facbec8f66",
+      "previous": "984b6f041a0f32b5c3791beb32e846d78000b1e49b6505d8eb683f715e87ec5c"
+    },
+    "src/lib/catalogue/details.server.ts": {
+      "current": "ae341a893ba4bf29ce7ce2d68baeb96ec4ea0cb034b8f89f932ae9e0caf5fb1a",
+      "previous": "3eddaac9c7aa5a6cb3c29b28d6d042bdf644347a700f3f2954d2e18253771139"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "current": "31c1b89667404d88ffe6d3918ad504f9a86612cbe497d83bd130d515cf2bcd4f",
+      "previous": "f5e6e596ca03a6cd766909f733e9df2c0ce83b21e938f46d408698af568a7569"
+    },
+    "src/lib/providers/comic-vine/adapter.server.ts": {
+      "current": "9b9c16b0c96f9b56707fd18d848a9c54b313f52c8dd7d286863eb4a2255812f2",
+      "previous": "2ca7fed281084c5552fd660fafaea0b9cb3991523e72d9391fe7ba5b94ca9b9d"
+    },
+    "src/lib/providers/reading.server.ts": {
+      "current": "1ff4daed0d8646651aed8a4c066d579ac572586ca192cf04ca6bf0de232ff09c",
+      "previous": "17b9d4f64596d007278bc453035a94607029b714fd18e2f6a29e50c6f045454f"
+    },
+    "src/lib/providers/tmdb/adapter.server.ts": {
+      "current": "7868c53e987fcdb375ade36c1d7beb85e0dc01a488063b8937a3859c3967f55f",
+      "previous": "8484257abdefd80a079946980c5e454e08334350773336dc9039b8c0ebee055d"
+    },
+    "src/lib/server/utils/provider-cache.ts": {
+      "current": "f2f03b31c09a72fac75b9aadcd6b8acbb7aeeb8710b399232ae83866c0cae7bc",
+      "previous": "d68be8af4b0aa884e2679ef75a044e93b3d46baadd03ecbd551a764bcaaa98f7"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "20c744dfd15f9d01f5026323630d0715679117f8819e341e4d58e5c3305fb851",
+      "previous": "341b3013f5b7e0fb3b135342126dd1054922c57ca2ca361c3fbb3ae608f585bb"
+    },
+    "tests/reading-db.test.ts": {
+      "current": "4112bc5b1c9d8734c0e328d8c32b7b0a7af447c319513c6c2e3c13a16d23e1e0",
+      "previous": "2e9ed9fc19f5c56a2aa465090d17d04649d94e1a8ccf3419a9fcdd33d49495a1"
+    }
+  },
+  "report": "docs/audits/2026-11-16-provider-rows/verification.md",
+  "reportSha256": "2d611afccfcce5b71876d6a0166b0dd3e27d2583a2ed4f5bcbd8c96cf1d2ed9f"
+}

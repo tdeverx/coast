@@ -127,22 +127,37 @@ run('Dynamic For You returns an immutable definition census while cards load sep
  expect((await allRows('lan-http-seed')).map(row=>row.key).sort()).toEqual(orderA.map(row=>row.key).sort());
  expect(orderA.filter(row=>row.surface==='popular').map(row=>row.category).sort()).toEqual(['game','music','screen']);
  const personalised=await allRows('00000000-0000-4000-8000-000000000001');
- expect(personalised.filter(row=>row.surface==='recommendations').map(row=>row.category).sort()).toEqual(['game','music','screen']);
+ const recommendations=personalised.filter(row=>row.surface==='recommendations');
+ expect(recommendations.filter(row=>!row.available).map(row=>row.category).sort()).toEqual(['game','music','screen']);
+ expect(recommendations.filter(row=>row.available)).toMatchObject([{category:'screen',kind:'movie',available:true}]);
  expect(personalised.map(row=>row.key)).toEqual((await allRows('00000000-0000-4000-8000-000000000001')).map(row=>row.key));
- for(const row of personalised.filter(row=>row.surface==='recommendations')){
-  const grid=await recommendationRows(ownerId,'recommendations',new URL(`http://fixture.test?category=${row.category}&seed=00000000-0000-4000-8000-000000000001`));
+ const gridUrl=(category:string,kind?:string,available?:boolean,genre?:string,reason?:string)=>{
+  const query=new URLSearchParams({category,seed:'00000000-0000-4000-8000-000000000001'});
+  if(kind)query.set('kind',kind);
+  if(available)query.set('available','true');
+  if(genre)query.set('genre',genre);
+  if(reason)query.set('reason',reason);
+  return new URL(`http://fixture.test?${query}`);
+ };
+ for(const row of recommendations){
+  const grid=await recommendationRows(ownerId,'recommendations',gridUrl(row.category,row.kind,row.available));
   expect(grid.title).toBe(row.title);
   if(row.category==='game'){expect(grid.items.map(item=>item.id)).toContain(candidate);expect(grid.items.map(item=>item.id)).not.toContain(game);}
  }
- const dramaRows=orderA.filter(row=>row.surface==='genre'&&row.category==='screen'&&row.genre==='Drama');
- expect(dramaRows).toHaveLength(2);
- for(const row of dramaRows){if(row.surface!=='genre')continue;const grid=await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=${row.category}&genre=${row.genre}&kind=${row.kind}&reason=${row.reason}&seed=00000000-0000-4000-8000-000000000001`));expect(grid.title).toBe(row.title);expect(row.title.toLowerCase()).toContain('drama');}
+ const dramaRows=orderA.filter(row=>row.surface==='genre').filter(row=>row.category==='screen'&&row.genre==='Drama');
+ expect(dramaRows.filter(row=>!row.available).map(row=>row.kind).sort()).toEqual(['movie','show']);
+ expect(dramaRows.filter(row=>row.available)).toMatchObject([{kind:'movie',available:true}]);
+ for(const row of dramaRows){
+  const grid=await recommendationRows(ownerId,'row',gridUrl(row.category,row.kind,row.available,row.genre,row.reason));
+  expect(grid.title).toBe(row.title);expect(row.title.toLowerCase()).toContain('drama');
+ }
  const show=crypto.randomUUID(),freshMovie=crypto.randomUUID();
  await db`insert into media(id,kind,title,genres) values(${show},'show','Drama show',ARRAY['Drama']),(${freshMovie},'movie','Drama movie',ARRAY['Drama'])`;
  const movies=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=movie'));
  const shows=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=show'));
  expect(movies.items.map(item=>item.id)).toContain(freshMovie);expect(movies.items.map(item=>item.id)).not.toContain(show);
  expect(shows.items.map(item=>item.id)).toContain(show);expect(shows.items.map(item=>item.id)).not.toContain(freshMovie);
+ expect((await recommendationRows(ownerId,'row',gridUrl('screen','movie',true,'Drama'))).items.map(item=>item.id)).not.toContain(freshMovie);
  const personalRow=orderA.find(row=>row.surface==='seed'&&row.workId===game);
  expect(personalRow?.title).toContain('Played');
  const linked=await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=game&work=${game}&seed=00000000-0000-4000-8000-000000000001`));

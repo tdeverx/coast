@@ -1,0 +1,8 @@
+# Feed refresh and cancellation verification
+
+Feed shelves already on screen refresh within the shared observer's 300px margin. Rendered shelves farther away retain their cards and coalesce revisions until the viewer approaches them. Viewer and capability changes cancel superseded work and clear data from the previous scope. Standalone grids and shelves keep their immediate refresh behavior.
+
+- A 30-shelf Svelte fixture uses tracking and social revisions to verify that offscreen shelves stay idle, a shelf refreshes once on re-entry even after multiple revisions, and viewer changes immediately clear old cards. Discover has separate adapter coverage for retained cards and a deferred refresh.
+- A Chromium smoke test against the production build and a disposable PostgreSQL copy traversed 24 Discover shelves. After a real rating mutation at the bottom, all six refresh requests across two revision updates were confined to the same three nearby shelves. On returning to the top, three nearby stale shelves refreshed. No page errors occurred. The probe used fixture row responses and the application's rating endpoint.
+- PostgreSQL integration tests abort the actual Discover request while the IGDB, Open Library, and Comic Vine test transports are waiting, then verify that a fresh request succeeds. A unit test verifies cancellation during IGDB OAuth before the listing request starts. Shared requests retain their existing last-caller cancellation contract.
+- Screen Discover now hydrates the chosen provider IDs directly. The integration fixture covers both a catalogue-only preview and its later library import, while the admission tests cover empty provider responses. Empty membership skips screen card hydration.

@@ -70,12 +70,19 @@ function providerError(error: unknown): never {
 
 export class OpenLibraryAdapter {
   constructor(private request: ProviderTransport, private userAgent = 'Coast (+https://github.com/tdeverx/coast)') {}
-  private async searchRequest(query: string, page: number, limit = OPEN_LIBRARY_PAGE_SIZE, sort?: string) {
-    const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit), fields });
+  private async searchRequest(query: string, page: number, limit = OPEN_LIBRARY_PAGE_SIZE, sort?: string, signal?: AbortSignal, projection = fields) {
+    const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit), fields:projection });
     if (sort) params.set('sort', sort);
     return v.parse(searchSchema, await this.request(`/search.json?${params}`, {
-      headers: { accept: 'application/json', 'User-Agent': this.userAgent },
+      headers: { accept: 'application/json', 'User-Agent': this.userAgent }, signal,
     }));
+  }
+  async browseSubject(subject: string, signal?: AbortSignal): Promise<ReadingMetadata[]> {
+    v.parse(v.pipe(v.string(),v.regex(/^[a-z ]{1,50}$/)),subject);
+    try {
+      const result = await this.searchRequest(`subject:"${subject}"`,1,OPEN_LIBRARY_PAGE_SIZE,'trending',signal,'key,title,author_name,subject,first_publish_year,cover_i');
+      return result.docs.map(mapDocument).filter(item=>item.kind==='book');
+    } catch (cause) { signal?.throwIfAborted(); providerError(cause); }
   }
   async search(query: string, page = 1): Promise<ReadingPage> {
     const search = v.parse(querySchema, query);
@@ -95,16 +102,16 @@ export class OpenLibraryAdapter {
     } catch (error) { providerError(error); }
   }
   /** Official search sorts: current attention, or first publication year (not edition additions). */
-  async discover(section: 'trending' | 'recent', page = 1): Promise<ReadingPage> {
+  async discover(section: 'trending' | 'recent', page = 1, signal?: AbortSignal): Promise<ReadingPage> {
     v.parse(v.picklist(['trending', 'recent']), section);
     v.parse(pageSchema, page);
     try {
       const query = section === 'trending' ? 'trending_z_score:[1 TO *]' : `first_publish_year:[1 TO ${new Date().getUTCFullYear()}]`;
-      const result = await this.searchRequest(query, page, OPEN_LIBRARY_PAGE_SIZE, section === 'trending' ? 'trending' : 'new');
+      const result = await this.searchRequest(query, page, OPEN_LIBRARY_PAGE_SIZE, section === 'trending' ? 'trending' : 'new', signal);
       const count = result.numFound ?? result.num_found;
       if (count === undefined) throw new AppError(502, 'Open Library returned invalid discovery pagination.', 'openlibrary_unavailable');
       return { items: result.docs.map(mapDocument), total: count, page, nextPage: page < READING_PROVIDER_PAGE_LIMIT && result.docs.length > 0 && page * OPEN_LIBRARY_PAGE_SIZE < count ? page + 1 : null };
-    } catch (error) { providerError(error); }
+    } catch (error) { signal?.throwIfAborted(); providerError(error); }
   }
   async workForEdition(id:string):Promise<string|null> {
     const identifier=v.parse(v.pipe(v.string(),v.regex(/^(?:OL[1-9][0-9]{0,19}M|[0-9]{9}[0-9X]|[0-9]{13})$/)),id);

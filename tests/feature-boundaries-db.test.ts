@@ -48,7 +48,7 @@ run('direct title/people enrichment and personal statistics fail before provider
  await expect(mediaStatistics(a,movie,'all')).rejects.toMatchObject({code:'feature_disabled'});
  await expect(ensureDetails(a,movie)).rejects.toMatchObject({code:'feature_disabled'});
  expect(await searchMedia(a,'Feature')).toEqual({items:[],providerUnavailable:false,truncated:false});
- expect((await discoverMedia(a)).items).toEqual([]);
+ expect(await discoverMedia(a)).toMatchObject({trending:[],recent:[]});
  expect(await requestOptions(a,movie)).toEqual([]);
  await expect(requestMedia(a,{mediaId:movie,instanceId:crypto.randomUUID(),addToWatchlist:false})).rejects.toMatchObject({code:'feature_disabled'});
 });

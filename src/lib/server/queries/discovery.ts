@@ -9,7 +9,8 @@ import { discoverIgdb } from '#lib/providers/igdb/service.server.js';
 import { providerGameCards } from '#lib/games/presentation.server.js';
 import { workCards } from '#lib/collection/query.server.js';
 import { discoverMedia } from '#lib/catalogue/service.server.js';
-import { mediaViews } from './media';
+import { mediaViewsForIds } from './media';
+import { publicMedia } from '#lib/social/public.server.js';
 import type { DiscoveryContent, DiscoverySection, DiscoverySurface } from '#lib/discovery.js';
 import { readingProviderCards } from '#lib/reading/query.server.js';
 import { discoverReading, readingProviderConfigured } from '#lib/providers/reading.server.js';
@@ -19,12 +20,14 @@ import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { providerApiError } from '#lib/server/security/provider-api-error.js';
 import { surfaceEnabled } from '#lib/experimental.js';
 import { pageNumberSchema } from './pagination';
-export async function discoveryContent(userId:string,raw:unknown,signal?:AbortSignal):Promise<DiscoveryContent>{
-  signal?.throwIfAborted();
+export async function discoveryContent(userId:string|null,raw:unknown,signal = new AbortController().signal):Promise<DiscoveryContent>{
+  signal.throwIfAborted();
   const input=v.parse(v.object({surface:v.picklist(['watch','play','listen','read']),section:v.picklist(['trending','recent']),kind:v.optional(v.picklist(['all','book','comic']),'all'),page:v.optional(pageNumberSchema,1)}),raw);
   const config=await getFeatureConfig(userId);
   signal?.throwIfAborted();
   if(!surfaceEnabled(config,input.surface))throw new AppError(404,'This medium is disabled.','feature_disabled');
+  if(input.surface==='watch')return screenDiscovery(userId,input.section,signal);
+  if(!userId)throw new AppError(404,'This discovery medium is unavailable.','feature_disabled');
   if(input.surface==='read'){
     if (input.kind !== 'all') requireEnabledCategory(config, input.kind);
     v.parse(v.pipe(pageNumberSchema, v.maxValue(READING_PROVIDER_PAGE_LIMIT)), input.page);
@@ -34,9 +37,10 @@ export async function discoveryContent(userId:string,raw:unknown,signal?:AbortSi
       if (kind === 'comic' && input.section === 'trending') return { ...empty, notice: 'Comic Vine does not provide a trending feed. Browse Recently released for new comics.' };
       try {
         if (!await readingProviderConfigured(kind)) return { ...empty, notice: 'Connect Comic Vine in Integrations to discover comics.' };
-        const result = await discoverReading(kind, input.section, input.page);
+        const result = await discoverReading(kind, input.section, input.page, signal);
         return { ...result, pages: Math.max(input.page, Math.min(READING_PROVIDER_PAGE_LIMIT, Math.ceil(result.total / (kind === 'book' ? 20 : 10)))), failure: '', notice: kind === 'book' ? input.section === 'trending' ? 'Trending on Open Library.' : 'Books ordered by first publication year on Open Library.' : 'Comic releases from Comic Vine, ordered by store date.' };
       } catch (cause) {
+        signal.throwIfAborted();
         return { ...empty, failure: cause instanceof AppError ? cause.message : cause instanceof ProviderHttpError ? providerApiError(cause).body.error : 'Reading discovery could not be loaded. Please try again.' };
       }
     }));
@@ -49,26 +53,37 @@ export async function discoveryContent(userId:string,raw:unknown,signal?:AbortSi
       notice: results.map(result => result.notice).filter(Boolean).join(' '),
     };
   }
-  if(input.surface!=='watch')requireExperimentalFeature(config, input.surface === 'listen' ? 'music' : 'gaming');
-  return input.surface==='watch'?screenDiscovery(userId,input.section,signal):input.surface==='play'?gameDiscovery(userId,input.section,signal):musicDiscovery(userId,input.section,signal);
+  requireExperimentalFeature(config, input.surface === 'listen' ? 'music' : 'gaming');
+  return input.surface==='play'?gameDiscovery(userId,input.section,signal):musicDiscovery(userId,input.section,signal);
 }
-async function screenDiscovery(userId:string,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
-  const data=await discoverMedia(userId,section);
+async function screenDiscovery(userId:string|null,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
+  const data=await discoverMedia(userId,section,signal);
   signal?.throwIfAborted();
   const ids=section==='recent'?data.recent:data.trending;
-  const items=await mediaViews(userId,{ids,limit:60});
-  const byId=new Map(items.map(i=>[i.id,i]));
-  return {items:ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]),failure:data.providerUnavailable?'Some discovery providers are unavailable. Please try again.':''};
+  return {items:await discoveryScreenCards(userId,ids),failure:data.providerUnavailable&&!ids.length?'Discovery providers are unavailable. Please try again.':''};
 }
-async function gameDiscovery(userId:string,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
+export async function discoveryScreenCards(userId:string|null,ids:string[]){
+  if(!ids.length)return [];
+  return userId?mediaViewsForIds(userId,ids):publicMedia(ids);
+}
+
+/** Keep the hero's layout stable and provider I/O out of the route load. */
+export async function discoveryHero(userId:string|null){
+  const rows=await getDb().execute<{id:string}>(sql`select m.id from media m
+    where m.kind in ('movie','show') and (m.release_date is null or m.release_date<=current_date)
+      and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt'))
+    order by (m.backdrop_path is not null) desc,m.updated_at desc,m.id limit 5`);
+  return discoveryScreenCards(userId,rows.map(row=>row.id));
+}
+async function gameDiscovery(userId:string,section:DiscoverySection,signal:AbortSignal):Promise<DiscoveryContent>{
   const [instance]=await getDb().select().from(providerInstances).where(and(eq(providerInstances.provider,'igdb'),eq(providerInstances.enabled,true),sql`${providerInstances.credentials} is not null`)).limit(1);
   if(!instance)return {items:[],failure:'',notice:'Connect IGDB in Integrations to discover games.'};
-  signal?.throwIfAborted();
+  signal.throwIfAborted();
   try{
-    const remote=await discoverIgdb(instance.id,section);
-    signal?.throwIfAborted();
+    const remote=await discoverIgdb(instance.id,section,signal);
+    signal.throwIfAborted();
     return {items:await providerGameCards(userId,remote.map(item=>({...item,instanceId:instance.id}))),failure:'',notice:section==='trending'?'Trending by IGDB popularity.':undefined};
-  }catch(cause){signal?.throwIfAborted();if(cause instanceof AppError&&cause.status===404)throw cause;return {items:[],failure:'Game discovery could not be loaded. Please try again.'};}
+  }catch(cause){signal.throwIfAborted();if(cause instanceof AppError&&cause.status===404)throw cause;return {items:[],failure:'Game discovery could not be loaded. Please try again.'};}
 }
 async function musicDiscovery(userId:string,section:DiscoverySection,signal?:AbortSignal):Promise<DiscoveryContent>{
   // Popularity uses visible activity only; a shared catalogue never grants access.

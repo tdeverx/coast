@@ -1,0 +1,26 @@
+{
+  "files": {
+    "docs/performance.md": {
+      "current": "ccdc7089dfc190d50649406dbfae9001620c6cad3be241ef74403a44cd5918d1",
+      "previous": "2f50b04fe3ac4e31f0a18526f9e147011eb3d5159d677e8bae2b15facbec8f66"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "current": "95452981ed91d9df259f93c25aff7b39ee04863d293e243f3cc20cd5ca6df382",
+      "previous": "31c1b89667404d88ffe6d3918ad504f9a86612cbe497d83bd130d515cf2bcd4f"
+    },
+    "src/lib/providers/comic-vine/adapter.server.ts": {
+      "current": "ffe3dc17c11d6ca584d3972784660ecfae8c08c2bb5ab9e3989a78dbc9cc9d2b",
+      "previous": "9b9c16b0c96f9b56707fd18d848a9c54b313f52c8dd7d286863eb4a2255812f2"
+    },
+    "src/lib/providers/reading.server.ts": {
+      "current": "0c0b9e88f10dc356c72a6ee5917732777d340ebc88f341c1daa264eb1d92ece2",
+      "previous": "1ff4daed0d8646651aed8a4c066d579ac572586ca192cf04ca6bf0de232ff09c"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "2d18f7058226e5c8cd49463c62fe3af464258ce3cd66eeb10f17baecf4358f91",
+      "previous": "20c744dfd15f9d01f5026323630d0715679117f8819e341e4d58e5c3305fb851"
+    }
+  },
+  "report": "docs/audits/2026-11-16-provider-rows/viewport-refresh.md",
+  "reportSha256": "a679c92929d85442d79cf57bc19b433eb4b3037479c317dc607d7e5c1baee6e0"
+}
