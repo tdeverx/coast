@@ -232,6 +232,42 @@ run('fallback skips the failed copy and different cuts and resumes saved progres
  }
 });
 
+run('quality handoffs preserve one viewing and one Trakt history export', async () => {
+ const db = getSql(), trakt = crypto.randomUUID();
+ await db`INSERT INTO provider_instances(id,provider,name,base_url)
+  VALUES(${trakt},'trakt','History fixture','https://history-fixture.invalid')`;
+ try {
+  await db`INSERT INTO external_ids(media_id,provider,external_id,media_kind) VALUES(${movie},'tmdb','123','movie')`;
+  await db`INSERT INTO provider_connections(user_id,instance_id,status,external_user_id,settings)
+   VALUES(${user},${trakt},'connected','trakt-account',${{ sync: { history: true } }}::jsonb)`;
+  const options = { mediaId: movie, browser };
+  const first = await startPlayback(user, { ...options, fromStart: true });
+  await progressPlayback(user, first.id, { event: 'start', positionSeconds: 0 });
+  await progressPlayback(user, first.id, { positionSeconds: 110 });
+  const lower = await startPlayback(user, {
+   ...options, quality: { maxHeight: 720 }, reconfigureSessionId: first.id, reconfigurePosition: 110,
+  });
+  expect(lower).toMatchObject({ kind: 'hls', startSeconds: 110 });
+  await progressPlayback(user, lower.id, { event: 'start', positionSeconds: 110 });
+  const automatic = await startPlayback(user, { ...options, quality: {}, reconfigureSessionId: lower.id });
+  expect(automatic).toMatchObject({ kind: 'direct', startSeconds: 110 });
+  await progressPlayback(user, automatic.id, { event: 'start', positionSeconds: 110 });
+  await progressPlayback(user, automatic.id, { event: 'ended', positionSeconds: 120 });
+  const replay = await startPlayback(user, { ...options, fromStart: true });
+  await progressPlayback(user, replay.id, { event: 'start', positionSeconds: 0 });
+  await progressPlayback(user, replay.id, { event: 'ended', positionSeconds: 120 });
+  const watches = await db<{ source_event_id: string; id: string }[]>`SELECT source_event_id, id FROM tracking_events
+   WHERE user_id=${user} AND media_id=${movie} AND action='watch' AND source='playback'`;
+  expect(watches.map(watch => watch.source_event_id).sort()).toEqual([`playback:${first.id}`, `playback:${replay.id}`].sort());
+  const exports = await db<{ event_id: string }[]>`SELECT payload->>'eventId' AS event_id FROM outbox_actions
+   WHERE user_id=${user} AND kind='trakt.export' AND payload->>'category'='history'`;
+  expect(exports.map(row => row.event_id).sort()).toEqual(watches.map(watch => watch.id).sort());
+ } finally {
+  await db`DELETE FROM external_ids WHERE media_id=${movie} AND provider='tmdb'`;
+  await db`DELETE FROM provider_instances WHERE id=${trakt}`;
+ }
+});
+
 run('named edition selection retains quality policy and stores the exact selected source for sync',async()=>{
  const db=getSql();const [original]=await db`SELECT provider_item_id FROM availability WHERE user_id=${user} AND media_id=${movie}`;
  const source=(id:string,width:number):PlaybackSource=>({id,name:`Director's Cut ${width===1920?'1080p':'720p'}`,container:'mp4',bitrate:width===1920?2_000_000:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,raw:{},streams:[{type:'Video',codec:'h264',index:0,width,height:width===1920?1080:720},{type:'Audio',codec:'aac',index:1}]});

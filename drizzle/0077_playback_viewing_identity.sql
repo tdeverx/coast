@@ -1,0 +1,1 @@
+ALTER TABLE "playback_sessions" ADD COLUMN "viewing_id" uuid;

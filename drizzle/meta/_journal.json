@@ -540,6 +540,13 @@
       "when": 1794933358202,
       "tag": "0076_disposable_reading_links",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794950753009,
+      "tag": "0077_playback_viewing_identity",
+      "breakpoints": true
     }
   ]
 }

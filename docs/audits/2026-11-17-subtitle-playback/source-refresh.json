@@ -8,6 +8,10 @@
       "previous": "276dd93a6d6b06f565ed480000b1554118b989d042b3dd3c72fbda53dd5dac48",
       "current": "dd4b8caf9d0f377fcc5f662e554160a05e826bc4df5549ae6ab0712680c3ba8e"
     },
+    "drizzle/meta/_journal.json": {
+      "previous": "67451fb26e1c795383cf7f0951e47d7f479087bf92a39ba18719b791afbd6efb",
+      "current": "d08d0b7188aadd6e90a6cbdcd7f100a10545c4e51bbc7c995aba2eac691a6c07"
+    },
     "scripts/browser-music-check.ts": {
       "previous": "f0aab0efaec7bc3d446b893b78ed59bedbc6494ba865e7563d1ca0b52f514cbc",
       "current": "45da55a1f9c72dbb268d3351055e9e1db8e6b7981f5208967a24e8750c2cfc39"
@@ -50,7 +54,7 @@
     },
     "src/lib/playback/service.server.ts": {
       "previous": "100c0928e77e21ebe241f832aee055d1a972c21b0870c61ca06bf6bf87c3e9e8",
-      "current": "4c3f6eb4b56cd9c11ab6c4486c4818349f1969d071628938e0e7dc6b2a656593"
+      "current": "f93574352f099b34f4eb2ba3904c4d7a40c91a1c3340076f997d18f44e2eaaf1"
     },
     "src/lib/providers/contracts.ts": {
       "previous": "c6aeac50dc6e60ddb8a49c055d485fbfac0875d5fc92c8852bd5e9056b6b6b98",
@@ -67,6 +71,14 @@
     "src/lib/server/api/playback.server.ts": {
       "previous": "39c1e8c2cece24519fe1baf279f16defc6c541e32d602c0c3da6e29753c9a3d1",
       "current": "d4e4956f36a6de3a13106ee986c838f937125a3166f6e7742d9524156efb3f9d"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "1e80d6fee289d3007b41308ec00c692e52c25319eab1e21bf7719e51db1ae5f3",
+      "current": "b10d7b054cdc5a21bf4779708fb3bc942881aae85dd26412e8eb02eb04dc20ff"
+    },
+    "src/lib/sync/changes.server.ts": {
+      "previous": "cd6317e37f4d328c527758e8e62b805ecf4c3501fff308701650835251d9160b",
+      "current": "b555fc38c9d5e3a34572a1c3ba35f79c0e14162c0614f2d2ddd3951fbfba4bd9"
     },
     "src/lib/ui/component-manifest.json": {
       "previous": "6f1b7b3c40437c10b0c657ec28521d5910990b71e26a0a848d3dd4b26a1a5f2c",
@@ -168,6 +180,10 @@
       "previous": "a8e65f0fa74182504e8749b395a3a35943d3fd27276a3d123c7914e668160048",
       "current": "e156c324c67c4abeeec750a320a0f0d8c0844555ed2a4981942c19f1e5280a29"
     },
+    "tests/playback-generation-db.test.ts": {
+      "previous": "f29bb138ca675d7c5af77899f76e2dda067818d8bd8ab14b4e2b7c0fb554a218",
+      "current": "b1fd3f894ef95d4b78ac2184dc920d173a283685d5df4d040c6917143ed634c0"
+    },
     "tests/player-recovery.test.ts": {
       "previous": "c14c23183a4c29f4aac1b11e28d92f4991c0e98c0dc4ff08dca754a1c2f52b5d",
       "current": "13ba8ffc93ab3e2ca89d2f92be3cec21e2a82324f50b088dfa36a96bddbdc7f9"
@@ -203,5 +219,5 @@
     "tests/subtitle-playback.test.ts": "4ca6bafe64a9088263aa317090e0b7a63c2ef6cf07ba42173d6782a39cb0a690"
   },
   "report": "docs/audits/2026-11-17-subtitle-playback/source-refresh.md",
-  "reportSha256": "e75e2e0f537fda5876a4764cb84da62e8aa1a23219d57e72cc445e2938a195b3"
+  "reportSha256": "383fc67dc5dc82a31e458100bd973d124d0611fe1b8673fd4fded0e90341d596"
 }

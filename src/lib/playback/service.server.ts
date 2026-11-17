@@ -294,6 +294,7 @@ async function preparePlayback(
     ne(playbackSessions.state, 'stopped'), gt(playbackSessions.expiresAt, new Date()),
   )).limit(1) : [];
   if (data.reconfigureSessionId && !previous) throw new AppError(409, 'This playback session cannot change video.');
+  const replaced = previous ?? fallback;
   const expectedDuration = fallback?.durationSeconds ?? data.expectedDuration;
   const fallbackEdition = fallback && namedEdition(fallback.edition, item.title).value;
   const available = await getDb()
@@ -555,6 +556,7 @@ async function preparePlayback(
     .insert(playbackSessions)
     .values({
       id:sessionId,
+      viewingId: replaced?.viewingId ?? replaced?.id,
       userId,
       shareId: share?.id,
       shareViewerId: share?.viewerId,
@@ -718,7 +720,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
         action: 'watch',
         source: 'playback',
         sequence: session.sequence ?? undefined,
-        sourceEventId: `playback:${session.id}`,
+        sourceEventId: `playback:${session.viewingId ?? session.id}`,
         rewatch: true,
         editionId: `${session.connectionId}:${session.sourceId}`,
         acknowledged: true,
@@ -737,6 +739,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
       connectionId: session.connectionId,
       mediaId: session.mediaId,
       jellyfinEvent: firstStart ? 'start' : stop ? 'stop' : 'progress',
+      viewingId: session.viewingId ?? undefined,
       traktEvent:
         firstStart || resumed
           ? 'start'
