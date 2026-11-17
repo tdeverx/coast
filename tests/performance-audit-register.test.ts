@@ -15,9 +15,10 @@ import menuReadRetrySourceRefresh from '../docs/audits/2026-11-17-menu-read-retr
 import menuTrackingSourceRefresh from '../docs/audits/2026-11-17-menu-tracking/source-refresh.json';
 import menuRolloutSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/source-refresh.json';
 import menuRolloutFollowupSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json';
+import menuPlaybackEligibilitySourceRefresh from '../docs/audits/2026-11-17-menu-rollout/playback-eligibility-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -26,6 +27,21 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('PR eligibility and bootstrap corrections advance exact pins without rewriting published evidence', async () => {
+  expect(menuPlaybackEligibilitySourceRefresh.epoch).toBe('menu-playback-eligibility-review-2026-11-17');
+  expect(menuPlaybackEligibilitySourceRefresh.blanketAcceptance).toBe(false);
+  for(const [path,pin] of Object.entries(menuPlaybackEligibilitySourceRefresh.files))
+    await expectCurrentSource(path,pin.current,'Review the PR playback eligibility correction.');
+  const supportingFiles: Readonly<Record<string,string>> = menuPlaybackEligibilitySourceRefresh.supportingFiles;
+  for(const [path,hash] of Object.entries(supportingFiles))
+    await expectCurrentSource(path,hash,'Review the playback eligibility regression evidence.');
+  const report=await Bun.file(menuPlaybackEligibilitySourceRefresh.report).text();
+  expect(report).toContain('1ef98ad');
+  expect(report).toContain('canPlayMusicCard');
+  expect(report).toContain('server source authorization');
+  expect(report).toContain('standalone container migration copy');
+});
 
 test('menu follow-up binds completed local work and bounded proof without promoting provider acceptance', async () => {
   expect(menuRolloutFollowupSourceRefresh.epoch).toBe('menu-rollout-followup-local-2026-11-17');

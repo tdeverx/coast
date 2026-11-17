@@ -24,6 +24,7 @@
   import { playMusic, playMusicArtist } from '#lib/playback/client.svelte.js';
   import type { MediaCardPresentation } from '../types';
   import type { MusicItem } from '#lib/music/model.js';
+  import { canPlayMusicCard } from '#lib/music/presentation.js';
   import type { GameStatus } from '#lib/games/model.js';
   import type { ReadingState } from '#lib/reading/model.js';
   import type { WorkList, GameActionState, ReadingActionState } from '#lib/media/work-actions.js';
@@ -57,8 +58,7 @@
   const reading = $derived(item.kind === 'book' || item.kind === 'comic');
   const music = $derived(item.kind === 'track' || item.kind === 'album');
   const artist = $derived(item.kind === 'artist');
-  const canPlay = $derived(playbackAllowed
-    && ((music || artist) && !!item.available));
+  const canPlay = $derived(playbackAllowed && canPlayMusicCard(item));
   const canRead = $derived(reading && !!workId && !!item.available && readerAllowed);
   const canShare = $derived((item.kind === 'track' && !!item.available || reading && canRead)
     && allowed('sharing', !!page.data.playbackSharing));

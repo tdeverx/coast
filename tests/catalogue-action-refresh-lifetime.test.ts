@@ -14,24 +14,26 @@ async function factory(kind:'reading'|'game'|'music'|'rating'){
  const path=kind==='reading'?'ReadingCommands':kind==='game'?'GameCommands':'MusicCommands';
  const child=(await componentScript(kind==='rating'?'src/lib/ui/components/Rating.svelte':`src/lib/ui/work-menu/${path}.svelte`)).replace('$props()','properties').replace(/\bexport (?=(?:async )?function)/g,'');
  const {create}=await import(moduleUrl(compileRunes(`
+ import {canPlayMusicCard} from ${JSON.stringify(import.meta.resolve('../src/lib/music/presentation'))};
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createMenuResource} from ${JSON.stringify(menu)};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  import {createMutation} from ${JSON.stringify(mutation)};
  import {createOperation} from ${JSON.stringify(operation)};
- export function create(transport,write,menuFixtureContext){
+ export function create(transport,write,menuFixtureContext,itemInput){
   let revision=$state(0);const cleanups=[];
-  const properties={item:{id:'work',workId:'work',kind:${JSON.stringify(kind==='reading'?'book':kind==='game'?'game':'track')},available:true,title:'Work',href:'#'}};
+  const properties={item:itemInput??{id:'work',workId:'work',kind:${JSON.stringify(kind==='reading'?'book':kind==='game'?'game':'track')},available:true,title:'Work',href:'#'}};
   const page={data:{user:{id:'user',role:'user',settings:{}},capabilities:{},experiments:{}},url:new URL('https://fixture.invalid'),params:{}};
   const contentRevisionKey=()=>revision,onDestroy=callback=>cleanups.push(callback),reportFailure=()=>{},displayLabel=value=>value;
   const useMenuPreview=()=>menuFixtureContext,menuCondition=(_id,actual)=>actual,detailHref=href=>href,retryMenuRead=undefined;
   const useClient=()=>({api:transport,change:write,preview:!!menuFixtureContext,feedback:{notify(){}}});
+  const plays=[],playMusic=async(...args)=>{plays.push(['music',...args]);},playMusicArtist=async(...args)=>{plays.push(['artist',...args]);};
   ${work}
   ${catalogue}
   function createChild(properties){${child};return {isBusy,run:${kind==='reading'?'complete':kind==='game'?'finish':kind==='rating'?'()=>rate(4)':'log'}};}
   const message=cause=>cause.message;const command=createChild({workId:'work',mediaId:'work',onrated:value=>work.rate(value),get progress(){return progress;},gameData:{platforms:[],playthrough:{id:'run',status:'in-progress',progressPercent:0}},ensure:work.load,changed});
   ${kind==='rating'?"function createRatingActions(properties){"+quickActions+";ratingControl=command;return {isBusy};}ratingActions=createRatingActions({section:'rating',workId:'work'});":(kind==='reading'?'readingCommands':kind==='game'?'gameCommands':'musicCommands')+'=command;'}
-  return {open,close,toggleBackground,background:()=>profileBackground,swapTarget(value){identity.replace({workId:value});},run:()=>command.run(),invalidate(){revision++;},busy:()=>command.isBusy(),dispose(){cleanups.forEach(cleanup=>cleanup());}};
+  return {open,close,start,plays,canPlay:()=>canPlay,toggleBackground,background:()=>profileBackground,swapTarget(value){identity.replace({workId:value});},run:()=>command.run(),invalidate(){revision++;},busy:()=>command.isBusy(),dispose(){cleanups.forEach(cleanup=>cleanup());}};
  }
  `)));
  return create;
@@ -145,4 +147,14 @@ for(const medium of ['catalogue','screen'] as const)test(`${medium} profile back
   finish({});await settle();expect(writes[1]).toEqual({action:'background',mediaId:null});expect(owner.background()).toBe(false);
   owner.toggleBackground();preview.dispose();finish({});await settle();expect(preview.context.profileBackground('work',false)).toBe(false);
  }finally{owner.dispose();dispose();preview.dispose();}
+});
+
+test('catalogue music start shares card eligibility for omitted, false and artist availability without extra reads',async()=>{
+ const create=await factory('music');
+ for(const [kind,available,expected] of [['track',undefined,true],['album',undefined,true],['track',false,false],['album',false,false],['artist',undefined,false],['artist',false,false],['artist',true,true]] as const){
+  let owner:any,reads=0;
+  const dispose=runtime.effect_root(()=>owner=create(async()=>{reads++;throw Error('Canonical music playback must not read card actions.');},async()=>({}),undefined,{id:'work',workId:'work',kind,available,title:'Saved music',href:'#'}));
+  try{runtime.flush();expect(owner.canPlay()).toBe(expected);await owner.start();expect(owner.plays).toEqual(expected?[[kind==='artist'?'artist':'music','work',...(kind==='artist'?[false]:[false,false])]]:[]);expect(reads).toBe(0);}
+  finally{owner.dispose();dispose();}
+ }
 });

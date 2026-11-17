@@ -1,5 +1,5 @@
 import type { ScreenKind, MediaRelationship } from '#lib/media/model.js';
-import { initialReadingBookmarkCycle, type ReadingKind, type ReadingProvider, type ReadingState, type ReadingFormat, type ReadingLocation, type ReadingRereadRestore } from '#lib/reading/model.js';
+import type { ReadingKind, ReadingProvider, ReadingState, ReadingFormat, ReadingLocation, ReadingRereadRestore } from '#lib/reading/model.js';
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -1128,7 +1128,7 @@ export const readingProgress = pgTable('reading_progress', {
   totalPages: integer('total_pages'),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
-  bookmarkCycle: uuid('bookmark_cycle').notNull().default(initialReadingBookmarkCycle),
+  bookmarkCycle: uuid('bookmark_cycle').notNull().default('00000000-0000-0000-0000-000000000000'),
   rereadRestore: jsonb('reread_restore').$type<ReadingRereadRestore>(),
   updatedAt: updatedAt(),
 }, (t) => [
@@ -1150,7 +1150,7 @@ export const readingSessions = pgTable('reading_sessions', {
   externalId: text('external_id'),
   format: text('format').$type<ReadingFormat>().notNull(),
   edition: text('edition').notNull(),
-  bookmarkCycle: uuid('bookmark_cycle').notNull().default(initialReadingBookmarkCycle),
+  bookmarkCycle: uuid('bookmark_cycle').notNull().default('00000000-0000-0000-0000-000000000000'),
   location: jsonb('location').$type<ReadingLocation>(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   closedAt: timestamp('closed_at', { withTimezone: true }),
