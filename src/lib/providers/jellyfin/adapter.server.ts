@@ -47,7 +47,7 @@ const sourceSchema = v.object({
   SupportsTranscoding: bool,
   TranscodingUrl: str,
   TranscodingContainer: str,
-  MediaStreams: v.optional(v.array(streamSchema), []),
+  MediaStreams: v.optional(v.array(streamSchema)),
 });
 const itemSchema = v.object({
   Id: v.string(),
@@ -80,7 +80,7 @@ const itemSchema = v.object({
   SourceType: str,
   LocationType: str,
   Tags: v.optional(v.array(v.string())),
-  MediaSources: v.optional(v.array(sourceSchema), []),
+  MediaSources: v.optional(v.array(sourceSchema)),
   ImageTags: v.optional(v.record(v.string(), v.string()), {}),
   BackdropImageTags: v.optional(v.array(v.string()), []),
   ScreenshotImageTags: v.nullish(v.array(v.string()), []),
@@ -110,7 +110,7 @@ function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
     transcoding: data.SupportsTranscoding,
     transcodingUrl: data.TranscodingUrl || undefined,
     transcodingContainer: data.TranscodingContainer || undefined,
-    streams: data.MediaStreams.filter(
+    streams: (data.MediaStreams ?? []).filter(
       (s) => s.Type === 'Video' || s.Type === 'Audio' || s.Type === 'Subtitle'
     ).map((s) => ({
       index: s.Index,
@@ -141,6 +141,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   return {
     id: i.Id,
     kind,
+    emptyPlaybackSources: i.MediaSources?.length === 0 || undefined,
     addedAt: jellyfinAddedDate(i.DateCreated),
     access: {sourceType:i.SourceType, locationType:i.LocationType, tags:i.Tags, officialRating:i.OfficialRating, customRating:i.CustomRating},
     expectedMembers: (kind === 'show' || kind === 'season') ? i.RecursiveItemCount ?? undefined : undefined,
@@ -179,7 +180,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
       seasonNumber: (kind === 'season' ? i.IndexNumber : i.ParentIndexNumber) ?? undefined,
       episodeNumber: kind === 'episode' ? (i.IndexNumber ?? undefined) : undefined,
     },
-    sources: i.MediaSources.map(source),
+    sources: (i.MediaSources ?? []).map(source),
     artwork: Object.fromEntries(
       artworkKeys.flatMap((type) => {
         const index = type === 'chapter' ? i.Chapters.findIndex((chapter) => chapter.ImageTag) : 0;
@@ -425,7 +426,7 @@ export class JellyfinAdapter {
     userId: string,
     capabilities: BrowserCapabilities,
     maxBitrate: number,
-    options: { shared?: boolean; vrchatCodec?: VrchatVideoCodec; deviceId?: string; signal?: AbortSignal } = {}
+    options: { shared?: boolean; vrchatCodec?: VrchatVideoCodec; deviceId?: string; signal?: AbortSignal; probe?: boolean } = {}
   ) {
     options.signal?.throwIfAborted();
     const profile = {
@@ -490,6 +491,7 @@ export class JellyfinAdapter {
           EnableDirectPlay: !options.shared,
           EnableDirectStream: !options.shared,
           EnableTranscoding: true,
+          ...(options.probe ? {AutoOpenLiveStream: false} : {}),
           AllowVideoStreamCopy: !options.shared,
           AllowAudioStreamCopy: !options.shared,
           ...(options.deviceId ? {DeviceId:options.deviceId} : {}),

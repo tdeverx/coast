@@ -447,6 +447,8 @@ export type TrackingAction =
   | 'watch'
   | 'unwatch'
   | 'progress'
+  | 'pause'
+  | 'resume'
   | 'drop'
   | 'restore'
   | 'watchlist'
@@ -516,6 +518,7 @@ export const trackingState = pgTable(
     watchlist: boolean('watchlist').notNull().default(false),
     favourite: boolean('favourite').notNull().default(false),
     collected: boolean('collected').notNull().default(false),
+    paused: boolean('paused').notNull().default(false),
     dropped: boolean('dropped').notNull().default(false),
     completedEpisodes: integer('completed_episodes').notNull().default(0),
     totalEpisodes: integer('total_episodes').notNull().default(0),
@@ -525,6 +528,7 @@ export const trackingState = pgTable(
   (t) => [
     primaryKey({ columns: [t.userId, t.mediaId] }),
     index('tracking_state_recent_idx').on(t.userId, t.updatedAt),
+    index('tracking_state_paused_idx').on(t.userId, t.updatedAt).where(sql`${t.paused}`),
     check('tracking_nonnegative', sql`${t.playCount} >= 0 and ${t.positionSeconds} >= 0`),
   ]
 );
@@ -905,10 +909,11 @@ export const mediaRequests = pgTable(
     externalId: text('external_id'),
     serverId: integer('server_id'),
     observedScanId: uuid('observed_scan_id'),
+    playbackVerifiedSourceId: uuid('playback_verified_source_id'),
     is4k: boolean('is_4k').notNull().default(false),
     seasons: integer('seasons').array().notNull().default([]),
     state: text('state')
-      .$type<'pending' | 'approved' | 'available' | 'declined' | 'cancelled' | 'failed'>()
+      .$type<'pending' | 'approved' | 'processing' | 'available' | 'declined' | 'cancelled' | 'failed'>()
       .notNull()
       .default('pending'),
     createdAt: createdAt(),

@@ -20,6 +20,7 @@ import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
 import { heroTitleIds } from '#lib/media/hero.js';
 import { readingCards } from '#lib/reading/query.server.js';
+import { pausedProgressPage } from './paused-progress';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
 export function progressData(userId:string, raw?:Partial<import('#lib/progress.js').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
@@ -27,7 +28,7 @@ export function progressData(userId:string, raw:unknown, viewerId?:string):Promi
 export async function progressData(userId:string, raw:unknown = {}, viewerId=userId):Promise<ProgressContent> {
   const result=await readProgressData(userId,raw,viewerId);
   // Do not probe private activity in another medium when viewing someone else's profile.
-  if(userId!==viewerId)return {...result,emptyAllMedia:false};
+  if(userId!==viewerId||result.view==='paused')return {...result,emptyAllMedia:false};
   if(result.total)return {...result,emptyAllMedia:false};
   const config=await getFeatureConfig(viewerId);
   // An empty default medium cannot hide another medium's personal content.
@@ -36,10 +37,10 @@ export async function progressData(userId:string, raw:unknown = {}, viewerId=use
     (${result.view}='favourites' and exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.favourite))
     or (${result.view} in ('watchlist','next','up-next') and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.watchlist and not t.dropped)
       or exists(select 1 from up_next n where n.media_id=w.id and n.user_id=${userId}) or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status='planned') or exists(select 1 from reading_progress p where p.work_id=w.id and p.user_id=${userId} and p.state='planned')))
-    or (${result.view}='watching' and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.position_seconds>0 and not t.dropped)
+    or (${result.view}='watching' and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.position_seconds>0 and not (t.dropped or t.paused))
       or exists(select 1 from music_progress p where p.track_id=w.id and p.user_id=${userId} and p.position_seconds>0)
-      or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status in ('in-progress','paused'))
-      or exists(select 1 from reading_progress p where p.work_id=w.id and p.user_id=${userId} and p.state in ('reading','paused'))))
+      or (select g.status from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} order by g.created_at desc,g.id desc limit 1)='in-progress'
+      or exists(select 1 from reading_progress p where p.work_id=w.id and p.user_id=${userId} and p.state='reading')))
     or (${result.view}='recommendations' and exists(select 1 from social_recommendations r where r.work_id=w.id and r.recipient_id=${userId} and r.state='pending'))
   )) as present`);
   return {...result,emptyAllMedia:!other.present};
@@ -51,6 +52,7 @@ async function readProgressData(
 ): Promise<ProgressContent> {
   const options = v.parse(progressOptionsSchema, raw);
   if(options.view === 'recommendations') return recommendationProgress(userId,viewerId,options);
+  if(options.view === 'paused') return {...options,...await pausedProgressPage(userId,viewerId,options)};
   if(options.category==='reading')return readingProgress(userId,viewerId,options);
   if(options.kind==='book'||options.kind==='comic')throw new AppError(400,'Choose a reading type only for Reading.');
   if(userId!==viewerId) {
@@ -59,7 +61,7 @@ async function readProgressData(
   }
   if (options.category !== 'screen') return mediumProgress(userId, viewerId, options);
   if (options.view === 'watchlist' || options.view === 'favourites') {
-    const list = await listsData(userId, { ...options, filter: 'to-watch',category:'screen' }, viewerId);
+    const list = await listsData(userId, { ...options, filter: 'to-watch',category:'screen' }, viewerId, 'saved');
     return { ...options, page: list.page, pages: list.pages, total: list.total, items: list.items.filter((item):item is MediaView=>!('href' in item)) };
   }
   if (options.view === 'finished' || options.view === 'dropped') {
@@ -79,8 +81,9 @@ async function readProgressData(
     };
   }
   const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId);
+  const presentation = options.view === 'watching' ? 'continue' : 'next';
   const views = new Map(
-    (await mediaViewsForIds(userId, visibleIds, viewerId, true)).map((item) => [item.id, item])
+    (await mediaViewsForIds(userId, visibleIds, viewerId, true, presentation)).map((item) => [item.id, item])
   );
   const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
   decorateProgressCards(items, sequenceById, options.view);
@@ -93,10 +96,13 @@ export function decorateProgressCards(items:MediaView[], sequenceById:Awaited<Re
     const context = sequenceById.get(item.id);
     if (context && (view !== 'watching' || context.entry.progress > 0)) {
       item = items[index] = applySequenceEntry(item, context.entry, context.source);
-      item.captionSubtitleHref = context.source.kind==='collection'?`/media/${context.source.id}`:`/lists/${context.source.id}`;
-      item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
+      if (!item.captionSubtitle) {
+        item.captionSubtitleHref = context.source.kind==='collection'?`/media/${context.source.id}`:`/lists/${context.source.id}`;
+        item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
+      }
       continue;
     }
+    if (view === 'watching' || view === 'next' || view === 'up-next' || view === 'finished') continue;
     const title = item.showTitle;
     if (!title) {
       if (item.rewatchStartedAt) item.captionSubtitle = 'Rewatching';
@@ -138,7 +144,7 @@ async function readingProgressSelection(userId:string,viewerId:string,options:im
   const state=sql`case when ${progressVisible} then ${s.readingProgress.state} else null end`;
   const selection=options.view==='favourites'
     ? sql`social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',${s.readingWorks.kind}) and ${s.trackingState.favourite}`
-    : options.view==='watching' ? sql`${state} in ('reading','paused')`
+    : options.view==='watching' ? sql`${state}='reading'`
     : options.view==='finished' ? sql`${state}='completed'`
     : options.view==='dropped' ? sql`${state}='dropped'`
     : sql`((${includeSaved ? saved : sql`false`}) or (${options.view}<>'watchlist' and (${state}='planned' or (${!includeSaved} and exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=${s.readingWorks.id}))))) and coalesce(${state} not in ('reading','paused','completed','dropped'),true)`;
@@ -183,7 +189,7 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
     })
     .from(s.trackingState)
     .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
-    .where(and(eq(s.trackingState.userId, userId), eq(s.trackingState.dropped, false), sql`(${s.trackingState.watched} or ${s.trackingState.positionSeconds}>0 or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null)`))
+    .where(and(eq(s.trackingState.userId, userId), eq(s.trackingState.dropped, false), eq(s.trackingState.paused, false), sql`(${s.trackingState.watched} or ${s.trackingState.positionSeconds}>0 or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null)`))
     .orderBy(desc(s.trackingState.updatedAt), s.media.id);
   const planned = await continuationIds(
     userId,
@@ -255,7 +261,9 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
             : undefined,
         options.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined,
         sql`not exists (select 1 from episodes e join tracking_state parent on parent.media_id in (e.show_id,e.season_id)
-      where e.media_id = ${s.media.id} and parent.user_id = ${userId} and parent.dropped)`
+          where e.media_id = ${s.media.id} and parent.user_id = ${userId} and (parent.dropped or parent.paused))`,
+        sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and paused.paused
+          and paused.media_id in (${s.media.id}, (select season.show_id from seasons season where season.media_id = ${s.media.id})))`
       )
     )
     .orderBy(
@@ -317,12 +325,13 @@ async function mediumProgress(userId:string, viewerId:string, options:import('#l
 }
 
 function mediumProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions,includeSaved=true) {
+  const gameStatus=sql`(select g.status from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id order by g.created_at desc,g.id desc limit 1)`;
   const active=options.category==='game'
-    ? sql`(select g.status from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id order by g.created_at desc,g.id desc limit 1) in ('in-progress','paused')`
+    ? sql`${gameStatus} in (${options.view==='watching'?sql`'in-progress'`:sql`'in-progress','paused'`})`
     : sql`exists(select 1 from music_progress p where p.user_id=${userId} and p.track_id=w.id and p.position_seconds>0 and (p.duration_seconds is null or p.position_seconds<p.duration_seconds))`;
   const planned=sql`(${includeSaved} and exists(select 1 from tracking_state t where t.user_id=${userId} and t.media_id=w.id and t.watchlist and not t.dropped))
     or exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=w.id)
-    or (${options.category}='game' and (select g.status from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id order by g.created_at desc,g.id desc limit 1)='planned')`;
+    ${options.category==='game'?sql`or ${gameStatus}='planned'`:sql``}`;
   const available=sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id
     where a.user_id=${viewerId} and c.user_id=${viewerId} and c.status='connected' and i.enabled and a.state='available' and
     (a.media_id=w.id or exists(select 1 from media_relationships r where r.parent_id=w.id and r.child_id=a.media_id and r.kind='contains')))`;

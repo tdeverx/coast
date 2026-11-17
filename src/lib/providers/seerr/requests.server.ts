@@ -14,6 +14,7 @@ import {
   outboxActions,
   syncValues,
   providerJobSnapshots,
+  availability,
 } from '#lib/server/db/schema.js';
 import { enqueueAction, PermanentActionError, type OutboxAction } from '#lib/server/queue/index.js';
 import {
@@ -32,8 +33,25 @@ import { connectionFor } from '#lib/providers/connections.server.js';
 import { getSeerr, assertSeerrAccount } from '#lib/providers/seerr/connection.server.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { jobExecution, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
+import { createRequestPlaybackCheck, requestPlaybackCandidates } from './playback-readiness.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
+type RequestState = typeof mediaRequests.$inferSelect.state;
+
+function seerrRequestState(remote: SeerrRequest): RequestState {
+  const mediaStatus = remote.is4k ? remote.media?.status4k : remote.media?.status;
+  if (remote.status === 3) return 'declined';
+  if (remote.status === 4) return 'failed';
+  if (remote.status === 5 || mediaStatus === 5) return 'available';
+  if (remote.status === 2) return mediaStatus === 3 || mediaStatus === 4 ? 'processing' : 'approved';
+  return 'pending';
+}
+
+const requestNoticeTitles: Record<RequestState, string> = {
+  pending: 'Request pending approval', approved: 'Your request was accepted', processing: 'Your request is in progress',
+  available: 'Your requested title is ready to watch', declined: 'Your request was declined',
+  failed: 'Your request could not be completed', cancelled: 'Your request was cancelled',
+};
 
 type RequestOption = ReturnType<typeof groupDestination>[number] & {
   instanceId: string;
@@ -94,7 +112,7 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
             and(
               eq(mediaRequests.mediaId, mediaId),
               eq(mediaRequests.instanceId, instance.id),
-              sql`${mediaRequests.state} in ('pending','approved','available')`
+              sql`${mediaRequests.state} in ('pending','approved','processing','available')`
             )
           ),
       ]);
@@ -262,7 +280,7 @@ export async function requestMedia(userId: string, input: unknown) {
           eq(mediaRequests.mediaId, data.mediaId),
           eq(mediaRequests.instanceId, data.instanceId),
           eq(mediaRequests.is4k, data.is4k),
-          sql`${mediaRequests.state} in ('pending','approved','available')`
+          sql`${mediaRequests.state} in ('pending','approved','processing','available')`
         )
       );
     return existing.find((r) =>
@@ -309,7 +327,7 @@ export async function requestMedia(userId: string, input: unknown) {
           eq(mediaRequests.instanceId, data.instanceId),
           eq(mediaRequests.serverId, serverId),
           eq(mediaRequests.is4k, data.is4k),
-          sql`${mediaRequests.state} in ('pending','approved','available')`
+          sql`${mediaRequests.state} in ('pending','approved','processing','available')`
         )
       );
     const remote = (destination.existing?.requests || []).filter(
@@ -392,6 +410,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
   let point:SeerrCheckpoint=saved?v.parse(seerrCheckpointSchema,saved):{task:'seerr-sync',scanId:crypto.randomUUID(),phase:'scanning',offset:0,next:0,after:null};
   const retain=async(tx:Tx,next:SeerrCheckpoint)=>{await saveJobCheckpoint(next,tx);point=next;};
   const expired=()=>!!execution&&performance.now()-execution.started>=10_000;
+  const checkPlayback = createRequestPlaybackCheck(scope);
   const {importTmdb}=await import('#lib/catalogue/service.server.js');
   while(point.phase==='scanning'){
     if(point.offset>100000)throw new Error('Seerr request sync exceeded the supported page bound.');
@@ -422,7 +441,15 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
     const remaining=page.results.slice(point.next),externalIds=remaining.map(remote=>String(remote.id));
     const known=externalIds.length?await db.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),inArray(mediaRequests.externalId,externalIds))):[];
     const knownById=new Map(known.map(request=>[request.externalId,request]));
-    type Prepared={remote:SeerrRequest;workId?:string};
+    const candidates = await requestPlaybackCandidates(scope, remaining.flatMap(remote => {
+      const request = knownById.get(String(remote.id));
+      return request && seerrRequestState(remote) === 'available' ? [{
+        requestId: remote.id, mediaId: request.mediaId, is4k: request.is4k, seasons: request.seasons,
+        previousId: request.state === 'available' ? request.playbackVerifiedSourceId : null,
+      }] : [];
+    }));
+    const sourceVersions = new Map([...candidates.values()].flatMap(rows => rows.map(row => [row.id, row] as const)));
+    type Prepared={remote:SeerrRequest;workId?:string;state:RequestState;sourceId:string|null;pendingIds:string[]};
     let pending:Prepared[]=[];
     async function commit(next:number,complete:boolean){
       await guarded(async tx=>{
@@ -431,24 +458,47 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
         // observation may have committed while metadata was being fetched.
         const current=ids.length?await tx.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),inArray(mediaRequests.externalId,ids))):[];
         const byId=new Map(current.map(request=>[request.externalId,request]));
-        const unchanged:string[]=[],insertions:typeof mediaRequests.$inferInsert[]=[],notices:{id:string;mediaId:string;remoteId:number;state:typeof mediaRequests.$inferSelect.state}[]=[];
-        for(const {remote,workId} of pending){
-          const state:typeof mediaRequests.$inferSelect.state=(remote.is4k?remote.media?.status4k:remote.media?.status)===5?'available':remote.status===2?'approved':remote.status===3?'declined':'pending';
+        const checkedIds = [...new Set(pending.flatMap(row => row.sourceId ? [row.sourceId, ...row.pendingIds] : row.pendingIds))];
+        const checked = checkedIds.length ? await tx.select({
+          id: availability.id, mediaId: availability.mediaId, verifiedAt: sql<string>`${availability.verifiedAt}::text`,
+        }).from(availability).where(and(
+          eq(availability.userId,userId),eq(availability.connectionId,scope.linkedConnectionId),eq(availability.state,'available'),
+          inArray(availability.id,checkedIds))) : [];
+        // The linked account lock also fences Jellyfin sync. Evidence from
+        // before a newer catalogue observation cannot change the request.
+        const present = new Set(checked.filter(row => {
+          const observed = sourceVersions.get(row.id);
+          return observed?.mediaId === row.mediaId && observed.verifiedAt === row.verifiedAt;
+        }).map(row => row.id));
+        const readyIds = new Set<string>(), pendingSourceIds = new Set<string>();
+        const unchanged:string[]=[],insertions:typeof mediaRequests.$inferInsert[]=[],notices:{id:string;mediaId:string;remoteId:number;state:RequestState}[]=[];
+        for(const entry of pending){
+          const {remote,workId}=entry;
           const local=byId.get(String(remote.id));
+          const sourceId=entry.sourceId && local?.mediaId===workId && present.has(entry.sourceId) ? entry.sourceId : null;
+          if (sourceId) readyIds.add(sourceId);
+          if (local?.mediaId===workId) for (const id of entry.pendingIds) if (present.has(id)) pendingSourceIds.add(id);
+          const state=entry.state==='available' && !sourceId ? 'processing' : entry.state;
           if(local){
-            if(local.state===state)unchanged.push(local.id);
+            if(local.state===state && local.playbackVerifiedSourceId===sourceId)unchanged.push(local.id);
             else{
-              await tx.update(mediaRequests).set({state,observedScanId:point.scanId,updatedAt:new Date()}).where(eq(mediaRequests.id,local.id));
-              notices.push({id:local.id,mediaId:local.mediaId,remoteId:remote.id,state});
+              await tx.update(mediaRequests).set({state,playbackVerifiedSourceId:sourceId,observedScanId:point.scanId,updatedAt:new Date()}).where(eq(mediaRequests.id,local.id));
+              if (local.state!==state) notices.push({id:local.id,mediaId:local.mediaId,remoteId:remote.id,state});
             }
           }else if(workId)insertions.push({userId,instanceId,mediaId:workId,externalId:String(remote.id),serverId:remote.serverId,is4k:remote.is4k,seasons:remote.seasons.map(season=>season.seasonNumber),state,observedScanId:point.scanId});
+        }
+        for (const [state, ids] of [['pending',[...pendingSourceIds].filter(id=>!readyIds.has(id))],['ready',[...readyIds]]] as const) {
+          if (ids.length) await tx.update(availability).set({source:sql`${availability.source} || jsonb_build_object('coastPlaybackState', ${state}::text)`})
+            .where(and(eq(availability.userId,userId),eq(availability.connectionId,scope.linkedConnectionId),inArray(availability.id,ids),
+              sql`(${availability.source}->>'coastPlaybackState') is distinct from ${state}`));
         }
         if(unchanged.length)await tx.update(mediaRequests).set({observedScanId:point.scanId}).where(inArray(mediaRequests.id,unchanged));
         if(insertions.length)await tx.insert(mediaRequests).values(insertions);
         // Notification persistence and the cursor are one commit: a resumed page
         // must never skip a status change whose notification was not stored.
-        await notifyMany(notices.map(notice=>({userId,kind:'request',title:notice.state==='available'?'Your requested title is available':`Request ${notice.state}`,
-          sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:'/requests' as const}})),tx);
+        await notifyMany(notices.map(notice=>({userId,kind:'request',title:requestNoticeTitles[notice.state],
+          body:notice.state==='processing'?'Coast will notify you when the title is ready to watch.':undefined,
+          sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state==='available'?'playable':notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:'/requests' as const}})),tx);
         await retain(tx,complete?{...point,phase:page.results.length<100?'missing':'scanning',offset:point.offset+100,next:0,after:null}:{...point,next});
         if(complete&&execution)await tx.delete(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id));
       });
@@ -456,12 +506,16 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
     }
     for(let index=point.next;index<page.results.length;index++){
       const remote=page.results[index];
-      let workId:string|undefined;
-      if(!knownById.has(String(remote.id))&&remote.media?.tmdbId){
+      const known=knownById.get(String(remote.id));
+      let workId=known?.mediaId;
+      if(!workId&&remote.media?.tmdbId){
         const kind=remote.type==='tv'||remote.media.mediaType==='tv'?'show':'movie';
         workId=(await importTmdb(kind,String(remote.media.tmdbId),{includeEpisodes:false})).id;
       }
-      pending.push({remote,workId});
+      const state=seerrRequestState(remote);
+      const proof=state==='available' ? await checkPlayback(candidates.get(remote.id) ?? [],known?.is4k ?? remote.is4k,known?.state==='available'?known.playbackVerifiedSourceId:undefined)
+        : {sourceId:null,pendingIds:[]};
+      pending.push({remote,workId,state,...proof});
       if(expired()&&index+1<page.results.length){await commit(index+1,false);await jobCheckpoint();}
     }
     await commit(page.results.length,true);
@@ -478,7 +532,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
       try{await adapter.requestDetails(Number(request.externalId));}
       catch(error){if(!(error instanceof ProviderHttpError)||error.status!==404)throw error;removed=true;}
       await guarded(async tx=>{
-        if(removed)await tx.update(mediaRequests).set({state:'cancelled',updatedAt:new Date()}).where(and(eq(mediaRequests.id,request.id),eq(mediaRequests.externalId,request.externalId!),sql`${mediaRequests.observedScanId} is not distinct from ${request.observedScanId}::uuid`));
+        if(removed)await tx.update(mediaRequests).set({state:'cancelled',playbackVerifiedSourceId:null,updatedAt:new Date()}).where(and(eq(mediaRequests.id,request.id),eq(mediaRequests.externalId,request.externalId!),sql`${mediaRequests.observedScanId} is not distinct from ${request.observedScanId}::uuid`));
         await retain(tx,{...point,after:request.id});
       });
       if(expired())await jobCheckpoint();
@@ -626,8 +680,8 @@ export async function executeSeerrManagement(action: OutboxAction, resolveAccoun
     let remoteState: typeof mediaRequests.$inferSelect.state;
     try {
       const remote = await adapter.requestDetails(Number(request.externalId));
-      remoteState = (remote.is4k?remote.media?.status4k:remote.media?.status)===5?'available'
-        :remote.status===2?'approved':remote.status===3?'declined':'pending';
+      const stage=seerrRequestState(remote);
+      remoteState = stage==='available' && !request.playbackVerifiedSourceId ? 'processing' : stage;
     } catch (error) {
       if ((error as {status?:number}).status!==404) throw error;
       remoteState='cancelled';
@@ -638,7 +692,7 @@ export async function executeSeerrManagement(action: OutboxAction, resolveAccoun
         const preference = await conflictPreference(tx,action.userId,connection.id);
         if (preference==='local') return false;
         if (preference==='remote') {
-          await tx.update(mediaRequests).set({state:remoteState,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
+          await tx.update(mediaRequests).set({state:remoteState,playbackVerifiedSourceId:remoteState==='available'?request.playbackVerifiedSourceId:null,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
           await tx.update(syncValues).set({conflict:false,agreed:{value:remoteState},remote:{value:remoteState},updatedAt:new Date()})
             .where(and(eq(syncValues.connectionId,connection.id),eq(syncValues.category,`request:${request.id}`)));
         } else {
@@ -657,6 +711,6 @@ export async function executeSeerrManagement(action: OutboxAction, resolveAccoun
     await assertSeerrAccount(tx,scope);
     await tx.update(syncValues).set({conflict:false,agreed:{value:desired},remote:{value:desired},updatedAt:new Date()})
       .where(and(eq(syncValues.connectionId,connection.id),eq(syncValues.category,`request:${request.id}`)));
-    await tx.update(mediaRequests).set({state:desired,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
+    await tx.update(mediaRequests).set({state:desired,playbackVerifiedSourceId:null,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
   });
 }

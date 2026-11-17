@@ -83,7 +83,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
       | typeof s.episodes.seasonId
       | typeof s.mediaRelationships.parentId
   ) =>
-    sql`not exists (select 1 from tracking_state parent_state where parent_state.media_id = ${id} and parent_state.user_id = ${userId} and parent_state.dropped)`;
+    sql`not exists (select 1 from tracking_state parent_state where parent_state.media_id = ${id} and parent_state.user_id = ${userId} and (parent_state.dropped or parent_state.paused))`;
   const [episodes, collections] = await Promise.all([
     db
       .select({

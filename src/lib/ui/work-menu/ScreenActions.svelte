@@ -22,6 +22,7 @@
     type MediaActionData,
   } from '#lib/media/actions.js';
   import type { RequestDestination } from '#lib/media/requests.js';
+  import { requestStatusLabel } from '#lib/library-feed.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { message, ApiError } from '#lib/ui/client.js';
   import { useClient } from '#lib/ui/client-context.js';
@@ -105,6 +106,7 @@
     (data?.targets ?? [active]).filter((target) => page.url.pathname !== `/media/${target.id}`)
   );
   const wholeWork = $derived(data?.wholeWork ?? active);
+  const trackingPaused = $derived(wholeWork.status === 'paused');
   const continuing = $derived(
     !wholeWork.dropped &&
       !!(
@@ -115,12 +117,15 @@
         (wholeWork.completedEpisodes && !wholeWork.watched)
       )
   );
+  const canPauseTracking = $derived((wholeWork.kind === 'movie' || wholeWork.kind === 'show') &&
+    !wholeWork.dropped && (trackingPaused || continuing || (wholeWork.watchlist && !wholeWork.watched)));
   const recordAgain = $derived(active.watched || active.playCount > 0);
   const isAdmin = $derived(page.data.user?.role === 'admin');
   const featureTarget=$derived(['movie','show','season','episode'].includes(active.kind)?active:null);
   const featuredHere=$derived(!!featureTarget&&page.data.featuredHeroIds?.includes(featureTarget.id));
   const isGroup = $derived(isMediaGroup(active));
   const playable = $derived(data ? data.playable : isMediaGroup(item) ? next : item);
+  const playbackPending = $derived((playable ?? active).playbackPending === true);
   const editions = $derived(data?.editions ?? []);
   const selectedEdition = $derived(
     editionName===undefined&&page.params.id === active.id
@@ -302,6 +307,7 @@
     }
   }
   async function startTarget() {
+    if (playbackPending) return;
     if ((active.kind === 'collection' || active.sequence) && active.id === item.id) {
       await sequenceControl?.start();
       return;
@@ -452,13 +458,7 @@
       disabled={busy}
       onclick={() => manageRequest(request, 'approve')}>Approve request…</Button>{/if}
   <Button item icon="arrow" href={`/requests?request=${request.id}`}
-    >View request · {request.state === 'pending'
-      ? 'Pending'
-      : request.state === 'approved'
-        ? 'Approved'
-        : request.state === 'available'
-          ? 'Available'
-          : 'Failed'}</Button>
+    >View request · {requestStatusLabel(request.state)}</Button>
   {#if request.canCancel || request.canDecline}<div
       class="menu-divider"
       role="separator"
@@ -563,7 +563,9 @@
 {/snippet}
 {#snippet content(view: View)}
   {#if view === 'root'}
-    {#if page.data.capabilities?.playback!==false && (active.available || data?.progressTargetIds.includes(active.id))}
+    {#if playbackPending}
+      <Button item icon="clock" disabled disabledReason="In your Jellyfin library. Waiting for a playable stream.">Stream pending</Button>
+    {:else if page.data.capabilities?.playback!==false && (active.available || data?.progressTargetIds.includes(active.id))}
       {@render branch(playLabel, 'play', 'play')}
     {:else}
       <Button item
@@ -592,8 +594,19 @@
       }}
     />
     <div class="menu-divider" role="separator"></div>
-    <Button item icon="list" disabled={busy || loading} onclick={toggleContinue}
-      >{continuing ? 'Remove from Continue' : 'Add to Continue'}</Button>
+    {#if !trackingPaused}
+      <Button item icon="list" disabled={busy || loading} onclick={toggleContinue}
+        >{continuing ? 'Remove from Continue' : 'Add to Continue'}</Button>
+    {/if}
+    {#if canPauseTracking}
+      <Button item icon={trackingPaused ? 'play' : 'pause'} disabled={busy || loading}
+        onclick={() => {
+          const paused = trackingPaused;
+          const mediaId = wholeWork.id;
+          void perform(() => change('tracking', {mediaId, action: paused ? 'resume' : 'pause'}),
+            paused ? 'Tracking resumed.' : 'Tracking paused.');
+        }}>{trackingPaused ? 'Resume tracking' : 'Pause tracking'}</Button>
+    {/if}
     <WorkActions section="relationships" workId={active.id} controls={relationshipControls([
       { kind: 'watchlist', value: active.watchlist, icon: 'bookmark', showCheckmark: false,
         label: active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist' },
@@ -802,6 +815,7 @@
           href={`/media/${item.id}`}
           icon="arrow">Learn more</Button
         >
+      {:else if (next ?? item).playbackPending}<span class="badge">Stream pending</span>
       {:else if (next ?? item).available && page.data.capabilities?.playback!==false}<Button
           size={hero ? "hero" : "standard"}
           icon="play"

@@ -20,6 +20,7 @@ async function adapter(path:string){return import(moduleUrl((await compile(path)
  .replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/client.js',clientUrl)
  .replaceAll('#lib/ui/resource.svelte.js',resourceUrl).replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl)
  .replaceAll('#lib/library.js',import.meta.resolve('../src/lib/library'))
+ .replaceAll('#lib/ui/progress-card-style.js',import.meta.resolve('../src/lib/ui/progress-card-style'))
  .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))));}
 const {createLibrarySource}:typeof import('../src/lib/ui/shelves/library.svelte')=await adapter('../src/lib/ui/shelves/library.svelte.ts');
 const {createCreditsSource}:typeof import('../src/lib/ui/shelves/credits.svelte')=await adapter('../src/lib/ui/shelves/credits.svelte.ts');

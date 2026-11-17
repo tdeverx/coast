@@ -5,7 +5,7 @@ test('saved rows and profile-only statuses select their own presentation', () =>
   expect(progressSurface('recommendations', false)).toBe('recommendations');
   expect(progressSurface('watching', false)).toBe('continue');
   expect(progressSurface('watching', true)).toBe('profile');
-  for (const view of ['finished', 'dropped']) expect(progressSurface(view, false)).toBe('profile');
+  for (const view of ['paused', 'finished', 'dropped']) expect(progressSurface(view, false)).toBe('profile');
   for (const profile of [false, true]) {
     expect(progressSurface('watchlist', profile)).toBe('watchlist');
     expect(progressSurface('favourites', profile)).toBe('favourites');

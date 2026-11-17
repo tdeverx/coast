@@ -498,6 +498,20 @@
       "when": 1794777011758,
       "tag": "0070_invite_plan_followup",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1794901405304,
+      "tag": "0071_paused_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1794903783355,
+      "tag": "0072_request_playback_verification",
+      "breakpoints": true
     }
   ]
 }

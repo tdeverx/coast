@@ -31,6 +31,7 @@ const code=(await compile('../src/lib/ui/shelves/progress-experiment.svelte.ts')
   .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
   .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
   .replaceAll('#lib/progress-experiment.js',import.meta.resolve('../src/lib/progress-experiment'))
+  .replaceAll('#lib/ui/progress-card-style.js',import.meta.resolve('../src/lib/ui/progress-card-style'))
   .replaceAll('#lib/ui/client-context.js',clientUrl)
   .replaceAll('#lib/ui/client.js',clientUrl)
   .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl('export const useShelfLocation=()=>({embedded:true});'))
@@ -75,6 +76,25 @@ test('Progress is lazy, requests only a row preview, and does not refetch unchan
   }finally{dispose();}
 });
 
+test('Progress gives every tab its own shape and artwork defaults',()=>{
+  const {result,dispose}=source({username:'owner',initial:content()});
+  const defaults=[
+    ['continue','fanart','thumb','episode-season-show'],
+    ['next','poster','primary','season-show-episode'],
+    ['paused','fanart','thumb','show-season-episode'],
+    ['watchlist','fanart','thumb','show-season-episode'],
+    ['favourites','fanart','thumb','show-season-episode'],
+    ['finished','poster','primary','show-season-episode'],
+  ];
+  client.setDelivery(async()=>content());
+  try{
+    for(const [view,shape,artworkStyle,artworkPriority] of defaults){
+      result.filters[0].change(view);
+      expect(result).toMatchObject({shape,artworkStyle,artworkPriority});
+    }
+  }finally{dispose();}
+});
+
 test('an authoritative SSR replacement and its content revision cause no duplicate client request',async()=>{
   let calls=0;
   client.setDelivery(async()=>{calls++;return content('unexpected');});
@@ -116,11 +136,11 @@ test('expanded requests keep full pages and never inherit preview mode',async()=
   finally{dispose();}
 });
 
-test('profile Progress adds Finished/Dropped and preserves the owner in row reads and expanded links',async()=>{
+test('profile Progress orders Paused before Finished and preserves the owner in row reads and expanded links',async()=>{
   const paths:string[]=[];client.setDelivery(async(path:string)=>{paths.push(path);return content();});
   const {result,dispose}=source({username:'profile owner'});
   try{
-    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','finished','dropped']);
+    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','paused','finished','dropped']);
     const continueKey=result.resetKey;
     result.filters[0].change('finished');await settle();
     expect(result.resetKey).not.toBe(continueKey);
@@ -128,6 +148,9 @@ test('profile Progress adds Finished/Dropped and preserves the owner in row read
     const url=new URL(paths[0],'http://fixture/');expect(url.searchParams.get('username')).toBe('profile owner');expect(url.searchParams.get('view')).toBe('finished');
     expect(new URL(result.href!,'http://fixture').searchParams.get('username')).toBe('profile owner');
     result.filters[0].change('dropped');await settle();expect(new URL(paths[2],'http://fixture').searchParams.get('view')).toBe('dropped');
+    result.filters[0].change('paused');await settle();
+    expect(new URL(paths[3],'http://fixture').searchParams.get('view')).toBe('paused');
+    expect(new URL(result.href!,'http://fixture').searchParams.get('view')).toBe('paused');
   }finally{dispose();}
 });
 
@@ -174,9 +197,9 @@ test('action-scoped Progress keeps one segment-driven format and restricts media
   expect(new URL(calls[0],'http://fixture/').searchParams.get('category')).toBe('reading');
   expect(result.controls[0].options?.map(option=>option.value)).toEqual(['all','book','comic']);
   expect(result.items.map(item=>item.id)).toEqual(['book']);
-  for(const view of ['next','watchlist','favourites']){
+  for(const [view,shape,artwork] of [['next','poster','primary'],['watchlist','fanart','thumb'],['favourites','fanart','thumb']] as const){
    result.filters[0].change(view);await settle();
-   expect(result.shape).toBe('poster');expect(result.artworkStyle).toBe('primary');
+   expect(result.shape).toBe(shape);expect(result.artworkStyle).toBe(artwork);
    expect(result.href).toContain('category=reading');
   }
  }finally{dispose();}

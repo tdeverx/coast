@@ -90,7 +90,7 @@
    notice.kind==='reaction'?`Reacted${notice.reaction?' '+notice.reaction:''} to your activity.`:
    notice.kind==='synced-invite'?'Invited you to a party.':
    notice.kind==='availability'?'A title on your watchlist is now available.':
-   notice.kind==='request'?({pending:'Your request is pending.',approved:'Approved and being prepared.',available:'Your request is ready to watch.',declined:'Your request was declined.',failed:'Your request could not be completed.'} as Record<string,string>)[notice.requestState??'']??notice.title:notice.title;
+   notice.kind==='request'?({pending:'Your request is pending.',approved:'Your request was accepted.',processing:'Waiting for a playable stream.',available:'Your request is ready to watch.',declined:'Your request was declined.',failed:'Your request could not be completed.'} as Record<string,string>)[notice.requestState??'']??notice.title:notice.title;
   const parts=[event,notice.body];
   if(notice.sessionState)parts.push(`Session ${notice.sessionState.toLowerCase()}`);
   if(notice.media&&['recommendation','availability','synced-invite'].includes(notice.kind))parts.push(availability(notice));

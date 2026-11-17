@@ -44,6 +44,7 @@ const resolve:Record<string,string>={
   '../db/read-cancellation':import.meta.resolve('../src/lib/server/db/read-cancellation'),
   '../experimental':import.meta.resolve('../src/lib/server/experimental'),
   './media':import.meta.resolve('../src/lib/server/queries/media'),
+  './paused-progress':import.meta.resolve('../src/lib/server/queries/paused-progress'),
   './viewing-recency':import.meta.resolve('../src/lib/server/queries/viewing-recency'),
   '#lib/core/tracking/rewatch.server.js':import.meta.resolve('../src/lib/core/tracking/rewatch.server'),
   './pagination':import.meta.resolve('../src/lib/server/queries/pagination'),

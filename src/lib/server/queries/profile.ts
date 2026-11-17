@@ -530,7 +530,7 @@ export async function profileProgress(
     .offset((page - 1) * PAGE_SIZE);
   const hasMore = page < pages;
   const views = new Map(
-    (await mediaViews(userId, { ids: rows.map((row) => row.id), limit: PAGE_SIZE }, viewerId)).map(
+    (await mediaViews(userId, { ids: rows.map((row) => row.id), limit: PAGE_SIZE, progressPresentation: selected === 'watched' ? 'saved' : undefined }, viewerId)).map(
       (item) => [item.id, item]
     )
   );
@@ -571,8 +571,10 @@ export async function profileProgress(
   for (const id of showIds) {
     const item = views.get(id)!;
     if (item.rewatchStartedAt) {
-      item.captionTitle = item.title;
-      item.captionSubtitle = `Rewatching · ${item.completedEpisodes} / ${item.totalEpisodes} aired`;
+      if (selected !== 'watched') {
+        item.captionTitle = item.title;
+        item.captionSubtitle = `Rewatching · ${item.completedEpisodes} / ${item.totalEpisodes} aired`;
+      }
       continue;
     }
     const count = countById.get(id) ?? {total:0, completed:0, partial:0, fraction:0};
@@ -583,8 +585,8 @@ export async function profileProgress(
       trackingProgress: { unit: 'percent', value: count.fraction * 100 },
       status:
         selected === 'dropped' ? 'dropped' : selected === 'watched' ? 'completed' : 'in-progress',
-      captionTitle: item.title,
-      captionSubtitle: `${count.completed} / ${count.total} aired${count.partial ? ` · ${count.partial} started` : ''}`,
+      ...(selected !== 'watched' ? {captionTitle: item.title,
+        captionSubtitle: `${count.completed} / ${count.total} aired${count.partial ? ` · ${count.partial} started` : ''}`} : {}),
     });
   }
   return {

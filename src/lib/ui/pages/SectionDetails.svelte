@@ -32,7 +32,7 @@
 </script>
 <div class="content section-page">
  {#if source}<Shelf {source} hideEmpty={false} />
- {:else if selection?.section==='favourites'}<Shelf title="Favourites" layout="grid" items={resource.data.items} availability={false} hideEmpty={false} busy={!resource.ready||resource.busy} error={resource.error} retry={()=>void load()} onactivate={()=>void load()} hasMore={resource.data.page<resource.data.pages} onend={()=>void load(resource.data.page+1,true)}>
+ {:else if selection?.section==='favourites'}<Shelf title="Favourites" layout="grid" styleSegment={kind} items={resource.data.items} availability={false} hideEmpty={false} busy={!resource.ready||resource.busy} error={resource.error} retry={()=>void load()} onactivate={()=>void load()} hasMore={resource.data.page<resource.data.pages} onend={()=>void load(resource.data.page+1,true)}>
   {#snippet segments(style)}<SegmentedControl {...style} label="Favourite media type" value={kind} options={mediaTypeOptions({...page.data,features:page.data.capabilities})} onchange={value=>{kind=value;void load();}} />{/snippet}
  </Shelf>
  {:else if selection}<Shelf title="Activity, in perspective" size="panel" layout="grid" itemCount={resource.ready?panels.length+1:0} artworkOptions={false} hideEmpty={false} busy={!resource.ready||resource.busy} error={resource.error} retry={()=>void load()} onactivate={()=>void load()}>

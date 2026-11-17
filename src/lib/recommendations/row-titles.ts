@@ -5,60 +5,40 @@ import { getProviderGenre } from './row-catalog';
 export const genreTitlePatterns:Record<GenreReason,readonly string[]> = {
   liked: [
     '{Genre} {items} you might love',
-    'You might like these {genre} {items}',
-    '{Genre} {items} that might interest you',
+    '{Genre} {items} you might like',
     'Because you enjoy {genre} {items}',
-    'More {genre} {items} for you',
-    'Find a new favourite among these {genre} {items}',
-    'A few more {genre} {items} to try',
-    'Your next discovery in {genre} {items}',
+    'More {genre} {items}',
   ],
   watched: [
-    'More {genre} {items} to explore',
+    'More {genre} {items}',
     'Keep exploring {genre} {items}',
-    'You might like more of these {genre} {items}',
-    '{Genre} {items} worth a look',
-    'Something else in {genre} {items}',
-    'A few more {genre} {items} for you',
+    '{Genre} {items} to discover',
   ],
   saved: [
     'Explore {genre} {items}',
-    '{Genre} {items} that might interest you',
-    'You might like these {genre} {items}',
-    'Take a look at these {genre} {items}',
-    'Discover more {genre} {items}',
-    'A few {genre} {items} to consider',
+    'Discover {genre} {items}',
+    '{Genre} {items} you might like',
   ],
   explore: [
-    'A new direction in {items}: {genre}',
     'Something different: {genre} {items}',
-    'Explore a different side of {items}: {genre}',
-    'A change of pace with {genre} {items}',
+    'A change of pace: {genre} {items}',
     '{Genre} {items} beyond your usual picks',
-    'A little outside your usual {items}: {genre}',
   ],
 };
 export const relatedTitlePatterns:Record<Exclude<GenreReason,'explore'>,readonly string[]> = {
   liked: [
     'More like {title}',
     'Because you liked {title}',
-    'If you enjoyed {title}, try these',
     'For fans of {title}',
-    'You might also like these after {title}',
   ],
   watched: [
     'More like {title}',
-    'Something else like {title}',
-    'More to explore after {title}',
-    'If you enjoyed {title}, try these',
-    'Take a look beyond {title}',
+    'Similar to {title}',
+    'After {title}',
   ],
   saved: [
     'More like {title}',
-    'Something similar to {title}',
-    'Explore more like {title}',
-    'If {title} caught your eye, try these',
-    'A few more ideas alongside {title}',
+    'Similar to {title}',
   ],
 };
 const popularTitlePatterns = [
@@ -68,10 +48,8 @@ const popularTitlePatterns = [
 ] as const;
 const recommendationTitlePatterns = [
   '{Items} you might like',
-  '{Items} picked for you',
+  'Recommended {items}',
   '{Items} worth discovering',
-  'Find your next favourite among these {items}',
-  'A few {items} that might interest you',
 ] as const;
 
 function choose(patterns:readonly string[],seed:string,key:string) {

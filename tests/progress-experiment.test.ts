@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import * as v from 'valibot';
-import {progressExperimentSchema,progressExperimentTabs} from '../src/lib/progress-experiment';
+import {profileProgressExperimentTabs,progressExperimentSchema,progressExperimentTabs} from '../src/lib/progress-experiment';
 import {mixedCardStyle,cardAspectRatio} from '../src/lib/ui/mixed-card';
 import {planEpisodeContinuations} from '../src/lib/server/queries/continuations';
 import {sectionTarget} from '../src/lib/ui/section-target';
@@ -27,6 +27,8 @@ test('mixed destinations preserve segment/filter selections and reject invalid f
   expect(sectionTarget('/progress-experiment?view=later',url)).toBeNull();
   expect(sectionTarget('/progress-experiment?view=finished&kind=comic&username=another-user',url)).toMatchObject({source:{type:'progress-experiment',username:'another-user',filters:{view:'finished',kind:'comic'}}});
   expect(v.safeParse(progressExperimentSchema,{view:'dropped'}).success).toBe(true);
+  expect(profileProgressExperimentTabs.slice(1,4).map(tab=>tab.label)).toEqual(['Next','Paused','Finished']);
+  expect(sectionTarget('/progress-experiment?view=paused',url)).toMatchObject({source:{type:'progress-experiment',filters:{view:'paused'}}});
   expect(v.safeParse(progressExperimentSchema,{view:'watchlist',page:0}).success).toBe(false);
   expect(progressExperimentTabs.find(tab=>tab.value==='watchlist')?.label).toBe('Later');
   for(const kind of ['album','track'])expect(v.safeParse(progressExperimentSchema,{kind}).success).toBe(false);

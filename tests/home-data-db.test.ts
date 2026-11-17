@@ -61,7 +61,8 @@ run('a saved season and continuing episodes select their show while the shelf re
   expect(home.heroes[0]?.id).toBe(heroTitleIds(progress.items)[0]);
   expect(home.heroes[0]?.id).toBe(show);
   expect(progress.items[0].id).toBe(episodes[1]);
-  expect(progress.items[0].captionTitle).toBe('Hero show');
+  expect(progress.items[0].captionTitle ?? progress.items[0].title).toBe('Episode 2');
+  expect(progress.items[0].captionSubtitle).toBe('Hero show');
 });
 
 run('saved selection keeps the latest 300 states and older unfinished states without expanding untouched history', async () => {

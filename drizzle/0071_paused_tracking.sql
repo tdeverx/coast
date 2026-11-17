@@ -1,0 +1,2 @@
+ALTER TABLE "tracking_state" ADD COLUMN "paused" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE INDEX "tracking_state_paused_idx" ON "tracking_state" USING btree ("user_id","updated_at") WHERE "tracking_state"."paused";

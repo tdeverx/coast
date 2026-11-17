@@ -22,6 +22,7 @@ const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta
 const navigationUrl=moduleUrl('export const goto=async()=>{};');
 const routeUrl=moduleUrl('export const page={data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},experimentalMusic:false,experimentalGaming:false},state:{}};');
 const code=(await compile('../src/lib/ui/shelves/progress.svelte.ts'))
+  .replaceAll('#lib/ui/progress-card-style.js',import.meta.resolve('../src/lib/ui/progress-card-style'))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
  .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental'))
  .replaceAll('#lib/progress.js',import.meta.resolve('../src/lib/progress'))

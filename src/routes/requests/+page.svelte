@@ -1,6 +1,6 @@
 <script lang="ts">
   import { reportFailure } from '#lib/ui/client-context.js';
-  import { displayLabel } from '#lib/ui/labels.js';
+  import { requestStatusLabel } from '#lib/library-feed.js';
   import Heading from '#lib/ui/components/Heading.svelte';
   import { change, message } from '#lib/ui/client.js';
   import Shelf from '#lib/ui/components/Shelf.svelte';
@@ -46,7 +46,7 @@
       {#snippet details(item)}{@const request = requestById.get(item.entryId!)!}
         <div class="request-details stack">
           <span class="badge" class:available={request.state === 'available'}
-            >{request.state === 'pending' ? 'Pending approval' : displayLabel(request.state)}</span
+            >{request.state === 'pending' ? 'Pending approval' : requestStatusLabel(request.state)}</span
           >
           <p class="small">
             {request.destination}{request.is4k ? ' · 4K' : ''}{request.seasons.length

@@ -5,7 +5,7 @@ import * as v from 'valibot';
 import type {ShelfConfig} from './shelves';
 import {recommendationSectionSource} from '#lib/recommendations/section.js';
 import type {DynamicMedium} from '#lib/recommendations/model.js';
-import type {ProgressOptions} from '#lib/progress.js';
+import {progressSurface,type ProgressOptions} from '#lib/progress.js';
 import {validPageInterval} from '#lib/page-window.js';
 import {activityFiltersSchema} from '#lib/social/model.js';
 /** Only linked row destinations; ordinary navigation to these pages stays unchanged. */
@@ -20,10 +20,10 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   if(!filters.success)return null;
   source={type:'progress-experiment',layout:'grid',category:filters.output.category,filters:filters.output,username:get('username')||undefined};
  }else if(url.pathname==='/progress'){
-  const view=get('view','watching');if(!['watching','up-next','next','recommendations','watchlist','favourites','finished','dropped'].includes(view))return null;
+  const view=get('view','watching');if(!['watching','up-next','next','recommendations','watchlist','favourites','paused','finished','dropped'].includes(view))return null;
   const category=get('category','screen'),kind=get('kind','all'),scope=get('scope','all');
   if(!['screen','game','music','reading'].includes(category)||!['all','movie','show','book','comic'].includes(kind)||!['all','available'].includes(scope))return null;
-  source={type:'progress',layout:'grid',actionScoped:get('scoped')==='true',category:get('scoped')==='true'?category as ProgressOptions['category']:undefined,surface:['next','recommendations','watchlist','favourites'].includes(view)?view as 'next'|'recommendations'|'watchlist'|'favourites':p.has('username')||['finished','dropped'].includes(view)?'profile':'continue',username:get('username')||undefined,mediums:!p.has('username')&&get('scoped')!=='true',filters:{view,category,kind,scope,page:1} as ProgressOptions};
+  source={type:'progress',layout:'grid',actionScoped:get('scoped')==='true',category:get('scoped')==='true'?category as ProgressOptions['category']:undefined,surface:progressSurface(view,p.has('username')),username:get('username')||undefined,mediums:!p.has('username')&&get('scoped')!=='true',filters:{view,category,kind,scope,page:1} as ProgressOptions};
  }else if(['/library','/music','/games'].includes(url.pathname)){
   const surface=url.pathname==='/music'?'listen':url.pathname==='/games'?'play':get('view','watch');
   if(!['watch','listen','play','read'].includes(surface))return null;
@@ -39,7 +39,7 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   const section=get('section'),category=action?actionCategories[action]:get('category','screen');
   if(!['screen','game','music','reading'].includes(category))return null;
   if(section==='recent'&&['all','movie','show','music','game','book','comic'].includes(get('kind',action?'all':'movie')))source={type:'library-feed',feature:'recent',action,layout:'grid',kind:get('kind',action?'all':'movie')};
-  else if(section==='requests'&&(!action||action==='watch')&&['all','movie','show'].includes(get('kind','all'))&&['available','pending','approved','declined'].includes(get('state','available')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','available')};
+  else if(section==='requests'&&(!action||action==='watch')&&['all','movie','show'].includes(get('kind','all'))&&['available','pending','approved','processing','declined'].includes(get('state','available')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','available')};
   else if(['activity','popular'].includes(section)){
    const filters=v.safeParse(activityFiltersSchema,{...Object.fromEntries(p),audience:get('audience','friends')});if(section==='activity'&&!filters.success)return null;
    source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:!action,layout:'grid',...(section==='activity'&&filters.success?filters.output:{})};

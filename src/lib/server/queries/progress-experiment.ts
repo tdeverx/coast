@@ -17,6 +17,7 @@ import {pagination, PAGE_SIZE} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
 import {withReadCancellation} from '../db/read-cancellation';
 import {libraryTrackingCondition} from './library';
+import {pausedProgressPage} from './paused-progress';
 
 /** Shared Progress row: select eligible IDs across enabled media before hydrating one page. */
 export async function progressExperimentData(userId:string, raw:unknown, {preview=false,signal,viewerId=userId}:{preview?:boolean;signal?:AbortSignal;viewerId?:string}={}):Promise<ProgressExperimentContent> {
@@ -24,7 +25,9 @@ export async function progressExperimentData(userId:string, raw:unknown, {previe
 }
 async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,viewerId}:{preview:boolean;signal?:AbortSignal;viewerId:string}):Promise<ProgressExperimentContent>{
   signal?.throwIfAborted();
-  const options=v.parse(progressExperimentSchema,raw),config=await getFeatureConfig(viewerId);
+  const options=v.parse(progressExperimentSchema,raw);
+  if(options.view==='paused')return {...options,...await pausedProgressPage(userId,viewerId,options,preview,signal)};
+  const config=await getFeatureConfig(viewerId);
   signal?.throwIfAborted();
   const saved=options.view==='watchlist'||options.view==='favourites';
   const history=options.view==='finished'||options.view==='dropped';
@@ -79,7 +82,8 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
         ${history?sql`(select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=${s.works.id})`:sql`null::timestamptz`}
       ) desc nulls last`,s.works.id).limit(pageSize).offset((page-1)*pageSize);
   signal?.throwIfAborted();
-  let items=await workCards(userId,viewerId,visible.map(row=>row.id),!saved);
+  const presentation = options.view==='continue' || options.view==='next' ? options.view : options.view==='dropped' ? undefined : 'saved';
+  let items=await workCards(userId,viewerId,visible.map(row=>row.id),!saved,presentation);
   signal?.throwIfAborted();
   const readingIds=items.filter(item=>item.kind==='book'||item.kind==='comic').map(item=>item.id);
   if(readingIds.length){

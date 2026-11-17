@@ -3,7 +3,7 @@ import type { MediaView, MediaCardPresentation } from './ui/types';
 
 export const progressOptionsSchema = v.object({
   view: v.optional(
-    v.picklist(['watching', 'up-next', 'next', 'recommendations', 'watchlist', 'favourites', 'finished', 'dropped']),
+    v.picklist(['watching', 'up-next', 'next', 'recommendations', 'watchlist', 'favourites', 'paused', 'finished', 'dropped']),
     'watching'
   ),
   category: v.optional(v.picklist(['screen', 'game', 'music', 'reading']), 'screen'),
@@ -21,6 +21,7 @@ export type ProgressContent = ProgressOptions & {
 export const progressTabs = [
   { value: 'watching', label: 'Watching' },
   { value: 'up-next', label: 'Next' },
+  { value: 'paused', label: 'Paused' },
   { value: 'watchlist', label: 'Watchlist' },
   { value: 'favourites', label: 'Favourites' },
   { value: 'finished', label: 'Finished' },
@@ -31,7 +32,7 @@ export function progressSurface(view: string, profile: boolean): ProgressSurface
   if (view === 'recommendations') return 'recommendations';
   if (view === 'next') return 'next';
   if (view === 'watchlist' || view === 'favourites') return view;
-  return profile || view === 'finished' || view === 'dropped' ? 'profile' : 'continue';
+  return profile || view === 'paused' || view === 'finished' || view === 'dropped' ? 'profile' : 'continue';
 }
 export const progressTitles: Record<ProgressSurface, string> = {
   continue: 'Continue',

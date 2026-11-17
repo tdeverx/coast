@@ -9,6 +9,7 @@ import {createResource, uniqueItems} from '#lib/ui/resource.svelte.js';
 import {contentRevisionKey} from '#lib/ui/content-revision.svelte.js';
 import {categoryEnabled} from '#lib/experimental.js';
 import {mediaTypeOptions} from '#lib/ui/filter-options.js';
+import {progressCardStyle} from '#lib/ui/progress-card-style.js';
 import type {ShelfSource, ShelfControl} from './types';
 
 export type ProgressExperimentSourceOptions={category?:'screen'|'game'|'reading';type:'progress-experiment';username?:string;layout?:'row'|'grid';initial?:ProgressExperimentContent;filters?:ProgressExperimentOptions};
@@ -22,6 +23,7 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   let preferences=$state<Record<string,Filters>>(Object.fromEntries([...progressExperimentTabs,...profileProgressExperimentTabs].map(tab=>[tab.value,{kind:'all',scope:'all'}])));
   untrack(()=>{const filters=get().filters??initial;if(filters)preferences[view]={kind:filters.kind,scope:filters.scope};});
   const current=$derived(preferences[view]);
+  const style=$derived(progressCardStyle(view));
   const resource=createResource<ProgressExperimentContent>(untrack(()=>initial??{view,kind:'all',scope:'all',items:[],total:0,page:1,pages:1}),!!untrack(()=>initial));
   const ownerKey=$derived(JSON.stringify([page.data.user?.id,get().username,scopedCategory]));
   let loadedOwner=$state(untrack(()=>ownerKey));
@@ -78,8 +80,9 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
     get busy(){return resource.busy;},get ready(){return resource.ready;},get error(){return resource.error;},
     get activated(){return resource.activated;},
     get href(){return layout==='row'?href():undefined;},
-    get shape(){return view==='continue'?'fanart' as const:'poster' as const;},
-    get artworkStyle(){return view==='continue'?'thumb' as const:'primary' as const;},
+    get shape(){return style?.shape??'poster';},
+    get artworkStyle(){return style?.artworkStyle??'primary';},
+    get artworkPriority(){return style?.artworkPriority;},
     get resetKey(){return JSON.stringify([ownerKey,view,current.kind,current.scope]);},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:false,controls:layout==='grid'?'both' as const:'none' as const};},
     get filters():ShelfControl[]{return [

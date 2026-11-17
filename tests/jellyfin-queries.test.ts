@@ -19,6 +19,17 @@ test('shared screen metadata omits discarded sources while user access keeps sou
   expect(fields[1]).toContain('MediaSources');
 });
 
+test('Jellyfin catalogue observations distinguish omitted sources from an explicit empty source list',async()=>{
+  const adapter=new JellyfinAdapter(async()=>({Items:[
+    {Id:'a'.repeat(32),Type:'Movie'},
+    {Id:'b'.repeat(32),Type:'Movie',MediaSources:[]},
+    {Id:'c'.repeat(32),Type:'Movie',MediaSources:[{Id:'source',MediaStreams:[]}]},
+  ],TotalRecordCount:3}),'device');
+  const {items}=await adapter.library('user',0,undefined,'user');
+  expect(items.map(item=>item.emptyPlaybackSources)).toEqual([undefined,true,undefined]);
+  expect(items[2].sources[0].raw.MediaStreams).toEqual([]);
+});
+
 test('authenticated rich screen hydration is bounded, deduplicated and preserves omitted items',async()=>{
   const ids=Array.from({length:102},(_,n)=>n.toString(16).padStart(32,'0'));
   const lengths:number[]=[];

@@ -90,6 +90,7 @@ export interface MediaView {
   status?: Lifecycle | null;
   trackingProgress?: Progress;
   canOpen?: boolean;
+  playbackPending?: boolean;
   queued?: boolean;
   available: boolean;
   availableSources?: string[];

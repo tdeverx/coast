@@ -153,7 +153,7 @@
     )
   );
   const primaryAction = $derived(
-    page.data.capabilities?.playback===false && !['game','book','comic'].includes(item.kind) || page.data.capabilities?.reader===false && ['book','comic'].includes(item.kind) ? 'open' : trackedItem
+    trackedItem?.playbackPending || page.data.capabilities?.playback===false && !['game','book','comic'].includes(item.kind) || page.data.capabilities?.reader===false && ['book','comic'].includes(item.kind) ? 'open' : trackedItem
       ? primaryMediaAction({
           category: trackedItem.category ?? 'screen',
           canOpen: trackedItem.canOpen ?? trackedItem.available,
@@ -284,6 +284,7 @@
         class="play glass icon-button"
         use:liquidGlass={{ enabled: active }}
         aria-label={primaryMenu?`Actions for ${item.title}`:`${primaryLabel} ${item.title}`}
+        title={trackedItem?.playbackPending && !primaryMenu ? 'Stream pending · Open details' : undefined}
         aria-haspopup={primaryMenu?'menu':undefined}
         onclick={activate}
         ><Icon
