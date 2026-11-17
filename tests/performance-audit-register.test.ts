@@ -16,9 +16,10 @@ import menuTrackingSourceRefresh from '../docs/audits/2026-11-17-menu-tracking/s
 import menuRolloutSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/source-refresh.json';
 import menuRolloutFollowupSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json';
 import menuPlaybackEligibilitySourceRefresh from '../docs/audits/2026-11-17-menu-rollout/playback-eligibility-source-refresh.json';
+import menuResolvedArtistSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/resolved-artist-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -27,6 +28,20 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('resolved artist eligibility advances its own immutable review receipt', async () => {
+  expect(menuResolvedArtistSourceRefresh.epoch).toBe('menu-resolved-artist-review-2026-11-17');
+  expect(menuResolvedArtistSourceRefresh.blanketAcceptance).toBe(false);
+  for(const [path,pin] of Object.entries(menuResolvedArtistSourceRefresh.files))
+    await expectCurrentSource(path,pin.current,'Review the prepared artist identity eligibility correction.');
+  const supportingFiles: Readonly<Record<string,string>> = menuResolvedArtistSourceRefresh.supportingFiles;
+  for(const [path,hash] of Object.entries(supportingFiles))
+    await expectCurrentSource(path,hash,'Review the prepared artist regression evidence.');
+  const report=await Bun.file(menuResolvedArtistSourceRefresh.report).text();
+  expect(report).toContain('295c703');
+  expect(report).toContain('resolved workId');
+  expect(report).toContain('zero additional reads');
+});
 
 test('PR eligibility and bootstrap corrections advance exact pins without rewriting published evidence', async () => {
   expect(menuPlaybackEligibilitySourceRefresh.epoch).toBe('menu-playback-eligibility-review-2026-11-17');

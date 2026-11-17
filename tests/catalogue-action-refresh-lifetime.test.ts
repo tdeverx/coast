@@ -158,3 +158,12 @@ test('catalogue music start shares card eligibility for omitted, false and artis
   finally{owner.dispose();dispose();}
  }
 });
+
+test('prepared artist identity enables the existing source menu and dispatches its canonical ID without more reads',async()=>{
+ const create=await factory('music');let owner:any,reads=0;
+ const dispose=runtime.effect_root(()=>owner=create(async()=>{reads++;throw Error('Prepared artist playback must reuse its canonical identity.');},async()=>({}),undefined,{id:'provider-artist',connectionId:'source',kind:'artist',available:true,title:'Artist',href:'#'}));
+ try{
+  runtime.flush();expect(owner.canPlay()).toBe(false);owner.swapTarget('prepared-artist');runtime.flush();
+  expect(owner.canPlay()).toBe(true);await owner.start();expect(owner.plays).toEqual([['artist','prepared-artist',false]]);expect(reads).toBe(0);
+ }finally{owner.dispose();dispose();}
+});

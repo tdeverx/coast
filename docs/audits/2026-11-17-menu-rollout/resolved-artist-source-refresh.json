@@ -1,0 +1,36 @@
+{
+  "epoch": "menu-resolved-artist-review-2026-11-17",
+  "blanketAcceptance": false,
+  "predecessorReceipts": [
+    "docs/audits/2026-11-15-invite-accounts/source-refresh.json",
+    "docs/audits/2026-11-15-invite-accounts/followup-source-refresh.json",
+    "docs/audits/2026-11-15-app-housekeeping/source-refresh.json",
+    "docs/audits/2026-11-16-recommendation-feeds/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/viewport-source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/followup-source-refresh.json",
+    "docs/audits/2026-11-17-menu-read-retry/source-refresh.json",
+    "docs/audits/2026-11-17-menu-tracking/source-refresh.json",
+    "docs/audits/2026-11-17-menu-rollout/source-refresh.json",
+    "docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json",
+    "docs/audits/2026-11-17-menu-rollout/playback-eligibility-source-refresh.json"
+  ],
+  "files": {
+    "src/lib/ui/work-menu/CatalogueActions.svelte": {
+      "previous": "29f7fffb384c9887d98b241fd53ea343c381cee47852a33bc6ed8a22dc2d4af8",
+      "current": "c80b89a97e744072b2f21a8a881f95d5edb85b959abdff81a3721597268483d1"
+    },
+    "tests/catalogue-action-refresh-lifetime.test.ts": {
+      "previous": "3ccda7e31cc0a5e964d98f00778fa518edc0a28bf0ce0b86ed0aa15b068b008f",
+      "current": "4d24376802a1cfd1fb92fe1a798c1f542959bf35bdbb1b01d7973a2bcec3818d"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "4d66e118f74b37c7eadef66ec1b642103ba741a207c9b05d07b41a621c61accd",
+      "current": "37961991fb71d7513a0f1e3f1852f4e7e4b7611f01ca386e1e79ffbfc02fe2d0"
+    }
+  },
+  "supportingFiles": {},
+  "report": "docs/audits/2026-11-17-menu-rollout/resolved-artist.md",
+  "reportSha256": "218b489ee9133ec4e6d5ce085ee47d51f39d1236f58657758dbdefa915498500"
+}
