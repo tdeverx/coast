@@ -1,4 +1,5 @@
 import type { MediaView } from '../ui/types';
+import type { ActiveCheckin } from '#lib/social/checkins.js';
 
 export const isMediaGroup = (item: Pick<MediaView, 'kind'>) =>
   ['show', 'season', 'collection'].includes(item.kind);
@@ -13,6 +14,8 @@ export type MediaActionData = {
   hasReleaseDate: boolean;
   progressTargetIds: string[];
   hasPersonalOverrides: boolean;
+  activeCheckinId: string | null;
+  activeCheckin?: ActiveCheckin | null;
   ownRewatchStartedAt: string | null;
   rewatchTargetIds: string[];
   targets: MediaView[];

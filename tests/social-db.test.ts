@@ -4,7 +4,7 @@ import {getSql} from '../src/lib/server/db';
 import {friends,requestFriend,changeFriend,react,recommend,recommendations,respondRecommendation} from '../src/lib/social/service.server';
 import {activityFeed,workSocial,reactionSummary} from '../src/lib/social/queries.server';
 import {canView} from '../src/lib/social/privacy.server';
-import {startCheckin,cancelCheckin,completeCheckin} from '../src/lib/social/presence.server';
+import {startCheckin,cancelCheckin,finishCheckin,completeCheckin} from '../src/lib/social/presence.server';
 import {friendInsights} from '../src/lib/social/insights.server';
 import {reconcileProviderValue} from '../src/lib/sync/values.server';
 import {track} from '../src/lib/core/tracking/service.server';
@@ -115,7 +115,11 @@ run('check-in uses an accessible Jellyfin file duration before falling back to t
   }
   await db`update media set runtime_minutes=null where id=${show}`;
   await db`update provider_connections set status='disconnected' where id=${connection}`;
-  await expect(startCheckin(ids[2],{workId:episode})).rejects.toMatchObject({status:400});
+  const manual=await startCheckin(ids[2],{workId:episode});
+  expect(manual.mode).toBe('manual');
+  await finishCheckin(ids[2],manual.id);
+  expect(await db`select id from social_activity where user_id=${ids[2]} and work_id=${episode} and event_kind='checkin'`).toHaveLength(1);
+  expect(await db`select id from tracking_events where user_id=${ids[2]} and media_id=${episode} and action='watch'`).toHaveLength(0);
  } finally {
   await db`delete from social_checkins where work_id=${episode}`;
   await db`delete from provider_instances where id=${instance}`;

@@ -32,6 +32,7 @@ export function createDetailSource(get:()=>DetailSourceOptions):ShelfSource{
  $effect(()=>{const selected=local;untrack(()=>{if(selected===wasLocal)return;wasLocal=selected;if(selected)resource.cancel();else if(dirty||!resource.ready||resource.error)void load();});});
  onDestroy(resource.dispose);
  return {
+  get filterReset(){return get().availability?{disabled:!available,run:()=>{available=false;}}:undefined;},
   get title(){return resource.data.title??get().title;},get href(){
    const href=get().layout==='grid'?undefined:get().href??resource.data.href;
    if(!href||!get().availability)return href;
@@ -41,7 +42,7 @@ export function createDetailSource(get:()=>DetailSourceOptions):ShelfSource{
   get ready(){return local||resource.ready&&resource.activated&&!dirty;},get activated(){return local||resource.activated;},
   get shape(){return get().shape??'poster';},get mediaKind(){return get().mediaKind;},
   get resetKey(){return get().anchor?`${scope}:${local}`:get().path;},
-  get filters(){return get().availability?[{type:'availability' as const,label:'Available to play only',value:available?'available':'all',change:(value:string)=>{available=value==='available';}}]:[];},controls:[],
+  get filters(){return get().availability?[{type:'availability' as const,label:`Available to ${get().mediaKind==='music'?'listen':get().mediaKind==='reading'?'read':'watch'} only`,value:available?'available':'all',change:(value:string)=>{available=value==='available';}}]:[];},controls:[],
   get initialItemId(){return get().anchor&&!local?resource.data.focusId:undefined;},
   get pagination(){return local?{kind:'local' as const}:{kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,firstPage,append:get().layout!=='grid',controls:get().layout==='grid'?'both' as const:'none' as const};},
   get empty(){return 'No items in this selection.';},load,

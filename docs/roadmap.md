@@ -34,6 +34,8 @@ Playback Stop semantics are selected and implemented: close immediately, wait fo
 
 ## Acceptance and reliability
 
+- After the menu rollout, investigate shared material repaint artifacts using a temporary Clear material built and tested one layer at a time. Hovering adjacent Customiser checkboxes or bottom segments can leave sharp rectangular backdrop patches. SVG bypass, border-blend and isolation comparisons did not resolve it; a separate backdrop-plane experiment also failed once glass was restored. All material experiments were reverted at the user's request. Preserve existing materials until the cause and a working fix are verified.
+
 - Real-account provider/social acceptance: Jellyfin video, audio and reading access; Trakt linking, history and live activity; Steam ownership/achievements; Seerr requests, cancellations and partial-season updates. Exercise reconnects/account switching, genuine sync conflicts, privacy and taste results with intentional accounts.
 - Validate shared-library onboarding, companion updates and queue recovery under real multi-account load. Measure import throughput, memory and interactive latency; synthetic cache/staging tests do not establish production speed. See [provider job verification limits](audits/2026-10-07-provider-jobs.md).
 - Validate playback on physical desktop/mobile devices and multiple party clients, including codecs, autoplay, source transitions, drift, reconnects and HLS outages. Extend representative accessibility checks to real assistive technology.

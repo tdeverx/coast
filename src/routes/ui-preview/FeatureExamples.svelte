@@ -3,6 +3,7 @@
   const delivery=useClient().feedback;
   import { providePreviewPlayback } from '#lib/playback/context.svelte.js';
   import Avatar from '#lib/ui/components/Avatar.svelte';
+  import ProfileBackgroundMenu from '#lib/ui/components/ProfileBackgroundMenu.svelte';
   import Header from '#lib/ui/components/Header.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
   import Shelf from '#lib/ui/components/Shelf.svelte';
@@ -55,7 +56,7 @@
         <div class="profile-heading">
           <div class="avatar"><Avatar name={displayName} src={scenario === 'no-art' ? null : '/coast-mark.png'} label={`${displayName}'s avatar`} class="profile-icon" size={104} /></div>
           <div class="identity"><p class="eyebrow">{scenario === 'self' ? 'Your profile' : 'Profile'}</p><h1>{displayName}</h1><p class="handle">@preview</p><p class="bio">{scenario === 'long' ? 'A fictional biography with room for favourite stories, music and games. '.repeat(8) : scenario === 'self' ? 'Your life in stories.' : 'A life in stories.'}</p>
-            {#if scenario === 'self'}<div class="row actions"><Button size="hero" onclick={() => delivery.notify('Preview edit requested. No profile is changed.')}>Edit profile</Button><Button menu text="Background" label="Profile background"><Button item selection="radio" checked={backgroundMode === 'activity'} onclick={() => backgroundMode = 'activity'}>Last activity</Button><Button item selection="radio" checked={backgroundMode !== 'activity'} onclick={() => backgroundMode = 'fixed'}>Selected title</Button></Button><Button emphasis="subtle" onclick={() => delivery.notify('Preview clear requested.')}>Clear background</Button>{#if background}<Button emphasis="subtle" onclick={() => positioning = !positioning}>Position background</Button>{/if}</div>{/if}
+            {#if scenario === 'self'}<div class="row actions"><Button size="hero" onclick={() => delivery.notify('Preview edit requested. No profile is changed.')}>Edit profile</Button><ProfileBackgroundMenu mode={backgroundMode==='activity'?'activity':'fixed'} change={mode=>backgroundMode=mode} /><Button emphasis="subtle" onclick={() => delivery.notify('Preview clear requested.')}>Clear background</Button>{#if background}<Button emphasis="subtle" onclick={() => positioning = !positioning}>Position background</Button>{/if}</div>{/if}
             {#if positioning}<div class="position-controls"><label>Vertical position<input type="range" min="0" max="100" bind:value={position} /></label><Button emphasis="subtle" onclick={() => { positioning = false; delivery.notify('Preview position selected.'); }}>Save position</Button><Button emphasis="subtle" onclick={() => positioning = false}>Cancel</Button></div>{/if}
           </div>
         </div>
@@ -86,7 +87,7 @@
   {:else if name === 'planning.action'}
     <Button onclick={() => opened = true}>Open planning dialog</Button><PlanAction workId={id} title={movie.title} partyAllowed bind:open={opened} />
   {:else if name === 'sharing.action'}
-    <Button onclick={() => opened = true}>Open sharing dialog</Button><ShareAction workId={id} title={movie.title} bind:open={opened} />
+    <Button onclick={() => opened = true}>Open sharing dialog</Button><ShareAction workId={id} title={scenario==='reading'?reading.title:movie.title} reading={scenario==='reading'} bind:open={opened} />
   {:else if name === 'sharing.landing'}
     {#if scenario === 'party'}<Heading title="Synced session" variant="page" /><div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p><Button onclick={() => delivery.notify('Preview join requested. No party is joined.')}>Join session</Button></div>
     {:else}<Heading title="Playback invitation" /><p>Play this shared item. You control your own playback.</p>{#if scenario === 'expired'}<p>This preview invitation has expired.</p>{:else}<Button onclick={() => delivery.notify('Preview invitation requested. No playback starts.')}>Open invitation</Button>{/if}{#if scenario === 'error'}<Toast kind="error" text="This preview invitation could not be opened." />{/if}{/if}

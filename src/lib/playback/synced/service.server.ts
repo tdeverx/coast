@@ -129,7 +129,7 @@ export async function roomState(userId:string,id:string,input?:unknown):Promise<
       WHERE b.id=p.playback_id AND b.user_id=p.user_id AND b.expires_at>NOW() AND c.account_generation=b.account_generation AND c.status='connected' AND i.enabled)`;
     await sql`UPDATE synced_participants p SET joined=FALSE,buffering=FALSE WHERE p.room_id=${id} AND p.joined AND p.reading_session_id IS NOT NULL AND NOT EXISTS(
       SELECT 1 FROM reading_sessions b JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id
-      WHERE b.id=p.reading_session_id AND b.user_id=p.user_id AND NOT u.disabled AND b.closed_at IS NULL AND b.expires_at>NOW() AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation))`;
+      WHERE b.id=p.reading_session_id AND b.user_id=p.user_id AND NOT u.disabled AND b.share_id IS NULL AND b.closed_at IS NULL AND b.expires_at>NOW() AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation))`;
     const members:RoomState['participants']=await sql`SELECT p.user_id AS "userId",u.username,CASE WHEN social_visible(u.id,${userId}::uuid,'details') THEN u.settings->'profile'->>'avatar' END AS avatar,p.joined,p.buffering,p.ready,p.unavailable,(p.heartbeat_at>NOW()-INTERVAL '15 seconds') AS online FROM synced_participants p JOIN users u ON u.id=p.user_id WHERE p.room_id=${id} ORDER BY (p.user_id=${r.host_id}) DESC,u.username,p.user_id`;
     const controllers=r.settings.controllers.filter((user:string)=>members.some(member=>member.userId===user&&member.joined));
     if(controllers.length!==r.settings.controllers.length){
@@ -182,12 +182,12 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     await requirePartyUse(sql,userId,reading?.workId??p?.media_id??r.media_id,reading?'reading':p?.media_type??r.media_type,r.host_id);
     let restoreReadingHost=false;
     if(reading){
-      const [source]=await sql`SELECT b.id FROM reading_sessions b JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE b.id=${reading.id} AND b.user_id=${userId} AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation) FOR SHARE OF b`;
+      const [source]=await sql`SELECT b.id FROM reading_sessions b JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE b.id=${reading.id} AND b.user_id=${userId} AND b.share_id IS NULL AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation) FOR SHARE OF b`;
       if(!source)throw new AppError(410,'This reading session has ended.');
       if(!actor.joined&&r.host_id===userId){
         // A room read may have observed our deliberate source close during handover.
         // Only that still-live host membership can recover, never a removed/expired source.
-        const [handover]=await sql`SELECT p.user_id FROM synced_participants p JOIN reading_sessions b ON b.id=p.reading_session_id JOIN users u ON u.id=p.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE p.room_id=${id} AND p.user_id=${userId} AND p.heartbeat_at>NOW()-INTERVAL '15 seconds' AND b.user_id=p.user_id AND b.closed_at IS NOT NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation)`;
+        const [handover]=await sql`SELECT p.user_id FROM synced_participants p JOIN reading_sessions b ON b.id=p.reading_session_id JOIN users u ON u.id=p.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE p.room_id=${id} AND p.user_id=${userId} AND p.heartbeat_at>NOW()-INTERVAL '15 seconds' AND b.user_id=p.user_id AND b.share_id IS NULL AND b.closed_at IS NOT NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation)`;
         restoreReadingHost=!!handover;
         if(!restoreReadingHost)throw new AppError(403,'Rejoin the party before changing its reading source.');
       }
@@ -200,7 +200,7 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     if(data.location!==undefined&&data.action!=='location')throw new AppError(400,'Use the reading location action.');
     if(data.action==='location'){
       const location=data.location;
-      const [member]=await sql`SELECT b.* FROM synced_participants p JOIN reading_sessions b ON b.id=p.reading_session_id JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE p.room_id=${id} AND p.user_id=${userId} AND p.joined AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation)`;
+      const [member]=await sql`SELECT b.* FROM synced_participants p JOIN reading_sessions b ON b.id=p.reading_session_id JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE p.room_id=${id} AND p.user_id=${userId} AND p.joined AND b.share_id IS NULL AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation)`;
       if(r.media_type!=='reading'||!location||!member||member.work_id!==r.media_id||member.edition!==r.edition||member.format!==location.format||r.reading_format!==location.format||location.format!=='epub'&&location.page>location.total)throw new AppError(409,'Choose a valid location in your joined reading edition.');
       if(r.reading&&r.reading.format!==location.format||r.reading&&location.format!=='epub'&&r.reading.total!==location.total)throw new AppError(409,'This file has a different reading layout.');
       await sql`UPDATE synced_rooms SET reading=${location}::jsonb,updated_at=NOW(),revision=revision+1 WHERE id=${id}`;return;

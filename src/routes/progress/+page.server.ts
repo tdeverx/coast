@@ -3,9 +3,9 @@ import { AppError } from '#lib/server/security/errors.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { progressOptionsSchema, progressParameters, progressSurface } from '#lib/progress.js';
-import { progressData } from '#lib/server/queries/progress.js';
+import { progressData, tabbedProgressData } from '#lib/server/queries/progress.js';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ locals, url, depends }) => {
+export const load: PageServerLoad = async ({ locals, url, depends, request }) => {
   depends('coast:tracking', 'coast:social');
   if (!locals.user) error(401, 'Sign in to view your progress.');
   const options = v.safeParse(progressOptionsSchema, progressParameters(url));
@@ -14,11 +14,15 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
     const subject = url.searchParams.has('username')
       ? await profileUser(url.searchParams.get('username')!)
       : locals.user;
+    const actionScoped=url.searchParams.get('scoped')==='true';
+    const surface=progressSurface(options.output.view,url.searchParams.has('username'));
     return {
-      actionScoped: url.searchParams.get('scoped') === 'true',
+      actionScoped,
       profileContext: url.searchParams.has('username'),
-      surface: progressSurface(options.output.view, url.searchParams.has('username')),
-      progress: await progressData(subject.id, options.output, locals.user.id),
+      surface,
+      progress: await (surface==='profile'&&!actionScoped
+        ? tabbedProgressData(subject.id,options.output,locals.user.id,'profile',request.signal)
+        : progressData(subject.id,options.output,locals.user.id)),
       username: subject.username,
       isOwner: subject.id === locals.user.id,
     };

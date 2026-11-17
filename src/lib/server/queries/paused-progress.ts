@@ -8,6 +8,24 @@ import { getFeatureConfig } from '../features';
 import { hasPermittedWorkSource } from './media';
 import { pagination, PAGE_SIZE } from './pagination';
 
+const pausedCandidates=(userId:string,category?:string)=>sql`
+  select media_id as id, updated_at from tracking_state where ${!category || category === 'screen'} and user_id = ${userId} and paused
+  union all select games.game_id, games.updated_at from (
+    select distinct on (game_id) game_id, status, updated_at
+    from game_playthroughs where ${!category || category === 'game'} and user_id = ${userId}
+    order by game_id, created_at desc, id desc
+  ) games where games.status = 'paused'
+  union all select work_id, updated_at from reading_progress where ${!category || category === 'reading'} and user_id = ${userId} and state = 'paused'
+`;
+
+export async function pausedProgressPresent(userId:string,viewerId:string,category?:string) {
+  const [result]=await getDb().execute<{present:boolean}>(sql`select exists(
+    select 1 from (${pausedCandidates(userId,category)}) paused join works on works.id=paused.id
+    where social_visible(${userId}::uuid,${viewerId}::uuid,'progress',works.category)
+  ) as present`);
+  return result.present;
+}
+
 /** Both Progress surfaces read the existing per-medium states before hydrating a single page. */
 export async function pausedProgressPage(
   userId: string,
@@ -27,15 +45,7 @@ export async function pausedProgressPage(
   const size = preview ? ROW_BATCH_SIZE : PAGE_SIZE;
   signal?.throwIfAborted();
   const [result] = await getDb().execute<{ total: number; ids: string[] }>(sql`
-    with latest_games as (
-      select distinct on (game_id) game_id, status, updated_at
-      from game_playthroughs where ${!category || category === 'game'} and user_id = ${userId}
-      order by game_id, created_at desc, id desc
-    ), paused as (
-      select media_id as id, updated_at from tracking_state where ${!category || category === 'screen'} and user_id = ${userId} and paused
-      union all select game_id, updated_at from latest_games where status = 'paused'
-      union all select work_id, updated_at from reading_progress where ${!category || category === 'reading'} and user_id = ${userId} and state = 'paused'
-    ), eligible as (
+    with paused as (${pausedCandidates(userId,category)}), eligible as (
       select paused.id, paused.updated_at from paused join works on works.id = paused.id
       ${scope === 'available' ? sql`left join media on media.id = works.id` : sql``}
       where ${conditions}

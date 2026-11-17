@@ -2,7 +2,7 @@ import {beforeAll,afterAll,expect,test} from 'bun:test';
 import {getDb,getSql,closeDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
-import {progressData} from '../src/lib/server/queries/progress';
+import {progressData,tabbedProgressData} from '../src/lib/server/queries/progress';
 import {friendDiscovery} from '../src/lib/social/insights.server';
 import {activityFeed} from '../src/lib/social/queries.server';
 import {progressExperimentData} from '../src/lib/server/queries/progress-experiment';
@@ -185,16 +185,49 @@ run('Progress presents episode and season captions with the correct artwork hier
  }
  await check('next',pilot,{captionTitle:'Caption series',captionSubtitle:'An authored season title'},['/season-poster','/show-poster','/episode-poster']);
  await check('watchlist',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-thumb','/season-thumb','/episode-thumb']);
- await check('favourites',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-thumb','/season-thumb','/episode-thumb']);
+ expect(progressCardStyle('favourites')).toMatchObject({shape:'poster',artworkStyle:'primary'});
+ await check('favourites',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-poster','/season-poster','/episode-poster']);
  expect((await progressExperimentData(owner,{view:'favourites'})).items.find(item=>item.id===film)?.captionSubtitle).toBe('2022');
  await trackWithExports(owner,{mediaId:pilot,action:'watch'});
  await trackWithExports(owner,{mediaId:other,action:'progress',positionSeconds:60,durationSeconds:1800});
- await check('continue',other,{title:'The next episode',captionSubtitle:'Caption series'},['/next-thumb','/season-thumb','/show-thumb']);
+ await check('continue',other,{
+  captionTitle:'Caption series',captionTitleHref:`/media/${series}`,
+  captionSubtitle:'The next episode',captionSubtitleHref:`/media/${other}`,
+ },['/next-thumb','/season-thumb','/show-thumb']);
  await trackWithExports(owner,{mediaId:series,action:'pause'});
  await check('paused',series,{title:'Caption series',captionSubtitle:'The next episode'},['/show-thumb','/season-thumb','/next-thumb']);
  await trackWithExports(owner,{mediaId:series,action:'resume'});
  await trackWithExports(owner,{mediaId:other,action:'watch'});
  await check('finished',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-poster','/season-poster','/episode-poster']);
+});
+
+run('Progress publishes only nonempty segments and falls forward without hydrating an empty tab',async()=>{
+ const db=getDb(),owner=crypto.randomUUID(),film=crypto.randomUUID();
+ await db.insert(s.users).values({id:owner,username:`progress-segments-${owner}`});
+ await db.insert(s.media).values({id:film,kind:'movie',title:'Favourite only'});
+ const overview=(view='continue')=>progressExperimentData(owner,{category:'screen',view},{preview:true,segments:'overview'});
+ expect(await overview()).toMatchObject({availableViews:[],view:'continue',items:[]});
+ await trackWithExports(owner,{mediaId:film,action:'favourite'});
+ const fallback=await overview();
+ expect(fallback).toMatchObject({availableViews:['favourites'],view:'favourites',total:1});
+ expect(fallback.items.map(item=>item.id)).toEqual([film]);
+ expect(await progressExperimentData(owner,{category:'screen',view:'favourites',kind:'show'},{segments:'overview'}))
+  .toMatchObject({availableViews:['favourites'],view:'favourites',items:[]});
+ expect(await progressExperimentData(owner,{category:'screen'},{segments:'overview',viewerId:friend}))
+  .toMatchObject({availableViews:[],items:[]});
+ expect(await tabbedProgressData(owner,{},owner,'profile')).toMatchObject({availableViews:[],items:[]});
+ await db.insert(s.upNext).values({userId:owner,mediaId:film});
+ expect(await tabbedProgressData(owner,{},owner,'profile'))
+  .toMatchObject({availableViews:['up-next'],view:'up-next',items:[{id:film}]});
+ await trackWithExports(owner,{mediaId:film,action:'pause'});
+ expect(await tabbedProgressData(owner,{view:'up-next'},owner,'profile'))
+  .toMatchObject({availableViews:['paused'],view:'paused',items:[{id:film}]});
+ await trackWithExports(owner,{mediaId:film,action:'resume'});
+ await trackWithExports(owner,{mediaId:film,action:'watch'});
+ expect(await progressExperimentData(owner,{category:'screen',view:'paused'},{segments:'profile'}))
+  .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
+ expect(await tabbedProgressData(owner,{view:'finished'},owner,'profile'))
+  .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
 });
 
 run('Paused reuses the current playthrough and reading states with progress privacy',async()=>{
@@ -221,6 +254,8 @@ run('Paused reuses the current playthrough and reading states with progress priv
  expect(await updateReading(owner,book,{state:'reading'})).toMatchObject({page:12,totalPages:230});
  expect((await progressExperimentData(owner,{view:'paused'})).items).toEqual([]);
  expect(new Set((await progressExperimentData(owner,{view:'continue'})).items.map(item=>item.id))).toEqual(new Set([game,book]));
+ expect(await progressExperimentData(owner,{category:'reading'},{segments:'overview'}))
+  .toMatchObject({availableViews:['continue'],items:[{id:book}]});
 });
 
 run('imported activity joins the ordinary date-sorted feed with privacy and stable pagination',async()=>{
@@ -365,7 +400,7 @@ run('artist and comic-volume Activity use verified credit and issue membership',
  try{
   await db.insert(s.users).values({id:viewer,username:`membership-${viewer}`});
   const [server]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Activity credits fixture',baseUrl:'https://fixture.invalid'}).returning();
-  await db.insert(s.musicArtists).values({id:artist,instanceId:server.id,externalId:artist,name:'Scoped artist'});
+  await db.insert(s.works).values({id:artist,category:'music',kind:'artist'});await db.insert(s.musicWorks).values({id:artist,kind:'artist',title:'Scoped artist'});await db.insert(s.musicArtists).values({id:artist,workId:artist,instanceId:server.id,externalId:artist,name:'Scoped artist'});
   await db.insert(s.works).values([{id:recording,category:'music',kind:'track'},{id:other,category:'music',kind:'track'},{id:issue,category:'comic',kind:'comic'}]);
   await db.insert(s.musicWorks).values([{id:recording,kind:'track',title:'Artist recording'},{id:other,kind:'track',title:'Other recording'}]);
   await db.insert(s.musicCredits).values({artistId:artist,workId:recording,role:'artist'});
@@ -415,7 +450,7 @@ run('merged relationship segments cover reading, games, music and their verified
   await db.insert(s.gameSessions).values({id:crypto.randomUUID(),playthroughId:playthrough.id,minutesPlayed:12,playedAt:new Date()});
   await db.insert(s.musicWorks).values([{id:album,kind:'album',title:'Saved album'},{id:track,kind:'track',title:'Active track'}]);await db.insert(s.mediaRelationships).values({parentId:album,childId:track,kind:'contains',position:1});
   await db.insert(s.musicProgress).values({userId:peer,trackId:track,positionSeconds:40,durationSeconds:200,playCount:1});
-  const [server]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Merged Activity artist',baseUrl:'https://fixture.invalid'}).returning();await db.insert(s.musicArtists).values({id:artist,instanceId:server.id,externalId:artist,name:'Merged artist'});await db.insert(s.musicCredits).values([{workId:album,artistId:artist,role:'album-artist'},{workId:track,artistId:artist,role:'artist'}]);
+  const [server]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Merged Activity artist',baseUrl:'https://fixture.invalid'}).returning();await db.insert(s.works).values({id:artist,category:'music',kind:'artist'});await db.insert(s.musicWorks).values({id:artist,kind:'artist',title:'Merged artist'});await db.insert(s.musicArtists).values({id:artist,workId:artist,instanceId:server.id,externalId:artist,name:'Merged artist'});await db.insert(s.musicCredits).values([{workId:album,artistId:artist,role:'album-artist'},{workId:track,artistId:artist,role:'artist'}]);
   await db.insert(s.trackingState).values([{userId:peer,mediaId:album,watchlist:true},{userId:peer,mediaId:episodes[0],watched:true}]);
   for(const scope of [{workId:book,relationship:'watchlist'},{workId:comic,relationship:'consumed'},{readingGroupId:group,relationship:'consumed'},{workId:game,relationship:'progress'},{workId:game,relationship:'consumed'},{workId:track,relationship:'progress'},{workId:album,relationship:'consumed'},{artistId:artist,relationship:'watchlist'},{workId:show,relationship:'consumed'},{workId:season,relationship:'consumed'}]){
    const result=await activityFeed(viewer,scope);expect(result.items.length).toBeGreaterThan(0);expect(result.items.every(item=>item.captionActor?.username===`relationship-peer-${peer}`)).toBe(true);

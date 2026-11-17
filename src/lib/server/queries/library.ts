@@ -23,7 +23,7 @@ export const libraryOptionsSchema = v.object({
   kind: v.optional(v.picklist(['all', 'movie', 'show','collection']), 'all'),
   scope: v.optional(v.picklist(['available', 'all']), 'available'),
   source: v.optional(v.union([v.literal('all'), uuidSchema]), 'all'),
-  tracking: v.optional(v.picklist(['all', 'watched', 'unwatched', 'progress', 'dropped']), 'all'),
+  tracking: v.optional(v.picklist(['all', 'watched', 'unwatched', 'progress', 'paused', 'dropped']), 'all'),
 });
 
 export function libraryTrackingCondition(
@@ -46,11 +46,13 @@ export function libraryTrackingCondition(
     ? sql`(${complete}) and not coalesce(${reference.dropped},false)`
     : tracking === 'unwatched'
       ? sql`not (${complete})`
+      : tracking === 'paused'
+        ? sql`${reference.state}.paused=true and not coalesce(${reference.dropped},false)`
       : tracking === 'dropped'
         ? sql`${reference.dropped}=true`
         : tracking === 'progress'
           ? sql`case
-              when coalesce(${reference.dropped},false) then false
+              when coalesce(${reference.dropped},false) or coalesce(${reference.state}.paused,false) then false
               when ((${started}) or ${rewatchBoundary(userId, sql`${reference.id}`)} is not null) then not (${complete})
               else false end`
           : undefined;

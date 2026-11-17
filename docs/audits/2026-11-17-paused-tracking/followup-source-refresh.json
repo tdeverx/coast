@@ -1,0 +1,22 @@
+{
+  "files": {
+    "src/lib/server/queries/media.ts": {
+      "current": "c5ea72f700935cc812ae4104c2db5a4f2cadc981ad549aa91f0df1a53e01a224",
+      "previous": "2b8a80d559aa7da3d0ddc9978181ffc3157c0253c84ae7662b9895fdd9a4aaf2"
+    },
+    "src/lib/server/queries/progress-experiment.ts": {
+      "current": "2908e26c00a67bef220848362486da0dd399edd7a7a2ef0f671a58fddbab2e41",
+      "previous": "2f35615c5050d4c10e4628f4b38cda4e856e91e6cedeb448b9969d3d1a6d1e71"
+    },
+    "src/lib/ui/component-manifest.json": {
+      "current": "a9345d431084c72455f39657c71ff4de4be2ca3411a6eb2e5553f51b5cc4d4e0",
+      "previous": "8e0112242afffac25c20b35254abceb1c8b2440ff4ca211f669619c430587247"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "240ec6305b613d68ed2531a9607da3f93509580e5dfa184a865c9ffcc01f8ade",
+      "previous": "1514b26eae2a9ec8be85fddc1014d6598661f77ffa13f8980a2747c1535fd60e"
+    }
+  },
+  "report": "docs/audits/2026-11-17-paused-tracking/progress-followup.md",
+  "reportSha256": "114ef5cbd50213a34cf611f7106317c4f709222b0d65cc65b0ad542c02b9770c"
+}

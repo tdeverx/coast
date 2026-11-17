@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { compileModule } from 'svelte/compiler';
+import { ApiError, retryMenuRead } from './fixtures/menu-read-retry';
 const url = (source: string) => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 async function rune(path: string, replacements: Record<string, string> = {}) {
   let code = compileModule(new Bun.Transpiler({ loader: 'ts' }).transformSync(await Bun.file(new URL(path, import.meta.url)).text()), { filename: path.split('/').at(-1)!.replace('.ts', '.js'), generate: 'client' }).js.code
@@ -21,6 +22,16 @@ test('menus single-flight cold reads and reuse an unchanged snapshot on reopen',
   held.resolve('loaded'); await first;
   menu.close(); await menu.open();
   expect(menu.data).toBe('loaded'); expect(reads).toBe(1);
+});
+test('one hundred passive menu snapshots make no reads and opening one retains a single demand owner',async()=>{
+ let reads=0;
+ const menus=Array.from({length:100},(_,index)=>createMenuResource(()=>'',()=>String(index),async()=>String(++reads)));
+ expect(reads).toBe(0);
+ try{
+  for(let index=0;index<20;index++){await menus[49].open();menus[49].close();}
+  expect(reads).toBe(1);
+  expect(menus.filter(menu=>menu.active)).toHaveLength(0);
+ }finally{menus.forEach(menu=>menu.dispose());}
 });
 test('a tracked scope can synchronize once while read admission still rejects a stale captured key', async () => {
   let scope = 'first', keys = 0, reads = 0;
@@ -84,6 +95,52 @@ test('failed optional reads retain usable state and allow an explicit retry', as
   const menu = createMenuResource(() => '', () => 'scope', async () => { if (++reads === 2) throw new Error('Unavailable'); return String(reads); });
   await menu.open(); await menu.load(true); expect(menu.data).toBe('1'); expect(menu.error).toBe('Unavailable');
   await menu.load(true); expect(menu.error).toBe(''); expect(menu.data).toBe('3');
+});
+test('an open menu shares one retry and publishes only its final failure', async () => {
+  let reads = 0;
+  const menu = createMenuResource(() => '', () => 'scope', async () => {
+    if (++reads === 1) throw new ApiError('Temporarily unavailable', 503);
+    throw new ApiError('Still unavailable', 503);
+  }, retryMenuRead);
+  const request = menu.open();
+  await Promise.resolve();
+  expect(menu.load()).toBe(request);
+  expect(menu.busy).toBe(true);
+  expect(menu.error).toBe('');
+  await request;
+  expect(reads).toBe(2);
+  expect(menu.busy).toBe(false);
+  expect(menu.error).toBe('Still unavailable');
+});
+test('closing or changing scope during retry suppresses the extra read and stale failure', async () => {
+  for (const close of [true, false]) {
+    let reads = 0, scope = 'initial';
+    const menu = createMenuResource(() => '', () => scope, async () => {
+      reads++;
+      throw new TypeError('Network error');
+    }, retryMenuRead);
+    const request = menu.open();
+    await Promise.resolve();
+    if (close) menu.close();
+    else scope = 'replacement';
+    await request;
+    expect(reads).toBe(1);
+    expect(menu.error).toBe('');
+    menu.dispose();
+  }
+});
+test('background loads and permanent failures make one attempt', async () => {
+  for (const [active, status] of [[false, 503], [true, 403], [true, 429]] as const) {
+    let reads = 0;
+    const menu = createMenuResource(() => '', () => 'scope', async () => {
+      reads++;
+      throw new ApiError('Unavailable', status);
+    }, retryMenuRead);
+    await (active ? menu.open() : menu.load());
+    expect(reads).toBe(1);
+    expect(menu.error).toBe('Unavailable');
+    menu.dispose();
+  }
 });
 test('an acknowledged field patch does not turn a pending snapshot into complete empty state', async () => {
   const held = [deferred<{ rating: number | null; game: string | null }>(), deferred<{ rating: number | null; game: string | null }>()];

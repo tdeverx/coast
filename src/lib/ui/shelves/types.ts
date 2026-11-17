@@ -2,9 +2,11 @@ import type { Snippet } from 'svelte';
 import type { JournalEntry } from '#lib/profile/journal.js';
 import type { MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork, ArtworkPriority } from '#lib/ui/types.js';
 import type { SequenceContext } from '#lib/media/sequence.js';
+import type { FilterReset, FilterSection } from '#lib/ui/controls/filters.js';
 export type ShelfItem = MediaView | MediaCardPresentation;
 export type ShelfControl = {
   type: 'segments' | 'select' | 'availability' | 'collection' | 'media-type';
+  section?: FilterSection;
   label: string;
   value: string;
   options?: { value: string; label: string }[];
@@ -33,11 +35,13 @@ export interface ShelfSource {
   readonly busy: boolean;
   readonly ready: boolean;
   readonly emptyConfirmed?: boolean;
+  readonly hideRow?: boolean;
   readonly error: string;
   readonly activated: boolean;
   readonly href?: string;
   readonly filters: ShelfControl[];
   readonly controls: ShelfControl[];
+  readonly filterReset?: FilterReset;
   readonly shape?: MediaCardShape;
   readonly mixed?: boolean;
   readonly artworkStyle?: MediaCardArtwork;

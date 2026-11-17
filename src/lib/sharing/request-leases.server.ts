@@ -15,7 +15,7 @@ export function waitSharedRetry(milliseconds:number,signal?:AbortSignal) {
 /** Short row locks admit parallel dispatches; no provider I/O holds a transaction. */
 export async function withSharedRequest(
   ownerId:string,viewerId:string,playbackId:string,request:Request,
-  dispatch:(request:Request,headersReceived:()=>Promise<void>)=>Promise<Response>
+  dispatch:(request:Request,headersReceived:()=>Promise<void>)=>Promise<Response>,kind:'playback'|'reading'='playback'
 ) {
   // A worker must abort dispatch before its durable lease can expire after a crash.
   const deadline=new AbortController(),timer=setTimeout(()=>deadline.abort(new DOMException('Stream preparation timed out.','TimeoutError')),25_000);
@@ -27,14 +27,16 @@ export async function withSharedRequest(
   while(true){
     signal.throwIfAborted();
     const admitted=await db.begin(async tx=>{
-      const [viewer]=await tx`select v.preparing_until,p.state,p.expires_at,v.ended_at from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and p.id=${playbackId} for update of v`;
+      const [viewer]=kind==='reading'
+       ?await tx`select v.preparing_until,case when r.closed_at is null then 'active' else 'stopped' end as state,r.expires_at,v.ended_at from share_viewers v join playback_shares s on s.id=v.share_id join reading_sessions r on r.id=v.reading_session_id where v.id=${viewerId} and s.owner_id=${ownerId} and r.id=${playbackId} and r.share_id=s.id and r.share_viewer_id=v.id and s.revoked_at is null and s.expires_at>now() for update of v`
+       :await tx`select v.preparing_until,p.state,p.expires_at,v.ended_at from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and p.id=${playbackId} for update of v`;
       if(!viewer||viewer.state==='stopped'||viewer.ended_at||new Date(viewer.expires_at)<=new Date())throw new AppError(410,'The viewer playback session has expired.');
       if(viewer.preparing_until&&new Date(viewer.preparing_until)>new Date())return false;
       await tx`delete from share_request_leases where viewer_id=${viewerId} and expires_at<=now()`;
       const [active]=await tx`select count(*)::int as total from share_request_leases where viewer_id=${viewerId}`;
       if(active.total>=8)return false;
       signal.throwIfAborted();
-      await tx`insert into share_request_leases(id,viewer_id,playback_id,expires_at) values(${id},${viewerId},${playbackId},now()+interval '35 seconds')`;
+      await tx`insert into share_request_leases(id,viewer_id,playback_id,reading_id,expires_at) values(${id},${viewerId},${kind==='playback'?playbackId:null},${kind==='reading'?playbackId:null},now()+interval '35 seconds')`;
       return true;
     });
     if(admitted)break;

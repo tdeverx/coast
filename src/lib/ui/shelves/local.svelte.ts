@@ -62,24 +62,26 @@ export function createShelfSelection<T extends ShelfItem>(get: () => LocalOption
     const config = get();
     const result: ShelfControl[] = [];
     if (config.mode === 'watched') result.push({
-      type: 'segments', label: `${config.title} progress`, value: progress,
+      type: 'select', label: 'Watch status', value: progress,
       options: [{ value: 'all', label: 'All' }, { value: 'unwatched', label: 'Unwatched' }, { value: 'watched', label: 'Watched' }],
       change: value => { progress = value; },
     });
     if (config.availability) result.push({
-      type: 'availability', label: `${config.title} availability`, value: config.availableOnly ? 'available' : 'all',
+      type: 'availability', label: 'Available only', value: config.availableOnly ? 'available' : 'all',
       change: value => setAvailable(value === 'available'),
     });
     return result;
   });
   const controls = $derived<ShelfControl[]>([{
-    type: 'select', label: `${get().title} type`, value: kind, options,
+    type: 'select', label: 'Media type', value: kind, options: options.length > 2 ? options : [],
     change: value => { kind = value; },
   }]);
   $effect(() => { if (!get().busy) settledItems = get().items; });
   $effect(() => { if (!options.some(option => option.value === kind)) kind = 'all'; });
 
   return {
+    get filterReset() { return { disabled: progress === 'all' && kind === 'all' && !get().availableOnly,
+      run: () => { progress = 'all'; kind = 'all'; setAvailable(false); } }; },
     get items() { return items; },
     get sourceItems() { return sourceItems; },
     get href() { return href; },

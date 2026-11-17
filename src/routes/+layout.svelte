@@ -1,13 +1,15 @@
 <script lang="ts">
   import { reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
   import '../app.css';
+  let { data, children } = $props();
   import { reader, closeReading } from '#lib/reading/client.svelte.js';
   import { createResource } from '#lib/ui/resource.svelte.js';
   const readerImport=createResource<typeof import('#lib/reading/Reader.svelte').default|undefined>(undefined);
   const Reader=$derived(readerImport.data);
-  function loadReader(){if(data.user&&reader.visible&&!readerImport.busy)return readerImport.load(async()=> (await import('#lib/reading/Reader.svelte')).default);}
-  $effect(()=>{const viewer=data.user?.id;if(!viewer||!reader.visible)return;untrack(()=>{if(!readerImport.data)void loadReader();});return()=>readerImport.cancel();});
-  reportImportFailure(()=>data.user&&reader.visible&&readerImport.error?'The reader could not load. Reload the page to try again.':'');
+  const readerAllowed=$derived(!!data.user||reader.session?.shared===true);
+  function loadReader(){if(readerAllowed&&reader.visible&&!readerImport.busy)return readerImport.load(async()=> (await import('#lib/reading/Reader.svelte')).default);}
+  $effect(()=>{const viewer=data.user?.id,shared=reader.session?.shared?reader.session.id:undefined;if((!viewer&&!shared)||!reader.visible)return;untrack(()=>{if(!readerImport.data)void loadReader();});return()=>readerImport.cancel();});
+  reportImportFailure(()=>readerAllowed&&reader.visible&&readerImport.error?'The reader could not load. Reload the page to try again.':'');
   import {closeNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import {closeFriends} from '#lib/ui/panels/friends.svelte.js';
   import {closeStreams} from '#lib/ui/panels/streams.svelte.js';
@@ -25,7 +27,6 @@
   import Header from '#lib/ui/components/Header.svelte';
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
-  let { data, children } = $props();
   const { api } = useClient();
   let expiredViewer = $state<string>();
   let content: HTMLElement;
@@ -246,7 +247,7 @@
   });
 
   $effect(() => {
-    if (!presenceUserId || !partiesEnabled) return;
+    if (!presenceUserId || !partiesEnabled || page.url.pathname==='/share') return;
 
     void restoreSynced();
   });
@@ -309,7 +310,7 @@
   class:audio-active={player.session?.mediaType === 'audio'}
   class:watching
 >
-  {#if data.user&&Reader}<Reader />{/if}
+  {#if readerAllowed&&Reader}<Reader />{/if}
   {#if data.user&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header

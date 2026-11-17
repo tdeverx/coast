@@ -12,7 +12,7 @@ function matchesReading(room:RoomState){return room.mediaType==='reading'&&!!rea
 function matchesPlayback(room:RoomState){return !!room.mediaId&&!!player.session&&compatibleSource({...room,mediaId:room.mediaId},{...player.session,mediaType:player.session.mediaType??'video',edition:player.session.edition??''});}
 export function isSyncHost(){return !!syncedPlayer.room&&syncedPlayer.room.hostId===syncedPlayer.userId;}
 export const syncPreferences=$state({offsetSeconds:0,keepPlaying:true});
-export function loadSyncPreferences(){
+function loadSyncPreferences(){
  try{const value=JSON.parse(localStorage.getItem(`coast:party-preferences:${syncedPlayer.userId}`)||'{}');syncPreferences.offsetSeconds=Number.isFinite(value.offsetSeconds)?Math.max(-5,Math.min(5,value.offsetSeconds)):0;syncPreferences.keepPlaying=value.keepPlaying!==false;}catch{syncPreferences.offsetSeconds=0;syncPreferences.keepPlaying=true;}
 }
 export function setSyncPreferences(patch:Partial<typeof syncPreferences>){
@@ -29,6 +29,7 @@ export function updatePartySettings(patch:Partial<PartySettings>){if(syncedPlaye
 export async function resyncNow(){await pollSynced();align(true);}
 function remember(id:string|null){if(id)sessionStorage.setItem('coast:synced',id);else sessionStorage.removeItem('coast:synced');}
 function align(force=false){
+  if(reader.session?.shared)return;
   const r=syncedPlayer.room;if(r?.mediaType==='reading'){if(matchesReading(r)&&!reader.syncing)void alignReading(r.reading??null).catch(cause=>syncedPlayer.notice=message(cause));return;}if(!r||syncedPlayer.changing||player.loading||!player.session||!matchesPlayback(r))return;
   alignPlayback({positionSeconds:Math.max(0,Math.min(r.durationSeconds,timelinePosition(r,Date.now()+offset)+syncPreferences.offsetSeconds)),paused:r.paused||r.bufferingPaused||timelinePosition(r,Date.now()+offset)>=r.durationSeconds-0.1,force});
 }
@@ -104,7 +105,7 @@ export async function pollSynced(){
   try{
     const snapshot=playbackSnapshot();
     const unavailable=!!r.mediaId&&(sourceKey(r)===unavailableSource||r.mediaType!=='reading'&&!!snapshot?.unavailable);
-    const next=await api<RoomState>(`synced/${r.id}/heartbeat`,{buffering:!!r.mediaId&&!unavailable&&(r.mediaType==='reading'?!matchesReading(r)||reader.loading||reader.rendering:!snapshot||snapshot.buffering),unavailable});
+    const next=await api<RoomState>(`synced/${r.id}/heartbeat`,{buffering:!reader.session?.shared&&!!r.mediaId&&!unavailable&&(r.mediaType==='reading'?!matchesReading(r)||reader.loading||reader.rendering:!snapshot||snapshot.buffering),unavailable});
     if(epoch!==generation||syncedPlayer.room?.id!==r.id||syncedPlayer.changing||next.revision<syncedPlayer.room.revision)return;
     offset=Date.parse(next.serverTime)-(started+Date.now())/2;lastResponse=Date.now();
     if(next.ended||!next.participants.some(p=>p.userId===syncedPlayer.userId&&p.joined)){
@@ -112,14 +113,19 @@ export async function pollSynced(){
     }
     if(unavailableSource!==null&&unavailableSource!==sourceKey(next))clearUnavailable();
     syncedPlayer.room=next;
+    if(reader.session?.shared)return;
     if(!next.mediaId&&reader.session)await closeReading();
     if(!next.mediaId&&player.session){syncedPlayer.changing=true;try{await stopPlayback();}finally{syncedPlayer.changing=false;}}
     player.audioQueue=next.mediaType==='audio'?next.queueItems:[];player.audioIndex=next.mediaType==='audio'?next.queueIndex:-1;
     if(next.mediaId&&sourceKey(next)!==unavailableSource&&!(next.mediaType==='reading'?matchesReading(next):matchesPlayback(next))){
       syncedPlayer.changing=true;
       try{
-        if(next.mediaType==='reading')await attachReading(await api<ReadingSessionView>(`reading/${next.mediaId}/matching`,{edition:next.edition}));
-        else {if(reader.session)await closeReading();await playMedia(next.mediaId,{mediaType:next.mediaType,edition:next.edition,expectedDuration:next.durationSeconds,fromStart:true});}
+        if(next.mediaType==='reading'){
+          const session=await api<ReadingSessionView>(`reading/${next.mediaId}/matching`,{edition:next.edition});
+          await attachReading(session,epoch!==generation||syncedPlayer.room?.id!==r.id||reader.session?.shared?AbortSignal.abort():undefined);
+        }
+        else {if(reader.session)await closeReading();if(epoch!==generation||syncedPlayer.room?.id!==r.id||reader.session?.shared)return;await playMedia(next.mediaId,{mediaType:next.mediaType,edition:next.edition,expectedDuration:next.durationSeconds,fromStart:true});}
+        if(reader.session?.shared)return;
         if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;
         const attached=await attachPrepared(r.id,next.mediaType==='reading'?reader.session!.id:player.session!.id,next.mediaType==='reading');
         if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;
@@ -128,10 +134,11 @@ export async function pollSynced(){
       finally{syncedPlayer.changing=false;}
     }
     align();
-  }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=message(cause);if(isFeatureDisabled(cause)){await leaveSynced(true);return;}if(cause instanceof ApiError&&[401,403,404].includes(cause.status)){await leaveSynced();alignPlayback({positionSeconds:0,paused:true});}else if(Date.now()-lastResponse>15000)alignPlayback({positionSeconds:playbackSnapshot()?.positionSeconds||0,paused:true});}
+  }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=message(cause);if(isFeatureDisabled(cause)){await leaveSynced(true);return;}if(cause instanceof ApiError&&[401,403,404].includes(cause.status)){await leaveSynced(reader.session?.shared?true:syncPreferences.keepPlaying);alignPlayback({positionSeconds:0,paused:true});}else if(Date.now()-lastResponse>15000)alignPlayback({positionSeconds:playbackSnapshot()?.positionSeconds||0,paused:true});}
   finally{polling=false;}
 }
 export async function restoreSynced(){
+  if(reader.session?.shared)return;
   const id=sessionStorage.getItem('coast:synced'),epoch=generation;if(!id)return;
-  try{const room=await api<RoomState>(`synced/${id}`,undefined,'GET');if(epoch!==generation)return;if(room.ended){remember(null);return;}await joinSynced(room);}catch(cause){if(epoch!==generation)return;syncedPlayer.notice=message(cause);if(cause instanceof ApiError&&[401,403,404,410].includes(cause.status))remember(null);}
+  try{const room=await api<RoomState>(`synced/${id}`,undefined,'GET');if(epoch!==generation||reader.session?.shared)return;if(room.ended){remember(null);return;}await joinSynced(room);}catch(cause){if(epoch!==generation)return;syncedPlayer.notice=message(cause);if(cause instanceof ApiError&&[401,403,404,410].includes(cause.status))remember(null);}
 }

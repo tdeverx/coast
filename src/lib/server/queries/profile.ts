@@ -481,16 +481,9 @@ export async function profileActivity(
 }
 
 /** Current tracking status is independent of the dated activity journal. */
-export async function profileProgress(
-  userId: string,
-  status: unknown,
-  requestedPage: unknown = 1,
-  filters: { kind?: 'all' | 'movie' | 'show'; scope?: 'all' | 'available' } = {},
-  viewerId = userId
-) {
-  const selected = v.parse(v.picklist(['watched', 'progress', 'dropped']), status);
-  const requested = v.parse(pageNumberSchema, requestedPage);
-  const where = and(
+type ProfileProgressFilters = { kind?: 'all' | 'movie' | 'show'; scope?: 'all' | 'available' };
+function profileProgressWhere(userId:string, selected:'watched'|'progress'|'dropped', filters:ProfileProgressFilters,viewerId:string) {
+  return and(
     filters.kind === 'movie'
       ? eq(s.media.kind, 'movie')
       : selected === 'dropped'
@@ -503,6 +496,34 @@ export async function profileProgress(
     filters.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined,
     libraryTrackingCondition(userId, selected)
   );
+}
+
+export async function profileProgressPresence(userId:string,viewerId:string) {
+  // A completed show has at least one watched episode. Start both lookups
+  // from this owner's tracking rows instead of scanning the catalogue.
+  const candidates=(status:'watched'|'dropped')=>sql`select t.media_id as id from tracking_state t
+    where t.user_id=${userId} and ${status==='watched'?sql`t.watched`:sql`t.dropped`}
+    ${status==='watched'?sql`union select e.show_id from tracking_state t join episodes e on e.media_id=t.media_id
+      where t.user_id=${userId} and t.watched and not e.is_special`:sql``}`;
+  const presence=(status:'watched'|'dropped')=>sql`exists(select 1 from (${candidates(status)}) candidate
+    join ${s.media} on ${s.media.id}=candidate.id
+    left join ${s.trackingState} on ${s.trackingState.mediaId}=${s.media.id} and ${s.trackingState.userId}=${userId}
+    where ${profileProgressWhere(userId,status,{},viewerId)}
+      and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','screen'))`;
+  const [result]=await getDb().execute<{finished:boolean;dropped:boolean}>(sql`select ${presence('watched')} as finished,${presence('dropped')} as dropped`);
+  return result;
+}
+
+export async function profileProgress(
+  userId: string,
+  status: unknown,
+  requestedPage: unknown = 1,
+  filters: ProfileProgressFilters = {},
+  viewerId = userId
+) {
+  const selected = v.parse(v.picklist(['watched', 'progress', 'dropped']), status);
+  const requested = v.parse(pageNumberSchema, requestedPage);
+  const where = profileProgressWhere(userId,selected,filters,viewerId);
   const [count] = await getDb()
     .select({ total: sql<number>`count(*)::int` })
     .from(s.media)

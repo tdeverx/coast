@@ -143,7 +143,7 @@ test('home music uses native Library pages and entity tabs without progress stat
   expect(result.activated).toBe(false);expect(paths).toHaveLength(0);
   await result.load();expect(paths[0].searchParams.has('preview')).toBe(false);expect(result.title).toBe('Music library');
   expect(result.filters[0].options?.map(option=>option.value)).toEqual(['album','artist','track','playlist']);
-  expect(result.controls.find(control=>control.label==='Status')?.options?.map(option=>option.value)).toEqual(['all','later','favourites']);
+  expect(result.controls.find(control=>control.label==='Saved')?.options?.map(option=>option.value)).toEqual(['all','later','favourites']);
   await result.load(2,true);expect(paths[1].searchParams.get('page')).toBe('2');expect(result.items).toHaveLength(2);
   result.filters[0].change('artist');await settle();
   expect(result.controls.some(control=>control.label==='Status')).toBe(false);

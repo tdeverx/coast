@@ -299,7 +299,19 @@
           "film",
           "arrow",
           "download",
-          "shield"
+          "shield",
+          "sliders",
+          "checklist",
+          "share",
+          "link",
+          "image",
+          "skipBack",
+          "shuffle",
+          "layers",
+          "history",
+          "replay",
+          "calendar",
+          "userCheck"
         ]
       },
       {
@@ -321,6 +333,14 @@
       {
         "name": "onclick",
         "type": "(event: MouseEvent) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "primaryAction",
+        "type": "() => void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
@@ -660,6 +680,16 @@
       },
       {
         "name": "defaultOption",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "hideLabel",
         "type": "boolean",
         "optional": true,
         "bindable": false,
@@ -1110,7 +1140,19 @@
           "film",
           "arrow",
           "download",
-          "shield"
+          "shield",
+          "sliders",
+          "checklist",
+          "share",
+          "link",
+          "image",
+          "skipBack",
+          "shuffle",
+          "layers",
+          "history",
+          "replay",
+          "calendar",
+          "userCheck"
         ],
         "defaultSource": "'film'",
         "defaultValue": "film"
@@ -1526,7 +1568,19 @@
           "film",
           "arrow",
           "download",
-          "shield"
+          "shield",
+          "sliders",
+          "checklist",
+          "share",
+          "link",
+          "image",
+          "skipBack",
+          "shuffle",
+          "layers",
+          "history",
+          "replay",
+          "calendar",
+          "userCheck"
         ]
       },
       {
@@ -2722,6 +2776,14 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "onend",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },
@@ -3178,6 +3240,14 @@
         "defaultValue": false
       },
       {
+        "name": "initialSeasons",
+        "type": "readonly number[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
         "name": "options",
         "type": "RequestDestination[]",
         "optional": true,
@@ -3292,7 +3362,19 @@
           "film",
           "arrow",
           "download",
-          "shield"
+          "shield",
+          "sliders",
+          "checklist",
+          "share",
+          "link",
+          "image",
+          "skipBack",
+          "shuffle",
+          "layers",
+          "history",
+          "replay",
+          "calendar",
+          "userCheck"
         ]
       },
       {
@@ -3301,6 +3383,14 @@
         "optional": true,
         "bindable": false,
         "kind": "boolean",
+        "nullable": false
+      },
+      {
+        "name": "reset",
+        "type": "FilterReset",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
         "nullable": false
       }
     ]
@@ -3767,6 +3857,14 @@
         "kind": "data",
         "nullable": false,
         "defaultSource": "[]"
+      },
+      {
+        "name": "filterReset",
+        "type": "FilterReset",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
       },
       {
         "name": "actions",
@@ -4357,16 +4455,18 @@
     "props": [
       {
         "name": "section",
-        "type": "'recommendations' | 'social' | 'rating' | 'relationships'",
+        "type": "'social' | 'rating' | 'relationships' | 'quick' | 'reaction' | 'recommend'",
         "optional": false,
         "bindable": false,
         "kind": "select",
         "nullable": false,
         "choices": [
-          "recommendations",
           "social",
           "rating",
-          "relationships"
+          "relationships",
+          "quick",
+          "reaction",
+          "recommend"
         ]
       },
       {
@@ -4408,15 +4508,6 @@
       {
         "name": "controls",
         "type": "ComponentProps<typeof Button>[]",
-        "optional": true,
-        "bindable": false,
-        "kind": "data",
-        "nullable": false,
-        "defaultSource": "[]"
-      },
-      {
-        "name": "recommendationIds",
-        "type": "string[]",
         "optional": true,
         "bindable": false,
         "kind": "data",

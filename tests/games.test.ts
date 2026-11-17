@@ -17,4 +17,7 @@ test('game play time is bounded and never accepts future sessions or screen prog
   expect(v.safeParse(playthroughUpdateSchema, { positionSeconds: 60 }).success).toBe(false);
   expect(v.safeParse(playthroughUpdateSchema, { progressPercent: 101 }).success).toBe(false);
   expect(v.safeParse(playthroughUpdateSchema, {}).success).toBe(false);
+  expect(v.safeParse(playthroughUpdateSchema, { status: 'completed', completedAt: session.playedAt }).success).toBe(true);
+  expect(v.safeParse(playthroughUpdateSchema, { status: 'completed', completedAt: '2999-01-01T00:00:00.000Z' }).success).toBe(false);
+  expect(v.safeParse(playthroughUpdateSchema, { status: 'in-progress', completedAt: session.playedAt }).success).toBe(false);
 });

@@ -203,14 +203,10 @@
       </p>{/if}
     </div>
     <Button menu bind:this={menu} label={`${provider.name} ${task.title} actions`} disabled={busy}>
-      {#if running || queued.length}<Button item icon="clock" keepOpen={false} onclick={()=>void updateActive('promote')}>Prioritize up to {taskControlLimit} jobs</Button>{/if}
-      {#if failed.length && task.kinds[0]!=='benchmark.run'}<Button item icon="refresh" keepOpen={false} onclick={()=>void updateActive('retry')}>Retry up to {taskControlLimit} failures</Button>{/if}
-      {#if task.kinds[0]==='benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>{/if}
-      {#if queued.length || failed.length}<Button item icon="close" danger keepOpen={false} onclick={()=>void updateActive('cancel')}>Cancel up to {taskControlLimit} waiting jobs</Button>{/if}
       {#if task.scope}
         <Button
           item
-          icon="refresh"
+          icon="play"
           keepOpen={false}
           disabled={!provider.enabled || !provider.connectedAccounts && !local && !['tmdb', 'igdb'].includes(provider.provider)}
           disabledReason={!provider.enabled
@@ -227,8 +223,16 @@
           onclick={editSchedule}
         >Edit schedule</Button>
       {/if}
-      <Button item icon="list" keepOpen={false} onclick={()=>detailsOpen=true}>Details</Button>
-      {#if !local}<div class="menu-divider" role="separator"></div><Button item icon="settings" href="/settings/integrations" keepOpen={false}>Manage integration</Button>{/if}
+      <Button item icon="list" keepOpen={false} onclick={()=>detailsOpen=true}>View details</Button>
+      {#if !local}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Manage integration</Button>{/if}
+      {#if running || queued.length || failed.length || task.kinds[0]==='benchmark.run'}<div class="menu-divider" role="separator"></div>{/if}
+      {#if running || queued.length}<Button item icon="clock" keepOpen={false} onclick={()=>void updateActive('promote')}>Prioritize up to {taskControlLimit} jobs</Button>{/if}
+      {#if failed.length && task.kinds[0]!=='benchmark.run'}<Button item icon="refresh" keepOpen={false} onclick={()=>void updateActive('retry')}>Retry up to {taskControlLimit} failures</Button>{/if}
+      {#if task.kinds[0]==='benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>{/if}
+      {#if queued.length || failed.length}
+        <div class="menu-divider" role="separator"></div>
+      <Button item icon="close" danger keepOpen={false} onclick={()=>void updateActive('cancel')}>Cancel up to {taskControlLimit} waiting jobs</Button>{/if}
+
     </Button>
   </div>
 

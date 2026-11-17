@@ -1,0 +1,18 @@
+{
+  "files": {
+    "src/lib/core/tracking/continue.server.ts": {
+      "current": "03516519663ae2fe3c76d3bbde8ce3e83a9f691186437a5b39be053eec3b2b38",
+      "previous": "578abbae1361d0768e8dc94c613df9a0b78219761ba0621c2462f5ba7b6ecd3d"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "current": "fef2af17d2cb961c64e62f9fe6a51ed636e6025ea52ae709ed7e8bce82efee1f",
+      "previous": "f4a06af3acd1a44ef23860a8f0d9dc834e19d4587de415298f35816b72017873"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "ae71b92a245058eb9225986d3b07742ad222d4950a4910e31fa570d179f3d3bc",
+      "previous": "acc1495490e75edc1ccab00e3c2534ea39721a7d643fce4b17fcd2776ff71c28"
+    }
+  },
+  "report": "docs/audits/2026-11-17-menu-tracking/source-refresh.md",
+  "reportSha256": "557a5e9081a26f564abc7382a1cf1a24dc64e15b237cef5d37003377a698825b"
+}

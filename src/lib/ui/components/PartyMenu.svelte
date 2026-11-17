@@ -1,5 +1,6 @@
 <script lang="ts">
  import Button from './Button.svelte';
+ import Dialog from './Dialog.svelte';
  import {syncedPlayer,isSyncHost as liveIsSyncHost,canControlPlayback as liveCanControlPlayback,canEditPartyQueue as liveCanEditPartyQueue,syncedCommand as liveCommand,updatePartySettings as liveSettings,resyncNow as liveResync,leaveSynced as liveLeave,syncPreferences as liveSyncPreferences,setSyncPreferences as livePreferences,localSyncDrift} from '#lib/playback/synced/client.svelte.js';
  import {player,advanceMusic} from '#lib/playback/client.svelte.js';
  import {type RoomState,type PartySettings,canControl} from '#lib/playback/synced/model.js';
@@ -10,7 +11,7 @@
  import {createMenuResource} from '#lib/ui/controls/menu-resource.svelte.js';
  import {workMenuScope} from '#lib/ui/controls/work.svelte.js';
  import {readingLocationLabel} from '#lib/reading/model.js';
- let {demoRoom,demoUserId}:{demoRoom?:RoomState;demoUserId?:string}=$props();
+ let {demoRoom,demoUserId,onend}:{demoRoom?:RoomState;demoUserId?:string;onend?:()=>void}=$props();
  const {api,preview}=useClient();
  const clock=useClock('second',()=>!preview);
  // A demo owns its room/preferences locally; it never borrows the signed-in room.
@@ -39,7 +40,15 @@
  const updatePartySettings=(patch:Partial<PartySettings>)=>{if(!preview)return liveSettings(patch);if(previewRoom)previewRoom.settings={...previewRoom.settings,...patch};};
  const setSyncPreferences=(patch:Partial<typeof liveSyncPreferences>)=>{if(!preview)return livePreferences(patch);Object.assign(previewPreferences,patch);};
  const resyncNow=()=>{if(!preview)return liveResync();};
- const leaveSynced=()=>{if(!preview)return liveLeave();};
+ let endingRoomId = $state<string>();
+ const confirmingEnd = $derived(!!endingRoomId && room?.id === endingRoomId && isSyncHost());
+ async function endParty() {
+  if (!confirmingEnd) return;
+  endingRoomId = undefined;
+  if (preview) previewRoom = undefined;
+  else await liveLeave();
+  onend?.();
+ }
  const settings=$derived(room!.settings);
  const self=$derived(room?.participants.find(p=>p.userId===userId));
  const drift=$derived.by(()=>{clock.now;return preview?null:localSyncDrift();});
@@ -58,32 +67,34 @@
 </script>
 {#if room}
  <Button menu icon="settings" iconSize={18} size="icon" label="Party options" title="Party options">
-  <Button item keepOpen={false} onclick={resyncNow}>Resync</Button>
-  <Button menu text="Sync status" label="Sync status">
+  <Button item icon="refresh" onclick={resyncNow}>Resync</Button>
+  <Button menu label="Sync status" icon="broadcast">
    <Button item disabled>{room.mediaType==='reading'?readingLocationLabel(room.reading):drift===null?'No local playback':drift<.25?'Aligned':`${drift.toFixed(1)}s apart`}</Button>
    {#each room.participants as member (member.userId)}
     <Button item disabled>{member.username} — {!member.joined?'Invited':!member.online?'Disconnected':member.unavailable?room.mediaType==='reading'?'Cannot read':'Cannot play':member.buffering?room.mediaType==='reading'?'Opening':'Buffering':room.mediaType!=='reading'&&settings.readyCheck&&!member.ready?'Not ready':'Ready'}</Button>
    {/each}
   </Button>
-  {#if room.mediaType!=='reading'&&settings.readyCheck}<Button item checked={self?.ready??false} onclick={()=>syncedCommand('ready',{ready:!self?.ready})}>Ready</Button>{/if}
-  <Button menu text="Personal" label="Personal">
-   <Button item checked={preferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!preferences.keepPlaying})}>{room.mediaType==='reading'?'Keep reading when leaving':'Keep playing when leaving'}</Button>
+  {#if room.mediaType!=='reading'&&settings.readyCheck}<Button item icon="check" keepOpen checked={self?.ready??false} onclick={()=>syncedCommand('ready',{ready:!self?.ready})}>Ready</Button>{/if}
+  <div class="menu-divider" role="separator"></div>
+  <Button menu label="Personal" icon="user">
+   <Button item keepOpen checked={preferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!preferences.keepPlaying})}>{room.mediaType==='reading'?'Keep reading when leaving':'Keep playing when leaving'}</Button>
    {#if room.mediaType!=='reading'}
    <Button menu text="Playback offset" label="Playback offset">
-    <label class="offset-control">{preferences.offsetSeconds>0?'+':''}{preferences.offsetSeconds.toFixed(1)}s
-     <input aria-label="Personal playback offset" type="range" min="-5" max="5" step="0.1" value={preferences.offsetSeconds} oninput={event=>setSyncPreferences({offsetSeconds:Number(event.currentTarget.value)})}/>
+    <label class="offset-control" data-menu-interactive>{preferences.offsetSeconds>0?'+':''}{preferences.offsetSeconds.toFixed(1)}s
+     <input aria-label="Personal playback offset" data-menu-focus type="range" min="-5" max="5" step="0.1" value={preferences.offsetSeconds} oninput={event=>setSyncPreferences({offsetSeconds:Number(event.currentTarget.value)})}/>
     </label>
-    <Button item onclick={()=>setSyncPreferences({offsetSeconds:0})}>Reset</Button>
+    <Button item onclick={()=>setSyncPreferences({offsetSeconds:0})}>Reset offset</Button>
    </Button>
    {/if}
   </Button>
   {#if room.mediaType==='audio'}
-   <Button menu text="Queue" label="Queue">
+   <Button menu label="Party queue" icon="list">
     {#each room.queueItems as track,index (`${index}:${track.id}`)}
      <Button menu text={track.title} label={track.title}>
       <Button item disabled={!canControlPlayback()||track.availability!=='available'} keepOpen={false} onclick={()=>playTrack(index)}>Play</Button>
       <Button item disabled={!canEditPartyQueue()||index===0} onclick={()=>editQueue(index,'up')}>Move up</Button>
       <Button item disabled={!canEditPartyQueue()||index===room!.queue.length-1} onclick={()=>editQueue(index,'down')}>Move down</Button>
+      <div class="menu-divider" role="separator"></div>
       <Button item danger disabled={!canEditPartyQueue()||index===room!.queueIndex} onclick={()=>editQueue(index,'remove')}>Remove</Button>
      </Button>
     {/each}
@@ -100,36 +111,43 @@
   {/if}
   {#if isSyncHost()}
    <div class="menu-divider" role="separator"></div>
-   <Button menu text={room.mediaType==='reading'?'Reading controls':'Playback'} label={room.mediaType==='reading'?'Reading controls':'Playback'}>
-    {#each [{value:'host',label:'Host only'},{value:'everyone',label:'Everyone'},{value:'selected',label:'Selected members'}] as option}<Button item selection="radio" checked={settings.playback===option.value} onclick={()=>updatePartySettings({playback:option.value as typeof settings.playback})}>{option.label}</Button>{/each}
-    <Button menu text="Controllers" label="Controllers" disabled={settings.playback!=='selected'}>
-     {#each room.participants.filter(p=>p.joined&&p.userId!==room!.hostId) as member (member.userId)}<Button item keepOpen checked={settings.controllers.includes(member.userId)} onclick={()=>updatePartySettings({controllers:settings.controllers.includes(member.userId)?settings.controllers.filter(id=>id!==member.userId):[...settings.controllers,member.userId]})}>{member.username}</Button>{:else}<Button item disabled>No joined guests</Button>{/each}
+    <Button menu label={room.mediaType==='reading'?'Reading controls':'Playback controls'} icon="play">
+     {#each [{value:'host',label:'Host only'},{value:'everyone',label:'Everyone'},{value:'selected',label:'Selected members'}] as option}<Button item selection="radio" checked={settings.playback===option.value} onclick={()=>updatePartySettings({playback:option.value as typeof settings.playback})}>{option.label}</Button>{/each}
+     <Button menu text="Controllers" label="Controllers" disabled={settings.playback!=='selected'}>
+      {#each room.participants.filter(p=>p.joined&&p.userId!==room!.hostId) as member (member.userId)}<Button item keepOpen checked={settings.controllers.includes(member.userId)} onclick={()=>updatePartySettings({controllers:settings.controllers.includes(member.userId)?settings.controllers.filter(id=>id!==member.userId):[...settings.controllers,member.userId]})}>{member.username}</Button>{:else}<Button item disabled>No joined guests</Button>{/each}
+     </Button>
+     {#if room.mediaType!=='reading'}<div class="menu-divider" role="separator"></div>
+     <Button item checked={settings.readyCheck} onclick={()=>updatePartySettings({readyCheck:!settings.readyCheck})}>Ready check</Button>{/if}
     </Button>
-    {#if room.mediaType!=='reading'}<div class="menu-divider" role="separator"></div>
-    <Button item checked={settings.readyCheck} onclick={()=>updatePartySettings({readyCheck:!settings.readyCheck})}>Ready check</Button>{/if}
-   </Button>
-   {#if room.mediaType!=='reading'}<Button menu text="Buffering" label="Buffering">
-    <Button item checked={room.bufferingPolicy==='together'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'together'})}>Pause together</Button>
-    <Button item checked={room.bufferingPolicy==='catch-up'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'catch-up'})}>Continue and catch up</Button>
-   </Button>{/if}
-   <Button menu text="Invitations" label="Invitations">
-    <Button item checked={settings.acceptInvites} onclick={()=>updatePartySettings({acceptInvites:!settings.acceptInvites})}>Allow new members</Button>
-    <div class="menu-divider" role="separator"></div>
-    <Button item selection="radio" checked={settings.invitations==='host'} onclick={()=>updatePartySettings({invitations:'host'})}>Host only</Button>
-    <Button item selection="radio" checked={settings.invitations==='everyone'} onclick={()=>updatePartySettings({invitations:'everyone'})}>Everyone</Button>
-   </Button>
-   <Button menu text="Host disconnects" label="Host disconnects">
-    {#each [{value:'wait',label:'Wait for host'},{value:'continue',label:'Continue for up to 1 minute'},{value:'transfer',label:'Transfer ownership'}] as option}<Button item selection="radio" checked={settings.hostDisconnect===option.value} onclick={()=>updatePartySettings({hostDisconnect:option.value as typeof settings.hostDisconnect})}>{option.label}</Button>{/each}
-   </Button>
-   {#if room.mediaType!=='reading'}<Button menu text="Queue permissions" label="Queue permissions">
-    <Button item selection="radio" checked={settings.queue==='host'} onclick={()=>updatePartySettings({queue:'host'})}>Host only</Button>
-    <Button item selection="radio" checked={settings.queue==='everyone'} onclick={()=>updatePartySettings({queue:'everyone'})}>Everyone</Button>
-   </Button>{/if}
+    {#if room.mediaType!=='reading'}<Button menu text="Buffering" label="Buffering" icon="clock">
+     <Button item checked={room.bufferingPolicy==='together'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'together'})}>Pause together</Button>
+     <Button item checked={room.bufferingPolicy==='catch-up'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'catch-up'})}>Continue and catch up</Button>
+    </Button>{/if}
+    <Button menu text="Invitations" label="Invitations" icon="friends">
+     <Button item checked={settings.acceptInvites} onclick={()=>updatePartySettings({acceptInvites:!settings.acceptInvites})}>Allow new members</Button>
+     <div class="menu-divider" role="separator"></div>
+     <Button item selection="radio" checked={settings.invitations==='host'} onclick={()=>updatePartySettings({invitations:'host'})}>Host only</Button>
+     <Button item selection="radio" checked={settings.invitations==='everyone'} onclick={()=>updatePartySettings({invitations:'everyone'})}>Everyone</Button>
+    </Button>
+    <Button menu text="Host disconnects" label="Host disconnects" icon="broadcast">
+     {#each [{value:'wait',label:'Wait for host'},{value:'continue',label:'Continue for up to 1 minute'},{value:'transfer',label:'Transfer ownership'}] as option}<Button item selection="radio" checked={settings.hostDisconnect===option.value} onclick={()=>updatePartySettings({hostDisconnect:option.value as typeof settings.hostDisconnect})}>{option.label}</Button>{/each}
+    </Button>
+    {#if room.mediaType!=='reading'}<Button menu text="Queue permissions" label="Queue permissions" icon="list">
+     <Button item selection="radio" checked={settings.queue==='host'} onclick={()=>updatePartySettings({queue:'host'})}>Host only</Button>
+     <Button item selection="radio" checked={settings.queue==='everyone'} onclick={()=>updatePartySettings({queue:'everyone'})}>Everyone</Button>
+    </Button>{/if}
    <div class="menu-divider" role="separator"></div>
-   <Button item danger keepOpen={false} onclick={()=>leaveSynced()}>End party</Button>
+   <Button item icon="close" danger onclick={() => { endingRoomId = room?.id; }}>End party…</Button>
   {/if}
  </Button>
 {/if}
+<Dialog open={confirmingEnd} title="End this party?"
+ message="This ends the synced session for all participants." onclose={() => { endingRoomId = undefined; }}>
+ {#snippet footer()}
+  <Button onclick={() => { endingRoomId = undefined; }}>Cancel</Button>
+  <Button danger onclick={endParty}>End party</Button>
+ {/snippet}
+</Dialog>
 <style>
  .offset-control{display:grid;gap:8px;padding:8px 12px;font-size:var(--text-sm);font-variant-numeric:tabular-nums;}
  input{width:100%;accent-color:var(--accent);}

@@ -3,6 +3,7 @@ import { searchIgdb, igdbDetails, importIgdbGame } from '#lib/providers/igdb/ser
 import * as games from '#lib/core/games/service.server.js';
 
 import { AppError } from '#lib/server/security/errors.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleGames(context: ApiContext): Promise<Response | undefined> {
@@ -22,6 +23,8 @@ export async function handleGames(context: ApiContext): Promise<Response | undef
       else if (path.length === 2 && method === 'GET') result = await games.gameDetails(uid, uuid(path[1]));
       else if (path.length === 3 && path[2] === 'playthroughs' && method === 'POST')
         result = await games.createPlaythrough(uid, uuid(path[1]), body);
+      else if (path.length === 3 && path[2] === 'playthroughs' && method === 'GET')
+        result = await withReadCancellation(context.request.signal,()=>games.playthroughChoices(uid,uuid(path[1]),Number(url.searchParams.get('page')??1)));
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
  return Response.json(result ?? { ok: true });

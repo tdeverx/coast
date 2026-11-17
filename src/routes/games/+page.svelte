@@ -30,8 +30,8 @@
     {#snippet segments()}{@const browse=browseHeading('play',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{reset: false,})}/>{/if}{/snippet}
     {#snippet controls()}<RowFilter groups={[
       {label:'Games view',value:data.filters.view==='library'&&data.filters.personal?'personal':data.filters.view,options:[{value:'library',label:'All games'},{value:'personal',label:'Your games'},{value:'igdb',label:'Discover'}],change:view=>{void goto(pageUrl(1,view==='igdb'?'igdb':'library',data.filters.state,view==='personal'),{reset: false,});}},
-      ...(data.filters.view==='library'?[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{reset: false,});}}]:[]),
-    ]}>{#snippet actions()}{#if page.data.user?.role==='admin'}<Button item href="/settings/integrations" icon="server">Integrations</Button>{/if}{/snippet}</RowFilter>{/snippet}
+      ...(data.filters.view==='library'?[{section:'access' as const,label:'Owned only',presentation:'checkbox' as const,value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Owned only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{reset: false,});}}]:[]),
+    ]} reset={{disabled:data.filters.view==='library'&&!data.filters.personal&&data.filters.scope==='all',run:()=>goto(pageUrl(1,'library',data.filters.state,false,'all'),{reset:false})}}>{#snippet actions()}{#if page.data.user?.role==='admin'}<Button item href="/settings/integrations" icon="server">Integrations</Button>{/if}{/snippet}</RowFilter>{/snippet}
     {#snippet before()}
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
@@ -53,7 +53,7 @@
     {/snippet}
     {#snippet empty()}
   {#if !data.items.length && !data.failure && data.filters.view === 'library' && data.filters.scope === 'available'}
-    <EmptyState title="No owned games in this selection" description="Steam ownership provides availability; installation is unknown. Turn off Available to browse all games." icon="library" />
+    <EmptyState title="No owned games in this selection" description="Clear the ownership filter to browse all games." icon="library" />
   {:else if data.filters.view === 'igdb' && !data.sources.length}
     <EmptyState
       title="Connect IGDB"

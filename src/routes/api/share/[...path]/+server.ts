@@ -5,6 +5,7 @@ import { claimShare, shareCookie, sharedState, startShared, sharedProgress, shar
 import { AppError } from '#lib/server/security/errors.js';
 import { releaseViewer } from '#lib/sharing/leases.server.js';
 import {externalStream} from '#lib/sharing/external.server.js';
+import {startSharedReading,sharedReadingResource,touchSharedReading,closeSharedReading} from '#lib/sharing/reading.server.js';
 
 const headers = { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff' };
 const handler: RequestHandler = async ({ request, params, cookies, locals, url }) => {
@@ -17,6 +18,16 @@ const handler: RequestHandler = async ({ request, params, cookies, locals, url }
    return Response.json({ ok: true }, { headers });
   }
   if (request.method === 'GET' && path.join('/') === 'state') return Response.json(await sharedState(token), { headers });
+  if(path[0]==='reading'){
+   if(request.method==='POST'&&path.length===1)return Response.json(await startSharedReading(token,await readJsonBody(request,65536,false),request.signal),{headers});
+   if(request.method==='POST'&&path.length===3&&['heartbeat','close'].includes(path[2])){
+    v.parse(v.strictObject({}),await readJsonBody(request,65536,false));
+    return Response.json(path[2]==='close'?await closeSharedReading(token,path[1]):await touchSharedReading(token,path[1],request.signal),{headers});
+   }
+   if(path.length===3&&(path[2]==='file'&&['GET','HEAD'].includes(request.method)||path[2]==='manifest'&&request.method==='GET'))
+    return await sharedReadingResource(token,path[1],path[2],request);
+   if(path.length===4&&path[2]==='pages'&&request.method==='GET')return await sharedReadingResource(token,path[1],'pages',request,path[3]);
+  }
   if (path[0] === 'playback') {
    if (request.method === 'POST' && path.length === 1) return Response.json(await startShared(token, await readJsonBody(request,65536,false),request.signal), { headers });
    if (['GET','HEAD'].includes(request.method) && path.length === 3 && path[2] === 'stream') return await sharedStream(token, path[1], request);

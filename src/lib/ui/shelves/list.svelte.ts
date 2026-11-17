@@ -46,6 +46,13 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   const resource = createResource<Content>(
     untrack(() => initial ?? { items: [], page: 1, pages: 1, total: 0, kind: 'all', filter: 'all' }), !!untrack(() => initial)
   );
+  $effect(() => {
+    if (initial) {
+      resource.replace(initial);
+      scope = initial.scope ?? 'all';
+      kind = initial.kind;
+    }
+  });
   const content = $derived(resource.data);
   const busy = $derived(resource.busy);
   const error = $derived(resource.error);
@@ -139,6 +146,9 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
         }
       ];
     },
+
+    get filterReset() { return { disabled: scope === 'all' && kind === 'all',
+      run: () => { scope = 'all'; kind = 'all'; return load(1); } }; },
 
     get controls(): ShelfControl[] {
       return [

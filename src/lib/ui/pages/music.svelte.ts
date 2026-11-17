@@ -1,6 +1,6 @@
 import type { ReadonlyURL } from '$app/state';
 import { page } from '$app/state';
-import { playMusic } from '#lib/playback/client.svelte.js';
+import { playMusic, playMusicArtist } from '#lib/playback/client.svelte.js';
 import { message } from '#lib/ui/client.js';
 import { useClient } from '#lib/ui/client-context.js';
 import { musicDuration, musicHero, musicHref } from '#lib/music/presentation.js';
@@ -36,9 +36,9 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => Readonly
     try { await task(); } catch (cause) { failure = message(cause); } finally { busy = false; }
   }
   const commands = $derived<PageCommand[]>(canAct() ? [
-    ...(item.workId && item.kind!=='artist' && item.available!==false && page.data.capabilities?.playback!==false ? [
-      { label: 'Play', size:'hero' as const, icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
-      ...(item.kind==='album'||item.positionSeconds ? [{ label: 'Continue', size:'hero' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) }] : []),
+    ...(item.workId && item.available && page.data.capabilities?.playback!==false ? [
+      { label: 'Play', size:'hero' as const, icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : item.kind==='artist'?playMusicArtist(item.workId!):playMusic(item.workId!, false)) },
+      ...(item.kind==='album'||item.kind==='artist' ? [{ label: 'Shuffle', size:'hero' as const, icon:'shuffle' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : item.kind==='artist'?playMusicArtist(item.workId!,true):playMusic(item.workId!,false,true)) }] : []),
     ] : []),
   ] : []);
   const rows = $derived.by((): DetailRow[] => {

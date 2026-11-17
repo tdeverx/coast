@@ -25,9 +25,17 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
  const location=useShelfLocation();
   const { api, preview } = useClient();
   const initial = untrack(get);
+  const mediums = $derived(get().mediums ?? { ...page.data, features: page.data.capabilities });
   let surface = $state<DiscoverySurface>(initial.surface ?? 'watch');
-  let kind = $state<string>(initial.kind ?? 'all');
-  let available = $state(false);
+  function canFilterAvailability() {
+    return !!page.data.user && (surface === 'watch' || surface === 'play');
+  }
+  function watchKind() {
+    const value = get().layout === 'grid' ? location.url?.searchParams.get('rowKind') : null;
+    return value === 'movie' || value === 'show' ? value : 'all';
+  }
+  let kind = $state<string>(surface === 'watch' ? watchKind() : initial.kind ?? 'all');
+  let available = $state(canFilterAvailability() && initial.layout === 'grid' && location.url?.searchParams.get('rowAvailable') === 'true');
   let currentPage = $state(initial.page ?? 1);
   const resource = createResource<DiscoveryContent>(initial.initial ?? { items: [], failure: '' }, !!initial.initial);
   const cached = new Map<string, DiscoveryContent>();
@@ -54,7 +62,13 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
     const params=parameters(number);
     params.set('view',surface);
     params.delete('surface');
+    if (surface === 'watch' && kind !== 'all') params.set('rowKind', kind);
+    if (canFilterAvailability() && available) params.set('rowAvailable', 'true');
     return `/discover?${params}`;
+  }
+  function updateGridLocation() {
+    if (!location.embedded && !preview && get().layout === 'grid')
+      void goto(pageUrl(currentPage), { shallow: true, replace: true, reset: false, state: page.state });
   }
   const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number=get().layout==='grid'?currentPage:1,append=false) {
@@ -87,7 +101,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
       void load();
   }
   function surfaceAvailable(value:string) {
-    return surfaceEnabled({...get().mediums, experimentalMusic:get().mediums?.experimentalMusic??false,experimentalGaming:get().mediums?.experimentalGaming??false,experimentalBooks:get().mediums?.experimentalBooks??false,experimentalComics:get().mediums?.experimentalComics??false},value);
+    return surfaceEnabled(mediums, value);
   }
 
   function select(value: string) {
@@ -98,7 +112,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
     currentPage = 1;
     available = false;
 
-    if (!location.embedded && !preview && get().layout === 'grid') goto(pageUrl(1), { shallow: true, replace: true, reset: false, state: page.state });
+    updateGridLocation();
 
     resource.replace({ items: [], failure: '' });
     restoreOrLoad();
@@ -115,9 +129,9 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
   }
   const scopeKey = $derived(JSON.stringify([
     page.data.user?.id, get().section,
-    get().mediums?.experimentalMusic, get().mediums?.experimentalGaming,
-    get().mediums?.experimentalBooks, get().mediums?.experimentalComics,
-    get().mediums?.features,
+    mediums.experimentalMusic, mediums.experimentalGaming,
+    mediums.experimentalBooks, mediums.experimentalComics,
+    mediums.features,
   ]));
   const refreshKey = $derived(contentRevisionKey(page.data, ['tracking', 'social']));
   let previousScope = untrack(() => scopeKey);
@@ -143,15 +157,16 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
       const changed = key !== previousRefresh || initialChanged || scopeChanged;
       if (selection !== previousSelection) {
         surface = option.surface ?? 'watch';
-        kind = option.kind ?? 'all';
+        kind = surface === 'watch' ? watchKind() : option.kind ?? 'all';
         currentPage = option.page ?? 1;
-        available = false;
+        available = canFilterAvailability() && option.layout === 'grid' && location.url?.searchParams.get('rowAvailable') === 'true';
       }
       previousRefresh = key;
       previousScope = scope;
       previousInitial = current;
       previousSelection = selection;
       const withdrawn = !surfaceAvailable(surface);
+      if (!canFilterAvailability()) available = false;
       if(withdrawn&&option.scoped){
         cached.clear();
         refresh.clear();
@@ -164,16 +179,15 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
         currentPage = 1;
         available = false;
       }
-      const features = option.mediums;
       const kindWithdrawn = surface === 'read' && (
-        (kind === 'book' || kind === 'comic') && !categoryEnabled(features!, kind)
+        (kind === 'book' || kind === 'comic') && !categoryEnabled(mediums, kind)
       );
       if (kindWithdrawn) {
         kind = 'all';
         currentPage = 1;
       }
 
-      if (!location.embedded && !preview && (withdrawn || kindWithdrawn) && option.layout === 'grid') goto(pageUrl(currentPage), { shallow: true, replace: true, reset: false, state: page.state });
+      if (withdrawn || kindWithdrawn) updateGridLocation();
       if (!changed && !withdrawn && !kindWithdrawn) return;
 
       const activated = resource.activated || resource.ready;
@@ -193,6 +207,19 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
   });
   onDestroy(resource.dispose);
   return {
+    get filterReset() {
+      return { disabled: kind === 'all' && !available, run: () => {
+        const reload = surface === 'read' && kind !== 'all';
+        kind = 'all';
+        available = false;
+        currentPage = 1;
+        updateGridLocation();
+        if (reload) {
+          resource.replace({ items: [], failure: '' });
+          restoreOrLoad();
+        }
+      } };
+    },
     get pagination(): ShelfPagination {
       return surface === 'read'
         ? {
@@ -229,20 +256,21 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
               type: 'select' as const,
               label: 'Reading type',
               value: kind,
-              options: readingTypeOptions(get().mediums ?? {}),
+              options: readingTypeOptions(mediums),
               change: selectKind
             }
           ]
-          : surface === 'listen' ? [] : [
+          : canFilterAvailability() ? [
             {
               type: 'availability' as const,
-              label: 'Available to play only',
+              label: surface === 'play' ? 'Owned only' : 'Available to watch only',
               value: available ? 'available' : 'all',
               change: (value: string) => {
                 available = value === 'available';
+                updateGridLocation();
               }
             }
-          ]
+          ] : []
       ];
     },
     get controls(): ShelfControl[] {
@@ -254,6 +282,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
             value: kind,
             change: (value) => {
               kind = value;
+              updateGridLocation();
             }
           }
         ]

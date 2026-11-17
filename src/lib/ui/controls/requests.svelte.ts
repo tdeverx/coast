@@ -3,13 +3,15 @@ import type { MediaView } from '#lib/ui/types.js';
 import { requestScopeFormatter, type RequestDestination } from '#lib/media/requests.js';
 import type { api } from '#lib/ui/client.js';
 import { createRequestOptions } from './request-options.svelte';
+import { retryMenuRead } from './menu-read-retry';
 
 /** Lazy request state, independent of the button/menu rendering. */
 export function createRequestControls(options: {
   item: () => MediaView | null; data: () => MediaActionData | null; api: typeof api;
+  scope: () => string;
   onrequest: () => (fourK?: boolean, destinations?: RequestDestination[]) => void;
 }) {
-  const read = createRequestOptions(options.api);
+  const read = createRequestOptions(options.api, retryMenuRead);
   const requestOptions = $derived(read.value);
   const cancel = read.cancel, resetOptions = read.reset;
   const existingRequests = $derived(options.data()?.requests ?? []);
@@ -50,7 +52,8 @@ export function createRequestControls(options: {
     const item = options.item();
     if (read.busy || requestOptions || requestDisabledReason || !item) return;
     const id = item.id;
-    await read.load(id, undefined, () => options.item()?.id === id);
+    const scope = options.scope();
+    await read.load(id, undefined, () => options.item()?.id === id && options.scope() === scope);
   }
   function openRequest(fourK = false) {
     options.onrequest()(fourK, requestOptions);
@@ -59,6 +62,7 @@ export function createRequestControls(options: {
  return {cancel, resetOptions, loadRequestOptions, openRequest,
 get requestOptions() { return requestOptions; },
 get requestOptionsError() { return read.error; },
+get requestOptionsBusy() { return read.busy; },
 get existingRequests() { return existingRequests; },
 get scopeLabel() { return scopeLabel; },
 get canManageRequests() { return canManageRequests; },

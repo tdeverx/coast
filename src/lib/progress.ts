@@ -16,6 +16,7 @@ export type ProgressContent = ProgressOptions & {
   items: (MediaView | MediaCardPresentation)[];
   total: number;
   emptyAllMedia?: boolean;
+  availableViews?: ProgressOptions['view'][];
   pages: number;
 };
 export const progressTabs = [
@@ -26,8 +27,12 @@ export const progressTabs = [
   { value: 'favourites', label: 'Favourites' },
   { value: 'finished', label: 'Finished' },
   { value: 'dropped', label: 'Dropped' },
-];
+] as const;
 export type ProgressSurface = 'continue' | 'profile' | 'next' | 'recommendations' | 'watchlist' | 'favourites';
+export function progressSelectionTabs(surface: 'continue'|'profile') {
+  return progressTabs.filter(option=>['watching','up-next','paused'].includes(option.value) ||
+    surface==='profile' && ['finished','dropped'].includes(option.value));
+}
 export function progressSurface(view: string, profile: boolean): ProgressSurface {
   if (view === 'recommendations') return 'recommendations';
   if (view === 'next') return 'next';

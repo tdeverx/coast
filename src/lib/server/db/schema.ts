@@ -1,5 +1,5 @@
 import type { ScreenKind, MediaRelationship } from '#lib/media/model.js';
-import type { ReadingKind, ReadingProvider, ReadingState, ReadingFormat, ReadingLocation } from '#lib/reading/model.js';
+import { initialReadingBookmarkCycle, type ReadingKind, type ReadingProvider, type ReadingState, type ReadingFormat, type ReadingLocation, type ReadingRereadRestore } from '#lib/reading/model.js';
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -23,7 +23,7 @@ import { jsonb } from './jsonb';
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 export type MediaKind = ScreenKind;
-export type WorkKind = ScreenKind | 'game' | 'album' | 'track' | 'book' | 'audiobook' | 'comic';
+export type WorkKind = ScreenKind | 'game' | 'artist' | 'album' | 'track' | 'book' | 'audiobook' | 'comic';
 export type JsonObject = Record<string, unknown>;
 export type ProfileSettings = {
   displayName?: string;
@@ -1029,11 +1029,11 @@ export const gameSessions = pgTable('game_sessions', {
   check('game_sessions_minutes_check', sql`${t.minutesPlayed} between 1 and 1440`),
 ]);
 
-/** Albums/tracks are works; artists are credits and browsing preferences. */
+/** Shared music catalogue; artist source aliases retain their own provider identities. */
 export const musicWorks = pgTable('music_works', {
   id: uuid('id').primaryKey().references(() => works.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
-  kind: text('kind').$type<'album' | 'track'>().notNull(),
+  kind: text('kind').$type<'artist' | 'album' | 'track'>().notNull(),
   artistNames: text('artist_names').array().notNull().default([]),
   releaseDate: date('release_date'),
   year: integer('year'),
@@ -1047,21 +1047,18 @@ export const musicWorks = pgTable('music_works', {
 });
 export const musicArtists = pgTable('music_artists', {
   id: uuid('id').primaryKey().defaultRandom(),
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
   instanceId: uuid('instance_id').notNull().references(() => providerInstances.id, { onDelete: 'cascade' }),
   externalId: text('external_id').notNull(),
   name: text('name').notNull(),
 }, (t) => [uniqueIndex('music_artists_identity_unique').on(t.instanceId, t.externalId),
+  index('music_artists_work_idx').on(t.workId),
   index('music_artists_guid_idx').on(t.instanceId,sql`replace(lower(${t.externalId}),'-','')`)]);
 export const musicCredits = pgTable('music_credits', {
   workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
-  artistId: uuid('artist_id').notNull().references(() => musicArtists.id, { onDelete: 'cascade' }),
+  artistId: uuid('artist_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
   role: text('role').notNull(),
-}, (t) => [primaryKey({ columns: [t.workId, t.artistId, t.role] })]);
-export const musicArtistPreferences = pgTable('music_artist_preferences', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  artistId: uuid('artist_id').notNull().references(() => musicArtists.id, { onDelete: 'cascade' }),
-  favourite: boolean('favourite').notNull().default(false),
-}, (t) => [primaryKey({ columns: [t.userId, t.artistId] })]);
+}, (t) => [primaryKey({ columns: [t.workId, t.artistId, t.role] }), index('music_credits_artist_work_idx').on(t.artistId,t.workId)]);
 export const workIdentifiers = pgTable('work_identifiers', {
   workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
   provider: text('provider').notNull(),
@@ -1131,6 +1128,8 @@ export const readingProgress = pgTable('reading_progress', {
   totalPages: integer('total_pages'),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
+  bookmarkCycle: uuid('bookmark_cycle').notNull().default(initialReadingBookmarkCycle),
+  rereadRestore: jsonb('reread_restore').$type<ReadingRereadRestore>(),
   updatedAt: updatedAt(),
 }, (t) => [
   primaryKey({ columns: [t.userId, t.workId] }),
@@ -1144,21 +1143,26 @@ export const readingSessions = pgTable('reading_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   workId: uuid('work_id').notNull().references(() => readingWorks.id, { onDelete: 'cascade' }),
+  shareId: uuid('share_id').references(():AnyPgColumn=>playbackShares.id,{onDelete:'cascade'}),
+  shareViewerId: uuid('share_viewer_id').references(():AnyPgColumn=>shareViewers.id,{onDelete:'cascade'}),
   connectionId: uuid('connection_id').references(() => providerConnections.id, { onDelete: 'cascade' }),
   accountGeneration: uuid('account_generation'),
   externalId: text('external_id'),
   format: text('format').$type<ReadingFormat>().notNull(),
   edition: text('edition').notNull(),
+  bookmarkCycle: uuid('bookmark_cycle').notNull().default(initialReadingBookmarkCycle),
   location: jsonb('location').$type<ReadingLocation>(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   closedAt: timestamp('closed_at', { withTimezone: true }),
   createdAt: createdAt(), updatedAt: updatedAt(),
 }, t => [
-  index('reading_sessions_resume_idx').on(t.userId,t.workId,t.edition,t.updatedAt),index('reading_sessions_expiry_idx').on(t.expiresAt),
+  uniqueIndex('reading_sessions_shared_viewer_idx').on(t.shareViewerId).where(sql`${t.shareViewerId} is not null and ${t.closedAt} is null`),
+  index('reading_sessions_resume_idx').on(t.userId,t.workId,t.bookmarkCycle,t.edition,t.updatedAt),index('reading_sessions_expiry_idx').on(t.expiresAt),
   check('reading_sessions_format_check',sql`${t.format} in ('pdf','epub','cbz','cbr','cb7','cbt')`),
   check('reading_sessions_edition_check',sql`length(${t.edition}) between 1 and 200`),
   check('reading_sessions_check',sql`(${t.connectionId} is null)=(${t.externalId} is null)`),
   check('reading_sessions_check1',sql`${t.connectionId} is null or ${t.accountGeneration} is not null`),
+  check('reading_sessions_share_check',sql`(${t.shareId} is null)=(${t.shareViewerId} is null) and (${t.shareId} is null or (${t.connectionId} is not null and ${t.location} is null))`),
 ]);
 export const readingHistory = pgTable('reading_history', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -1258,8 +1262,10 @@ export const socialRecommendations = pgTable('social_recommendations', {
 export const socialCheckins = pgTable('social_checkins',{
   id:uuid('id').primaryKey().defaultRandom(),userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
   workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),state:text('state').notNull().default('active'),
+  mode:text('mode').$type<'timed' | 'manual'>().notNull().default('timed'),
   expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),createdAt:createdAt(),updatedAt:updatedAt(),
-},t=>[uniqueIndex('social_checkin_active_unique').on(t.userId).where(sql`${t.state}='active'`),check('social_checkin_state',sql`${t.state} in ('active','cancelled','completed')`)]);
+},t=>[uniqueIndex('social_checkin_active_unique').on(t.userId).where(sql`${t.state}='active'`),check('social_checkin_state',sql`${t.state} in ('active','cancelled','completed')`),
+  check('social_checkin_mode',sql`${t.mode} in ('timed','manual')`)]);
 export const socialLiveState = pgTable('social_live_state',{
   connectionId:uuid('connection_id').primaryKey().references(()=>providerConnections.id,{onDelete:'cascade'}),
   accountGeneration:uuid('account_generation').notNull(),workId:uuid('work_id').references(()=>works.id,{onDelete:'set null'}),
@@ -1475,6 +1481,7 @@ export const playbackShares = pgTable('playback_shares',{
 export const shareViewers = pgTable('share_viewers',{
  id:uuid('id').primaryKey().defaultRandom(),shareId:uuid('share_id').notNull().references(()=>playbackShares.id,{onDelete:'cascade'}),
  tokenHash:text('token_hash').notNull().unique(),host:boolean('host').notNull().default(false),
+ readingSessionId:uuid('reading_session_id').references(()=>readingSessions.id,{onDelete:'set null'}),
  preparingUntil:timestamp('preparing_until',{withTimezone:true}),
   preparationToken:uuid('preparation_token'),
   fingerprint:text('fingerprint'),
@@ -1489,9 +1496,11 @@ export const shareViewers = pgTable('share_viewers',{
 export const shareRequestLeases = pgTable('share_request_leases',{
  id:uuid('id').primaryKey(),
  viewerId:uuid('viewer_id').notNull().references(()=>shareViewers.id,{onDelete:'cascade'}),
- playbackId:uuid('playback_id').notNull().references(()=>playbackSessions.id,{onDelete:'cascade'}),
+ playbackId:uuid('playback_id').references(()=>playbackSessions.id,{onDelete:'cascade'}),
+ readingId:uuid('reading_id').references(()=>readingSessions.id,{onDelete:'cascade'}),
  expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
-},t=>[index('share_request_leases_viewer_idx').on(t.viewerId,t.expiresAt),index('share_request_leases_playback_idx').on(t.playbackId,t.expiresAt)]);
+},t=>[index('share_request_leases_viewer_idx').on(t.viewerId,t.expiresAt),index('share_request_leases_playback_idx').on(t.playbackId,t.expiresAt),
+ index('share_request_leases_reading_idx').on(t.readingId,t.expiresAt),check('share_request_leases_target_check',sql`(${t.playbackId} is not null)<>(${t.readingId} is not null)`)]);
 
 export const contentRevisions = pgTable('content_revisions', {
   scope: text('scope').notNull(), domain: text('domain').notNull(),

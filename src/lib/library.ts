@@ -35,6 +35,7 @@ export const librarySelections = {
     { value: 'all', label: 'All' },
     { value: 'unwatched', label: 'Unwatched' },
     { value: 'progress', label: 'In progress' },
+    { value: 'paused', label: 'Paused' },
     { value: 'watched', label: 'Watched' },
     { value: 'dropped', label: 'Dropped' },
   ],
@@ -63,7 +64,7 @@ export const librarySelections = {
 };
 
 /** Shared request vocabulary for library browsing and its home-page previews. */
-export function libraryPath(options: {
+function libraryPath(options: {
   surface: LibrarySurface;
   selection?: string;
   kind?: string;

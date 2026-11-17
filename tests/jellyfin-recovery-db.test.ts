@@ -5,7 +5,8 @@ import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
 import {syncJellyfinUser,syncJellyfinChanges,type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
-import {observeMusicPageAccess,persistMusic} from '../src/lib/music/persistence.server';
+import {observeMusicPageAccess,persistMusic,importedListenBatch,logMusic} from '../src/lib/music/persistence.server';
+import {musicHistory,removeMusicListen} from '../src/lib/music/history.server';
 import {importReading} from '../src/lib/catalogue/reading.server';
 import {observeReadingFile} from '../src/lib/catalogue/reading-files.server';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
@@ -60,6 +61,7 @@ run('recording copies aggregate once across pages, reversed order and a single-c
  const db=getDb(),state=async()=>(await db.select().from(s.musicProgress).where(and(eq(s.musicProgress.userId,f.user.id),eq(s.musicProgress.trackId,saved.workId!))))[0];
  expect(await state()).toMatchObject({playCount:3,positionSeconds:40});
  expect(await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id))).toHaveLength(3);
+ const retained=await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id)).orderBy(s.musicListens.id);
  expect((await db.select().from(s.trackingState).where(and(eq(s.trackingState.userId,f.user.id),eq(s.trackingState.mediaId,saved.workId!))))[0].favourite).toBe(true);
  await syncJellyfinChanges(f.user.id,f.connection.id,'user',{video:[],music:[ids[1]]},await f.context());
  expect(await state()).toMatchObject({playCount:3,positionSeconds:40});
@@ -67,6 +69,76 @@ run('recording copies aggregate once across pages, reversed order and a single-c
  for(const track of tracks)Object.assign(track.UserData,{IsFavorite:false,PlayCount:0,PlaybackPositionTicks:0});
  await f.sync();await f.sync();expect(await state()).toMatchObject({playCount:0,positionSeconds:0});
  expect(await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id))).toHaveLength(3);
+ expect(await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id)).orderBy(s.musicListens.id)).toEqual(retained);
+ for(const track of tracks)track.UserData.PlayCount=1;
+ await f.sync();await f.sync();expect((await state()).playCount).toBe(1);
+ expect(await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id)).orderBy(s.musicListens.id)).toEqual(retained);
+ const [baseline]=await db.select().from(s.syncValues).where(and(eq(s.syncValues.connectionId,f.connection.id),eq(s.syncValues.mediaId,saved.workId!),eq(s.syncValues.category,'history')));
+ expect(baseline.remote).toMatchObject({playCount:1,importedPlayCount:1});
+});
+
+run('accepted music resets preserve independent Coast listens and keep a removed ordinal suppressed on return',async()=>{
+ const external=id(),mbid=crypto.randomUUID();
+ const row={Id:external,Type:'Audio',Name:'Reset with local history',RunTimeTicks:900000000,ProviderIds:{MusicBrainzTrack:mbid},UserData:{IsFavorite:false,PlayCount:3,PlaybackPositionTicks:0}};
+ const f=await fixture(async path=>{
+  const q=new URL(path,'https://fixture.invalid').searchParams;
+  return q.get('includeItemTypes')==='Audio'||q.get('ids')?.split(',').includes(external)?{Items:[row],TotalRecordCount:1,StartIndex:0}:empty();
+ });
+ const saved=await persistMusic(f.instance.id,{id:external,kind:'track',title:row.Name,artists:[],albumArtists:[],artistNames:[],genres:[],externalIds:{musicbrainztrack:mbid}});workIds.push(saved.workId!);
+ const db=getDb(),trackId=saved.workId!;
+ const state=async()=>(await db.select().from(s.musicProgress).where(and(eq(s.musicProgress.userId,f.user.id),eq(s.musicProgress.trackId,trackId))))[0];
+ try{
+ await f.sync();
+ const ordinal=importedListenBatch(f.connection.syncAccountId??f.connection.id,trackId,0);
+ const [entry]=await db.select().from(s.musicListens).where(and(eq(s.musicListens.userId,f.user.id),eq(s.musicListens.trackId,trackId),eq(s.musicListens.batchId,ordinal)));
+ await removeMusicListen(f.user.id,trackId,entry.id);
+ const local=crypto.randomUUID();await logMusic(f.user.id,trackId,{batchId:local});
+ await db.update(s.users).set({settings:{syncConflictWinner:f.connection.id}}).where(eq(s.users.id,f.user.id));
+ const retained=await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id)).orderBy(s.musicListens.id);
+ row.UserData.PlayCount=0;await f.sync();await f.sync();expect((await state()).playCount).toBe(1);
+ row.UserData.PlayCount=1;await f.sync();await f.sync();expect((await state()).playCount).toBe(1);
+ row.UserData.PlayCount=2;await f.sync();await f.sync();expect((await state()).playCount).toBe(2);
+ expect(await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id)).orderBy(s.musicListens.id)).toEqual(retained);
+ expect((await musicHistory(f.user.id,trackId)).items.some(item=>item.id===entry.id)).toBe(false);
+ expect(retained.some(item=>item.batchId===local&&item.source==='coast')).toBe(true);
+ const [baseline]=await db.select().from(s.syncValues).where(and(eq(s.syncValues.connectionId,f.connection.id),eq(s.syncValues.mediaId,trackId),eq(s.syncValues.category,'history')));
+ expect(baseline).toMatchObject({conflict:false,remote:{playCount:2,importedPlayCount:2,ignoredRemovedPlayCount:0}});
+ }finally{
+  // This case intentionally queues a Coast listen export. Later worker cases
+  // claim globally, so release only this fixture's unused queued work.
+  await db.delete(s.outboxActions).where(eq(s.outboxActions.userId,f.user.id));
+ }
+});
+
+run('removing inactive retained music history preserves cleared summaries and independent Coast activity',async()=>{
+ const external=id(),mbid=crypto.randomUUID();
+ const row={Id:external,Type:'Audio',Name:'Remove after provider reset',ProviderIds:{MusicBrainzTrack:mbid},UserData:{PlayCount:3}};
+ const f=await fixture(async path=>{
+  const q=new URL(path,'https://fixture.invalid').searchParams;
+  return q.get('includeItemTypes')==='Audio'||q.get('ids')?.split(',').includes(external)?{Items:[row],TotalRecordCount:1,StartIndex:0}:empty();
+ });
+ const saved=await persistMusic(f.instance.id,{id:external,kind:'track',title:row.Name,artists:[],albumArtists:[],artistNames:[],genres:[],externalIds:{musicbrainztrack:mbid}});workIds.push(saved.workId!);
+ const db=getDb(),trackId=saved.workId!;
+ const state=async()=>(await db.select().from(s.musicProgress).where(and(eq(s.musicProgress.userId,f.user.id),eq(s.musicProgress.trackId,trackId))))[0];
+ try{
+  await f.sync();
+  const retained=await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id));
+  const occurrence=(index:number)=>retained.find(entry=>entry.batchId===importedListenBatch(f.connection.syncAccountId??f.connection.id,trackId,index))!;
+  row.UserData.PlayCount=0;await f.sync();
+  await removeMusicListen(f.user.id,trackId,occurrence(2).id);expect((await state()).playCount).toBe(0);
+  await f.sync();expect((await state()).playCount).toBe(0);
+  const local=crypto.randomUUID();await logMusic(f.user.id,trackId,{batchId:local});
+  await db.update(s.users).set({settings:{syncConflictWinner:f.connection.id}}).where(eq(s.users.id,f.user.id));
+  row.UserData.PlayCount=1;await f.sync();expect((await state()).playCount).toBe(2);
+  // Ordinal one remains historical after 3→0→1. It is not the active Coast listen.
+  await removeMusicListen(f.user.id,trackId,occurrence(1).id);expect((await state()).playCount).toBe(2);
+  // Ordinal zero is active again and removing it decrements only that occurrence.
+  await removeMusicListen(f.user.id,trackId,occurrence(0).id);expect((await state()).playCount).toBe(1);
+  row.UserData.PlayCount=2;await f.sync();await f.sync();expect((await state()).playCount).toBe(1);
+  const remaining=await db.select().from(s.musicListens).where(eq(s.musicListens.userId,f.user.id));
+  expect(remaining).toHaveLength(1);expect(remaining[0]).toMatchObject({source:'coast',batchId:local});
+  expect(await db.select().from(s.removedTrackingSources).where(and(eq(s.removedTrackingSources.userId,f.user.id),eq(s.removedTrackingSources.source,'removed-music-listen')))).toHaveLength(3);
+ }finally{await db.delete(s.outboxActions).where(eq(s.outboxActions.userId,f.user.id));}
 });
 
 run('changed music page totals retain old positive access and invalidate complete coverage',async()=>{

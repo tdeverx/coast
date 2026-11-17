@@ -83,7 +83,7 @@ test('Progress gives every tab its own shape and artwork defaults',()=>{
     ['next','poster','primary','season-show-episode'],
     ['paused','fanart','thumb','show-season-episode'],
     ['watchlist','fanart','thumb','show-season-episode'],
-    ['favourites','fanart','thumb','show-season-episode'],
+    ['favourites','poster','primary','show-season-episode'],
     ['finished','poster','primary','show-season-episode'],
   ];
   client.setDelivery(async()=>content());
@@ -93,6 +93,31 @@ test('Progress gives every tab its own shape and artwork defaults',()=>{
       expect(result).toMatchObject({shape,artworkStyle,artworkPriority});
     }
   }finally{dispose();}
+});
+
+test('Progress reuses settled segment visibility for filter changes and hides an all-empty row after refresh',async()=>{
+ const calls:URL[]=[];
+ client.setDelivery(async(path:string)=>{
+  const request=new URL(path,'http://fixture/');calls.push(request);
+  if(calls.length===1)return {...content('favourite','favourites'),availableViews:['favourites']};
+  const empty={...content('favourite','favourites'),items:[],total:0,kind:'show'};
+  return request.searchParams.has('segments')?{...empty,availableViews:[]}:empty;
+ });
+ const {result,dispose}=source();
+ try {
+  await result.load();
+  expect(result.filters[0]).toMatchObject({value:'favourites',options:[{value:'favourites',label:'Favourites'}]});
+  expect(result.items.map(item=>item.id)).toEqual(['favourite']);
+  expect(calls[0].searchParams.has('segments')).toBe(true);
+  result.controls[0].change('show');await settle();
+  expect(calls[1].searchParams.has('segments')).toBe(false);
+  expect(result.items).toEqual([]);
+  expect(result.hideRow).toBe(false);
+  route.replace(data('two'));await settle();
+  expect(calls[2].searchParams.has('segments')).toBe(true);
+  expect(result.hideRow).toBe(true);
+  expect(result.filters.some(control=>control.type==='segments')).toBe(false);
+ } finally {dispose();}
 });
 
 test('an authoritative SSR replacement and its content revision cause no duplicate client request',async()=>{
@@ -197,7 +222,7 @@ test('action-scoped Progress keeps one segment-driven format and restricts media
   expect(new URL(calls[0],'http://fixture/').searchParams.get('category')).toBe('reading');
   expect(result.controls[0].options?.map(option=>option.value)).toEqual(['all','book','comic']);
   expect(result.items.map(item=>item.id)).toEqual(['book']);
-  for(const [view,shape,artwork] of [['next','poster','primary'],['watchlist','fanart','thumb'],['favourites','fanart','thumb']] as const){
+  for(const [view,shape,artwork] of [['next','poster','primary'],['watchlist','fanart','thumb'],['favourites','poster','primary']] as const){
    result.filters[0].change(view);await settle();
    expect(result.shape).toBe(shape);expect(result.artworkStyle).toBe(artwork);
    expect(result.href).toContain('category=reading');

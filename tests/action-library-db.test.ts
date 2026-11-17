@@ -57,6 +57,26 @@ describe.skipIf(!target)('action Library container counts and pagination',()=>{
   expect((await read('surface=listen&selection=playlist&scope=all',other)).items.map(item=>item.title)).toEqual(['Private playlist']);
   expect((await read('surface=listen&selection=playlist&scope=available')).total).toBe(0);
  });
+ test('paused movies are selectable in Library and personal Collection without returning in-progress results',async()=>{
+  const db=getDb();
+  const mediaId=crypto.randomUUID();
+  const [instance]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Paused Library',baseUrl:'https://fixture.invalid'}).returning();
+  try {
+   await db.insert(s.media).values({id:mediaId,kind:'movie',title:'Paused movie'});
+   const [connection]=await db.insert(s.providerConnections).values({userId:owner,instanceId:instance.id}).returning();
+   const [item]=await db.insert(s.providerItems).values({instanceId:instance.id,mediaId,kind:'movie',externalId:mediaId}).returning();
+   await db.insert(s.availability).values({userId:owner,connectionId:connection.id,providerItemId:item.id,mediaId,state:'available'});
+   await db.insert(s.trackingState).values({userId:owner,mediaId,positionSeconds:60,durationSeconds:600,paused:true,collected:true});
+   const paused=await read('surface=watch&selection=paused&scope=all');
+   expect(paused.items.map(item=>item.id)).toContain(mediaId);
+   expect((await read('surface=watch&selection=progress&scope=all')).items.map(item=>item.id)).not.toContain(mediaId);
+   const {collectionData}=await import('../src/lib/collection/query.server');
+   expect((await collectionData(owner,{category:'screen',activity:'paused'})).items.map(item=>item.id)).toContain(mediaId);
+  } finally {
+   await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instance.id));
+   await db.delete(s.media).where(eq(s.media.id,mediaId));
+  }
+ });
  test('series counts verified groups, not issues, and applies personal membership before counting',async()=>{
   const second=await read('surface=read&kind=series&sort=title&scope=all&page=2');
   expect(second.total).toBe(75);expect(second.items).toHaveLength(15);expect(second.items[0].title).toBe('Series 060');

@@ -3,6 +3,7 @@ import {compileModule} from 'svelte/compiler';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 import type {RecommendationOptions} from '../src/lib/ui/shelves/for-you.svelte';
+import { recommendationSectionSource } from '../src/lib/recommendations/section';
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const compile=async(path:string)=>compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL(path,import.meta.url)).text()),{filename:'fixture.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'));
 const resourceUrl=moduleUrl(await compile('../src/lib/ui/resource.svelte.ts'));
@@ -21,6 +22,7 @@ const {createRecommendationSource}:typeof import('../src/lib/ui/shelves/for-you.
  .replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
  .replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl).replaceAll('#lib/ui/client.js',clientUrl)
  .replaceAll('./refresh.svelte.js',refreshUrl)
+ .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))
  .replaceAll('#lib/recommendations/row-titles.js',import.meta.resolve('../src/lib/recommendations/row-titles'))
  .replaceAll('#lib/experimental.js',import.meta.resolve('../src/lib/experimental'))));
 const settle=async()=>{for(let index=0;index<10;index++){runtime.flush();await Promise.resolve();}};
@@ -83,6 +85,112 @@ test('availability changes hide prior-filter recommendations and reject supersed
   finish(content('current'));await settle();stale(content('late available'));await settle();
   expect(source.items.map(item=>item.id)).toEqual(['current']);
  }finally{dispose();}
+});
+
+test('personal type filters replace server selections, preserve focused-row links and cancel stale results', async () => {
+  const calls: { url:URL; signal:AbortSignal; resolve:(value:ReturnType<typeof content>) => void }[] = [];
+  client.setDelivery((path:string,_body:unknown,_method:string,{signal}:{signal:AbortSignal}) =>
+    new Promise(resolve => calls.push({url:new URL(path,'https://fixture.test/'),signal,resolve})));
+  const {source,dispose} = fixture({category:'screen'});
+  try {
+    const first = source.load();
+    calls[0].resolve(content('all')); await first;
+    const type = source.filters.find(control => control.label === 'Media type')!;
+    expect(type.options?.map(option => option.value)).toEqual(['all','movie','show']);
+    type.change('movie');
+    expect(source.items).toEqual([]);
+    expect(calls[1].url.searchParams.get('kind')).toBe('movie');
+    expect(new URL(source.href!,'https://fixture.test').searchParams.get('rowKind')).toBe('movie');
+    type.change('show');
+    expect(calls[1].signal.aborted).toBe(true);
+    expect(calls[2].url.searchParams.get('kind')).toBe('show');
+    calls[2].resolve(content('current')); await settle();
+    calls[1].resolve(content('stale')); await settle();
+    expect(source.items.map(item => item.id)).toEqual(['current']);
+    type.change('show'); expect(calls).toHaveLength(3);
+  } finally { dispose(); }
+});
+
+test('fixed library recipes survive focused links and omit a redundant availability toggle', async () => {
+  const {source,dispose} = fixture({feature:'row',category:'screen',kind:'movie',genre:'Drama',available:true});
+  try {
+    expect(source.filters.some(control => control.type === 'availability')).toBe(false);
+    const url = new URL(source.href!,'https://fixture.test');
+    expect(recommendationSectionSource(url,'screen','personal')).toMatchObject({available:true,kind:'movie',genre:'Drama'});
+    const focused = fixture(recommendationSectionSource(url,'screen','personal'));
+    try {
+      expect(focused.source.filters.some(control => control.type === 'availability')).toBe(false);
+    } finally { focused.dispose(); }
+  } finally { dispose(); }
+});
+
+test('recommendation reset makes one request, cancels a prior filter read and retains its recipe',async()=>{
+ const calls:{url:URL;signal:AbortSignal;resolve:(value:ReturnType<typeof content>)=>void}[]=[];
+ client.setDelivery((path:string,_body:unknown,_method:string,{signal}:{signal:AbortSignal})=>new Promise(resolve=>calls.push({url:new URL(path,'https://fixture.test/'),signal,resolve})));
+ const {source,dispose}=fixture({category:'screen',feature:'row',genre:'Drama'});
+ try{
+  const first=source.load();calls[0].resolve(content('original'));await first;
+  expect(source.filterReset?.disabled).toBe(true);
+  source.filters.find(control=>control.label==='Media type')!.change('movie');
+  source.filters.find(control=>control.type==='availability')!.change('available');
+  expect(source.filterReset?.disabled).toBe(false);
+  const before=calls.length;
+  const reset=source.filterReset!.run();
+  expect(calls).toHaveLength(before+1);expect(calls[before-1].signal.aborted).toBe(true);
+  const query=calls.at(-1)!.url.searchParams;
+  expect(query.get('genre')).toBe('Drama');expect(query.get('category')).toBe('screen');expect(query.has('kind')).toBe(false);expect(query.get('available')).toBe('false');expect(query.get('page')).toBe('1');
+  calls.at(-1)!.resolve(content('reset'));await reset;
+  calls[before-1].resolve(content('stale'));await settle();
+  expect(source.items.map(item=>item.id)).toEqual(['reset']);expect(source.filterReset?.disabled).toBe(true);
+ }finally{dispose();}
+});
+
+test('provider sample availability is local, while fixed, upcoming and accessible music rows omit ineffective toggles', async () => {
+  let requests = 0;
+  client.setDelivery(async () => {
+    requests++;
+    return { ...content(),items:[
+      {id:'available',title:'Available',kind:'movie',available:true},
+      {id:'missing',title:'Missing',kind:'movie',available:false},
+    ] };
+  });
+  const provider = fixture({feature:'browse',category:'screen',kind:'movie',variant:'provider-popular',mode:'generic'});
+  try {
+    await provider.source.load();
+    provider.source.filters.find(control => control.type === 'availability')!.change('available');
+    expect(provider.source.items.map(item => item.id)).toEqual(['available']);
+    expect(requests).toBe(1);
+    expect(new URL(provider.source.href!,'https://fixture.test').searchParams.get('available')).toBe('true');
+  } finally { provider.dispose(); }
+  for (const option of [
+    {category:'music',mode:'generic'},
+    {category:'screen',feature:'browse',kind:'movie',variant:'upcoming'},
+    {category:'screen',feature:'browse',kind:'movie',variant:'library'},
+  ] as Partial<RecommendationOptions>[]) {
+    const entry = fixture(option);
+    try { expect(entry.source.filters.some(control => control.type === 'availability')).toBe(false); }
+    finally { entry.dispose(); }
+  }
+});
+
+test('capability withdrawal removes a reading subtype filter and cancels the withdrawn query', async () => {
+  const calls: { url:URL; signal:AbortSignal; resolve:(value:ReturnType<typeof content>) => void }[] = [];
+  client.setDelivery((path:string,_body:unknown,_method:string,{signal}:{signal:AbortSignal}) =>
+    new Promise(resolve => calls.push({url:new URL(path,'https://fixture.test/'),signal,resolve})));
+  const {source,dispose} = fixture({category:'reading'});
+  try {
+    const first = source.load(); calls[0].resolve(content('all')); await first;
+    source.filters.find(control => control.label === 'Reading type')!.change('comic');
+    expect(calls[1].url.searchParams.get('kind')).toBe('comic');
+    page.data.capabilities = {comic:false};
+    await settle();
+    expect(calls[1].signal.aborted).toBe(true);
+    expect(calls[2].url.searchParams.has('kind')).toBe(false);
+    expect(source.filters.some(control => control.label === 'Reading type')).toBe(false);
+    calls[2].resolve(content('current')); await settle();
+    calls[1].resolve(content('stale')); await settle();
+    expect(source.items.map(item => item.id)).toEqual(['current']);
+  } finally { delete page.data.capabilities; dispose(); }
 });
 
 test('a long feed refreshes only nearby shelves after a rating and coalesces deferred revisions',async()=>{

@@ -45,7 +45,7 @@ export async function deliverCheckin(userId:string,connectionId:string,checkinId
 export async function deliverCheckinToAdapter(userId:string,connectionId:string,checkinId:string,context:TraktContext) {
  const {adapter,connection,sync}=context;if(!sync.scrobble)return;
  const [checkin]=await getSql()`select c.*,m.kind from social_checkins c join media m on m.id=c.work_id where c.id=${checkinId} and c.user_id=${userId}`;
- if(!checkin)return;
+ if(!checkin || checkin.mode!=='timed')return;
  const [evidence]=await getDb().select().from(socialLiveDeliveries).where(and(eq(socialLiveDeliveries.connectionId,connectionId),eq(socialLiveDeliveries.checkinId,checkinId)));
  if(evidence&&evidence.accountGeneration!==connection.accountGeneration)return;
  if(checkin.state==='active'){await requireFeature(userId,'presence');await requireFeature(userId,'screen');}

@@ -93,9 +93,12 @@ run('parent captions reuse resolved metadata without a second full show hydratio
   await getDb().insert(s.trackingState).values({userId:owner,mediaId:episodes[0],positionSeconds:40,durationSeconds:1800});
   const result=await progressData(owner,{view:'watching',scope:'all'});
   const card=result.items.find(item=>item.id===episodes[0])!;
-  expect(card.captionTitle??card.title).toBe('Episode 0');
-  expect(card.captionSubtitle).toBe('Resolved parent title');
-  expect(card.captionSubtitleHref).toBe(`/media/${shows[0]}`);
+  expect(card).toMatchObject({
+    captionTitle:'Resolved parent title',
+    captionTitleHref:`/media/${shows[0]}`,
+    captionSubtitle:'Episode 0',
+    captionSubtitleHref:`/media/${episodes[0]}`,
+  });
   expect((await mediaViewsForIds(owner,[episodes[0]]))[0].showTitle).toBe('Resolved parent title');
   // Guests retain the public/raw metadata policy rather than private overrides.
   expect((await publicMedia([episodes[0]]))[0].showTitle).toBe('Parent 0');

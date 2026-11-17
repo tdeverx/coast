@@ -1,11 +1,12 @@
 <script lang="ts">
   import Button from './Button.svelte';
-  import { untrack, type Snippet } from 'svelte';
+  import { getContext, untrack, type Snippet } from 'svelte';
   import Icon, { type IconName } from './Icon.svelte';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   import type { GlassVariant } from '#lib/ui/materials/presets.js';
   import { createMenuController } from '#lib/ui/controls/menu.svelte.js';
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import { useMenuPreview } from '#lib/ui/controls/menu-preview.js';
   import { useClient } from '#lib/ui/client-context.js';
   const { preview } = useClient();
 
@@ -13,6 +14,7 @@
 
     children?: Snippet; text?: string; icon?: IconName; id?:string;
     onclick?: (event: MouseEvent) => void;
+    primaryAction?: () => void;
     emphasis?: 'standard' | 'subtle'; size?: 'standard' | 'hero' | 'icon'; fallback?: boolean;
     disabled?: boolean; type?: 'button' | 'submit'; label?: string; title?: string;
     pressed?: boolean; compact?: boolean;
@@ -27,7 +29,7 @@
     | { menu?: false; item?: false; href?: string }
   );
   let {
-    children, text, icon, id: suppliedId, href, onclick, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
+    children, text, icon, id: suppliedId, href, onclick, primaryAction, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
     type = 'button', label, title, pressed, compact = false,
     menu = false, item = false, trigger, hideTrigger = false,
     align = 'end', upward = false, triggerClass, onopen, onclose, panel = false,
@@ -36,11 +38,17 @@
   }: ButtonProps = $props();
   const id = $props.id();
   let root = $state<HTMLDivElement>(null!), triggerNode = $state<HTMLButtonElement>(null!), surface = $state<HTMLDivElement>(null!);
+  const fixture = preview ? useMenuPreview() : undefined;
+  const insideMenu = !!getContext('coast-context-menu');
+  const inlinePreview = untrack(() => menu && !insideMenu && !!label && (fixture?.claimInline(label) ?? false));
   // Mode is structural, fixed for the lifetime of this control. Values/callbacks remain live.
   const controller = untrack(() => menu ? createMenuController({
     root: () => root, triggerNode: () => triggerNode, surface: () => surface,
-    disabled: () => disabled, align: () => align, upward: () => upward, onopen: () => onopen?.(), onclose: () => onclose?.(),
+    inlinePreview, disabled: () => disabled, align: () => align, upward: () => upward, onopen: () => onopen?.(), onclose: () => onclose?.(),
   }) : null);
+  function presentInline(node: HTMLElement) {
+    return inlinePreview ? fixture?.mountInline(node) : undefined;
+  }
   export function openAt(position: { x: number; y: number }) { controller?.openAt(position); }
   export function focusFirst(last = false) { return controller?.focusFirst(last); }
   const nested = $derived(controller?.nested ?? false);
@@ -48,7 +56,9 @@
   const controlMaterial = $derived(material ?? (size === 'hero' ? 'clear' : 'glassDark'));
   const controlClass = $derived(`${menu ? triggerClass ?? (nested ? 'menu-row' : text ? 'button control-subtle' : 'icon-button')
     : item ? 'menu-row' : size === 'icon' ? 'icon-button' : compact ? 'availability-toggle' : `button control-${emphasis}${size === 'hero' ? ' hero' : ''}`} ${className}`);
-  const role = $derived(item ? (checked === undefined ? 'menuitem' : selection === 'radio' ? 'menuitemradio' : 'menuitemcheckbox') : menu && nested ? 'menuitem' : undefined);
+  const role = $derived(item || (menu && nested)
+    ? (checked === undefined ? 'menuitem' : selection === 'radio' ? 'menuitemradio' : 'menuitemcheckbox')
+    : undefined);
   function surfaceMaterial(node: HTMLElement, options: {enabled: boolean; variant: GlassVariant; blur: boolean}) {
     let action: ReturnType<typeof liquidGlass> | undefined;
     let applied = '';
@@ -64,8 +74,14 @@
   }
   function activate(event: MouseEvent) {
     if (disabled) {event.preventDefault(); if (disabledReason && !preview) notifyAction(disabledReason); return;}
-    if (controller) {if (controller.open && !nested) controller.close(); else controller.openMenu(event.detail === 0);}
-    else onclick?.(event);
+    if (controller) {
+      const disclosure = event.target instanceof Element && event.target.closest('[data-menu-disclosure]');
+      if (nested && primaryAction && !disclosure) {
+        primaryAction();
+        if (!keepOpen) controller.closeAll(true);
+      } else if (controller.open && !nested) controller.close();
+      else controller.openMenu(event.detail === 0);
+    } else onclick?.(event);
   }
 </script>
 
@@ -75,7 +91,7 @@
     {#if icon || menu && !nested && !text}<Icon name={icon ?? 'more'} size={iconSize ?? (menu || item ? 20 : 18)} filled={checked ?? pressed} />{/if}
     {#if item || menu && nested}<span class="menu-action-label">{text ?? (menu ? label : '')}{#if !menu}{@render children?.()}{/if}</span>
     {:else}{text}{#if !menu}{@render children?.()}{/if}{/if}
-    {#if branch || menu && nested}<span class="menu-chevron"><Icon name="right" /></span>
+    {#if branch || menu && nested}<span class="menu-chevron" data-menu-disclosure={primaryAction ? true : undefined}><Icon name="right" /></span>
     {:else if item && checked && showCheckmark}<span class="menu-chevron"><Icon name="check" /></span>{/if}
   {/if}
 {/snippet}
@@ -92,13 +108,14 @@
     aria-disabled={disabled || undefined} aria-describedby={disabled && disabledReason ? `${id}-reason` : undefined}
     aria-haspopup={menu || branch ? 'menu' : undefined} aria-expanded={controller?.open} aria-controls={menu ? `${id}-menu` : undefined}
     title={title ?? (disabled ? disabledReason : undefined)} data-menu-keep-open={menu || item && keepOpen ? true : undefined}
-    onkeydown={controller?.triggerKey} onpointerenter={event=>{if(controller?.nested && !controller.compact && event.pointerType==='mouse')controller.openMenu();}}
+    onkeydown={controller?.triggerKey} onpointerenter={controller?.hoverTrigger}
     onclick={activate}>{@render content()}</button>{/if}
 {/snippet}
-{#if controller}<div bind:this={root} class="context" class:external-trigger={hideTrigger} class:submenu={nested}>
-  {@render control()}
+{#if controller}<div bind:this={root} use:presentInline class="context" class:external-trigger={hideTrigger} class:submenu={nested} role="presentation"
+  onpointerenter={controller.cancelHoverDismiss} onpointerleave={controller.leaveHover}>
+  {#if !inlinePreview}{@render control()}{/if}
   <div bind:this={surface} id={`${id}-menu`} use:surfaceMaterial={{enabled:controller.open,variant:'glassDark',blur:false}} class="menu-surface glass"
-    class:menu-panel={panel} class:drill-hidden={controller.childHidden} role="menu" aria-label={label ?? 'More options'} popover="manual" tabindex="-1"
+    class:menu-panel={panel} class:inline-preview={inlinePreview} class:drill-hidden={controller.childHidden} role="menu" aria-label={label ?? 'More options'} popover={inlinePreview ? undefined : "manual"} tabindex="-1"
     onclick={controller.action} onkeydown={controller.menuKey} ontoggle={controller.toggle}>
     <div class="menu-content">
       {#if nested && controller.compact}<Button item keepOpen icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}
@@ -115,6 +132,7 @@
   .submenu > .menu-row {width:auto;}
   .context > button[hidden] {display:none;}
   .menu-surface {visibility:visible;pointer-events:auto;}
+  .menu-surface.inline-preview { position: relative; }
   .menu-surface.drill-hidden {visibility:hidden;pointer-events:none;}
   .button.control-standard {color:var(--ink);background:var(--coast-glass-fill);border:0;}
   .button.control-standard:hover {background:color-mix(in srgb,var(--coast-glass-fill),var(--white) 5%);}

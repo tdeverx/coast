@@ -1,12 +1,13 @@
 <script lang="ts">
   import {page} from '$app/state';
-  import {syncedPlayer,isSyncHost,canControlPlayback,syncedCommand,leaveSynced,joinSynced} from '#lib/playback/synced/client.svelte.js';
+  import {syncedPlayer,isSyncHost,canControlPlayback,canEditPartyQueue,syncedCommand,leaveSynced,joinSynced} from '#lib/playback/synced/client.svelte.js';
   import SyncedControls from './SyncedControls.svelte';
   import { browserDiagnostic } from '#lib/ui/diagnostics.js';
   import { sequencePath } from '#lib/media/sequence.js';
   import { onMount, untrack, tick } from 'svelte';
   import { refreshAfterChange } from '#lib/ui/client.js';
   import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted, cancelPlaybackPreparation } from '#lib/playback/client.svelte.js';
+  import { useMenuPreview, menuCondition } from '#lib/ui/controls/menu-preview.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   import { bufferedAhead, streamHasStopped, playbackFailureMessage } from '#lib/playback/failures.js';
   import { actualPlayedDelta } from '#lib/playback/listening.js';
@@ -27,6 +28,8 @@
   const { api, change, feedback } = useClient();
 
   const { player, preview } = usePlayback();
+  const menuFixture = preview ? useMenuPreview() : undefined;
+  const partiesEnabled = $derived(menuCondition('partyInvite', !!page.data.experimentalParties, preview, menuFixture));
 
   let syncControls = $state<{show:()=>Promise<void>}>();
   let video = $state<HTMLVideoElement>(null!);
@@ -67,7 +70,9 @@
   const partyRoom=$derived(preview?null:syncedPlayer.room);
   const partyBusy=$derived(!preview&&syncedPlayer.busy);
   const partyHost=$derived(!preview&&isSyncHost());
-  const followingHost=$derived(!!partyRoom&&!canControlPlayback());
+  const followingHost=$derived(preview && menuFixture ? !menuCondition('controlPlayback',true,preview,menuFixture) : !!partyRoom&&!canControlPlayback());
+  const savedQueueRestriction=$derived(followingHost?'Playback is controlled by the host'
+    :partyRoom&&!canEditPartyQueue()?'The host controls the party queue':undefined);
   const audioMode = $derived(player.session?.mediaType === 'audio');
   const sharedMode = $derived(!!player.session?.shareId);
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
@@ -107,9 +112,9 @@
     videoFitStyle(frame.width, frame.height, bounds.width, bounds.height, bars, crop)
   );
   const tracks = $derived((player.session?.subtitles ?? []).filter((track) => track.url));
-  const editions = $derived([
+  const editions = $derived(menuCondition('versions', true, preview, menuFixture) ? [
     ...new Set(player.session?.sources.map((source) => source.edition ?? '') ?? []),
-  ]);
+  ] : []);
   function seek(seconds: number,remote=false) {
     if(partyRoom&&!remote){void syncedCommand('seek',{positionSeconds:seconds});return;}
     if (!media || !Number.isFinite(duration) || duration <= 0) return;
@@ -586,7 +591,7 @@
   reportImportFailure(()=>startupImportError);
   reportFailure(()=>trackingNotice);
 </script>
-{#if page.data.experimentalParties}<SyncedControls bind:this={syncControls} />{/if}
+{#if partiesEnabled}<SyncedControls bind:this={syncControls} />{/if}
 
 <audio
   bind:this={audio}
@@ -687,7 +692,7 @@
           title={audioMode ? 'Previous track' : 'Back 10 seconds'}
           onclick={() => {if(!preview)audioMode ? advanceMusic(-1) : seek(current - 10);}} icon={audioMode ? 'left' : 'rewind'} iconSize={20} />
         <Button size="icon" class="icon-button play-toggle"
-          disabled={followingHost&&(!player.paused||partyRoom!.paused||partyRoom!.bufferingPaused)}
+          disabled={followingHost&&(!player.paused||partyRoom?.paused||partyRoom?.bufferingPaused)}
           title={followingHost?'Playback is controlled by the host':undefined}
           label={player.paused ? 'Play' : 'Pause'}
           onclick={toggle} icon={player.paused ? 'play' : 'pause'} iconSize={28} />
@@ -713,15 +718,17 @@
       />
       {#if !audioMode}<Button size="icon" icon="home" label={player.browsing?'Hide UI':'Show UI'} pressed={player.browsing} onclick={toggleUi}/>{/if}
       {#if !audioMode || !sharedMode}<Button menu label="Playback options" upward>
-        {#if page.data.experimentalParties&&!sharedMode}<Button item icon="party" disabled={partyBusy} onclick={()=>syncControls?.show()}>{partyRoom?'Synced session…':'Start synced session…'}</Button>{/if}
+        {#if partiesEnabled&&!sharedMode}<Button item icon="party" disabled={partyBusy} onclick={()=>syncControls?.show()}>{partyRoom?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
-          <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>{if(!preview)void playSavedMusicQueue().catch(cause=>error=message(cause));}}>Play saved music queue</Button>
-          <Button menu label="Queue" icon="list" upward panel>
+          <Button menu label="Current queue" icon="list" upward panel>
             {#each player.audioQueue as entry, index}
               <Button item selection="radio" checked={index === player.audioIndex} disabled={followingHost||entry.availability !== 'available'} disabledReason={followingHost?'Playback is controlled by the host':entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}
-                onclick={() => { if(preview)return;player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</Button>
+                onclick={() => { if(preview)return;player.audioIndex = index - 1; void advanceMusic().catch(cause=>error=message(cause)); }}>{entry.title}</Button>
+            {:else}
+              <Button item disabled>Queue empty</Button>
             {/each}
           </Button>
+          <Button item icon="play" disabled={!!savedQueueRestriction} disabledReason={savedQueueRestriction} onclick={()=>{if(!preview)void playSavedMusicQueue().catch(cause=>error=message(cause));}}>Play saved queue</Button>
         {:else}
         {#if tracks.length}
           <Button menu label="Subtitles" icon="subtitles" upward panel>

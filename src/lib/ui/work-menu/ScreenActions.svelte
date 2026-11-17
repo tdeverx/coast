@@ -1,11 +1,13 @@
 <script lang="ts">
   import { useRetention } from '#lib/ui/retention.js';
   import { reportFailure } from '#lib/ui/client-context.js';
+  import { menuCondition, useMenuPreview } from '#lib/ui/controls/menu-preview.js';
   import WorkActions from '../components/WorkActions.svelte';
   import { relationshipControls } from '#lib/ui/controls/actions.js';
-  import { getContext, onDestroy, untrack } from 'svelte';
+  import { getContext, onDestroy, untrack, type Snippet } from 'svelte';
   import { createResource } from '#lib/ui/resource.svelte.js';
   import { createMenuResource } from '#lib/ui/controls/menu-resource.svelte.js';
+  import { retryMenuRead } from '#lib/ui/controls/menu-read-retry.js';
   import { workMenuScope } from '#lib/ui/controls/work.svelte.js';
   import type { WorkList } from '#lib/media/work-actions.js';
   import WorkListActions from '../components/WorkListActions.svelte';
@@ -13,7 +15,6 @@
   import { createMutation } from '#lib/ui/mutation.svelte.js';
   import { setRelationship } from '#lib/ui/relationships.js';
 
-  import { trackingLanguage } from '#lib/media/model.js';
   import { sequencePath } from '#lib/media/sequence.js';
   import {
     isMediaGroup,
@@ -21,7 +22,7 @@
     targetLabel,
     type MediaActionData,
   } from '#lib/media/actions.js';
-  import type { RequestDestination } from '#lib/media/requests.js';
+  import { requestSeasonChoices, type RequestDestination } from '#lib/media/requests.js';
   import { requestStatusLabel } from '#lib/library-feed.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { message, ApiError } from '#lib/ui/client.js';
@@ -33,6 +34,7 @@
   import PlanAction from '#lib/experiments/PlanAction.svelte';
   import Button from '../components/Button.svelte';
   import Icon from '../components/Icon.svelte';
+  import CheckInActions from '../components/CheckInActions.svelte';
 
   import Dialog from '../components/Dialog.svelte';
   import RequestDialog from '../components/RequestDialog.svelte';
@@ -45,6 +47,13 @@
   const { api, change } = useClient();
 
   const { player, preview } = usePlayback();
+  const fixture = preview ? useMenuPreview() : undefined;
+  const allowed = (id: Parameters<typeof menuCondition>[0], actual: boolean) => menuCondition(id, actual, preview, fixture);
+  const playbackAllowed = $derived(allowed('playback', page.data.capabilities?.playback !== false));
+  const socialAllowed = $derived(allowed('social', page.data.capabilities?.social !== false));
+  const planningAllowed = $derived(allowed('planning', !!page.data.experiments?.planning));
+  const presenceAllowed = $derived(allowed('presence', page.data.capabilities?.presence !== false));
+  const requestsAllowed = $derived(allowed('requests', page.data.capabilities?.requests !== false));
 
   let {
     item,
@@ -53,7 +62,7 @@
     requestable = false,
     hero = false,
     menuOnly = false,
-    showTrigger = false,editionName,
+    showTrigger = false,editionName,entryActions,
   }: {
     item: MediaView;editionName?:string;
     context?: 'discover' | 'details' | 'home';
@@ -62,23 +71,25 @@
     hero?: boolean;
     menuOnly?: boolean;
     showTrigger?: boolean;
+    entryActions?: Snippet;
   } = $props();
   type View =
     | 'root'
     | 'play'
     | 'share'
-    | 'details'
+    | 'disposable-link'
+    | 'manage'
+    | 'tracking'
     | 'history'
     | 'watched'
     | 'rewatch'
-    | 'personalise'
-    | 'admin'
-    | 'list-entry';
-  let menu = $state<Button>();
+    | 'admin';
+  let menu = $state<Button>(), ratingActions=$state<WorkActions>();
   const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change });
   reportFailure(() => sequenceControl.error);
+  const menuScope = () => workMenuScope([item.id, item.sequence, item.listContext]);
   const snapshot = createMenuResource<MediaActionData | null>(() => null,
-    () => workMenuScope([item.id, item.sequence, item.listContext]), async signal => {
+    menuScope, async signal => {
       const target = item;
       const result = await api<MediaActionData>(`media/${target.id}/actions`, undefined, 'GET', { signal });
       if (target.sequence) {
@@ -88,23 +99,18 @@
         result.playable = resolved.next;
       }
       return result;
-    });
+    }, retryMenuRead);
   const data = $derived(snapshot.data), loading = $derived(snapshot.busy);
   const mutation = createMutation(() => snapshot.refresh(), useClient().feedback.notify, useRetention());
   const busy = $derived(mutation.busy);
-  const error = $derived(mutation.error || snapshot.error);
   $effect(() => {
-    const key = workMenuScope([item.id, item.sequence, item.listContext]);
-    untrack(() => { key; snapshot.sync(key); requests.resetOptions(); if (snapshot.active && !mutation.busy) void snapshot.load(); });
+    const key = menuScope();
+    untrack(() => { key; snapshot.sync(key); requests.resetOptions(); if (snapshot.active && !mutation.busy && !ratingActions?.isBusy()) void snapshot.load(); });
   });
   const playTarget = createResource<MediaView | null>(null);
   let alive = true;
   onDestroy(() => { alive = false; snapshot.dispose(); playTarget.dispose(); requests.resetOptions(); });
   const active = $derived(data?.item ?? item);
-  const language = $derived(trackingLanguage(active.category ?? 'screen'));
-  const detailTargets = $derived(
-    (data?.targets ?? [active]).filter((target) => page.url.pathname !== `/media/${target.id}`)
-  );
   const wholeWork = $derived(data?.wholeWork ?? active);
   const trackingPaused = $derived(wholeWork.status === 'paused');
   const continuing = $derived(
@@ -120,14 +126,19 @@
   const canPauseTracking = $derived((wholeWork.kind === 'movie' || wholeWork.kind === 'show') &&
     !wholeWork.dropped && (trackingPaused || continuing || (wholeWork.watchlist && !wholeWork.watched)));
   const recordAgain = $derived(active.watched || active.playCount > 0);
-  const isAdmin = $derived(page.data.user?.role === 'admin');
+  const isAdmin = $derived(allowed('admin', page.data.user?.role === 'admin'));
   const featureTarget=$derived(['movie','show','season','episode'].includes(active.kind)?active:null);
   const featuredHere=$derived(!!featureTarget&&page.data.featuredHeroIds?.includes(featureTarget.id));
   const isGroup = $derived(isMediaGroup(active));
   const playable = $derived(data ? data.playable : isMediaGroup(item) ? next : item);
   const playbackPending = $derived((playable ?? active).playbackPending === true);
   const editions = $derived(data?.editions ?? []);
+  let editionChoice = $state<{ mediaId: string; edition: string }>();
+  const profileBackground = $derived(fixture?.profileBackground(active.id,page.data.user?.settings?.profile?.backgroundMediaId === active.id)
+    ?? page.data.user?.settings?.profile?.backgroundMediaId === active.id);
+  const canShare = $derived(allowed('sharing', !!page.data.playbackSharing) && ['movie', 'episode'].includes(active.kind) && active.available);
   const selectedEdition = $derived(
+    editionChoice && editionChoice.mediaId === playable?.id ? editionChoice.edition :
     editionName===undefined&&page.params.id === active.id
       ? (page.url.searchParams.get('edition') ?? undefined)
       : undefined
@@ -139,7 +150,7 @@
   const requestItem = $derived(
     data ? data.requestTarget : ['movie', 'show'].includes(item.kind) ? item : null
   );
-  const requests = createRequestControls({item: () => requestItem, data: () => data, api, onrequest: () => (fourK = false, options) => {requestOptions = options; openRequest(fourK);}});
+  const requests = createRequestControls({item: () => requestItem, data: () => data, scope: menuScope, api, onrequest: () => (fourK = false, options) => {requestOptions = options; openRequest(fourK);}});
   const primaryLabel = $derived(
     (next ?? item).kind === 'episode'
       ? `${isResumable(next ?? item) ? 'Resume' : 'Play'} S${String((next ?? item).seasonNumber ?? 0).padStart(2, '0')}E${String((next ?? item).episodeNumber ?? 0).padStart(2, '0')}`
@@ -166,7 +177,10 @@
     includeSpecials = $state(false);
   let requestOptions = $state<RequestDestination[] | undefined>(),
     request4k = $state(false);
-  function openRequest(fourK = false) {
+  let initialSeasons = $state<readonly number[]>();
+  let seasonSelection = $state<Record<'standard' | 'fourK', number[]>>({ standard: [], fourK: [] });
+  function openRequest(fourK = false, seasons?: readonly number[]) {
+    initialSeasons = seasons;
     request4k = fourK;
     requestOpen = true;
   }
@@ -318,6 +332,7 @@
     await startTarget();
   }
   export function request() {
+    initialSeasons = undefined;
     request4k = false;
     requestOptions = undefined;
     if (!data && ['season', 'episode'].includes(item.kind)) {
@@ -379,25 +394,9 @@
       );
     }
   }
-  function removeEntry(listId: string, entryId: string) {
-    confirm(
-      'Remove this entry?',
-      'Only this occurrence will be removed. Your watch history is kept.',
-      async () => {
-        if (
-          await perform(
-            () => change(`lists/${listId}/items`, { entryId }, 'DELETE'),
-            'Entry removed.'
-          )
-        ) {
-          confirmOpen = false;
-        }
-      }
-    );
-  }
   async function toggleContinue() {
     const target = wholeWork;
-    const removing = continuing;
+    const removing = continuing || trackingPaused;
     let result:
       | { eventId?: string; previous?: import('#lib/core/tracking/continue.server.js').ContinueSnapshot }
       | undefined;
@@ -408,7 +407,7 @@
           action: removing ? 'remove' : 'add',
         });
       },
-      `${target.title} · ${removing ? 'Removed from Continue · Rewatch ended · History preserved' : target.dropped ? 'Restored to Continue' : 'Added to Next'}`,
+      `${target.title} · ${removing ? 'Hidden from Progress' : target.dropped ? 'Restored to Progress' : 'Added to Next'}`,
       removing
         ? async () => {
             await change('continue', { mediaId: target.id, action: 'undo', ...result });
@@ -447,9 +446,23 @@
     if(!target||!isAdmin||preview)return;
     void perform(()=>change('admin/featured-hero',{mediaId:target.id,featured:!remove}),remove?'Title removed from For You heroes.':`${target.title} · Featured on For You.`);
   }
-  async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
+  function toggleBackground() {
+    const selected = profileBackground,mediaId=active.id;
+    void perform(async () => {
+      const result=await change('profile', { action: 'background', mediaId: selected ? null : mediaId });
+      fixture?.setProfileBackground(selected ? null : mediaId);
+      return result;
+    },
+      selected ? 'Profile background cleared.' : 'Profile background set.');
+  }
+  function endRewatch() {
+    const mediaId = wholeWork.id;
+    void perform(() => change('rewatch', { mediaId, startedAt: null }), 'Rewatch ended.');
+  }
 
-  reportFailure(()=>error);
+  reportFailure(() => mutation.error);
+  reportFailure(() => snapshot.error && `Could not load menu actions. ${snapshot.error}`);
+  reportFailure(() => requests.requestOptionsError && `Could not load request options. ${requests.requestOptionsError}`);
 </script>
 
 {#snippet requestManagement(request: MediaActionData['requests'][number])}
@@ -474,215 +487,188 @@
       disabled={busy}
       onclick={() => manageRequest(request, 'cancel')}>Cancel request…</Button>{/if}
 {/snippet}
-{#snippet choices()}
-
-  {#if requests.canRequestStandard}
-    <Button item icon="request" onclick={() => requests.openRequest()}
-      >{requestItem?.kind === 'show'
-        ? 'Request remaining seasons…'
-        : 'Request standard version…'}</Button>
+{#snippet seasons(quality: 'standard' | 'fourK')}
+  {@const choices = requestSeasonChoices(requests.requestOptions ?? [], quality, active.kind === 'season' ? active.seasonNumber : undefined)}
+  {@const enabled = new Set(choices.filter(choice => choice.selectable).map(choice => choice.number))}
+  {@const selected = seasonSelection[quality].filter(number => enabled.has(number))}
+  {#each choices as choice (choice.number)}
+    <Button item checked={choice.selectable ? selected.includes(choice.number) : undefined}
+      disabled={!choice.selectable} keepOpen onclick={() => {
+        seasonSelection[quality] = selected.includes(choice.number) ? selected.filter(number => number !== choice.number) : [...selected, choice.number];
+      }}>
+      <span class="menu-season"><span>Season {choice.number}</span>
+        {#if !choice.selectable}<small>{choice.available ? 'Available' : choice.requested ? 'Requested' : 'Unavailable'}</small>{/if}
+      </span>
+    </Button>
+  {/each}
+  {#if choices.length}
+    <div class="menu-divider" role="separator"></div>
+    <Button item icon="request" disabled={!selected.length} onclick={() => {
+      requestOptions = requests.requestOptions;
+      openRequest(quality === 'fourK', selected);
+    }}>
+      {selected.length === 1 ? 'Request season…' : selected.length ? `Request ${selected.length} seasons…` : 'Request seasons…'}
+    </Button>
   {/if}
-  {#if requests.canRequest4k}<Button item icon="request" onclick={() => requests.openRequest(true)}
-      >Request 4K…</Button>{/if}
-  {#if requests.requestOptionsError}<Button item icon="refresh" onclick={requests.loadRequestOptions}
-      >Retry request options</Button>{/if}
-  {#if requests.existingRequests.length}
-    {#if requests.canRequestStandard || requests.canRequest4k || requests.requestOptionsError}<div
-        class="menu-divider"
-        role="separator"
-      ></div>{/if}
-    {#if requests.existingRequests.length === 1}
-      {@render requestManagement(requests.existingRequests[0])}
+{/snippet}
+
+{#snippet choices()}
+  {@const series = requestItem?.kind === 'show'}
+  {@const standard = !!requests.requestOptions?.some(destination => destination.variants.standard)}
+  {@const fourK = !!requests.requestOptions?.some(destination => destination.variants.fourK)}
+  {#if requests.requestOptionsBusy}
+    <div class="menu-label" role="status">Loading request options…</div>
+  {:else if requests.requestOptionsError}
+    <div class="menu-label" role="status">Request options unavailable</div>
+  {/if}
+  {#if standard}
+    {#if series}{@render seasons('standard')}
+    {:else}<Button item icon="request" disabled={!requests.canRequestStandard} onclick={() => requests.openRequest()}>Request standard version…</Button>{/if}
+  {/if}
+  {#if fourK}
+    {#if standard}<div class="menu-divider" role="separator"></div>{/if}
+    {#if series}
+      <Button menu label="Request 4K" icon="request" panel>{@render seasons('fourK')}</Button>
     {:else}
+      <Button item icon="request" disabled={!requests.canRequest4k} onclick={() => requests.openRequest(true)}>Request 4K…</Button>
+    {/if}
+  {/if}
+  {#if requests.existingRequests.length}
+    {#if standard || fourK}<div class="menu-divider" role="separator"></div>{/if}
+    <Button menu label="Manage requests" icon="list" panel>
       {#each requests.existingRequests as request (request.id)}
-        <Button menu label={requests.scopeLabel(request)} panel>
-          {#snippet trigger()}<Icon name="request" /><span class="menu-action-label"
-              >{requests.scopeLabel(request)}</span
-            ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
+        <Button menu label={requests.scopeLabel(request)} icon="request" title={requestStatusLabel(request.state)} panel>
           {@render requestManagement(request)}
         </Button>
       {/each}
-    {/if}
-  {:else}
-    {#if requests.canRequestStandard || requests.canRequest4k}<div
-        class="menu-divider"
-        role="separator"
-      ></div>{/if}
-    <Button item icon="arrow" href="/requests">View requests</Button>
-    {#if requests.requestOptions && !requests.canRequestStandard && !requests.canRequest4k}<Button item
-        disabled
-        disabledReason="Already available, requested, or not permitted for your account"
-        >Nothing more to request</Button>{/if}
+    </Button>
+  {:else if !standard && !fourK && requests.requestOptions && !requests.requestOptionsBusy}
+    <Button item disabled>Nothing to request</Button>
   {/if}
 {/snippet}
 
 {#snippet requestControls()}
-{#if requests.canManageRequests || (!requests.requestDisabledReason && requests.requestLabel !== 'Request')}
-  <Button menu
-    label={requests.requestLabel}
-    icon="request"
-    panel
-    disabled={busy || loading}
-    onopen={() => void requests.loadRequestOptions()}
-  >
-    {@render choices()}
-  </Button>
-{:else}
-  <Button item
-    icon="request"
-    disabled={loading || busy || !!requests.requestDisabledReason}
-    disabledReason={requests.requestDisabledReason}
-    onclick={() => requests.openRequest()}>{requests.requestLabel}…</Button>
-{/if}
-
+  {#if requests.canManageRequests || !requests.requestDisabledReason}
+    <Button menu label="Request" icon="request" panel disabled={busy || loading}
+      onopen={() => void requests.loadRequestOptions()} onclose={() => {
+        requests.cancel();
+        seasonSelection = { standard: [], fourK: [] };
+      }}>
+      {@render choices()}
+    </Button>
+  {:else}
+    <Button item icon="request" disabled disabledReason={requests.requestDisabledReason}>Request</Button>
+  {/if}
 {/snippet}
 
-{#snippet branch(label: string, to: View, icon: import('../components/Icon.svelte').IconName)}
-  <Button menu {label} {icon} panel disabled={busy || loading}>
+{#snippet branch(label: string, to: View, icon: import('../components/Icon.svelte').IconName, primaryAction?: () => void)}
+  <Button menu {label} {icon} panel disabled={busy || loading} {primaryAction}>
     {@render content(to)}
   </Button>
-{/snippet}
-{#snippet playbackChoices(edition?: string)}
-  <Button item
-    icon="play"
-    disabled={page.data.capabilities?.playback===false || player.loading || !playable?.available}
-    disabledReason={!playable?.available ? 'Not available to play' : undefined}
-    onclick={() => (edition === undefined ? startTarget() : play(edition))}
-  >
-    {resumable ? `Resume from ${playbackTime(playable!.progress)}` : 'Play'}
-  </Button>
-  {#if resumable}
-    <Button item
-      icon="rewind"
-      disabled={player.loading}
-      onclick={() => play(edition ?? selectedEdition, true)}
-    >
-      Play from beginning
-    </Button>
-  {/if}
 {/snippet}
 {#snippet content(view: View)}
   {#if view === 'root'}
     {#if playbackPending}
       <Button item icon="clock" disabled disabledReason="In your Jellyfin library. Waiting for a playable stream.">Stream pending</Button>
-    {:else if page.data.capabilities?.playback!==false && (active.available || data?.progressTargetIds.includes(active.id))}
-      {@render branch(playLabel, 'play', 'play')}
+    {:else if playbackAllowed && (playable?.available || active.kind === 'collection' && active.available)}
+      {#if resumable || editions.length > 1}
+        {@render branch(playLabel, 'play', 'play', startTarget)}
+      {:else}
+        <Button item icon="play" disabled={loading || player.loading} onclick={startTarget}>{playLabel}</Button>
+      {/if}
     {:else}
-      <Button item
-        icon="play"
-        disabled={loading || player.loading || !active.available || !playable}
-        disabledReason={!active.available || !playable ? 'Not available to play' : undefined}
-        onclick={startTarget}>{playLabel}</Button>
+      <Button item icon="clock" disabled disabledReason="A playable source is required.">Playback unavailable</Button>
     {/if}
-    {@render requestControls()}
-    {#if page.data.playbackSharing&&['movie','episode','track'].includes(active.kind)}
-      {@render branch('Share', 'share', 'friends')}
+    {#if presenceAllowed}
+      <CheckInActions workId={active.id} kind={active.kind} active={data?.activeCheckin} disabled={busy || loading}
+        preferredWorkId={['show','season'].includes(active.kind)&&playable?.kind==='episode'?playable.id:undefined}
+        preferredLabel={['show','season'].includes(active.kind)&&playable?.kind==='episode'?playable.title:undefined}
+        onchange={value => snapshot.patch(data => data ? { ...data, activeCheckin: value, activeCheckinId: value?.id ?? null } : data)} />
     {/if}
-    {#if page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
-    {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
-    <WorkActions section="social" workId={active.id} disabled={busy||loading} />
-    {#if page.data.capabilities?.presence!==false && ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading} onclick={checkIn}>Check in</Button>{/if}
     <div class="menu-divider" role="separator"></div>
-    {@render branch(language.mark, 'watched', 'check')}
-    {@render branch('Rewatch', 'rewatch', 'refresh')}
-    {@render branch('History', 'history', 'clock')}
-    <WorkActions section="rating"
-      workId={active.id}
-      rating={active.rating}
-      onrated={(value) => {
-        snapshot.patch(data => data ? { ...data, item: { ...data.item, rating: value } } : data);
-      }}
-    />
+    <WorkActions bind:this={ratingActions} section="rating" workId={active.id} rating={active.rating}
+      onrated={value => snapshot.patch(data => data ? { ...data, item: { ...data.item, rating: value } } : data)} />
     <div class="menu-divider" role="separator"></div>
-    {#if !trackingPaused}
-      <Button item icon="list" disabled={busy || loading} onclick={toggleContinue}
-        >{continuing ? 'Remove from Continue' : 'Add to Continue'}</Button>
+    {@render branch('Mark as watched', 'watched', 'check', () => recordWatch('now'))}
+    {@render branch(wholeWork.rewatchStartedAt ? 'Rewatch' : 'Start rewatch', 'rewatch', 'replay', wholeWork.rewatchStartedAt ? undefined : startRewatchNow)}
+    {#if socialAllowed}<WorkActions section="reaction" workId={active.id} disabled={busy || loading} />{/if}
+    {#if active.kind !== 'collection' && requestsAllowed}{@render requestControls()}{/if}
+    {@render branch('Manage', 'manage', 'sliders')}
+    <div class="menu-divider" role="separator"></div>
+    <WorkActions section="quick" workId={active.id} controls={[
+      ...relationshipControls([
+        { kind: 'watchlist', value: active.watchlist, icon: 'bookmark', label: active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist' },
+        { kind: 'collected', value: active.collected, icon: 'collection', label: `${active.collected ? 'Remove from' : 'Add to'} Collection` },
+        { kind: 'favourite', value: active.favourite, icon: 'heart', label: `${active.favourite ? 'Remove from' : 'Add to'} Favourites` },
+      ], relationship => {
+        if (relationship === 'collected') void perform(
+          () => setRelationship(active.id, relationship, !active.collected, change),
+          active.collected ? 'Removed from Collection.' : 'Added to Collection.'
+        );
+        else toggleSaved(relationship);
+      }, busy || loading),
+      { item: true, icon: 'image', checked: profileBackground, text: profileBackground ? 'Clear profile background' : 'Set as profile background',
+        disabled: busy, onclick: toggleBackground }
+    ]} />
+    {#if canShare || socialAllowed || planningAllowed || isAdmin}
+      <div class="menu-divider" role="separator"></div>
+      {#if canShare || socialAllowed || planningAllowed}
+        {@render branch('Share', 'share', 'share')}
+      {/if}
+      {#if isAdmin}{@render branch('Admin', 'admin', 'shield')}{/if}
     {/if}
+  {:else if view === 'share'}
+    {#if canShare}
+      <Button menu label="Create disposable link" icon="link" panel>
+        {#snippet trigger()}
+          <Icon name="link" />
+          <span class="menu-action-label menu-detail"><span>Create disposable link</span><small>No sign-in · expires</small></span>
+          <span class="menu-chevron"><Icon name="right" /></span>
+        {/snippet}
+        {@render content('disposable-link')}
+      </Button>
+      {#if socialAllowed || planningAllowed}<div class="menu-divider" role="separator"></div>{/if}
+    {/if}
+    {#if socialAllowed}<WorkActions section="recommend" workId={active.id} disabled={busy || loading} />{/if}
+    {#if planningAllowed}<Button item icon="calendar" onclick={() => { planningOpen = true; }}>Plan to watch…</Button>{/if}
+  {:else if view === 'disposable-link'}
+    <Button item icon="play" onclick={() => { sharingTarget = 'website'; sharingOpen = true; }}>Website link…</Button>
+    <Button item icon="broadcast" onclick={() => { sharingTarget = 'vrchat'; sharingOpen = true; }}>VRChat link…</Button>
+  {:else if view === 'play'}
+    <Button item icon="play" disabled={player.loading} onclick={startTarget}>
+      {resumable ? `Resume from ${playbackTime(playable!.progress)}` : playLabel}
+    </Button>
+    {#if resumable}
+      <Button item icon="skipBack" disabled={player.loading} onclick={() => play(selectedEdition, true)}>Play from beginning</Button>
+    {/if}
+    {#if editions.length > 1 && playable}
+      <div class="menu-divider" role="separator"></div>
+      {#each editions as edition (edition)}
+        <Button item selection="radio" checked={edition === (selectedEdition ?? editions[0])} keepOpen disabled={player.loading}
+          onclick={() => { if (playable) editionChoice = { mediaId: playable.id, edition }; }}>{edition || 'Original'}</Button>
+      {/each}
+    {/if}
+  {:else if view === 'manage'}
+    {@render branch('Tracking', 'tracking', 'checklist')}
+    {@render branch('History', 'history', 'history')}
+    <div class="menu-divider" role="separator"></div>
+    <WorkListActions workId={active.id} select={toggleList} disabled={busy || loading} />
+  {:else if view === 'tracking'}
     {#if canPauseTracking}
-      <Button item icon={trackingPaused ? 'play' : 'pause'} disabled={busy || loading}
+      <Button item icon={trackingPaused ? 'play' : 'pause'} disabled={busy || loading} keepOpen
         onclick={() => {
           const paused = trackingPaused;
           const mediaId = wholeWork.id;
-          void perform(() => change('tracking', {mediaId, action: paused ? 'resume' : 'pause'}),
+          void perform(() => change('tracking', { mediaId, action: paused ? 'resume' : 'pause' }),
             paused ? 'Tracking resumed.' : 'Tracking paused.');
         }}>{trackingPaused ? 'Resume tracking' : 'Pause tracking'}</Button>
     {/if}
-    <WorkActions section="relationships" workId={active.id} controls={relationshipControls([
-      { kind: 'watchlist', value: active.watchlist, icon: 'bookmark', showCheckmark: false,
-        label: active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist' },
-      { kind: 'collected', value: active.collected, icon: 'plus',
-        label: `${active.collected ? 'Remove from' : 'Add to'} Collection` },
-      { kind: 'favourite', value: active.favourite, icon: 'heart', showCheckmark: false,
-        label: active.favourite ? 'Remove from Favourites' : 'Add to Favourites' },
-    ], relationship => {
-      if (relationship === 'collected') void perform(
-        () => setRelationship(active.id, relationship, !active.collected, change),
-        active.collected ? 'Removed Collected status. Other relationships and history are preserved.' : 'Added to Collection.'
-      );
-      else toggleSaved(relationship);
-    }, busy || loading)} />
-    <WorkListActions workId={active.id} select={toggleList} disabled={busy || loading}>
-      {#if item.listContext}<div class="menu-divider" role="separator"></div>{@render branch('This list entry', 'list-entry', 'list')}{/if}
-    </WorkListActions>
-    <div class="menu-divider" role="separator"></div>
-    {#if detailTargets.length || editions.length > 1}{@render branch(
-        'Jump to',
-        'details',
-        'arrow'
-      )}{/if}
-    {@render branch('Personalise', 'personalise', 'film')}
-    {#if isAdmin}
-      <div class="menu-divider" role="separator"></div>
-      {@render branch('Admin', 'admin', 'settings')}
-    {/if}
-  {:else if view === 'share'}
-    <Button item icon="friends" onclick={()=>{sharingTarget='website';sharingOpen=true;}}>Website</Button>
-    {#if ['movie','episode'].includes(active.kind)}
-      <Button item icon="play" onclick={()=>{sharingTarget='vrchat';sharingOpen=true;}}>VRChat</Button>
-    {/if}
-  {:else if view === 'details'}
-    {#each detailTargets as target (target.id)}
-      <Button item
-        icon={target.kind === 'show' ? 'library' : 'film'}
-        href={`/media/${target.id}`}
-      >
-        {target.kind === 'episode'
-          ? `Episode · S${String(target.seasonNumber ?? 0).padStart(2, '0')}E${String(target.episodeNumber ?? 0).padStart(2, '0')}`
-          : target.kind === 'show'
-            ? 'Show'
-            : target.kind[0].toUpperCase() + target.kind.slice(1)} · {target.title}
-      </Button>
-    {/each}
-    {#if editions.length > 1}
-      {#if detailTargets.length}<div class="menu-divider" role="separator"></div>{/if}
-      {#each editions as edition}<Button item
-          icon="film"
-          href={`/media/${playable?.id ?? active.id}?${new URLSearchParams({ edition })}`}
-          >{edition || 'Original'} version</Button>{/each}
-    {/if}
-  {:else if view === 'play'}
-    {@render playbackChoices()}
-    {#if editions.length > 1}
-      <div class="menu-divider" role="separator"></div>
-      {#each editions as edition}
-        {#if resumable}<Button menu
-            label={`${edition || 'Original'} version`}
-            panel
-            disabled={player.loading}
-          >
-            {#snippet trigger()}<Icon name="film" /><span class="menu-action-label"
-                >{edition || 'Original'} version</span
-              ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
-            {@render playbackChoices(edition)}
-          </Button>{:else}<Button item
-            icon="play"
-            disabled={player.loading}
-            onclick={() => play(edition)}>Play {edition || 'Original'} version</Button>{/if}
-      {/each}
-    {/if}
+    <Button item icon="list" keepOpen disabled={busy || loading} onclick={toggleContinue}>
+      {continuing || trackingPaused ? 'Hide from Progress' : wholeWork.dropped ? 'Show in Progress' : 'Add to Next'}
+    </Button>
   {:else if view === 'watched'}
     <Button item icon="check" disabled={busy || loading} onclick={() => recordWatch('now')}
-      >Right now</Button>
+      >Now</Button>
     {#if data?.hasReleaseDate}<Button item
         icon="clock"
         disabled={busy}
@@ -693,7 +679,7 @@
     <Button item icon="clock" disabled={busy} onclick={() => openForm('log')}
       >Choose date…</Button>
   {:else if view === 'history'}
-    <Button item icon="clock" href={`/media/${active.id}?section=activity&relationship=consumed`}>View activity</Button>
+    <Button item icon="clock" href={`/media/${active.id}?section=activity&relationship=consumed`}>View history</Button>
     <div class="menu-divider" role="separator"></div>
     <Button item
       icon="check"
@@ -728,83 +714,22 @@
     <Button item icon="close" danger href={`/media/${active.id}/history`}
       >Remove from history…</Button>
   {:else if view === 'rewatch'}
-    <Button item icon="refresh" disabled={busy || loading} onclick={startRewatchNow}
-      >Start now</Button>
-    <Button item
-      icon="clock"
-      disabled={busy || loading}
-      onclick={() => openForm('rewatch', wholeWork)}>Choose date…</Button>
-  {:else if view === 'personalise'}
-    <Button item
-      icon="user"
-      disabled={busy}
-      onclick={() =>
-        perform(
-          () => change('profile', { action: 'background', mediaId: active.id }),
-          'Profile background updated.'
-        )}>Set as profile background</Button>
-    <Button item
-      icon="film"
-      onclick={() => {
-        editAdmin = false;
-        editOpen = true;
-      }}>Change artwork or title…</Button>
-    {#if data?.hasPersonalOverrides}
-      <Button item
-        icon="refresh"
-        danger
-        disabled={busy}
-        onclick={() =>
-          confirm(
-            'Reset my changes?',
-            'Use the original title and artwork again. This only changes your view.',
-            async () => {
-              if (await perform(() => change(`media/${active.id}/presentation`, {}, 'DELETE')))
-                confirmOpen = false;
-            }
-          )}>Reset my changes…</Button>
+    {#if wholeWork.rewatchStartedAt}
+      <Button item icon="close" disabled={busy || loading} onclick={endRewatch}>End rewatch</Button>
+    {:else}
+      <Button item icon="replay" disabled={busy || loading} onclick={startRewatchNow}>Now</Button>
+      <Button item icon="calendar" disabled={busy || loading} onclick={() => openForm('rewatch', wholeWork)}>Choose date…</Button>
     {/if}
   {:else if view === 'admin' && isAdmin}
     {#if featureTarget}<Button item icon="star" checked={featuredHere} disabled={busy||preview} onclick={featureOnForYou}>{featuredHere?'Remove from For You hero':'Feature on For You'}</Button>{/if}
     {#if data?.refreshTarget}<Button item icon="refresh" disabled={busy} onclick={refresh}
-        >Refresh {data.refreshTarget.id === active.id
-          ? 'title details'
-          : `show details · ${data.refreshTarget.title}`}</Button>{/if}
-    {#if page.data.user?.role === 'admin'}<Button item
+        title={data.refreshTarget.id===active.id?undefined:`Refresh metadata for ${data.refreshTarget.title}`}>Refresh metadata</Button>{/if}
+    {#if isAdmin}<Button item
         icon="settings"
         onclick={() => {
           editAdmin = true;
           editOpen = true;
-        }}>Edit title details…</Button>{/if}
-  {:else if view === 'list-entry'}
-    {#if item.listContext && active.id === item.id}
-      <Button item
-        icon="left"
-        disabled={busy}
-        onclick={() =>
-          perform(() =>
-            change(`lists/${item.listContext!.listId}/move`, {
-              entryId: item.listContext!.entryId,
-              direction: -1,
-            })
-          )}>Move this entry earlier</Button>
-      <Button item
-        icon="right"
-        disabled={busy}
-        onclick={() =>
-          perform(() =>
-            change(`lists/${item.listContext!.listId}/move`, {
-              entryId: item.listContext!.entryId,
-              direction: 1,
-            })
-          )}>Move this entry later</Button>
-      <Button item
-        icon="close"
-        danger
-        disabled={busy}
-        onclick={() => removeEntry(item.listContext!.listId, item.listContext!.entryId)}
-        >Remove from this list…</Button>
-    {/if}
+        }}>Edit metadata…</Button>{/if}
   {/if}
 {/snippet}
 {#if readOnly()}<Button href={`/media/${item.id}`} size="hero">Learn more</Button>{:else}
@@ -816,7 +741,7 @@
           icon="arrow">Learn more</Button
         >
       {:else if (next ?? item).playbackPending}<span class="badge">Stream pending</span>
-      {:else if (next ?? item).available && page.data.capabilities?.playback!==false}<Button
+      {:else if (next ?? item).available && playbackAllowed}<Button
           size={hero ? "hero" : "standard"}
           icon="play"
           disabled={player.loading}
@@ -835,22 +760,29 @@
       bind:this={menu}
       panel
       hideTrigger={menuOnly && !showTrigger}
-      onopen={openMenu}
-      onclose={closeMenu}
+      onopen={entryActions ? undefined : openMenu}
+      onclose={entryActions ? undefined : closeMenu}
       label={`Actions for ${item.title}`}
       align="start"
       upward={hero}
       triggerClass={hero ? 'icon-button hero-icon-action' : 'icon-button'}
     >
-      {#if error}
-        <Button item icon="refresh" onclick={() => loadActions()}>Retry</Button>{/if}
-      {@render content('root')}
+      {#if entryActions}
+        {@render entryActions()}
+        <div class="menu-divider" role="separator"></div>
+        <Button menu label="Title actions" icon="more" panel onopen={openMenu} onclose={closeMenu}>
+          {@render content('root')}
+        </Button>
+      {:else}
+        {@render content('root')}
+      {/if}
     </Button>
   </div>
   {#if item.kind === 'collection' || item.sequence}<Dialog bind:open={sequenceControl.open} title={sequenceControl.title} message={sequenceControl.message} actions={sequenceControl.actions} />{/if}
   {#if requestItem}<RequestDialog
       item={requestItem}
       initial4k={request4k}
+      {initialSeasons}
       options={requestOptions}
       onsent={() => {
         requestOptions = undefined;
@@ -862,8 +794,8 @@
       bind:open={requestOpen}
     />{/if}
 
-  {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
-  {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title} target={sharingTarget}/>{/if}
+  {#if planningAllowed}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
+  {#if allowed('sharing', !!page.data.playbackSharing)}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title} target={sharingTarget}/>{/if}
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}
     ><div class="stack">
@@ -925,6 +857,9 @@
 {/if}
 
 <style>
+  .menu-detail { display: grid; }
+  .menu-season { display: flex; gap: var(--menu-inset); justify-content: space-between; }
+  :is(.menu-detail, .menu-season) small { color: var(--muted); font-weight: var(--weight-regular); }
   .actions {
     gap: 12px;
   }

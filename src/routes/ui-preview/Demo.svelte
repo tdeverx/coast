@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useMenuPreview } from '#lib/ui/controls/menu-preview.js';
   import { reportFailure } from '#lib/ui/client-context.js';
  import AvatarPicker from '#lib/ui/components/AvatarPicker.svelte';
  import AccountFields from '#lib/ui/components/AccountFields.svelte';
@@ -10,7 +11,8 @@
   import { serviceTasks } from '#lib/providers/tasks.js';
   import { providePreviewPlayback } from '#lib/playback/context.svelte.js';
   providePreviewPlayback();
-  import { id,today,movie,show,episode,items,facts,days,journal,provider,job,music,track } from './demo/fixtures';
+  const menuFixture = useMenuPreview();
+  import { id,today,movie,show,episode,items,facts,days,journal,provider,job,music,track,menuPreviewItem,menuPreviewJob } from './demo/fixtures';
   let Avatar = $state<typeof import('#lib/ui/components/Avatar.svelte').default>(null!);
   let ChoiceGroup = $state<typeof import('#lib/ui/components/ChoiceGroup.svelte').default>(null!);
   let Field = $state<typeof import('#lib/ui/components/Field.svelte').default>(null!);
@@ -249,19 +251,19 @@
       <Heading {...browseHeading('watch',{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true})} selection={{...browseHeading('watch',{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}).selection!,value:browseSurface,change:value=>browseSurface=value}} />
 
     {:else if name==='Header'}
-      <Header user={{username:"preview",role:"admin"}} unread={2} />
+      <Header user={{username:"preview",role:menuFixture?.conditions.admin===false?"user":"admin"}} unread={2} />
     {:else if name==='Icon'}
       <div class="row">{#each ["play","pause","heart","star","bookmark","filter","user","library","search","more","left","right","settings","volume"] as name}<div class="icon-sample"><Icon name={name as IconName} /><small>{name}</small></div>{/each}</div>
     {:else if name==='IntegrationSettings'}
-      <IntegrationSettings providers={[provider]} experimentalGaming />
+      <IntegrationSettings providers={[{...provider,enabled:menuFixture?.conditions.integrationEnabled ?? provider.enabled}]} experimentalGaming />
     {:else if name==='JobSchedule'}
-      <JobSchedule {provider} task={serviceTasks("jellyfin")[0]} jobs={[job]} />
+      <JobSchedule {provider} task={(menuFixture?.conditions.benchmark?{...serviceTasks("jellyfin")[0],id:"benchmark",title:"Benchmark",kinds:["benchmark.run"]}:serviceTasks("jellyfin")[0])} jobs={[menuFixture?{...menuPreviewJob(menuFixture.conditions),kind:menuFixture.conditions.benchmark?"benchmark.run":serviceTasks("jellyfin")[0].kinds[0]}:job]} />
     {:else if name==='JobsSettings'}
       <JobsSettings providers={[provider]} actions={[job]} />
     {:else if name==='WorkListActions'}
       <WorkListActions workId={id} select={async()=>{}} />
     {:else if name==='WorkMenu'}
-      <WorkMenu item={movie} showTrigger />
+      <WorkMenu item={menuPreviewItem(scenario, menuFixture?.conditions)} menuOnly showTrigger />
     {:else if name==='MediaActivity'}
       <MediaActivity mediaId={id} period="month" />
     {:else if name==='MediaCard'}
@@ -323,7 +325,7 @@
     {:else if name==='ProviderAutomation'}
       <ProviderAutomation instance={provider} />
     {:else if name==='QueueList'}
-      <QueueList actions={[job]} />
+      <QueueList actions={[menuFixture?menuPreviewJob(menuFixture.conditions):job]} />
     {:else if name==='TextLink'}<TextLink href={`/media/${id}`} text="Preview title"/>
     {:else if name==='Rating'}
       <Rating mediaId={id} value={4} />
@@ -334,7 +336,7 @@
     {:else if name==='RowStyleMenu'}
       <p class="small">Opened from a shelf heading by right-click, long-press or Shift+F10.</p>
       <Button  onclick={openStyleMenu}>Open style menu</Button>
-      <RowStyleMenu bind:this={styleMenu} title="Preview row" />
+      <RowStyleMenu bind:this={styleMenu} title="Preview row" artworkOptions={menuFixture?.conditions.artwork ?? true} />
     {:else if name==='SegmentedControl'}
       <SegmentedControl label="Preview segments" bind:value={choice} {options} />
     {:else if name==='Toast'}

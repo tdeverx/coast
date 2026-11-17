@@ -28,7 +28,12 @@ export const playthroughInputSchema = v.strictObject({
 export const playthroughUpdateSchema = v.pipe(v.strictObject({
   status: v.optional(v.picklist(gameStatuses)),
   progressPercent: v.optional(v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(100))),
-}), v.check((input) => input.status !== undefined || input.progressPercent !== undefined, 'Supply a status or progress percentage.'));
+  completedAt: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.check(
+    value => Number.isFinite(Date.parse(value)) && Date.parse(value) <= Date.now(),
+    'Choose a valid completion date in the past.',
+  ))),
+}), v.check((input) => input.status !== undefined || input.progressPercent !== undefined, 'Supply a status or progress percentage.'),
+v.check(input => input.completedAt === undefined || input.status === 'completed', 'A completion date requires a completed playthrough.'));
 export const gameSessionInputSchema = v.strictObject({
   // A caller-generated UUID makes retries safe without merging distinct sessions.
   id: v.pipe(v.string(), v.uuid()),

@@ -7,6 +7,8 @@ import {syncJellyfinUser,executeJellyfinUserState,type JellyfinSyncContext} from
 import {persistMusic,logMusic} from '../src/lib/music/persistence.server';
 import {workAssessments} from '../src/lib/collection/query.server';
 import {trackWithExports} from '../src/lib/sync/changes.server';
+import {musicHistory,removeMusicListen} from '../src/lib/music/history.server';
+import {reconcileProviderValue,localSyncValue} from '../src/lib/sync/values.server';
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const tag=crypto.randomUUID(),albumExternal='a'.repeat(32),trackExternal='b'.repeat(32);
 const remote={Played:false,PlayCount:0,PlaybackPositionTicks:0,IsFavorite:false};
@@ -155,4 +157,47 @@ run('a music-only account resumes its retained track stage without restarting al
   expect(reads).toContain('Audio');expect(reads).not.toContain('MusicAlbum');
   expect(reads.every(type=>type==='Audio')).toBe(true);
  }finally{await db.update(s.users).set({settings:{}}).where(eq(s.users.id,userId));}
+});
+
+run('local-only music removals survive raw provider observations and future imports without counter loss or false conflicts',async()=>{
+ const db=getDb(),savedRemote={...remote},viewer=crypto.randomUUID();
+ await db.insert(s.users).values({id:viewer,username:`removed-music-${viewer}`});
+ const [source]=await db.insert(s.providerConnections).values({userId:viewer,instanceId:instance.id,externalUserId:tag,settings:{importPlayback:true,reconcileTracking:false}}).returning();
+ const sync=()=>syncJellyfinUser(viewer,source.id,undefined,{adapter,connection:source,instance});
+ const state=async()=>{
+  const [progress]=await db.select().from(s.musicProgress).where(and(eq(s.musicProgress.userId,viewer),eq(s.musicProgress.trackId,trackId)));
+  const [value]=await db.select().from(s.syncValues).where(and(eq(s.syncValues.connectionId,source.id),eq(s.syncValues.mediaId,trackId),eq(s.syncValues.category,'history')));
+  return {progress,value,total:(await musicHistory(viewer,trackId)).total};
+ };
+ try{
+  Object.assign(remote,{Played:true,PlayCount:2,PlaybackPositionTicks:0,IsFavorite:false});
+  await sync();expect((await state()).total).toBe(2);
+  const removed=(await musicHistory(viewer,trackId)).items[0];
+  await db.update(s.musicProgress).set({positionSeconds:42,durationSeconds:120}).where(and(eq(s.musicProgress.userId,viewer),eq(s.musicProgress.trackId,trackId)));
+  await removeMusicListen(viewer,trackId,removed.id);
+  expect(await db.transaction(tx=>localSyncValue(tx,viewer,trackId.toUpperCase(),'history'))).toEqual({value:true,playCount:2});
+  await sync();await sync();
+  let current=await state();
+  expect(current).toMatchObject({total:1,progress:{playCount:1,positionSeconds:42},value:{conflict:false,remote:{playCount:2,importedPlayCount:2}}});
+  remote.PlayCount=3;await sync();await sync();
+  expect(await state()).toMatchObject({total:2,progress:{playCount:2},value:{conflict:false,remote:{playCount:3,importedPlayCount:3}}});
+  const coastBatch=crypto.randomUUID();await logMusic(viewer,trackId,{batchId:coastBatch});
+  await sync();expect(await state()).toMatchObject({total:3,progress:{playCount:3},value:{conflict:false}});
+  remote.PlayCount=4;await sync();
+  expect(await state()).toMatchObject({total:4,progress:{playCount:4},value:{conflict:false,remote:{playCount:4,importedPlayCount:4}}});
+  await db.update(s.users).set({settings:{syncConflictWinner:source.id}}).where(eq(s.users.id,viewer));
+  const otherCoastBatch=crypto.randomUUID();await logMusic(viewer,trackId,{batchId:otherCoastBatch});
+  remote.PlayCount=7;await sync();
+  expect(await state()).toMatchObject({total:8,progress:{playCount:8},value:{conflict:false,remote:{playCount:7,importedPlayCount:7}}});
+  // Outbound observations can accept an aggregate before the traversal imports its occurrences.
+  await reconcileProviderValue(viewer,source.id,trackId,'history',{value:true,playCount:10},{source:'jellyfin',accountGeneration:source.accountGeneration});
+  expect(await state()).toMatchObject({total:8,progress:{playCount:8},value:{remote:{playCount:10,importedPlayCount:7}}});
+  remote.PlayCount=10;await sync();await sync();
+  expect(await state()).toMatchObject({total:11,progress:{playCount:11},value:{conflict:false,remote:{playCount:10,importedPlayCount:10}}});
+  remote.PlayCount=11;await sync();
+  current=await state();expect(current).toMatchObject({total:12,progress:{playCount:12},value:{conflict:false,remote:{playCount:11,importedPlayCount:11}}});
+  const retained=await db.select().from(s.musicListens).where(and(eq(s.musicListens.userId,viewer),eq(s.musicListens.trackId,trackId)));
+  expect(retained.filter(entry=>entry.source==='coast').map(entry=>entry.batchId).sort()).toEqual([coastBatch,otherCoastBatch].sort());
+  expect(retained.some(entry=>entry.id===removed.id)).toBe(false);
+ }finally{Object.assign(remote,savedRemote);await db.delete(s.users).where(eq(s.users.id,viewer));}
 });

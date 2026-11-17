@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ProfileBackgroundMenu from '#lib/ui/components/ProfileBackgroundMenu.svelte';
   const dev=import.meta.env.DEV;
   import { goto } from '$app/navigation';
   import { reportFailure } from '#lib/ui/client-context.js';
@@ -318,6 +319,14 @@
   <section class="section">
     {#snippet activityFilters()}
       <RowFilter
+        reset={{disabled:activityType==='all',run:()=>{
+          activityType='all';
+          if(layout==='grid'){
+            const url=new URL(page.url.href);
+            url.searchParams.set('type','all');url.searchParams.delete('page');
+            void goto(url,{shallow:true,replace:true,reset:false,state:page.state});
+          }
+        }}}
         groups={[
           {
             label: "Activity media type",
@@ -503,25 +512,8 @@
               <div class="row actions">
                 <Button size="hero" onclick={() => editing = true}>Edit profile</Button>
 
-                <Button menu text="Background" label="Profile background">
-                  <Button
-                    item
-                    selection="radio"
-                    checked={data.profile.backgroundMode === 'activity'}
-                    disabled={busy}
-                    keepOpen={false}
-                    onclick={() => update({ action: 'background-mode', mode: 'activity' })}
-                  >Last activity</Button>
-
-                  <Button
-                    item
-                    selection="radio"
-                    checked={data.profile.backgroundMode !== 'activity'}
-                    disabled={busy}
-                    keepOpen={false}
-                    onclick={() => update({ action: 'background-mode', mode: 'fixed' })}
-                  >Selected title</Button>
-                </Button>
+                <ProfileBackgroundMenu mode={data.profile.backgroundMode} disabled={busy}
+                  change={mode=>update({action:'background-mode',mode})} />
 
                 {#if data.profile.backgroundMediaId || data.profile.backgroundMode === 'activity'}
                   <Button

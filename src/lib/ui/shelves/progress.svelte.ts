@@ -6,6 +6,7 @@ import { goto } from '$app/navigation';
 import { page as route } from '$app/state';
 import {
   progressTabs,
+  progressSelectionTabs,
   progressTitles,
   type ProgressSurface,
   type ProgressContent,
@@ -46,7 +47,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
   const initialFilters=untrack(()=>getOptions().filters??initial);
   const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
-  const options = $derived(progressTabs.filter((option) => ['watching', 'up-next', 'paused'].includes(option.value) || surface === 'profile' && ['finished', 'dropped'].includes(option.value)));
+  const selectionSurface = $derived(!saved&&!mediums&&!getOptions().actionScoped ? surface==='profile'?'profile':'continue' : undefined);
   const defaultView = (): ProgressOptions['view'] => surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
 
   type Filters = Pick<ProgressOptions, 'kind' | 'scope'>;
@@ -91,7 +92,11 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   const href = (number = 1) => '/progress?' + parameters(number);
   const ownerKey = $derived(JSON.stringify([route.data.user?.id,username,getOptions().category,route.data.capabilities,route.data.experimentalMusic,route.data.experimentalGaming,route.data.experimentalBooks,route.data.experimentalComics]));
   let loadedOwner = $state(untrack(() => ownerKey));
+  const views=$derived(loadedOwner===ownerKey?content.availableViews:undefined);
+  const options=$derived((selectionSurface?progressSelectionTabs(selectionSurface):[]).filter(option=>!views||views.includes(option.value)));
   const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics,route.data.capabilities]));
+  const summaryEpoch=$derived(JSON.stringify([ownerKey,refreshKey,category,selectionSurface]));
+  let confirmedEpoch=untrack(()=>initial?.availableViews?summaryEpoch:undefined);
   let previousRefreshKey = untrack(() => refreshKey);
   let previousInitial = untrack(() => initial);
   $effect(() => {
@@ -112,6 +117,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           tab = next.view; category = next.category;
           preferences[tab] = {kind:next.kind,scope:next.scope};
           resource.replace(next);
+          confirmedEpoch=next.availableViews?summaryEpoch:undefined;
         } else if (activated) void select();
         return;
       }
@@ -129,12 +135,23 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
         category = next.category;
         preferences[tab] = { kind: next.kind, scope: next.scope };
         resource.replace(next);
+        confirmedEpoch=next.availableViews?summaryEpoch:undefined;
       } else if (category === next.category && tab === next.view && current.kind === next.kind && current.scope === next.scope) {
         resource.replace(next);
+        confirmedEpoch=next.availableViews?summaryEpoch:undefined;
       } else {
         void select();
       }
     });
+  });
+  $effect(()=>{
+    const settled=initial;
+    if(layout==='grid'&&!location.embedded&&!preview&&settled?.availableViews){
+      untrack(()=>{
+        if(settled.view!==(route.url.searchParams.get('view')??'watching'))
+          void goto(href(settled.page),{shallow:true,replace:true,reset:false,state:route.state});
+      });
+    }
   });
   $effect(() => {
     onitems?.(content.items, [content.view, content.category, content.kind, content.scope].join(':'));
@@ -148,23 +165,38 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       category=next as ProgressOptions['category'];
     }
     if(surface==='recommendations'&&route.data.capabilities?.social===false){resource.replace(emptyContent());return;}
-    const path = `progress?${parameters(number)}`;
+    const request=parameters(number);
+    const epoch=summaryEpoch;
+    const includeSummary=selectionSurface&&category==='screen'&&confirmedEpoch!==epoch;
+    if(includeSummary)request.set('segments',selectionSurface!);
+    const path = `progress?${request}`;
     const owner = username;
+    const requestedOwner=ownerKey;
 
     const result = await resource.load(
       async (signal) => {
         try {
-          return await api<ProgressContent>(path, undefined, 'GET', { signal });
+          const next=await api<ProgressContent>(path, undefined, 'GET', { signal });
+          if(!signal.aborted&&ownerKey===requestedOwner){
+            if(next.availableViews){
+              confirmedEpoch=epoch;
+              if(next.view!==tab){tab=next.view;preferences[tab]={kind:next.kind,scope:next.scope};}
+            }
+          }
+          return next;
       } catch (cause) {
-        if (owner && owner === username && !signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status))
-          resource.replace({ ...resource.data, items: [], total: 0, page: 1, pages: 1 }, cause.message);
+          if (owner && owner === username && !signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status)){
+            confirmedEpoch=undefined;
+            resource.replace({ ...resource.data, availableViews:undefined, items: [], total: 0, page: 1, pages: 1 }, cause.message);
+          }
           throw cause;
         }
       },
       {
         merge: (old, next) => ({
           ...next,
-          items: append
+          availableViews:next.availableViews??(includeSummary?undefined:old.availableViews),
+          items: append&&old.view===next.view
             ? uniqueItems([...old.items, ...next.items], (item) => item.entryId ?? item.id)
             : next.items
         })
@@ -183,6 +215,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
 
   return {
+    get filterReset() { return { disabled: current.kind === 'all' && current.scope === 'all', run: () => update(defaults()) }; },
     get pagination() {
       return {
         kind: 'pages' as const,
@@ -207,6 +240,9 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
     get emptyConfirmed() {
       return !mediums || content.emptyAllMedia === true;
+    },
+    get hideRow() {
+      return !!selectionSurface&&views?.length===0;
     },
 
     get ready() {
@@ -261,7 +297,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           ]
           : [],
 
-        ...!saved && !mediums&&!getOptions().actionScoped
+        ...options.length
           ? [
             {
               type: 'segments' as const,
@@ -280,7 +316,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           ? [
             {
               type: 'availability' as const,
-              label: category === 'reading' ? 'Available to read only' : 'Available to play only',
+              label: category === 'reading' ? 'Available to read only' : category === 'game' ? 'Available to play only' : 'Available to watch only',
               value: current.scope,
               change: (value: string) => update({ scope: value as Filters['scope'] })
             }

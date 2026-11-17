@@ -6,7 +6,7 @@ import {requestOptionsUrl} from './fixtures/request-options';
 const operationUrl=moduleUrl(compileRunes((await Bun.file(new URL('../src/lib/ui/operation.svelte.ts',import.meta.url)).text()).replace("import { message } from './client';",'const message=error=>error.message;')));
 let script=await componentScript('src/lib/ui/components/RequestDialog.svelte');
 const from=script.indexOf('let {'),to=script.indexOf('} = $props();',from);
-script=script.slice(0,from)+`let item=$state.raw(initial.item??{id:'first',kind:'show'}),seasonNumber=$state(initial.seasonNumber),initial4k=$state(initial.initial4k??false),options=$state.raw(initial.options),onsent,open=$state(true);`+script.slice(to+'} = $props();'.length);
+script=script.slice(0,from)+`let item=$state.raw(initial.item??{id:'first',kind:'show'}),seasonNumber=$state(initial.seasonNumber),initial4k=$state(initial.initial4k??false),initialSeasons=$state.raw(initial.initialSeasons),options=$state.raw(initial.options),onsent,open=$state(true);`+script.slice(to+'} = $props();'.length);
 const code=compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};import {createRequestOptions} from ${JSON.stringify(requestOptionsUrl)};import {createOperation} from ${JSON.stringify(operationUrl)};
  export function create(transport,initial={}){const callbacks=[],onDestroy=fn=>callbacks.push(fn),useClient=()=>({api:transport,change:()=>{throw Error('No request submission in read lifetime test');}}),reportFailure=()=>{};
  ${script}
@@ -45,4 +45,15 @@ test('independent request-option consumers do not share abort ownership',async()
   first.owner.close();await settle();expect(first.calls[0].signal.aborted).toBe(true);expect(second.calls[0].signal.aborted).toBe(false);
   second.calls[0].resolve({destinations:[destination('interested')]});await settle();expect(second.owner.destination).toBe('interested');
  }finally{first.close();second.close();}
+});
+
+test('menu-selected seasons survive destination choice only when that destination can request them',async()=>{
+ const source=destination('provided');
+ source.variants.standard.seasons.push({number:3,requested:false,available:false},{number:4,requested:true,available:false});
+ const f=fixture({options:[source],initialSeasons:[2,3,4,5]});
+ try{
+  await settle();
+  expect(f.calls).toHaveLength(0);
+  expect(f.owner.selected).toEqual([2,3]);
+ }finally{f.close();}
 });

@@ -2,7 +2,7 @@ import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js
 import * as v from 'valibot';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
-import { users, media, trackingState, type ProfileSettings } from '#lib/server/db/schema.js';
+import { users, works, trackingState, type ProfileSettings } from '#lib/server/db/schema.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { avatarRequestLimit, avatarImage, storeAvatar, pruneAvatars } from './avatar-storage.server';
 const uuid = v.pipe(v.string(), v.uuid());
@@ -73,9 +73,9 @@ export async function updateProfile(userId: string, input: unknown) {
     } else if (data.action === 'background') {
       if (data.mediaId) {
         const [item] = await tx
-          .select({ id: media.id })
-          .from(media)
-          .where(eq(media.id, data.mediaId));
+          .select({ id: works.id })
+          .from(works)
+          .where(and(eq(works.id, data.mediaId), sql`coast_category_enabled(${userId}::uuid,${works.category})`));
         if (!item) throw new AppError(404, 'Title not found.');
       }
       profile.backgroundMediaId = data.mediaId;

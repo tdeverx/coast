@@ -1,8 +1,9 @@
 import type { MusicItem } from './model';
 import type { MediaCardDisplay, MediaCardPresentation, MediaHeroPresentation } from '#lib/ui/types.js';
 
-/** Artists are browse destinations; tracks/albums use their music queue. */
+/** Canonical music works use their source-aware queue. */
 export function canPlayMusicCard(item: Pick<MediaCardDisplay, 'kind' | 'available' | 'workId' | 'connectionId'>) {
+  if(item.kind==='artist')return !!item.workId && item.available===true;
   return (item.kind === 'track' || item.kind === 'album') && item.available !== false &&
     !!(item.workId || item.connectionId);
 }
@@ -35,7 +36,7 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     href: item.workId?`/music/work/${item.workId}`:musicHref(connectionId, item.id),
     connectionId,
     backdrop: item.backdropUrl,
-    available: item.kind !== 'artist' && (item.available ?? !!connectionId),
+    available: item.available ?? (item.kind !== 'artist' && !!connectionId),
     captionCredits: item.kind === 'album' ? item.albumArtists : item.artists,
     captionSubtitle:
       musicCredits(item) ||

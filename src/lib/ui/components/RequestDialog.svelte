@@ -21,6 +21,7 @@
     item,
     seasonNumber,
     initial4k = false,
+    initialSeasons,
     options,
     onsent,
     open = $bindable(false),
@@ -29,6 +30,7 @@
     seasonNumber?: number;
     open: boolean;
     initial4k?: boolean;
+    initialSeasons?: readonly number[];
     options?: RequestDestination[];
     onsent?: () => void;
   } = $props();
@@ -44,22 +46,18 @@
   const failure = $derived(error || read.error);
   const active = $derived(destinations.find((d) => d.id === destination));
   const variant = $derived(is4k ? active?.variants.fourK : active?.variants.standard);
+  function chooseSeasons() {
+    const initial = initialSeasons && is4k === initial4k ? initialSeasons : seasonNumber === undefined ? [] : [seasonNumber];
+    const available = new Set((variant?.seasons ?? []).filter(season => !season.requested && !season.available).map(season => season.number));
+    selected = initial.filter(number => available.has(number));
+  }
   function chooseDestination() {
     const selectedDestination = destinations.find((d) => d.id === destination);
     is4k =
       initial4k ||
       (!selectedDestination?.variants.standard?.requestable &&
         !!selectedDestination?.variants.fourK?.requestable);
-    const availableVariant = is4k
-      ? selectedDestination?.variants.fourK
-      : selectedDestination?.variants.standard;
-    selected =
-      seasonNumber !== undefined &&
-      availableVariant?.seasons.some(
-        (season) => season.number === seasonNumber && !season.requested && !season.available
-      )
-        ? [seasonNumber]
-        : [];
+    chooseSeasons();
   }
   function load() {
     error = '';
@@ -72,13 +70,14 @@
       seasonNumber;
       options;
       initial4k;
+      initialSeasons;
       untrack(() => void load());
     }
     return read.cancel;
   });
   $effect(() => {
     const values = read.value;
-    initial4k; seasonNumber;
+    initial4k; initialSeasons; seasonNumber;
     if (open && values !== undefined) untrack(() => {
       destination = destinations[0]?.id ?? '';
       chooseDestination();
@@ -124,16 +123,7 @@
           ><input
             type="checkbox"
             bind:checked={is4k}
-            onchange={() => {
-              const current = is4k ? active?.variants.fourK : active?.variants.standard;
-              selected =
-                seasonNumber !== undefined &&
-                current?.seasons.some(
-                  (s) => s.number === seasonNumber && !s.available && !s.requested
-                )
-                  ? [seasonNumber]
-                  : [];
-            }}
+            onchange={chooseSeasons}
           />Request in 4K</label
         >{/if}
       {#if item.kind === 'show'}<div class="stack">

@@ -81,7 +81,7 @@ export async function refreshTasteCaches(){
    continue;
   }
   const evidence=await interestWorks(user.id),featureMap=await workTasteFeatures(evidence.map(work=>work.id));
-  const artistPreferences=config.features.music?await sql<{name:string}[]>`select a.name from music_artist_preferences p join music_artists a on a.id=p.artist_id where p.user_id=${user.id} and p.favourite`:[];
+  const artistPreferences=config.features.music?await sql<{name:string}[]>`select a.title as name from tracking_state p join music_works a on a.id=p.media_id and a.kind='artist' where p.user_id=${user.id} and p.favourite`:[];
   const profiles=new Map<string,TasteProfile>();
   for(const medium of ['movie','show','game','music','book','comic'].filter(medium=>categoryEnabled(config,['movie','show'].includes(medium)?'screen':medium)))profiles.set(medium,buildTasteProfile(evidence.filter(work=>(work.category==='music'?'music':work.kind)===medium).map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}))));
   if(config.experimentalMusic&&artistPreferences.length){const musicEvidence=evidence.filter(work=>work.category==='music').map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}));profiles.set('music',buildTasteProfile([...musicEvidence,...artistPreferences.map(artist=>({id:`artist:${artist.name}`,weight:5,features:{artists:namedFeatures([artist.name])}}))]));}

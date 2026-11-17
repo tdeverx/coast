@@ -109,8 +109,9 @@
       {#if page.data.user}
         <Shelf url={detailUrl}
           source={{type:'detail',title:'Progress',path:`media/${view.item.id}/next?specials=${showSpecials}`,href:rowHref('progress')+`&view=${progressView}&specials=${showSpecials}`,anchor:!section,availability:true,available:!!section&&detailUrl.searchParams.get('available')==='true',layout:section?'grid':'row',shape:progressView==='episodes'?'fanart':'poster',items:progressView==='seasons'?view.seasons.flatMap(season=>season.item?[season.item]:[]):undefined}}
-          artworkStyle={progressView==='episodes'?'thumb':'auto'} availability={false} hideEmpty={false} segments={progressSegments}
+          artworkStyle={progressView==='episodes'?'thumb':'auto'} availability={false} hideEmpty={false} segments={progressSegments} styleSegment={progressView}
           actions={progressView==='episodes'?episodeFilters:undefined}
+          filterReset={progressView==='episodes'?{disabled:!showSpecials,run:()=>{showSpecials=false;}}:undefined}
           captionAction={progressView==='episodes'?episodeAction:undefined} body={progressView==='episodes'?episodeBody:undefined} footer={progressView==='episodes'?episodeFooter:undefined}
         >
           {#snippet details(entry)}{#if entry.kind==='season'&&entry.totalEpisodes}<p class="small">{entry.totalEpisodes} episodes · {entry.completedEpisodes??0} watched</p>{/if}{/snippet}

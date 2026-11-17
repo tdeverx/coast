@@ -5,6 +5,7 @@ import type { MediaView } from '../src/lib/ui/types';
 import type { RequestDestination } from '../src/lib/media/requests';
 import type { api } from '../src/lib/ui/client';
 import { requestOptionsUrl } from './fixtures/request-options';
+import { menuReadRetryUrl } from './fixtures/menu-read-retry';
 
 const source = await Bun.file(new URL('../src/lib/ui/controls/requests.svelte.ts', import.meta.url)).text();
 const messageModule = `data:text/javascript;base64,${Buffer.from('export const message = error => error.message;').toString('base64')}`;
@@ -12,6 +13,7 @@ const compiled = compileModule(new Bun.Transpiler({loader: 'ts'}).transformSync(
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'))
   .replaceAll('#lib/ui/client.js', messageModule)
   .replaceAll('#lib/media/requests.js', import.meta.resolve('../src/lib/media/requests'))
+  .replaceAll('./menu-read-retry', menuReadRetryUrl)
   .replaceAll('./request-options.svelte', requestOptionsUrl);
 const controlsUrl = `data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`;
 const { createRequestControls }: typeof import('../src/lib/ui/controls/requests.svelte') = await import(controlsUrl);
@@ -20,7 +22,7 @@ const data = {requests: [], requestsEnabled: true} as unknown as MediaActionData
 
 test('request menus load lazily, deduplicate reads and reject superseded delivery', async () => {
   const deliveries: ((value: {destinations: RequestDestination[]}) => void)[] = [];
-  const request = createRequestControls({ item: () => item, data: () => data,
+  const request = createRequestControls({ item: () => item, data: () => data, scope: () => 'menu',
     api: (() => new Promise<{destinations: RequestDestination[]}>(resolve => deliveries.push(resolve))) as typeof api, onrequest: () => () => {} });
   expect(deliveries).toHaveLength(0);
   const stale = request.loadRequestOptions();
@@ -38,18 +40,32 @@ test('request menus load lazily, deduplicate reads and reject superseded deliver
   expect(deliveries).toHaveLength(2);
 });
 
-test('request failures allow targeted retry without losing the request intent', async () => {
+test('request options recover after one transient failure without losing the request intent', async () => {
   let calls = 0;
   let selected: {fourK?: boolean; destinations?: RequestDestination[]} | undefined;
-  const request = createRequestControls({item: () => item, data: () => data,
-    api: (async () => { if (++calls === 1) throw new Error('Source unavailable'); return {destinations: []}; }) as typeof api,
+  const request = createRequestControls({item: () => item, data: () => data, scope: () => 'menu',
+    api: (async () => { if (++calls === 1) throw new TypeError('Network error'); return {destinations: []}; }) as typeof api,
     onrequest: () => (fourK, destinations) => {selected = {fourK, destinations};} });
   await request.loadRequestOptions();
-  expect(request.requestOptionsError).toBe('Source unavailable');
-  await request.loadRequestOptions();
+  expect(calls).toBe(2);
   expect(request.requestOptionsError).toBe('');
   request.openRequest(true);
   expect(selected).toEqual({fourK: true, destinations: []});
+});
+test('closing the request submenu cancels its pending retry', async () => {
+  const signals: AbortSignal[] = [];
+  const request = createRequestControls({item: () => item, data: () => data, scope: () => 'menu',
+    api: (async (_path, _payload, _method, options) => {
+      signals.push(options!.signal!);
+      throw new TypeError('Network error');
+    }) as typeof api, onrequest: () => () => {}});
+  const pending = request.loadRequestOptions();
+  await Promise.resolve();
+  request.cancel();
+  await pending;
+  expect(signals).toHaveLength(1);
+  expect(signals[0].aborted).toBe(true);
+  expect(request.requestOptionsError).toBe('');
 });
 
 test('request scope formatter follows a replaced snapshot and stays stable within it', async () => {
@@ -57,7 +73,7 @@ test('request scope formatter follows a replaced snapshot and stays stable withi
     import {createRequestControls} from ${JSON.stringify(controlsUrl)};
     export function snapshot(initial) {
       let data = $state.raw(initial);
-      const controls = createRequestControls({item: () => null, data: () => data,
+      const controls = createRequestControls({item: () => null, data: () => data, scope: () => 'menu',
         api: async () => {throw Error('unexpected request');}, onrequest: () => () => {}});
       return {controls, replace(value) {data = value;}};
     }

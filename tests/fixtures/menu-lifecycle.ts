@@ -16,7 +16,7 @@ const queries:{listeners:Set<()=>void>;readonly matches:boolean;addEventListener
 const frames=new Map<number,FrameRequestCallback>(),documentEvents=new Map<string,Set<Function>>(),windowEvents=new Map<string,Set<Function>>();
 const listen=(events:Map<string,Set<Function>>,type:string,fn:Function)=>{let set=events.get(type);if(!set)events.set(type,set=new Set());set.add(fn);};
 class Node{
- isConnected=true;style={left:'',top:''};opened=false;children:Node[]=[];owner?:Node;onhide?:()=>void;textContent='Item';
+ isConnected=true;style={left:'',top:'',setProperty(_name:string,_value:string){}};opened=false;children:Node[]=[];owner?:Node;onhide?:()=>void;textContent='Item';
  contains(target:Node){return target===this||this.children.includes(target);}
  getBoundingClientRect(){return {top:30,left:40,bottom:60,right:140,width:100,height:30};}
  getClientRects(){return [this.getBoundingClientRect()];}
@@ -48,6 +48,8 @@ const top=options(),nested=options();let parent:any,child:any;
 const dispose=runtime.effect_root(()=>{
  parent=createMenuController(top.config);lifecycle.chooseParent(lifecycle.contexts[0]);
  child=createMenuController(nested.config);
+ lifecycle.chooseParent(undefined);
+ for(let index=0;index<100;index++)createMenuController(options().config);
 });
 top.root.children.push(nested.surface);nested.surface.onhide=()=>child.toggle({newState:'closed'});
 runtime.flush();expect(mediaListeners()).toBe(0);expect(activeObservers).toBe(0);expect(globalListeners()).toBe(0);
@@ -55,11 +57,16 @@ resize(true);expect(parent.compact).toBe(true);expect(child.compact).toBe(true);
 parent.openMenu();child.openMenu();runtime.flush();expect(mediaListeners()).toBe(2);expect(parent.childHidden).toBe(true);expect(activeObservers).toBe(2);
 child.close(true);await Promise.resolve();runtime.flush();expect(document.activeElement).toBe(nested.trigger);expect(parent.childHidden).toBe(false);expect(mediaListeners()).toBe(1);
 resize(false);expect(child.compact).toBe(false);
-// Button's actual hover admission checks compact before it calls openMenu.
-if(child.nested&&!child.compact)child.openMenu();runtime.flush();expect(child.open).toBe(true);expect(parent.childHidden).toBe(false);expect(mediaListeners()).toBe(2);
+child.hoverTrigger({pointerType:'mouse'});runtime.flush();expect(child.open).toBe(true);expect(parent.childHidden).toBe(false);expect(mediaListeners()).toBe(2);
+child.leaveHover({pointerType:'mouse'});child.cancelHoverDismiss();
+await new Promise(resolve=>setTimeout(resolve,140));expect(child.open).toBe(true);
+child.leaveHover({pointerType:'mouse'});await new Promise(resolve=>setTimeout(resolve,140));runtime.flush();expect(child.open).toBe(false);expect(mediaListeners()).toBe(1);
+child.triggerKey({key:'ArrowRight',preventDefault(){},stopPropagation(){}});await Promise.resolve();runtime.flush();expect(child.open).toBe(true);
+child.leaveHover({pointerType:'mouse'});await new Promise(resolve=>setTimeout(resolve,140));expect(child.open).toBe(true);
 resize(true);expect(child.compact).toBe(true);expect(parent.childHidden).toBe(true);
 child.triggerKey({key:'Escape',preventDefault(){},stopPropagation(){}});await Promise.resolve();runtime.flush();expect(document.activeElement).toBe(nested.trigger);expect(mediaListeners()).toBe(1);
 parent.close();runtime.flush();expect(mediaListeners()).toBe(0);expect(activeObservers).toBe(0);expect(globalListeners()).toBe(0);expect(frames.size).toBe(0);
+for(let index=0;index<20;index++){parent.openMenu();child.hoverTrigger({pointerType:'mouse'});child.leaveHover({pointerType:'mouse'});parent.close();runtime.flush();expect(mediaListeners()+activeObservers+globalListeners()+frames.size).toBe(0);}
 resize(false);parent.toggle({newState:'open'});runtime.flush();expect(parent.compact).toBe(false);expect(mediaListeners()).toBe(1);
 for(const navigate of lifecycle.navigations)navigate({shallow:false,type:'goto'});runtime.flush();expect(mediaListeners()).toBe(0);
 for(const cleanup of [...lifecycle.cleanups].reverse())cleanup();dispose();

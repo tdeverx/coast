@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useMenuPreview } from '#lib/ui/controls/menu-preview.js';
   import type { Component } from 'svelte';
   import { untrack } from 'svelte';
   import { providePreviewClient, reportFailure } from '#lib/ui/client-context.js';
@@ -22,7 +23,8 @@
   const customActive = $derived(custom !== undefined);
   const socialNames = new Set(['PartyCard', 'PartyMenu', 'PersistentPlayer', 'SyncedControls', 'FriendRoster', 'FriendsPanel', 'NotificationInbox', 'StreamsPanel', 'NotificationToasts', 'PlaybackTimeline']);
   const family = $derived<ReferenceFamily | undefined>(composition?.family ?? (socialNames.has(name) ? 'social' : undefined));
-  const transport = $derived(createPreviewTransport(name, scenario));
+  const menuFixture = useMenuPreview();
+  const transport = $derived(createPreviewTransport(name, scenario, menuFixture?.conditions));
   providePreviewClient((input, init) => transport(input, init));
   providePreviewPlayback();
   let Renderer = $state<Component<{name: string; scenario: string}>>();

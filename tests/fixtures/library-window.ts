@@ -21,7 +21,7 @@ const fixture=compileRunes(`
  import {createResource as nativeResource} from ${JSON.stringify(resource)};
  import {contentRevisionKey} from ${JSON.stringify(revision)};
  import {ApiError} from ${JSON.stringify(errors)};
- import {libraryBrowsePaths,libraryTitles,librarySelections,librarySortOptions,libraryGenres,librarySegments} from ${JSON.stringify(paths)};
+ import {libraryBrowsePaths,libraryTitles,librarySelections,librarySortOptions,libraryGenres,librarySegments,libraryEntityOptions,libraryCountTitle} from ${JSON.stringify(paths)};
  import {createPageRetention,retainPageWindow,retainedInterval} from ${JSON.stringify(windows)};
  import {surfaceEnabled,categoryEnabled} from ${JSON.stringify(features)};
  import {readingTypeOptions} from ${JSON.stringify(filters)};

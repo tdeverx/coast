@@ -5,6 +5,7 @@ import { musicWorks,musicProgress,lists } from '#lib/server/db/schema.js';
 import { workAssessments } from '#lib/collection/query.server.js';
 import { DomainError } from '#lib/core/errors.js';
 import { musicAlbumMembers, musicAlbumMembersSql } from './editions.server';
+import { canonicalArtistTrackSql, canonicalArtistPlayableTrackSql } from './artist-tracks.server';
 const MUSIC_QUEUE_LIMIT=10000;
 function requireQueueWithinLimit(entries:readonly unknown[]){
  if(entries.length>MUSIC_QUEUE_LIMIT)throw new DomainError('This queue exceeds 10,000 tracks. Choose fewer tracks.',409,'queue_too_large');
@@ -12,6 +13,7 @@ function requireQueueWithinLimit(entries:readonly unknown[]){
 export async function musicQueue(userId:string,workId:string){
   await requireFeature(userId,'music');
   const db=getDb();const [work]=await db.select().from(musicWorks).where(eq(musicWorks.id,workId));if(!work)throw new DomainError('Music not found.',404);
+  if(work.kind==='artist')return artistMusicQueue(userId,workId);
   const entries=work.kind==='track'?[work]:await musicAlbumMembers(workId,db,MUSIC_QUEUE_LIMIT+1);
   requireQueueWithinLimit(entries);
   if (!entries.length) return { items: [], continueId: null };
@@ -19,6 +21,23 @@ export async function musicQueue(userId:string,workId:string){
   const progress=await db.select().from(musicProgress).where(and(eq(musicProgress.userId,userId),inArray(musicProgress.trackId,entries.map(e=>e.id))));
   const current=progress.filter(p=>p.positionSeconds>0).sort((a,b)=>b.updatedAt.getTime()-a.updatedAt.getTime())[0];
   return {items:entries.map(e=>({id:e.id,title:e.title,availability:states.get(e.id)??'unknown'})),continueId:current?.trackId??entries[0]?.id??null};
+}
+
+function artistMembersSql(id: ReturnType<typeof sql>) {
+ return sql`select m.id,m.title,row_number() over(order by m.release_date nulls last,m.title,m.id) position
+  from music_works m where m.kind='track' and ${canonicalArtistTrackSql(id,sql`m.id`)}`;
+}
+
+/** Canonical artist metadata can survive its source. Playback still checks every track grant. */
+export async function artistMusicQueue(userId: string, workId: string) {
+  await requireFeature(userId, 'music');
+  const rows = await getDb().select({ id: musicWorks.id, title: musicWorks.title }).from(musicWorks)
+    .where(and(eq(musicWorks.kind, 'track'), canonicalArtistPlayableTrackSql(userId, workId, sql`${musicWorks.id}`)))
+    .orderBy(sql`${musicWorks.releaseDate} nulls last`, musicWorks.title, musicWorks.id)
+    .limit(MUSIC_QUEUE_LIMIT + 1);
+  requireQueueWithinLimit(rows);
+  if (!rows.length) throw new DomainError('No tracks by this artist are available to play.', 404);
+  return { items: rows.map(track => ({ ...track, availability: 'available' })), continueId: null };
 }
 
 /** Expand the existing ordered personal queue/list into music leaves, retaining
@@ -37,6 +56,9 @@ export async function savedMusicQueue(userId:string,listId?:string){
  const rows=await db.execute<{id:string;title:string}>(sql`with selected as (${seed}), tracks as (
   select t.id,t.title,selected.position,0 member_position,selected.entry from selected join music_works t on t.id=selected.media_id and t.kind='track'
   union all select t.id,t.title,selected.position,t.position member_position,selected.entry from selected cross join lateral (${musicAlbumMembersSql(sql`selected.media_id`)}) t
+  union all select t.id,t.title,selected.position,t.position member_position,selected.entry
+   from selected join music_works artist on artist.id=selected.media_id and artist.kind='artist'
+   cross join lateral (${artistMembersSql(sql`selected.media_id`)}) t
  ) select id,title from tracks order by position,member_position,entry,id limit ${MUSIC_QUEUE_LIMIT+1}`);
  const entries=Array.from(rows) as {id:string;title:string}[];
  requireQueueWithinLimit(entries);
@@ -58,6 +80,9 @@ export async function savedMusicQueuePage(userId: string, requestedPage = 1) {
  ), tracks as (
    select t.id,t.title,selected.position,0 member_position from selected join music_works t on t.id=selected.media_id and t.kind='track'
    union all select t.id,t.title,selected.position,t.position member_position from selected cross join lateral (${musicAlbumMembersSql(sql`selected.media_id`)}) t
+   union all select t.id,t.title,selected.position,t.position member_position
+    from selected join music_works artist on artist.id=selected.media_id and artist.kind='artist'
+    cross join lateral (${artistMembersSql(sql`selected.media_id`)}) t
  ), choices as (select distinct on(id) id,title,position,member_position from tracks order by id,position,member_position)`;
  const [count] = await db.execute<{total:number}>(sql`${choices} select count(*)::int total from choices`);
  const { page, pages } = pagination(count.total, requestedPage);

@@ -10,5 +10,5 @@ export const load:PageServerLoad=async({locals,url,depends,request})=>{
   const options=v.safeParse(progressExperimentSchema,progressExperimentParameters(url));
   if(!options.success)error(400,'Choose a valid progress view and filters.');
   const owner=url.searchParams.has('username')?await profileUser(url.searchParams.get('username')!):undefined;
-  return {username:owner?.username,progress:await progressExperimentData(owner?.id??locals.user.id,options.output,{signal:request.signal,viewerId:locals.user.id})};
+  return {username:owner?.username,progress:await progressExperimentData(owner?.id??locals.user.id,options.output,{signal:request.signal,viewerId:locals.user.id,segments:owner?'profile':'overview'})};
 };

@@ -4,6 +4,7 @@ import { compileModule } from 'svelte/compiler';
 import * as runtime from 'svelte/internal/client';
 import type { DiscoveryContent } from '../src/lib/discovery';
 import type { DiscoveryOptions } from '../src/lib/ui/shelves/discovery.svelte';
+import type { MediaView } from '../src/lib/ui/types';
 
 const moduleUrl = (source: string) => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const compile = async (path: string) => compileModule(new Bun.Transpiler({ loader: 'ts' }).transformSync(await Bun.file(new URL(path, import.meta.url)).text()), { filename: 'fixture.svelte.js', generate: 'client' }).js.code
@@ -14,8 +15,10 @@ const clientUrl = moduleUrl('export let delivery; export const setDelivery=next=
 const client = await import(clientUrl);
 const lifecycleUrl = moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))}; export const onDestroy=()=>{};`);
 const refreshUrl = moduleUrl((await compile('../src/lib/ui/shelves/refresh.svelte.ts')).replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`));
-const routeUrl = moduleUrl(`export const page={data:{user:{id:'viewer'},contentRevision:{tracking:'one',social:'one'}}};`);
-const navigationUrl = moduleUrl('export const replaceState=()=>{}; export const goto=async()=>{};');
+const routeUrl = moduleUrl(`export const page={data:{user:{id:'viewer'},contentRevision:{tracking:'one',social:'one'}},url:new URL('https://fixture.test/discover'),state:{}};`);
+const navigationUrl = moduleUrl('export const navigation=[]; export const replaceState=()=>{}; export const goto=async(href)=>{navigation.push(href);};');
+const { page } = await import(routeUrl);
+const { navigation } = await import(navigationUrl);
 const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
   .replaceAll('from "svelte"', `from ${JSON.stringify(lifecycleUrl)}`)
   .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
@@ -30,8 +33,8 @@ const { invalidateContentRevision } = await import(revisionUrl);
 const watch: DiscoveryContent = { items: [{id:'watch',kind:'movie',title:'Screen',href:'/media/watch',available:true} as any], failure:'' };
 const content = (id: string, available=true): DiscoveryContent => ({items:[{id,kind:'album',title:id,href:'/music/'+id,available}],failure:''});
 const settle = async () => { for (let i=0;i<8;i++) { runtime.flush(); await Promise.resolve(); } };
-function source(initial: DiscoveryContent | null = watch, visible?: () => boolean) {
-  const options = runtime.state({type:'discovery',section:'trending',surface:'watch',initial:initial ?? undefined,mediums:{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}} as DiscoveryOptions);
+function source(initial: DiscoveryContent | null = watch, visible?: () => boolean, patch: Partial<DiscoveryOptions> = {}) {
+  const options = runtime.state({type:'discovery',section:'trending',surface:'watch',initial:initial ?? undefined,mediums:{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true},...patch} as DiscoveryOptions);
   let result!: ReturnType<typeof createDiscoverySource>;
   const dispose = runtime.effect_root(()=>{result=createDiscoverySource(()=>runtime.get(options),visible);});
   runtime.flush();
@@ -142,4 +145,55 @@ test('provider guidance belongs to empty discovery results, not persistent row s
   client.setDelivery(async()=>({items:[],failure:'',notice:'Connect a provider in Integrations.'}));await result.load();
   expect(result.empty).toBe('Connect a provider in Integrations.');
  }finally{dispose();}
+});
+
+test('Discover finite filters survive row links and full views without another provider read', async () => {
+  let requests = 0;
+  client.setDelivery(async () => { requests++; return watch; });
+  const item = watch.items[0] as MediaView;
+  const rows: DiscoveryContent = { failure: '', items: [
+    { ...item, id:'movie', kind:'movie', available:true },
+    { ...item, id:'show', kind:'show', available:false },
+  ] };
+  const row = source(rows);
+  try {
+    row.result.controls[0].change('movie');
+    row.result.filters.find(control => control.type === 'availability')!.change('available');
+    expect(row.result.items.map(item => item.id)).toEqual(['movie']);
+    page.url = new URL(row.result.href!, 'https://fixture.test');
+    expect(page.url.searchParams.get('rowKind')).toBe('movie');
+    expect(page.url.searchParams.get('rowAvailable')).toBe('true');
+    const grid = source(rows, undefined, { layout:'grid', scoped:true });
+    try {
+      expect(grid.result.items.map(item => item.id)).toEqual(['movie']);
+      grid.result.controls[0].change('show');
+      expect(grid.result.items).toEqual([]);
+      grid.result.filters.find(control => control.type === 'availability')!.change('all');
+      expect(grid.result.items.map(item => item.id)).toEqual(['show']);
+      expect(new URL(navigation.at(-1), page.url).searchParams.get('rowKind')).toBe('show');
+      expect(requests).toBe(0);
+    } finally { grid.dispose(); }
+  } finally { row.dispose(); page.url = new URL('https://fixture.test/discover'); }
+});
+
+test('Discover omits unavailable public controls and resolves embedded medium capabilities from the session', () => {
+  const viewer = page.data.user;
+  page.data.user = null;
+  page.url = new URL('https://fixture.test/discover?rowAvailable=true');
+  const publicRow = source(watch, undefined, { layout:'grid', scoped:true });
+  try {
+    expect(publicRow.result.filters).toEqual([]);
+    expect(publicRow.result.items).toEqual(watch.items);
+  } finally {
+    publicRow.dispose(); page.data.user = viewer; page.url = new URL('https://fixture.test/discover');
+  }
+  page.data.experimentalBooks = true;
+  page.data.experimentalComics = true;
+  page.data.capabilities = { book:true, comic:false };
+  const reading = source(null, undefined, { surface:'read', scoped:true, mediums:undefined });
+  try {
+    expect(reading.result.filters[0].options?.map(option => option.value)).toEqual(['all','book']);
+  } finally {
+    reading.dispose(); delete page.data.capabilities; delete page.data.experimentalBooks; delete page.data.experimentalComics;
+  }
 });

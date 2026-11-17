@@ -9,8 +9,8 @@
   import {page} from '$app/state';
   const {api,change,preview,feedback}=useClient();
 
-  let { workId, title, target='website', allowProgressTracking=true, open = $bindable(false) }: {
-    workId: string; title: string; target?:ShareTarget; allowProgressTracking?:boolean; open?: boolean;
+  let { workId, title, target='website', reading=false, allowProgressTracking=true, open = $bindable(false) }: {
+    workId: string; title: string; target?:ShareTarget; reading?:boolean; allowProgressTracking?:boolean; open?: boolean;
   } = $props();
   let busy = $state(false), loading = $state(false), error = $state('');
   let hours = $state(6), connectionId = $state(''), copied=$state(false);
@@ -18,14 +18,15 @@
   let videoCodec=$state<VrchatVideoCodec>('h264');
   let sources = $state<{ id: string; name: string }[]>([]);
   let created = $state<{ id: string; token: string; target: ShareTarget } | null>(null);
-  let selection = $state<{ workId: string; title: string; target: ShareTarget }>();
-  const selectedTarget = $derived(selection?.target ?? target);
+  let selection = $state<{ workId: string; title: string; target: ShareTarget; reading:boolean }>();
+  const selectedTarget = $derived(selection?.target ?? (reading?'website':target));
+  const selectedReading = $derived(selection?.reading ?? reading);
   const inviteUrl = $derived(created ? `${preview?'https://coast.example':location.origin}${publicSharePath(created.token,created.target)}` : '');
   let activeDialog: AbortController | null = null;
 
   $effect(() => {
     if (!open) return;
-    const selected = untrack(() => ({workId,title,target})), controller = new AbortController();
+    const selected = untrack(() => ({workId,title,target:reading?'website' as const:target,reading})), controller = new AbortController();
     selection = selected;
     activeDialog = controller;
     created = null; copied=false; error = ''; sources = []; connectionId = ''; loading = true;videoCodec='h264';
@@ -51,7 +52,7 @@
     const scope = activeDialog;
     busy = true; error = '';
     try {
-      const result = await api<{ id: string; token: string; target: ShareTarget }>('sharing', { workId:selection.workId, connectionId, hours,target:selection.target,videoCodec,autoRevoke,trackProgress });
+      const result = await api<{ id: string; token: string; target: ShareTarget }>('sharing', { workId:selection.workId, connectionId, hours,target:selection.target,...(selection.reading?{}:{videoCodec,autoRevoke,trackProgress}) });
       if (scope === activeDialog && !scope?.signal.aborted) {
         created = result;
         await tick();
@@ -83,7 +84,7 @@
 </script>
 
 <Dialog bind:open title={`${selectedTarget==='vrchat'?'Share to VRChat':'Share'} · ${selection?.title ?? title}`}>
-  <p class="small muted">Anyone with this link can play this item until it expires or you revoke it. Each viewer controls their own playback.</p>
+  <p class="small muted">{selectedReading?'Anyone with this link can read this item until it expires or you revoke it. Their reading position stays separate from yours.':'Anyone with this link can play this item until it expires or you revoke it. Each viewer controls their own playback.'}</p>
   {#if created}
     <label class="field">Invitation link
       <input readonly value={inviteUrl} onfocus={event => event.currentTarget.select()} />
@@ -102,11 +103,13 @@
         <p class="small muted">For AVPro video players, including compatible ProTV and VideoTXL worlds. Unity-only players need a direct video file.</p>
         {#if page.data.allowVrchatHevc}<label class="field">Video format<select bind:value={videoCodec}><option value="h264">H.264 / AAC · MPEG-TS HLS</option><option value="hevc">H.265 / AAC · fMP4 HLS (experimental)</option></select></label>{/if}
       {/if}
+      {#if !selectedReading}
       <label class="check"><input type="checkbox" bind:checked={autoRevoke} /> Auto-revoke after playback</label>
       <p class="small muted">Close a used link after {shareIdleMinutes} minutes without a viewer, or {shareCompletionGraceMinutes} minutes after everyone leaves if one viewer reached {shareCompletionPercent}%{selectedTarget==='vrchat'?' (estimated)':''}.</p>
       {#if allowProgressTracking}
         <label class="check"><input type="checkbox" bind:checked={trackProgress} /> Track progress</label>
         <p class="small muted">Show playback in your live activity and record one watch on your account when any viewer reaches {shareCompletionPercent}%.{selectedTarget==='vrchat'?' VRChat progress is estimated from video segments served.':''}</p>
+      {/if}
       {/if}
       <Button type="submit" disabled={busy || loading || !connectionId}>{busy ? 'Creating…' : 'Create'}</Button>
     </form>

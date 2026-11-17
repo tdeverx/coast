@@ -23,14 +23,14 @@ const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function createRoot(initial,transport,inPreview=false){
-  let data=$state(initial);const reader=$state({visible:false}),page=$state({state:{},url:new URL('https://example.invalid/library')});
+  let data=$state(initial);const reader=$state({visible:false,session:null}),page=$state({state:{},url:new URL('https://example.invalid/library')});
   const cleanups=[],onDestroy=callback=>cleanups.push(callback),feedback=[],reportFailure=(read,retry)=>feedback.push({read,retry});
   let reloads=0;const useClient=()=>({preview:inPreview,feedback:{watch:(read,retry)=>feedback.push({read,retry})}}),window={location:{reload:()=>reloads++}};
   ${imports(importReporter)}
   const replaceState=(_url,state)=>{page.state=state;};
   ${imports(rootScript)}
   return {feedback,get reloads(){return reloads;},get components(){return {Reader,StreamsPanel,MediaDetailPanel,NotificationInbox,FriendsPanel};},
-   setReader(value){reader.visible=value;},setState(next){page.state=next;},setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());}};
+   setReader(value){reader.visible=value;},setReadingSession(value){reader.session=value;},setState(next){page.state=next;},setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());}};
  }
  export function createFeed(initial,transport,inPreview=false){
   let data=$state({hero:null});const page=$state({data:initial,url:new URL('https://example.invalid/for-you')});
@@ -168,4 +168,16 @@ test('HLS retry destroys a partially attached engine before constructing the rec
   recover(activeFeedback(controller));runtime.flush();await settle();expect(broken.instances[0].destroyed).toBe(1);expect(recovered.instances).toHaveLength(1);expect(controller.fallbacks).toBe(0);expect(element.pauses).toBe(1);expect(element.loads).toBe(1);
  }finally{dispose();}
  expect(broken.instances[0].destroyed).toBe(1);expect(recovered.instances[0].destroyed).toBe(1);expect(element.pauses).toBe(2);expect(element.loads).toBe(2);
+});
+
+test('anonymous Reader demand requires a shared grant and fences replacement grant imports',async()=>{
+ const requests:ReturnType<typeof deferred<any>>[]=[];let controller:any;
+ const dispose=runtime.effect_root(()=>controller=createRoot({user:null,capabilities:{social:false}},()=>{const pending=deferred<any>();requests.push(pending);return pending.promise;}));
+ try{
+  runtime.flush();controller.setReader(true);controller.setReadingSession({id:'ordinary'});runtime.flush();expect(requests).toHaveLength(0);
+  controller.setReadingSession({id:'first',shared:true});runtime.flush();expect(requests).toHaveLength(1);
+  controller.setReadingSession({id:'second',shared:true});runtime.flush();expect(requests).toHaveLength(2);
+  requests[0].reject(Error('outgoing grant import'));requests[1].resolve(moduleFor('current shared reader'));await settle();
+  expect(controller.components.Reader.displayName).toBe('current shared reader');expect(controller.feedback.every((entry:any)=>!failureText(entry))).toBe(true);
+ }finally{controller.dispose();dispose();}
 });

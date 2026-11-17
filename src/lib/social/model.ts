@@ -43,6 +43,7 @@ export const socialSettingsSchema = v.object({
   notifications:v.optional(v.object({'friend-request':v.optional(v.boolean()),'friend-accepted':v.optional(v.boolean()),recommendation:v.optional(v.boolean()),reaction:v.optional(v.boolean()),'synced-invite':v.optional(v.boolean())}),{}),
 });
 export const emojis = ['❤️','😂','😮','😢','🔥'] as const;
+export const reactionLabels:Record<typeof emojis[number],string>={'❤️':'Love','😂':'Laugh','😮':'Surprised','😢':'Sad','🔥':'Fire'};
 export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string};
 
 export function activityAction(kind:string) {

@@ -10,15 +10,18 @@ const script=(await componentScript('src/lib/reading/Reader.svelte'))
 const code=compileRunes(`
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {sameReadingLocation} from ${JSON.stringify(import.meta.resolve('../src/lib/reading/model'))};
- export function create(createReader,control=true,previewMode=false,previewExample=undefined){
-  const applicationReader=$state({session:{id:'first',url:'fixture.pdf',format:'pdf',location:null,workId:'work',edition:'edition'},file:null,visible:true,rendering:false,location:null,error:''});
-  const reportFailure=()=>{},useClient=()=>({preview:previewMode}),calls=[];
+ export function create(createReader,control=true,previewMode=false,previewExample=undefined,shared=false,heartbeatStatus=0,heartbeatWait=async()=>{}){
+  const applicationReader=$state({session:{id:'first',url:'fixture.pdf',format:'pdf',location:null,workId:'work',edition:'edition',shared},file:null,visible:true,rendering:false,location:null,error:''});
+  const calls=[],notices=[],reportFailure=()=>{},useClient=()=>({preview:previewMode,feedback:{notify:value=>notices.push(value)}});
   const page={data:{user:{settings:{}}}};
   const syncedPlayer={room:{mediaType:'reading',mediaId:'work',edition:'edition',readingFormat:'pdf',reading:{format:'pdf',page:1,total:2}}};
   const canControlPlayback=()=>control,fixtureHost={},message=error=>error.message;
-  let exit=null,navigator=null;const api=async()=>{calls.push('api');},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=value=>{navigator=value;calls.push('navigator');},setReadingExit=value=>{exit=value},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
+  class ApiError extends Error{constructor(status){super('This reading source is unavailable.');this.status=status;}}
+  const isFeatureDisabled=()=>false,document={hidden:false};let pulse=()=>{};
+  const setInterval=callback=>{pulse=callback;return 1;},clearInterval=()=>{};
+  let exit=null,navigator=null;const touchReadingSession=async()=>{calls.push('heartbeat');await heartbeatWait();if(heartbeatStatus)throw new ApiError(heartbeatStatus);},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=value=>{navigator=value;calls.push('navigator');},setReadingExit=value=>{exit=value},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
   ${script}
-  return {turn,calls,exit:()=>exit?.(),navigate:location=>navigator?.(location),openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;},get loadProgress(){return loadProgress;},get loading(){return loading;}};
+  return {turn,calls,notices,pulse:()=>pulse(),exit:()=>exit?.(),navigate:location=>navigator?.(location),openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;},get loadProgress(){return loadProgress;},get loading(){return loading;}};
  }`);
 const {create}=await import(moduleUrl(code));
 const deferred=()=>{let resolve!:()=>void,reject!:(cause:unknown)=>void;const promise=new Promise<void>((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
@@ -124,6 +127,12 @@ test('Read resumes its current session without preparing another edition',async(
  try{await owner.show();expect(calls).toBe(0);expect(owner.visible).toBe(true);expect(owner.completed).toBe(1);}
  finally{owner.dispose();dispose();}
 });
+test('Read from beginning prepares a new session without resetting tracked progress',async()=>{
+ const calls:any[]=[];let owner:any;
+ const dispose=runtime.effect_root(()=>owner=createLaunch(async(...args:any[])=>calls.push(args),false,{workId:'work'}));
+ try{await owner.show(true);expect(calls).toHaveLength(1);expect(calls[0][0]).toBe('work');expect(calls[0][3]).toBe(true);expect(owner.completed).toBe(1);}
+ finally{owner.dispose();dispose();}
+});
 test('duplicate Read is coalesced; disposal or a changed target cancels the preparation owner',async()=>{
  for(const transition of ['dispose','replace']as const){
   const late=deferred();let signal:AbortSignal|undefined,starts=0,owner:any;
@@ -162,4 +171,42 @@ test('exit fences pending and new external navigation before animation can save 
  const dispose=runtime.effect_root(()=>owner=create(async()=>({next:async()=>{},go:async(location:unknown)=>{targets.push(location);await motion.promise;},leave:async()=>{},destroy(){}})));
  try{await settle();const pending=owner.navigate({format:'pdf',page:2,total:3});await owner.exit();motion.resolve();await pending;await owner.navigate({format:'pdf',page:3,total:3});expect(targets).toHaveLength(1);expect(owner.calls.filter((value:string)=>value==='record')).toEqual([]);expect(owner.location).toBeNull();}
  finally{motion.resolve();dispose();}
+});
+
+test('a disposable reader remains locally controllable beside the same-work reading party and never publishes turns',async()=>{
+ const options:any[]=[];let owner:any,turns=0,rollbacks=0;
+ const dispose=runtime.effect_root(()=>owner=create(async(input:any)=>{options.push(input);return {next:async()=>{turns++;},go:async()=>{rollbacks++;},destroy(){}};},false,false,undefined,true));
+ try{
+  await settle();await owner.turn('next');expect(turns).toBe(1);
+  options[0].changed({format:'pdf',page:2,total:2});await settle();
+  expect(owner.location).toEqual({format:'pdf',page:2,total:2});expect(rollbacks).toBe(0);
+  expect(owner.calls.filter((call:string)=>call==='record')).toHaveLength(1);
+  expect(owner.calls).not.toContain('publish');
+ }finally{dispose();}
+});
+
+test('shared reader heartbeat retires permanent source denials with a useful notice and retains transient failures',async()=>{
+ for(const status of [401,403,404,409,410,503]){
+  let owner:any;const dispose=runtime.effect_root(()=>owner=create(async()=>({destroy(){}}),true,false,undefined,true,status));
+  try{
+   await settle();owner.pulse();await settle();
+   expect(owner.calls.filter((call:string)=>call==='close')).toHaveLength(status===503?0:1);
+   expect(owner.notices).toEqual(status===503?[]:['This reading source is unavailable.']);
+  }finally{dispose();}
+ }
+});
+
+test('ordinary reader heartbeat behavior is unchanged for source denials',async()=>{
+ for(const status of [401,403,404,409,503]){
+  let owner:any;const dispose=runtime.effect_root(()=>owner=create(async()=>({destroy(){}}),true,false,undefined,false,status));
+  try{await settle();owner.pulse();await settle();expect(owner.calls).not.toContain('close');expect(owner.notices).toEqual([]);}
+  finally{dispose();}
+ }
+});
+
+test('a late permanent heartbeat denial cannot close or notify for a successor reader',async()=>{
+ const denied=deferred();let owner:any;
+ const dispose=runtime.effect_root(()=>owner=create(async()=>({destroy(){}}),true,false,undefined,true,403,()=>denied.promise));
+ try{await settle();owner.pulse();owner.replace();await settle();denied.resolve();await settle();expect(owner.calls).not.toContain('close');expect(owner.notices).toEqual([]);}
+ finally{denied.resolve();dispose();}
 });

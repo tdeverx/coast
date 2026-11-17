@@ -15,6 +15,8 @@ import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
 import { requestList } from '../src/lib/server/queries/requests';
 import { workActionLists } from '../src/lib/collection/query.server';
 import { mediaViewsForIds } from '../src/lib/server/queries/media';
+import { progressData } from '../src/lib/server/queries/progress';
+import { cancelCheckin, startCheckin } from '../src/lib/social/presence.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const [owner, other, show, season, specials, ep1, ep2, special, movie, collection] = Array.from(
   { length: 10 },
@@ -246,25 +248,49 @@ run('menu undo data preserves queue membership and ordinary-list ordering', asyn
 });
 
 run(
-  'Continue removal ends the whole-show rewatch and Undo restores it without erasing history',
+  'hiding a show drops it from Progress and restores its exact rewatch position',
   async () => {
     expect(await wholeWorkId(getDb(), ep1)).toBe(show);
     expect(await wholeWorkId(getDb(), season)).toBe(show);
-    const before = await mediaHistory(owner, show);
+    await getDb().update(s.media).set({ releaseDate: '2020-01-01' }).where(eq(s.media.id, ep2));
     const startedAt = '2024-01-01T00:00:00.000Z';
     await setRewatch(owner, { mediaId: show, startedAt });
+    await track(owner, {
+      mediaId: ep2,
+      action: 'progress',
+      positionSeconds: 93,
+      durationSeconds: 1800,
+      acknowledged: true,
+    });
+    const watchingEpisode = async () => (await progressData(owner)).items.find((i) => i.id === ep2);
+    const nextIds = async () => (await progressData(owner, { view: 'up-next' })).items.map((i) => i.id);
+    const before = await mediaHistory(owner, show);
+    expect((await watchingEpisode())?.progress).toBe(93);
+    await changeContinue(owner, { mediaId: show, action: 'add' });
+    expect(await nextIds()).toContain(show);
+
     const removed = await changeContinue(owner, { mediaId: ep1, action: 'remove' });
     expect(removed.mediaId).toBe(show);
-    expect((await mediaActionData(owner, show)).ownRewatchStartedAt).toBeNull();
     expect((await getTracking(owner, show)).dropped).toBe(true);
+    expect((await mediaActionData(owner, show)).ownRewatchStartedAt).toBe(startedAt);
+    expect(await watchingEpisode()).toBeUndefined();
+    expect(await nextIds()).not.toContain(show);
+    expect((await progressData(owner, { view: 'dropped' })).items.map((i) => i.id)).toContain(show);
+
     await changeContinue(owner, {
       mediaId: show,
       action: 'undo',
       eventId: removed.eventId,
       previous: removed.previous,
     });
-    expect((await mediaActionData(owner, show)).ownRewatchStartedAt).toBe(startedAt);
     expect((await getTracking(owner, show)).dropped).toBe(false);
+    expect((await watchingEpisode())?.progress).toBe(93);
+    expect(await nextIds()).toContain(show);
+    await changeContinue(owner, { mediaId: season, action: 'remove' });
+    expect(await watchingEpisode()).toBeUndefined();
+    await changeContinue(owner, { mediaId: season, action: 'add' });
+    expect((await watchingEpisode())?.progress).toBe(93);
+    expect((await mediaActionData(owner, show)).ownRewatchStartedAt).toBe(startedAt);
     const after = await mediaHistory(owner, show);
     expect(after.total).toBe(before.total);
     expect((await mediaActionData(other, show)).ownRewatchStartedAt).toBeNull();
@@ -304,6 +330,39 @@ run('collection Continue removal preserves member state and rejects stale Undo',
       previous: removal.previous,
     })
   ).rejects.toThrow('changed since removal');
+
+  const secondRemoval = await changeContinue(owner, { mediaId: collection, action: 'remove' });
+  const startedAt = '2025-02-02T00:00:00.000Z';
+  await setRewatch(owner, { mediaId: collection, startedAt });
+  await expect(
+    changeContinue(owner, {
+      mediaId: collection,
+      action: 'undo',
+      eventId: secondRemoval.eventId,
+      previous: secondRemoval.previous,
+    })
+  ).rejects.toThrow('changed since removal');
+  expect((await mediaActionData(owner, collection)).ownRewatchStartedAt).toBe(startedAt);
+});
+
+run('a menu only exposes a cancellable check-in for the current viewer and title', async () => {
+  await getDb().update(s.media).set({ runtimeMinutes: 44 }).where(eq(s.media.id, ep1));
+  const before = await mediaHistory(owner, ep1);
+  const checkin = await startCheckin(owner, { workId: ep1 });
+  expect((await mediaActionData(owner, ep1)).activeCheckinId).toBe(checkin.id);
+  expect((await mediaActionData(owner, ep2)).activeCheckinId).toBeNull();
+  expect((await mediaActionData(owner, season)).activeCheckinId).toBeNull();
+  expect((await mediaActionData(other, ep1)).activeCheckinId).toBeNull();
+  await expect(cancelCheckin(other, checkin.id)).rejects.toThrow('Check-in not found');
+  expect(await cancelCheckin(owner, checkin.id)).toEqual({ state: 'cancelled' });
+  expect((await mediaActionData(owner, ep1)).activeCheckinId).toBeNull();
+  expect(await mediaHistory(owner, ep1)).toEqual(before);
+  await getDb().insert(s.socialCheckins).values({
+    userId: owner,
+    workId: ep1,
+    expiresAt: new Date('2020-01-01'),
+  });
+  expect((await mediaActionData(owner, ep1)).activeCheckinId).toBeNull();
 });
 
 run('request menu management follows owner state and Seerr permissions', async () => {
