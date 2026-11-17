@@ -330,7 +330,7 @@
     {:else if name==='Rating'}
       <Rating mediaId={id} value={4} />
     {:else if name==='RequestDialog'}
-      <RequestDialog bind:open item={scenario==='show'?show:movie} initial4k={scenario==='four-k'} options={scenario==='empty'?[]:[{id,name:'Preview request server',variants:{standard:{serverId:1,requestable:true,seasons:scenario==='show'?[{number:1,requested:false,mine:false,available:false},{number:2,requested:true,mine:false,available:false},{number:3,requested:false,mine:false,available:true}]:[]},fourK:{serverId:2,requestable:true,seasons:[]}}}]} />
+      <RequestDialog bind:open item={scenario==='show'?show:movie} initial4k={scenario==='four-k'} options={scenario==='empty'?[]:[{id,name:'Preview request server',variants:{standard:{serverId:1,requestable:true,available:false,requested:false,seasons:scenario==='show'?[{number:1,requested:false,mine:false,available:false},{number:2,requested:true,mine:false,available:false},{number:3,requested:false,mine:false,available:true}]:[]},fourK:{serverId:2,requestable:true,available:false,requested:false,seasons:[]}}}]} />
     {:else if name==='RowFilter'}
       <RowFilter groups={[{label:"Media type", value:mediaType, options:mediaTypeOptions({experimentalMusic:true,experimentalGaming:true}), change:value=>mediaType=value}, {label:"Preview filter", value:choice, options:options, change:(value)=>choice=value}]} />
     {:else if name==='RowStyleMenu'}

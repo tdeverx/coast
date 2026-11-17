@@ -31,7 +31,7 @@ export function raiseToastStack(node: HTMLElement) {
 }
 
 export type ToastArtwork = Pick<import('#lib/ui/types.js').MediaView, 'id' | 'title' | 'poster' | 'backdrop'> &
-  Pick<import('#lib/ui/types.js').WorkSummary, 'kind'>;
+  Pick<import('#lib/ui/types.js').WorkSummary, 'kind'> & {href?:string;workId?:string};
 export type ToastNotification = {
   id: string;
   title: string;
@@ -49,7 +49,7 @@ type Timer = ReturnType<typeof setTimeout> | number;
 type Ports = {
   preview: boolean;
   hide: (ids: string[], signal: AbortSignal) => Promise<unknown>;
-  dismiss: (id: string, signal: AbortSignal) => Promise<unknown>;
+  hidePersistent: (id: string, signal: AbortSignal) => Promise<unknown>;
   refresh: () => Promise<void>;
   refreshFailure: () => void;
   changed: () => void;
@@ -135,7 +135,7 @@ export function createNotificationToasts(ports: Ports) {
     const timer = delay(() => controller.abort(new DOMException('Notification dismissal timed out.', 'TimeoutError')), 15000);
     requestTimer = timer;
     try {
-      if (batch[0][1] === 'persistent') await ports.dismiss(batch[0][0], controller.signal);
+      if (batch[0][1] === 'persistent') await ports.hidePersistent(batch[0][0], controller.signal);
       else await ports.hide(batch.map(([id]) => id), controller.signal);
       if (disposed) return false;
       cancel(timer); if (requestTimer === timer) requestTimer = undefined;

@@ -1,7 +1,7 @@
 import { PlaybackSavePending } from '#lib/playback/stop.js';
 import { browserDiagnostic } from '#lib/ui/diagnostics.js';
 import { api, capturePlaybackApi } from '#lib/ui/client.js';
-import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+import { feedbackForViewer } from '#lib/ui/action-feedback.svelte.js';
 import type { PlaybackView } from '#lib/ui/types.js';
 
 export const player = $state({
@@ -222,6 +222,7 @@ export async function playSavedMusicQueue(){
   return playMusicQueue(result);
 }
 export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQueue=false){
+  const notifyAction=feedbackForViewer().notify;
   const intent=preparationRevision;
   const {syncedPlayer,canControlPlayback}=await import('./synced/client.svelte');
   if(intent!==preparationRevision)return;

@@ -287,8 +287,8 @@ export function createPreviewTransport(name: string, scenario: string, condition
       });
       if (method === 'GET' && path === 'requests/options') return Response.json({
         destinations: [{ id, name: 'Preview Jellyfin', variants: {
-          standard: {serverId:1,requestable:true,seasons:[1,2,3].map(number=>({number,available:number===1,requested:number===2,mine:number===2}))},
-          fourK: conditions.fourK ? {serverId:2,requestable:true,seasons:[1,2,3].map(number=>({number,available:false,requested:false,mine:false}))} : null
+          standard: {serverId:1,requestable:true,available:false,requested:false,seasons:[1,2,3].map(number=>({number,available:number===1,requested:number===2,mine:number===2}))},
+          fourK: conditions.fourK ? {serverId:2,requestable:true,available:false,requested:false,seasons:[1,2,3].map(number=>({number,available:false,requested:false,mine:false}))} : null
         }}]
       });
       if (method !== 'GET' && ['ratings','tracking','rewatch','profile','social/checkins'].some(prefix=>path===prefix||path.startsWith(prefix+'/'))) {

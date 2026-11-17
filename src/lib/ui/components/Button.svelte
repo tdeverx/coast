@@ -89,7 +89,7 @@
   {#if menu && trigger}{@render trigger()}
   {:else}
     {#if icon || menu && !nested && !text}<Icon name={icon ?? 'more'} size={iconSize ?? (menu || item ? 20 : 18)} filled={checked ?? pressed} />{/if}
-    {#if item || menu && nested}<span class="menu-action-label">{text ?? (menu ? label : '')}{#if !menu}{@render children?.()}{/if}</span>
+    {#if item && size !== 'icon' || menu && nested}<span class="menu-action-label">{text ?? (menu ? label : '')}{#if !menu}{@render children?.()}{/if}</span>
     {:else}{text}{#if !menu}{@render children?.()}{/if}{/if}
     {#if branch || menu && nested}<span class="menu-chevron" data-menu-disclosure={primaryAction ? true : undefined}><Icon name="right" /></span>
     {:else if item && checked && showCheckmark}<span class="menu-chevron"><Icon name="check" /></span>{/if}

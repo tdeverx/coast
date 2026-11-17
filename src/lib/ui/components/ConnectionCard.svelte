@@ -3,7 +3,6 @@
   import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import type {SourceImpact} from '#lib/collection/source-changes.server.js';
-  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { untrack } from 'svelte';
   import { createResource } from '#lib/ui/resource.svelte.js';
   import { message } from '#lib/ui/client.js';
@@ -12,7 +11,8 @@
   import Icon from './Icon.svelte';
   import Dialog from './Dialog.svelte';
 
-  const { api, change, preview } = useClient();
+  const { api, change, preview, feedback } = useClient();
+  const notifyAction=feedback.notify;
 
   let {
     provider,

@@ -1,7 +1,7 @@
 
 import * as v from 'valibot';
 import { AppError } from '#lib/server/security/errors.js';
-import { broadcast, hideNotificationToasts } from '#lib/server/notifications/index.js';
+import { broadcast, hideNotificationToasts, recordFeedbackNotifications } from '#lib/server/notifications/index.js';
 import { notificationInbox,notificationParameters,markNotification,markNotificationsRead,markNotificationsSeen } from '#lib/server/notifications/inbox.js';
 import { uuid, type ApiContext } from './context.server';
 
@@ -11,6 +11,7 @@ export async function handleNotifications(context: ApiContext): Promise<Response
  if (path[0] === 'notifications') {
       if (path.length === 1 && method === 'GET') result = await notificationInbox(user,notificationParameters(url));
       else if(path.length===2&&path[1]==='toast-hidden'&&method==='POST')result=await hideNotificationToasts(user,body);
+      else if(path.length===2&&path[1]==='feedback'&&method==='POST')result=await recordFeedbackNotifications(user,body);
       else if(path[1]==='seen'&&method==='POST')result=await markNotificationsSeen(user,body);
       else if(path[1]==='read-all'&&method==='POST')result=await markNotificationsRead(user,body);
       else if (path[1] === 'broadcast' && method === 'POST') result = await broadcast(user, body);

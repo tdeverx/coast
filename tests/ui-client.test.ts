@@ -11,7 +11,7 @@ const revisionCode = compileModule(new Bun.Transpiler({ loader: 'ts' }).transfor
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'));
 const revisionUrl = moduleUrl(revisionCode);
 const { readContentRevision }: typeof import('../src/lib/ui/content-revision.svelte') = await import(revisionUrl);
-const feedbackUrl = moduleUrl('export const notices=[]; export function notifyAction(text){notices.push(text);}');
+const feedbackUrl = moduleUrl('export const notices=[]; export function notifyAction(text){notices.push(text);}export const feedbackForViewer=()=>({notify:notifyAction});');
 const source = await Bun.file(new URL('../src/lib/ui/client.ts', import.meta.url)).text();
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(source)
   .replaceAll('./action-feedback.svelte', feedbackUrl).replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);

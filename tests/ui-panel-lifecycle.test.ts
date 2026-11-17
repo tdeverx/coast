@@ -45,7 +45,7 @@ const connectionScript=(await componentScript('src/lib/ui/components/ConnectionC
 const connectionCode=compileRunes(`import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(initial,transport){
-  const reportFailure=()=>{},useClient=()=>({api:transport});
+  const reportFailure=()=>{},useClient=()=>({api:transport,feedback:{notify:()=>{}}});
   ${connectionScript}
   return {setProvider(next){provider=next;},get scan(){return scan;},get error(){return scanStatus.error;}};
  }`);

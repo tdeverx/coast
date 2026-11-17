@@ -2,7 +2,7 @@ import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
-import { notifyAction } from './action-feedback.svelte';
+import { feedbackForViewer } from './action-feedback.svelte';
 
 let playbackApi = '/api/v1/';
 let playbackApiRevision = 0;
@@ -74,16 +74,18 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
 export function createApiClient(transport: ApiTransport, afterChange: (path: string) => Promise<void>) {
   const api = <T = unknown>(path: string, body?: unknown, method = 'POST', options: Pick<RequestInit, 'signal'> = {}) => requestApi<T>(transport, path, body, method, options);
   const change = async <T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) => {
+    const notify=feedbackForViewer().notify;
     const result = await api<T>(path, body, method,options);
-    await acknowledgeRefresh(() => afterChange(path));
+    await acknowledgeRefresh(() => afterChange(path),notify);
     return result;
   };
   const changeMany = <T = unknown>(paths: readonly string[], body?: unknown, method = 'POST') => orderedChanges<T>(api, afterChange, paths, body, method);
   return { api, change, changeMany };
 }
 export async function change<T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) {
+  const notify=feedbackForViewer().notify;
   const result = await api<T>(path, body, method,options);
-  await acknowledgeRefresh(() => refreshAfterChange(path));
+  await acknowledgeRefresh(() => refreshAfterChange(path),notify);
   return result;
 }
 /** Keep each command acknowledgement, with one completion refresh for a same-domain action. */
@@ -97,6 +99,7 @@ async function orderedChanges<T>(
   body: unknown,
   method: string
 ): Promise<T[]> {
+  const notify=feedbackForViewer().notify;
   const commands = [...paths];
   if (!commands.length) return [];
   const domain = commands[0].split('/')[0];
@@ -108,11 +111,11 @@ async function orderedChanges<T>(
     return results;
   } finally {
     // A failed later command still leaves acknowledged earlier commands visible.
-    if (results.length) await acknowledgeRefresh(() => afterChange(commands[0]));
+    if (results.length) await acknowledgeRefresh(() => afterChange(commands[0]),notify);
   }
 }
 /** A failed page refresh cannot turn an acknowledged command into a failed write. */
-async function acknowledgeRefresh(refresh: () => Promise<void>) {
+async function acknowledgeRefresh(refresh: () => Promise<void>,notifyAction:ReturnType<typeof feedbackForViewer>['notify']) {
   try { await refresh(); }
   catch { notifyAction('Saved. The page could not refresh; reload to see the latest data.'); }
 }

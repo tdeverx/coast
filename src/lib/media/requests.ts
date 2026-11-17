@@ -8,8 +8,19 @@ export type RequestDestination = {
 export type RequestVariant = {
   serverId: number | null;
   requestable: boolean;
+  available: boolean;
+  requested: boolean;
   seasons: { number: number; requested: boolean; mine: boolean; available: boolean }[];
 };
+
+/** Availability captions share the season checklist's precedence across destinations. */
+export function requestQualityStatus(destinations: readonly RequestDestination[], quality: 'standard' | 'fourK') {
+  const variants = destinations.flatMap(destination => destination.variants[quality] ?? []);
+  if (variants.some(variant => variant.requestable)) return '';
+  if (variants.some(variant => variant.available)) return 'Available';
+  if (variants.some(variant => variant.requested)) return 'Requested';
+  return 'Unavailable';
+}
 
 /** Bind destination multiplicity once for a request snapshot, then format its labels. */
 export function requestScopeFormatter(requests: MediaActionData['requests']) {

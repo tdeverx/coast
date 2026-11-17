@@ -8,7 +8,6 @@
   import { useClock } from '#lib/ui/clock.svelte.js';
   import { untrack,onDestroy } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
-  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { message } from '#lib/ui/client.js';
   import { useClient } from '#lib/ui/client-context.js';
   import { contextGesture } from '#lib/ui/context-gesture.js';
@@ -24,7 +23,8 @@
   import {companionHealthy,type CompanionState} from '#lib/providers/jellyfin/companion.js';
   import {taskControlLimit,jobIdentityScope} from '#lib/providers/job-policy.js';
 
-  const { change, preview } = useClient();
+  const { change, preview, feedback } = useClient();
+  const notifyAction=feedback.notify;
 
   let {
     provider,

@@ -17,7 +17,7 @@ async function loadClient(kind:'reading'|'playback'){
  const model=import.meta.resolve('../src/lib/reading/model.ts');
  const filename=kind==='reading'?'../src/lib/reading/client.svelte.ts':'../src/lib/playback/client.svelte.ts';
  const source=await Bun.file(new URL(filename,import.meta.url)).text();
- const feedbackUrl=moduleUrl(`export const notices=[];export const notifyAction=text=>notices.push(text); // ${unique}`);
+ const feedbackUrl=moduleUrl(`export const notices=[];export const notifyAction=text=>notices.push(text);export const feedbackForViewer=()=>({notify:notifyAction}); // ${unique}`);
  const code=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:`${kind}.svelte.js`,generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
   .replaceAll('#lib/ui/client.js',transportUrl).replaceAll('#lib/ui/diagnostics.js',moduleUrl('export const browserDiagnostic=()=>{};'))

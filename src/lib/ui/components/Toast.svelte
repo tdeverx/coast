@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { cardArtwork } from '#lib/media/artwork.js';
   import { notificationToastDuration, type ToastArtwork } from '#lib/ui/controls/notification-toasts.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
+  import { profilePath } from '#lib/profile/url.js';
   import Avatar from './Avatar.svelte';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
@@ -73,8 +74,8 @@
   $effect(() => {
     const update = onpause;
     if (!paused) return;
-    update?.(true);
-    return () => update?.(false);
+    untrack(() => update?.(true));
+    return () => untrack(() => update?.(false));
   });
   $effect(() => {
     const dismiss = ondismiss;
@@ -138,14 +139,17 @@
     {@render dismissButton()}
   {/if}
   {#if rich && actor}
-    <span class="toast-avatar" aria-hidden="true" style:--stamp-x={avatarPlacement.x} style:--stamp-y={avatarPlacement.y} style:--stamp-tilt={avatarPlacement.tilt}>
+    <a class="toast-avatar" href={profilePath(actor.username)} aria-label={`View ${actor.username}'s profile`}
+      style:--stamp-x={avatarPlacement.x} style:--stamp-y={avatarPlacement.y} style:--stamp-tilt={avatarPlacement.tilt}>
       <Avatar name={actor.username} src={actor.avatar} size={44} />
-    </span>
+    </a>
   {/if}
   {#if artwork && mediaCard}
-    <div class="toast-artwork" aria-hidden="true" style:--stamp-x={mediaPlacement.x} style:--stamp-y={mediaPlacement.y} style:--stamp-tilt={mediaPlacement.tilt}>
+    <svelte:element this={media?.href ? 'a' : 'div'} class="toast-artwork" href={media?.href || undefined}
+      aria-label={media?.href ? `View ${artwork.title}` : undefined} aria-hidden={media?.href ? undefined : true}
+      style:--stamp-x={mediaPlacement.x} style:--stamp-y={mediaPlacement.y} style:--stamp-tilt={mediaPlacement.tilt}>
       {#await mediaCard then {default: MediaCard}}<MediaCard item={artwork} {shape} artworkOnly />{:catch}{/await}
-    </div>
+    </svelte:element>
   {/if}
 </div>
 
@@ -199,6 +203,7 @@
   }
   @keyframes toast-expiry { to { transform: scaleX(0); } }
   .toast-avatar, .toast-artwork {
+    --media-surface-hover-scale: 1.12;
     position: absolute;
     z-index: 4;
     pointer-events: none;
@@ -209,12 +214,20 @@
     inset-inline-start: -17px;
     border-radius: 50%;
     box-shadow: var(--elevation-raised);
-    outline: 2px solid var(--surface);
   }
+  a.toast-avatar, a.toast-artwork { display: block; pointer-events: auto; }
+  .toast-avatar :global(.avatar) { transition: transform var(--fast) var(--ease); }
+  .toast-avatar :global(.avatar::after) { transition: border-width var(--fast), opacity var(--fast); }
+  .toast-avatar:is(:hover, :focus-visible) :global(.avatar),
+  .toast-artwork:focus-visible :global(.art) { transform: scale(var(--media-surface-hover-scale)); }
+  .toast-avatar:is(:hover, :focus-visible) :global(.avatar::after),
+  .toast-artwork:focus-visible :global(.art::after) { border-width: 3px; opacity: 1; }
+  .toast-artwork:focus-visible :global(.art::before) { opacity: 0.4; }
   .toast-artwork {
     inset-block-end: -9px;
     inset-inline-end: -17px;
     inline-size: 58px;
+    border-radius: 8px;
   }
   .toast-artwork :global(.art) { border-radius: 8px; box-shadow: var(--elevation-raised); }
   @media (max-width: 380px) {
@@ -222,6 +235,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .toast, .toast-timer > span { animation: none; }
+    .toast-avatar :global(.avatar), .toast-avatar :global(.avatar::after) { transition: none; }
   }
   @media (pointer: coarse) {
     .toast :global(.toast-dismiss)::before { content: ''; position: absolute; inset: -10px; }

@@ -66,6 +66,8 @@ type RequestOption = ReturnType<typeof groupDestination>[number] & {
 type RequestVariant = {
   serverId: number;
   requestable: boolean;
+  available: boolean;
+  requested: boolean;
   seasons: { number: number; requested: boolean; mine: boolean; available: boolean }[];
 };
 
@@ -162,11 +164,15 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
               : !requested.length &&
                 !pending.length &&
                 (is4k ? details.mediaInfo?.status4k : details.mediaInfo?.status) !== 5;
-          return { serverId, requestable, seasons };
+          return { serverId, requestable, seasons,
+            available: kind === 'show' ? !!seasons.length && seasons.every(season => season.available)
+              : (is4k ? details.mediaInfo?.status4k : details.mediaInfo?.status) === 5,
+            requested: requested.length > 0 || pending.length > 0,
+          };
         };
         const standard = variant(false, destination.standardServerId),
           fourK = variant(true, destination.fourKServerId);
-        if (!standard?.requestable && !fourK?.requestable) continue;
+        if (!standard && !fourK) continue;
         verified.push({
           ...destination,
           instanceId: instance.id,

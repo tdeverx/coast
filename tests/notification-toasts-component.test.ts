@@ -15,7 +15,7 @@ test('compiled notification host updates show older arrivals and fence unmounted
  const old={id:'old',title:'Notice',body:null,level:'normal',readAt:null,toastHiddenAt:null,createdAt:new Date(0)};
  const dispose=runtime.effect_root(()=>{owner=create([old],client);});runtime.flush();cleanup=owner.mount();await settle();
  expect(owner.visible.map((n:any)=>n.id)).toEqual(['old']);expect(calls).toHaveLength(0);
- owner.dismiss('old');expect(calls.map(c=>c.path)).toEqual(['notifications/toast-hidden']);expect(calls[0].body).toEqual({ids:['old']});
+ owner.dismiss('old');expect(calls.map(c=>c.path)).toEqual(['notifications/toast-hidden']);expect(calls[0].body).toEqual({ids:['old'],includePersistent:false});
  owner.replace([{...old,id:'arrival',createdAt:new Date()}]);await settle();expect(owner.visible.map((n:any)=>n.id)).toEqual(['arrival']);
  cleanup();dispose();calls[0].reject();await settle();expect(failures).toEqual([]);expect(calls).toHaveLength(1);
 });
@@ -31,19 +31,17 @@ function persistentFixture(){
  const dispose=runtime.effect_root(()=>{owner=create([persistent],client,ApiError);});runtime.flush();const cleanup=owner.mount();runtime.flush();
  return {owner,calls,failures,persistent,normal,dispose(){cleanup();dispose();}};
 }
-test('persistent lost acknowledgement then genuine404 is terminal and drains a later normal hide',async()=>{
+test('persistent toast X retries suppression and drains a later normal hide without dismissing the inbox',async()=>{
  const f=persistentFixture();try{
-  f.owner.dismiss('persistent');f.calls[0].reject(Error('Response lost after commit'));await settle();expect(f.failures).toHaveLength(1);expect(f.owner.visible.map((n:any)=>n.id)).toEqual(['persistent']);
+  f.owner.dismiss('persistent');expect(f.calls[0].path).toBe('notifications/toast-hidden');
+  f.calls[0].reject(Error('Response lost after commit'));await settle();expect(f.failures).toHaveLength(1);expect(f.owner.visible.map((n:any)=>n.id)).toEqual(['persistent']);
   f.owner.replace([f.persistent,f.normal]);await settle();f.owner.dismiss('normal');expect(f.calls).toHaveLength(1);
-  const retry=f.owner.retry();expect(f.calls[1].path).toBe('notifications/persistent');f.calls[1].reject(new ApiError('Notification not found.',404));await retry;await settle();
+  const retry=f.owner.retry();expect(f.calls[1].path).toBe('notifications/toast-hidden');f.calls[1].resolve();await retry;await settle();
   expect(f.calls[2].path).toBe('notifications/toast-hidden');expect(f.owner.visible).toEqual([]);f.calls[2].resolve();await settle();expect(f.failures).toHaveLength(1);
  }finally{f.dispose();}
 });
-test('deleted or no-longer-visible404 dismissals are terminal, while genuine401/403/5xx and non-ApiError404 retain retry',async()=>{
- for(const reason of ['deleted','no-longer-visible']){
-  const f=persistentFixture();try{f.owner.dismiss('persistent');f.calls[0].reject(new ApiError(reason,404));await settle();expect(f.failures).toEqual([]);expect(f.owner.visible).toEqual([]);expect(await f.owner.retry()).toBe(false);}finally{f.dispose();}
- }
- for(const cause of [new ApiError('Session expired',401),new ApiError('Forbidden',403),new ApiError('Server failure',500),{status:404}]){
+test('failed persistent suppression retains retry for every unsuccessful response',async()=>{
+ for(const cause of [new ApiError('Not found',404),new ApiError('Session expired',401),new ApiError('Forbidden',403),new ApiError('Server failure',500),{status:404}]){
   const f=persistentFixture();try{f.owner.dismiss('persistent');f.calls[0].reject(cause);await settle();expect(f.failures).toHaveLength(1);expect(f.owner.visible.map((n:any)=>n.id)).toEqual(['persistent']);const retry=f.owner.retry();expect(f.calls).toHaveLength(2);f.calls[1].resolve();expect(await retry).toBe(true);}finally{f.dispose();}
  }
 });

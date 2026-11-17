@@ -2,6 +2,20 @@ import {expect,test} from 'bun:test';
 import {shelfControls} from '../src/lib/ui/shelves/controls';
 import type {ShelfControl} from '../src/lib/ui/shelves/types';
 import {filterSections} from '../src/lib/ui/controls/filters';
+import {availabilityControl} from '../src/lib/ui/controls/actions';
+
+test('the heading play shortcut and filter checkbox use the same availability state and command',()=>{
+ const calls:string[]=[];
+ const control:ShelfControl={type:'availability',label:'Available only',value:'all',change:value=>{calls.push(value);control.value=value;}};
+ const select=(item:ShelfControl,value:string)=>{expect(item).toBe(control);item.change(value);};
+ let header=shelfControls([control],select);
+ expect(header.availability).toEqual([control]);
+ const shortcut=availabilityControl(header.availability[0].value==='available',value=>select(control,value?'available':'all'));
+ expect(shortcut.pressed).toBe(false);shortcut.onclick();
+ header=shelfControls([control],select);
+ expect(header.groups[0].value).toBe('available');header.groups[0].change('all');
+ expect(header.availability[0].value).toBe('all');expect(calls).toEqual(['available','all']);
+});
 
 test('every shelf source puts binary and secondary filters in the shared menu without invoking a load',()=>{
  let changes=0;

@@ -42,7 +42,7 @@ export async function notificationToasts(user: SessionUser, rich = false): Promi
   return {
    ...notice,
    actor: actor && {username:actor.username,avatar:actor.avatar},
-   media: card && {id:card.id,kind:card.kind,title:card.title,poster:card.poster ?? card.artwork?.primary,backdrop:card.backdrop,year:card.year,captionSubtitle:card.captionSubtitle,durationLabel:card.durationLabel},
+   media: card && {id:card.id,workId:'workId' in card?card.workId:undefined,href:'href' in card?card.href:`/media/${card.id}`,kind:card.kind,title:card.title,poster:card.poster ?? card.artwork?.primary,backdrop:card.backdrop,year:card.year,captionSubtitle:card.captionSubtitle,durationLabel:card.durationLabel},
   };
  });
 }
@@ -63,7 +63,7 @@ function visible(user:SessionUser,filters:NotificationFilters=defaultNotificatio
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true
- where n.user_id=${userId} and (not ${user.access?.libraryOnly===true} or n.kind='membership-expiry') and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
+ where n.user_id=${userId} and (not ${user.access?.libraryOnly===true} or n.kind in ('membership-expiry','action-feedback')) and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
  and (job.id is null or job.state not in ('cancelled','succeeded'))
  ), visible as (
  select n.*,w.category

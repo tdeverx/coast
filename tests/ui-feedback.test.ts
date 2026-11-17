@@ -1,5 +1,6 @@
 import {expect,test} from 'bun:test';
 import {compileModule} from 'svelte/compiler';
+import {createRawSnippet} from 'svelte';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
@@ -9,7 +10,9 @@ const source=await Bun.file(new URL('../src/lib/ui/action-feedback.svelte.ts',im
 const compiled=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'feedback.svelte.js',generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
   .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
-  .replaceAll('./client',moduleUrl('export const message=cause=>cause.message;'));
+  .replaceAll('$app/state',moduleUrl('export const page={data:{user:null}};'))
+  .replaceAll('./controls/feedback-notifications',import.meta.resolve('../src/lib/ui/controls/feedback-notifications'))
+  .replaceAll('./client',moduleUrl('export const message=cause=>cause.message;export const api=async()=>{};export const refreshAfterChange=async()=>{};'));
 const {createFeedback,actionFeedback}:typeof import('../src/lib/ui/action-feedback.svelte')=await import(moduleUrl(compiled));
 
 test('isolated feedback, modal ownership and failed retries stay in their owning delivery scope',async()=>{
@@ -122,4 +125,23 @@ test('owned pending feedback stays busy, becomes retryable, and restores unrelat
  expect(feedback.current?.kind).toBe('info');expect(feedback.current?.busy).toBe(true);
  feedback.failure('Save failed',()=>{attempts++;feedback.clear(owner);},owner);
  expect(feedback.current?.busy).toBe(false);await feedback.act();expect(attempts).toBe(1);expect(feedback.current?.text).toBe('Unrelated message');
+});
+
+test('notify, pending, failure and undo records survive X and dialog host transfers without duplicate publication',async()=>{
+ const records:{id:string;text:string;kind:string;pending:boolean}[]=[];
+ const feedback=createFeedback(notice=>records.push(notice)),owner=Symbol('operation');
+ feedback.notify('Saved',async()=>{});feedback.clear();expect(records).toHaveLength(1);
+ feedback.pending('Saving',owner);const pending=records[1];
+ feedback.failure('Failed',undefined,owner);expect(records[2]).toMatchObject({id:pending.id,kind:'error',pending:false});
+ const close=feedback.host('dialog');feedback.showNotifications(createRawSnippet(()=>({render:()=>'<span>Notifications</span>'})));close();expect(records).toHaveLength(3);
+ feedback.clearAll();expect(records).toHaveLength(3);
+ feedback.recordingFailure(async()=>false,owner);expect(records).toHaveLength(3);
+ feedback.notify('Saved again',async()=>{});await feedback.act();expect(records.at(-1)?.text).toBe('Change undone.');
+});
+test('late retry errors cannot record an old viewers feedback under a new account',async()=>{
+ let viewer='one',reject!:(cause:unknown)=>void;const records:{text:string;viewer?:string}[]=[];
+ const feedback=createFeedback((notice,viewer)=>records.push({text:notice.text,viewer}),()=>viewer);
+ feedback.failure('Old account failure',()=>new Promise((_resolve,no)=>{reject=no;}));
+ const pending=feedback.act();viewer='two';reject(Error('Old retry detail'));await pending;
+ expect(records).toEqual([{text:'Old account failure',viewer:'one'}]);
 });
