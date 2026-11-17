@@ -3,6 +3,8 @@ export type TrackingAction =
   | 'watch'
   | 'unwatch'
   | 'progress'
+  | 'pause'
+  | 'resume'
   | 'drop'
   | 'restore'
   | 'watchlist'
@@ -16,6 +18,7 @@ export interface TrackingProjection {
   watchlist: boolean;
   favourite: boolean;
   collected: boolean;
+  paused: boolean;
   dropped: boolean;
   completedEpisodes: number;
   totalEpisodes: number;
@@ -37,6 +40,7 @@ export const emptyTrackingState = (): TrackingProjection => ({
   watchlist: false,
   favourite: false,
   collected: false,
+  paused: false,
   dropped: false,
   completedEpisodes: 0,
   totalEpisodes: 0,
@@ -79,7 +83,14 @@ export function projectTracking(
       state.durationSeconds = change.durationSeconds ?? state.durationSeconds;
       break;
     }
+    case 'pause':
+      if (!state.dropped) state.paused = true;
+      break;
+    case 'resume':
+      state.paused = false;
+      break;
     case 'drop':
+      state.paused = false;
       state.dropped = true;
       break;
     case 'restore':

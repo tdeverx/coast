@@ -416,12 +416,15 @@ async function runJellyfinScan(
               ? item.metadata.runtimeMinutes * 60
               : undefined,
             streams: [],
-            raw: {},
+            raw: {} as Record<string, unknown>,
           },
         ];
     for (const source of sources) {
       const video = source.streams.find((s) => s.type === 'Video'),
         audio = source.streams.find((s) => s.type === 'Audio');
+      const videoItem = item.kind === 'movie' || item.kind === 'episode';
+      const playbackState = videoItem && (item.emptyPlaybackSources || Array.isArray(source.raw?.MediaStreams)) ?
+        video ? 'ready' : 'pending' : undefined;
       const data = {
         userId,
         connectionId,
@@ -436,7 +439,7 @@ async function runJellyfinScan(
         width: video?.width,
         height: video?.height,
         durationSeconds: source.durationSeconds,
-        source: { ...source.raw, ...(userScope ? {coastUserData:item.userData??null,coastMembershipCount:item.expectedMembers??null,coastReadStage:scope==='personal'?String(filterIndex):'user',coastListed:listedItems.has(item.id)} : {}) },
+        source: { ...source.raw, ...(playbackState ? {coastPlaybackState:playbackState} : {}), ...(userScope ? {coastUserData:item.userData??null,coastMembershipCount:item.expectedMembers??null,coastReadStage:scope==='personal'?String(filterIndex):'user',coastListed:listedItems.has(item.id)} : {}) },
         state: virtual ? 'unavailable' as const : 'available' as const,
         verifiedAt: new Date(),
         scanId,
@@ -468,7 +471,10 @@ async function runJellyfinScan(
           mediaId: sql`excluded.media_id`, edition: sql`excluded.edition`, container: sql`excluded.container`,
           videoCodec: sql`excluded.video_codec`, audioCodec: sql`excluded.audio_codec`, bitrate: sql`excluded.bitrate`,
           width: sql`excluded.width`, height: sql`excluded.height`, durationSeconds: sql`excluded.duration_seconds`,
-          source: sql`excluded.source`, state: sql`excluded.state`, verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
+          source: sql`excluded.source || case when ${availability.source}->>'coastPlaybackState'='pending'
+            and (excluded.source->'MediaStreams') is not distinct from (${availability.source}->'MediaStreams')
+            then jsonb_build_object('coastPlaybackState','pending') else '{}'::jsonb end`,
+          state: sql`excluded.state`, verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
         },
       });
     }
@@ -479,10 +485,13 @@ async function runJellyfinScan(
     });
     const newlyAvailable = ids.filter(id => !previouslyAvailable.has(id));
     const savedTitles = newlyAvailable.length ? await db.select({id: trackingState.mediaId}).from(trackingState)
-      .where(and(eq(trackingState.userId, userId), inArray(trackingState.mediaId, newlyAvailable), eq(trackingState.watchlist, true))) : [];
+      .where(and(eq(trackingState.userId, userId), inArray(trackingState.mediaId, newlyAvailable), eq(trackingState.watchlist, true), sql`not exists (
+        select 1 from media_requests request join provider_instances seerr on seerr.id = request.instance_id
+        where request.user_id = ${userId} and request.media_id = ${trackingState.mediaId} and seerr.linked_media_instance_id = ${instance.id}
+          and request.state in ('pending', 'approved', 'processing', 'available'))`)) : [];
     for (const {id} of savedTitles) await notify({
-      userId, kind: 'availability', title: `${availableTitles.get(id)} is available`,
-      body: 'A title on your watchlist is now in your library.', sourceKey: `available:${id}`,
+      userId, kind: 'availability', title: `${availableTitles.get(id)} was added to your library`,
+      body: 'Jellyfin added a title from your watchlist.', sourceKey: `available:${id}`,
       data: {actorId: userId, subjectId: id, workId: id, destination: `/media/${id}`},
     });
     pendingAvailability.clear(); pendingAddedDates.clear(); availableTitles.clear(); expectedMembers.clear();

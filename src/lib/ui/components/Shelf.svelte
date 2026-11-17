@@ -44,7 +44,7 @@
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', mixed = false, overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
-    mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
+    mediaKind = 'screen', segments: customSegments, styleSegment, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, appendWhenReady = false, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
   }: {
@@ -71,6 +71,7 @@
     artworkPriority?: ArtworkPriority;
     mediaKind?: 'screen' | 'music' | 'game' | 'reading';
     segments?: Snippet<[Pick<ComponentProps<typeof SegmentedControl>,'material'|'presentation'>]>;
+    styleSegment?: string;
     filterGroups?: FilterGroup[];
     controls?: Snippet;
     actions?: Snippet;
@@ -222,8 +223,9 @@
   const hasNavigation = $derived(!sectionCandidate&&!infiniteGrid&&(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl));
   let styleMenu = $state<RowStyleMenu>();
   const layoutItems=$derived(entries.map(entry=>entry.key));
+  const segmentStyleKey=$derived(JSON.stringify([styleSegment, ...headerControls.segments.map(control=>[control.label,control.value])]));
   const rail = createShelfLayout(() => ({
-    size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
+    size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority, styleSegment: segmentStyleKey,
     overlay, layout: displayLayout, busy: displayBusy, preserveHeight: displayPreserveHeight,
     hasMore: displayHasMore, onend: displayOnend, resetKey: displayResetKey,
     hasPrevious: displayHasPrevious, onstart: adapter?.loadPrevious, initialItemId: adapter?.initialItemId, items:layoutItems,

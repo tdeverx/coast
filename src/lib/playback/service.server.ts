@@ -156,6 +156,37 @@ export function playbackResourcePath(
   url.searchParams.delete('apiKey');
   return `${path}${url.search}`;
 }
+
+/** Normalize PlaybackInfo resources for the same verified Jellyfin instance used by playback. */
+export function jellyfinPlaybackResource(instance: Parameters<typeof instanceServerUrl>[0], itemId: string,
+  upstream: string, mediaType: 'audio' | 'video' = 'video') {
+  const serverUrl = instanceServerUrl(instance);
+  const serverPath = new URL(serverUrl).pathname;
+  const publicPrefix = new URL(instance.baseUrl).pathname.replace(/\/$/, '');
+  const reference = upstream.startsWith('/') && serverPath !== '/' && !upstream.startsWith(serverPath) &&
+    !(publicPrefix && upstream.startsWith(`${publicPrefix}/`))
+    ? `${serverPath.replace(/\/$/, '')}${upstream}` : upstream;
+  return playbackResourcePath(serverUrl, itemId, reference, undefined, mediaType, instance.baseUrl);
+}
+
+/** Confirm the selected stream responds under the same account and URL policy as playback. */
+export async function probeJellyfinVideo(
+  ownerId: string, { instance, connection }: Awaited<ReturnType<typeof getJellyfin>>,
+  itemId: string, plan: PlaybackPlan, signal: AbortSignal,
+) {
+  const { accessToken } = v.parse(v.object({ accessToken: v.string() }), JSON.parse(await decryptCredential(connection.credentials!)));
+  const upstream = plan.useHls ? plan.source.transcodingUrl! : `/Videos/${itemId}/stream?${new URLSearchParams({
+    static: 'true', MediaSourceId: plan.source.id,
+  })}`;
+  const path = jellyfinPlaybackResource(instance, itemId, upstream);
+  const response = await secureProviderFetch(await instanceFetchConfig(instance), path, {
+    method: 'HEAD', headers: { Authorization: jellyfinAuthorization(ownerId, accessToken) }, signal,
+  }, { maxBytes: 128 * 1024 ** 3 });
+  const type = response.headers.get('content-type')?.split(';')[0].toLowerCase() ?? '';
+  if (response.ok && response.status !== 204 && (plan.useHls ? /mpegurl/.test(type) : /^(video\/|application\/(octet-stream|mp4)$)/.test(type)))
+    return 'ready';
+  return response.ok || response.status === 404 || response.status === 410 ? 'pending' : 'unknown';
+}
 async function resourceUrl(sessionId: string, path: string, expiresAt: Date) {
   const token = await encryptCredential(
     JSON.stringify({ sessionId, path, expiresAt: expiresAt.getTime() })
@@ -337,20 +368,7 @@ async function preparePlayback(
       ? source.transcodingUrl!
       : `/${mediaType==='audio'?'Audio':'Videos'}/${best.row.providerItem.externalId}/stream?${query}`;
   // PlaybackInfo paths can be absolute from the server's own origin or rooted below its reverse-proxy prefix.
-  const serverUrl = instanceServerUrl(best.instance);
-  const serverPath = new URL(serverUrl).pathname;
-  const publicPrefix = new URL(best.instance.baseUrl).pathname.replace(/\/$/, '');
-  const reference =
-    upstream.startsWith('/') && serverPath !== '/' && !upstream.startsWith(serverPath) &&
-      !(publicPrefix && upstream.startsWith(`${publicPrefix}/`))
-      ? `${serverPath.replace(/\/$/, '')}${upstream}`
-      : upstream;
-  let streamPath = playbackResourcePath(
-    serverUrl,
-    best.row.providerItem.externalId,
-    reference,
-    undefined,mediaType,best.instance.baseUrl
-  );
+  let streamPath = jellyfinPlaybackResource(best.instance, best.row.providerItem.externalId, upstream, mediaType);
   if(share) {
     streamPath=sharedResourcePath(streamPath,{providerSessionId:best.playSessionId??crypto.randomUUID(),providerDeviceId,maxBitrate:maximum,mediaType,vrchatCodec:share.vrchatCodec});
     if(share.vrchatCodec){

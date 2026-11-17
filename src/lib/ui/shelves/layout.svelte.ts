@@ -6,6 +6,7 @@ type LayoutOptions = {
   size: MediaCardShape | 'panel';
   artworkStyle: MediaCardArtwork;
   artworkPriority?: ArtworkPriority;
+  styleSegment?: string;
   overlay: MediaCardOverlay;
   layout: 'row' | 'grid';
   busy: boolean;
@@ -25,10 +26,15 @@ type LayoutOptions = {
 /** Geometry, scroll state and user presentation choices for the single shelf rail. */
 export function createShelfLayout(get: () => LayoutOptions) {
   let scroller = $state<HTMLDivElement>();
-  let overridePriority = $state<ArtworkPriority | null>(null);
-  let overrideShape = $state<MediaCardShape | null>(null);
-  let overrideArtwork = $state<MediaCardArtwork | null>(null);
-  let overrideOverlay = $state<MediaCardOverlay | null>(null);
+  // The rail owns temporary overrides for each segment combination it has styled.
+  const segmentStyles = $state<Record<string, Partial<MediaRowStyle>>>({});
+  const styleSegment = $derived(get().styleSegment ?? '');
+  const overrides = $derived(segmentStyles[styleSegment]);
+  function override<Key extends keyof MediaRowStyle>(key: Key, value: MediaRowStyle[Key] | null) {
+    const style = { ...overrides, [key]: value ?? undefined };
+    if (Object.values(style).some(value => value !== undefined)) segmentStyles[styleSegment] = style;
+    else delete segmentStyles[styleSegment];
+  }
   let previous = $state(false);
   let next = $state(false);
   let savedHeight = $state(0);
@@ -49,12 +55,12 @@ export function createShelfLayout(get: () => LayoutOptions) {
   const layout = $derived(get().layout);
   const items = $derived(get().items);
   const restoration = $derived(get().restoration);
-  const size = $derived(overrideShape ?? get().size);
+  const size = $derived(overrides?.shape ?? get().size);
   const style = $derived<MediaRowStyle>({
     shape: size === 'panel' ? 'poster' : size,
-    artworkStyle: overrideArtwork ?? get().artworkStyle,
-    overlay: overrideOverlay ?? get().overlay,
-    artworkPriority: overridePriority ?? get().artworkPriority,
+    artworkStyle: overrides?.artworkStyle ?? get().artworkStyle,
+    overlay: overrides?.overlay ?? get().overlay,
+    artworkPriority: overrides?.artworkPriority ?? get().artworkPriority,
   });
 
   function measure() {
@@ -241,10 +247,10 @@ export function createShelfLayout(get: () => LayoutOptions) {
 
   return {
     get scroller() { return scroller; }, set scroller(value) { scroller = value; },
-    get overridePriority() { return overridePriority; }, set overridePriority(value) { overridePriority = value; },
-    get overrideShape() { return overrideShape; }, set overrideShape(value) { overrideShape = value; },
-    get overrideArtwork() { return overrideArtwork; }, set overrideArtwork(value) { overrideArtwork = value; },
-    get overrideOverlay() { return overrideOverlay; }, set overrideOverlay(value) { overrideOverlay = value; },
+    get overridePriority() { return overrides?.artworkPriority ?? null; }, set overridePriority(value) { override('artworkPriority',value); },
+    get overrideShape() { return overrides?.shape ?? null; }, set overrideShape(value) { override('shape',value); },
+    get overrideArtwork() { return overrides?.artworkStyle ?? null; }, set overrideArtwork(value) { override('artworkStyle',value); },
+    get overrideOverlay() { return overrides?.overlay ?? null; }, set overrideOverlay(value) { override('overlay',value); },
     get size() { return size; },
     get style() { return style; },
     get previous() { return previous; },

@@ -8,6 +8,25 @@ const lifecycle=await import(lifecycleUrl);
 const source=await Bun.file(new URL('../src/lib/ui/shelves/layout.svelte.ts',import.meta.url)).text();
 const code=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'layout.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')).replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`).replaceAll('../shelf-position',import.meta.resolve('../src/lib/ui/shelf-position'));
 const {createShelfLayout}:typeof import('../src/lib/ui/shelves/layout.svelte')=await import(moduleUrl(code));
+test('temporary row overrides follow the active segment and reset in a fresh rail',()=>{
+ const segment=runtime.state('continue');
+ const options=()=>({styleSegment:runtime.get(segment),size:'poster' as const,artworkStyle:'primary' as const,overlay:'none' as const,layout:'row' as const,busy:false,preserveHeight:false,hasMore:false});
+ let rail!:ReturnType<typeof createShelfLayout>;
+ const dispose=runtime.effect_root(()=>rail=createShelfLayout(options));
+ try{
+  rail.overrideShape='square';rail.overrideArtwork='backdrop';rail.overridePriority='episode-season-show';rail.overrideOverlay='logo';
+  runtime.set(segment,'next');
+  expect(rail.style).toMatchObject({shape:'poster',artworkStyle:'primary',overlay:'none',artworkPriority:undefined});
+  rail.overrideShape='banner';
+  runtime.set(segment,'continue');
+  expect(rail.style).toMatchObject({shape:'square',artworkStyle:'backdrop',overlay:'logo',artworkPriority:'episode-season-show'});
+  rail.overrideShape=null;rail.overrideArtwork=null;rail.overridePriority=null;rail.overrideOverlay=null;
+  runtime.set(segment,'next');
+  expect(rail.style.shape).toBe('banner');
+ }finally{dispose();}
+ const fresh=runtime.effect_root(()=>rail=createShelfLayout(options));
+ try{expect(rail.style.shape).toBe('poster');}finally{fresh();}
+});
 test('rail scroll/observer bursts share one frame and cannot publish after disposal',async()=>{
  const oldRAF=globalThis.requestAnimationFrame,oldCancel=globalThis.cancelAnimationFrame,oldResize=globalThis.ResizeObserver,oldMutation=globalThis.MutationObserver,oldMatch=globalThis.matchMedia;
  let nextFrame=0,reads=0,disconnected=0,observers=0,ends=0;const frames=new Map<number,FrameRequestCallback>();let observerSchedule!:()=>void;

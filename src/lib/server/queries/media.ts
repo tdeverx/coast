@@ -20,6 +20,7 @@ import { rankSearch } from '#lib/search.js';
 import {namedEdition} from '#lib/media/editions.js';
 import {editionSnapshot} from '#lib/media/edition-metadata.js';
 import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
+import { progressCollections, progressEpisodes, type ProgressPresentation } from './progress-card-context';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 const viewOptionsSchema = v.object({
@@ -30,6 +31,7 @@ const viewOptionsSchema = v.object({
   availableFirst: v.optional(v.boolean(), false),
   editionName: v.optional(v.pipe(v.string(),v.minLength(1),v.maxLength(500))),
   airedProgress: v.optional(v.boolean(), false),
+  progressPresentation: v.optional(v.picklist(['continue', 'next', 'paused', 'saved'])),
 });
 type CollectionDescendant = {
   rootId: string;
@@ -98,7 +100,7 @@ function cardAvailability(userId: string, ids: string[]) {
   // Start from the selected cards and their episode children. The catalogue
   // query above starts from every source the viewer can access.
   const scope = sql`${`{${ids.join(',')}}`}::uuid[]`;
-  return getDb().execute<{ mediaId: string; name: string }>(sql`
+  return getDb().execute<{ mediaId: string; name: string; playbackState: 'ready' | 'pending' | 'unknown' | null }>(sql`
     with targets as (select ${scope} as ids), related(media_id, source_id) as (
       select id, id from targets cross join lateral unnest(targets.ids) as target(id)
       union all
@@ -106,12 +108,15 @@ function cardAvailability(userId: string, ids: string[]) {
       union all
       select e.season_id, e.media_id from targets join episodes e on e.season_id = any(targets.ids)
     )
-    select distinct related.media_id as "mediaId", p.name
+    select distinct related.media_id as "mediaId", p.name,
+      case when p.provider = 'jellyfin' and leaf.kind in ('movie', 'episode')
+        then coalesce(a.playback_state, 'unknown') end as "playbackState"
     from related
+    join media leaf on leaf.id = related.source_id
     -- Keep the indexed lookup per relevant source even when the planner
     -- estimates that scanning all availability for this user is cheaper.
     join lateral (
-      select a.connection_id from availability a
+      select a.connection_id, a.source->>'coastPlaybackState' as playback_state from availability a
       where a.user_id = ${userId} and a.media_id = related.source_id and a.state = 'available'
       offset 0
     ) a on true
@@ -176,6 +181,7 @@ export async function mediaViews(
     availableFirst?: boolean;
     editionName?: string;
     airedProgress?: boolean;
+    progressPresentation?: ProgressPresentation;
   } = {},
   viewerId: string | null = userId
 ): Promise<MediaView[]> {
@@ -227,6 +233,14 @@ export async function mediaViews(
   if (!rows.length && search) rows = await readRows(true);
   if (!rows.length) return [];
   const ids = rows.map((row) => row.id);
+  const resumeContext = options.progressPresentation === 'next' || options.progressPresentation === 'paused';
+  const configRead = resumeContext && rows.some(row => row.kind === 'show' || row.kind === 'season') ? getConfig() : undefined;
+  const [progressContext, progressGroups] = options.progressPresentation && options.progressPresentation !== 'continue' ? await Promise.all([
+    progressEpisodes(userId, rows, options.progressPresentation, configRead),
+    progressCollections(rows, options.progressPresentation),
+  ]) : [[], []];
+  const progressById = new Map(progressContext.map(entry => [entry.rootId, entry]));
+  const collectionById = new Map(progressGroups.map(entry => [entry.rootId, entry.collectionId]));
   const queued = new Set(
     (
       await db
@@ -275,6 +289,8 @@ export async function mediaViews(
         ...(episode.seasonId ? [episode.seasonId] : []),
       ]),
       ...seasonRows.map((season) => season.showId),
+      ...progressContext.flatMap(entry => [entry.seasonId, entry.episodeId].filter((id): id is string => !!id)),
+      ...collectionById.values(),
     ]),
   ];
   const { raw: _rawSnapshot, ...snapshotColumns } = getTableColumns(s.metadataSnapshots);
@@ -324,7 +340,7 @@ export async function mediaViews(
         )
       ),
     db.select({ settings: s.users.settings }).from(s.users).where(eq(s.users.id, userId)),
-    getConfig(),
+    configRead ?? getConfig(),
     db
       .select({
         mediaId: s.providerItems.mediaId,
@@ -401,6 +417,22 @@ export async function mediaViews(
       region: settings.region,
     }).values;
   }
+  function artworkFor(id: string, kind: s.MediaKind) {
+    const tmdbImages: ArtworkImages = {};
+    for (const snapshot of (snapshotById.get(id) ?? [])
+      .filter((snapshot) => snapshot.provider === 'tmdb')
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())) {
+      for (const key of artworkKeys)
+        tmdbImages[key] ||= tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork) || undefined;
+    }
+    const images = config.metadataSource === 'tmdb-only' ? tmdbImages : { ...tmdbImages, ...artworkById.get(id) };
+    const values = metadataById.get(id);
+    images.primary = tmdbArtworkUrl(values?.posterPath, config.cacheTmdbArtwork) || images.primary;
+    const backdrop = tmdbArtworkUrl(values?.backdropPath, config.cacheTmdbArtwork);
+    images.backdrop = options.progressPresentation ? images.backdrop || backdrop || undefined : backdrop || images.backdrop;
+    if (kind === 'episode') images.thumb ||= images.primary || images.screenshot || images.backdrop;
+    return images;
+  }
   const views = rows.map((row): MediaView => {
     const state = stateById.get(row.id);
     const metadata = metadataById.get(row.id)!;
@@ -420,8 +452,15 @@ export async function mediaViews(
       includeEpisodes(child.mediaId);
     }
     const sources = new Set<string>();
-    for (const id of availableIds)
-      for (const source of availableById.get(id) ?? []) sources.add(source.name);
+    let hasPendingStream = false;
+    let canTryPlayback = false;
+    for (const id of availableIds) {
+      for (const source of availableById.get(id) ?? []) {
+        sources.add(source.name);
+        hasPendingStream ||= source.playbackState === 'pending';
+        canTryPlayback ||= source.playbackState === 'ready' || source.playbackState === 'unknown';
+      }
+    }
     const progress = state?.positionSeconds ?? 0;
     const duration = state?.durationSeconds ?? 0;
     const watched = state?.watched ?? false;
@@ -433,41 +472,47 @@ export async function mediaViews(
     const artworkSources: NonNullable<MediaView['artworkSources']> = {};
     const lineage = [row.id, episode?.seasonId, parentId].filter((id): id is string => Boolean(id));
     for (const id of lineage) {
-      const tmdbImages: ArtworkImages = {};
-      for (const snapshot of (snapshotById.get(id) ?? [])
-        .filter((snapshot) => snapshot.provider === 'tmdb')
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())) {
-        for (const key of artworkKeys)
-          tmdbImages[key] ||=
-            tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork) || undefined;
-      }
-      const inherited =
-        config.metadataSource === 'tmdb-only'
-          ? { ...tmdbImages }
-          : { ...tmdbImages, ...artworkById.get(id) };
-      const values = metadataById.get(id);
-      inherited.primary =
-        tmdbArtworkUrl(values?.posterPath, config.cacheTmdbArtwork) || inherited.primary;
-      inherited.backdrop =
-        tmdbArtworkUrl(values?.backdropPath, config.cacheTmdbArtwork) || inherited.backdrop;
-      // Episode Primary images are stills, unlike season/show posters.
-      if (row.kind === 'episode' && id === row.id)
-        inherited.thumb ||= inherited.primary || inherited.screenshot || inherited.backdrop;
       const level = id === row.id ? row.kind : id === episode?.seasonId ? 'season' : 'show';
+      const inherited = artworkFor(id, level);
       if (level === 'episode' || level === 'season' || level === 'show')
         artworkSources[level] = { ...inherited };
       for (const key of artworkKeys) artwork[key] ||= inherited[key];
     }
+    const progressEpisode = progressById.get(row.id);
+    if (progressEpisode?.seasonId && !artworkSources.season) artworkSources.season = artworkFor(progressEpisode.seasonId, 'season');
+    if (progressEpisode?.episodeId && !artworkSources.episode) artworkSources.episode = artworkFor(progressEpisode.episodeId, 'episode');
     artwork.primary ||= fallback('primary');
     artwork.backdrop ||= fallback('backdrop');
     artwork.logo ||= fallback('logo');
     if (row.kind === 'episode')
       artwork.thumb ||= artwork.backdrop || artwork.primary || fallback('thumb');
+    const title = metadata.title ?? row.title;
+    const showTitle = parentId ? metadataById.get(parentId)?.title ?? undefined : undefined;
+    const year = metadata.releaseDate ? Number(metadata.releaseDate.slice(0, 4)) : row.year;
+    let caption: Pick<MediaView, 'captionTitle' | 'captionTitleHref' | 'captionSubtitle' | 'captionSubtitleHref'> = {};
+    if (options.progressPresentation === 'continue' && episode && showTitle) {
+      caption = { captionSubtitle: showTitle, captionSubtitleHref: `/media/${episode.showId}` };
+    } else if (options.progressPresentation === 'next') {
+      const seasonId = episode?.seasonId ?? seasonById.get(row.id)?.mediaId ?? progressEpisode?.seasonId;
+      const seasonNumber = episode?.seasonNumber ?? seasonById.get(row.id)?.seasonNumber ?? progressEpisode?.seasonNumber;
+      const seasonTitle = (seasonId ? metadataById.get(seasonId)?.title?.trim() : undefined) || (seasonNumber != null ? `Season ${seasonNumber}` : undefined);
+      caption = {
+        captionTitle: showTitle,
+        captionTitleHref: showTitle && parentId ? `/media/${parentId}` : undefined,
+        captionSubtitle: seasonTitle ?? (year ? String(year) : undefined),
+        captionSubtitleHref: seasonTitle && seasonId ? `/media/${seasonId}` : undefined,
+      };
+    } else if (options.progressPresentation === 'paused' || options.progressPresentation === 'saved') {
+      const relatedId = options.progressPresentation === 'paused' ? progressEpisode?.episodeId : collectionById.get(row.id);
+      const subtitle = relatedId ? metadataById.get(relatedId)?.title?.trim() : undefined;
+      caption = { captionSubtitle: subtitle || (year ? String(year) : undefined), captionSubtitleHref: subtitle ? `/media/${relatedId}` : undefined };
+    }
     return {
       id: row.id,
       tmdbId: tmdbIds.get(row.id),
       kind: row.kind,
-      title: metadata.title ?? row.title,
+      title,
+      ...caption,
       originalTitle: metadata.originalTitle,
       overview: metadata.overview,
       poster: tmdbArtworkUrl(metadata.posterPath, config.cacheTmdbArtwork) || artwork.primary,
@@ -475,14 +520,15 @@ export async function mediaViews(
       logo: artwork.logo,
       artwork: Object.values(artwork).some(Boolean) ? artwork : undefined,
       artworkSources: Object.keys(artworkSources).length ? artworkSources : undefined,
-      year: metadata.releaseDate ? Number(metadata.releaseDate.slice(0, 4)) : row.year,
+      year,
       releaseDate: metadata.releaseDate,
       runtimeMinutes: metadata.runtimeMinutes,
       genres: metadata.genres ?? [],
       certification: metadata.certificate,
       category: 'screen',
       canOpen: sources.size > 0,
-      status: lifecycle({
+      ...(hasPendingStream && !canTryPlayback ? { playbackPending: true } : {}),
+      status: state?.paused ? 'paused' : lifecycle({
         completed: watched,
         dropped: state?.dropped ?? false,
         planned: state?.watchlist ?? false,
@@ -528,7 +574,7 @@ export async function mediaViews(
       seasonNumber: episode?.seasonNumber ?? seasonById.get(row.id)?.seasonNumber,
       episodeNumber: episode?.episodeNumber,
       showId: episode?.showId ?? seasonById.get(row.id)?.showId,
-      showTitle: parentId ? metadataById.get(parentId)?.title ?? undefined : undefined,
+      showTitle,
     };
   });
   const collectionViews = views.filter(item => item.kind==='collection');
@@ -576,7 +622,7 @@ export async function mediaViews(
         item.watched = total > 0 && completed === total;
         item.progress = completed;
         item.duration = total;
-        item.status = item.dropped ? 'dropped' : item.watched ? 'completed' : 'in-progress';
+        if (item.status !== 'paused') item.status = item.dropped ? 'dropped' : item.watched ? 'completed' : 'in-progress';
       }
     }
   }
@@ -593,10 +639,10 @@ export async function mediaViews(
 }
 
 /** Explicit membership remains complete; each ordered hydration batch stays bounded. */
-export async function mediaViewsForIds(userId: string, ids: string[], viewerId = userId, airedProgress = false): Promise<MediaView[]> {
+export async function mediaViewsForIds(userId: string, ids: string[], viewerId = userId, airedProgress = false, progressPresentation?: ProgressPresentation): Promise<MediaView[]> {
   const unique = [...new Set(ids)], cards = new Map<string,MediaView>();
   for (let offset=0;offset<unique.length;offset+=PAGE_SIZE)
-    for (const card of await mediaViews(userId,{ids:unique.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE,airedProgress},viewerId))
+    for (const card of await mediaViews(userId,{ids:unique.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE,airedProgress,progressPresentation},viewerId))
       cards.set(card.id,card);
   return unique.flatMap(id => cards.has(id) ? [cards.get(id)!] : []);
 }
@@ -661,6 +707,7 @@ export async function sequenceNextView(
 }
 
 export async function nextPlayable(userId: string, item: MediaView): Promise<MediaView | null> {
+  if (item.playbackPending) return null;
   if (item.kind === 'movie' || item.kind === 'episode') return item.available ? item : null;
   if (item.kind === 'collection')
     return sequenceNextView(userId, { kind: 'collection', id: item.id });
@@ -679,7 +726,7 @@ export async function nextPlayable(userId: string, item: MediaView): Promise<Med
         eq(item.kind === 'season' ? s.episodes.seasonId : s.episodes.showId, item.id),
         eq(s.episodes.isSpecial, false),
         episodeHasAired(sql`${id}`, metadataSource),
-        sql`exists (select 1 from availability a join provider_connections c on c.id = a.connection_id join provider_instances p on p.id = c.instance_id where a.media_id = ${id} and a.user_id = ${userId} and c.user_id = ${userId} and a.state = 'available' and c.status = 'connected' and p.enabled)`
+        sql`exists (select 1 from availability a join provider_connections c on c.id = a.connection_id join provider_instances p on p.id = c.instance_id where a.media_id = ${id} and a.user_id = ${userId} and c.user_id = ${userId} and a.state = 'available' and c.status = 'connected' and p.enabled and (a.source->>'coastPlaybackState') is distinct from 'pending')`
       )
     )
     .orderBy(

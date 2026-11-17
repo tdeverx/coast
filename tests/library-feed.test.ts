@@ -19,7 +19,8 @@ test('request cards retain request identity and use a status indicator without m
  }
 });
 test('feed inputs reject unbounded paging and invalid selections, and expanded rows preserve their scope',()=>{
- expect(v.safeParse(requestFeedSchema,{state:'processing'}).success).toBe(false);
+ expect(v.safeParse(requestFeedSchema,{state:'processing'}).success).toBe(true);
+ expect(v.safeParse(requestFeedSchema,{state:'unknown'}).success).toBe(false);
  expect(v.safeParse(requestFeedSchema,{kind:'book'}).success).toBe(false);
  expect(v.safeParse(recentLibrarySchema,{page:1_000_001}).success).toBe(false);
  expect(sectionTarget('/for-you?section=requests&state=approved&kind=show',new URL('http://coast/'))).toMatchObject({source:{type:'library-feed',feature:'requests',state:'approved',kind:'show',layout:'grid'}});

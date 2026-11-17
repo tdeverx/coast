@@ -72,6 +72,8 @@ export interface PlaybackSource {
   raw: Record<string, unknown>;
 }
 export interface AvailableItem {
+  /** Distinguishes an explicit empty library source list from an omitted field. */
+  emptyPlaybackSources?: boolean;
   id: string;
   kind: 'movie' | 'show' | 'season' | 'episode';
   metadata: Metadata;

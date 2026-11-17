@@ -38,7 +38,7 @@ test('requests keep state/type filters server-side and withdraw stale owner or d
  let source!:ReturnType<typeof createLibraryFeedSource>;
  const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'requests',layout:'grid'})));await settle();
  try{
-  expect(source.filters[0].value).toBe('available');expect(source.filters[0].options?.map(option=>option.value)).toEqual(['available','pending','approved','declined']);
+  expect(source.filters[0].value).toBe('available');expect(source.filters[0].options?.map(option=>option.value)).toEqual(['available','pending','approved','processing','declined']);
   const first=source.load();calls[0].resolve(result(['old-owner']));await first;await settle();
   expect(source.enrichSocial).toBe(false);expect(source.pagination).toMatchObject({infinite:true,controls:'none'});
   source.filters[0].change('approved');source.controls[0].change('show');expect(calls[1].signal.aborted).toBe(true);

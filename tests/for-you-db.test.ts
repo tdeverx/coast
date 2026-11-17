@@ -5,6 +5,15 @@ import {getConfig} from '../src/lib/server/config';
 import {progressData} from '../src/lib/server/queries/progress';
 import {friendDiscovery} from '../src/lib/social/insights.server';
 import {activityFeed} from '../src/lib/social/queries.server';
+import {progressExperimentData} from '../src/lib/server/queries/progress-experiment';
+import {mediaActionData,mediaHistory} from '../src/lib/server/queries/media-actions';
+import {trackWithExports} from '../src/lib/sync/changes.server';
+import {setRewatch} from '../src/lib/core/tracking/rewatch.server';
+import {createPlaythrough,updatePlaythrough} from '../src/lib/core/games/service.server';
+import {updateReading} from '../src/lib/core/reading/service.server';
+import {importReading} from '../src/lib/catalogue/reading.server';
+import {cardArtwork} from '../src/lib/media/artwork';
+import {progressCardStyle} from '../src/lib/ui/progress-card-style';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),friend=crypto.randomUUID();
 const show=crypto.randomUUID(),season=crypto.randomUUID(),episodes=[crypto.randomUUID(),crypto.randomUUID()],game=crypto.randomUUID(),track=crypto.randomUUID();
@@ -87,7 +96,6 @@ run('Progress and Next omit future and undated episodes before counts and become
  await db.insert(s.episodes).values([aired,future,undated].map((mediaId,index)=>({mediaId,showId:series,seasonId,seasonNumber:1,episodeNumber:index+1})));
  await db.insert(s.trackingState).values([{userId:owner,mediaId:aired,watched:true},{userId:owner,mediaId:undated,positionSeconds:30,durationSeconds:300}]);
  await db.insert(s.upNext).values([future,undated].map(mediaId=>({userId:owner,mediaId})));
- const {progressExperimentData}=await import('../src/lib/server/queries/progress-experiment');
  for(const view of ['watching','next','up-next'] as const){
   expect(await progressData(owner,{view})).toMatchObject({items:[],total:0});
  }
@@ -101,6 +109,118 @@ run('Progress and Next omit future and undated episodes before counts and become
  expect((await progressData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).items.map(item=>item.id)).toEqual([future]);
  expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
+});
+
+run('pausing a movie or whole show hides each progress entry and preserves the position, queue and rewatch history',async()=>{
+ const db=getDb(),owner=crypto.randomUUID(),movie=crypto.randomUUID(),queued=crypto.randomUUID();
+ await db.insert(s.users).values({id:owner,username:`paused-${owner}`});
+ await db.insert(s.media).values([{id:movie,kind:'movie',title:'Partly watched'},{id:queued,kind:'movie',title:'Waiting in Next'}]);
+ await trackWithExports(owner,{mediaId:episodes[0],action:'watch',acknowledged:true,occurredAt:'2020-01-02T15:00:00Z'});
+ await setRewatch(owner,{mediaId:show,startedAt:'2020-01-03T15:00:00Z'});
+ await trackWithExports(owner,{mediaId:episodes[0],action:'progress',positionSeconds:420,durationSeconds:1800});
+ await trackWithExports(owner,{mediaId:movie,action:'progress',positionSeconds:200,durationSeconds:1000,editionId:'fixture'});
+ await db.insert(s.upNext).values([{userId:owner,mediaId:season},{userId:owner,mediaId:queued}]);
+ const ids=(result:{items:{id:string}[]})=>result.items.map(item=>item.id);
+ const watching=async()=>ids(await progressData(owner,{view:'watching'}));
+ const next=async()=>ids(await progressData(owner,{view:'up-next'}));
+ const watchBefore=await watching(),nextBefore=await next(),history=await mediaHistory(owner,show);
+ expect(watchBefore).toEqual(expect.arrayContaining([movie,episodes[0]]));
+ expect(nextBefore).toEqual(expect.arrayContaining([queued,season]));
+
+ for(const id of [movie,queued,show]) {
+  expect(await trackWithExports(owner,{mediaId:id,action:'pause'})).toMatchObject({state:{paused:true},progressChanged:false});
+ }
+ expect(await trackWithExports(owner,{mediaId:show,action:'pause'})).toMatchObject({changed:false,eventId:null});
+ expect(await watching()).toEqual([]);
+ expect(await next()).toEqual([]);
+ expect((await progressExperimentData(owner,{view:'next'})).total).toBe(0);
+ expect((await progressExperimentData(owner,{view:'continue'})).total).toBe(0);
+ const paused=await progressExperimentData(owner,{view:'paused'},{preview:true});
+ expect(new Set(ids(paused))).toEqual(new Set([movie,queued,show]));
+ expect(paused.items.find(item=>item.id===show)).toMatchObject({title:'Friend show',captionSubtitle:'Episode 1',captionSubtitleHref:`/media/${episodes[0]}`});
+ expect(paused.items.find(item=>item.id===movie)).toMatchObject({status:'paused',progress:200,duration:1000});
+ expect((await mediaActionData(owner,episodes[0])).wholeWork).toMatchObject({id:show,status:'paused'});
+ expect(await mediaHistory(owner,show)).toEqual(history);
+ expect((await getSql()`select position_seconds from edition_progress where user_id=${owner} and media_id=${movie}`)[0].position_seconds).toBe(200);
+
+ for(const id of [movie,queued,show]) {
+  expect(await trackWithExports(owner,{mediaId:id,action:'resume'})).toMatchObject({state:{paused:false},progressChanged:false});
+ }
+ expect(new Set(await watching())).toEqual(new Set(watchBefore));
+ expect(await next()).toEqual(nextBefore);
+ expect((await progressData(owner,{view:'watching'})).items.find(item=>item.id===episodes[0])).toMatchObject({progress:420,rewatchStartedAt:'2020-01-03T15:00:00.000Z'});
+ expect(await mediaHistory(owner,show)).toEqual(history);
+ expect((await progressExperimentData(owner,{view:'paused'})).total).toBe(0);
+});
+
+run('Progress presents episode and season captions with the correct artwork hierarchy for each tab',async()=>{
+ const db=getDb(),owner=crypto.randomUUID();
+ const [series,chapter,pilot,other,collection,film]=Array.from({length:6},()=>crypto.randomUUID());
+ await db.insert(s.users).values({id:owner,username:`progress-cards-${owner}`});
+ await db.insert(s.media).values([
+  {id:series,kind:'show',title:'Caption series',releaseDate:'2020-01-01'},
+  {id:chapter,kind:'season',title:'An authored season title'},
+  {id:pilot,kind:'episode',title:'Pilot',releaseDate:'2020-01-01'},
+  {id:other,kind:'episode',title:'The next episode',releaseDate:'2020-01-02'},
+  {id:collection,kind:'collection',title:'A named collection'},
+  {id:film,kind:'movie',title:'Standalone film',year:2022},
+ ]);
+ await db.insert(s.shows).values({mediaId:series});
+ await db.insert(s.seasons).values({mediaId:chapter,showId:series,seasonNumber:1});
+ await db.insert(s.episodes).values([pilot,other].map((mediaId,index)=>({mediaId,showId:series,seasonId:chapter,seasonNumber:1,episodeNumber:index+1})));
+ await db.insert(s.mediaRelationships).values({parentId:collection,childId:series,kind:'collection'});
+ await db.insert(s.metadataSnapshots).values([[series,'show'],[chapter,'season'],[pilot,'episode'],[other,'next']].map(([mediaId,key])=>({
+  mediaId,provider:'tmdb',raw:{artwork:{primary:`/${key}-poster`,thumb:`/${key}-thumb`}},
+ })));
+ await trackWithExports(owner,{mediaId:series,action:'watchlist'});
+ await trackWithExports(owner,{mediaId:series,action:'favourite'});
+ await trackWithExports(owner,{mediaId:film,action:'favourite'});
+ await db.insert(s.upNext).values({userId:owner,mediaId:pilot});
+ async function check(view:'continue'|'next'|'paused'|'watchlist'|'favourites'|'finished',id:string,expected:object,art:string[]) {
+  const result=await progressExperimentData(owner,{category:'screen',view},{preview:true});
+  const item=result.items.find(item=>item.id===id)!;
+  expect(item).toMatchObject(expected);
+  const {artworkStyle,artworkPriority,shape}=progressCardStyle(view)!;
+  expect(cardArtwork(item,artworkStyle==='auto'?'primary':artworkStyle,shape,artworkPriority).candidates.slice(0,3)).toEqual(art);
+ }
+ await check('next',pilot,{captionTitle:'Caption series',captionSubtitle:'An authored season title'},['/season-poster','/show-poster','/episode-poster']);
+ await check('watchlist',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-thumb','/season-thumb','/episode-thumb']);
+ await check('favourites',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-thumb','/season-thumb','/episode-thumb']);
+ expect((await progressExperimentData(owner,{view:'favourites'})).items.find(item=>item.id===film)?.captionSubtitle).toBe('2022');
+ await trackWithExports(owner,{mediaId:pilot,action:'watch'});
+ await trackWithExports(owner,{mediaId:other,action:'progress',positionSeconds:60,durationSeconds:1800});
+ await check('continue',other,{title:'The next episode',captionSubtitle:'Caption series'},['/next-thumb','/season-thumb','/show-thumb']);
+ await trackWithExports(owner,{mediaId:series,action:'pause'});
+ await check('paused',series,{title:'Caption series',captionSubtitle:'The next episode'},['/show-thumb','/season-thumb','/next-thumb']);
+ await trackWithExports(owner,{mediaId:series,action:'resume'});
+ await trackWithExports(owner,{mediaId:other,action:'watch'});
+ await check('finished',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-poster','/season-poster','/episode-poster']);
+});
+
+run('Paused reuses the current playthrough and reading states with progress privacy',async()=>{
+ const db=getDb(),raw=getSql(),owner=crypto.randomUUID();
+ await raw`update system_settings set value=jsonb_set(value,'{experimentalBooks}','true'::jsonb) where key='coast'`;
+ await db.insert(s.users).values({id:owner,username:`paused-${owner}`,settings:{social:{sections:{progress:'private'}}}});
+ const [userA,userB]=[owner,friend].sort();
+ await db.insert(s.friendships).values({userA,userB,state:'accepted',requestedBy:owner});
+ const {id:book}=await importReading({provider:'openlibrary',externalId:'OL987654321W',kind:'book',title:'Book on hold',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL987654321W'});
+ const playthrough=await createPlaythrough(owner,game,{status:'in-progress'});
+ await updatePlaythrough(owner,playthrough.id,{progressPercent:35});
+ await updateReading(owner,book,{state:'reading',page:12,totalPages:230});
+ await db.insert(s.upNext).values([{userId:owner,mediaId:game},{userId:owner,mediaId:book}]);
+
+ expect(await updatePlaythrough(owner,playthrough.id,{status:'paused'})).toMatchObject({status:'paused',progressPercent:35});
+ expect(await updateReading(owner,book,{state:'paused'})).toMatchObject({state:'paused',page:12,totalPages:230});
+ expect((await progressExperimentData(owner,{view:'continue'})).items).toEqual([]);
+ expect((await progressExperimentData(owner,{view:'next'})).items).toEqual([]);
+ expect(new Set((await progressExperimentData(owner,{view:'paused'})).items.map(item=>item.id))).toEqual(new Set([game,book]));
+ expect((await progressData(owner,{view:'paused',category:'reading',kind:'book'})).items.map(item=>item.id)).toEqual([book]);
+ expect((await progressExperimentData(owner,{view:'paused'},{viewerId:friend})).items).toEqual([]);
+ expect((await progressExperimentData(owner,{view:'paused',scope:'available'})).items).toEqual([]);
+ expect(await updatePlaythrough(owner,playthrough.id,{status:'in-progress'})).toMatchObject({progressPercent:35});
+ expect(await updateReading(owner,book,{state:'reading'})).toMatchObject({page:12,totalPages:230});
+ expect((await progressExperimentData(owner,{view:'paused'})).items).toEqual([]);
+ expect(new Set((await progressExperimentData(owner,{view:'continue'})).items.map(item=>item.id))).toEqual(new Set([game,book]));
 });
 
 run('imported activity joins the ordinary date-sorted feed with privacy and stable pagination',async()=>{

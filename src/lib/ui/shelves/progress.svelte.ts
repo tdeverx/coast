@@ -18,6 +18,7 @@ import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
 import type { ShelfSource, ShelfControl } from './types';
 import { readingTypeOptions } from '#lib/ui/filter-options.js';
+import { progressCardStyle } from '#lib/ui/progress-card-style.js';
 
 export type ProgressSourceOptions = {
   category?:ProgressOptions['category'];
@@ -45,7 +46,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
   const initialFilters=untrack(()=>getOptions().filters??initial);
   const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
-  const options = $derived(progressTabs.filter((option) => ['watching', 'up-next'].includes(option.value) || surface === 'profile' && ['finished', 'dropped'].includes(option.value)));
+  const options = $derived(progressTabs.filter((option) => ['watching', 'up-next', 'paused'].includes(option.value) || surface === 'profile' && ['finished', 'dropped'].includes(option.value)));
   const defaultView = (): ProgressOptions['view'] => surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
 
   type Filters = Pick<ProgressOptions, 'kind' | 'scope'>;
@@ -63,6 +64,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   let category = $state<ProgressOptions['category']>(untrack(() => getOptions().category??initialFilters?.category ?? 'screen'));
   const title = $derived(surface==='watchlist'?'Later':category==='reading'&&surface==='continue'?'Continue reading':category==='game'&&surface==='continue'?'Playing':progressTitles[surface]);
   let tab = $state<string>(untrack(() => initialFilters?.view ?? defaultView()));
+  const style = $derived(category === 'music' ? undefined : progressCardStyle(tab));
   let preferences = $state<Record<string, Filters>>(
     Object.fromEntries([...progressTabs, {value:'next',label:'Next'}, {value:'recommendations',label:'Recommendations'}].map((option) => [option.value, defaults()]))
   );
@@ -226,7 +228,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     get shape() {
       return category === 'music'
         ? 'square'
-        : saved || category === 'reading' ? 'poster' : 'fanart';
+        : style?.shape ?? (saved || category === 'reading' ? 'poster' : 'fanart');
     },
 
     get mediaKind() {
@@ -234,11 +236,11 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     },
 
     get artworkStyle() {
-      return category !== 'screen' || saved ? 'auto' : 'thumb';
+      return style?.artworkStyle ?? (category !== 'screen' || saved ? 'auto' : 'thumb');
     },
 
     get artworkPriority() {
-      return ['watching', 'up-next'].includes(content.view) ? 'season-show-episode' : undefined;
+      return style?.artworkPriority;
     },
 
     get filters(): ShelfControl[] {

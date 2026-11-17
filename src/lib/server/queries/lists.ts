@@ -173,12 +173,12 @@ export async function listCandidateIds(userId:string, options:unknown,viewerId=u
   return rows.map(row=>row.id);
 }
 
-export async function listsData(userId:string,rawOptions:unknown={},viewerId=userId) {
+export async function listsData(userId:string,rawOptions:unknown={},viewerId=userId,progressPresentation?: 'saved') {
   const {lists,selected,selectedIds,total,page,pages,pageSize,input}=await listPlan(userId,rawOptions,viewerId);
   const db=getDb();
   const views = new Map(
     (
-      await workCards(userId,viewerId,selectedIds.map(row=>row.id))
+      await workCards(userId,viewerId,selectedIds.map(row=>row.id),false,progressPresentation)
     ).map((item) => [('workId' in item?item.workId:undefined)??item.id, item])
   );
   const sequence = selected?.playlist

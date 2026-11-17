@@ -9,6 +9,11 @@ import {type getSeerr,type SeerrAccountScope} from '../src/lib/providers/seerr/c
 import {refreshRequests} from '../src/lib/providers/seerr/requests.server';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
+import * as providerFetch from '../src/lib/server/security/provider-fetch';
+import * as jellyfinAccount from '../src/lib/providers/jellyfin/connection.server';
+import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
+import {encryptCredential} from '../src/lib/server/security/credentials';
+import {mediaViewsForIds,nextPlayable} from '../src/lib/server/queries/media';
 
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 let scope:SeerrAccountScope,instance:typeof s.providerInstances.$inferSelect,connection:typeof s.providerConnections.$inferSelect,mediaId:string;
@@ -28,7 +33,7 @@ beforeAll(async()=>{
 afterAll(async()=>{
  if(!enabled||!scope)return;const db=getDb();await db.delete(s.users).where(eq(s.users.id,scope.userId));await db.delete(s.providerInstances).where(eq(s.providerInstances.id,scope.instanceId));await db.delete(s.providerInstances).where(eq(s.providerInstances.id,scope.linkedInstanceId));await db.delete(s.works).where(eq(s.works.id,mediaId));
 });
-async function fixture(total:number,listed=total,options:{partial?:boolean;status?:number;details?:(id:number)=>Promise<void>}={}){
+async function fixture(total:number,listed=total,options:{partial?:boolean;status?:number;mediaStatus?:number;details?:(id:number)=>Promise<void>}={}){
  const db=getDb();
  await db.delete(s.outboxActions).where(eq(s.outboxActions.userId,scope.userId));await db.delete(s.mediaRequests).where(eq(s.mediaRequests.userId,scope.userId));
  await db.update(s.providerConnections).set({settings:{}}).where(eq(s.providerConnections.id,connection.id));
@@ -41,7 +46,8 @@ async function fixture(total:number,listed=total,options:{partial?:boolean;statu
   if(url.pathname.endsWith('/request')){
    const offset=Number(url.searchParams.get('skip'));pages.push(offset);
    if(injectPartial){injectPartial=false;jobExecution.getStore()!.started=performance.now()-10001;}
-   return {results:Array.from({length:Math.max(0,Math.min(100,listed-offset))},(_,index)=>({id:offset+index+1,status:options.status??1,requestedBy:{id:42}}))};
+   return {results:Array.from({length:Math.max(0,Math.min(100,listed-offset))},(_,index)=>({id:offset+index+1,status:options.status??1,requestedBy:{id:42},
+    ...(options.mediaStatus?{media:{id:1,tmdbId:1992000002,status:options.mediaStatus}}:{})}))};
   }
   const id=Number(url.pathname.split('/').at(-1));details.push(id);await options.details?.(id);return{id,status:1,requestedBy:{id:42}};
  },'fixture',42);
@@ -61,6 +67,72 @@ run('Seerr scan yields after five pages and resumes with constant-size cursor an
  const requests=await db.select().from(s.mediaRequests).where(eq(s.mediaRequests.userId,scope.userId));expect(requests).toHaveLength(600);expect(requests.every(request=>request.updatedAt.getTime()===old.getTime())).toBe(true);
  expect(new Set(requests.map(request=>request.observedScanId))).toEqual(new Set([String(point.scanId)]));expect((await f.checkpoint()).phase).toBe('complete');
  const [after]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection.id));expect(typeof after.settings.requestsVerifiedAt).toBe('string');
+});
+
+run('a catalogue-only request stays in progress until a mapped Jellyfin stream passes the playback probe',async()=>{
+ const db=getDb(),f=await fixture(1,1,{status:2,mediaStatus:5});
+ const [linkedInstance]=await db.select().from(s.providerInstances).where(eq(s.providerInstances.id,scope.linkedInstanceId));
+ const [linked]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,scope.linkedConnectionId));
+ const externalId=crypto.randomUUID().replaceAll('-','');
+ const [mapped]=await db.insert(s.providerItems).values({instanceId:linkedInstance.id,externalId,kind:'movie',mediaId}).returning();
+ const [source]=await db.insert(s.availability).values({userId:scope.userId,connectionId:linked.id,providerItemId:mapped.id,mediaId,sourceId:'source',state:'available'}).returning();
+ const credentials=await encryptCredential(JSON.stringify({accessToken:'fixture-jellyfin-token'}));
+ let playbackReads=0,headReads=0,hasTrack=false,headStatus=404,replaceOnProbe=false;
+ const adapter=new JellyfinAdapter(async (path,init)=>{
+  if(path==='/System/Info/Public')return {Id:linkedInstance.id,ServerName:'Fixture',Version:'10.11',ProductName:'Jellyfin Server'};
+  expect(path).toBe('/Items/'+externalId+'/PlaybackInfo');
+  expect(JSON.parse(String(init?.body))).toMatchObject({UserId:linked.externalUserId,AutoOpenLiveStream:false});
+  playbackReads++;
+  return hasTrack?{MediaSources:[{Id:'source',Container:'mp4',SupportsDirectPlay:true,MediaStreams:[{Index:0,Type:'Video',Codec:'h264'}]}]}:{MediaSources:[]};
+ },scope.userId);
+ const jellyfin=spyOn(jellyfinAccount,'getJellyfin').mockResolvedValue({instance:linkedInstance,connection:{...linked,credentials},adapter});
+ const relay=spyOn(providerFetch,'secureProviderFetch').mockImplementation(async (_config,path,options,transport)=>{
+  headReads++;
+  expect(options?.method).toBe('HEAD');
+  expect(transport?.stream).toBeUndefined();
+  expect(path).toBe('/Videos/'+externalId+'/stream?static=true&MediaSourceId=source');
+  if (replaceOnProbe) {
+   replaceOnProbe=false;
+   await db.update(s.availability).set({verifiedAt:sql`${s.availability.verifiedAt} + interval '1 second'`}).where(eq(s.availability.id,source.id));
+  }
+  return new Response(null,{status:headStatus,headers:{'Content-Type':'video/mp4'}});
+ });
+ const read=async()=> (await db.select().from(s.mediaRequests).where(eq(s.mediaRequests.userId,scope.userId)))[0];
+ const noticeCount=async()=> (await db.select().from(s.notifications).where(and(eq(s.notifications.userId,scope.userId),eq(s.notifications.sourceKey,`seerr:${scope.instanceId}:1:playable`)))).length;
+ try{
+  await f.execute();
+  expect(await read()).toMatchObject({state:'processing',playbackVerifiedSourceId:null});
+  expect(await noticeCount()).toBe(0);
+  expect(headReads).toBe(0);
+  const [pending]=await mediaViewsForIds(scope.userId,[mediaId]);
+  expect(pending).toMatchObject({available:true,playbackPending:true});
+  expect(await nextPlayable(scope.userId,pending)).toBeNull();
+
+  hasTrack=true;
+  await refreshRequests(scope.userId,scope.instanceId);
+  expect(headReads).toBe(1);
+  expect((await read()).state).toBe('processing');
+  expect(await noticeCount()).toBe(0);
+  headStatus=200;
+  replaceOnProbe=true;
+  await refreshRequests(scope.userId,scope.instanceId);
+  expect(await read()).toMatchObject({state:'processing',playbackVerifiedSourceId:null});
+  expect(await noticeCount()).toBe(0);
+  expect((await mediaViewsForIds(scope.userId,[mediaId]))[0].playbackPending).toBe(true);
+
+  await refreshRequests(scope.userId,scope.instanceId);
+  expect(await read()).toMatchObject({state:'available',playbackVerifiedSourceId:source.id});
+  expect(await noticeCount()).toBe(1);
+  expect((await mediaViewsForIds(scope.userId,[mediaId]))[0].playbackPending).toBeUndefined();
+  await db.insert(s.availability).values(['alternate-a','alternate-b','alternate-c'].map(sourceId => ({
+   userId:scope.userId,connectionId:linked.id,providerItemId:mapped.id,mediaId,sourceId,state:'available' as const,
+  })));
+  await refreshRequests(scope.userId,scope.instanceId);
+  expect(await read()).toMatchObject({state:'available',playbackVerifiedSourceId:source.id});
+  expect(playbackReads).toBe(4);
+  expect(headReads).toBe(3);
+  expect(await noticeCount()).toBe(1);
+ }finally{jellyfin.mockRestore();relay.mockRestore();}
 });
 run('a slow partial page retains only that bounded page and resumes without refetching it',async()=>{
  const db=getDb(),f=await fixture(100,100,{partial:true});

@@ -36,6 +36,8 @@ export const trackingInputSchema = v.object({
     'watch',
     'unwatch',
     'progress',
+    'pause',
+    'resume',
     'drop',
     'restore',
     'watchlist',
@@ -140,6 +142,8 @@ async function applyChange(
     .from(works)
     .where(eq(works.id, input.mediaId));
   if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
+  if (['pause', 'resume'].includes(input.action) && item.kind !== 'movie' && item.kind !== 'show')
+    throw new DomainError('Pause or resume tracking on the whole movie or show.');
   if (item.category !== 'screen' && ['watch', 'unwatch', 'progress', 'drop', 'restore'].includes(input.action))
     throw new DomainError('Use this medium’s activity controls.');
   if (

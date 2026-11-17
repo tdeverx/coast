@@ -1,13 +1,14 @@
 import * as v from 'valibot';
 import type {ShelfItem} from './ui/shelves/types';
 
-export const progressExperimentTabs = [
-  {value:'continue',label:'Continue'}, {value:'next',label:'Next'}, {value:'watchlist',label:'Later'}, {value:'favourites',label:'Favourites'},
+const trackingTabs = [
+  {value:'continue',label:'Continue'}, {value:'next',label:'Next'}, {value:'paused',label:'Paused'},
 ];
-export const profileProgressExperimentTabs=[...progressExperimentTabs.filter(tab=>tab.value==='continue'||tab.value==='next'),{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
+export const progressExperimentTabs = [...trackingTabs,{value:'watchlist',label:'Later'},{value:'favourites',label:'Favourites'}];
+export const profileProgressExperimentTabs = [...trackingTabs,{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
 export const progressExperimentSchema = v.object({
   category:v.optional(v.picklist(['screen','game','reading'])),
-  view:v.optional(v.picklist(['continue','next','watchlist','favourites','finished','dropped']),'continue'),
+  view:v.optional(v.picklist(['continue','next','paused','watchlist','favourites','finished','dropped']),'continue'),
   kind:v.optional(v.picklist(['all','movie','show','game','book','comic']),'all'),
   scope:v.optional(v.picklist(['all','available']),'all'),
   page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1_000_000)),1),

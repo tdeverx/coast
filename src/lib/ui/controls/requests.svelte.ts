@@ -20,7 +20,7 @@ export function createRequestControls(options: {
     )
   );
   const requested = $derived(
-    existingRequests.some((request) => ['pending', 'approved'].includes(request.state))
+    existingRequests.some((request) => ['pending', 'approved', 'processing'].includes(request.state))
   );
   const requestLabel = $derived(
     canManageRequests

@@ -18,7 +18,7 @@
 {#snippet reviewSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Review source" value={model.reviews!.selection} options={model.reviews!.options} onchange={value=>model.reviews!.select?.(value)} />{/snippet}
 {#snippet insightSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Insights selection" value={model.insights!.selection} onchange={model.insights!.select} options={model.insights!.tabs.map(({value,label})=>({value,label}))} />{/snippet}
 {#if model.credits&&(!section||section==='credits')}
- <Shelf segments={model.credits.groups.length>1?creditSegments:undefined} title="Credits" size="circle" artworkOptions={false} preserveHeight layout={section?'grid':'row'} href={!section?model.credits.href:undefined} onactivate={model.credits.activate} itemCount={credit?.people.length??0} error={failureText(model.credits.errors)} retry={()=>retryFailures(model.credits?.errors)} hideEmpty={model.credits.hideEmpty??false} busy={credit?.busy}>
+ <Shelf segments={model.credits.groups.length>1?creditSegments:undefined} styleSegment={model.credits.selection} title="Credits" size="circle" artworkOptions={false} preserveHeight layout={section?'grid':'row'} href={!section?model.credits.href:undefined} onactivate={model.credits.activate} itemCount={credit?.people.length??0} error={failureText(model.credits.errors)} retry={()=>retryFailures(model.credits?.errors)} hideEmpty={model.credits.hideEmpty??false} busy={credit?.busy}>
   {#snippet children(style)}{#each credit?.people??[] as person(person.id)}<MediaCard item={person} shape={style.shape} artworkStyle={style.artworkStyle} overlay={style.overlay}/>{/each}{/snippet}
  </Shelf>
 {/if}

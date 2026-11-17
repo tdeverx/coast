@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import {rankRows,genreReason} from '../src/lib/recommendations/row-ranking';
-import {genreRowTitle} from '../src/lib/recommendations/row-titles';
+import {genreRowTitle, genreTitlePatterns, relatedTitlePatterns, recommendationRowTitle} from '../src/lib/recommendations/row-titles';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
 test('row priority favours established tastes, stays stable per visit, and retains exploration',()=>{
  const rows=[{key:'interest',category:'screen',weight:12},{key:'explore',category:'game',weight:.35}];
@@ -8,7 +8,12 @@ test('row priority favours established tastes, stays stable per visit, and retai
  expect(first).toBeGreaterThan(90);expect(rankRows(rows,'visit')).toEqual(rankRows(rows,'visit'));expect(rankRows(rows,'visit')).toHaveLength(2);
  expect(genreReason(0,0)).toBe('saved');expect(genreReason(1,0)).toBe('watched');expect(genreReason(2,0)).toBe('liked');expect(genreReason(0,1)).toBe('liked');
  expect(genreRowTitle('screen','Animation','movie','saved')).not.toContain('love');
- expect(genreRowTitle('screen','Animation','show','explore')).toBe('A new direction in shows: animation');
+ expect(genreRowTitle('screen','Animation','show','explore')).toBe('Something different: animation shows');
+});
+test('recommendation headings carry the context without conversational suffixes',()=>{
+ const titles=[...Object.values(genreTitlePatterns).flat(),...Object.values(relatedTitlePatterns).flat(),
+  ...Array.from({length:20},(_,index)=>recommendationRowTitle('screen',String(index)))];
+ expect(titles.every(title=>!/(?:try these|to try|for you)$/i.test(title))).toBe(true);
 });
 test('Trakt recommendations use the authenticated bounded read endpoint',async()=>{
  const adapter=new TraktAdapter(async(path,init)=>{expect(path).toBe('/recommendations/movies?limit=40');expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer token');return [{title:'Suggestion',year:2025,ids:{trakt:2,tmdb:3}}];},'client','secret','token');
