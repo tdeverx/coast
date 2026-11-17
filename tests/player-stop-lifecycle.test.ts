@@ -9,7 +9,7 @@ function fixture(deliver:(input:any)=>Promise<unknown>,party=false,audio=true,re
  const states:string[]=[],calls:any[]=[],leaves:boolean[]=[],refreshes:string[]=[];
  const create=new Function('createPlaybackReports','createPlaybackStop','capturePlaybackApi','states','leaves','refreshes','api',new Bun.Transpiler({loader:'ts'}).transformSync(`
  let preview=false,closed=false,active=true,startedSessionId='a',acknowledgedSessionId='a',current=38,duration=100,audioMode=${audio},playedSeconds=24,trackingNotice='',error='';
- let stopFeedback;const feedbackForViewer=()=>({});
+ let stopFeedback,switchingVideo;const feedbackForViewer=()=>({}),savePlaybackSnapshot=()=>{};
  let saved=false,saving=false,next=null,advances=0;function sequencePath(){return 'sequence';}async function advanceMusic(){advances++;}
  const player={session:{id:'a',startSeconds:0,durationSeconds:100},role:'playback',paused:false,browsing:true,subtitlePrompt:false},media={paused:false};
  const reports=createPlaybackReports(),stopSave=createPlaybackStop(state=>states.push(state));

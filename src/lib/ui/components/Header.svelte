@@ -34,6 +34,19 @@
   import { reader, hideReading } from '#lib/reading/client.svelte.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   const { player } = usePlayback();
+  const videoOpen = $derived(!!player.session && player.session.mediaType !== 'audio' && !player.session.shareId);
+  const resumeMedia = $derived(videoOpen ? player.browsing : !reader.visible);
+  const mediaHomeLabel = $derived(videoOpen ? player.browsing ? 'Resume video' : 'Show app'
+    : reader.visible ? 'Show app' : 'Resume reading');
+  function mediaHome() {
+    if (videoOpen) {
+      player.browsing = !player.browsing;
+      player.controlsVisible = true;
+    } else if (!preview && reader.session) {
+      if (reader.visible) void hideReading();
+      else reader.visible = true;
+    }
+  }
   import { slidingPill } from '#lib/ui/materials/sliding-pill.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   let { user, unread = 0, friendRequests = 0, publicBrowse = true, hasActiveLinks = false }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings; access?:import('#lib/auth/invites.js').CoastAccess } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean; hasActiveLinks?:boolean } =
@@ -140,7 +153,10 @@
     {/if}
     <div class="account">
       {#if user}
-      {#if !preview&&reader.session}<Button icon="library" size="icon" label={reader.visible?'Show app':'Resume reading'} onclick={()=>{if(reader.visible)void hideReading();else reader.visible=true;}}/>{/if}
+      {#if videoOpen || !preview && reader.session}<Button size="icon"
+        label={mediaHomeLabel} title={mediaHomeLabel} onclick={mediaHome}>
+        <Icon name={resumeMedia ? 'play' : 'home'} filled={false} />
+      </Button>{/if}
       {#if user.role==='admin'||hasActiveLinks}
         <Button size="icon" id={preview?`${previewId}-streams`:"streams-trigger"} class="notification" label={user.role!=='admin'?'Shared links':streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}>
           <Icon name="broadcast" size={21}/>

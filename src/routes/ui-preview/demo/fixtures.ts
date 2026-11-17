@@ -8,6 +8,11 @@ import type { MediaActionData } from '#lib/media/actions.js';
 import { providerSchedule } from '#lib/providers/schedule.js';
 export const id='00000000-0000-4000-8000-000000000074';
 export const today='2026-10-01';
+const previewSubtitleUrl = 'data:text/vtt,WEBVTT%0A%0A00%3A00%3A00.000%20--%3E%2000%3A00%3A04.000%0APreview%20subtitle';
+export const previewSubtitleTracks = [
+  { index: 3, label: 'English', language: 'eng', url: previewSubtitleUrl },
+  { index: 4, label: 'French', language: 'fre', url: `${previewSubtitleUrl}%20(en%20français)` },
+];
 export const movie:MediaView={id,kind:'movie',title:'Preview title',overview:'Demo content for comparing the existing components. Nothing in this preview is saved.',year:2026,genres:['Drama','Adventure'],runtimeMinutes:110,available:false,progress:1800,duration:6600,watched:false,playCount:0,watchlist:true,favourite:false,collected:true,dropped:false,rating:4,poster:'/coast-mark.png',backdrop:'/coast-mark.png'};
 export const show:MediaView={...movie,id:'00000000-0000-4000-8000-000000000075',kind:'show',title:'Preview series',progress:0,totalEpisodes:8,completedEpisodes:3};
 export const episode:MediaView={...movie,id:'00000000-0000-4000-8000-000000000076',kind:'episode',title:'A first chapter',runtimeMinutes:45,releaseDate:today,showId:show.id,seasonNumber:1,episodeNumber:1};
@@ -175,6 +180,20 @@ export function createPreviewTransport(name: string, scenario: string, condition
     if (scenario === 'loading' && method === 'GET' && signal) {
       // A held read, released by the existing component resource on close/replacement.
       await new Promise<never>((_, reject) => signal.addEventListener('abort', () => reject(new DOMException('Preview request cancelled', 'AbortError')), {once: true}));
+    }
+    if (/^(?:media|playback)\/[^/]+\/subtitles$/.test(path)) {
+      const tracks = previewSubtitleTracks;
+      const source = { availabilityId: id, sourceId: id };
+      const subtitleAction = JSON.parse(typeof init?.body === 'string' ? init.body : '{}');
+      if (method === 'POST' && subtitleAction.language) return Response.json([
+        { id: 'match', ticket: 'preview-match', name: 'Web release · 1080p', exact: true, format: 'srt', sdh: true, downloads: 2458 },
+        { id: 'other', ticket: 'preview-other', name: 'Blu-ray release', exact: false, format: 'srt', downloads: 809 },
+      ]);
+      if (method === 'POST') return Response.json({
+        tracks: [...tracks, { index: 5, label: 'English · SDH', language: 'eng', url: `${previewSubtitleUrl}%20%5BSDH%5D` }],
+        index: 5, source,
+      });
+      return Response.json({ tracks, preferred: 'en', version: '1080p · Preview Jellyfin', scope: 'preview-subtitles', source });
     }
     if (name === 'WorkMenu') {
       if(method==='POST'&&path==='ratings'){

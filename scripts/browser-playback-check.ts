@@ -80,10 +80,8 @@ function readVideo(locator: Locator) {
   });
 }
 async function openPlaybackMenu(name: string) {
-  const trigger=page.getByRole('button', { name: 'Playback options', exact: true });
-  await trigger.focus();
+  const trigger=page.getByRole('button', { name, exact: true });
   await trigger.press('ArrowDown');
-  await page.getByRole('menuitem',{name,exact:true}).press('ArrowRight');
   const menu = page.getByRole('menu', { name, exact: true });
   await expect(menu).toBeVisible();
   return menu;
@@ -150,7 +148,7 @@ try {
   await expect(prompt).toBeVisible();
   expect(playbackReports.filter((report) => report.sessionId === preparedSession.id)).toEqual([]);
   await prompt.getByRole('button', { name: 'Close dialog', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).not.toBeVisible();
   expect(playbackReports.filter((report) => report.sessionId === preparedSession.id)).toEqual([
     { sessionId: preparedSession.id, event: 'stop' },
   ]);
@@ -171,7 +169,7 @@ try {
     .toBeGreaterThan(0);
   await expect
     .poll(async () => (await readVideo(playbackVideo)).subtitleMode)
-    .toBe('showing');
+    .toBe('hidden');
   expect(await playbackVideo.getAttribute('src')).toContain('/api/v1/playback/');
   await screenshot('player-desktop');
   expect(
@@ -196,7 +194,7 @@ try {
   await (await openPlaybackMenu('Subtitles')).getByRole('menuitemradio', { name: /^English/ }).click();
   await expect
     .poll(async () => (await readVideo(playbackVideo)).subtitleMode)
-    .toBe('showing');
+    .toBe('hidden');
   console.log('PASS subtitle off/on uses the real text track');
   await page.locator('.playback-chrome').getByRole('button',{name:'Play',exact:true}).click();
 
@@ -217,8 +215,8 @@ try {
   await expect
     .poll(async () => (await readVideo(playbackVideo)).currentTime)
     .toBeGreaterThanOrEqual(18);
-  await page.getByRole('button', { name: 'Close player', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
+  await page.getByRole('button', { name: 'Stop playback', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).not.toBeVisible();
   await page.goto(`${origin}/media/${mediaId}`);
   await hydrated();
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
@@ -233,7 +231,7 @@ try {
   console.log('PASS title video persists while navigation pauses playback, with saved progress and resume');
 
   step = 'HLS source';
-  await page.getByRole('button',{name:'Close player',exact:true}).click();
+  await page.getByRole('button',{name:'Stop playback',exact:true}).click();
   await page.goto(`${origin}/media/${mediaId}`);
   await hydrated();
   // Simulate a device requiring transcoding, using the unchanged Play control.
@@ -274,7 +272,7 @@ try {
   step = 'mobile playback';
   await page.setViewportSize({ width: 390, height: 844 });
   await page.mouse.move(20, 20);
-  await expect(page.getByRole('button', { name: 'Close player', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).toBeVisible();
   await screenshot('player-mobile');
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -310,7 +308,7 @@ try {
   await expect(page.getByText('Your watch history is up to date.', { exact: true })).toBeVisible();
   await screenshot('postplay-mobile');
   await page.getByRole('button', { name: 'Back to Coast', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).not.toBeVisible();
   await expect(page.getByText('Marked as watched', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   console.log('PASS ended playback saves watch history and renders post-play');
@@ -374,7 +372,7 @@ try {
     await expect
       .poll(async () => (await readVideo(playbackVideo)).currentTime)
       .toBeGreaterThanOrEqual(18);
-    await page.getByRole('button', { name: 'Close player', exact: true }).click();
+    await page.getByRole('button', { name: 'Stop playback', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Resume S01E02', exact: true })).toBeVisible();
     step = 'resume next episode and complete regular episodes';
     const resumeResponse = nextSession();
@@ -392,7 +390,7 @@ try {
     ).toBeVisible({ timeout: 10_000 });
     await expect(postplay.getByRole('button', { name: /^Play S/ })).not.toBeVisible();
     await postplay.getByRole('button', { name: 'Back to Coast', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).not.toBeVisible();
     const completedShow = await (await page.request.get(`${origin}/api/v1/media/${showId}`)).json();
     expect(completedShow.item.completedEpisodes).toBe(2);
     expect(completedShow.item.totalEpisodes).toBe(2);

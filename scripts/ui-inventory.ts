@@ -66,6 +66,9 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
   'src/lib/ui/work-menu/WorkHistory.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Reading, selected-playthrough and listening history dialogs are owned by the catalogue command compositions.' },
   'src/lib/ui/components/CheckInActions.svelte': { owner: 'src/lib/ui/components/WorkMenu.svelte', reason: 'Shared check-in actions are demonstrated through their owning media menus.' },
   'src/lib/ui/components/ProfileBackgroundMenu.svelte': { owner: 'src/routes/profile/[username]/+page.svelte', reason: 'Profile background choices are demonstrated through the shared profile identity preview.' },
+  'src/lib/ui/components/SubtitleMenu.svelte': { owner: 'src/lib/ui/work-menu/ScreenActions.svelte', reason: 'The media menu preview demonstrates installed tracks and subtitle language flyouts.' },
+  'src/lib/ui/components/PlaybackQualityMenu.svelte': { owner: 'src/lib/ui/components/PersistentPlayer.svelte', reason: 'Playback controls read the active player session and its source capabilities.' },
+  'src/lib/ui/components/SubtitleSearchDialog.svelte': { owner: 'src/lib/ui/work-menu/ScreenActions.svelte', reason: 'The advanced search is reached from the media menu preview.' },
 };
 
 /** These thin routes delegate presentation to registered detail compositions. */

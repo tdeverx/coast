@@ -26,6 +26,7 @@ type MenuOptions = {
   disabled: () => boolean;
   align: () => 'start' | 'end';
   upward: () => boolean;
+  openOnHover?: () => boolean | undefined;
   inlinePreview?: boolean;
   onopen?: () => void;
   onclose?: () => void;
@@ -72,7 +73,7 @@ export function createMenuController(options: MenuOptions) {
   }
 
   function hoverTrigger(event: PointerEvent) {
-    if (!parent || (modeQuery?.matches ?? compact) || event.pointerType !== 'mouse') return;
+    if (!(options.openOnHover?.() ?? !!parent) || parent && (modeQuery?.matches ?? compact) || event.pointerType !== 'mouse') return;
     cancelHoverDismiss();
     openMenu(false, false, true);
   }
@@ -172,16 +173,17 @@ export function createMenuController(options: MenuOptions) {
         point ? point.x : options.align() === 'start' ? anchor.left : anchor.right - menu.width
       )
     );
+    const triggerGap = options.openOnHover?.() ? 4 : gap;
     const preferred = point
       ? point.y
       : options.upward()
-        ? anchor.top - menu.height - gap
-        : anchor.bottom + gap;
+        ? anchor.top - menu.height - triggerGap
+        : anchor.bottom + triggerGap;
     const alternate = point
       ? point.y - menu.height
       : options.upward()
-        ? anchor.bottom + gap
-        : anchor.top - menu.height - gap;
+        ? anchor.bottom + triggerGap
+        : anchor.top - menu.height - triggerGap;
     const top =
       preferred >= gap && preferred + menu.height <= window.innerHeight - gap
         ? preferred
@@ -214,7 +216,9 @@ export function createMenuController(options: MenuOptions) {
   }
   function focusItem(last = false) {
     const items = controls();
-    (last ? items.at(-1) : items[0])?.focus({ preventScroll: true });
+    const item = last ? items.at(-1) : items[0];
+    // A selected search branch can open before its first result arrives.
+    (item ?? (options.openOnHover?.() === false ? options.surface() : undefined))?.focus({ preventScroll: true });
   }
   function openMenu(focus = false, last = false, fromHover = false) {
     if (disposed || options.disabled() || !options.surface() || !options.triggerNode()) return;
@@ -246,7 +250,8 @@ export function createMenuController(options: MenuOptions) {
       return;
     }
 
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || parent && event.key === 'ArrowRight') {
+    const vertical = event.key === 'ArrowDown' || event.key === 'ArrowUp';
+    if (parent && event.key === 'ArrowRight' || vertical && (!parent || options.openOnHover?.() !== false)) {
       event.preventDefault();
       event.stopPropagation();
       openMenu(true, event.key === 'ArrowUp');

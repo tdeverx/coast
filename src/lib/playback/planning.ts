@@ -1,4 +1,5 @@
 import type { BrowserCapabilities, PlaybackPolicy, PlaybackSource } from '#lib/providers/contracts.js';
+import { requiresQualityEncoding, qualitySourceAllowed, type PlaybackQuality } from './quality';
 export interface PlaybackPlan {
   source: PlaybackSource;
   mode: 'direct' | 'relay' | 'transcode';
@@ -18,11 +19,12 @@ export function planPlayback(
   browser: BrowserCapabilities,
   policy: PlaybackPolicy,
   sourceId?: string,
-  mediaType: 'audio' | 'video' = 'video'
+  mediaType: 'audio' | 'video' = 'video',
+  quality?: PlaybackQuality
 ): PlaybackPlan {
   const maximum = Math.min(policy.maxBitrate, browser.maxBitrate || Infinity);
   const choices = sources
-    .filter((s) => !sourceId || s.id === sourceId)
+    .filter((s) => (!sourceId || s.id === sourceId) && qualitySourceAllowed(s, quality))
     .map((source): PlaybackPlan | null => {
       const video = source.streams.find((s) => s.type === 'Video'),
         audio =
@@ -35,7 +37,7 @@ export function planPlayback(
         (!audio || (!!audio.codec && browser.audioCodecs.includes(audio.codec.toLowerCase()))) &&
         (!source.bitrate || source.bitrate <= maximum) &&
         (!browser.maxWidth || !video?.width || video.width <= browser.maxWidth);
-      if (source.directPlay && compatible)
+      if (source.directPlay && compatible && !requiresQualityEncoding(quality) && (!quality?.maxBitrate || !!source.bitrate))
         return {
           source,
           mode: policy.delivery === 'relay-only' ? 'relay' : 'direct',
@@ -43,7 +45,7 @@ export function planPlayback(
           maxBitrate: maximum,
         };
       if (
-        policy.allowTranscoding &&
+        policy.allowTranscoding && quality?.mode !== 'direct' &&
         source.transcoding &&
         source.transcodingUrl &&
         (browser.nativeHls || browser.hlsJs)

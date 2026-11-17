@@ -46,7 +46,7 @@ test('the permanent reference and its examples require an administrator', () => 
 test('explicit reference recipes account for every production route and feature-owned Svelte file',()=>{
   const coverage=validateReferenceCoverage(reference());
   expect(coverage.compositions).toBe(compositions.length);
-  expect(coverage.internal).toBe(19);
+  expect(coverage.internal).toBe(22);
   expect(coverage.delegated).toBe(9);
   expect(coverage.owners).toBeGreaterThan(Object.keys(manifest).length);
 });

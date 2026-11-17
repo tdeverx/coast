@@ -1,11 +1,11 @@
-// Isolated browser/timer boundary; actual Svelte lifetimes and crop sampler run together.
+// Isolated browser/timer boundary; actual trailer Svelte owner.
 import {expect} from 'bun:test';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,svelteUrl} from './ui-script';
 const flush=async()=>{for(let i=0;i<6;i++){runtime.flush();await Promise.resolve();}};
 const timers=new Map<number,()=>void>(),listeners=new Map<string,Set<()=>void>>();let serial=0;
-const document={hidden:false,createElement:()=>({width:0,height:0,getContext:()=>null}),
+const document={hidden:false,
  addEventListener(type:string,fn:()=>void){let set=listeners.get(type);if(!set)listeners.set(type,set=new Set());set.add(fn);},
  removeEventListener(type:string,fn:()=>void){listeners.get(type)?.delete(fn);},
 };
@@ -27,16 +27,14 @@ const stubUrl=moduleUrl(compileRunes(`
  export const heroPlayer=$state({id:'hero',url:'trailer',visible:false,paused:false,crop:{left:0,right:0,top:.1,bottom:.1},ready:false,playing:false,muted:true,outcome:'idle'});
  export const player=$state({session:null,browsing:false,paused:true});
  export const usePlayback=()=>({heroPlayer,player,preview:false});
- export const config=$state({heroId:'hero',heroActive:true,heroSize:{width:0,height:0},preview:false,src:'playback',active:true,audioMode:false,crop:true,foreground:true,player:{browsing:false,paused:false,session:null}});
+ export const config=$state({heroId:'hero',heroActive:true,heroSize:{width:0,height:0}});
 `));
-const cropUrl=import.meta.resolve('../../src/lib/playback/observe-crop.ts');
 const cropModelUrl=import.meta.resolve('../../src/lib/playback/crop.ts');
 const visibilityUrl=import.meta.resolve('../../src/lib/playback/visibility.ts');
 const heroSource=(await Bun.file('src/lib/ui/heroes/playback.svelte.ts').text())
  .replaceAll(/from ['"]\$app\/state['"]/g,`from ${JSON.stringify(stubUrl)}`)
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
  .replaceAll(/from ['"]#lib\/playback\/context.svelte\.js['\"]/g,`from ${JSON.stringify(stubUrl)}`)
- .replaceAll(/from ['"]#lib\/playback\/observe-crop\.js['\"]/g,`from ${JSON.stringify(cropUrl)}`)
  .replaceAll(/from ['"]#lib\/playback\/crop\.js['\"]/g,`from ${JSON.stringify(cropModelUrl)}`)
  .replaceAll(/from ['"]#lib\/playback\/visibility\.js['\"]/g,`from ${JSON.stringify(visibilityUrl)}`);
 const {createHeroPlayback}=await import(moduleUrl(compileRunes(heroSource)));
@@ -74,29 +72,4 @@ const beforeOutcome=stub.heroPlayer.outcome;stub.heroPlayer.playing=false;other.
 expect(stub.heroPlayer.playing).toBe(false);expect(stub.heroPlayer.outcome).toBe(beforeOutcome);
 disposeOther();dispose();for(const cleanup of lifecycle.mounted)cleanup();expect(timers.size).toBe(0);expect(listeners.get('visibilitychange')?.size).toBe(0);
 
-// Run PersistentPlayer's actual analysis effect, independently of source/transport effects.
-const playerSource=await Bun.file('src/lib/ui/components/PersistentPlayer.svelte').text();
-const start=playerSource.indexOf('  // Analysis has a shorter lifetime'),effect=playerSource.indexOf('  $effect(',start),end=playerSource.indexOf('  $effect(',effect+1);
-expect(start).toBeGreaterThan(0);expect(end).toBeGreaterThan(effect);
-const playerCode=compileRunes(`import {observeVideoCrop} from ${JSON.stringify(cropUrl)};
- import {noCrop} from ${JSON.stringify(cropModelUrl)};
- export function create(config,video){
-  const preview=$derived(config.preview),src=$derived(config.src),active=$derived(config.active),audioMode=$derived(config.audioMode),crop=$derived(config.crop),foreground=$derived(config.foreground),player=config.player;
-  let bars=$state(noCrop);
-  ${playerSource.slice(start,end)}
-  return ()=>bars;
- }`);
-const {create}=await import(moduleUrl(playerCode)),media=new Video();media.currentTime=12;media.src='playback';
-const stop=runtime.effect_root(()=>create(stub.config,media));await flush();expect(timers.size).toBe(1);
-for(const [target,key,disabled,enabled] of [
- [stub.config,'crop',false,true],[stub.config,'foreground',false,true],[stub.config.player,'browsing',true,false],[stub.config.player,'paused',true,false],
- [stub.config,'audioMode',true,false],[stub.config,'active',false,true],[stub.config,'preview',true,false],[stub.config,'src','','playback'],
-] as const){
- target[key]=disabled;await flush();expect(timers.size).toBe(0);
- target[key]=enabled;await flush();expect(timers.size).toBe(1);
-}
-stub.config.player.session={initialCrop:{left:0,right:0,top:.1,bottom:.1}};await flush();expect(timers.size).toBe(0);
-stub.config.player.session=null;await flush();expect(timers.size).toBe(1);
-expect(media.src).toBe('playback');expect(media.writes).toBe(1);expect(media.currentTime).toBe(12);expect(media.loads).toBe(0);
-stop();expect(timers.size).toBe(0);
-console.log(JSON.stringify({heroLifetime:true,heroPolicyCases:2,playerDisabledCases:9,pendingTimers:timers.size,retainedSource:true,inlineOwnership:true,resizeWithoutReload:true,artworkPreload:true}));
+console.log(JSON.stringify({heroLifetime:true,heroPolicyCases:2,pendingTimers:timers.size,retainedSource:true,inlineOwnership:true,resizeWithoutReload:true,artworkPreload:true}));

@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
 import {providerVideoCrop} from '../src/lib/playback/provider-crop.server';
-import {companionFrameCrop} from '../src/lib/playback/crop';
+import {companionFrameCrop,resolveFrameCrop} from '../src/lib/playback/crop';
 import type {PlaybackSource} from '../src/lib/providers/contracts';
 const source={streams:[{type:'Video',width:1920,height:1080}]} as PlaybackSource;
 test('the companion crop endpoint accepts any selected video ID with the existing authenticated transport',async()=>{
@@ -24,4 +24,12 @@ test('companion metadata validates bounds and handles absent/disabled plugins wi
  expect(await providerVideoCrop(failed,'episode',source)).toBeNull();
  const abort=new AbortController();abort.abort();
  await expect(providerVideoCrop(missing,'movie',source,abort.signal)).rejects.toThrow();
+});
+test('crop analysis runs before playback even when Jellyfin omits the frame dimensions',async()=>{
+ const crop={Width:1920,Height:800,X:0,Y:140};
+ const adapter=new JellyfinAdapter(async()=>({Crop:crop,Error:null}),'device');
+ const detected=await providerVideoCrop(adapter,'video',{...source,streams:[]});
+ expect(detected).toEqual(crop);
+ expect(resolveFrameCrop(detected,1920,1080)).toEqual({left:0,right:0,top:140/1080,bottom:140/1080});
+ expect(resolveFrameCrop(detected,1280,720)).toBeNull();
 });

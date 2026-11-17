@@ -9,6 +9,7 @@ import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './
 import { jellyfinAddedDate } from './added-date.server';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
+import { requiresQualityEncoding, type PlaybackQuality } from '#lib/playback/quality.js';
 import { ProviderActionError } from '../contracts';
 import type {
   AvailableItem,
@@ -24,6 +25,7 @@ const streamSchema = v.object({
   Index: v.number(),
   Type: v.picklist(['Video', 'Audio', 'Subtitle', 'EmbeddedImage', 'Data', 'Lyric']),
   Codec: str,
+  Channels: num,
   Language: str,
   DisplayTitle: str,
   IsDefault: bool,
@@ -48,6 +50,19 @@ const sourceSchema = v.object({
   TranscodingUrl: str,
   TranscodingContainer: str,
   MediaStreams: v.optional(v.array(streamSchema)),
+});
+const subtitleSourceSchema = v.object({
+  Id: v.string(), Name: str,
+  MediaStreams: v.optional(v.array(v.object({
+    Type: v.string(), Index: v.number(), Codec: str, Language: str, DisplayTitle: str,
+    Path: str, IsExternal: bool, IsForced: bool, IsHearingImpaired: bool,
+  })), []),
+});
+const remoteSubtitleSchema = v.object({
+  Id: v.pipe(v.string(), v.minLength(1), v.maxLength(250)), ProviderName: v.string(),
+  Name: str, Format: str, IsHashMatch: v.nullish(v.boolean()), HearingImpaired: v.nullish(v.boolean()),
+  Forced: v.nullish(v.boolean()), AiTranslated: v.nullish(v.boolean()), MachineTranslated: v.nullish(v.boolean()),
+  DownloadCount: v.nullish(v.number()),
 });
 const itemSchema = v.object({
   Id: v.string(),
@@ -116,6 +131,7 @@ function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
       index: s.Index,
       type: s.Type as 'Video' | 'Audio' | 'Subtitle',
       codec: s.Codec || undefined,
+      channels: s.Channels ?? undefined,
       language: s.Language || undefined,
       title: s.DisplayTitle || undefined,
       isDefault: s.IsDefault,
@@ -357,6 +373,38 @@ export class JellyfinAdapter {
       throw error;
     }
   }
+  async canManageSubtitles(userId: string, signal?: AbortSignal) {
+    const user = v.parse(v.object({ Id: v.string(), Policy: v.object({
+      IsAdministrator: bool, EnableSubtitleManagement: bool,
+    }) }), await this.call(`/Users/${encodeURIComponent(userId)}`, { signal }));
+    return jellyfinItemKey(user.Id) === jellyfinItemKey(userId) &&
+      (user.Policy.IsAdministrator || user.Policy.EnableSubtitleManagement);
+  }
+  async subtitleSources(userId: string, itemId: string, signal?: AbortSignal) {
+    const result = v.parse(v.object({ MediaSources: v.optional(v.array(subtitleSourceSchema), []) }),
+      await this.call(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo?${new URLSearchParams({ userId })}`, { signal }));
+    return result.MediaSources.map(source => ({
+      id: source.Id,
+      label: source.Name || 'Original',
+      tracks: source.MediaStreams.filter(stream => stream.Type === 'Subtitle').map(stream => ({
+        type: 'Subtitle' as const, index: stream.Index, codec: stream.Codec ?? undefined,
+        title: stream.DisplayTitle ?? undefined, language: stream.Language ?? undefined,
+        external: stream.IsExternal, forced: stream.IsForced, sdh: stream.IsHearingImpaired, path: stream.Path,
+      })),
+    }));
+  }
+  async remoteSubtitles(itemId: string, language: string, signal: AbortSignal) {
+    const list = v.parse(v.array(v.unknown()), await this.call(
+      `/Items/${encodeURIComponent(itemId)}/RemoteSearch/Subtitles/${encodeURIComponent(language)}`, { signal }));
+    return list.flatMap(result => {
+      const parsed = v.safeParse(remoteSubtitleSchema, result);
+      return parsed.success && parsed.output.ProviderName.toLowerCase().replace(/\s+/g, '') === 'opensubtitles'
+        ? [parsed.output] : [];
+    });
+  }
+  async downloadSubtitle(itemId: string, resultId: string) {
+    await this.call(`/Items/${encodeURIComponent(itemId)}/RemoteSearch/Subtitles/${encodeURIComponent(resultId)}`, { method: 'POST' });
+  }
   /** Hydrate only missing shared mappings under this account's access policy. */
   async items(userId: string, ids: string[]): Promise<AvailableItem[]> {
     const requested = [...new Map(ids.map(id => [jellyfinItemKey(id), id])).values()];
@@ -426,9 +474,11 @@ export class JellyfinAdapter {
     userId: string,
     capabilities: BrowserCapabilities,
     maxBitrate: number,
-    options: { shared?: boolean; vrchatCodec?: VrchatVideoCodec; deviceId?: string; signal?: AbortSignal; probe?: boolean } = {}
+    options: { shared?: boolean; vrchatCodec?: VrchatVideoCodec; deviceId?: string; signal?: AbortSignal; probe?: boolean; quality?: PlaybackQuality } = {}
   ) {
     options.signal?.throwIfAborted();
+    const { quality } = options;
+    const direct = !options.shared && !requiresQualityEncoding(quality);
     const profile = {
       Name: 'Coast browser',
       MaxStreamingBitrate: maxBitrate,
@@ -457,13 +507,13 @@ export class JellyfinAdapter {
           MinSegments: 1,
         },
         {
-          Container: 'ts',
+          Container: quality?.videoCodec === 'hevc' ? 'mp4' : 'ts',
           Type: 'Video',
-          VideoCodec: 'h264',
-          AudioCodec: 'aac',
+          VideoCodec: quality?.videoCodec ?? 'h264',
+          AudioCodec: quality?.audioCodec ?? 'aac',
           Protocol: 'hls',
           Context: 'Streaming',
-          MaxAudioChannels: '2',
+          MaxAudioChannels: String(quality?.audioChannels ?? 2),
           MinSegments: 1,
           BreakOnNonKeyFrames: !options.shared,
         },
@@ -488,12 +538,14 @@ export class JellyfinAdapter {
           UserId: userId,
           MaxStreamingBitrate: maxBitrate,
           DeviceProfile: options.vrchatCodec ? {...vrchatDeviceProfile(options.vrchatCodec),MaxStreamingBitrate:maxBitrate,MaxStaticBitrate:maxBitrate} : profile,
-          EnableDirectPlay: !options.shared,
-          EnableDirectStream: !options.shared,
-          EnableTranscoding: true,
+          EnableDirectPlay: direct,
+          EnableDirectStream: direct,
+          EnableTranscoding: quality?.mode !== 'direct',
+          ...(quality?.audioTrack !== undefined ? { AudioStreamIndex: quality.audioTrack } : {}),
+          ...(quality?.audioChannels ? { MaxAudioChannels: quality.audioChannels } : {}),
           ...(options.probe ? {AutoOpenLiveStream: false} : {}),
-          AllowVideoStreamCopy: !options.shared,
-          AllowAudioStreamCopy: !options.shared,
+          AllowVideoStreamCopy: !options.shared && !quality?.videoCodec && !quality?.maxHeight,
+          AllowAudioStreamCopy: !options.shared && !quality?.audioCodec && !quality?.audioChannels,
           ...(options.deviceId ? {DeviceId:options.deviceId} : {}),
         }),
       })

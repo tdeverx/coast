@@ -39,8 +39,9 @@ export const menuEntries: MenuEntry[] = [
   })) },
   { value: 'filter', label: 'Filter', inline: 'Filters', examples: filterExamples },
   menu('list-entry', 'List entry', 'WorkMenu', 'Actions for ', [['list-entry', 'List entry']]),
-  menu('player', 'Player', 'PersistentPlayer', 'Playback options', [['controller', 'Video player'], ['audio', 'Audio player']]),
-  menu('volume', 'Volume', 'PersistentPlayer', 'Volume', [['controller', 'Volume']]),
+  menu('quality', 'Quality', 'PersistentPlayer', 'Quality', [['controller', 'Quality']]),
+  menu('subtitles', 'Subtitles', 'PersistentPlayer', 'Subtitles', [['controller', 'Subtitles']]),
+  menu('volume', 'Volume', 'PersistentPlayer', 'Volume', [['controller', 'Video playback'], ['audio', 'Music playback']]),
   menu('party', 'Party', 'PartyMenu', 'Party options', [['host', 'Video · Host'], ['member', 'Video · Guest'], ['audio-host', 'Audio · Host'], ['audio-member', 'Audio · Guest'], ['reading-host', 'Reading · Host'], ['reading-member', 'Reading · Guest']]),
   menu('active-shared', 'Active shared playback', 'StreamsPanel', 'Actions for The Expanse', [['shared', 'Active shared playback']]),
   menu('shared-link', 'Shared link', 'StreamsPanel', 'Actions for The Expanse', [['links', 'Current link'], ['older-link', 'Older link']]),
@@ -102,7 +103,8 @@ export function menuConditions(entry: MenuEntry, example: MenuExample): Conditio
   if (entry.value === 'party') return [condition('readyCheck', 'Ready check'), condition('controlPlayback', 'Guests control playback'), condition('editQueue', 'Guests edit queue'), condition('selectedControllers', 'Selected controllers', false), condition('acceptInvites', 'Allow new members')];
   if (entry.value === 'shared-link') return [condition('copyable', 'URL available to copy', example.value !== 'older-link')];
   if (entry.value === 'friend') return [condition('friendActivity', 'Activity visible'), condition('compare', 'Taste comparison available'), condition('partyInvite', 'Can invite to a party')];
-  if (entry.value === 'player') return [condition('versions', 'Multiple versions'), condition('subtitles', 'Subtitle tracks available'), condition('partyInvite', 'Parties enabled'), condition('controlPlayback', 'Control playback')];
+  if (entry.value === 'quality') return [condition('versions', 'Multiple versions')];
+  if (entry.value === 'subtitles') return [condition('subtitles', 'Subtitle tracks available')];
   if (entry.value === 'account') return [condition('presence', 'Presence enabled'),condition('libraryOnly', 'Library-only account',false),condition('requests', 'Requests enabled'),condition('planning', 'Planning enabled'),condition('admin', 'Administrator')];
   if (entry.value === 'navigation') return [condition('screen','Films & TV enabled'),condition('music','Music enabled'),condition('game','Gaming enabled'),condition('book','Books enabled'),condition('comic','Comics enabled')];
   if (entry.value === 'row-appearance')return [condition('artwork','Artwork options')];

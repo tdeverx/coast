@@ -1,4 +1,4 @@
-/** Conservative black-bar detection on same-origin frames. Dark scenes never establish a crop. */
+/** A crop comes from the companion plugin, normalized when source dimensions are known. */
 export interface FrameCrop {
   left: number;
   top: number;
@@ -6,72 +6,8 @@ export interface FrameCrop {
   bottom: number;
 }
 export const noCrop: FrameCrop = { left: 0, top: 0, right: 0, bottom: 0 };
-export function measureBlackBars(
-  pixels: Uint8ClampedArray,
-  width: number,
-  height: number
-): FrameCrop | null {
-  const light = (x: number, y: number) => {
-    const i = (y * width + x) * 4;
-    return pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722;
-  };
-  let sum = 0,
-    count = 0;
-  for (let y = Math.floor(height * 0.3); y < height * 0.7; y++)
-    for (let x = Math.floor(width * 0.3); x < width * 0.7; x++) {
-      sum += light(x, y);
-      count++;
-    }
-  if (sum / Math.max(count, 1) < 35) return null;
-  const darkRow = (y: number) => {
-    let bright = 0;
-    for (let x = 2; x < width - 2; x++) if (light(x, y) > 16) bright++;
-    return bright / (width - 4) < 0.015;
-  };
-  const darkColumn = (x: number) => {
-    let bright = 0;
-    for (let y = 2; y < height - 2; y++) if (light(x, y) > 16) bright++;
-    return bright / (height - 4) < 0.015;
-  };
-  let top = 0,
-    bottom = 0,
-    left = 0,
-    right = 0;
-  while (top < height * 0.22 && darkRow(top)) top++;
-  while (bottom < height * 0.22 && darkRow(height - bottom - 1)) bottom++;
-  while (left < width * 0.22 && darkColumn(left)) left++;
-  while (right < width * 0.22 && darkColumn(width - right - 1)) right++;
-  // Require matching bars on opposing edges; fit to the first content pixel.
-  // Leaving a sampled matte pixel becomes a visible strip after cover scaling.
-  if (top < 2 || bottom < 2 || Math.abs(top - bottom) > 2) top = bottom = 0;
-  if (left < 2 || right < 2 || Math.abs(left - right) > 2) left = right = 0;
-  return {
-    top: top / height,
-    bottom: bottom / height,
-    left: left / width,
-    right: right / width,
-  };
-}
-function sameCrop(a: FrameCrop, b: FrameCrop) {
-  return (Object.keys(a) as (keyof FrameCrop)[]).every((key) => Math.abs(a[key] - b[key]) < 0.012);
-}
-/** Darkness or an uncropped studio intro must not permanently settle the movie's crop. */
-export function createCropTracker() {
-  let previous: FrameCrop | null = null,
-    agreement = 0,
-    samples = 0;
-  return (measured: FrameCrop | null) => {
-    samples++;
-    agreement = measured ? (previous && sameCrop(previous, measured) ? agreement + 1 : 1) : 0;
-    previous = measured;
-    const crop = agreement >= 3 ? measured : null;
-    return {
-      crop,
-      ready: crop !== null || samples >= 8,
-      complete: crop !== null && Object.values(crop).some((edge) => edge > 0),
-    };
-  };
-}
+export type CropRectangle = { Width: number; Height: number; X: number; Y: number };
+export type VideoCrop = FrameCrop | CropRectangle;
 export function videoFitStyle(
   videoWidth: number,
   videoHeight: number,
@@ -97,8 +33,11 @@ export function videoFitStyle(
 }
 
 /** Normalize the companion's pixel rectangle against the selected source's frame. */
-export function companionFrameCrop(crop:{Width:number;Height:number;X:number;Y:number}|null,width?:number,height?:number):FrameCrop|null{
+export function companionFrameCrop(crop:CropRectangle|null,width?:number,height?:number):FrameCrop|null{
   if(!crop||!width||!height||![width,height,crop.Width,crop.Height,crop.X,crop.Y].every(Number.isFinite)
     ||crop.Width<=0||crop.Height<=0||crop.X<0||crop.Y<0||crop.X+crop.Width>width||crop.Y+crop.Height>height)return null;
   return {left:crop.X/width,top:crop.Y/height,right:(width-crop.X-crop.Width)/width,bottom:(height-crop.Y-crop.Height)/height};
+}
+export function resolveFrameCrop(crop: VideoCrop | null | undefined, width: number, height: number): FrameCrop | null {
+  return crop && 'Width' in crop ? companionFrameCrop(crop, width, height) : crop ?? null;
 }

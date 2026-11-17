@@ -22,6 +22,7 @@ async function loadClient(kind:'reading'|'playback'){
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
   .replaceAll('#lib/ui/client.js',transportUrl).replaceAll('#lib/ui/diagnostics.js',moduleUrl('export const browserDiagnostic=()=>{};'))
   .replaceAll('#lib/ui/action-feedback.svelte.js',feedbackUrl)
+  .replaceAll('./subtitle-selection.svelte',moduleUrl('export const pendingSubtitle=()=>undefined,consumeSubtitle=()=>{};'))
   .replaceAll('#lib/playback/synced/client.svelte.js',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
   .replaceAll('#lib/playback/client.svelte.js',playbackUrl).replaceAll('#lib/reading/client.svelte.js',readingUrl)
   .replaceAll('#lib/playback/stop.js',import.meta.resolve('../src/lib/playback/stop.ts'))
@@ -173,8 +174,27 @@ test('reading party replacement hands over the new source before closing the old
  t.delivery((path:string)=>{if(path==='reading/sessions/old/close')expect(sync.commands).toEqual([['item',{readingSessionId:'new'}]]);return Promise.resolve(path.endsWith('/session')?readingSession('new'):{});});
  await c.openReading('book',input);expect(c.reader.session.id).toBe('new');expect(c.reader.loading).toBe(false);
 });
-function controller(c:any){const stops:boolean[]=[],resumes:string[]=[];c.registerPlaybackController({waitForStop:async()=>{},stop:async(cancel:boolean)=>{stops.push(cancel);c.player.session=null;c.player.role='idle';},resume:async()=>{resumes.push('resume');},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});return {stops,resumes};}
+function controller(c:any,snapshot=()=>({})){const stops:boolean[]=[],resumes:string[]=[];c.registerPlaybackController({waitForStop:async()=>{},stop:async(cancel:boolean)=>{stops.push(cancel);c.player.session=null;c.player.role='idle';},resume:async()=>{resumes.push('resume');},pause:()=>{},beginPlaybackGesture:()=>{},snapshot,align:()=>{}});return {stops,resumes};}
 const withDocument=async(run:()=>Promise<void>)=>{const previous=globalThis.document;globalThis.document={createElement:()=>({canPlayType:()=>''})} as unknown as Document;try{await run();}finally{globalThis.document=previous;}};
+test('video changes hold the current player through preparation and preserve its position and controls',()=>withDocument(async()=>{
+ const {client:c,transport:t}=await loadClient('playback'),prepared=deferred();
+ let positionSeconds=40;
+ const events=controller(c,()=>({positionSeconds,subtitleIndex:3}));
+ c.player.session={id:'current',mediaId:'video',startSeconds:0,subtitles:[{index:3,label:'English'}]};
+ c.player.role='playback';c.player.paused=true;c.player.muted=true;c.player.browsing=true;
+ t.delivery(()=>prepared.promise);
+ const pending=c.playMedia('video',{reconfigureSessionId:'current',quality:{maxHeight:720}});
+ await settle();expect(t.calls[0].args[1].reconfigurePosition).toBe(40);
+ expect(c.player.session.id).toBe('current');expect(c.player.role).toBe('playback');expect(events.stops).toEqual([]);
+ positionSeconds=42;
+ prepared.resolve({id:'next',mediaId:'video',startSeconds:40,durationSeconds:90,subtitles:[{index:3,label:'English'}]});
+ await pending;
+ expect(c.player.session).toMatchObject({id:'next',handoff:true,startSeconds:42,startPaused:true,defaultSubtitleIndex:3});
+ expect(c.player.role).toBe('playback');expect(c.player.browsing).toBe(true);expect(c.player.muted).toBe(true);
+ t.delivery(()=>Promise.reject(Error('Negotiation failed')));
+ await expect(c.playMedia('video',{reconfigureSessionId:'next',quality:{maxHeight:480}})).rejects.toThrow('Negotiation failed');
+ expect(c.player.session.id).toBe('next');expect(c.player.role).toBe('playback');expect(events.stops).toEqual([]);
+}));
 test('stopping pending playback rejects late publication and retires through captured share authority',()=>withDocument(async()=>{
  const {client:c,transport:t}=await loadClient('playback'),prepared=deferred();controller(c);t.setMode('share');
  t.delivery((path:string)=>path==='playback'?prepared.promise:Promise.resolve({}));

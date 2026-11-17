@@ -403,6 +403,7 @@ export async function enqueuePlaybackActionsInTransaction(
   userId: string,
   input: {
     sessionId: string;
+    viewingId?: string;
     connectionId: string;
     mediaId: string;
     jellyfinEvent: 'start' | 'progress' | 'stop';
@@ -440,7 +441,7 @@ export async function enqueuePlaybackActionsInTransaction(
         connectionId: connection.id,
         kind: 'trakt.scrobble',
         payload: {
-          sessionId: input.sessionId,
+          sessionId: input.viewingId ?? input.sessionId,
           mediaId: input.mediaId,
           event: input.traktEvent,
           progress,

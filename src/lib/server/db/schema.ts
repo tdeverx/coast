@@ -861,6 +861,7 @@ export const playbackSessions = pgTable('playback_sessions', {
   listenRecorded: boolean('listen_recorded').notNull().default(false),
   correlationId: uuid('correlation_id').notNull().defaultRandom(),
   id: uuid('id').primaryKey().defaultRandom(),
+  viewingId: uuid('viewing_id'),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

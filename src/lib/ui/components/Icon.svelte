@@ -12,6 +12,7 @@
     PlayIcon,
     TvMinimalPlayIcon,
     PauseIcon,
+    StopIcon,
     GoBackward10SecIcon,
     GoForward30SecIcon,
     PlusSignIcon,
@@ -24,6 +25,7 @@
     ArrowRight01Icon,
     Notification01Icon,
     Settings01Icon,
+    Settings05Icon,
     LeftToRightListBulletIcon,
     Bookmark01Icon,
     Logout01Icon,
@@ -67,6 +69,7 @@
     play: PlayIcon,
     party: TvMinimalPlayIcon,
     pause: PauseIcon,
+    stop: StopIcon,
     rewind: GoBackward10SecIcon,
     forward: GoForward30SecIcon,
     plus: PlusSignIcon,
@@ -79,6 +82,7 @@
     right: ArrowRight01Icon,
     bell: Notification01Icon,
     settings: Settings01Icon,
+    settings05: Settings05Icon,
     list: LeftToRightListBulletIcon,
     bookmark: Bookmark01Icon,
     request: PlusSignIcon,
@@ -111,7 +115,8 @@
   } as const;
   export type IconName = keyof typeof icons;
   // Fill only closed silhouettes; utility and navigation paths stay outlined.
-  const fillableIcons = new Set<IconName>(['play', 'pause', 'heart', 'star', 'bookmark', 'collection', 'image']);
+  const transportIcons = new Set<IconName>(['play', 'pause', 'stop']);
+  const fillableIcons = new Set<IconName>([...transportIcons, 'heart', 'star', 'bookmark', 'collection', 'image']);
 </script>
 
 <script lang="ts">
@@ -120,7 +125,7 @@
   const imageMaskId = $props.id();
   let { name, size = 20, filled }: { name: IconName; size?: number; filled?: boolean } = $props();
   const showFill = $derived(
-    fillableIcons.has(name) && (filled ?? (name === 'play' || name === 'pause'))
+    fillableIcons.has(name) && (filled ?? transportIcons.has(name))
   );
 </script>
 

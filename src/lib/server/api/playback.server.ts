@@ -1,12 +1,18 @@
 
 import { AppError } from '#lib/server/security/errors.js';
-import { startPlayback, progressPlayback, recordPlaybackError } from '#lib/playback/service.server.js';
+import { startPlayback, progressPlayback, recordPlaybackError, verifyPlaybackResume } from '#lib/playback/service.server.js';
 import { uuid, type ApiContext } from './context.server';
+import { handleSubtitles } from './subtitles.server';
 
 export async function handlePlayback(context: ApiContext): Promise<Response | undefined> {
  const { uid, path, method, body } = context;
  let result: unknown;
  if (path[0] === 'playback') {
+      if (path.length === 3 && path[2] === 'subtitles') return handleSubtitles(context, true);
+      if (path.length === 2 && method === 'GET') {
+        await verifyPlaybackResume(uid, uuid(path[1]));
+        return Response.json({ ok: true }, { headers: { 'Cache-Control': 'private, no-store' } });
+      }
       if (path.length === 1 && method === 'POST') result = await startPlayback(uid, body, undefined, context.request.signal);
       else if (path[2] === 'progress' && method === 'POST')
         result = await progressPlayback(uid, uuid(path[1]), body);
