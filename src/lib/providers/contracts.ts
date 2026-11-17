@@ -46,6 +46,7 @@ export interface MediaStream {
   index: number;
   type: 'Video' | 'Audio' | 'Subtitle';
   codec?: string;
+  channels?: number;
   language?: string;
   title?: string;
   isDefault?: boolean;

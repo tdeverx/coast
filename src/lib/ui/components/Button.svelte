@@ -21,6 +21,7 @@
  trigger?: Snippet; hideTrigger?: boolean;
     align?: 'start' | 'end'; upward?: boolean; triggerClass?: string; onopen?: () => void; onclose?: () => void;
     panel?: boolean; disabledReason?: string; danger?: boolean; branch?: boolean;
+    submenuIcon?: IconName; openOnHover?: boolean;
     checked?: boolean; showCheckmark?: boolean; selection?: 'checkbox' | 'radio'; keepOpen?: boolean;
     material?: GlassVariant; class?: string; iconSize?: number;
   } & (
@@ -33,7 +34,7 @@
     type = 'button', label, title, pressed, compact = false,
     menu = false, item = false, trigger, hideTrigger = false,
     align = 'end', upward = false, triggerClass, onopen, onclose, panel = false,
-    disabledReason, danger = false, branch = false, checked, showCheckmark = true,
+    disabledReason, danger = false, branch = false, submenuIcon = 'right', openOnHover, checked, showCheckmark = true,
     selection = 'checkbox', keepOpen = false, material, class: className = '', iconSize,
   }: ButtonProps = $props();
   const id = $props.id();
@@ -44,7 +45,8 @@
   // Mode is structural, fixed for the lifetime of this control. Values/callbacks remain live.
   const controller = untrack(() => menu ? createMenuController({
     root: () => root, triggerNode: () => triggerNode, surface: () => surface,
-    inlinePreview, disabled: () => disabled, align: () => align, upward: () => upward, onopen: () => onopen?.(), onclose: () => onclose?.(),
+    inlinePreview, disabled: () => disabled, align: () => align, upward: () => upward, openOnHover: () => openOnHover,
+    onopen: () => onopen?.(), onclose: () => onclose?.(),
   }) : null);
   function presentInline(node: HTMLElement) {
     return inlinePreview ? fixture?.mountInline(node) : undefined;
@@ -75,10 +77,17 @@
   function activate(event: MouseEvent) {
     if (disabled) {event.preventDefault(); if (disabledReason && !preview) notifyAction(disabledReason); return;}
     if (controller) {
-      const disclosure = event.target instanceof Element && event.target.closest('[data-menu-disclosure]');
-      if (nested && primaryAction && !disclosure) {
+      const disclosure = nested && event.target instanceof Element && event.target.closest('[data-menu-disclosure]');
+      if (primaryAction && !disclosure) {
         primaryAction();
-        if (!keepOpen) controller.closeAll(true);
+        if (nested && !keepOpen) controller.closeAll(true);
+        if (!nested && openOnHover && event.detail > 0) {
+          // Touch and pen need access to a menu that a mouse can open by hovering.
+          const touchLike = 'pointerType' in event
+            ? event.pointerType === 'touch' || event.pointerType === 'pen'
+            : controller.compact;
+          if (touchLike) controller.openMenu();
+        }
       } else if (controller.open && !nested) controller.close();
       else controller.openMenu(event.detail === 0);
     } else onclick?.(event);
@@ -91,7 +100,7 @@
     {#if icon || menu && !nested && !text}<Icon name={icon ?? 'more'} size={iconSize ?? (menu || item ? 20 : 18)} filled={checked ?? pressed} />{/if}
     {#if item && size !== 'icon' || menu && nested}<span class="menu-action-label">{text ?? (menu ? label : '')}{#if !menu}{@render children?.()}{/if}</span>
     {:else}{text}{#if !menu}{@render children?.()}{/if}{/if}
-    {#if branch || menu && nested}<span class="menu-chevron" data-menu-disclosure={primaryAction ? true : undefined}><Icon name="right" /></span>
+    {#if branch || menu && nested}<span class="menu-chevron" data-menu-disclosure={primaryAction ? true : undefined}><Icon name={submenuIcon} /></span>
     {:else if item && checked && showCheckmark}<span class="menu-chevron"><Icon name="check" /></span>{/if}
   {/if}
 {/snippet}

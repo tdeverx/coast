@@ -825,7 +825,7 @@ form.stack,
   height: var(--icon-control);
 }
 .media-card .play > svg,
-.controls .play-toggle > svg {
+.controls .transport-primary > svg {
   width: var(--icon-primary);
   height: var(--icon-primary);
 }

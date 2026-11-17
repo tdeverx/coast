@@ -121,7 +121,7 @@ export interface MediaView {
   requestable?: boolean;
 }
 export interface PlaybackView {
-  initialCrop?: import('#lib/playback/crop.js').FrameCrop | null;
+  initialCrop?: import('#lib/playback/crop.js').VideoCrop | null;
   shareId?: string;
   measureSharePlayback?: boolean;
   mediaType?: 'audio' | 'video';
@@ -140,6 +140,9 @@ export interface PlaybackView {
   edition?: string;
   defaultSubtitleIndex: number | null;
   subtitlePrompt: boolean;
+  quality?: import('#lib/playback/quality.js').PlaybackQualityInfo;
+  startPaused?: boolean;
+  handoff?: boolean;
   subtitles: {
     index: number;
     label: string;

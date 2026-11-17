@@ -29,6 +29,10 @@
   import { useClient } from '#lib/ui/client-context.js';
   import { playbackTime } from '#lib/playback/time.js';
   import { playMedia } from '#lib/playback/client.svelte.js';
+  import { pendingSubtitle, rememberSubtitle } from '#lib/playback/subtitle-selection.svelte.js';
+  import { createSubtitleControls } from '#lib/playback/subtitle-controls.svelte.js';
+  import SubtitleMenu from '../components/SubtitleMenu.svelte';
+  import SubtitleSearchDialog from '../components/SubtitleSearchDialog.svelte';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   import ShareAction from '#lib/sharing/ShareAction.svelte';
   import PlanAction from '#lib/experiments/PlanAction.svelte';
@@ -143,6 +147,21 @@
       ? (page.url.searchParams.get('edition') ?? undefined)
       : undefined
   );
+  const subtitleTarget = $derived(playbackAllowed && playable?.available && !playbackPending &&
+    ['movie', 'episode'].includes(active.kind) && !readOnly() && !page.data.user?.access?.libraryOnly && (preview || !!page.data.user)
+    ? playable : null);
+  const subtitleEdition = $derived(selectedEdition !== undefined ? { edition: selectedEdition } : editionName ? { editionName } : {});
+  const subtitleChoice = $derived(subtitleTarget ? pendingSubtitle(subtitleTarget.id, subtitleEdition) : undefined);
+  let previewSubtitle = $state(-1);
+  const subtitleIndex = $derived(preview ? previewSubtitle : subtitleChoice?.index);
+  const subtitles = createSubtitleControls({
+    endpoint: () => `media/${subtitleTarget?.id}/subtitles?${new URLSearchParams(subtitleEdition as Record<string, string>)}`,
+    owner: () => page.data.user?.id ?? '',
+    added: ({ source, index }) => {
+      if (preview) previewSubtitle = index;
+      else if (source && subtitleTarget) rememberSubtitle(subtitleTarget.id, subtitleEdition, { ...source, index });
+    },
+  });
   const resumable = $derived(!!playable && isResumable(playable));
   const playLabel = $derived(
     `${resumable ? 'Resume' : 'Play'}${playable?.kind === 'episode' ? ` S${String(playable.seasonNumber ?? 0).padStart(2, '0')}E${String(playable.episodeNumber ?? 0).padStart(2, '0')}` : ''}`
@@ -579,7 +598,7 @@
     {#if playbackPending}
       <Button item icon="clock" disabled disabledReason="In your Jellyfin library. Waiting for a playable stream.">Stream pending</Button>
     {:else if playbackAllowed && (playable?.available || active.kind === 'collection' && active.available)}
-      {#if resumable || editions.length > 1}
+      {#if resumable || editions.length > 1 || subtitleTarget}
         {@render branch(playLabel, 'play', 'play', startTarget)}
       {:else}
         <Button item icon="play" disabled={loading || player.loading} onclick={startTarget}>{playLabel}</Button>
@@ -649,12 +668,22 @@
     {#if resumable}
       <Button item icon="skipBack" disabled={player.loading} onclick={() => play(selectedEdition, true)}>Play from beginning</Button>
     {/if}
-    {#if editions.length > 1 && playable}
+    {#if editions.length > 1 && playable || subtitleTarget}
       <div class="menu-divider" role="separator"></div>
-      {#each editions as edition (edition)}
-        <Button item selection="radio" checked={edition === (selectedEdition ?? editions[0])} keepOpen disabled={player.loading}
-          onclick={() => { if (playable) editionChoice = { mediaId: playable.id, edition }; }}>{edition || 'Original'}</Button>
-      {/each}
+    {/if}
+    {#if editions.length > 1 && playable}
+      <Button menu label="Version" icon="film" panel>
+        {#each editions as edition (edition)}
+          <Button item selection="radio" checked={edition === (selectedEdition ?? editions[0])} keepOpen disabled={player.loading}
+            onclick={() => { if (playable) editionChoice = { mediaId: playable.id, edition }; }}>{edition || 'Original'}</Button>
+        {/each}
+      </Button>
+    {/if}
+    {#if subtitleTarget}
+      <SubtitleMenu controls={subtitles} selected={subtitleIndex} onselect={(index, options) => {
+        if (preview) previewSubtitle = index;
+        else if (options?.source) rememberSubtitle(subtitleTarget!.id, subtitleEdition, { ...options.source, index });
+      }} />
     {/if}
   {:else if view === 'manage'}
     {@render branch('Tracking', 'tracking', 'checklist')}
@@ -786,6 +815,9 @@
       {/if}
     </Button>
   </div>
+  {#if subtitles.advanced && subtitleTarget}
+    <SubtitleSearchDialog controls={subtitles} title={subtitleTarget.title} selected={subtitleIndex} />
+  {/if}
   {#if item.kind === 'collection' || item.sequence}<Dialog bind:open={sequenceControl.open} title={sequenceControl.title} message={sequenceControl.message} actions={sequenceControl.actions} />{/if}
   {#if requestItem}<RequestDialog
       item={requestItem}

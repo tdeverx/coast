@@ -15,6 +15,7 @@ import { loadMediaDetails } from '#lib/application/media-details.server.js';
 import { mediaViews,mediaViewsForIds, nextPlayable, detailsData } from '#lib/server/queries/media.js';
 import { refreshMedia } from '#lib/catalogue/service.server.js';
 import { getTrailer } from '#lib/playback/service.server.js';
+import { handleSubtitles } from './subtitles.server';
 import { uuid, type ApiContext } from './context.server';
 import {mediaDetailData} from '#lib/application/work-details.server.js';
 import { showNext } from '#lib/server/queries/show-next.js';
@@ -23,6 +24,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
  const { user, uid, path, method, url, body } = context;
  let result: unknown;
  if (path[0] === 'media') {
+      if (path.length === 3 && path[2] === 'subtitles') return handleSubtitles(context, false);
       if(path.length===2&&path[1]==='details'&&method==='GET'){
         const href=v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(2048)),url.searchParams.get('href'));
         return Response.json(await mediaDetailData(uid,href,context.request.signal,url.searchParams.get('enhance')==='true'));

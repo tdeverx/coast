@@ -110,6 +110,7 @@
       "src/lib/ui/components/Pagination.svelte",
       "src/lib/ui/components/PartyMenu.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PlaybackQualityMenu.svelte",
       "src/lib/ui/components/ProfileBackgroundMenu.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
@@ -121,6 +122,8 @@
       "src/lib/ui/components/RowStyleMenu.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
+      "src/lib/ui/components/SubtitleMenu.svelte",
+      "src/lib/ui/components/SubtitleSearchDialog.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
       "src/lib/ui/components/Toast.svelte",
       "src/lib/ui/components/WorkActions.svelte",
@@ -267,7 +270,7 @@
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
-      "src/lib/ui/components/SyncedControls.svelte",
+      "src/lib/ui/components/SubtitleSearchDialog.svelte",
       "src/lib/ui/components/WorkMenu.svelte",
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
@@ -331,6 +334,7 @@
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RequestDialog.svelte",
+      "src/lib/ui/components/SubtitleSearchDialog.svelte",
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
@@ -713,8 +717,7 @@
       "Button",
       "Dialog",
       "Icon",
-      "PlaybackTimeline",
-      "SyncedControls"
+      "PlaybackTimeline"
     ],
     "usedBy": [
       "src/routes/+layout.svelte"
@@ -982,16 +985,14 @@
     "path": "src/lib/ui/components/SyncedControls.svelte",
     "elements": [
       "Button",
-      "Dialog",
       "PartyCard",
       "PartyMenu",
       "PlaybackTimeline"
     ],
     "usedBy": [
-      "src/lib/ui/components/FriendsPanel.svelte",
-      "src/lib/ui/components/PersistentPlayer.svelte"
+      "src/lib/ui/components/FriendsPanel.svelte"
     ],
-    "dynamicComposition": true
+    "dynamicComposition": false
   },
   "TextLink": {
     "path": "src/lib/ui/components/TextLink.svelte",

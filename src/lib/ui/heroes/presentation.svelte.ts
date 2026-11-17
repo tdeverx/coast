@@ -159,7 +159,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
     const title=untrack(()=>active)!;
     const controller=new AbortController();
     let url=screenItem(title)?title.trailer:null;
-    let crop:import('#lib/playback/crop.js').FrameCrop|null=null,pending=false;
+    let crop:import('#lib/playback/crop.js').VideoCrop|null=null,pending=false;
     phase='artwork';attached=false;
     intersecting=false;
     const owned=createHeroCycle({
@@ -190,7 +190,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
       attach();
       if(requested||url||!screenItem(title)||!title.available)return;
       requested=true;pending=true;
-      void api<{url:string|null;crop:import('#lib/playback/crop.js').FrameCrop|null}>(`media/${id}/trailer`,undefined,'GET',{signal:controller.signal})
+      void api<{url:string|null;crop:import('#lib/playback/crop.js').VideoCrop|null}>(`media/${id}/trailer`,undefined,'GET',{signal:controller.signal})
         .then(result=>{if(controller.signal.aborted)return;url=result.url;crop=result.crop??null;pending=false;
           if(url)attach();else if(phase==='trailer')owned.finishTrailer();})
         .catch(()=>{pending=false;if(!controller.signal.aborted&&phase==='trailer')owned.finishTrailer();});

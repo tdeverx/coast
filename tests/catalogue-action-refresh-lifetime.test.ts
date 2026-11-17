@@ -80,6 +80,7 @@ const {create:createScreen}=await import(moduleUrl(compileRunes(`
   const useClient=()=>({api:transport,change:write,preview:!!menuFixtureContext,feedback:{notify(){}}});
   const usePlayback=()=>({player:{loading:false},preview:!!menuFixtureContext}),createSequencePlayback=()=>({error:''}),createRequestControls=()=>({resetOptions(){},cancel(){}});
   const isMediaGroup=()=>false,isResumable=()=>false,message=cause=>cause.message;
+  const createSubtitleControls=()=>({}),pendingSubtitle=()=>undefined;
   const contentRevisionKey=()=>revision;
   ${work}
   ${screen}

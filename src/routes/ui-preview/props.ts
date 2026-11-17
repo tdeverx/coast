@@ -55,7 +55,7 @@ const examples:Record<string,Record<string,unknown>>={
   RowFilter:{label:'Filters',selection:false,submenus:false,icon:'filter',groups:[{label:'Selection',value:'all',options:choices}]},RowStyleMenu:{title:'Preview row',artworkOptions:true,mediaKind:'screen',overridePriority:null,overrideShape:null,overrideArtwork:null,overrideOverlay:null},
   SegmentedControl:{label:'Preview segments',options:choices,value:'all'},SettingsRow:{title:'Social',description:'Friends, recommendations and shared activities.'},
   Shelf:{title:'Your next favourites',items,shape:'poster',layout:'row',artworkOptions:true,hideEmpty:false,enrichSocial:false},SocialControls:{friends:[{username:'Alice',status:'online'},{username:'Sam',status:'away'},{username:'Taylor',status:'busy'}],total:7,showOverflow:true,size:32},
-  StreamsPanel:{open:false,initialView:'now'},SyncedControls:{inline:false,embedded:false},Toast:{text:'Changes saved.',description:'Preview only',kind:'info',busy:false,actionLabel:'Undo'},
+  StreamsPanel:{open:false,initialView:'now'},SyncedControls:{embedded:false},Toast:{text:'Changes saved.',description:'Preview only',kind:'info',busy:false,actionLabel:'Undo'},
   WorkActions:{section:'social',workId:id,disabled:false,rating:4,controls:[{item:true,text:'Add to Collection',icon:'plus'}],recommendationIds:[]},WorkListActions:{workId:id,reading:false,disabled:false},WorkMenu:{item:movie,context:'discover',showTrigger:true,hero:false,menuOnly:false,requestable:false},
  };
 /** Synthetic inputs for real components. Clone only the selected fixture. */

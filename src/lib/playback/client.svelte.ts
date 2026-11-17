@@ -2,6 +2,7 @@ import { PlaybackSavePending } from '#lib/playback/stop.js';
 import { browserDiagnostic } from '#lib/ui/diagnostics.js';
 import { api, capturePlaybackApi } from '#lib/ui/client.js';
 import { feedbackForViewer } from '#lib/ui/action-feedback.svelte.js';
+import { consumeSubtitle, pendingSubtitle } from './subtitle-selection.svelte';
 import type { PlaybackView } from '#lib/ui/types.js';
 
 export const player = $state({
@@ -22,7 +23,7 @@ export const player = $state({
 export const heroPlayer = $state({
   outcome: 'idle' as 'idle'|'ended'|'failed',
   generation: 0,
-  crop: null as import('./crop').FrameCrop|null,
+  crop: null as import('./crop').VideoCrop|null,
   id: '',
   url: '',
   visible: false,
@@ -38,7 +39,7 @@ type PlaybackController = {
   waitForStop: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
-  snapshot: () => {positionSeconds:number;buffering:boolean;unavailable?:boolean};
+  snapshot: () => {positionSeconds:number;buffering:boolean;unavailable?:boolean;subtitleIndex?:number};
   align: (state:{positionSeconds:number;paused:boolean;force?:boolean}) => void;
 };
 let controller: PlaybackController | undefined;
@@ -73,13 +74,16 @@ export async function playMedia(
     mediaType?: 'audio' | 'video';
     sourceId?: string;
     fallbackSessionId?: string;
+    reconfigureSessionId?: string;
     edition?: string;
     editionName?:string;
     expectedDuration?: number;
     fromStart?: boolean;
     retry?: boolean;
     subtitleIndex?: number;
+    subtitleSourceId?: string;
     maxBitrate?: number;
+    quality?: import('./quality').PlaybackQuality;
     continuationId?: string;
     sequence?: import('#lib/media/sequence.js').SequenceContext;
   } = {}
@@ -89,9 +93,15 @@ export async function playMedia(
   const {syncedPlayer,canControlPlayback,syncedCommand}=await import('./synced/client.svelte');
   if(player.loading||intent!==preparationRevision)return;
   const room=syncedPlayer.room;
+  const previous = options.reconfigureSessionId ? player.session : null;
+  if (options.reconfigureSessionId && (!previous || previous.id !== options.reconfigureSessionId || previous.shareId ||
+      room || player.role !== 'playback' || previous.mediaId !== mediaId)) return;
   if(room&&!syncedPlayer.changing&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   const syncSwitch=!!room&&!syncedPlayer.changing;
   if(syncSwitch)syncedPlayer.changing=true;
+  const subtitle = options.mediaType !== 'audio' && options.subtitleIndex === undefined && !options.fallbackSessionId && !options.reconfigureSessionId
+    ? pendingSubtitle(mediaId, options) : undefined;
+  if (subtitle) options = { ...options, sourceId: subtitle.availabilityId, subtitleSourceId: subtitle.sourceId, subtitleIndex: subtitle.index };
   if (
     player.session?.mediaId === mediaId &&
     player.role === 'playback' &&
@@ -99,12 +109,14 @@ export async function playMedia(
     !options.fromStart &&
     !options.retry &&
     options.fallbackSessionId === undefined &&
+    options.reconfigureSessionId === undefined &&
     options.sourceId === undefined &&
     options.edition === undefined &&
     options.editionName === undefined &&
     options.expectedDuration === undefined &&
     options.subtitleIndex === undefined &&
-    options.maxBitrate === undefined
+    options.maxBitrate === undefined &&
+    options.quality === undefined
   ) {
     player.controlsVisible = true;
     if(syncSwitch)syncedPlayer.changing=false;
@@ -120,32 +132,56 @@ export async function playMedia(
   player.preparationStartedAt = performance.now();
   browserDiagnostic('playback.start');
   try {
-    const {reader,closeReading}=await import('#lib/reading/client.svelte.js');if(reader.session)await closeReading();
-    if(!current())return;
-    if (player.session) await controller?.stop(false);
-    if(!current())return;
-    await controller?.waitForStop();
-    if(!current())return;
+    if (!previous) {
+      const {reader,closeReading}=await import('#lib/reading/client.svelte.js');if(reader.session)await closeReading();
+      if(!current())return;
+      if (player.session) await controller?.stop(false);
+      if(!current())return;
+      await controller?.waitForStop();
+      if(!current())return;
+    }
     const video = document.createElement('video');
     const videoCodecs = ['h264'];
     if (video.canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"')) videoCodecs.push('hevc');
     if (video.canPlayType('video/webm; codecs="vp9"')) videoCodecs.push('vp9');
     if (video.canPlayType('video/mp4; codecs="av01.0.05M.08"')) videoCodecs.push('av1');
-    const requestOptions={...options};delete requestOptions.retry;
+    const audioCodecs = ['aac', 'mp3', 'opus', 'vorbis', 'flac'];
+    if (video.canPlayType('audio/mp4; codecs="ac-3"')) audioCodecs.push('ac3');
+    if (video.canPlayType('audio/mp4; codecs="ec-3"')) audioCodecs.push('eac3');
+    const { retry: _retry, ...requestOptions } = options;
+    const reconfigurePosition = previous ? controller?.snapshot().positionSeconds : undefined;
     const session = await request<PlaybackView>('playback', {
       mediaId,
       ...requestOptions,
+      reconfigurePosition,
       browser: {
         containers: ['mp4', 'm4v', 'webm', 'mp3', 'flac', 'ogg', 'm4a', 'aac', 'wav'],
         videoCodecs,
-        audioCodecs: ['aac', 'mp3', 'opus', 'vorbis', 'flac'],
+        audioCodecs,
         nativeHls: !!video.canPlayType('application/vnd.apple.mpegurl'),
         hlsJs: typeof MediaSource !== 'undefined',
         maxBitrate: options.maxBitrate,
       },
     },'POST',{signal:abort.signal});
-    if(!current()){await request(`playback/${session.id}/progress`,{event:'stop',positionSeconds:session.startSeconds,durationSeconds:session.durationSeconds}).catch(()=>{});return;}
+    if(!current() || previous && player.session?.id !== previous.id){await request(`playback/${session.id}/progress`,{event:'stop',positionSeconds:session.startSeconds,durationSeconds:session.durationSeconds}).catch(()=>{});return;}
+    if (previous) {
+      const atSwitch = controller?.snapshot();
+      const start = atSwitch?.positionSeconds ?? session.startSeconds;
+      const end = session.durationSeconds > 0 ? Math.max(0, session.durationSeconds - 0.1) : Infinity;
+      const currentTrack = previous.subtitles?.find(track => track.index === atSwitch?.subtitleIndex);
+      const matching = options.edition === undefined
+        ? session.subtitles?.find(track => track.index === atSwitch?.subtitleIndex)
+        : currentTrack && session.subtitles?.find(track => track.language === currentTrack.language && track.label === currentTrack.label);
+      player.session = {
+        ...session, handoff: true, startPaused: player.paused, startSeconds: Math.min(start, end),
+        initialCrop: options.edition === undefined ? previous.initialCrop : session.initialCrop,
+        defaultSubtitleIndex: atSwitch?.subtitleIndex === -1 ? null : matching?.index ?? session.defaultSubtitleIndex,
+      };
+      player.subtitlePrompt = false;
+      return;
+    }
     player.session = session;
+    if (subtitle) consumeSubtitle(subtitle);
     player.continuationId = options.continuationId ?? '';
     player.subtitlePrompt = session.subtitlePrompt;
     player.role = 'playback';
@@ -166,7 +202,7 @@ export async function playMedia(
 export function presentTrailer(
   id: string,
   url: string,
-  crop: import('./crop').FrameCrop|null = null
+  crop: import('./crop').VideoCrop|null = null
 ) {
   heroPlayer.id = id;
   heroPlayer.url = url;

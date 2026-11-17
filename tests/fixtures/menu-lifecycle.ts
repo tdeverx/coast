@@ -44,15 +44,22 @@ const mediaListeners=()=>queries.reduce((sum,query)=>sum+query.listeners.size,0)
 const globalListeners=()=>[...documentEvents.values(),...windowEvents.values()].reduce((sum,set)=>sum+set.size,0);
 const resize=(value:boolean)=>{compact=value;for(const query of queries)for(const fn of [...query.listeners])fn();runtime.flush();};
 function options(){const root=new Node(),surface=new Node(),trigger=new Node();root.children=[surface,trigger];return {root,surface,trigger,config:{root:()=>root,surface:()=>surface,triggerNode:()=>trigger,disabled:()=>false,align:()=>'end' as const,upward:()=>false}};}
-const top=options(),nested=options();let parent:any,child:any;
+const top=options(),nested=options(),volume=options();let parent:any,child:any,hoverMenu:any;
+let openOnHover=true,childOpened=0;
 const dispose=runtime.effect_root(()=>{
  parent=createMenuController(top.config);lifecycle.chooseParent(lifecycle.contexts[0]);
- child=createMenuController(nested.config);
+ child=createMenuController({...nested.config,openOnHover:()=>openOnHover,onopen:()=>childOpened++});
  lifecycle.chooseParent(undefined);
+ hoverMenu=createMenuController({...volume.config,openOnHover:()=>true,upward:()=>true});
  for(let index=0;index<100;index++)createMenuController(options().config);
 });
 top.root.children.push(nested.surface);nested.surface.onhide=()=>child.toggle({newState:'closed'});
 runtime.flush();expect(mediaListeners()).toBe(0);expect(activeObservers).toBe(0);expect(globalListeners()).toBe(0);
+parent.hoverTrigger({pointerType:'mouse'});expect(parent.open).toBe(false);
+hoverMenu.hoverTrigger({pointerType:'touch'});expect(hoverMenu.open).toBe(false);
+hoverMenu.hoverTrigger({pointerType:'mouse'});runtime.flush();expect(hoverMenu.open).toBe(true);
+hoverMenu.leaveHover({pointerType:'mouse'});await new Promise(resolve=>setTimeout(resolve,140));runtime.flush();
+expect(hoverMenu.open).toBe(false);expect(mediaListeners()+activeObservers+globalListeners()+frames.size).toBe(0);
 resize(true);expect(parent.compact).toBe(true);expect(child.compact).toBe(true);
 parent.openMenu();child.openMenu();runtime.flush();expect(mediaListeners()).toBe(2);expect(parent.childHidden).toBe(true);expect(activeObservers).toBe(2);
 child.close(true);await Promise.resolve();runtime.flush();expect(document.activeElement).toBe(nested.trigger);expect(parent.childHidden).toBe(false);expect(mediaListeners()).toBe(1);
@@ -61,7 +68,14 @@ child.hoverTrigger({pointerType:'mouse'});runtime.flush();expect(child.open).toB
 child.leaveHover({pointerType:'mouse'});child.cancelHoverDismiss();
 await new Promise(resolve=>setTimeout(resolve,140));expect(child.open).toBe(true);
 child.leaveHover({pointerType:'mouse'});await new Promise(resolve=>setTimeout(resolve,140));runtime.flush();expect(child.open).toBe(false);expect(mediaListeners()).toBe(1);
+openOnHover=false;
+const openedBeforeSelection=childOpened;
+child.hoverTrigger({pointerType:'mouse'});
+child.triggerKey({key:'ArrowDown',preventDefault(){},stopPropagation(){}});
+runtime.flush();expect(child.open).toBe(false);expect(childOpened).toBe(openedBeforeSelection);
 child.triggerKey({key:'ArrowRight',preventDefault(){},stopPropagation(){}});await Promise.resolve();runtime.flush();expect(child.open).toBe(true);
+expect(childOpened).toBe(openedBeforeSelection+1);
+openOnHover=true;
 child.leaveHover({pointerType:'mouse'});await new Promise(resolve=>setTimeout(resolve,140));expect(child.open).toBe(true);
 resize(true);expect(child.compact).toBe(true);expect(parent.childHidden).toBe(true);
 child.triggerKey({key:'Escape',preventDefault(){},stopPropagation(){}});await Promise.resolve();runtime.flush();expect(document.activeElement).toBe(nested.trigger);expect(mediaListeners()).toBe(1);

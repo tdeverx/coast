@@ -1,7 +1,7 @@
 import { onMount, untrack, tick } from 'svelte';
 import { page } from '$app/state';
 import { usePlayback } from '#lib/playback/context.svelte.js';
-import { noCrop, videoFitStyle } from '#lib/playback/crop.js';
+import { noCrop, resolveFrameCrop, videoFitStyle } from '#lib/playback/crop.js';
 import { heroPlaybackVisible } from '#lib/playback/visibility.js';
 /** Each hero owns its video element, artwork-time buffering, crop fitting and cleanup. */
 export function createHeroPlayback(get:()=>{id?:string;active:boolean;size:{width:number;height:number}}) {
@@ -10,13 +10,13 @@ export function createHeroPlayback(get:()=>{id?:string;active:boolean;size:{widt
   let video = $state<HTMLVideoElement>();
   let foreground = $state(true);
   let frame = $state({ width: 0, height: 0 });
-  const crop = $derived(heroPlayer.crop ?? noCrop);
+  const crop = $derived(resolveFrameCrop(heroPlayer.crop, frame.width, frame.height) ?? noCrop);
   const permitted = $derived(page.data.capabilities?.playback !== false && page.data.capabilities?.screen !== false);
   const owner=$derived(get());
   const claimed=$derived(owner.active&&!!owner.id&&heroPlayer.id===owner.id);
   const visible = $derived(claimed && permitted && heroPlaybackVisible(heroPlayer.visible,player));
   const videoStyle = $derived(videoFitStyle(frame.width, frame.height,
-    owner.size.width,owner.size.height,crop,true));
+    owner.size.width,owner.size.height,crop,Object.values(crop).some(edge => edge > 0)));
 
   function failed() {
     if(!claimed)return;

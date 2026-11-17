@@ -16,12 +16,21 @@
   import { usePlayback } from '#lib/playback/context.svelte.js';
   import type { FriendEntry } from '#lib/social/model.js';
   import { defaultPartySettings, type RoomState } from '#lib/playback/synced/model.js';
-  import { id, movie, today } from './demo/fixtures';
+  import type { PlaybackQualityInfo } from '#lib/playback/quality.js';
+  import { id, movie, previewSubtitleTracks, today } from './demo/fixtures';
 
   let { name, scenario = 'default' }: { name: string; scenario: string } = $props();
   let open = $state(false);
-    let position = $state(945);
+  let position = $state(945);
   const {player} = usePlayback();
+  const videoQuality: PlaybackQualityInfo = {
+    selection: {}, mode: 'transcode', height: 2160, bitrate: 36_000_000, bitrateLimit: 20_000_000, allowTranscode: true,
+    videoCodecs: ['h264', 'hevc'], audioCodecs: ['aac', 'ac3'],
+    audioTracks: [
+      { index: 1, label: 'English · 5.1', channels: 6, default: true },
+      { index: 2, label: 'French · Stereo', channels: 2 },
+    ],
+  };
   const names = ['Alice', 'Sam', 'Taylor', 'Morgan', 'Jamie', 'Robin', 'Alex', 'Casey'];
   const reading = { format: 'cbz', page: 12, total: 32 } as const;
   const participants = names.map((username, index) => ({
@@ -88,7 +97,11 @@
     if (selected === 'NotificationToasts') void import('#lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
     if (selected === 'PersistentPlayer' && ['controller', 'audio'].includes(scenario)) {
       untrack(()=>{
-        player.session={id,mediaId:id,mediaType:scenario === 'audio' ? 'audio' : 'video',title:'Preview track',detail:'Preview artist · Preview album',artwork:movie.poster,url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:conditions.subtitles ? [{index:0,label:'English',url:'/preview-subtitles.vtt'},{index:1,label:'English (SDH)',url:'/preview-subtitles-sdh.vtt'}] : [],sources:[{id:'preview-original',label:'Original',edition:''},{id:'preview-extended',label:'Extended',edition:'Extended'}]};
+        player.session={id,mediaId:id,mediaType:scenario === 'audio' ? 'audio' : 'video',title:'Preview track',detail:'Preview artist · Preview album',artwork:movie.poster,url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:conditions.subtitles ? previewSubtitleTracks : [],sources:[{id:'preview-original',label:'Original',edition:''},{id:'preview-extended',label:'Extended',edition:'Extended'}]};
+        if (scenario !== 'audio') {
+          player.session.quality = { ...videoQuality, selection: {} };
+          player.session.initialCrop = { left: 0, right: 0, top: 0.1, bottom: 0.1 };
+        }
         player.audioQueue = [{id,title:'Preview track',availability:'available'}]; player.audioIndex = 0;
         player.role='playback';player.paused=true;player.controlsVisible=true;
       });
@@ -151,7 +164,7 @@
     {#if scenario === 'error'}<Toast kind="error" text="This source could not be played." onaction={() => action('Retried playback')} />
     {:else if scenario === 'postplay'}<EmptyState title="Playback finished" description="This shared item has finished." icon="check" /><Button onclick={() => action('Closed')}>Close</Button>
     {:else if scenario === 'hidden'}<p class="small quiet">Playback chrome is hidden while the player’s existing controls visibility is off.</p>
-    {:else}<div class="row"><Button size="icon" icon={scenario === 'playing' ? 'pause' : 'play'} label={scenario === 'playing' ? 'Pause' : 'Play'} disabled={follower} onclick={() => action(scenario === 'playing' ? 'Paused' : 'Playing')} /><PlaybackTimeline audio={audioMode} title={audioMode ? 'Preview track' : 'Preview series'} detail={follower ? 'Playback is controlled by the host' : 'S01E03 · Preview episode'} current={position} duration={2700} onseek={follower ? undefined : value => position = value} /><Button size="icon" icon="close" label="Close player" onclick={() => action('Closed')} /></div>{/if}
+    {:else}<div class="row"><Button size="icon" icon={scenario === 'playing' ? 'pause' : 'play'} label={scenario === 'playing' ? 'Pause' : 'Play'} disabled={follower} onclick={() => action(scenario === 'playing' ? 'Paused' : 'Playing')} /><Button size="icon" icon="stop" label="Stop playback" onclick={() => action('Stopped')} /><PlaybackTimeline audio={audioMode} title={audioMode ? 'Preview track' : 'Preview series'} detail={follower ? 'Playback is controlled by the host' : 'S01E03 · Preview episode'} current={position} duration={2700} onseek={follower ? undefined : value => position = value} /></div>{/if}
     {/if}
   {/if}
 {/key}

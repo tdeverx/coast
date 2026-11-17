@@ -44,8 +44,12 @@ try{
   await player.getByRole('button',{name:'Pause',exact:true}).click();await expect.poll(count).toBe(before+1);
   await page.screenshot({path:`${output}/audio-${delivery}-${mobile?'mobile':'desktop'}.png`,fullPage:false});
   await player.getByRole('button',{name:'Next track',exact:true}).click();await expect(player).toContainText('Coast Audio Two');await expect(page.getByRole('status').filter({hasText:'Skipped unavailable tracks: Coast missing audio'})).toBeVisible();
-  await player.getByRole('button',{name:'Playback options',exact:true}).click();await page.getByRole('menuitem',{name:'Queue',exact:true}).click();await expect(page.getByRole('menuitemradio',{name:'Coast missing audio',exact:true})).toHaveAttribute('aria-disabled','true');await page.keyboard.press('Escape');await page.keyboard.press('Escape');
-  await player.getByRole('button',{name:'Close player',exact:true}).click();await expect(player).toHaveCount(0);
+  await player.getByRole('button',{name:'Volume',exact:true}).press('ArrowDown');
+  await page.getByRole('menuitem',{name:'Advanced options',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Current queue',exact:true}).click();
+  await expect(page.getByRole('menuitemradio',{name:'Coast missing audio',exact:true})).toHaveAttribute('aria-disabled','true');
+  for(let level=0;level<3;level++)await page.keyboard.press('Escape');
+  await player.getByRole('button',{name:'Stop playback',exact:true}).click();await expect(player).toHaveCount(0);
   await page.goto(`${origin}/music/${fixture.connectionId}/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`);await expect.poll(()=>page.locator('.page-shell').evaluate(e=>(e as HTMLElement).style.getPropertyValue('--active-hero-height'))).not.toBe('');await page.getByRole('button',{name:'Play',exact:true}).click();await expect(player).toBeVisible();
   const seekBefore=await count();await expect.poll(()=>page.locator('audio').evaluate(a=>(a as HTMLAudioElement).currentTime)).toBeGreaterThan(0.3);await page.getByRole('slider',{name:'Playback position'}).press('End');await expect(player).toHaveCount(0,{timeout:10000});expect(await count()).toBe(seekBefore);
   await page.getByRole('button',{name:'Play',exact:true}).click();await expect(player).toBeVisible();

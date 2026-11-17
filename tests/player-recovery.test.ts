@@ -28,7 +28,7 @@ test('terminal player errors request one alternate copy for the failed personal 
   const preview=false, src='/stream', audioMode=false, partyRoom=null, sharedMode=false;
   const tracePlayback=()=>{}, clearStreamFailure=()=>{}, media=null;
   const feedbackForViewer=()=>({failure:()=>{throw Error('Successful fallback cannot publish a failure');}});
-  let failedSessionId='';
+  let failedSessionId='',switchingVideo;
   ${new Bun.Transpiler({loader:'ts'}).transformSync(handler)}
   return failure;
  `);

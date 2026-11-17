@@ -109,7 +109,7 @@
  }
  reportFailure(()=>failure || (open ? activeSegment==='party' ? parties.error : activeSegment==='invites' ? '' : roster.error : ''),refresh);
 </script>
-{#snippet activeParty()}<SyncedControls inline embedded/>{/snippet}
+{#snippet activeParty()}<SyncedControls embedded/>{/snippet}
 <Dialog bind:open title={restricted?"Invite people":"Friends"} popover={true} anchor={preview?undefined:"#friends-trigger"} {onclose} footer={activeRoom?activeParty:undefined}>
  {#snippet heading()}<Heading title={restricted?"Invite people":"Friends"}>
   {#snippet heading()}{#if !restricted}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[]),...(!preview?[{value:'invites',label:'Invite people'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/if}{/snippet}

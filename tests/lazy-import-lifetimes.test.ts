@@ -10,7 +10,8 @@ const rootScript=(await componentScript(paths[0])).split('const watching =')[0].
 // Vite supplies this constant in the app; the standalone development fixture has no Vite environment.
 const feedScript=(await componentScript(paths[1])).replace('let { data } = $props();','').replaceAll('import.meta.env.DEV','true');
 const playerScript=await componentScript(paths[2]);
-const startup=playerScript.slice(playerScript.indexOf('$effect(() => {\n    if (preview) return;\n    const url = src,'),playerScript.indexOf('// Analysis has a shorter lifetime'));
+const startupStart=playerScript.indexOf('$effect(() => {\n    if (preview) return;\n    const url = src,');
+const startup=playerScript.slice(startupStart,playerScript.indexOf('\n  $effect(',startupStart + 1));
 if(!startup.includes('ownsStartup')||!startup.includes('void start().catch'))throw Error('Actual player startup fixture boundary changed');
 const playerFeedback=playerScript.slice(playerScript.indexOf('reportFailure(()=>startupImportError'),playerScript.indexOf('reportFailure(()=>trackingNotice'));
 const contextSource=await Bun.file(new URL('../src/lib/ui/client-context.ts',import.meta.url)).text();
@@ -39,8 +40,8 @@ const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(
   return {feedback,get reloads(){return reloads;},get component(){return DynamicFeed;},setData(next){page.data=next;},setSection(value){page.url=new URL('https://example.invalid/for-you'+(value?'?section='+value:''));},dispose(){cleanups.forEach(cleanup=>cleanup());}};
  }
  export function createStartup(initial,element,transport,inPreview=false){
-  const player=$state({session:initial,paused:false});let preview=inPreview,hls=null,error=$state(''),startupAttempt=$state(0),retryStartup,startupImportError=$state(''),bars;
-  const src=$derived(player.session?.url),media=element,noCrop={},partyRoom=null;
+  const player=$state({session:initial,paused:false});let preview=inPreview,hls=null,error=$state(''),startupAttempt=$state(0),retryStartup,startupImportError=$state(''),switchingVideo;
+  const src=$derived(player.session?.url),media=element,partyRoom=null;
   const clearStreamFailure=()=>{},streamInterrupted=()=>{},failure=async()=>{},message=cause=>cause.message;
   let fallbacks=0;const switchEdition=()=>{fallbacks++;},feedback=[],reportFailure=(read,retry)=>feedback.push({read,retry});
   let reloads=0;const useClient=()=>({preview:inPreview,feedback:{watch:(read,retry)=>feedback.push({read,retry})}}),window={location:{reload:()=>reloads++}};
