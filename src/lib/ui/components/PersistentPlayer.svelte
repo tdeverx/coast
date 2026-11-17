@@ -83,7 +83,7 @@
   const audioMode = $derived(player.session?.mediaType === 'audio');
   const sharedMode = $derived(!!player.session?.shareId);
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
-  let playedSeconds = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
+  let playedSeconds = 0, playedBeforeRefresh = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
   function coveredPlayback() {
     const ranges = media?.played;
     let covered = 0;
@@ -97,7 +97,7 @@
     if (playedAt) playedSeconds += actualPlayedDelta(playedPosition, media.currentTime, (now - playedAt) / 1000, wasPlaying, seeking);
     // Native played ranges exclude seek gaps, pauses and buffering, and retain the
     // endpoints that coarse timeupdate events can miss on a complete traversal.
-    playedSeconds = Math.max(playedSeconds, coveredPlayback());
+    playedSeconds = Math.max(playedSeconds, playedBeforeRefresh + coveredPlayback());
     playedAt = now;
     playedPosition = media.currentTime;
     current = media.currentTime;
@@ -517,7 +517,9 @@
     if (preview) return;
     const session = player.session;
     if (session) {
-      playedSeconds = 0; playedPosition = session.startSeconds; playedAt = 0; wasPlaying = false; seeking = false;
+      playedBeforeRefresh = session.playedBeforeRefresh ?? 0;
+      playedSeconds = playedBeforeRefresh;
+      playedPosition = session.startSeconds; playedAt = 0; wasPlaying = false; seeking = false;
       if (!session.handoff) crop = false;
       subtitle = session.defaultSubtitleIndex ?? -1;
       captions = [];
@@ -614,8 +616,10 @@
       savePlaybackSnapshot();
       return;
     }
+    accountPlayed();
     savePlaybackSnapshot({
       viewer, session, position: switchingVideo ? current : media?.readyState >= 1 ? media.currentTime : session.startSeconds,
+      playedSeconds: audioMode ? playedSeconds : 0,
       subtitle, volume, crop, paused: player.paused, muted: player.muted, browsing: player.browsing,
       continuationId: player.continuationId, queue: player.audioQueue, queueIndex: player.audioIndex,
     });
@@ -636,6 +640,7 @@
     if (saved.session.mediaType !== 'audio') switchingVideo = {};
     player.session = {
       ...saved.session, handoff: true, startSeconds: saved.position, startPaused: saved.paused,
+      playedBeforeRefresh: saved.playedSeconds,
       defaultSubtitleIndex: saved.subtitle, subtitlePrompt: false,
     };
     player.audioQueue = saved.queue;

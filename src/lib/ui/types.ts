@@ -143,6 +143,7 @@ export interface PlaybackView {
   quality?: import('#lib/playback/quality.js').PlaybackQualityInfo;
   startPaused?: boolean;
   handoff?: boolean;
+  playedBeforeRefresh?: number;
   subtitles: {
     index: number;
     label: string;

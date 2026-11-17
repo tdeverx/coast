@@ -90,7 +90,7 @@
     },
     "src/lib/ui/components/PersistentPlayer.svelte": {
       "previous": "b78685e9f94610c099022cd090738b3ebbc199ace53491ba63404a1afcf5c0ce",
-      "current": "128522e93400c49df9968b6c0ded3f399ae2d0cae009ed535b1fe749bd4f771c"
+      "current": "57f57ccbe5c3ad80bb14883c5fca69e3d742c19827e85238d128333fa2c167a2"
     },
     "src/lib/ui/components/SyncedControls.svelte": {
       "previous": "a9cbb50797346027268a207fbb3e3597339067d4b13b6a15a096b8c180bb813a",
@@ -110,7 +110,7 @@
     },
     "src/lib/ui/types.ts": {
       "previous": "bf6c6db22f4e63e6a8ed5318e022091e6ea127ae63b16834741675ae0e17e5e5",
-      "current": "5cdf7ef63194d462331874e8e5350616d76d1458e6df80c0f3ca6e14a09b38d3"
+      "current": "6bd991b61779ba50cb12d4073a55fd0f51e1eca1e60f220873bfc4936440a192"
     },
     "src/lib/ui/work-menu/ScreenActions.svelte": {
       "previous": "e4a273e1ceff0feef98ddd36b121a50557bba29d9edb3bc5a513838527a25533",
@@ -170,7 +170,7 @@
     },
     "tests/player-recovery.test.ts": {
       "previous": "c14c23183a4c29f4aac1b11e28d92f4991c0e98c0dc4ff08dca754a1c2f52b5d",
-      "current": "2a48a48cbf5d3f7d78be651dd4b01f6eec1e454c473317e9f807e4080f90e463"
+      "current": "13ba8ffc93ab3e2ca89d2f92be3cec21e2a82324f50b088dfa36a96bddbdc7f9"
     },
     "tests/player-stop-lifecycle.test.ts": {
       "previous": "5599a7efeddf3976099e5c3c31b4569cd3d73e1f1653ab74a53531ce1e07e281",
@@ -190,7 +190,7 @@
     }
   },
   "supportingFiles": {
-    "src/lib/playback/persistence.ts": "1c4d330482ddc630feae87ee3c0024c5f567ae40f0e18239cf60984210d59631",
+    "src/lib/playback/persistence.ts": "ed4b4e5a502bbc80fb38dbcde55679a24ee62e5d368233d597138779ac97b5a9",
     "src/lib/playback/quality.ts": "f581540006f0c60f53f53cfef4549d665c1c42db285338137a08f3ccd6712b62",
     "src/lib/playback/subtitle-controls.svelte.ts": "8d6e3c22085d5fe9a10b1dc96acd4da76a6ca027e3bf1e57e774162b1fae7d73",
     "src/lib/playback/subtitle-selection.svelte.ts": "246e243e1d10770cdb4c59c817f7b17319ab9bdd81bc2689d81819a28398c053",
@@ -203,5 +203,5 @@
     "tests/subtitle-playback.test.ts": "4ca6bafe64a9088263aa317090e0b7a63c2ef6cf07ba42173d6782a39cb0a690"
   },
   "report": "docs/audits/2026-11-17-subtitle-playback/source-refresh.md",
-  "reportSha256": "1ecd07c277b648efa15d443fe20776de6eb98599d3d1c474d135933087896f00"
+  "reportSha256": "e75e2e0f537fda5876a4764cb84da62e8aa1a23219d57e72cc445e2938a195b3"
 }

@@ -5,6 +5,7 @@ type PlaybackSnapshot = {
   viewer: string;
   session: PlaybackView;
   position: number;
+  playedSeconds: number;
   subtitle: number;
   volume: number;
   crop: boolean;
@@ -31,7 +32,8 @@ export function takePlaybackSnapshot(viewer: string): PlaybackSnapshot | undefin
     sessionStorage.removeItem(key);
     if (!saved || saved.viewer !== viewer || saved.session?.shareId ||
         saved.session?.url !== `/api/v1/playback/${saved.session?.id}/stream` ||
-        !Number.isFinite(saved.position) || !Number.isFinite(saved.volume) || !Array.isArray(saved.queue)) return;
+        !Number.isFinite(saved.position) || !Number.isFinite(saved.playedSeconds) || saved.playedSeconds < 0 ||
+        !Number.isFinite(saved.volume) || !Array.isArray(saved.queue)) return;
     return saved;
   } catch {
     savePlaybackSnapshot();
