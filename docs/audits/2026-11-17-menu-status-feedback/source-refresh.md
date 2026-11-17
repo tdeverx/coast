@@ -35,3 +35,5 @@ The local green results above precede this cleanup. **No local test or validatio
 ## Account transition review
 
 The root layout and persistent player follow the current viewer for watched errors. Playback fallback and final-save feedback capture the viewer when the operation starts. The toast host filters presentation by viewer and clears only the departing viewer’s notices on teardown. Regression cases exercise sign-in with an existing watcher, an old operation finishing late, and host replacement with a pending Undo action. Validation for this revision runs in PR CI.
+
+The initial review-fix CI run identified a missing dependency in the extracted playback stop test fixture. The fixture now supplies the feedback capture used by the production handler. Its playback assertions are unchanged.

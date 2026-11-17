@@ -180,6 +180,10 @@
       "previous": "ac79a20a0ac68a153ca06e5594ad0aeb9c77d6ff5d6f67d3bc968c8ab68972f1",
       "current": "c14c23183a4c29f4aac1b11e28d92f4991c0e98c0dc4ff08dca754a1c2f52b5d"
     },
+    "tests/player-stop-lifecycle.test.ts": {
+      "previous": "bbf65744fecbe0c6afd66a9ff79e414c109a86e72caeabe45d4f483218db64b5",
+      "current": "5599a7efeddf3976099e5c3c31b4569cd3d73e1f1653ab74a53531ce1e07e281"
+    },
     "tests/request-dialog-lifetime.test.ts": {
       "previous": "ea1d5639b3c1ae841bc32be75bf4444a4726a6688ea29a9b34e5fcca93645689",
       "current": "7d257a3d825a5d675994bcff5b1a06cbab0fc4e815ab9150155b076466db4839"
@@ -214,5 +218,5 @@
     "tests/toast-stamps.test.ts": "966636f811ec756da84d160b2f8569eeb7538fca3394495911187fe005ec07a6"
   },
   "report": "docs/audits/2026-11-17-menu-status-feedback/source-refresh.md",
-  "reportSha256": "cc1959468ef5e8ccb747039c3a4c98b668cd6abb00e356fad735086ac5814a24"
+  "reportSha256": "2c040be8fa729ce0e80e829dc5a7c326d834d050b960dfe9fa9c1f29f9bfaa00"
 }
