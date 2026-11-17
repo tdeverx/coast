@@ -13,11 +13,15 @@ export const temporaryFeedback = (notice: ActionNotice) => notice.kind === 'info
 /** One delivery channel per client scope. Preview clients never publish into the application. */
 export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=>void,viewer?:()=>string|undefined) {
   const state = $state<{ notices: ActionNotice[]; hosts: string[]; notifications?: Snippet }>({ notices: [], hosts: [] });
-  const current = () => state.notices.at(-1) ?? null;
+  const current = () => {
+    const viewerId = viewer?.();
+    return state.notices.findLast(notice => notice.viewerId === viewerId) ?? null;
+  };
   function publish(input: Omit<ActionNotice,'id'>,persist=true) {
-    const previous=input.owner?state.notices.find(value=>value.owner===input.owner):undefined;
-    const notice={...input,id:previous?.id??crypto.randomUUID(),viewerId:viewer?.()};
-    state.notices = [...state.notices.filter(value => value.owner !== notice.owner ||
+    const viewerId = viewer?.();
+    const previous = input.owner ? state.notices.find(value => value.viewerId === viewerId && value.owner === input.owner) : undefined;
+    const notice = {...input, id: previous?.id ?? crypto.randomUUID(), viewerId};
+    state.notices = [...state.notices.filter(value => value.viewerId !== viewerId || value.owner !== notice.owner ||
       !notice.owner && (value.kind !== notice.kind || !!value.undo !== !!notice.undo)), notice];
     if(persist)record?.({id:notice.id,text:notice.text,kind:notice.kind,pending:notice.busy},notice.viewerId);
   }
@@ -25,10 +29,16 @@ export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=
   function pending(text: string, owner: symbol) { publish({ text, owner, kind: 'info', busy: true, error: '' }); }
   function failure(text: string, retry?: () => unknown, owner?: symbol, actionLabel?:string) { publish({ text, retry, owner, actionLabel, kind: 'error', busy: false, error: '' }); }
   function clear(owner?: symbol) {
-    if (owner) state.notices = state.notices.filter(value => value.owner !== owner);
-    else state.notices = state.notices.slice(0, -1);
+    const viewerId = viewer?.();
+    if (owner) state.notices = state.notices.filter(value => value.viewerId !== viewerId || value.owner !== owner);
+    else {
+      const notice = current();
+      if (notice) state.notices = state.notices.filter(value => value !== notice);
+    }
   }
-  function clearAll() { state.notices = []; }
+  function clearAll({viewerId} = {viewerId: viewer?.()}) {
+    state.notices = state.notices.filter(value => value.viewerId !== viewerId);
+  }
   async function act() {
     const notice = current();
     if (!notice || notice.busy || !(notice.undo || notice.retry)) return;
@@ -51,8 +61,9 @@ export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=
   }
   function watch(read: () => FailureSource, retry?: () => unknown) {
     const owner = Symbol('operation feedback');
-    let previous = '';
+    let previous = '', previousViewer = untrack(() => viewer?.());
     $effect(() => {
+      const viewerId = viewer?.();
       const source = read();
       const text = (source && typeof source === 'object' ? source.text : source)?.trim() ?? '';
       const attempt = source && typeof source === 'object' ? source.retry : retry;
@@ -60,14 +71,15 @@ export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=
       untrack(() => {
         if (text && text !== previous) failure(text, attempt, owner, actionLabel);
         else if (!text) clear(owner);
-        else {
-          const notice = state.notices.find(value => value.owner === owner);
+        else if (viewerId === previousViewer) {
+          const notice = state.notices.find(value => value.viewerId === viewerId && value.owner === owner);
           if (notice) { notice.retry = attempt; notice.actionLabel = actionLabel; }
         }
         previous = text;
+        previousViewer = viewerId;
       });
     });
-    onDestroy(() => clear(owner));
+    onDestroy(() => { state.notices = state.notices.filter(value => value.owner !== owner); });
   }
   function host(id: string) {
     untrack(() => { state.hosts = [...state.hosts.filter(value => value !== id), id]; });
@@ -99,8 +111,10 @@ actionFeedback.recording=recording;
 /** Async component continuations keep their original viewer's feedback authority. */
 export function feedbackForViewer(viewerId=page.data.user?.id):Feedback{
   const active=()=>page.data.user?.id===viewerId;
-  const guarded=new Set(['notify','pending','failure','clear','clearAll','act','recordingFailure']);
+  const guarded=new Set(['notify','pending','failure','clear','act','recordingFailure']);
   return new Proxy(actionFeedback,{get(target,key){
+    // A keyed host can retire after the current viewer has already changed.
+    if(key==='clearAll')return()=>target.clearAll({viewerId});
     if(key==='watch')return(read:()=>FailureSource,retry?:()=>unknown)=>target.watch(()=>active()?read():undefined,retry);
     const value=Reflect.get(target,key,target);
     if(guarded.has(String(key))&&typeof value==='function')return(...args:unknown[])=>{if(active())return Reflect.apply(value,target,args);};

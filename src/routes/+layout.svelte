@@ -9,7 +9,7 @@
   const readerAllowed=$derived(!!data.user||reader.session?.shared===true);
   function loadReader(){if(readerAllowed&&reader.visible&&!readerImport.busy)return readerImport.load(async()=> (await import('#lib/reading/Reader.svelte')).default);}
   $effect(()=>{const viewer=data.user?.id,shared=reader.session?.shared?reader.session.id:undefined;if((!viewer&&!shared)||!reader.visible)return;untrack(()=>{if(!readerImport.data)void loadReader();});return()=>readerImport.cancel();});
-  reportImportFailure(()=>readerAllowed&&reader.visible&&readerImport.error?'The reader could not load. Reload the page to try again.':'');
+  reportImportFailure(()=>readerAllowed&&reader.visible&&readerImport.error?'The reader could not load. Reload the page to try again.':'', 'current-viewer');
   import {closeNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import {closeFriends} from '#lib/ui/panels/friends.svelte.js';
   import {closeStreams} from '#lib/ui/panels/streams.svelte.js';
@@ -108,7 +108,7 @@
 
   reportImportFailure(() => streamsOpen && streamsImport.error
     ? 'Stream activity could not load. Reload the page to try again.'
-    : '');
+    : '', 'current-viewer');
 
   const detailImport = createResource<
     typeof import('#lib/media/DetailPanel.svelte').default |
@@ -146,7 +146,7 @@
 
   reportImportFailure(() => data.user && page.state.mediaDetailHref && detailImport.error
     ? 'Title details could not load. Reload the page to try again.'
-    : '');
+    : '', 'current-viewer');
 
   function loadNotifications() {
     if (notificationOpen && !notificationImport.busy) return notificationImport.load(async () => (await import('#lib/ui/components/NotificationInbox.svelte')).default);
@@ -182,11 +182,11 @@
 
   reportImportFailure(() => notificationOpen && notificationImport.error
     ? 'Notifications could not load. Reload the page to try again.'
-    : '');
+    : '', 'current-viewer');
 
   reportImportFailure(() => friendsOpen && friendsImport.error
     ? 'Friends could not load. Reload the page to try again.'
-    : '');
+    : '', 'current-viewer');
 
   onDestroy(() => {
     for (const resource of [
@@ -288,12 +288,12 @@
 
     };
   });
-  reportFailure(()=>syncedPlayer.notice);
+  reportFailure(()=>syncedPlayer.notice, undefined, 'current-viewer');
   reportFailure(() => expiredViewer && expiredViewer === data.user?.id ? {
     text: 'Your session has expired. Your current page is still here.',
     actionLabel: 'Sign in again',
     retry: () => goto(`/login?next=${encodeURIComponent(page.url.pathname + page.url.search)}`),
-  } : '');
+  } : '', undefined, 'current-viewer');
 </script>
 
 <svelte:head

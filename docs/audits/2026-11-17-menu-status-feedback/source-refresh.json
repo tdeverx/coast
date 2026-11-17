@@ -66,11 +66,11 @@
     },
     "src/lib/ui/action-feedback.svelte.ts": {
       "previous": "5a64439996d4ca830668c6cef179ef2f6021d19134bfdd951c2967a5a0116397",
-      "current": "8f6bddee576cee0246838da4b5b3facd85e3fa9c8890a5af5bda9be4c7d9f1cd"
+      "current": "d8511994d9256362d0f5de7ad689d8be320c9cfa2ca9348e8a07cd89bda97416"
     },
     "src/lib/ui/client-context.ts": {
       "previous": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
-      "current": "643726afccf034d74088bb0785a39b6fa7f063ab5146486dffeb33982075c638"
+      "current": "1d84fca3011273e48719435bc47bf810a4c8e674df01e29f8edfb562be87a8a3"
     },
     "src/lib/ui/client.ts": {
       "previous": "9c650119432ebe58afc2f52d818b99b7b3f15723c1a22c0ae19db670f0d76ec2",
@@ -91,6 +91,10 @@
     "src/lib/ui/components/NotificationToasts.svelte": {
       "previous": "695be9484874a288106b92a670af8ba92fe8f6901ed2db02ce093d45ccc9c862",
       "current": "76401ea3bcd49c08138fd8fb2755fd663586c9d9b7f2b1da6a05a489c14cbf3b"
+    },
+    "src/lib/ui/components/PersistentPlayer.svelte": {
+      "previous": "9ae2495abf6d84d3608dd064ea835a3af4b66b1de17cf9e4f4681b862b03ecd5",
+      "current": "b78685e9f94610c099022cd090738b3ebbc199ace53491ba63404a1afcf5c0ce"
     },
     "src/lib/ui/components/RequestDialog.svelte": {
       "previous": "aded52b2be5527db448e234d65c6aab56ea7f51061e64f14ad05d26dd16a3603",
@@ -124,6 +128,10 @@
       "previous": "246ad9e312d284b73cc3285ea6c9f028fff7969f02b7e497d5fe28f605649cdc",
       "current": "420b1ad2afcc5640b44cc008fe1e206b62ac0afeeee50743dac57f08c4416770"
     },
+    "src/routes/+layout.svelte": {
+      "previous": "514c39da192736cb7b572b0d7ea2629298fe4d8531a205ada6fd3c3a9fee769b",
+      "current": "b55bf72d59bbca6fa3010ca182b3446790d573b6d19a2b8db3c0f7c0a6aaf6b8"
+    },
     "src/routes/ui-preview/Demo.svelte": {
       "previous": "f46617f571f771105f0ff7facda1c07c5d2d2604cfdba2ac5f652a804ff63850",
       "current": "5ca8cfa9dbc243e2a4e32a0d41665e0bb2112f147642bd9bc7a6ddbaf2b8ea12"
@@ -135,6 +143,18 @@
     "src/routes/ui-preview/props.ts": {
       "previous": "2c41d2695f77a4e96507c1f3e8894be7fcbf9d9d4d024c0d22c79751e7636067",
       "current": "5d5be8b1181131b9e1666b96b60dfb4611115e044e0b5d58df45220ef4853e72"
+    },
+    "tests/auth-feedback.test.ts": {
+      "previous": "374ebd76420ea7f3724ba9e509b33c89dff64c0d07467c222d9ff23a617b0e8e",
+      "current": "51f3c34a9a80e133199d58805621e4a573f9e60e9ceea0b38440366c1c289adb"
+    },
+    "tests/avatar-picker-lifetime.test.ts": {
+      "previous": "a118ee4cb9e261029bc79a1b631b09fdd7fa7f4180370c2ec0b4d1a6f5ed0657",
+      "current": "b706d2b9825363b4f81b43a0b8f2b063d1fc5a1a53d770ccf7367bb3aa7f4321"
+    },
+    "tests/lazy-import-lifetimes.test.ts": {
+      "previous": "6e040440019a201dce6b91d15594b9a463bc02ee06a2446c2300142e2ef5efd3",
+      "current": "0fe4ff4bd7a03076920be2990c3aecb6347d9d2d12cd17f9787b1a4db7552d1e"
     },
     "tests/media-lifecycle-client.test.ts": {
       "previous": "353179700e2fd532512e536efad364c9c3911686f9b2ebff69646d155d5957ae",
@@ -156,9 +176,17 @@
       "previous": "37961991fb71d7513a0f1e3f1852f4e7e4b7611f01ca386e1e79ffbfc02fe2d0",
       "current": "a8e65f0fa74182504e8749b395a3a35943d3fd27276a3d123c7914e668160048"
     },
+    "tests/player-recovery.test.ts": {
+      "previous": "ac79a20a0ac68a153ca06e5594ad0aeb9c77d6ff5d6f67d3bc968c8ab68972f1",
+      "current": "c14c23183a4c29f4aac1b11e28d92f4991c0e98c0dc4ff08dca754a1c2f52b5d"
+    },
     "tests/request-dialog-lifetime.test.ts": {
       "previous": "ea1d5639b3c1ae841bc32be75bf4444a4726a6688ea29a9b34e5fcca93645689",
       "current": "7d257a3d825a5d675994bcff5b1a06cbab0fc4e815ab9150155b076466db4839"
+    },
+    "tests/route-refresh.test.ts": {
+      "previous": "4a85de02f275cd9b83fb690517220160701d5883a0c81a9f90ff198403affe48",
+      "current": "2430747bccb4158be374546199c3a2f152715a1d44e439567c325a89ba93acda"
     },
     "tests/ui-client.test.ts": {
       "previous": "c9a44d1bf579c01e4b155096ca662f954761420cba0d94640f850cf45513bf48",
@@ -166,7 +194,7 @@
     },
     "tests/ui-feedback.test.ts": {
       "previous": "71c0afcf5b92547b954157cad70617bff3a1fe60dfe7746db4cd3434e852ad6d",
-      "current": "1f3d4164ee40ce4bb7d79c5e74135d64c8e5b7ae4b0a60a4de38a8db422ac893"
+      "current": "9bd175a13565758f8ea21d8a0e75e7476636862e503464e98af590826d7fc299"
     },
     "tests/ui-panel-lifecycle.test.ts": {
       "previous": "fb844136523a05d45d17ff7c4c9c6ed95813a240602d11132f5e77bfe7a683d7",
@@ -175,22 +203,6 @@
     "tests/ui-shelf-controls.test.ts": {
       "previous": "41550455c9e92cd899f75c3e40a7c390833081d3793201d96beb825cfe6dc1a7",
       "current": "8b7938cca55a2c8d1ec28bd714bf22ead370e1dfbbf83334dc01ede72d78e693"
-    },
-    "tests/auth-feedback.test.ts": {
-      "previous": "374ebd76420ea7f3724ba9e509b33c89dff64c0d07467c222d9ff23a617b0e8e",
-      "current": "51f3c34a9a80e133199d58805621e4a573f9e60e9ceea0b38440366c1c289adb"
-    },
-    "tests/avatar-picker-lifetime.test.ts": {
-      "previous": "a118ee4cb9e261029bc79a1b631b09fdd7fa7f4180370c2ec0b4d1a6f5ed0657",
-      "current": "b706d2b9825363b4f81b43a0b8f2b063d1fc5a1a53d770ccf7367bb3aa7f4321"
-    },
-    "tests/lazy-import-lifetimes.test.ts": {
-      "previous": "6e040440019a201dce6b91d15594b9a463bc02ee06a2446c2300142e2ef5efd3",
-      "current": "0fe4ff4bd7a03076920be2990c3aecb6347d9d2d12cd17f9787b1a4db7552d1e"
-    },
-    "tests/route-refresh.test.ts": {
-      "previous": "4a85de02f275cd9b83fb690517220160701d5883a0c81a9f90ff198403affe48",
-      "current": "2430747bccb4158be374546199c3a2f152715a1d44e439567c325a89ba93acda"
     }
   },
   "supportingFiles": {
@@ -202,5 +214,5 @@
     "tests/toast-stamps.test.ts": "966636f811ec756da84d160b2f8569eeb7538fca3394495911187fe005ec07a6"
   },
   "report": "docs/audits/2026-11-17-menu-status-feedback/source-refresh.md",
-  "reportSha256": "931256f7586744bbd3ac8f540b198e9f4f9f1aee151ffe0aebd15ebfff368427"
+  "reportSha256": "cc1959468ef5e8ccb747039c3a4c98b668cd6abb00e356fad735086ac5814a24"
 }
