@@ -8,6 +8,7 @@ import { mediaActionData, mediaHistory, mediaActivity } from '#lib/server/querie
 
 import * as v from 'valibot';
 import { AppError } from '#lib/server/security/errors.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { addLocalSeasonEpisodes } from '#lib/core/media/service.server.js';
 import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '#lib/catalogue/overrides/service.server.js';
 import { loadMediaDetails } from '#lib/application/media-details.server.js';
@@ -46,13 +47,13 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
       } else if (path[2] === 'next' && path.length === 3 && method === 'GET')
         result = await showNext(uid, uuid(path[1]), url.searchParams.has('page') ? Number(url.searchParams.get('page')) : undefined, url.searchParams.get('available') === 'true', url.searchParams.get('specials') === 'true');
       else if (path[2] === 'actions' && method === 'GET')
-        result = await mediaActionData(uid, uuid(path[1]));
+        result = await withReadCancellation(context.request.signal,()=>mediaActionData(uid, uuid(path[1])));
       else if (path[2] === 'activity' && method === 'GET')
         result = await mediaActivity(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
       else if (path[2] === 'history' && method === 'DELETE')
         result = await removeHistory(uid, uuid(path[1]), body);
       else if (path[2] === 'history' && method === 'GET')
-        result = await mediaHistory(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
+        result = await withReadCancellation(context.request.signal,()=>mediaHistory(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1)));
       else if (path[2] === 'trailer' && method === 'GET')
         result = await getTrailer(uid, uuid(path[1]),context.request.signal);
       else if (path[2] === 'refresh' && method === 'POST') {

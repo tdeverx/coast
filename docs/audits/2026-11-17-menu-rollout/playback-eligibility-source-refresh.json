@@ -1,0 +1,41 @@
+{
+  "epoch": "menu-playback-eligibility-review-2026-11-17",
+  "blanketAcceptance": false,
+  "predecessorReceipts": [
+    "docs/audits/2026-11-15-invite-accounts/source-refresh.json",
+    "docs/audits/2026-11-15-invite-accounts/followup-source-refresh.json",
+    "docs/audits/2026-11-15-app-housekeeping/source-refresh.json",
+    "docs/audits/2026-11-16-recommendation-feeds/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/viewport-source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/followup-source-refresh.json",
+    "docs/audits/2026-11-17-menu-read-retry/source-refresh.json",
+    "docs/audits/2026-11-17-menu-tracking/source-refresh.json",
+    "docs/audits/2026-11-17-menu-rollout/source-refresh.json",
+    "docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json"
+  ],
+  "files": {
+    "src/lib/server/db/schema.ts": {
+      "previous": "f7bde4ca6ecb5e1aec6d4db0707804006aa9ea0c2a373ebefd66a02a8524dfc4",
+      "current": "1e80d6fee289d3007b41308ec00c692e52c25319eab1e21bf7719e51db1ae5f3"
+    },
+    "src/lib/ui/work-menu/CatalogueActions.svelte": {
+      "previous": "23726c48f35b37a3b5cfee9e6f03df16c60c828da54e490bd99e1cbea08aa3c0",
+      "current": "29f7fffb384c9887d98b241fd53ea343c381cee47852a33bc6ed8a22dc2d4af8"
+    },
+    "tests/catalogue-action-refresh-lifetime.test.ts": {
+      "previous": "c5d71017dc82d21eb54e5203372fabb7c5936474b20cd55468a769429ad2fdbc",
+      "current": "3ccda7e31cc0a5e964d98f00778fa518edc0a28bf0ce0b86ed0aa15b068b008f"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "f050bcd46e00c333e6c218a3844da93b18adb226b39e3eee3a9b8fbe6639e44c",
+      "current": "4d66e118f74b37c7eadef66ec1b642103ba741a207c9b05d07b41a621c61accd"
+    }
+  },
+  "supportingFiles": {
+    "tests/container-schema.test.ts": "6724f2ac97b9acd93e5281a758b1e44816810e051a3c3ea681584c89838a5528"
+  },
+  "report": "docs/audits/2026-11-17-menu-rollout/playback-eligibility.md",
+  "reportSha256": "754faeff76c202b15d403ce1080802f29cf9facad3527cb79cd6269558275fc6"
+}

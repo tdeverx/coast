@@ -30,10 +30,10 @@ import { friendInsights, friendDiscovery } from '#lib/social/insights.server.js'
 import { requireVisible } from '#lib/social/privacy.server.js';
 import { previewProjection, approveProjection, reviewProjection } from '#lib/collection/projection.server.js';
 import { previewSourceChange } from '#lib/collection/source-changes.server.js';
-import { musicQueue, savedMusicQueue, savedMusicQueuePage } from '#lib/music/queue.server.js';
+import { artistMusicQueue, musicQueue, savedMusicQueue, savedMusicQueuePage } from '#lib/music/queue.server.js';
 import { collectionData, collectionParameters, workActionData, workActionLists, workCards } from '#lib/collection/query.server.js';
 import { missingDemand, adminDemand } from '#lib/collection/demand.server.js';
-import { musicHistory } from '#lib/music/history.server.js';
+import { musicHistory, musicArtistTrackChoices, removeMusicListen, resetMusicPosition } from '#lib/music/history.server.js';
 import {musicChildren} from '#lib/music/details.server.js';
 import { logMusic } from '#lib/music/persistence.server.js';
 import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
@@ -43,7 +43,7 @@ import { sequenceSourceSchema } from '#lib/media/sequence.js';
 import { isHeroTitle } from '#lib/media/hero.js';
 import { mediaViewsForIds, sequenceNextView } from '#lib/server/queries/media.js';
 import { profileUser } from '#lib/server/queries/profile-user.js';
-import { progressData } from '#lib/server/queries/progress.js';
+import { progressData, tabbedProgressData } from '#lib/server/queries/progress.js';
 import { progressParameters } from '#lib/progress.js';
 import { listsData } from '#lib/server/queries/lists.js';
 import { profileSectionData, profileInsightsData } from '#lib/server/queries/profile.js';
@@ -206,6 +206,10 @@ export const handler: RequestHandler = async (event) => {
         if(action==='works'&&path.length===2)return Response.json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='recommendations')return Response.json(await social.recommendations(uid,page,url.searchParams.get('available')==='true'));
         if(action==='insights')return Response.json(url.searchParams.has('friendId')?await friendInsights(uid,uuid(url.searchParams.get('friendId'))):await friendDiscovery(uid));
+        if(action==='checkins'&&id==='episodes'&&path.length===3)return Response.json(await withReadCancellation(request.signal,async()=>
+          (await import('#lib/social/checkins-query.server.js')).checkinEpisodes(uid,uuid(url.searchParams.get('workId')),page)));
+        if(action==='checkins'&&id==='tracks'&&path.length===3)return Response.json(await withReadCancellation(request.signal,async()=>
+          (await import('#lib/social/checkins-query.server.js')).checkinArtistTracks(uid,uuid(url.searchParams.get('workId')),page)));
         if(action==='checkins'){
           const live=await (await import('#lib/social/presence.server.js')).presence(uid);
           const cards=await workCards(uid,uid,live.map((item:{workId:string})=>item.workId));
@@ -216,7 +220,12 @@ export const handler: RequestHandler = async (event) => {
         if(action==='friends')return Response.json(id?await social.changeFriend(uid,uuid(id),input):await social.requestFriend(uid,input));
         if(action==='reactions')return Response.json(await social.react(uid,input));
         if(action==='recommendations')return Response.json(id?await social.respondRecommendation(uid,uuid(id),input):await social.recommend(uid,input));
-        if(action==='checkins')return Response.json(id?await (await import('#lib/social/presence.server.js')).cancelCheckin(uid,uuid(id)):await (await import('#lib/social/presence.server.js')).startCheckin(uid,input));
+        if(action==='checkins'){
+          const checkins=await import('#lib/social/checkins.server.js');
+          if(!id)return Response.json(await checkins.startCheckin(uid,input));
+          const command=v.parse(v.optional(v.picklist(['finish','cancel']),'cancel'),input.action);
+          return Response.json(command==='finish'?await checkins.finishCheckin(uid,uuid(id)):await checkins.cancelCheckin(uid,uuid(id)));
+        }
       }
       throw new AppError(404,'Social action not found.');
     }
@@ -224,15 +233,20 @@ export const handler: RequestHandler = async (event) => {
     if(subjectId!==uid && !['collection','progress'].includes(path[0]) && !(path[0]==='profile'&&path[1]==='section'&&url.searchParams.get('section')==='favourites'))
       await requireVisible(subjectId,uid,path[1]==='activity'?'activity':'insights','screen');
     if(path[0]==='music' && path[2]==='children' && path.length===3 && method==='GET')return Response.json(await musicChildren(uid,path[1],url,request.signal));
-    if(path[0]==='music' && path[2]==='history' && path.length===3 && method==='GET')return Response.json(await musicHistory(uid,uuid(path[1]),Number(url.searchParams.get('page')??1)));
+    if(path[0]==='music' && path[2]==='history' && path.length===3 && method==='GET')return Response.json(await withReadCancellation(request.signal,()=>musicHistory(uid,uuid(path[1]),Number(url.searchParams.get('page')??1))));
+    if(path[0]==='music' && path[2]==='history' && path.length===4 && method==='DELETE')return Response.json(await removeMusicListen(uid,uuid(path[1]),uuid(path[3])));
+    if(path[0]==='music' && path[2]==='log-options' && path.length===3 && method==='GET')return Response.json(await withReadCancellation(request.signal,()=>musicArtistTrackChoices(uid,uuid(path[1]),Number(url.searchParams.get('page')??1))));
+    if(path[0]==='music' && path[1]==='artists' && path[3]==='queue' && path.length===4 && method==='GET') return Response.json(await artistMusicQueue(uid,uuid(path[2])));
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return Response.json(await musicQueue(uid,uuid(path[1])));
     if(path[0]==='music' && path[1]==='queue' && path[2]==='picker' && path.length===3 && method==='GET')return Response.json(await savedMusicQueuePage(uid,Number(url.searchParams.get('page')??1)));
     if(path[0]==='music' && path[1]==='queue' && path.length===2 && method==='GET')return Response.json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return Response.json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined,requestedPageInterval(Number(url.searchParams.get('page')??1),url.searchParams.get('firstPage')),request.signal));
     if (path[0] === 'collection' && path[1] && (path.length === 2 || path.length === 3 && path[2] === 'lists') && method === 'GET') {
+      return withReadCancellation(request.signal,async()=>{
       const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getFeatureConfig(uid),work.category);
       if (path[2] === 'lists') return Response.json(await workActionLists(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1), url.searchParams.get('reading') === 'true'));
       return Response.json(await workActionData(uid,uuid(path[1]),url.searchParams.has('playthrough')?uuid(url.searchParams.get('playthrough')):undefined));
+      });
     }
     if (path[0] === 'missing' && method === 'GET') return Response.json(await missingDemand(uid,url));
     if (path[0] === 'admin' && path[1] === 'demand' && method === 'GET') { requireAdmin(user); return Response.json(await adminDemand(url)); }
@@ -264,10 +278,16 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='library'&&path[1]==='recent'&&path.length===2&&method==='GET')
       return Response.json(await recentLibraryData(uid,{action:url.searchParams.get('action')??undefined,kind:url.searchParams.get('kind')??undefined,page:url.searchParams.has('page')?Number(url.searchParams.get('page')):undefined,preview:url.searchParams.get('preview')==='true'},request.signal));
     if (path[0] === 'progress' && path[1] === 'experiment' && path.length === 2 && method === 'GET') {
-      return Response.json(await progressExperimentData(subjectId,progressExperimentParameters(url),{preview:url.searchParams.get('preview')==='true',signal:request.signal,viewerId:uid}));
+      const segments=url.searchParams.get('segments')==='true' ? url.searchParams.has('username')?'profile':'overview' : undefined;
+      return Response.json(await progressExperimentData(subjectId,progressExperimentParameters(url),{preview:url.searchParams.get('preview')==='true',signal:request.signal,viewerId:uid,segments}));
     }
-    if (path[0] === 'progress' && path.length === 1 && method === 'GET')
-      return Response.json(await progressData(subjectId, progressParameters(url), uid));
+    if (path[0] === 'progress' && path.length === 1 && method === 'GET') {
+      const segments=url.searchParams.get('segments');
+      const options=progressParameters(url);
+      return Response.json(await (segments==='profile'||segments==='continue'
+        ? tabbedProgressData(subjectId,options,uid,segments,request.signal)
+        : progressData(subjectId,options,uid)));
+    }
     if (path[0] === 'lists' && path[1] === 'content' && path.length === 2 && method === 'GET')
       return Response.json(
         await listsData(uid, {
@@ -302,6 +322,10 @@ export const handler: RequestHandler = async (event) => {
       return Response.json(await trackWithExports(uid,{mediaId:uuid(path[1]),action:'collect',value:data.collected}));
     }
     if(path[0]==='music' && path[1] && path[2]==='log' && method==='POST') return Response.json(await logMusic(uid,uuid(path[1]),body));
+    if(path[0]==='music'&&path.length===3&&path[2]==='reset-position'&&method==='POST'){
+      v.parse(v.strictObject({}),body);
+      return Response.json(await resetMusicPosition(uid,uuid(path[1])));
+    }
 
     const context = { path, method, url, user, uid, subjectId, body, request, locals };
     for (const dispatch of [handleUpNext, handleGames, handleReading, handleGamePlaythroughs, handleSession, handleProfile, handleContinue, handleRewatch, handleTracking, handleRatings, handleMedia, handleLists, handleProviders, handleRequests, handlePlayback, handleNotifications, handleConflicts, handleQueue, handleSettings, handleAdmin]) {

@@ -6,6 +6,7 @@
   import Toast from './Toast.svelte';
   import { temporaryFeedback } from '#lib/ui/action-feedback.svelte.js';
   import { raiseToastStack } from '#lib/ui/controls/notification-toasts.js';
+  import { useMenuPreview } from '#lib/ui/controls/menu-preview.js';
   import { useClient } from '#lib/ui/client-context.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   import type { ComponentProps } from 'svelte';
@@ -22,7 +23,9 @@
     wide?: boolean; edgeToEdge?: boolean; expanding?:boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet; floating?:Snippet;
     onclose?: () => void; onrequestclose?: () => void; contentKey?: string;
   } = $props();
-  const {feedback} = useClient();
+  const {feedback, preview} = useClient();
+  const menuFixture = preview ? useMenuPreview() : undefined;
+  const previewWrapper = $derived(!!menuFixture?.wrapsMenu(title));
   const retain=useRetention();
   $effect(()=>{if(open)return retain();});
   const hostId = $props.id();
@@ -166,7 +169,7 @@
     });
   }
   $effect(() => {
-    if (!dialog) return;
+    if (!dialog || previewWrapper) return;
     if (popover) {
       if (open && !dialog.matches(':popover-open')) {
         returnFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
@@ -195,14 +198,14 @@
   });
 </script>
 
-<svelte:element this={popover ? 'div' : 'dialog'}
+<svelte:element this={popover || previewWrapper ? 'div' : 'dialog'}
   class="dialog"
   style:--popover-width={`${popoverWidth}px`}
   style:--detail-expansion-distance={`${expansionDistance}px`}
   class:solid-surface={!popover}
   class:glass={popover}
   use:liquidGlass={{variant:'glassDark',enabled:popover,renderer:'css'}}
-  popover={popover ? 'auto' : undefined}
+  popover={popover && !previewWrapper ? 'auto' : undefined}
   role={popover ? 'dialog' : undefined}
   aria-label={title}
   bind:this={dialog}

@@ -2,9 +2,10 @@ import { managedReadingSource, requireManagedReadingSession } from '#lib/server/
 import { readingManifest, readingPage } from '#lib/reading/delivery.server.js';
 
 import { addReading } from '#lib/application/reading.server.js';
-import { updateReading } from '#lib/core/reading/service.server.js';
+import { updateReading, removeReadingHistory } from '#lib/core/reading/service.server.js';
 import { readingDetails, readingHistoryData } from '#lib/reading/query.server.js';
 import { AppError } from '#lib/server/security/errors.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import {readingIssuesForWork,editionsForReading,readingGroupData} from '#lib/reading/groups.server.js';
 import { uuid, type ApiContext } from './context.server';
 import {readingCredits,readingCommunity,relatedReading} from '#lib/reading/detail.server.js';
@@ -30,20 +31,27 @@ export async function handleReading({ uid, path, method, body, url, request,user
   if (path.length === 2 && method === 'GET') return Response.json(await readingDetails(uid, uuid(path[1])));
   if (path.length === 3 && path[2] === 'progress' && method === 'POST')
     return Response.json(await updateReading(uid, uuid(path[1]), body));
+  if(path.length===4&&path[2]==='history'&&method==='DELETE')
+    return Response.json(await removeReadingHistory(uid,uuid(path[1]),uuid(path[3])));
   if(path.length===3){
     const id=uuid(path[1]);
     if(path[2]==='credits'&&method==='GET')return Response.json(await readingCredits(uid,id));
     if(path[2]==='community'&&method==='GET')return Response.json(await readingCommunity(uid,id));
     if(path[2]==='related'&&method==='GET')return Response.json(await relatedReading(uid,id,Number(url.searchParams.get('page')??1)));
     if(path[2]==='matching'&&method==='POST')return Response.json(await matchingReading(uid,id,String(body.edition??'')));
-    if(path[2]==='session'&&method==='POST')return Response.json(await prepareReading(uid,id,user.access?.libraryOnly ? await managedReadingSource(uid,id) : body,request.signal));
+    if(path[2]==='session'&&method==='POST'){
+      const input=user.access?.libraryOnly?{
+        ...await managedReadingSource(uid,id),...(body.fromBeginning===true?{fromBeginning:true}:{}),
+      }:body;
+      return Response.json(await prepareReading(uid,id,input,request.signal));
+    }
     if(path[2]==='connections'&&method==='GET')return Response.json(await readingConnections(uid,id));
     if(path[2]==='linked'&&method==='GET')return Response.json(await linkedReadingSources(uid,id));
     if(path[2]==='issues'&&method==='GET')return Response.json(await readingIssuesForWork(uid,id,Number(url.searchParams.get('page')??1)));
     if(path[2]==='editions'&&method==='GET')return Response.json(await editionsForReading(uid,id,Number(url.searchParams.get('page')??1)));
     if(path[2]==='sources'&&method==='GET')return Response.json(await readingSources(uid,id,uuid(url.searchParams.get('connectionId')),url.searchParams.get('q')??'',Number(url.searchParams.get('offset')??0),request.signal));
     if(path[2]==='history'&&method==='GET'){
-      return Response.json(await readingHistoryData(uid,id,Number(url.searchParams.get('page')??1)));
+      return Response.json(await withReadCancellation(request.signal,()=>readingHistoryData(uid,id,Number(url.searchParams.get('page')??1))));
     }
   }
   throw new AppError(404, 'Action not found.');

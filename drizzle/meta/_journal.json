@@ -512,6 +512,34 @@
       "when": 1794903783355,
       "tag": "0072_request_playback_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794929394922,
+      "tag": "0073_manual_checkins",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1794929477338,
+      "tag": "0074_reading_reread_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1794930572149,
+      "tag": "0075_canonical_music_artists",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1794933358202,
+      "tag": "0076_disposable_reading_links",
+      "breakpoints": true
     }
   ]
 }

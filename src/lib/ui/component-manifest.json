@@ -88,6 +88,7 @@
       "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
+      "src/lib/ui/components/CheckInActions.svelte",
       "src/lib/ui/components/ChoiceGroup.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
@@ -109,6 +110,7 @@
       "src/lib/ui/components/Pagination.svelte",
       "src/lib/ui/components/PartyMenu.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/ProfileBackgroundMenu.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/QueueList.svelte",
@@ -131,6 +133,7 @@
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
+      "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/+error.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
@@ -250,11 +253,13 @@
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
       "src/lib/ui/components/DetailOverlay.svelte",
+      "src/lib/ui/components/FriendRoster.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
+      "src/lib/ui/components/PartyMenu.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
@@ -263,11 +268,12 @@
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
-      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/components/WorkMenu.svelte",
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
+      "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -342,7 +348,9 @@
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
-      "src/lib/ui/work-menu/ReadingCommands.svelte"
+      "src/lib/ui/work-menu/MusicCommands.svelte",
+      "src/lib/ui/work-menu/ReadingCommands.svelte",
+      "src/lib/ui/work-menu/WorkHistory.svelte"
     ],
     "dynamicComposition": true
   },
@@ -351,6 +359,7 @@
     "elements": [
       "Avatar",
       "Button",
+      "Dialog",
       "IdentityCard"
     ],
     "usedBy": [
@@ -444,6 +453,7 @@
       "src/lib/ui/components/RowFilter.svelte",
       "src/lib/ui/components/TextLink.svelte",
       "src/lib/ui/components/Toast.svelte",
+      "src/lib/ui/components/WorkActions.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
@@ -667,6 +677,7 @@
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -688,7 +699,8 @@
   "PartyMenu": {
     "path": "src/lib/ui/components/PartyMenu.svelte",
     "elements": [
-      "Button"
+      "Button",
+      "Dialog"
     ],
     "usedBy": [
       "src/lib/ui/components/SyncedControls.svelte"
@@ -913,7 +925,8 @@
       "Pagination",
       "RowFilter",
       "RowStyleMenu",
-      "SegmentedControl"
+      "SegmentedControl",
+      "TextLink"
     ],
     "usedBy": [
       "src/lib/media/Details.svelte",
@@ -987,7 +1000,8 @@
     ],
     "usedBy": [
       "src/lib/ui/components/ActivityHeader.svelte",
-      "src/lib/ui/components/MediaCard.svelte"
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/lib/ui/components/Shelf.svelte"
     ],
     "dynamicComposition": false
   },
@@ -1008,6 +1022,7 @@
     "path": "src/lib/ui/components/WorkActions.svelte",
     "elements": [
       "Button",
+      "Icon",
       "Rating",
       "ReactionActions",
       "RecommendAction"
@@ -1032,7 +1047,8 @@
   "WorkMenu": {
     "path": "src/lib/ui/components/WorkMenu.svelte",
     "elements": [
-      "Button"
+      "Button",
+      "Dialog"
     ],
     "usedBy": [
       "src/lib/games/Details.svelte",

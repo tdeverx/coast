@@ -23,16 +23,17 @@ export async function activeShareExpiry(actor: SessionUser | null) {
 
 export async function listActiveShares(actor: SessionUser | null) {
   const user = requireUser(actor), db = getSql();
-  const rows = await db<{ id: string; workId: string; kind: 'movie'|'episode'|'track'; target: ShareTarget; title: string; expiresAt: Date; viewers: number; canCopy: boolean }[]>`
-    select s.id,s.work_id as "workId",w.kind,s.target,coalesce(m.title,mw.title,'Shared item') as title,s.expires_at as "expiresAt",
+  const rows = await db<{ id: string; workId: string; kind: 'movie'|'episode'|'track'|'book'|'comic'; target: ShareTarget; title: string; expiresAt: Date; viewers: number; canCopy: boolean }[]>`
+    select s.id,s.work_id as "workId",w.kind,s.target,coalesce(m.title,mw.title,rw.title,'Shared item') as title,s.expires_at as "expiresAt",
       s.encrypted_token is not null as "canCopy",
-      (select count(*)::int from share_viewers v join playback_sessions p on p.id=v.playback_id
-       where v.share_id=s.id and v.ended_at is null and p.state<>'stopped'
+      (select count(*)::int from share_viewers v left join playback_sessions p on p.id=v.playback_id left join reading_sessions r on r.id=v.reading_session_id
+       where v.share_id=s.id and v.ended_at is null and (p.state<>'stopped' or r.closed_at is null and r.expires_at>now())
          and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second') as viewers
     from playback_shares s
     join works w on w.id=s.work_id
     left join media m on m.id=s.work_id
     left join music_works mw on mw.id=s.work_id
+    left join reading_works rw on rw.id=s.work_id
     where ${activeLinks(db, user.id)}
     order by s.created_at desc,s.id desc limit 20
   `;

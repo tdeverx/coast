@@ -46,7 +46,7 @@ function currentAdmission(source:string){
  };
 }
 
-// Independent original persisted OR semantics. Do not express this oracle as
+// Independent persisted OR semantics, including the approved canonical artist root. Do not express this oracle as
 // the optimized root/allowed-ID expansion, or it would mirror the new algorithm.
 function originalAdmission(scope:Scope,ids?:string[]):Query{
  const idFilter=sql`and (${ids===undefined} or a.id in (${ids?.length?sql.join(ids.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
@@ -54,12 +54,13 @@ function originalAdmission(scope:Scope,ids?:string[]):Query{
   ${scope.workId?sql`left join episodes e on e.media_id=a.work_id left join seasons se on se.media_id=a.work_id`:sql``}
   where true ${idFilter}
   ${scope.workId?sql`and (a.work_id=${scope.workId}::uuid or e.show_id=${scope.workId}::uuid or e.season_id=${scope.workId}::uuid or se.show_id=${scope.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${scope.workId}::uuid and member.child_id in(a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``}
-  ${scope.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${scope.artistId}::uuid)`:sql``}
+  ${scope.artistId?sql`and (a.work_id=${scope.artistId}::uuid and exists(select 1 from works artist where artist.id=a.work_id and artist.kind='artist')
+   or exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${scope.artistId}::uuid))`:sql``}
   ${scope.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${scope.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``}
   order by a.id`);
 }
 
-run('Activity scope admission matches the original OR over persisted event identities',async()=>{
+run('Activity scope admission matches persisted OR membership including canonical artist roots',async()=>{
  let pool:Bun.SQL|undefined,client:any,began=false;const previousFetch=globalThis.fetch;
  const result:{cases:{label:string;rows:number;equal:boolean}[];gaps:string[];rolledBack?:boolean;poolClosed?:boolean}={cases:[],gaps:[]};
  try{

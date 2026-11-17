@@ -475,7 +475,7 @@ suite('application PostgreSQL read models', () => {
       )
     ).toBe(false);
     const watching = (await progressData(b)).items.find((item) => item.id === e2);
-    expect(watching?.captionSubtitle).toBe('Queue show');
+    expect(watching).toMatchObject({ captionTitle: 'Queue show', captionSubtitle: 'Episode 1' });
     expect(
       (await mediaViews(b, { ids: [showId, secondSeason] })).every((item) => !item.queued)
     ).toBe(true);
@@ -641,9 +641,11 @@ suite('application PostgreSQL read models', () => {
     expect(continuedHome.heroes[0]?.id).toBe(show);
     expect(continuedHome.heroes[0]?.kind).toBe('show');
     const continuing = (await progressData(a)).items.find((item) => item.id === episodeTwo);
-    expect(continuing?.title).toBe('Regular episode 2');
-    expect(continuing?.captionTitle ?? continuing?.title).toBe('Regular episode 2');
-    expect(continuing?.captionSubtitle).toBe('Available show');
+    expect(continuing).toMatchObject({
+      title: 'Regular episode 2',
+      captionTitle: 'Available show',
+      captionSubtitle: 'Regular episode 2',
+    });
     await track(a, { mediaId: episodeOne, action: 'unwatch', acknowledged: true });
   });
   test('partial movies remain saved while completed shows leave the ordinary saved shelf', async () => {

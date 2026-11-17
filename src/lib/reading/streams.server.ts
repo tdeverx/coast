@@ -8,7 +8,7 @@ import type { StreamsSnapshot } from '#lib/application/streams.server.js';
 // playback scan: downloading a comic never creates a Jellyfin playback session.
 function eligible(userId: string) {
   const sql = getSql();
-  return sql`not u.disabled and coast_feature_enabled(u.id,'reader')
+  return sql`s.share_id is null and not u.disabled and coast_feature_enabled(u.id,'reader')
     and coast_feature_enabled(${userId}::uuid,'reader')
     and coast_category_enabled(u.id,w.kind)
     and coast_category_enabled(${userId}::uuid,w.kind)`;

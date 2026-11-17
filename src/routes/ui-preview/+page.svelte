@@ -23,13 +23,15 @@
   onDestroy(()=>backgrounds.destroy());
   const section = $derived(page.url.searchParams.has('section') ? referenceSection(page.url.searchParams.get('section')) : 'elements');
   const inventory = $derived<readonly string[]>(section === 'elements' ? elements : section === 'compositions' ? compositions.map(item=>item.id) : composedComponents);
-  const options = $derived(referenceEntries.filter(entry=>inventory.includes(entry.id)).map(entry=>({value:entry.id,label:entry.title})));
-  const name = $derived(options.find(option=>option.value===page.url.searchParams.get('component'))?.value ?? (section==='elements'?'Button':options[0]?.value ?? 'Button'));
+  const options = $derived(referenceEntries.filter(entry=>inventory.includes(entry.id)).map(entry => ({ value: entry.id, label: entry.title })));
+  const name = $derived(options.find(option=>option.value===page.url.searchParams.get('component'))?.value ?? (section === 'elements' ? 'Button' : options[0]?.value ?? 'Button'));
   let chartGallery: Promise<typeof import('./charts/ChartGallery.svelte')> | undefined;
   let materialEditor: Promise<typeof import('#lib/ui/materials/MaterialTweaker.svelte')> | undefined;
+  let menusPreview: Promise<typeof import('./MenusPreview.svelte')> | undefined;
   let componentEditor: Promise<typeof import('./ComponentPlayground.svelte')> | undefined;
   const loadCharts = () => chartGallery ??= import('./charts/ChartGallery.svelte').catch(cause=>{client.feedback.failure('The chart editor could not load. Reload to retry.');throw cause;});
   const loadMaterials = () => materialEditor ??= import('#lib/ui/materials/MaterialTweaker.svelte').catch(cause=>{client.feedback.failure('The material editor could not load. Reload to retry.');throw cause;});
+  const loadMenus = () => menusPreview ??= import('./MenusPreview.svelte').catch(cause=>{client.feedback.failure('The menu preview could not load. Reload to retry.');throw cause;});
   const loadComponents = () => componentEditor ??= import('./ComponentPlayground.svelte').catch(cause=>{client.feedback.failure('The component editor could not load. Reload to retry.');throw cause;});
   function update(values:Record<string,string|null>) {
     const url = new URL(page.url.href);
@@ -52,6 +54,11 @@
   {:else if section === 'charts'}
     {#await loadCharts()}<p class="quiet" role="status">Loading charts…</p>
     {:then gallery}<gallery.default layout={workspace} />
+    {:catch}<!-- Failure is delivered by the scoped toast. -->{/await}
+  {:else if section === 'menus'}
+    {#await loadMenus()}<p class="quiet" role="status">Loading menus…</p>
+    {:then gallery}<gallery.default menu={page.url.searchParams.get('menu')} variant={page.url.searchParams.get('variant')}
+      select={(menu, variant) => update({ menu, variant })} layout={workspace} />
     {:catch}<!-- Failure is delivered by the scoped toast. -->{/await}
   {:else if section === 'typography' || section === 'colors'}
     {#key section}<Foundations {section} layout={workspace} />{/key}

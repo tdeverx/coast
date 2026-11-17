@@ -1,10 +1,11 @@
 import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
+import { activeCheckinSql } from '#lib/social/checkins-query.server.js';
 import {librarySortValues,librarySegmentValues} from '#lib/library.js';
 import {libraryOrder} from '#lib/server/queries/library-order.js';
 import { getFeatureConfig } from '#lib/server/features.js';
 import { personaliseWorkCards } from '#lib/catalogue/overrides/presentation.server.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '#lib/server/experimental.js';
-import { sql, eq, inArray, type SQL } from 'drizzle-orm';
+import { sql, eq, inArray, getTableColumns, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
 import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
@@ -38,7 +39,7 @@ export const collectionOptionsSchema = v.object({
   page: v.optional(pageNumberSchema, 1),
   level: v.optional(v.picklist(['all', 'root']), 'all'),
   category: v.optional(v.picklist(['all', 'screen', 'music', 'game', 'reading', 'book', 'comic']), 'all'),
-  kind: v.optional(v.picklist(['all', 'movie', 'show', 'season', 'episode', 'collection', 'album', 'track', 'game', 'book', 'audiobook', 'comic']), 'all'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show', 'season', 'episode', 'collection', 'artist', 'album', 'track', 'game', 'book', 'audiobook', 'comic']), 'all'),
   relationship: v.optional(v.picklist(['all', 'collected', 'watchlist', 'favourite', 'rating', 'list', 'queue', 'activity']), 'all'),
   activity: v.optional(v.picklist(['all', 'unwatched', 'planned', 'active', 'reading', 'paused', 'completed', 'dropped']), 'all'),
   availability: v.optional(v.picklist(['all', 'available', 'partial', 'unavailable', 'unknown', 'ready']), 'all'),
@@ -273,8 +274,15 @@ export async function workActionData(userId: string, id: string, playthroughId?:
          from game_playthroughs p where p.game_id=g.id and p.user_id=${userId}
          and (${playthroughId ?? null}::uuid is null or p.id=${playthroughId ?? null}::uuid)
          order by p.created_at desc,p.id desc limit 1)) from games g where g.id=${id}) as game,
-      (select jsonb_build_object('state',state,'page',page,'totalPages',total_pages)
-       from reading_progress where user_id=${userId} and work_id=${id}) as reading`);
+      (select jsonb_build_object('state',state,'page',page,'totalPages',total_pages,
+        'rereadId',case when reread_restore is not null then bookmark_cycle end,
+        'hasBookmark',exists(select 1 from reading_sessions s where s.share_id is null and s.user_id=${userId} and s.work_id=${id}
+          and s.bookmark_cycle=reading_progress.bookmark_cycle and s.location is not null))
+       from reading_progress where user_id=${userId} and work_id=${id}) as reading,
+      case when coast_feature_enabled(${userId}::uuid,'presence') then
+        case when (select kind from works where id=${id}::uuid)='artist'
+          then ${activeCheckinSql(userId,id,'artist')} else ${activeCheckinSql(userId,id)} end
+        else null end as "activeCheckin"`);
   return rows[0] as import('#lib/media/work-actions.js').WorkActionState;
 }
 
@@ -357,7 +365,13 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   const [screen,gameRows,musicRows,readingRows] = await Promise.all([
     screenIds.length?mediaViews(ownerId,{ids:screenIds,limit:PAGE_SIZE,airedProgress,progressPresentation},viewerId):[],
     gameIds.length?(await import('#lib/core/games/service.server.js')).gamePresentationMetadata(gameIds).then(rows=>[...rows.values()]):[],
-    musicIds.length?db.select().from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
+    musicIds.length?db.select({...getTableColumns(musicWorks),available:sql<boolean>`exists(
+      select 1 from music_credits credit
+      join availability a on a.media_id=credit.work_id and a.user_id=${viewerId}::uuid and a.state='available'
+      join provider_connections c on c.id=a.connection_id and c.user_id=a.user_id
+      join provider_instances i on i.id=c.instance_id
+      where credit.artist_id=music_works.id and c.status='connected' and i.enabled and i.provider='jellyfin'
+    )`}).from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
     readingIds.length&&(config.experimentalBooks||config.experimentalComics)
       ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
       : Promise.resolve([]),
@@ -365,6 +379,8 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   const [mappings,credits] = await Promise.all([musicRows.length && viewerId ? db.select({
     mediaId:providerItems.mediaId,externalId:providerItems.externalId,
     primaryImageTag:sql<string|null>`${providerItems.snapshot}->>'primaryImageTag'`,connection:providerConnections.id,
+    artistId:sql<string|null>`(select a.id from music_artists a where a.work_id=${providerItems.mediaId}
+      and a.instance_id=${providerItems.instanceId} and replace(lower(a.external_id),'-','')=replace(lower(${providerItems.externalId}),'-','') limit 1)`,
   }).from(providerItems)
     .innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId))
     .innerJoin(providerInstances,eq(providerInstances.id,providerItems.instanceId))
@@ -374,7 +390,7 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   ]);
   const cards=new Map<string,MediaView|MediaCardPresentation>(screen.map(i=>[i.id,i]));
   for(const g of gameRows) cards.set(g.id,{id:g.id,workId:g.id,kind:'game',title:g.title,href:`/games/${g.id}`,poster:g.posterPath,backdrop:g.backdropPath});
-  for(const m of musicRows){ const source=mappings.find(p=>p.mediaId===m.id),credit=credits.get(m.id),artists=credit?(m.kind==='album'?credit.albumArtists:credit.artists):[];cards.set(m.id,{id:source?.externalId??m.id,workId:m.id,kind:m.kind,title:m.title,captionCredits:artists,captionSubtitle:artists.length?artists.map(artist=>artist.name).join(', '):m.artistNames.join(', '),year:m.year,href:`/music/work/${m.id}`,connectionId:source?.connection,poster:source?.primaryImageTag?`/api/v1/providers/${source.connection}/music/${source.externalId}/artwork`:undefined}); }
+  for(const m of musicRows){ const source=mappings.find(p=>p.mediaId===m.id),credit=credits.get(m.id),artists=credit?(m.kind==='album'?credit.albumArtists:credit.artists):[];cards.set(m.id,{id:source?.externalId??m.id,workId:m.id,artistId:source?.artistId??undefined,...(m.kind==='artist'?{available:m.available}:{}),kind:m.kind,title:m.title,captionCredits:artists,captionSubtitle:artists.length?artists.map(artist=>artist.name).join(', '):m.kind==='artist'?'Artist':m.artistNames.join(', '),year:m.year,href:`/music/work/${m.id}`,connectionId:source?.connection,poster:source?.primaryImageTag?`/api/v1/providers/${source.connection}/music/${source.externalId}/artwork`:undefined}); }
   for(const item of await readingCards(ownerId,viewerId,readingRows))cards.set(item.id,item);
   const personal = await personaliseWorkCards(viewerId,[...cards.values()].filter((card): card is MediaCardPresentation => 'href' in card && card.kind !== 'book' && card.kind !== 'comic'));
   for (const card of personal) cards.set(card.workId ?? card.id, card);
@@ -399,7 +415,7 @@ async function collectionPage(viewerId: string, raw: unknown={}, username?: stri
       or (${input.activity}='reading' and (select progress_visible from visibility where category=c.category) and exists(select 1 from reading_progress p where p.user_id=${ownerId} and p.work_id=c.id and p.state='reading'))
       or (${input.activity}='unwatched' and not c.completed and not c.dropped)
       or (${input.activity}='planned' and not c.active and not c.completed and not c.dropped)
-      or (${input.activity}='paused' and (select progress_visible from visibility where category=c.category) and ((select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused' or exists(select 1 from reading_progress p where p.user_id=${ownerId} and p.work_id=c.id and p.state='paused')))
+      or (${input.activity}='paused' and (select progress_visible from visibility where category=c.category) and (exists(select 1 from tracking_state p where p.user_id=${ownerId} and p.media_id=c.id and p.paused and not p.dropped) or (select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused' or exists(select 1 from reading_progress p where p.user_id=${ownerId} and p.work_id=c.id and p.state='paused')))
       or (${input.activity}='completed' and c.completed) or (${input.activity}='dropped' and c.dropped))
     and (${input.availability}='all' or (${input.availability}='available' and c.availability in ('available','partial')) or c.availability=${input.availability} or
       (${input.availability}='ready' and exists(select 1 from assessments a where a.id=c.next_id and a.availability='available')))

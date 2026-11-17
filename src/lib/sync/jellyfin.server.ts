@@ -4,7 +4,8 @@ import { defaultConfig } from '#lib/server/config.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {saveJellyfinAddedDates} from '#lib/providers/jellyfin/added-date.server.js';
 import {importJellyfinReading} from './jellyfin-reading.server';
-import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '#lib/music/persistence.server.js';
+import { persistMusic, observeMusicPageAccess } from '#lib/music/persistence.server.js';
+import { applyImportedMusicCount } from '#lib/music/sync-count.server.js';
 import { reconcileJellyfinBatch } from './jellyfin-finalization.server';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import {
@@ -30,7 +31,7 @@ import {
   providerInstances,
   media,
   users,
-  works, musicProgress, reconciliationIntents, syncValues,
+  works, reconciliationIntents, syncValues,
 } from '#lib/server/db/schema.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
@@ -502,13 +503,10 @@ async function runJellyfinScan(
           if(item.kind==='track'){
             const count=Math.max(0,Math.min(item.playCount??0,10000));
             await reconcileProviderValue(userId,connectionId,saved.workId,'history',{value:count>0,playCount:count},{source:'jellyfin',accountGeneration:connection.accountGeneration,apply:async tx=>{
-              let added=0;
               const [baseline]=await tx.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.mediaId,saved.workId!),eq(syncValues.category,'history')));
               const local=await localSyncValue(tx,userId,saved.workId!,'history');
-              const observed=Number(baseline?.remote.playCount??local.playCount??0);
-              added=await recordImportedMusicListens(tx,userId,saved.workId!,connection.syncAccountId??connectionId,Math.min(count,observed),count);
-              await tx.insert(musicProgress).values({userId,trackId:saved.workId!,playCount:count}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:count,updatedAt:new Date()}});
-              return {changed:added>0};
+              const observed=Number(baseline?.remote.importedPlayCount??baseline?.remote.playCount??local.playCount??0);
+              return applyImportedMusicCount(tx,userId,saved.workId!,connection.syncAccountId??connectionId,observed,count);
             }});
             await reconcileProviderValue(userId,connectionId,saved.workId,'progress',{positionSeconds:Math.round((item.positionSeconds??0)*1000)/1000,durationSeconds:Math.round(item.durationSeconds??0)},{source:'jellyfin',accountGeneration:connection.accountGeneration});
           }

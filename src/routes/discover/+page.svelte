@@ -33,7 +33,7 @@
       {/key}
     {:else if data.selected}
       {#key `${section}:${data.selection.surface}:${data.selection.kind}:${data.selection.page}`}
-        <Shelf availability={data.selection.surface!=='read'} source={{type:'discovery',layout:'grid',scoped:true,mediums,
+        <Shelf source={{type:'discovery',layout:'grid',scoped:true,mediums,
           ...data.selection,initial:data.selected}} />
       {/key}
     {/if}

@@ -15,7 +15,7 @@ export async function alignReading(location:ReadingLocation|null){
 let sharedPosition:{sessionId:string;roomId:string;location:ReadingLocation}|null=null,publishing:Promise<void>|null=null;
 /** Serialize shared locations too: an older revision retry must not undo a newer page turn. */
 export function publishReading(roomId:string,location:ReadingLocation){
- const session=reader.session;if(!session)return;
+ const session=reader.session;if(!session||session.shared)return;
  sharedPosition={sessionId:session.id,roomId,location};reader.syncing=true;
  if(!publishing)publishing=(async()=>{
   try{
@@ -26,9 +26,18 @@ export function publishReading(roomId:string,location:ReadingLocation){
   }finally{publishing=null;reader.syncing=false;}
  })();
 }
-async function retireSession(session:ReadingSessionView){await api(`reading/sessions/${session.id}/close`,{}).catch(()=>{});}
+async function sharedReadingRequest(session:ReadingSessionView,action:'heartbeat'|'close',signal?:AbortSignal){
+ const response=await fetch(`/api/share/reading/${encodeURIComponent(session.id)}/${action}`,{method:'POST',headers:{'content-type':'application/json'},body:'{}',signal});
+ const value=await response.json().catch(()=>null);
+ if(!response.ok)throw new ApiError(typeof value?.error==='string'?value.error:'This reading invitation is unavailable.',response.status);
+}
+export async function touchReadingSession(session:ReadingSessionView,signal?:AbortSignal){
+ if(session.shared)return sharedReadingRequest(session,'heartbeat',signal);
+ await api(`reading/sessions/${session.id}/heartbeat`,{},'POST',{signal});
+}
+async function retireSession(session:ReadingSessionView){await (session.shared?sharedReadingRequest(session,'close'):api(`reading/sessions/${session.id}/close`,{})).catch(()=>{});}
 function install(session:ReadingSessionView,file:File|null){reader.session=session;reader.file=file;reader.location=session.location;reader.visible=true;reader.unsaved=false;reader.error='';}
-export async function openReading(workId:string,input?:{file:File}|{connectionId:string;externalId:string},signal?:AbortSignal){
+export async function openReading(workId:string,input?:{file:File}|{connectionId:string;externalId:string},signal?:AbortSignal,fromBeginning=false){
  cancelOpening();const epoch=generation,abort=new AbortController();opening=abort;reader.loading=true;if(!reader.unsaved)reader.error='';
  const current=()=>epoch===generation&&!abort.signal.aborted;
  const cancel=()=>abort.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)abort.abort();
@@ -41,6 +50,7 @@ export async function openReading(workId:string,input?:{file:File}|{connectionId
    if(!current())return;
    body={source:'local',format,edition:await readingFileIdentity(input.file,abort.signal)};
   }else body=input?{source:'jellyfin',connectionId:input.connectionId,externalId:input.externalId}:{source:'linked'};
+  if(fromBeginning)body={...body,fromBeginning:true};
   if(!current())return;
   const session=prepared=await api<ReadingSessionView>(`reading/${workId}/session`,body,'POST',{signal:abort.signal});
   if(!current())return;
@@ -60,15 +70,16 @@ export async function openReading(workId:string,input?:{file:File}|{connectionId
  }catch(cause){if(current()){reader.error=message(cause);throw cause;}}
  finally{signal?.removeEventListener('abort',cancel);if(prepared&&!installed)await retireSession(prepared);if(epoch===generation&&opening===abort){opening=null;reader.loading=false;}}
 }
-export async function attachReading(session:ReadingSessionView){
+export async function attachReading(session:ReadingSessionView,signal?:AbortSignal){
+ if(signal?.aborted){await retireSession(session);return;}
  cancelOpening();const epoch=generation;
  let installed=false;
  try{
   if(reader.session)await closeReading(false);
-  if(epoch!==generation)return;
+  if(epoch!==generation||signal?.aborted)return;
   const {stopPlayback}=await import('#lib/playback/client.svelte.js');
-  if(epoch!==generation)return;
-  await stopPlayback();if(epoch!==generation)return;
+  if(epoch!==generation||signal?.aborted)return;
+  await stopPlayback();if(epoch!==generation||signal?.aborted)return;
   install(session,null);installed=true;
  }finally{if(!installed)await retireSession(session);}
 }
@@ -82,7 +93,7 @@ export async function closeReading(cancelPendingOpening=true,save=true){
  if(save&&reader.visible)await exit?.().catch(()=>{});
  if(reader.session?.id!==session.id)return;
  reader.visible=false;reader.session=null;reader.file=null;reader.location=null;reader.unsaved=false;move=null;exit=null;
- await retireSession(session);await refreshAfterChange('reading');
+ await retireSession(session);if(!session.shared)await refreshAfterChange('reading');
 }
 type BookmarkSnapshot={id:string;location:ReadingLocation};
 let writing:Promise<boolean>|null=null,pending:BookmarkSnapshot|null=null,acknowledged:BookmarkSnapshot|null=null,saveError='';
@@ -90,6 +101,7 @@ let writing:Promise<boolean>|null=null,pending:BookmarkSnapshot|null=null,acknow
 export function recordReading(location:ReadingLocation):Promise<boolean>{
  const session=reader.session;if(!session)return Promise.resolve(true);
  reader.location=location;session.location=location;
+ if(session.shared){reader.unsaved=false;return Promise.resolve(true);}
  if(!writing&&acknowledged?.id===session.id&&sameReadingLocation(acknowledged.location,location)){
   pending=null;reader.unsaved=false;if(reader.error===saveError)reader.error='';saveError='';return Promise.resolve(true);
  }

@@ -1,4 +1,6 @@
 import { expect, test } from 'bun:test';
+import { parse } from 'svelte/compiler';
+import {combineFilterResets} from '../src/lib/ui/controls/filters';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 import { compileRunes, moduleUrl, resourceUrl, svelteUrl } from './fixtures/ui-script';
@@ -16,6 +18,25 @@ const source=(await Bun.file(new URL('../src/lib/ui/shelves/detail.svelte.ts',im
 const module=await import(moduleUrl(compileRunes(`let transport;export const setTransport=value=>transport=value;${source}`)));
 const settle=async()=>{for(let i=0;i<8;i++){runtime.flush();await Promise.resolve();}};
 const content=(number:number,items:string[],focusId='next')=>({items:items.map(id=>({id,kind:'episode',title:id})),page:number,pages:6,total:360,focusId});
+test('the show custom progress picker supplies its active segment to the shared style owner', async () => {
+ const shelves:Record<string,unknown>[]=[];
+ function visit(value:unknown) {
+  if (!value || typeof value!=='object') return;
+  const node=value as Record<string,unknown>;
+  if(node.type==='Component'&&node.name==='Shelf')shelves.push(node);
+  for(const child of Object.values(node)) {
+   if(Array.isArray(child))child.forEach(visit);
+   else if(child&&typeof child==='object')visit(child);
+  }
+ }
+ const ast=parse(await Bun.file(new URL('../src/lib/media/Details.svelte',import.meta.url)).text(),{modern:true});
+ visit(ast.fragment);
+ type Attribute={name:string;value?:{expression?:{name?:string}}};
+ const owner=shelves.find(node=>(node.attributes as Attribute[]).some(attribute=>attribute.name==='segments'&&attribute.value?.expression?.name==='progressSegments'));
+ expect(owner).toBeDefined();
+ const segment=(owner!.attributes as Attribute[]).find(attribute=>attribute.name==='styleSegment');
+ expect(segment?.value?.expression?.name).toBe('progressView');
+});
 function fixture(anchor=true){
  page.data.user.id='viewer';page.data.revision=0;
  const requests:{path:string;signal:AbortSignal;finish:(value:unknown)=>void}[]=[];
@@ -24,7 +45,7 @@ function fixture(anchor=true){
  const options=runtime.state({type:'detail',title:'Next',path:'media/show/next',href:'/media/show?section=next',anchor,availability:true,items:undefined});
  const dispose=runtime.effect_root(()=>row=module.createDetailSource(()=>runtime.get(options)));
  runtime.flush();
- return {row,requests,local(items:any){runtime.set(options,{...runtime.get(options),items});},close(){lifecycle.callbacks.splice(0).forEach((fn:()=>void)=>fn());dispose();}};
+ return {row,requests,specials(value:boolean){runtime.set(options,{...runtime.get(options),path:`media/show/next?specials=${value}`});},local(items:any){runtime.set(options,{...runtime.get(options),items});},close(){lifecycle.callbacks.splice(0).forEach((fn:()=>void)=>fn());dispose();}};
 }
 test('anchored rows make no inactive requests and start at the server-selected page',async()=>{
  const f=fixture();try{
@@ -79,5 +100,21 @@ test('segments retain the same source and cached episode page while local season
   f.row.filters[0].change('available');await settle();expect(f.requests).toHaveLength(1);expect(f.row.items.map((item:any)=>item.id)).toEqual(['season-1']);
   f.local(undefined);await settle();expect(f.requests).toHaveLength(2);expect(f.requests[1].path).toBe('media/show/next?available=true');
   f.requests[1].finish(content(1,['available-next']));await settle();expect(f.row.items[0].id).toBe('available-next');
+ }finally{f.close();}
+});
+
+test('resetting specials and availability together issues one replacement and rejects its prior response',async()=>{
+ const f=fixture();try{
+  const initial=f.row.load();f.requests[0].finish(content(1,['original']));await initial;
+  f.specials(true);await settle();
+  f.row.filters[0].change('available');await settle();
+  const before=f.requests.length;
+  const reset=combineFilterResets({disabled:false,run:()=>f.specials(false)},f.row.filterReset)!;
+  expect(reset.disabled).toBe(false);await reset.run();await settle();
+  expect(f.requests).toHaveLength(before+1);expect(f.requests[before-1].signal.aborted).toBe(true);
+  expect(f.requests.at(-1)!.path).toBe('media/show/next?specials=false&available=false');
+  f.requests.at(-1)!.finish(content(1,['reset']));await settle();
+  f.requests[before-1].finish(content(1,['stale']));await settle();
+  expect(f.row.items.map((item:any)=>item.id)).toEqual(['reset']);
  }finally{f.close();}
 });

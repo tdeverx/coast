@@ -1,5 +1,14 @@
 import * as v from 'valibot';
 
+export const initialReadingBookmarkCycle = '00000000-0000-0000-0000-000000000000';
+export type ReadingRereadRestore = {
+  bookmarkCycle: string;
+  page: number;
+  totalPages: number | null;
+  startedAt: string | null;
+  completedAt: string;
+};
+
 export const readingKinds = ['book', 'comic'] as const;
 export type ReadingKind = (typeof readingKinds)[number];
 export type ReadingProvider = 'openlibrary' | 'comic-vine';
@@ -10,9 +19,9 @@ export const readingFormats = ['pdf', 'epub', ...comicFormats] as const;
 export type ReadingFormat = (typeof readingFormats)[number];
 export type ComicFormat = (typeof comicFormats)[number];
 export const readingPrepareSchema=v.variant('source',[
-  v.strictObject({source:v.literal('linked')}),
-  v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/))}),
-  v.strictObject({source:v.literal('jellyfin'),connectionId:v.pipe(v.string(),v.uuid()),externalId:v.pipe(v.string(),v.regex(/^[a-f0-9-]{32,36}$/i))}),
+  v.strictObject({source:v.literal('linked'),fromBeginning:v.optional(v.literal(true))}),
+  v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/)),fromBeginning:v.optional(v.literal(true))}),
+  v.strictObject({source:v.literal('jellyfin'),connectionId:v.pipe(v.string(),v.uuid()),externalId:v.pipe(v.string(),v.regex(/^[a-f0-9-]{32,36}$/i)),fromBeginning:v.optional(v.literal(true))}),
 ]);
 export type ReadingPrepareInput=v.InferOutput<typeof readingPrepareSchema>;
 export const readingFileAccept = '.pdf,.epub,.cbz,.zip,.cbr,.rar,.cb7,.7z,.cbt';
@@ -49,6 +58,8 @@ export function readingFormat(filename: string): ReadingFormat | null {
   return readingFormats.includes(extension as ReadingFormat) ? extension as ReadingFormat : null;
 }
 export type ReadingSessionView = {
+  /** Disposable viewer sessions never write the source owner's private progress. */
+  shared?:boolean;
   kind: ReadingKind;
   id: string; workId: string; title: string; format: ReadingFormat; edition: string;
   location: ReadingLocation | null; url: string | null; source: 'local' | 'jellyfin';

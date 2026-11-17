@@ -16,6 +16,7 @@
     onrated?: (value: number | null) => void;
   } = $props();
   let busy = $state(false);
+  export function isBusy() { return busy; }
   let error = $state('');
   let preview = $state<number | null>(null);
   const removing = $derived(preview !== null && preview === value);
@@ -65,7 +66,7 @@
       {#each [0, 1, 2, 3, 4] as index}
         <button
           type="button"
-          class="rating-star"
+          class="rating-star menu-icon-action"
           class:rating-star-preview={preview !== null}
           class:rating-star-removing={removing}
           class:rating-star-selected={preview === null && value !== null}
@@ -86,9 +87,9 @@
             void rate(score === value ? null : score);
           }}
         >
-          <span class="rating-star-outline" aria-hidden="true"><Icon name="star" size={24} /></span>
+          <span class="rating-star-outline" aria-hidden="true"><Icon name="star" /></span>
           <span class="rating-star-fill" aria-hidden="true"
-            ><Icon name="star" size={24} filled /></span
+            ><Icon name="star" filled /></span
           >
         </button>
       {/each}
@@ -107,27 +108,15 @@
   .menu-rating {
     display: grid;
     min-width: 0;
-    padding: 4px var(--menu-item-inset, 8px);
   }
   .rating-stars {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: center;
     width: 100%;
-    gap: 0;
+    gap: var(--menu-inset, 2px);
   }
   .rating-star {
-    position: relative;
-    display: grid;
-    width: 100%;
-    min-width: 0;
-    height: var(--control-height);
-    place-items: center;
-    border: 0;
-    background: transparent;
-    padding: 0;
-    font-size: var(--text-2xl);
-    line-height: var(--leading-solid);
     color: color-mix(in srgb, var(--white) 55%, transparent);
   }
   .rating-star-outline,
@@ -136,7 +125,7 @@
     grid-row: 1;
     display: grid;
     place-items: center;
-    width: min(24px, 100%);
+    width: min(var(--menu-icon-action-artwork), 100%);
     aspect-ratio: 1;
   }
   .rating-star :global(svg) {

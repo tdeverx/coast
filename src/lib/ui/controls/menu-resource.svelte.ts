@@ -1,7 +1,11 @@
 import { createResource } from '../resource.svelte';
+import type { retryMenuRead } from './menu-read-retry';
 
 /** One menu owns one scoped snapshot. Closing cancels reads; writes keep their own lifetime. */
-export function createMenuResource<T>(initial: () => T, key: () => string, fetch: (signal: AbortSignal) => Promise<T>) {
+export function createMenuResource<T>(
+  initial: () => T, key: () => string, fetch: (signal: AbortSignal) => Promise<T>,
+  retry?: typeof retryMenuRead
+) {
   const resource = createResource(initial());
   let scope: string | undefined;
   let ready = false;
@@ -23,12 +27,15 @@ export function createMenuResource<T>(initial: () => T, key: () => string, fetch
     if (!force && ready) return Promise.resolve(resource.data);
     const captured = scope;
     const request = resource.load(async signal => {
+      const current = () => captured === key();
       try {
-        const value = await fetch(signal);
-        if (!signal.aborted && captured !== key()) resource.cancel();
+        const value = retry && active
+          ? await retry(() => fetch(signal), signal, current)
+          : await fetch(signal);
+        if (!signal.aborted && !current()) resource.cancel();
         return value;
       } catch (cause) {
-        if (!signal.aborted && captured !== key()) resource.cancel();
+        if (!signal.aborted && !current()) resource.cancel();
         throw cause;
       }
     });

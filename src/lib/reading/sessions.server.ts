@@ -1,7 +1,7 @@
 import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '#lib/server/db/index.js';
+import { getDb, getSql } from '#lib/server/db/index.js';
 import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '#lib/server/db/schema.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { AppError } from '#lib/server/security/errors.js';
@@ -16,7 +16,7 @@ import { ProviderHttpError, secureProviderFetch } from '#lib/server/security/pro
 import { observeReadingFile } from '#lib/catalogue/reading-files.server.js';
 import { updateReading } from '#lib/core/reading/service.server.js';
 import { readingCache, readingLease, type ReadingCacheSource } from './cache.server';
-import { comicFormats, readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
+import { comicFormats, initialReadingBookmarkCycle, readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
 const uuid=v.pipe(v.string(),v.uuid());
 async function work(userId:string,workId:string) {
  v.parse(uuid,userId);v.parse(uuid,workId);
@@ -54,6 +54,7 @@ export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<ty
 /** A normal Read uses a known available link, preferring the last opened edition.
  * Selection grants no access: preparation still verifies the live source. */
 async function defaultReadingSources(userId:string,workId:string) {
+ const cycle=bookmarkCycleFor(userId,workId);
  const sources=await getDb().select({connectionId:providerConnections.id,externalId:workEditions.externalId,availabilityId:availability.id,verifiedAt:availability.verifiedAt,generation:providerConnections.accountGeneration})
   .from(workEditions).innerJoin(providerConnections,and(eq(providerConnections.instanceId,workEditions.instanceId),eq(providerConnections.userId,userId)))
   .innerJoin(providerInstances,eq(providerInstances.id,workEditions.instanceId))
@@ -61,8 +62,30 @@ async function defaultReadingSources(userId:string,workId:string) {
   .innerJoin(availability,and(eq(availability.providerItemId,providerItems.id),eq(availability.connectionId,providerConnections.id),eq(availability.userId,userId),eq(availability.mediaId,workId),eq(availability.state,'available')))
   .where(and(eq(workEditions.workId,workId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'jellyfin'),eq(providerInstances.enabled,true),
    inArray(workEditions.format,readingFormats),sql`coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`))
-  .orderBy(sql`(${workEditions.metadata}->>'version' = (select s.edition from reading_sessions s where s.user_id=${userId}::uuid and s.work_id=${workId}::uuid order by s.updated_at desc,s.id desc limit 1)) desc nulls last`,desc(availability.verifiedAt),providerInstances.name,workEditions.id).limit(20);
+  .orderBy(sql`(${workEditions.metadata}->>'version' = coalesce(
+    (select s.edition from reading_sessions s
+     where s.user_id=${userId}::uuid and s.work_id=${workId}::uuid and s.share_id is null and s.bookmark_cycle=${cycle} and s.location is not null
+     order by s.updated_at desc,s.id desc limit 1),
+    (select s.edition from reading_progress p join reading_sessions s
+      on s.user_id=p.user_id and s.work_id=p.work_id and s.share_id is null and s.bookmark_cycle=(p.reread_restore->>'bookmarkCycle')::uuid
+     where p.user_id=${userId}::uuid and p.work_id=${workId}::uuid and p.reread_restore is not null and s.location is not null
+     order by s.updated_at desc,s.id desc limit 1)
+  )) desc nulls last`,desc(availability.verifiedAt),providerInstances.name,workEditions.id).limit(20);
  return sources;
+}
+function bookmarkCycleFor(userId:string,workId:string) {
+ return sql<string>`coalesce((select bookmark_cycle from reading_progress where user_id=${userId}::uuid and work_id=${workId}::uuid),${initialReadingBookmarkCycle}::uuid)`;
+}
+/** Sharing pins one live owner-authorized file, never a title match or browser upload. */
+export async function readingShareSource(userId:string,workId:string,connectionId:string,externalId:string,signal?:AbortSignal){
+ const item=await work(userId,workId),context=await getJellyfin(userId,connectionId);
+ const book=await context.adapter.readingItem(context.connection.externalUserId!,externalId,signal);
+ const format=bookFormat(book);if(!format)throw new AppError(409,'This reading format is unsupported.');
+ if(!await context.adapter.downloadAllowed(context.connection.externalUserId!,context.instance.serverIdentity,signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
+ const edition=sourceEdition(context.instance.serverIdentity??context.instance.id,book);
+ signal?.throwIfAborted();
+ await observeReadingFile({userId,workId,connectionId,instanceId:context.instance.id,generation:context.connection.accountGeneration,book,edition});
+ return {...context,item,format,edition,externalId:jellyfinItemKey(book.Id)};
 }
 export async function prepareReading(userId:string,workId:string,raw:unknown,signal?:AbortSignal):Promise<ReadingSessionView> {
  signal?.throwIfAborted();
@@ -102,7 +125,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   await lockFeaturePolicyInTransaction(tx,userId);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   signal?.throwIfAborted();
-  const [user]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));
+  const [user]=await tx.select({bookmarkCycle:bookmarkCycleFor(userId,workId)}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));
   if(!user)throw new AppError(401,'Sign in to read.');
   await requireFeatureInTransaction(tx,userId,'reader');
   await requireFeatureInTransaction(tx,userId,item.kind);
@@ -110,9 +133,10 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
    const [source]=await tx.select({id:providerConnections.id}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.accountGeneration,accountGeneration!),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).for('share');
    if(!source)throw new AppError(410,'Reconnect this reading source.');
   }
-  const [previous]=await tx.select({location:readingSessions.location}).from(readingSessions).where(and(eq(readingSessions.userId,userId),eq(readingSessions.workId,workId),eq(readingSessions.edition,edition),eq(readingSessions.format,format))).orderBy(desc(readingSessions.updatedAt)).limit(1);
+  const {bookmarkCycle}=user;
+  const [previous]=await tx.select({location:readingSessions.location}).from(readingSessions).where(and(eq(readingSessions.userId,userId),eq(readingSessions.workId,workId),eq(readingSessions.bookmarkCycle,bookmarkCycle),eq(readingSessions.edition,edition),eq(readingSessions.format,format),isNull(readingSessions.shareId),sql`${readingSessions.location} is not null`)).orderBy(desc(readingSessions.updatedAt),desc(readingSessions.id)).limit(1);
   signal?.throwIfAborted();
-  const [prepared]=await tx.insert(readingSessions).values({userId,workId,format,edition,connectionId,accountGeneration,externalId,location:previous?.location??null,expiresAt:new Date(Date.now()+86400000)}).returning();
+  const [prepared]=await tx.insert(readingSessions).values({userId,workId,format,edition,bookmarkCycle,connectionId,accountGeneration,externalId,location:input.fromBeginning?null:previous?.location??null,expiresAt:new Date(Date.now()+86400000)}).returning();
   signal?.throwIfAborted();
   return prepared;
  });
@@ -120,10 +144,18 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
  return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source==='local'?'local':'jellyfin',url:input.source!=='local'?`/api/v1/reading/sessions/${session.id}/file`:null,...(input.source!=='local'&&comicFormats.includes(format as typeof comicFormats[number])?{manifest:`/api/v1/reading/sessions/${session.id}/manifest`}:{})};
 }
 /** One fresh source context per operation; never retain an access decision between requests. */
-async function readingSessionContext(userId:string,id:string) {
+async function readingSessionContext(userId:string,id:string,shareId?:string) {
  v.parse(uuid,id);
- const [session]=await getDb().select().from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()),sql`not exists(select 1 from work_editions e join provider_connections c on c.instance_id=e.instance_id where c.id=${readingSessions.connectionId} and replace(lower(e.external_id),'-','')=replace(lower(${readingSessions.externalId}),'-','') and e.metadata->>'identityConflict'='true')`));
+ const [session]=await getDb().select().from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),shareId?eq(readingSessions.shareId,shareId):isNull(readingSessions.shareId),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()),sql`not exists(select 1 from work_editions e join provider_connections c on c.instance_id=e.instance_id where c.id=${readingSessions.connectionId} and replace(lower(e.external_id),'-','')=replace(lower(${readingSessions.externalId}),'-','') and e.metadata->>'identityConflict'='true')`));
  if(!session)throw new AppError(410,'This reading session has ended.');
+ if(shareId){
+  const [share]=await getSql()`select s.* from playback_shares s join share_viewers v on v.share_id=s.id
+   where s.id=${shareId} and s.owner_id=${userId} and s.work_id=${session.workId} and s.connection_id=${session.connectionId}
+    and s.account_generation=${session.accountGeneration} and s.source_id=${session.externalId} and s.edition=${session.edition}
+    and v.id=${session.shareViewerId} and v.reading_session_id=${id} and v.ended_at is null`;
+  if(!share)throw new AppError(410,'This reading invitation has ended.');
+  await (await import('#lib/sharing/service.server.js')).assertShare(share);
+ }
  await work(userId,session.workId);
  const jellyfin=session.connectionId?await getJellyfin(userId,session.connectionId):null;
  if(jellyfin&&jellyfin.connection.accountGeneration!==session.accountGeneration)throw new AppError(410,'Reconnect this reading source.');
@@ -147,12 +179,14 @@ export async function moveReading(userId:string,id:string,raw:unknown) {
 }
 export async function closeReading(userId:string,id:string) {
  v.parse(uuid,id);
- await getDb().update(readingSessions).set({closedAt:new Date()}).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId)));
+ const [owned]=await getDb().select({shareId:readingSessions.shareId}).from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId)));
+ if(owned?.shareId)throw new AppError(410,'Use the reading invitation to close this session.');
+ await getDb().update(readingSessions).set({closedAt:new Date()}).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),isNull(readingSessions.shareId)));
  await (await readingCache()).release(readingLease(userId,id));return {closed:true};
 }
-async function remoteReadingContext(userId:string,id:string,signal:AbortSignal) {
+async function remoteReadingContext(userId:string,id:string,signal:AbortSignal,shareId?:string) {
  signal.throwIfAborted();
- const {session,jellyfin}=await readingSessionContext(userId,id);
+ const {session,jellyfin}=await readingSessionContext(userId,id,shareId);
  if(!session.connectionId||!session.externalId||!jellyfin)throw new AppError(404,'Local reading files remain in your browser.');
  const {connection,instance,adapter}=jellyfin;
  const book=await adapter.readingItem(connection.externalUserId!,session.externalId,signal);
@@ -160,9 +194,9 @@ async function remoteReadingContext(userId:string,id:string,signal:AbortSignal) 
  return {session,connection,instance,book,adapter};
 }
 /** Cache reuse never replaces this operation's fresh per-reader source authorization. */
-export async function readingDeliverySource(userId:string,id:string,signal:AbortSignal):Promise<ReadingCacheSource> {
+export async function readingDeliverySource(userId:string,id:string,signal:AbortSignal,shareId?:string):Promise<ReadingCacheSource> {
  try {
-  const {session,connection,instance,book,adapter}=await remoteReadingContext(userId,id,signal);
+  const {session,connection,instance,book,adapter}=await remoteReadingContext(userId,id,signal,shareId);
   if(!await adapter.downloadAllowed(connection.externalUserId!,instance.serverIdentity,signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
 
   if(!comicFormats.includes(session.format as typeof comicFormats[number]))throw new AppError(400,'This format uses its document reader.');
@@ -176,8 +210,9 @@ export async function readingDeliverySource(userId:string,id:string,signal:Abort
   throw cause;
  }
 }
-export async function streamReading(userId:string,id:string,request:Request) {
- const {session,connection,instance}=await remoteReadingContext(userId,id,request.signal);
+export async function streamReading(userId:string,id:string,request:Request,shareId?:string) {
+ const {session,connection,instance,adapter}=await remoteReadingContext(userId,id,request.signal,shareId);
+ if(shareId&&!await adapter.downloadAllowed(connection.externalUserId!,instance.serverIdentity,request.signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
  const headers=new Headers({Authorization:jellyfinAuthorization(userId,credentials.accessToken)});
  const range=request.headers.get('range');if(range){if(!/^bytes=\d*-\d*$/.test(range))throw new AppError(400,'Choose one byte range.');headers.set('Range',range);}
@@ -197,6 +232,9 @@ export async function streamReading(userId:string,id:string,request:Request) {
   }
  }
  if(!response.ok&&response.status!==206){await response.body?.cancel();return new Response('Reading file unavailable.',{status:response.status===416?416:502});}
+ if(shareId){try{const current=await remoteReadingContext(userId,id,request.signal,shareId);
+  if(!await current.adapter.downloadAllowed(current.connection.externalUserId!,current.instance.serverIdentity,request.signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
+ }catch(cause){await response.body?.cancel();throw cause;}}
  const outgoing=new Headers({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Type':session.format==='pdf'?'application/pdf':'application/octet-stream','Content-Security-Policy':"default-src 'none'; sandbox"});
  for(const key of ['content-length','content-range','accept-ranges','etag','last-modified']){const value=response.headers.get(key);if(value)outgoing.set(key,value);}
  if(headSize){outgoing.set('content-length',headSize);outgoing.delete('content-range');}

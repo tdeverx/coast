@@ -1,8 +1,11 @@
 <script lang="ts">
   import {userStatus,chooseStatus,sharePresence} from '#lib/social/status.svelte.js';
   import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '#lib/social/status.js';
+  import {menuCondition,useMenuPreview} from '#lib/ui/controls/menu-preview.js';
   import {useClient, reportFailure } from '#lib/ui/client-context.js';
   const {preview,api}=useClient();
+  const fixture=preview?useMenuPreview():undefined;
+  const allowed=(key:Parameters<typeof menuCondition>[0],actual:boolean)=>menuCondition(key,actual,preview,fixture);
   const previewId=$props.id();
   // Preview controls share the presentation, but never the signed-in account's state.
   let previewStatus = $state<typeof userStatus>({ preference:'automatic', status:'online', busy:false, error:'', sharePresence:true });
@@ -35,6 +38,7 @@
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   let { user, unread = 0, friendRequests = 0, publicBrowse = true, hasActiveLinks = false }: { user: { username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings; access?:import('#lib/auth/invites.js').CoastAccess } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean; hasActiveLinks?:boolean } =
     $props();
+  const restricted=$derived(allowed('libraryOnly',user?.access?.libraryOnly===true));
   let streamCount=$state<number|null>(null);
   const streamOwner = $derived(!preview && user?.role === 'admin' ? page.data.user?.id ?? user.username : null);
   $effect(() => {
@@ -62,8 +66,13 @@
       controller.abort();
     };
   });
-  const actions=$derived(actionOptions({...page.data,features:page.data.capabilities}).filter(option=>!!user||option.value==='watch'));
-  const action=$derived(user?resolveAction(page.url.searchParams,user?.settings?.action,{...page.data,features:page.data.capabilities}):'watch');
+  const actionConfig=$derived({...page.data,features:{...page.data.capabilities,
+    screen:allowed('screen',page.data.capabilities?.screen!==false),music:allowed('music',page.data.capabilities?.music!==false),
+    game:allowed('game',page.data.capabilities?.game!==false),book:allowed('book',page.data.capabilities?.book!==false),comic:allowed('comic',page.data.capabilities?.comic!==false)},
+    experimentalMusic:allowed('music',page.data.experimentalMusic),experimentalGaming:allowed('game',page.data.experimentalGaming),
+    experimentalBooks:allowed('book',page.data.experimentalBooks),experimentalComics:allowed('comic',page.data.experimentalComics)});
+  const actions=$derived(actionOptions(actionConfig).filter(option=>!!user||option.value==='watch'));
+  const action=$derived(user?resolveAction(page.url.searchParams,user?.settings?.action,actionConfig):'watch');
   let changingAction=$state(false);
   let actionError=$state('');
   let actionRequest:AbortController|undefined;
@@ -93,7 +102,7 @@
   }
   reportFailure(()=>actionError);
 
-  const nav = $derived(user?.access?.libraryOnly ? [{label:'Library',href:'/library',icon:'library' as const}] : user ? [
+  const nav = $derived(restricted ? [{label:'Library',href:'/library',icon:'library' as const}] : user ? [
     { label: 'For You', href: actionHref('/for-you',action), icon:'home' as const },
     { label: 'Library', href: actionHref('/library',action),icon:'library' as const },
     { label: 'Discover', href: actionHref('/discover',action),icon:'discover' as const },
@@ -108,8 +117,8 @@
 >
   <div class="header-inner content">
     <div class="action-home">
-    <a class="brand-home" href={user?.access?.libraryOnly?'/library':user?actionHref('/for-you',action):publicBrowse?'/discover?view=watch':'/login'} aria-label="Coast home"><Brand compact size={32} /></a>
-    {#if !user?.access?.libraryOnly&&actions.length&&nav.length}<Button menu align="start" triggerClass="action-trigger" label="Choose action" disabled={changingAction}>
+    <a class="brand-home" href={restricted?'/library':user?actionHref('/for-you',action):publicBrowse?'/discover?view=watch':'/login'} aria-label="Coast home"><Brand compact size={32} /></a>
+    {#if !restricted&&actions.length&&nav.length}<Button menu align="start" triggerClass="action-trigger" label="Choose action" disabled={changingAction}>
       {#snippet trigger()}<span>{actionLabels[action]}</span><span class="action-chevron"><Icon name="right"/></span>{/snippet}
       {#each actions as option}<Button item selection="radio" checked={option.value===action} onclick={()=>chooseAction(option.value)}>{option.label}</Button>{/each}
     </Button>{/if}
@@ -138,7 +147,7 @@
           {#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}
         </Button>
       {/if}
-      {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={user.access?.libraryOnly?"Invite people":friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
+      {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={restricted?"Invite people":friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
       <Button size="icon"
         id={preview?`${previewId}-notifications`:"notification-trigger"}
         class="notification"
@@ -148,7 +157,7 @@
       ><Button menu label="Account menu"
         >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={page.data.capabilities?.presence===false?'offline':status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
-          {#if !user.access?.libraryOnly&&page.data.capabilities?.presence!==false}<Button menu label="Activity status">
+          {#if !restricted&&allowed('presence',page.data.capabilities?.presence!==false)}<Button menu label="Activity status">
             {#snippet trigger()}{#if status.status!=='offline'}<span class="status-dot" data-status={status.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{status.preference==='automatic'?statusLabels[status.status]:preferenceLabels[status.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
             {#snippet children()}
               {#each statusPreferences as preference}<Button item selection="radio" checked={status.preference===preference} disabled={status.busy} onclick={()=>void selectStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
@@ -158,12 +167,12 @@
             {/snippet}
           </Button>
           {/if}<div class="menu-divider" role="separator"></div>
-          {#if !user.access?.libraryOnly}
+          {#if !restricted}
             <Button item icon="user" href={profilePath(user.username)}>Profile</Button>
             <Button item icon="list" href="/lists">Your lists</Button>
           {/if}
-          {#if page.data.capabilities?.requests!==false}<Button item icon="request" href="/requests">Requests</Button>{/if}
-          {#if page.data.experiments.planning}<Button item icon="list" href="/planning">Planning · experimental</Button>{/if}
+          {#if allowed('requests',page.data.capabilities?.requests!==false)}<Button item icon="request" href="/requests">Requests</Button>{/if}
+          {#if allowed('planning',!!page.data.experiments.planning)}<Button item icon="list" href="/planning">Planning · experimental</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <Button item icon="settings" href="/settings">Settings</Button>
           {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"

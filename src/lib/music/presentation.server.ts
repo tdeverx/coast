@@ -11,12 +11,20 @@ export async function hydrateMusicItems(viewerId:string|null,items:MusicItem[]) 
   const selected=sql.join(ids.map(id=>sql`${id}::uuid`),sql`, `);
   const [credits,rows]=await Promise.all([
     musicWorkCredits(ids,viewerId),
-    getDb().execute<{id:string;playCount:number;position:number;favourite:boolean;available:boolean;artwork:string|null}>(sql`
+    getDb().execute<{id:string;playCount:number;position:number;favourite:boolean;available:boolean;artwork:string|null;artistId:string|null}>(sql`
       select w.id,coalesce(p.play_count,0)::int as "playCount",coalesce(p.position_seconds,0) as position,
         coalesce(t.favourite,false) as favourite,
-        exists(select 1 from availability a join provider_connections c on c.id=a.connection_id
+        case when w.kind='artist' then exists(select 1 from music_credits credit
+          join availability a on a.media_id=credit.work_id and a.user_id=${viewerId}::uuid and a.state='available'
+          join provider_connections c on c.id=a.connection_id and c.user_id=a.user_id
+          join provider_instances i on i.id=c.instance_id
+          where credit.artist_id=w.id and c.status='connected' and i.enabled and i.provider='jellyfin')
+        else exists(select 1 from availability a join provider_connections c on c.id=a.connection_id
           join provider_instances i on i.id=c.instance_id where a.media_id=w.id and a.user_id=${viewerId}::uuid
-          and c.user_id=${viewerId}::uuid and a.state='available' and c.status='connected' and i.enabled) as available,
+          and c.user_id=${viewerId}::uuid and a.state='available' and c.status='connected' and i.enabled) end as available,
+        (select a.id from music_artists a join provider_connections c on c.instance_id=a.instance_id
+          join provider_instances i on i.id=a.instance_id where a.work_id=w.id and c.user_id=${viewerId}::uuid
+          and c.status='connected' and i.enabled and i.provider='jellyfin' order by a.id limit 1) as "artistId",
         image.artwork
       from music_works w
       left join music_progress p on p.track_id=w.id and p.user_id=${viewerId}::uuid
@@ -33,6 +41,6 @@ export async function hydrateMusicItems(viewerId:string|null,items:MusicItem[]) 
   return items.map(item=>{
     const state=item.workId?byId.get(item.workId):undefined;
     return state?{...item,...credits.get(state.id),available:state.available,playCount:state.playCount,
-      positionSeconds:state.position,favourite:state.favourite,artworkUrl:state.artwork??item.artworkUrl}:item;
+      positionSeconds:state.position,favourite:state.favourite,artistId:state.artistId??undefined,artworkUrl:state.artwork??item.artworkUrl}:item;
   });
 }

@@ -3,6 +3,7 @@ import { page } from '$app/state';
 import { useClient } from '../client-context';
 import { contentRevisionKey } from '../content-revision.svelte';
 import { createMenuResource } from './menu-resource.svelte';
+import { retryMenuRead } from './menu-read-retry';
 import { setRelationship, type Relationship } from '../relationships';
 import type { WorkActionState } from '#lib/media/work-actions.js';
 
@@ -12,7 +13,7 @@ export function workMenuScope(target: unknown) {
   // Menu snapshots do not contain the actor's avatar; keep all other settings dependencies.
   const { avatar: _avatar, ...profile } = settings?.profile ?? {};
   const menuSettings = settings?.profile ? { ...settings, profile } : settings;
-  return JSON.stringify([target, contentRevisionKey(page.data, ['tracking']),
+  return JSON.stringify([target, contentRevisionKey(page.data, ['tracking', 'social']),
     page.data.user?.role, menuSettings, page.data.experimentalMusic,
     page.data.experimentalGaming, page.data.experimentalBooks, page.data.experimentalComics,
     page.data.experimentalParties, page.data.experiments, page.data.playbackSharing, page.data.capabilities]);
@@ -24,7 +25,7 @@ export function createWorkActions(getId: () => string | undefined, context: () =
   const resource = createMenuResource(empty, () => workMenuScope([getId(), context(), playthrough()]), async signal => {
     const id = getId();
     return id ? api<WorkActionState>(`collection/${id}${playthrough() ? `?playthrough=${playthrough()}` : ''}`, undefined, 'GET', { signal }) : empty();
-  });
+  }, retryMenuRead);
   const direct = $derived(new Set(resource.data.reasons.filter(reason => reason.origin === 'direct').map(reason => reason.relationship)));
   $effect(() => {
     const scope = workMenuScope([getId(), context(), playthrough()]);

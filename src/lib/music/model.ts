@@ -3,7 +3,7 @@ export type MusicKind = 'artist' | 'album' | 'track';
 export interface MusicArtist {
   id: string;
   name: string;
-  /** Only populated when the viewer has an active source for this artist. */
+  /** Shared artist catalogue destination when the credit has a known identity. */
   href?: string;
 }
 export interface MusicItem {

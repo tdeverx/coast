@@ -14,7 +14,9 @@ export const progressExperimentSchema = v.object({
   page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1_000_000)),1),
 });
 export type ProgressExperimentOptions = v.InferOutput<typeof progressExperimentSchema>;
-export type ProgressExperimentContent = ProgressExperimentOptions & {items:ShelfItem[];total:number;pages:number};
+export type ProgressExperimentContent = ProgressExperimentOptions & {
+  items:ShelfItem[];total:number;pages:number;availableViews?:ProgressExperimentOptions['view'][];
+};
 export function progressExperimentParameters(url:URL) {
   return {category:url.searchParams.get('category')??undefined,view:url.searchParams.get('view')??undefined,kind:url.searchParams.get('kind')??undefined,
     scope:url.searchParams.get('scope')??undefined,page:url.searchParams.has('page')?Number(url.searchParams.get('page')):undefined};

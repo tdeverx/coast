@@ -38,6 +38,8 @@ test('music card playback needs a queue identity and preserves artist browsing',
   expect(canPlayMusicCard({kind:'album'})).toBe(false);
   expect(canPlayMusicCard({kind:'track',workId:'work',available:false})).toBe(false);
   expect(canPlayMusicCard({kind:'artist',connectionId:'connection'})).toBe(false);
+  expect(canPlayMusicCard({kind:'artist',workId:'artist',available:true})).toBe(true);
+  expect(canPlayMusicCard({kind:'artist',workId:'artist',available:false})).toBe(false);
   expect(canPlayMusicCard({kind:'game',workId:'work'})).toBe(false);
 });
 

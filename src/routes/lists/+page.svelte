@@ -52,7 +52,7 @@
     {#if data.detail.selected?.description}<p class="description">
         {data.detail.selected.description}
       </p>{/if}
-    {#key data.detail}<Shelf source={{ type: 'list', view: data.detail.view, title: title, layout: "grid", custom: !!data.detail.selected, initial: data.detail, onitems: (items, key) => {
+    {#key data.detail.view}<Shelf source={{ type: 'list', view: data.detail.view, title: title, layout: "grid", custom: !!data.detail.selected, initial: data.detail, onitems: (items, key) => {
           heroItems = items;
           selection = key;
         }, ondelete: () => (deleteId = data.detail!.selected!.id) }} />{/key}

@@ -3,8 +3,8 @@ import { readingDeliverySource } from './sessions.server';
 import { AppError } from '#lib/server/security/errors.js';
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" };
 /** One operation streams progress, then its version-bound layout. No progress jobs or polling. */
-export async function readingManifest(userId: string, id: string, request: Request) {
-    const source = await readingDeliverySource(userId, id, request.signal);
+export async function readingManifest(userId: string, id: string, request: Request, shareId?:string) {
+    const source = await readingDeliverySource(userId, id, request.signal, shareId);
     const cache = await readingCache(), lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
     const releaseOperation = cache.claim(lease, entry);
     const cancellation = new AbortController(), signal = AbortSignal.any([request.signal, cancellation.signal]);
@@ -20,7 +20,7 @@ export async function readingManifest(userId: string, id: string, request: Reque
                 cache.touch(lease);
                 if (entry.manifest && entry.finished) {
                     // A long acquisition cannot publish after its reader/version was withdrawn.
-                    await readingDeliverySource(userId, id, signal);
+                    await readingDeliverySource(userId, id, signal, shareId);
                     delivered = true;
                     yield { manifest: entry.manifest };
                     return;
@@ -59,10 +59,10 @@ export async function readingManifest(userId: string, id: string, request: Reque
         },
     }), { headers: { ...headers, 'Content-Type': 'application/x-ndjson' } });
 }
-export async function readingPage(userId: string, id: string, index: string, request: Request) {
+export async function readingPage(userId: string, id: string, index: string, request: Request, shareId?:string) {
     if (!/^(0|[1-9]\d{0,3})$/.test(index))
         throw new AppError(404, 'Reading page not found.');
-    const source = await readingDeliverySource(userId, id, request.signal);
+    const source = await readingDeliverySource(userId, id, request.signal, shareId);
     const cache = await readingCache();
     const lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
     cache.claim(lease, entry);
@@ -72,7 +72,7 @@ export async function readingPage(userId: string, id: string, index: string, req
     const page = await cache.page(entry, Number(index), signal);
     // Admission and page lookup yield even on warm hits. Reauthorize after both
     // before publishing, so a close/reconnect cannot recreate an ended lease.
-    await readingDeliverySource(userId, id, signal);
+    await readingDeliverySource(userId, id, signal, shareId);
     // The response can outlive preparation. Request cancellation or cache eviction aborts its file reader.
     const body = Bun.file(page.path).stream().pipeThrough(new TransformStream<Uint8Array, Uint8Array>({ transform(chunk, controller) {
             signal.throwIfAborted();

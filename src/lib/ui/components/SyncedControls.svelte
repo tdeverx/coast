@@ -46,8 +46,10 @@
       {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if !preview&&isSyncHost()&&member.userId!==room?.hostId}<Button item disabled={busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
       {#snippet actions()}
         <span class="small quiet" aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(room?.createdAt??''))/1000))}</span>
-        <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={busy} onclick={async()=>{if(preview)return;await leaveSynced();open=false;}}/>
-        <PartyMenu/>
+        {#if !isSyncHost()}
+          <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={busy} onclick={async()=>{if(preview)return;await leaveSynced();open=false;}}/>
+        {/if}
+        <PartyMenu onend={() => { open = false; }} />
       {/snippet}
     </PartyCard>
   {/if}

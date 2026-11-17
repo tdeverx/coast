@@ -1,4 +1,6 @@
 import { effectiveReleaseDate } from '#lib/catalogue/metadata/release-date.server.js';
+import { activeCheckinSql } from '#lib/social/checkins-query.server.js';
+import { supportsCheckin } from '#lib/social/checkins.js';
 import { historyScope } from '../../core/tracking/history-scope.server';
 import { wholeWorkId } from '../../core/tracking/continue.server';
 import { rewatchFields } from '../../core/tracking/rewatch.server';
@@ -22,8 +24,14 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
   if (!item) throw new AppError(404, 'This title was not found.');
   const config = await getFeatureConfig(userId);
   const wholeId = await wholeWorkId(db, mediaId);
+  const canCheckIn = config.features.presence && supportsCheckin(item.kind);
   const [dated] = await db
-    .select({ releaseDate: effectiveReleaseDate(sql`${s.media.id}`, config.metadataSource) })
+    .select({
+      releaseDate: effectiveReleaseDate(sql`${s.media.id}`, config.metadataSource),
+      activeCheckin: canCheckIn
+        ? activeCheckinSql(userId, mediaId, item.kind === 'show' || item.kind === 'season' ? item.kind : undefined)
+        : sql<null>`null`,
+    })
     .from(s.media)
     .where(eq(s.media.id, mediaId));
   const hasReleaseDate = ['show', 'season', 'collection'].includes(item.kind)
@@ -154,6 +162,8 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
     hasReleaseDate,
     progressTargetIds: progressTargets.map((row) => row.id),
     hasPersonalOverrides: !!(personal?.title || personal?.posterPath || personal?.backdropPath),
+    activeCheckinId: dated?.activeCheckin?.workId === mediaId ? dated.activeCheckin.id : null,
+    activeCheckin: dated?.activeCheckin ?? null,
     ownRewatchStartedAt: rewatch?.startedAt.toISOString() ?? null,
     rewatchTargetIds: rewatches.map((row) => row.mediaId),
     targets: [

@@ -17,6 +17,28 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;await saveConfig(config);for(const id of users)await getSql()`DELETE FROM users WHERE id=${id}`;for(const id of [work,other])await getSql()`DELETE FROM works WHERE id=${id}`;});
 const local=(format='pdf',edition='a'.repeat(64))=>({source:'local',format,edition});
+run('reading from beginning preserves the saved bookmark until the new session actually reads',async()=>{
+ const other=crypto.randomUUID();
+ await getSql()`INSERT INTO works(id,category,kind) VALUES(${other},'book','book')`;
+ await getSql()`INSERT INTO reading_works(id,provider,external_id,kind,title,source_url) VALUES(${other},'openlibrary','OL698473W','book','Beginning fixture','https://fixture.invalid')`;
+ try{
+ const edition='8'.repeat(64);
+ const initial=await prepareReading(users[0],other,local('pdf',edition));
+ await moveReading(users[0],initial.id,{format:'pdf',page:3,total:8});
+ await closeReading(users[0],initial.id);
+ const [before]=await getSql()`SELECT state,page,bookmark_cycle FROM reading_progress WHERE user_id=${users[0]} AND work_id=${other}`;
+ const fresh=await prepareReading(users[0],other,{...local('pdf',edition),fromBeginning:true});
+ expect(fresh.location).toBeNull();
+ await closeReading(users[0],fresh.id);
+ expect((await prepareReading(users[0],other,local('pdf',edition))).location).toEqual({format:'pdf',page:3,total:8});
+ const [after]=await getSql()`SELECT state,page,bookmark_cycle FROM reading_progress WHERE user_id=${users[0]} AND work_id=${other}`;
+ expect(after).toEqual(before);
+ const started=await prepareReading(users[0],other,{...local('pdf',edition),fromBeginning:true});
+ await moveReading(users[0],started.id,{format:'pdf',page:1,total:8});
+ await closeReading(users[0],started.id);
+ expect((await prepareReading(users[0],other,local('pdf',edition))).location).toEqual({format:'pdf',page:1,total:8});
+ }finally{await getSql()`DELETE FROM works WHERE id=${other}`;}
+});
 run('reading sessions are private, bounded and resume the same edition',async()=>{
  const s=await prepareReading(users[0],work,local());expect(s.url).toBeNull();
  await expect(ownedReadingSession(users[1],s.id)).rejects.toMatchObject({status:410});
@@ -105,6 +127,120 @@ run('EPUB reopening preserves explicit completion; rereads reset all edition boo
  await expect(ownedReadingSession(users[0],session.id)).rejects.toMatchObject({status:410});
  expect((await prepareReading(users[0],work,local('epub','d'.repeat(64)))).location).toBeNull();
  await expect(updateReading(users[0],work,{restart:true,state:'reading',page:0})).rejects.toMatchObject({status:409});
+});
+
+run('ending a reread restores the completed read and each edition without duplicating history', async () => {
+ const edition = 'e'.repeat(64), otherEdition = 'f'.repeat(64);
+ const original = await prepareReading(users[0],work,local('epub',edition));
+ const location = {format:'epub' as const,cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:.75};
+ await moveReading(users[0],original.id,location);
+ const otherSession = await prepareReading(users[0],work,local('pdf',otherEdition));
+ await moveReading(users[0],otherSession.id,{format:'pdf',page:3,total:4});
+ const occurredAt='2020-02-01T12:00:00.000Z';
+ const completed=await updateReading(users[0],work,{state:'completed',occurredAt});
+ expect(completed.completedAt?.toISOString()).toBe(occurredAt);
+ const before=(await getSql()`SELECT count(*)::int AS total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total;
+ const reread=await updateReading(users[0],work,{restart:true,state:'reading',page:0,occurredAt:'2020-03-01T12:00:00.000Z'});
+ expect(reread.rereadRestore?.bookmarkCycle).toBe(completed.bookmarkCycle);
+ await expect(ownedReadingSession(users[0],original.id)).rejects.toMatchObject({status:410});
+ const fresh=await prepareReading(users[0],work,local('epub',edition));
+ expect(fresh.location).toBeNull();
+ await moveReading(users[0],fresh.id,{...location,fraction:.2});
+ const {pruneTransientRecords}=await import('../src/lib/server/storage/retention.server');
+ await getSql()`UPDATE reading_sessions SET expires_at=now()-interval '31 days' WHERE id IN (${original.id}::uuid,${otherSession.id}::uuid)`;
+ await pruneTransientRecords();
+ expect((await getSql()`SELECT count(*)::int AS total FROM reading_sessions WHERE id IN (${original.id}::uuid,${otherSession.id}::uuid)`)[0].total).toBe(2);
+ const restored=await updateReading(users[0],work,{endReread:reread.bookmarkCycle});
+ expect(restored).toMatchObject({state:'completed',page:completed.page,totalPages:completed.totalPages,bookmarkCycle:completed.bookmarkCycle,rereadRestore:null});
+ expect(restored.completedAt).toEqual(completed.completedAt);
+ expect((await prepareReading(users[0],work,local('epub',edition))).location).toEqual(location);
+ expect((await prepareReading(users[0],work,local('pdf',otherEdition))).location).toEqual({format:'pdf',page:3,total:4});
+ await expect(ownedReadingSession(users[0],fresh.id)).rejects.toMatchObject({status:410});
+ expect((await getSql()`SELECT count(*)::int AS total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total).toBe(before+1);
+ expect(await updateReading(users[0],work,{endReread:reread.bookmarkCycle})).toEqual(restored);
+ await getSql()`UPDATE reading_sessions SET expires_at=now()-interval '31 days' WHERE id=${fresh.id}`;
+ await pruneTransientRecords();
+ expect(await getSql()`SELECT id FROM reading_sessions WHERE id=${fresh.id}`).toHaveLength(0);
+ const newer=await updateReading(users[0],work,{restart:true,state:'reading',page:0});
+ await expect(updateReading(users[0],work,{endReread:reread.bookmarkCycle})).rejects.toMatchObject({status:409});
+ await expect(updateReading(users[1],work,{endReread:newer.bookmarkCycle})).rejects.toMatchObject({status:409});
+ await updateReading(users[0],work,{endReread:newer.bookmarkCycle});
+});
+
+run('correcting a completed reading date updates one owned history and activity entry', async () => {
+ await updateReading(users[0],work,{state:'completed',occurredAt:'2020-04-01T12:00:00.000Z'});
+ const before=(await getSql()`SELECT count(*)::int AS total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total;
+ const occurredAt='2020-05-01T12:00:00.000Z';
+ const corrected=await updateReading(users[0],work,{state:'completed',occurredAt});
+ expect(await updateReading(users[0],work,{state:'completed',occurredAt})).toEqual(corrected);
+ expect((await getSql()`SELECT count(*)::int AS total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total).toBe(before);
+ const rows=await getSql()`SELECT h.occurred_at, a.occurred_at AS projected_at FROM reading_history h
+  JOIN social_activity a ON a.user_id=h.user_id AND a.source_key='reading:'||h.id
+  WHERE h.user_id=${users[0]} AND h.work_id=${work} AND h.state='completed' AND h.occurred_at=${occurredAt}::timestamptz`;
+ expect(rows).toHaveLength(1);
+ expect(new Date(rows[0].projected_at).toISOString()).toBe(occurredAt);
+ await updateReading(users[0],work,{state:'reading',page:0,totalPages:4});
+});
+
+run('resetting reading position clears every edition while keeping completion and history',async()=>{
+ const db=getSql(),epub='6'.repeat(64),pdf='7'.repeat(64);
+ await updateReading(users[0],work,{state:'reading',page:2,totalPages:4});
+ const first=await prepareReading(users[0],work,local('epub',epub));
+ const second=await prepareReading(users[0],work,local('pdf',pdf));
+ await moveReading(users[0],first.id,{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:.75});
+ await moveReading(users[0],second.id,{format:'pdf',page:3,total:4});
+ const completed=await updateReading(users[0],work,{state:'completed',occurredAt:'2021-01-01T12:00:00.000Z'});
+ const history=await db`SELECT id,state,occurred_at FROM reading_history WHERE user_id=${users[0]} AND work_id=${work} ORDER BY id`;
+ const reset=await updateReading(users[0],work,{reset:'position'});
+ expect(reset).toMatchObject({state:'completed',page:0,totalPages:4,startedAt:completed.startedAt,completedAt:completed.completedAt,rereadRestore:null});
+ expect(reset.bookmarkCycle).not.toBe(completed.bookmarkCycle);
+ expect(await db`SELECT id,state,occurred_at FROM reading_history WHERE user_id=${users[0]} AND work_id=${work} ORDER BY id`).toEqual(history);
+ expect(await db`SELECT id FROM reading_sessions WHERE id IN (${first.id}::uuid,${second.id}::uuid)`).toHaveLength(2);
+ await expect(moveReading(users[0],first.id,{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:.9})).rejects.toMatchObject({status:410});
+ await expect(moveReading(users[0],second.id,{format:'pdf',page:4,total:4})).rejects.toMatchObject({status:410});
+ expect((await prepareReading(users[0],work,local('epub',epub))).location).toBeNull();
+ expect((await prepareReading(users[0],work,local('pdf',pdf))).location).toBeNull();
+});
+
+run('resetting a reread preserves End reread restoration and fences the old cycle',async()=>{
+ const db=getSql(),edition='8'.repeat(64),location={format:'pdf' as const,page:3,total:4};
+ const original=await prepareReading(users[0],work,local('pdf',edition));
+ await moveReading(users[0],original.id,location);
+ const completed=await updateReading(users[0],work,{state:'completed'});
+ const before=(await db`SELECT count(*)::int total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total;
+ const reread=await updateReading(users[0],work,{restart:true,state:'reading',page:0});
+ const current=await prepareReading(users[0],work,local('pdf',edition));
+ await moveReading(users[0],current.id,{format:'pdf',page:1,total:4});
+ const reset=await updateReading(users[0],work,{reset:'position'});
+ expect(reset.rereadRestore).toEqual(reread.rereadRestore);
+ expect(reset.state).toBe('reading');expect(reset.page).toBe(0);
+ await expect(moveReading(users[0],current.id,{format:'pdf',page:2,total:4})).rejects.toMatchObject({status:410});
+ await expect(updateReading(users[0],work,{endReread:reread.bookmarkCycle})).rejects.toMatchObject({status:409});
+ const restored=await updateReading(users[0],work,{endReread:reset.bookmarkCycle});
+ expect(restored).toMatchObject({state:'completed',page:completed.page,bookmarkCycle:completed.bookmarkCycle,rereadRestore:null});
+ expect((await prepareReading(users[0],work,local('pdf',edition))).location).toEqual(location);
+ expect((await db`SELECT count(*)::int total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total).toBe(before+1);
+});
+
+run('mark unread exits rereading, clears bookmarks and dates, and preserves its history',async()=>{
+ const db=getSql(),edition='9'.repeat(64);
+ const reread=await updateReading(users[0],work,{restart:true,state:'reading',page:0});
+ const current=await prepareReading(users[0],work,local('pdf',edition));
+ await moveReading(users[0],current.id,{format:'pdf',page:2,total:4});
+ const before=(await db`SELECT count(*)::int total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total;
+ const completed=await db`SELECT id FROM reading_history WHERE user_id=${users[0]} AND work_id=${work} AND state='completed' ORDER BY id`;
+ const unread=await updateReading(users[0],work,{reset:'unread'});
+ expect(unread).toMatchObject({state:'planned',page:0,totalPages:4,startedAt:null,completedAt:null,rereadRestore:null});
+ expect(unread.bookmarkCycle).not.toBe(reread.bookmarkCycle);
+ await expect(moveReading(users[0],current.id,{format:'pdf',page:3,total:4})).rejects.toMatchObject({status:410});
+ expect((await prepareReading(users[0],work,local('pdf',edition))).location).toBeNull();
+ expect(await db`SELECT id FROM reading_history WHERE user_id=${users[0]} AND work_id=${work} AND state='completed' ORDER BY id`).toEqual(completed);
+ expect((await db`SELECT count(*)::int total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total).toBe(before+1);
+ expect(await db`SELECT id FROM social_activity WHERE user_id=${users[0]} AND work_id=${work} AND event_kind='reading-planned' AND occurred_at=${unread.updatedAt}`).toHaveLength(1);
+ expect(await updateReading(users[0],work,{endReread:reread.bookmarkCycle})).toEqual(unread);
+ await updateReading(users[0],work,{reset:'unread'});
+ expect((await db`SELECT count(*)::int total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total).toBe(before+1);
+ await updateReading(users[0],work,{state:'reading',page:0,totalPages:4});
 });
 
 run('reading files share metadata but never grant another account cached availability',async()=>{

@@ -12,6 +12,7 @@ import { withSharedRequest } from './request-leases.server';
 import {externalShareResourcePath,shareCompletionPercent} from './policy';
 import { reserveViewer, ensureSharedEncoding, releaseViewer, stopViewerPlayback } from './leases.server';
 import { completeShare, recordShareSegment } from './progress.server';
+import { readingShareSource } from '#lib/reading/sessions.server.js';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export const shareCookie='coast_share_viewer';
@@ -25,10 +26,15 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  if(data.together&&!config.experimentalParties)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
  const context=await getJellyfin(user.id,data.connectionId);
  await context.adapter.identity(context.instance.serverIdentity??undefined);
- const db=getSql(),sources=await db<{external_id:string;kind:string}[]>`select distinct pi.external_id,w.kind from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) order by pi.external_id`;
+ const db=getSql(),sources=await db<{external_id:string;kind:string}[]>`select distinct pi.external_id,w.kind from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track','book','comic') and coast_category_enabled(${user.id}::uuid,w.category) order by pi.external_id limit 20`;
  if(!sources.length)throw new AppError(403,'Choose one playable item from your accessible source.');
  // Item-level evidence confirms this account's access before issuing the capability.
- if(sources[0].kind==='track'){
+ const reading=['book','comic'].includes(sources[0].kind);
+ let readingSource:Awaited<ReturnType<typeof readingShareSource>>|undefined;
+ if(reading){
+  if(data.target!=='website'||data.together||data.trackProgress||data.autoRevoke)throw new AppError(400,'Reading links use independent website access without owner tracking.');
+  readingSource=await readingShareSource(user.id,data.workId,data.connectionId,sources[0].external_id);
+ }else if(sources[0].kind==='track'){
   if(data.target==='vrchat')throw new AppError(400,'VRChat sharing requires a movie or episode.');
   if(data.trackProgress)throw new AppError(400,'Shared watch tracking requires a movie or episode.');
   await context.adapter.musicItem(context.connection.externalUserId!,sources[0].external_id);
@@ -44,9 +50,16 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  const [tokenHash,encryptedToken]=await Promise.all([hashToken(token),encryptCredential(token)]);
  return db.begin(async tx=>{
   await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
+  if(readingSource){
+   const [current]=await tx`select c.id from provider_connections c join users u on u.id=c.user_id join provider_instances i on i.id=c.instance_id
+    where c.id=${data.connectionId} and c.user_id=${user.id} and c.account_generation=${readingSource.connection.accountGeneration}
+      and c.status='connected' and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true')
+      and coast_feature_enabled(u.id,'sharing') and coast_feature_enabled(u.id,'reader') and coast_category_enabled(u.id,${sources[0].kind}) for share of c,u,i`;
+   if(!current)throw new AppError(410,'The shared reading source changed.');
+  }
   const [count]=await tx`select count(*)::int as total from playback_shares where owner_id=${user.id} and revoked_at is null and expires_at>now()`;
   if(count.total>=20)throw new AppError(409,'Revoke an active link before creating more.');
-  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,encrypted_token,together,target,video_codec,expires_at,auto_revoke,track_progress) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${tokenHash},${encryptedToken},${data.together},${data.target},${data.videoCodec},${expiresAt},${data.autoRevoke},${data.trackProgress}) returning id`;
+  const [row]=await tx`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,encrypted_token,together,target,video_codec,expires_at,auto_revoke,track_progress,source_id,edition) values(${user.id},${data.workId},${data.connectionId},${context.connection.accountGeneration},${tokenHash},${encryptedToken},${data.together},${data.target},${data.videoCodec},${expiresAt},${data.autoRevoke},${data.trackProgress},${readingSource?.externalId??null},${readingSource?.edition??null}) returning id`;
   return {id:row.id,token,expiresAt,target:data.target,videoCodec:data.videoCodec};
  });
 }
@@ -54,6 +67,7 @@ export async function listShares(actor:SessionUser|null){const user=requireUser(
 export async function revokeShare(actor:SessionUser|null,id:string){
  const user=requireUser(actor),rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()),encrypted_token=null where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;
  if(!rows.length)throw new AppError(404,'Link not found.');
+ await (await import('./reading.server')).closeReadingShare(user.id,id);
  const viewers=await getSql()<{id:string}[]>`select id from share_viewers where share_id=${id} and ended_at is null limit 64`;
  for(let i=0;i<viewers.length;i+=2)await Promise.allSettled(viewers.slice(i,i+2).map(viewer=>releaseViewer(user.id,viewer.id)));
 }
@@ -75,21 +89,23 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
  });
 }
 export async function assertShare(share:Record<string,any>,db=getSql()){
- const config=await getFeatureConfig(share.owner_id,db);
- const [current]=await db`select s.revoked_at,s.expires_at,s.together,s.target,s.video_codec,w.category,
- c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available') as accessible
+ const [current]=await db`select s.owner_id,s.source_id,s.edition,s.revoked_at,s.expires_at,s.together,s.target,s.video_codec,w.category,w.kind,
+ c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a join provider_items pi on pi.id=a.provider_item_id where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available' and (w.kind not in ('book','comic') or replace(lower(pi.external_id),'-','')=replace(lower(s.source_id),'-',''))) as accessible
  from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;
- if(!current||!config.allowPlaybackSharing||current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
+ if(!current)throw new AppError(410,'This invitation is unavailable.');
+ const config=await getFeatureConfig(current.owner_id,db);
+ if(!config.allowPlaybackSharing||current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
  if(current.target==='vrchat'&&(!config.allowTranscoding||current.video_codec==='hevc'&&!config.allowVrchatHevc))throw new AppError(410,'This VRChat profile is disabled by the administrator.');
  if(!categoryEnabled(config,current.category)||current.together&&!config.experimentalParties)throw new AppError(410,'This medium is disabled.');
+ if(['book','comic'].includes(current.kind)&&(!config.features.reader||current.target!=='website'||current.together||!current.source_id||!current.edition))throw new AppError(410,'This reading invitation is unavailable.');
  if(!current.accessible)throw new AppError(410,'The shared source is no longer accessible.');
 }
 export async function shareViewer(token?:string){
  if(!token||!/^[A-Za-z0-9_-]{43}$/.test(token))throw new AppError(401,'Open a valid playback invitation.');
- const [row]=await getSql()`select s.*,v.id as viewer_id,v.host,v.playback_id,p.state as playback_state,coalesce(m.title,a.title) as title from share_viewers v join playback_shares s on s.id=v.share_id left join media m on m.id=s.work_id left join music_works a on a.id=s.work_id left join playback_sessions p on p.id=v.playback_id where v.token_hash=${await hashToken(token)}`;
+ const [row]=await getSql()`select s.*,v.id as viewer_id,v.host,v.playback_id,v.reading_session_id,w.kind,p.state as playback_state,coalesce(m.title,a.title,r.title) as title from share_viewers v join playback_shares s on s.id=v.share_id join works w on w.id=s.work_id left join media m on m.id=s.work_id left join music_works a on a.id=s.work_id left join reading_works r on r.id=s.work_id left join playback_sessions p on p.id=v.playback_id where v.token_hash=${await hashToken(token)}`;
  if(!row)throw new AppError(401,'Open a valid playback invitation.');await assertShare(row);return row;
 }
-export async function sharedState(token?:string){const row=await shareViewer(token);if(row.playback_id&&row.playback_state!=='stopped')await reserveViewer(row.owner_id,row.viewer_id);return {id:row.id,workId:row.work_id,title:row.title,host:row.host,together:row.together,positionSeconds:row.position_seconds,durationSeconds:row.duration_seconds,paused:row.paused,updatedAt:row.updated_at,serverTime:new Date().toISOString(),expiresAt:row.expires_at};}
+export async function sharedState(token?:string){const row=await shareViewer(token);if(row.reading_session_id)await reserveViewer(row.owner_id,row.viewer_id,false,row.reading_session_id);else if(row.playback_id&&row.playback_state!=='stopped')await reserveViewer(row.owner_id,row.viewer_id);return {id:row.id,workId:row.work_id,title:row.title,mediaType:['book','comic'].includes(row.kind)?'reading':row.kind==='track'?'audio':'video',host:row.host,together:row.together,positionSeconds:row.position_seconds,durationSeconds:row.duration_seconds,paused:row.paused,updatedAt:row.updated_at,serverTime:new Date().toISOString(),expiresAt:row.expires_at};}
 export async function startShared(token:string|undefined,input:unknown,signal?:AbortSignal){
  signal?.throwIfAborted();
  const viewer=await shareViewer(token);

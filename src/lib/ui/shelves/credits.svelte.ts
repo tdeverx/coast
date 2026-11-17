@@ -95,6 +95,8 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
 
 
   return {
+    get filterReset() { return { disabled: type === 'all' && department === 'all' && available === (scope === 'library'),
+      run: () => { type = 'all'; department = 'all'; available = scope === 'library'; return request(1, true); } }; },
     get pagination() { return { kind: 'pages' as const, page: result.page, pages: result.pages, append: layout === 'row' && scope !== 'known', controls: layout === 'grid' ? 'header' as const : 'none' as const }; },
     get title() { return title; }, get items() { return result.items; }, get busy() { return busy; }, get ready() { return ready; },
     get error() { return error; }, get activated() { return resource.activated; },
@@ -103,10 +105,10 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
     get rows() { return scope === 'all' ? 2 : 1; },
     get resetKey() { return `${type}:${department}`; },
     get filters(): ShelfControl[] { return [
-      {type:'segments' as const,label:`${title} roles`,value:department,options:[{value:'all',label:'All'},...(result.departments??['Acting','Crew']).map(label=>({value:label,label}))],change:(value:string)=>{department=value;void request(1, true);}},
-      ...(scope!=='library' ? [{type:'availability' as const,label:'Available to play only',value:available?'available':'all',change:(value:string)=>{available=value==='available';void request(1, true);}}] : []),
+      {type:'select' as const,label:'Role',value:department,options:[{value:'all',label:'All'},...(result.departments??['Acting','Crew']).map(label=>({value:label,label}))],change:(value:string)=>{department=value;void request(1, true);}},
+      ...(scope!=='library' ? [{type:'availability' as const,label:'Available to watch only',value:available?'available':'all',change:(value:string)=>{available=value==='available';void request(1, true);}}] : []),
     ]; },
-    get controls(): ShelfControl[] { return [{type:'select',label:`${title} type`,value:type,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>{type=value;void request(1, true);}}]; },
+    get controls(): ShelfControl[] { return [{type:'select',label:'Media type',value:type,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>{type=value;void request(1, true);}}]; },
     details(item) { const roles=rolesById.get(item.id); return roles && roles.remaining>0 ? {summary:'View all roles',body:roles.full} : undefined; },
     get empty() { return !ready ? 'Loading credits…' : scope==='library' ? 'No available titles in your library.' : 'No credits match these filters.'; }, load,
   };

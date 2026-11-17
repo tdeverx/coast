@@ -111,6 +111,18 @@ export async function gameDetails(userId: string | null, gameId: string) {
   return { ...enriched, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
+/** Menu choices load labels only; session totals and provider state stay out of this read. */
+export async function playthroughChoices(userId: string, gameId: string, requestedPage = 1) {
+  uuid(userId);uuid(gameId);v.parse(pageNumberSchema,requestedPage);
+  await requireFeature(userId,'game');
+  const size=20;
+  const rows=await getDb().select({id:gamePlaythroughs.id,platform:gamePlaythroughs.platform,
+    status:gamePlaythroughs.status,progressPercent:gamePlaythroughs.progressPercent,createdAt:gamePlaythroughs.createdAt})
+    .from(gamePlaythroughs).where(and(eq(gamePlaythroughs.userId,userId),eq(gamePlaythroughs.gameId,gameId)))
+    .orderBy(desc(gamePlaythroughs.createdAt),desc(gamePlaythroughs.id)).limit(size+1).offset((requestedPage-1)*size);
+  return {items:rows.slice(0,size),hasMore:rows.length>size};
+}
+
 export async function createPlaythrough(userId: string, gameId: string, raw: unknown, transaction?: Transaction) {
   uuid(userId); uuid(gameId);
   const input = v.parse(playthroughInputSchema, raw);
@@ -137,15 +149,15 @@ async function ownedPlaythrough(tx: Transaction, userId: string, id: string) {
 
 export async function updatePlaythrough(userId: string, id: string, raw: unknown, transaction?: Transaction) {
   uuid(userId); uuid(id);
-  const input = v.parse(playthroughUpdateSchema, raw);
+  const { completedAt: date, ...input } = v.parse(playthroughUpdateSchema, raw);
   const apply=async(tx:Transaction)=>{
     const current = await ownedPlaythrough(tx, userId, id);
     const status = input.status ?? current.status;
     const now = new Date();
     const startedAt = status === 'in-progress' ? current.startedAt ?? now : current.startedAt;
-    const completedAt = status === 'completed' ? current.completedAt ?? now : null;
+    const completedAt = status === 'completed' ? date ? new Date(date) : current.completedAt ?? now : null;
     if (status === current.status && (input.progressPercent ?? current.progressPercent) === current.progressPercent &&
-      startedAt === current.startedAt && completedAt === current.completedAt) return current;
+      startedAt === current.startedAt && completedAt?.getTime() === current.completedAt?.getTime()) return current;
     const [row] = await tx.update(gamePlaythroughs).set({
       ...input,
       startedAt,
@@ -203,6 +215,20 @@ export async function playthroughDetails(userId:string,id:string,requestedPage=1
   const sessions=await db.select().from(gameSessions).where(eq(gameSessions.playthroughId,id))
     .orderBy(desc(gameSessions.playedAt),desc(gameSessions.id)).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
   return {...playthrough,sessions,page,pages};
+}
+
+/** Local play-time correction preserves playthrough status, dates and progress. */
+export async function removeGameSession(userId:string,id:string,sessionId:string){
+  uuid(userId);uuid(id);uuid(sessionId);
+  return getDb().transaction(async tx=>{
+    const current=await ownedPlaythrough(tx,userId,id);
+    const removed=await tx.delete(gameSessions).where(and(eq(gameSessions.id,sessionId),eq(gameSessions.playthroughId,id))).returning({id:gameSessions.id});
+    if(removed.length){
+      await enqueueCollectionProjectionInTransaction(tx,userId);
+      await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,sessionId,action:'session_removed'});
+    }
+    return {removed:removed.length>0};
+  });
 }
 
 /** Refresh provider-owned metadata while retaining the game's ID and all private playthroughs. */

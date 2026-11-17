@@ -1,36 +1,67 @@
 <script lang="ts">
-  import { useRetention } from '#lib/ui/retention.js';
-  import { reportFailure } from '#lib/ui/client-context.js';
   import { page } from '$app/state';
   import type { ComponentProps } from 'svelte';
   import Button from './Button.svelte';
-  import { useClient } from '#lib/ui/client-context.js';
-  import { createMutation } from '#lib/ui/mutation.svelte.js';
+  import Icon from './Icon.svelte';
   import Rating from './Rating.svelte';
   import RecommendAction from './RecommendAction.svelte';
   import ReactionActions from './ReactionActions.svelte';
-  let { section, workId, disabled = false, rating = null, onrated, controls = [], recommendationIds = [] }: {
-    section: 'recommendations' | 'social' | 'rating' | 'relationships';
+  let { section, workId, disabled = false, rating = null, onrated, controls = [] }: {
+    section: 'social' | 'rating' | 'relationships' | 'quick' | 'reaction' | 'recommend';
     workId: string; disabled?: boolean; rating?: number | null; onrated?: (value: number | null) => void;
-    recommendationIds?: string[];
     controls?: ComponentProps<typeof Button>[];
   } = $props();
-  const {changeMany}=useClient();
-  const mutation=createMutation(async()=>{}, useClient().feedback.notify, useRetention());
-  async function respond(action:'save'|'dismiss') {
-    await mutation.run(()=>changeMany(recommendationIds.map(id=>`social/recommendations/${id}`),{action}),action==='save'?'Recommendation saved.':'Recommendation dismissed.');
-  }
-
-  reportFailure(()=>mutation.error);
+  let ratingControl=$state<Rating>();
+  export function isBusy() { return ratingControl?.isBusy() ?? false; }
 </script>
-{#if section === 'recommendations' && page.data.capabilities?.social!==false}
-  <Button item icon="bookmark" disabled={disabled||mutation.busy} onclick={()=>respond('save')}>Save</Button>
-  <Button item icon="close" disabled={disabled||mutation.busy} onclick={()=>respond('dismiss')}>Dismiss</Button>
-
-{:else if section === 'social' && page.data.capabilities?.social!==false}
+{#if section === 'social' && page.data.capabilities?.social!==false}
   <RecommendAction {workId} {disabled} /><ReactionActions targetId={workId} {disabled} />
+{:else if section === 'reaction'}
+  <ReactionActions targetId={workId} {disabled} />
+{:else if section === 'recommend'}
+  {#if page.data.capabilities?.social!==false}<RecommendAction {workId} {disabled} />{/if}
 {:else if section === 'rating'}
-  <Rating mediaId={workId} value={rating} {onrated} />
-{:else if section !== 'social' && section !== 'recommendations'}
+  <Rating bind:this={ratingControl} mediaId={workId} value={rating} {onrated} />
+{:else if section === 'quick'}
+  <div class="quick-actions" role="group" aria-label="Quick actions">
+    {#each controls as control}
+      <Button {...control} icon={undefined} class="menu-icon-action" text={undefined} label={control.label ?? control.text}
+        title={control.title ?? control.text} keepOpen showCheckmark={false}>
+        {#if control.icon}
+          <span class="quick-icon" class:profile-icon={control.icon === 'image'} aria-hidden="true">
+            <span class="quick-outline"><Icon name={control.icon} /></span>
+            <span class="quick-fill"><Icon name={control.icon} filled /></span>
+          </span>
+        {/if}
+      </Button>
+    {/each}
+  </div>
+{:else if section === 'relationships'}
   {#each controls as control}<Button {...control} />{/each}
 {/if}
+
+<style>
+  .quick-actions { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: var(--menu-inset); }
+  .quick-actions :global(.menu-icon-action:hover:not(:disabled)),
+  .quick-actions :global(.menu-icon-action:focus-visible) { background: transparent; }
+  .quick-icon {
+    display: grid;
+    width: min(var(--menu-icon-action-artwork), 100%);
+    aspect-ratio: 1;
+    color: color-mix(in srgb, var(--white) 55%, transparent);
+  }
+  .quick-outline, .quick-fill { grid-area: 1 / 1; }
+  .profile-icon .quick-outline { visibility: var(--quick-profile-outline, visible); }
+  .quick-icon :global(svg) { width: 100%; height: 100%; }
+  .quick-fill {
+    color: var(--quick-fill-color, var(--ink));
+    visibility: var(--quick-fill-visibility, hidden);
+  }
+  .quick-actions :global(.menu-icon-action[aria-checked='true']),
+  .quick-actions :global(.menu-icon-action:focus-visible) { --quick-fill-visibility: visible; --quick-profile-outline: hidden; }
+  .quick-actions :global(.menu-icon-action[role='menuitemcheckbox'][aria-checked='true']:focus-visible) { --quick-fill-color: var(--danger); }
+  @media (hover: hover) {
+    .quick-actions :global(.menu-icon-action:hover) { --quick-fill-visibility: visible; --quick-profile-outline: hidden; }
+    .quick-actions :global(.menu-icon-action[role='menuitemcheckbox'][aria-checked='true']:hover) { --quick-fill-color: var(--danger); }
+  }
+</style>

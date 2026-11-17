@@ -10,6 +10,7 @@ import { useClient } from '#lib/ui/client-context.js';
 import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
 import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import { ApiError } from '#lib/ui/client.js';
+import { mediaTypeOptions } from '#lib/ui/filter-options.js';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
 import { createShelfRefresh } from './refresh.svelte.js';
 
@@ -38,8 +39,25 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
     ? location.url.searchParams.get('category') ?? 'screen'
     : 'screen'));
 
-  let available = $state(get().available === true || get().feature !== 'upcoming' && get().feature !== 'browse' && get().layout === 'grid'
-    && (get().mode !== 'generic' || !!page.data.user) && location.url.searchParams.get('available') === 'true');
+  const localAvailability = $derived(get().feature === 'browse'
+    && ['provider-genre', 'provider-popular', 'provider-rated'].includes(get().variant ?? ''));
+  function canFilterAvailability() {
+    return (get().feature === 'row' || get().feature === 'recommendations' || localAvailability) && !get().available
+      && (get().mode !== 'generic' || !!page.data.user && category !== 'music');
+  }
+  let available = $state(get().available === true || canFilterAvailability() && get().layout === 'grid'
+    && location.url.searchParams.get('available') === 'true');
+  const kindOptions = $derived.by(() => {
+    if (get().kind || get().mode === 'generic' || (get().feature !== 'row' && get().feature !== 'recommendations')) return [];
+    if (category === 'screen') return mediaTypeOptions().filter(option => ['all', 'movie', 'show'].includes(option.value));
+    if (category !== 'reading') return [];
+    const options = mediaTypeOptions({ ...page.data, features: page.data.capabilities })
+      .filter(option => ['all', 'book', 'comic'].includes(option.value));
+    return options.length > 2 ? options : [];
+  });
+  const initialKind = get().layout === 'grid' ? location.url.searchParams.get('rowKind') : null;
+  let selectedKind = $state(kindOptions.some(option => option.value === initialKind) ? initialKind! : 'all');
+  const kind = $derived(get().kind ?? (selectedKind === 'all' ? undefined : selectedKind));
 
   const resource = createResource(
     {
@@ -76,16 +94,31 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
       : recommendationRowTitle(medium, orderSeed);
   });
   function enabled() {
+    const config = { ...page.data, features: page.data.capabilities }, kind = get().kind;
     return (get().feature === 'upcoming'
       ? page.data.capabilities?.planning !== false
-      : generic || page.data.capabilities?.personalisation !== false) && categoryEnabled({ ...page.data, features: page.data.capabilities }, category) && (get().kind !== 'book' || page.data.experimentalBooks) && (get().kind !== 'comic' || page.data.experimentalComics) && (get().feature !== 'upcoming' || page.data.experiments.planning);
+      : generic || page.data.capabilities?.personalisation !== false) && categoryEnabled(config, category)
+      && ((kind !== 'book' && kind !== 'comic') || categoryEnabled(config, kind))
+      && (get().feature !== 'upcoming' || page.data.experiments.planning);
   }
 
+  function updateGridLocation(number: number) {
+    if (location.embedded || preview || get().layout !== 'grid') return;
+    const url = new URL(location.url.href);
+    url.searchParams.set('category', category);
+    if (canFilterAvailability()) url.searchParams.set('available', String(available));
+    else url.searchParams.delete('available');
+    if (selectedKind !== 'all') url.searchParams.set('rowKind', selectedKind);
+    else url.searchParams.delete('rowKind');
+    url.searchParams.set('page', String(number));
+    void goto(url, { shallow: true, replace: true, reset: false, state: page.state });
+  }
   const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number?: number, append = false) {
     if (append && resource.busy) return;
     refresh.clear();
     if (!get().category && !categoryEnabled({ ...page.data, features: page.data.capabilities }, category)) category = mediumOptions({ ...page.data, features: page.data.capabilities })[0]?.value ?? category;
+    if (!kindOptions.some(option => option.value === selectedKind)) selectedKind = 'all';
 
     if (!enabled()) {
       resource.replace(empty());
@@ -101,23 +134,14 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
     const requestedScope = selectionKey;
     if (append && resource.data.scope !== requestedScope) { append = false; number = 1; }
 
-    if (!location.embedded && !preview && get().layout === 'grid') {
-      const url = new URL(location.url.href);
+    updateGridLocation(number);
 
-      url.searchParams.set('category', category);
-
-      if (get().feature === 'upcoming' || get().feature === 'browse') url.searchParams.delete('available'); else url.searchParams.set('available', String(available));
-
-      url.searchParams.set('page', String(number));
-      goto(url, { shallow: true, replace: true, reset: false, state: page.state });
-    }
-
-    const params = new URLSearchParams({ category, available: String(available), page: String(number) });
+    const params = new URLSearchParams({ category, available: String(!localAvailability && available), page: String(number) });
 
     if (get().feature === 'upcoming') params.set('view', 'releases');
     if (get().genre) params.set('genre', get().genre!);
     if (get().workId) params.set('work', get().workId!);
-    if (get().kind) params.set('kind', get().kind!);
+    if (kind) params.set('kind', kind);
     if (get().variant) params.set('variant', get().variant!);
     if (!generic && get().reason) params.set('reason', get().reason!);
     if (get().feature !== 'upcoming') params.set('seed', orderSeed);
@@ -156,9 +180,9 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
  const scopeKey=$derived(JSON.stringify([
   page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
   get().feature==='upcoming'&&page.data.experiments.planning,
-  get().mode,get().feature,get().variant,get().genre,get().kind,get().reason,get().workId,get().category,
+  get().mode,get().feature,get().variant,get().genre,get().kind,get().reason,get().workId,get().category,get().available,
   ]));
- const selectionKey=$derived(JSON.stringify([scopeKey,category,available]));
+ const selectionKey=$derived(JSON.stringify([scopeKey,category,!localAvailability&&available,selectedKind]));
  let previousScope=untrack(()=>scopeKey);
  let previousRefresh=untrack(()=>refreshKey);
  $effect(()=>{const scope=scopeKey,key=refreshKey;untrack(()=>{
@@ -166,11 +190,22 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
   if(!changed&&key===previousRefresh)return;
   previousScope=scope;previousRefresh=key;
   const activated=resource.activated||resource.ready;
-  if(changed){if(get().category!==undefined)category=get().category!;if(activated)resource.replace(empty());}
+  if(changed){
+   if(get().category!==undefined)category=get().category!;
+   if(!canFilterAvailability())available=get().available===true;
+   if(!kindOptions.some(option=>option.value===selectedKind))selectedKind='all';
+   if(activated)resource.replace(empty());
+  }
   if(activated)refresh.invalidate();
  });});
   onDestroy(resource.dispose);
- const selectMedium=(value:string)=>{category=value;void load(1);};
+ const selectMedium=(value:string)=>{
+  if(value===category)return;
+  category=value;
+  selectedKind='all';
+  if(!canFilterAvailability())available=get().available===true;
+  void load(1);
+ };
   return {
     get title() { return title; },
   get href(){
@@ -179,15 +214,18 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
    if(get().genre)params.set('genre',get().genre!);
    if(get().workId)params.set('work',get().workId!);
    if(get().kind)params.set('kind',get().kind!);
+   if(selectedKind!=='all')params.set('rowKind',selectedKind);
    if(get().variant)params.set('variant',get().variant!);
    if(!generic && get().reason)params.set('reason',get().reason!);
    if(get().feature!=='upcoming')params.set('seed',orderSeed);
-   if(get().feature!=='upcoming'&&get().feature!=='browse')params.set('available',String(available));
+   if(get().available)params.set('library','true');
+   else if(canFilterAvailability())params.set('available',String(available));
       return `${generic?'/discover':'/for-you'}?${params}`;
     },
 
     get items() {
-      return enabled() && resource.data.scope === selectionKey ? resource.data.items : [];
+      if (!enabled() || resource.data.scope !== selectionKey) return [];
+      return localAvailability && available ? resource.data.items.filter(item => item.available) : resource.data.items;
     },
 
     get busy() {
@@ -211,7 +249,7 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
     },
 
     get resetKey() {
-      return `${category}:${get().kind ?? 'all'}:${available}`;
+      return `${category}:${kind ?? 'all'}:${available}`;
     },
 
     get mediaKind() {
@@ -243,6 +281,13 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
     get controls() {
       return [];
     },
+    get filterReset() {
+      const categoryChoices = mediumOptions({ ...page.data, features: page.data.capabilities }, ['screen', 'game', 'music', 'reading']);
+      const defaultCategory = get().category ?? (categoryChoices.some(option => option.value === 'screen') ? 'screen' : categoryChoices[0]?.value ?? category);
+      const resetCategory = get().feature === 'row' ? category : defaultCategory;
+      return { disabled: category === resetCategory && selectedKind === 'all' && (!canFilterAvailability() || !available),
+        run: () => { category = resetCategory; selectedKind = 'all'; if (canFilterAvailability()) available = false; return load(1); } };
+    },
 
     get filters(): ShelfControl[] {
       return [
@@ -250,23 +295,39 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
           ? []
           : [
             {
-              type: 'segments' as const,
-              label: `${get().feature} medium`,
+              type: 'select' as const,
+              label: 'Medium',
               value: category,
               options: mediumOptions({ ...page.data, features: page.data.capabilities }, ['screen', 'game', 'music', 'reading']),
               change: selectMedium
             }
           ],
 
-        ...get().feature !== 'upcoming' && get().feature !== 'browse' && !get().available && (!generic || !!page.data.user)
+        ...kindOptions.length ? [{
+          type: 'select' as const,
+          label: category === 'reading' ? 'Reading type' : 'Media type',
+          value: selectedKind,
+          options: kindOptions,
+          change: (value: string) => {
+            if (value === selectedKind || !kindOptions.some(option => option.value === value)) return;
+            selectedKind = value;
+            void load(1);
+          }
+        }] : [],
+
+        ...canFilterAvailability()
           ? [
             {
               type: 'availability' as const,
-              label: 'Available',
+              label: category === 'reading' ? 'Available to read only' : category === 'music' ? 'Available to listen only'
+                : category === 'game' ? 'Owned only' : 'Available to watch only',
               value: available ? 'available' : 'all',
               change: (value: string) => {
-                available = value === 'available';
-                void load(1);
+                const next = value === 'available';
+                if (available === next) return;
+                available = next;
+                if (localAvailability) updateGridLocation(1);
+                else void load(1);
               }
             }
           ]

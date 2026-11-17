@@ -45,10 +45,11 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
     activated: true,
     filterBy: 'none',
     get filters(): ShelfControl[] {
-      return [{ type: 'segments', label: `${this.title} media type`, value: kind,
+      return [{ type: 'select', label: 'Media type', value: kind,
         options: [...mediaTypeOptions(options.mediums ?? page.data), ...((options.mediums ?? page.data).experimentalMusic ? [{ value: 'artist', label: 'Artists' }] : [])].filter(option=>option.value==='all'||!options.view||options.view==='all'||searchSurface(option.value)===options.view), change: selectKind }];
     },
     controls: [],
+    get filterReset() { return { disabled: kind === 'all', run: () => selectKind('all') }; },
     actions: [],
     rows: 1,
     get resetKey() { return `${options.query}:${options.view ?? 'all'}:${kind}`; },

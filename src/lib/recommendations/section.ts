@@ -17,5 +17,6 @@ export function recommendationSectionSource(url: { searchParams: Pick<URLSearchP
   const reason = params.get('reason');
   return {type:'recommendation',mode,feature,category,kind,variant,layout:'grid',
     genre:params.get('genre') || undefined, workId:params.get('work') || undefined, seed:params.get('seed') || undefined,
+    available:(feature === 'row' || feature === 'recommendations') && params.get('library') === 'true' || undefined,
     reason:reason && ['liked','watched','saved','explore'].includes(reason) ? reason as GenreReason : undefined};
 }

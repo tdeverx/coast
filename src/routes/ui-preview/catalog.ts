@@ -11,6 +11,7 @@ export const referenceSections = [
   { value: 'elements', label: 'Elements' },
   { value: 'components', label: 'Components' },
   { value: 'compositions', label: 'Compositions' },
+  { value: 'menus', label: 'Menus' },
 ];
 
 // Small controls, content primitives and charts used to compose larger components.
@@ -19,10 +20,12 @@ export const elements = [
   'ActivityHeader', 'ProgressBar', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
   'MetricGrid', 'Toast', 'OperationProgress', 'SettingsRow',
   'Pagination', 'PlaybackTimeline', 'Rating', 'TextLink',
-  'RowFilter', 'RowStyleMenu', 'SegmentedControl',
+  'SegmentedControl',
 ] as const satisfies readonly (typeof components[number])[];
 
-export const composedComponents = components.filter(name => !elements.some(element => element === name));
+export const menuComponents = ['WorkMenu', 'WorkListActions', 'RowFilter', 'RowStyleMenu', 'PartyMenu'] as const satisfies readonly (typeof components[number])[];
+const menuOnly = new Set<string>(menuComponents);
+export const composedComponents = components.filter(name => !menuOnly.has(name) && !elements.some(element => element === name));
 
 export const referenceEntries = [
   ...components.map(id => ({id, title: id.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,letter=>letter.toUpperCase()), sources: [manifest[id].path], elements: manifest[id].elements, usedBy: manifest[id].usedBy, dynamicComposition: manifest[id].dynamicComposition})),

@@ -10,9 +10,16 @@ import recommendationSourceRefresh from '../docs/audits/2026-11-16-recommendatio
 import providerRowsSourceRefresh from '../docs/audits/2026-11-16-provider-rows/source-refresh.json';
 import viewportSourceRefresh from '../docs/audits/2026-11-16-provider-rows/viewport-source-refresh.json';
 import pausedTrackingSourceRefresh from '../docs/audits/2026-11-17-paused-tracking/source-refresh.json';
+import progressFollowupSourceRefresh from '../docs/audits/2026-11-17-paused-tracking/followup-source-refresh.json';
+import menuReadRetrySourceRefresh from '../docs/audits/2026-11-17-menu-read-retry/source-refresh.json';
+import menuTrackingSourceRefresh from '../docs/audits/2026-11-17-menu-tracking/source-refresh.json';
+import menuRolloutSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/source-refresh.json';
+import menuRolloutFollowupSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json';
+import menuPlaybackEligibilitySourceRefresh from '../docs/audits/2026-11-17-menu-rollout/playback-eligibility-source-refresh.json';
+import menuResolvedArtistSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/resolved-artist-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -21,6 +28,61 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('resolved artist eligibility advances its own immutable review receipt', async () => {
+  expect(menuResolvedArtistSourceRefresh.epoch).toBe('menu-resolved-artist-review-2026-11-17');
+  expect(menuResolvedArtistSourceRefresh.blanketAcceptance).toBe(false);
+  for(const [path,pin] of Object.entries(menuResolvedArtistSourceRefresh.files))
+    await expectCurrentSource(path,pin.current,'Review the prepared artist identity eligibility correction.');
+  const supportingFiles: Readonly<Record<string,string>> = menuResolvedArtistSourceRefresh.supportingFiles;
+  for(const [path,hash] of Object.entries(supportingFiles))
+    await expectCurrentSource(path,hash,'Review the prepared artist regression evidence.');
+  const report=await Bun.file(menuResolvedArtistSourceRefresh.report).text();
+  expect(report).toContain('295c703');
+  expect(report).toContain('resolved workId');
+  expect(report).toContain('zero additional reads');
+});
+
+test('PR eligibility and bootstrap corrections advance exact pins without rewriting published evidence', async () => {
+  expect(menuPlaybackEligibilitySourceRefresh.epoch).toBe('menu-playback-eligibility-review-2026-11-17');
+  expect(menuPlaybackEligibilitySourceRefresh.blanketAcceptance).toBe(false);
+  for(const [path,pin] of Object.entries(menuPlaybackEligibilitySourceRefresh.files))
+    await expectCurrentSource(path,pin.current,'Review the PR playback eligibility correction.');
+  const supportingFiles: Readonly<Record<string,string>> = menuPlaybackEligibilitySourceRefresh.supportingFiles;
+  for(const [path,hash] of Object.entries(supportingFiles))
+    await expectCurrentSource(path,hash,'Review the playback eligibility regression evidence.');
+  const report=await Bun.file(menuPlaybackEligibilitySourceRefresh.report).text();
+  expect(report).toContain('1ef98ad');
+  expect(report).toContain('canPlayMusicCard');
+  expect(report).toContain('server source authorization');
+  expect(report).toContain('standalone container migration copy');
+});
+
+test('menu follow-up binds completed local work and bounded proof without promoting provider acceptance', async () => {
+  expect(menuRolloutFollowupSourceRefresh.epoch).toBe('menu-rollout-followup-local-2026-11-17');
+  expect(menuRolloutFollowupSourceRefresh.blanketAcceptance).toBe(false);
+  for (const [path,pin] of Object.entries(menuRolloutFollowupSourceRefresh.files))
+    await expectCurrentSource(path,pin.current,'Review the changed follow-up owner and refresh its local evidence.');
+  for (const [path,hash] of Object.entries(menuRolloutFollowupSourceRefresh.supportingFiles))
+    await expectCurrentSource(path,hash,'Review the follow-up supporting source and its remaining acceptance.');
+  const report=await Bun.file(menuRolloutFollowupSourceRefresh.report).text();
+  expect(report).toContain('100 actual cards');
+  expect(report).toContain('Disposable reading isolation and lifecycle review');
+  expect(report).toContain('material investigation');
+  expect(report).toContain('must explicitly approve opening a pull request');
+});
+
+test('menu rollout binds local source review without claiming complete parity or hosted acceptance', async () => {
+  expect(menuRolloutSourceRefresh.epoch).toBe('menu-rollout-local-2026-11-17');
+  expect(menuRolloutSourceRefresh.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(menuRolloutSourceRefresh.files))
+    await expectCurrentSource(path, pin.current, 'Refresh the rollout source review and its remaining parity.');
+  for (const [path, hash] of Object.entries(menuRolloutSourceRefresh.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the changed rollout supporting owner and its local evidence.');
+  const report = await Bun.file(menuRolloutSourceRefresh.report).text();
+  expect(report).toContain('Feature parity still open');
+  expect(report).toContain('Mark unread and Reset reading position remain planned');
+});
 
 test('audit register binds runtime pins and executable owners without promoting open work', async () => {
   expect(register.schemaVersion).toBe(1);

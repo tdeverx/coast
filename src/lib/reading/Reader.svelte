@@ -1,5 +1,5 @@
 <script lang="ts">
- import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, setReadingExit, retryReadingSave } from './client.svelte';
+ import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, setReadingExit, retryReadingSave, touchReadingSession } from './client.svelte';
  import { useClient, reportFailure } from '#lib/ui/client-context.js';
  import { page } from '$app/state';
  import { untrack } from 'svelte';
@@ -11,10 +11,10 @@
  import Button from '#lib/ui/components/Button.svelte';
  import ProgressBar from '#lib/ui/components/ProgressBar.svelte';
  import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
- import { api, message, isFeatureDisabled, ApiError } from '#lib/ui/client.js';
+ import { message, isFeatureDisabled, ApiError } from '#lib/ui/client.js';
  import type { ReaderEngine } from './reader/engine';
  import type { ReaderProgress } from './reader/load';
- const { preview } = useClient();
+ const { preview, feedback } = useClient();
  let { example }: { example?: { title: string; state?: 'ready'|'opening'|'error'|'unsaved'|'follower' } } = $props();
  const sample = $state({ visible:false, file:null as File|null, session:null as ReadingSessionView|null, location:{format:'cbz',page:1,total:8} as ReadingLocation|null, error:'',unsaved:false,rendering:false });
  const reader = $derived(preview ? sample : applicationReader);
@@ -25,7 +25,7 @@
  let host=$state<HTMLElement>();
  let engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
  let loadProgress=$state<ReaderProgress>({phase:'prepare'});
- const following=$derived(!preview&&syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
+ const following=$derived(!preview&&syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&!reader.session.shared&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
  const controlled=$derived(preview ? example?.state!=='follower' : !following||canControlPlayback());
  let external=false,minimizing=false,readerOwner=0;
  function backdropDuration(){return typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches?0:250;}
@@ -43,8 +43,14 @@
   const heartbeat=setInterval(()=>{
    if(document.hidden||!reader.visible||controller.signal.aborted||heartbeatPending)return;
    heartbeatPending=true;
-   void api(`reading/sessions/${session.id}/heartbeat`,{},'POST',{signal:controller.signal})
-    .catch(cause=>{if(!controller.signal.aborted&&(isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});})
+   void touchReadingSession(session,controller.signal)
+    .catch(cause=>{
+     if(controller.signal.aborted||reader.session?.id!==session.id)return;
+     if(isFeatureDisabled(cause)||cause instanceof ApiError&&(cause.status===410||session.shared&&[401,403,404,409].includes(cause.status))){
+      if(session.shared)feedback.notify(message(cause));
+      void closeReading(true,false).catch(()=>{});
+     }
+    })
     .finally(()=>{heartbeatPending=false;});
   },60000);
   const ownsNavigation=(revision:number)=>!exiting&&!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
@@ -59,7 +65,7 @@
     const previous=reader.location;reader.location=location;
     if(external||sameReadingLocation(previous,location))return;
     void recordReading(location);
-    if(syncedPlayer.room?.mediaType==='reading'&&syncedPlayer.room.mediaId===session.workId&&syncedPlayer.room.edition===session.edition&&canControlPlayback()&&!syncedPlayer.changing)publishReading(syncedPlayer.room.id,location);
+    if(!session.shared&&syncedPlayer.room?.mediaType==='reading'&&syncedPlayer.room.mediaId===session.workId&&syncedPlayer.room.edition===session.edition&&canControlPlayback()&&!syncedPlayer.changing)publishReading(syncedPlayer.room.id,location);
    }})).then(async result=>{
     if(controller.signal.aborted){result.destroy();return;}engine=current=result;
     if(result.resize){

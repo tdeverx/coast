@@ -49,9 +49,10 @@ run('Activity reasons preserves baseline SQL for filters and friends and fences 
     const fences=actual.sql.split(marker).length-1,normalized=actual.sql.replace(marker,'reasons as (');
     expect(fences).toBe(row.fences);check(normalized===reference.sql,'reasons_cte_shape_changed');
     // Original caller binding contract, independent of the optional fence.
-    // Only these existing scalar scope values belong in the seventeen slots.
-    const expectedParams=[scope.workId??null,scope.artistId??null,scope.readingGroupId??null,viewer,viewer,viewer,viewer,viewer,'all','all','all',scope.friendId??null,scope.friendId??null,viewer,scope.relationship,scope.relationship,scope.workId??null];
-    check(isDeepStrictEqual(actual.params,expectedParams),'reasons_parameter_contract_changed');expect(actual.params.length).toBe(17);
+    // Canonical artist roots and credited members use the same artist identity
+    // in two explicit slots; other scalar authority bindings stay unchanged.
+    const expectedParams=[scope.workId??null,scope.artistId??null,scope.artistId??null,scope.readingGroupId??null,viewer,viewer,viewer,viewer,viewer,'all','all','all',scope.friendId??null,scope.friendId??null,viewer,scope.relationship,scope.relationship,scope.workId??null];
+    check(isDeepStrictEqual(actual.params,expectedParams),'reasons_parameter_contract_changed');expect(actual.params.length).toBe(18);
     result.activeCases++;result.materializedCases+=fences;
    }
    for(const friendId of[undefined,friend]){const empty=dialect.sqlToQuery(activityRelationships(viewer,{...root.scope,friendId}));check(empty.sql===''&&empty.params.length===0,'absent_relationship_helper_changed');result.helperAbsentCases++;}

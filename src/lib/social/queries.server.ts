@@ -16,7 +16,8 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  const scoped=!!(o.workId||o.artistId||o.readingGroupId)||activityIds!==undefined;
  const activityScope=sql`and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
  const workScope=o.workId?sql`and (a.work_id=${o.workId}::uuid or e.show_id=${o.workId}::uuid or e.season_id=${o.workId}::uuid or se.show_id=${o.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${o.workId}::uuid and member.child_id in (a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``;
- const artistScope=o.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${o.artistId}::uuid)`:sql``;
+ const artistScope=o.artistId?sql`and (a.work_id=${o.artistId}::uuid and exists(select 1 from music_works artist where artist.id=a.work_id and artist.kind='artist')
+  or exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${o.artistId}::uuid))`:sql``;
  const readingGroupScope=o.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${o.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``;
  // Expand only the requested work and its direct contains members. Each
  // subtype lookup uses that original root set; this is not recursive descent.

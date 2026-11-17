@@ -1,15 +1,15 @@
 import * as v from 'valibot';
 import {and, eq, inArray, ne, sql} from 'drizzle-orm';
 import {categoryEnabled} from '#lib/experimental.js';
-import {progressExperimentSchema, type ProgressExperimentContent} from '#lib/progress-experiment.js';
+import {progressExperimentSchema,progressExperimentTabs,profileProgressExperimentTabs, type ProgressExperimentContent} from '#lib/progress-experiment.js';
 import {progressOptionsSchema} from '#lib/progress.js';
 import {collectionCTE,collectionRead,workCards} from '#lib/collection/query.server.js';
 import {getFeatureConfig} from '../features';
 import {getDb} from '../db';
 import * as s from '../db/schema';
-import {listCandidateIds} from './lists';
+import {listCandidateIds,savedProgressPresence} from './lists';
 import {enabledCategories} from '../experimental';
-import {decorateProgressCards, mediumProgressIds, readingProgressIds, screenProgressPlan} from './progress';
+import {createScreenProgressPlanning,decorateProgressCards,mediumProgressIds,nonScreenProgressPresence,readingProgressIds,screenProgressPlan,screenProgressPresent} from './progress';
 import {hasPermittedWorkSource} from './media';
 import {viewingRecency} from './viewing-recency';
 import {rewatchBoundary} from '#lib/core/tracking/rewatch.server.js';
@@ -17,39 +17,52 @@ import {pagination, PAGE_SIZE} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
 import {withReadCancellation} from '../db/read-cancellation';
 import {libraryTrackingCondition} from './library';
-import {pausedProgressPage} from './paused-progress';
+import {pausedProgressPage,pausedProgressPresent} from './paused-progress';
+
+const historySource=(userId:string)=>sql`from assessments a left join ${s.media} on ${s.media.id}=a.id
+  left join ${s.trackingState} on ${s.trackingState.mediaId}=a.id and ${s.trackingState.userId}=${userId}`;
+const historyMembership=(userId:string,view:'finished'|'dropped')=>sql`a.category<>'music' and case when a.category='screen' then
+  ${view==='finished'?sql`a.kind in ('movie','show')`:sql`a.kind in ('movie','show','season','episode','collection')`}
+  and ${libraryTrackingCondition(userId,view==='finished'?'watched':'dropped')}
+  else ${view==='finished'?sql`a.completed and not a.dropped`:sql`a.dropped`} end`;
+
+type ReadOptions={preview?:boolean;signal?:AbortSignal;viewerId?:string;segments?:'overview'|'profile'};
 
 /** Shared Progress row: select eligible IDs across enabled media before hydrating one page. */
-export async function progressExperimentData(userId:string, raw:unknown, {preview=false,signal,viewerId=userId}:{preview?:boolean;signal?:AbortSignal;viewerId?:string}={}):Promise<ProgressExperimentContent> {
-  return withReadCancellation(signal,()=>progressExperimentRead(userId,raw,{preview,signal,viewerId}));
+export async function progressExperimentData(userId:string, raw:unknown, {preview=false,signal,viewerId=userId,segments}:ReadOptions={}):Promise<ProgressExperimentContent> {
+  return withReadCancellation(signal,()=>progressExperimentRead(userId,raw,{preview,signal,viewerId,segments}));
 }
-async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,viewerId}:{preview:boolean;signal?:AbortSignal;viewerId:string}):Promise<ProgressExperimentContent>{
+async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,viewerId,segments}:ReadOptions&{preview:boolean;viewerId:string}):Promise<ProgressExperimentContent>{
   signal?.throwIfAborted();
-  const options=v.parse(progressExperimentSchema,raw);
-  if(options.view==='paused')return {...options,...await pausedProgressPage(userId,viewerId,options,preview,signal)};
+  const requested=v.parse(progressExperimentSchema,raw);
+  if(!segments&&requested.view==='paused')return {...requested,...await pausedProgressPage(userId,viewerId,requested,preview,signal)};
   const config=await getFeatureConfig(viewerId);
   signal?.throwIfAborted();
+  const planning=segments?createScreenProgressPlanning(userId,viewerId,true):undefined;
+  const availableViews=segments?await progressExperimentPresence(userId,viewerId,requested.category,config,planning!,segments):undefined;
+  signal?.throwIfAborted();
+  const options=availableViews?.length&&!availableViews.includes(requested.view)
+    ? {...requested,view:availableViews[0],kind:'all' as const,scope:'all' as const,page:1}
+    : requested;
+  const segmentSummary=availableViews?{availableViews}:{};
+  if(availableViews?.length===0)return {...options,...segmentSummary,items:[],total:0,page:1,pages:1};
+  if(options.view==='paused')return {...options,...segmentSummary,...await pausedProgressPage(userId,viewerId,options,preview,signal)};
   const saved=options.view==='watchlist'||options.view==='favourites';
   const history=options.view==='finished'||options.view==='dropped';
   const view=options.view==='continue'?'watching':'up-next';
   const base=v.parse(progressOptionsSchema,{view,scope:options.scope});
   const wants=(category:string)=>(!options.category||options.category===category)&&!saved&&!history&&categoryEnabled(config,category)&&(options.kind==='all'||(category==='screen'?['movie','show'].includes(options.kind):category==='reading'?['book','comic'].includes(options.kind):options.kind==='game'));
   const [screen,games,reading]=await Promise.all([
-    wants('screen')?screenProgressPlan(userId,base,viewerId,{firstEpisode:options.view==='next',sortByActivity:false}):undefined,
+    wants('screen')?screenProgressPlan(userId,base,viewerId,{firstEpisode:options.view==='next',sortByActivity:false,planning}):undefined,
     wants('game')?mediumProgressIds(userId,{...base,category:'game'},false,viewerId):[],
     wants('reading')?readingProgressIds(userId,{...base,category:'reading'},false,viewerId):[],
   ]);
   signal?.throwIfAborted();
   const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal',options.category??'all','status')}
-    select a.id from assessments a left join ${s.media} on ${s.media.id}=a.id
-    left join ${s.trackingState} on ${s.trackingState.mediaId}=a.id and ${s.trackingState.userId}=${userId}
-    where a.category<>'music' and case when a.category='screen' then
-      ${options.view==='finished'?sql`a.kind in ('movie','show')`:sql`a.kind in ('movie','show','season','episode','collection')`}
-      and ${libraryTrackingCondition(userId,options.view==='finished'?'watched':'dropped')}
-      else ${options.view==='finished'?sql`a.completed and not a.dropped`:sql`a.dropped`} end`):[];
+    select a.id ${historySource(userId)} where ${historyMembership(userId,options.view as 'finished'|'dropped')}`):[];
   const candidates=history?historyRows.map(row=>row.id as string):saved?await listCandidateIds(userId,{view:options.view,category:options.category??'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId):[...new Set([...(screen?.allIds??[]),...games,...reading])];
   signal?.throwIfAborted();
-  if(!candidates.length)return {...options,items:[],total:0,page:1,pages:1};
+  if(!candidates.length)return {...options,...segmentSummary,items:[],total:0,page:1,pages:1};
   const available=hasPermittedWorkSource(viewerId,options.category);
   const section=saved?options.view==='favourites'?'favourites':'collection':'progress';
   const where=and(
@@ -66,7 +79,7 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
   signal?.throwIfAborted();
   const pageSize=preview?ROW_BATCH_SIZE:PAGE_SIZE;
   const {page,pages}=pagination(count.total,options.page,pageSize);
-  if(!count.total)return {...options,items:[],total:0,page,pages};
+  if(!count.total)return {...options,...segmentSummary,items:[],total:0,page,pages};
   // Row previews consume twenty cards; expanded pages retain the shared sixty-card boundary.
   const visible=await getDb().select({id:s.works.id,available:sql<boolean>`${available}`}).from(s.works)
     .leftJoin(s.media,eq(s.media.id,s.works.id)).where(where)
@@ -107,5 +120,34 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
     const decorated=new Map(screenItems.map(item=>[item.id,item]));
     items=items.map(item=>decorated.get(item.id)??item);
   }
-  return {...options,items,total:count.total,page,pages};
+  return {...options,...segmentSummary,items,total:count.total,page,pages};
+}
+
+async function progressExperimentPresence(
+  userId:string,viewerId:string,category:ProgressExperimentContent['category'],config:Awaited<ReturnType<typeof getFeatureConfig>>,
+  planning:ReturnType<typeof createScreenProgressPlanning>,segments:'overview'|'profile',
+):Promise<NonNullable<ProgressExperimentContent['availableViews']>> {
+  const screen=(!category||category==='screen')&&categoryEnabled(config,'screen');
+  async function historyPresence() {
+    const contains=(view:'finished'|'dropped')=>sql`exists(select 1 ${historySource(userId)} where ${historyMembership(userId,view)}
+      and ${enabledCategories(sql`a.category`,config)}
+      and social_visible(${userId}::uuid,${viewerId}::uuid,'progress',a.category))`;
+    const [result]=await getDb().execute<{finished:boolean;dropped:boolean}>(sql`
+      ${collectionCTE(userId,viewerId,'all','personal',category??'all','status')}
+      select ${contains('finished')} as finished,${contains('dropped')} as dropped`);
+    return result;
+  }
+  const [continuing,next,other,paused,history,saved]=await Promise.all([
+    screen?screenProgressPresent(userId,viewerId,'watching',planning):false,
+    screen?screenProgressPresent(userId,viewerId,'up-next',planning,true):false,
+    nonScreenProgressPresence(userId,viewerId,category,config),
+    pausedProgressPresent(userId,viewerId,category),
+    segments==='profile'?historyPresence():undefined,
+    segments==='overview'?savedProgressPresence(userId,viewerId,category??'all',config):undefined,
+  ]);
+  const present:Partial<Record<ProgressExperimentContent['view'],boolean>>={
+    continue:continuing||other.continue,next:next||other.next,paused,...history,...saved,
+  };
+  return (segments==='profile'?profileProgressExperimentTabs:progressExperimentTabs)
+    .map(tab=>tab.value as ProgressExperimentContent['view']).filter(view=>present[view]);
 }

@@ -179,15 +179,32 @@ export function presentTrailer(
   heroPlayer.visible = true;
 }
 
-export async function playMusic(workId:string,continuing=false){
-  const intent=preparationRevision;
+type MusicQueue = { items: { id: string; title: string; availability: string }[]; continueId: string | null };
+
+async function prepareMusicQueue(path: string, continuing = false, shuffle = false) {
+  const intent = preparationRevision;
   await controller?.waitForStop();
-  if(intent!==preparationRevision)return;
-  const result=await api<{items:{id:string;title:string;availability:string}[];continueId:string|null}>(`music/${workId}/queue`,undefined,'GET');
-  if(intent!==preparationRevision)return;
-  return playMusicQueue(result,continuing);
+  if (intent !== preparationRevision) return;
+  const result = await api<MusicQueue>(path, undefined, 'GET');
+  if (intent !== preparationRevision) return;
+  if (shuffle) {
+    const items = [...result.items];
+    for (let index = items.length - 1; index > 0; index--) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [items[index], items[other]] = [items[other], items[index]];
+    }
+    return playMusicQueue({ items, continueId: null });
+  }
+  return playMusicQueue(result, continuing);
 }
-export async function playMusicQueue(result:{items:{id:string;title:string;availability:string}[];continueId:string|null},continuing=false){
+
+export function playMusic(workId: string, continuing = false, shuffle = false) {
+  return prepareMusicQueue(`music/${workId}/queue`, continuing, shuffle);
+}
+export function playMusicArtist(workId: string, shuffle = false) {
+  return prepareMusicQueue(`music/artists/${workId}/queue`, false, shuffle);
+}
+export async function playMusicQueue(result:MusicQueue,continuing=false){
   const intent=preparationRevision;
   const {syncedPlayer,canControlPlayback,canEditPartyQueue}=await import('./synced/client.svelte');
   if(intent!==preparationRevision)return;

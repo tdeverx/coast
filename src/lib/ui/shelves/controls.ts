@@ -2,18 +2,25 @@ import type { FilterGroup } from '#lib/ui/controls/filters.js';
 import { mediaTypeOptions } from '#lib/ui/filter-options.js';
 import type { ShelfControl } from './types';
 
-/** One placement rule for every source: segments and availability beside the title, secondary choices in the menu. */
+/** Keep navigation segments at the heading and send applicable filters to its menu. */
 export function shelfControls(controls: ShelfControl[], select: (control: ShelfControl, value: string) => void) {
-  return {
-    segments: controls.filter(control => control.type === 'segments'),
-    availability: controls.filter(control => control.type === 'availability'),
-    groups: controls.filter(control => control.type !== 'segments' && control.type !== 'availability').map((control): FilterGroup => ({
+  const groups = controls.flatMap((control): FilterGroup[] => {
+    if (control.type === 'segments') return [];
+    const availability = control.type === 'availability';
+    const collection = control.type === 'collection';
+    const options = control.type === 'media-type' ? mediaTypeOptions(control.mediums)
+      : availability ? [{ value: 'all', label: 'All titles' }, { value: 'available', label: control.label }]
+      : collection ? [{ value: 'all', label: 'All titles' }, { value: 'collection', label: control.label }]
+      : control.options ?? [];
+    if (options.length < 2) return [];
+    return [{
       label: control.label,
+      section: control.section ?? (availability || collection ? 'access' : 'content'),
       value: control.value,
-      options: control.type === 'media-type' ? mediaTypeOptions(control.mediums)
-        : control.type === 'collection' ? [{value:'all',label:'All library titles'},{value:'collection',label:'In my Collection'}]
-        : control.options ?? [],
+      options,
+      presentation: availability || collection ? 'checkbox' : undefined,
       change: value => select(control, value),
-    })),
-  };
+    }];
+  });
+  return { segments: controls.filter(control => control.type === 'segments'), groups };
 }

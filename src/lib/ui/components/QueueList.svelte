@@ -58,22 +58,25 @@
       label={`${displayLabel(action.kind)} job actions`}
       disabled={queue.busy(action.id)}
     >
-      {#if ['pending', 'running'].includes(action.state) && (!action.failure || action.failure.retryable)}<Button item icon="clock" keepOpen={false} onclick={() => void update(action.id, 'promote')}>Prioritize</Button>{/if}
-      {#if jobRemedy(action) === 'connection'}<Button item icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</Button>
-      {:else if jobRemedy(action) === 'permissions'}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</Button>
-      {:else if jobRemedy(action) === 'metadata'}<Button item icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</Button>
+      {@const priority=['pending','running'].includes(action.state)&&(!action.failure||action.failure.retryable)}
+      {@const retry=action.kind!=='benchmark.run'&&action.state!=='running'&&(action.state==='failed'||action.attempts>0)}
+      {@const benchmark=action.kind==='benchmark.run'}
+      {@const remedy=jobRemedy(action)}
+      {@const recovery=remedy!=='retry'}
+      {@const commands=priority||retry||benchmark}
+      {#if priority}<Button item icon="clock" keepOpen={false} onclick={() => void update(action.id,'promote')}>Prioritize</Button>{/if}
+      {#if retry}<Button item icon="refresh" keepOpen={false} onclick={() => void update(action.id,'retry')}>{action.state==='failed'?'Retry':'Retry now'}</Button>{/if}
+      {#if benchmark}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>{/if}
+      {#if recovery}
+        {#if commands}<div class="menu-divider" role="separator"></div>{/if}
+        {#if remedy==='connection'}<Button item icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</Button>
+        {:else if remedy==='permissions'}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</Button>
+        {:else if remedy==='metadata'}<Button item icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</Button>{/if}
       {/if}
-      {#if action.kind === 'benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>
-      {:else if action.state !== 'running' && (action.state === 'failed' || action.attempts > 0)}<Button item
-          icon="refresh"
-          keepOpen={false}
-          onclick={() => void update(action.id, 'retry')}
-          >{action.state === 'failed' ? 'Retry' : 'Retry now'}</Button>{/if}
-      {#if ['pending', 'failed'].includes(action.state)}<Button item
-        icon="close"
-        keepOpen={false}
-        danger
-        onclick={() => void update(action.id, 'cancel')}>Cancel job</Button>{/if}
+      {#if ['pending','failed'].includes(action.state)}
+        {#if commands||recovery}<div class="menu-divider" role="separator"></div>{/if}
+        <Button item icon="close" keepOpen={false} danger onclick={() => void update(action.id,'cancel')}>Cancel job</Button>
+      {/if}
     </Button>
   {/if}
 </div>

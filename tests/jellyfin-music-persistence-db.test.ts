@@ -96,19 +96,20 @@ run('selected releases retain repeated recordings and exclude other-release bonu
   expect(assessment.completed).toBe(true);expect(assessment.availability).toBe('available');
 });
 
-run('canonical credits retain roles and text while artist destinations use only the viewers active source',async()=>{
+run('canonical credits retain roles and link to the artist catalogue independently of playback sources',async()=>{
   const artist={id:jellyfinItemKey(crypto.randomUUID()),name:'Album artist'};
   const saved=await persistMusic(instanceId,{...item(crypto.randomUUID()),kind:'album',artists:[],albumArtists:[artist],artistNames:[]});workIds.push(saved.workId!);
   const [work]=await getDb().select().from(s.musicWorks).where(eq(s.musicWorks.id,saved.workId!));expect(work.artistNames).toEqual(['Album artist']);
   const own=(await musicWorkCredits([saved.workId!],userId)).get(saved.workId!)!;
-  expect(own.albumArtists[0].href).toBe(`/music/${connection.id}/${artist.id}`);expect(own.artists).toEqual([]);
+  const [alias]=await getDb().select().from(s.musicArtists).where(and(eq(s.musicArtists.instanceId,instanceId),eq(s.musicArtists.externalId,artist.id)));
+  expect(own.albumArtists[0].href).toBe(`/music/work/${alias.workId}`);expect(own.artists).toEqual([]);
   const visitor=(await musicWorkCredits([saved.workId!],null)).get(saved.workId!)!;
-  expect(visitor.albumArtists[0].name).toBe('Album artist');expect(visitor.albumArtists[0].href).toBeUndefined();
+  expect(visitor.albumArtists[0].name).toBe('Album artist');expect(visitor.albumArtists[0].href).toBe(`/music/work/${alias.workId}`);
   const [ownCard]=await workCards(userId,userId,[saved.workId!]);
-  expect(ownCard.captionCredits?.[0]).toMatchObject({name:'Album artist',href:`/music/${connection.id}/${artist.id}`});
+  expect(ownCard.captionCredits?.[0]).toMatchObject({name:'Album artist',href:`/music/work/${alias.workId}`});
   const [guestCard]=await workCards(userId,null,[saved.workId!]);
   expect(guestCard.captionCredits?.[0]).toMatchObject({name:'Album artist'});
-  expect(guestCard.captionCredits?.[0].href).toBeUndefined();
+  expect(guestCard.captionCredits?.[0].href).toBe(`/music/work/${alias.workId}`);
 });
 
 run('account generation changes during hydration never grant the old account access',async()=>{

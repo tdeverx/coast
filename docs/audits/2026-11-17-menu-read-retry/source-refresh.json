@@ -1,0 +1,14 @@
+{
+  "files": {
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "current": "f4a06af3acd1a44ef23860a8f0d9dc834e19d4587de415298f35816b72017873",
+      "previous": "7d5679f9ffdbc9f846bb23189e2bd44f42ee298d7a344fd8c3b580c64c2ad59e"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "current": "acc1495490e75edc1ccab00e3c2534ea39721a7d643fce4b17fcd2776ff71c28",
+      "previous": "240ec6305b613d68ed2531a9607da3f93509580e5dfa184a865c9ffcc01f8ade"
+    }
+  },
+  "report": "docs/audits/2026-11-17-menu-read-retry/source-refresh.md",
+  "reportSha256": "3542f302ad0d0fdf358604fcd72f70178e727389e18004aa7f01a76716d21670"
+}

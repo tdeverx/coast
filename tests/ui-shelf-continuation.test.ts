@@ -78,7 +78,7 @@ test('disposal prevents subsequent continuation and retry work',async()=>{
   dispose();await row.more();await row.retry();expect(calls).toBe(0);
 });
 
-test('the actual Shelf script can initialize a cold server render before its lazy source activates',async()=>{
+test('the Shelf script distinguishes loading, settled empty and failed shelves during server rendering',async()=>{
  const serverLifecycle=moduleUrl('export const untrack=fn=>fn();export const onDestroy=()=>{};');
  async function serverModule(path:string){
   const script=await Bun.file(new URL(path,import.meta.url)).text();
@@ -94,12 +94,20 @@ test('the actual Shelf script can initialize a cold server render before its laz
   export function render(input,shelfControls){
    const page={data:{},state:{},url:new URL('http://fixture/for-you')};
    const untrack=fn=>fn(),onDestroy=()=>{},useDetailSection=()=>null,useClient=()=>({api:async()=>{},change:async()=>{},preview:true});
-   const createShelfSource=()=>undefined,createSequencePlayback=()=>({}),createSocialEnrichment=()=>({cancel(){}}),contentRevisionKey=()=>'',createShelfLayout=()=>({}),reportFailure=()=>{};
+   const createShelfSource=()=>input.fixtureSource,createSequencePlayback=()=>({}),createSocialEnrichment=()=>({cancel(){}}),contentRevisionKey=()=>'',createShelfLayout=()=>({}),reportFailure=()=>{};
    ${script}
-   return {cards:displayItems.length,hasMore:displayHasMore};
+   return {cards:displayItems.length,hasMore:displayHasMore,loading,emptyRow,emptyGrid,hidden,preserveHeight:displayPreserveHeight};
   }
  `;
  const compiled=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(fixtureSource),{generate:'server',filename:'shelf-script.svelte.js'}).js.code;
  const {render}=await import(moduleUrl(compiled));
- expect(render({items:cards(60).map(id=>({id:String(id),kind:'movie',title:String(id)}))},shelfControls)).toEqual({cards:20,hasMore:true});
+ expect(render({items:cards(60).map(id=>({id:String(id),kind:'movie',title:String(id)}))},shelfControls)).toMatchObject({cards:20,hasMore:true});
+ expect(render({hideEmpty:false,busy:true},shelfControls)).toMatchObject({loading:true,emptyRow:false,hidden:false,preserveHeight:true});
+ expect(render({hideEmpty:false},shelfControls)).toMatchObject({loading:false,emptyRow:true,hidden:false,preserveHeight:false});
+ expect(render({hideEmpty:false,preserveHeight:true},shelfControls)).toMatchObject({emptyRow:true,preserveHeight:true});
+ const emptySource={items:[],busy:false,error:'',ready:true,filters:[],controls:[]};
+ expect(render({source:{},fixtureSource:{...emptySource,ready:false},appendWhenReady:true},shelfControls)).toMatchObject({loading:true,hidden:true});
+ expect(render({source:{},fixtureSource:emptySource,appendWhenReady:true},shelfControls)).toMatchObject({loading:false,hidden:true});
+ expect(render({source:{},fixtureSource:emptySource,layout:'grid'},shelfControls)).toMatchObject({loading:false,emptyGrid:true,hidden:false});
+ expect(render({source:{},fixtureSource:{...emptySource,error:'Could not load titles'},layout:'grid'},shelfControls)).toMatchObject({loading:false,emptyGrid:false,hidden:false});
 });

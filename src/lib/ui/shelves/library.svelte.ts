@@ -80,7 +80,8 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const selectedGenre=$derived(genreOverride??genre);
   let collection = $state(untrack(() => initialCollection));
   const title = $derived(getOptions().title ?? preview?.title ?? libraryTitles[surface]);
-  const entities=$derived(libraryEntityOptions(surface,{...route.data,features:route.data.capabilities}));
+  const entities=$derived(libraryEntityOptions(surface,{...route.data,features:route.data.capabilities})
+    .filter(option => !username || !['artist', 'playlist', 'series'].includes(option.value)));
   let selection = $state(untrack(() => initialSelection)),
     kind = $state(untrack(() => initialKind)),
     scope = $state<'all' | 'available'>(untrack(() => collection ? initialAvailability === 'available' ? 'available' : 'all' : initialScope));
@@ -121,6 +122,26 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const selections = $derived(collection && surface === 'listen'
     ? librarySelections.listen.filter((option) => option.value !== 'artist')
     : librarySelections[surface]);
+  const availabilityAction = $derived(surface === 'read' ? 'read' : surface === 'listen' ? 'listen' : surface === 'watch' ? 'watch' : 'play');
+  const statusLabel = $derived(surface === 'read' ? 'Reading status' : surface === 'play' ? 'Playthrough status' : 'Watch status');
+  const savedOptions = librarySegments.filter(option => ['all', 'later', 'favourites'].includes(option.value));
+  const progressOptions = $derived([
+    ...librarySelections[surface],
+    ...surface === 'watch' ? [] : [{ value: 'unwatched', label: surface === 'read' ? 'Unread' : 'Unplayed' }],
+    ...librarySegments.filter(option => ['continue', 'next', 'later', 'favourites'].includes(option.value)),
+  ]);
+
+  function changeStatus(value: string) {
+    const useSegment = !librarySelections[surface].some(option => option.value === value);
+    if (useSegment) {
+      selection = 'all';
+      segment = value as LibrarySegment;
+    } else {
+      selection = value;
+      segment = 'all';
+    }
+    void load(1);
+  }
 
   const paths = (number = 1, firstPage?: number) => libraryBrowsePaths(
     {
@@ -443,6 +464,24 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         : `${sort}:${segment}:${selectedGenre}:${collection}:${selection}:${kind}:${scope}:${relationship}:${source}:${availability}:${navigation}`;
     },
 
+    get filterReset() {
+      const resetKind = getOptions().entitySegments || getOptions().kindControl === false ? kind : initialKind;
+      const resetSelection = getOptions().entitySegments && surface === 'listen' || !getOptions().entitySegments && !getOptions().segments ? selection : 'all';
+      const resetSegment = getOptions().segments && !getOptions().entitySegments ? segment : initialSegment;
+      const resetCollection = entity === 'artist' || entity === 'playlist' || username ? collection : initialCollection;
+      const resetScope = entity === 'artist' ? scope : resetCollection ? initialAvailability === 'available' ? 'available' : 'all' : initialScope;
+      return {
+        disabled: sort === initialSort && selectedGenre === genre && collection === resetCollection && kind === resetKind && selection === resetSelection && segment === resetSegment
+          && scope === resetScope && relationship === initialRelationship && source === initialSource && availability === initialAvailability,
+        run: () => {
+          sort = initialSort; genreOverride = undefined; collection = resetCollection;
+          kind = resetKind; selection = resetSelection; segment = resetSegment;
+          scope = resetScope; relationship = initialRelationship; source = initialSource; availability = initialAvailability;
+          return load(1);
+        },
+      };
+    },
+
     get filters(): ShelfControl[] {
       return [
         {
@@ -451,14 +490,14 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           value: getOptions().entitySegments?entity:getOptions().segments?segment:selection,
           options: getOptions().entitySegments?entities:getOptions().segments?librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)):selections,
           change: (value: string) => {
-            if(getOptions().entitySegments){if(surface==='listen'){selection=value;if(value==='artist'||value==='playlist')collection=false;}else kind=value as typeof kind;segment='all';genreOverride='';relationship='all';source='all';}
+            if(getOptions().entitySegments){if(surface==='listen'){selection=value;if(value==='artist'||value==='playlist')collection=false;if(value==='artist')scope='all';}else kind=value as typeof kind;segment='all';genreOverride='';relationship='all';source='all';}
             else if(getOptions().segments){segment=value as LibrarySegment;selection=surface==='listen'?selection:'all';if(surface==='listen'&&selection==='artist'&&segment!=='all')selection='all';}
             else selection = value;
             void load(1);
           }
         },
 
-        ...!preview&&entity!=='playlist'&&entity!=='artist'
+        ...!preview&&!username&&entity!=='playlist'&&entity!=='artist'
           ? [
             {
               type: 'collection' as const,
@@ -479,10 +518,10 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           ]
           : [],
 
-        ...(surface!=='watch'||collection ? [
+        ...(container || !collection && (surface === 'play' || surface === 'read' || surface === 'listen' && (preview || entity === 'all')) ? [
           {
             type: 'availability' as const,
-            label: `Available to ${surface==='read'?'read':surface==='watch'?'watch':surface==='listen'?'listen':'play'} only`,
+            label: surface === 'play' ? 'Owned only' : `Available to ${availabilityAction} only`,
             value: scope,
             change: (value: string) => {
               scope = value as typeof scope;
@@ -498,9 +537,24 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
     get controls(): ShelfControl[] {
       return [
-        ...getOptions().entitySegments&&!container&&entity!=='artist'?[{type:'select' as const,label:'Status',value:segment,options:librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)).map(option=>({...option,label:surface==='read'&&option.value==='unwatched'?'Unread':surface==='play'&&option.value==='unwatched'?'Unplayed':option.label})),change:(value:string)=>{segment=value as LibrarySegment;void load(1);}}]:[],
+        ...getOptions().entitySegments&&!container&&entity!=='artist'?[
+          surface === 'listen' ? {
+            type: 'select' as const, label: 'Saved', options: savedOptions,
+            value: segment,
+            change: (value: string) => {
+              segment = value as LibrarySegment;
+              void load(1);
+            },
+          } : {
+            type: 'select' as const, label: statusLabel, options: progressOptions,
+            value: selection !== 'all' ? selection : segment === 'finished'
+              ? surface === 'watch' ? 'watched' : 'completed'
+              : segment,
+            change: changeStatus,
+          },
+        ]:[],
         ...layout==='grid'&&!preview?[
-          {type:'select' as const,label:'Sort by',value:sort,options:librarySortOptions,change:(value:string)=>{sort=value as LibrarySort;void load(1);}},
+          {type:'select' as const,section:'order' as const,label:'Sort by',value:sort,options:librarySortOptions,change:(value:string)=>{sort=value as LibrarySort;void load(1);}},
           ...surface==='watch'&&!collection&&kind!=='collection'?[{type:'select' as const,label:'Genre',value:selectedGenre,options:[{value:'',label:'All genres'},...[...new Set([...libraryGenres,...(selectedGenre?[selectedGenre]:[])])].sort().map(value=>({value,label:value}))],change:(value:string)=>{genreOverride=value;void load(1);}}]:[],
           ...surface==='listen'&&getOptions().segments&&!getOptions().entitySegments?[{type:'select' as const,label:'Music type',value:selection,options:selections.filter(option=>segment==='all'||option.value!=='artist'),change:(value:string)=>{selection=value;void load(1);}}]:[],
         ]:[],
@@ -559,10 +613,11 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
             {
               type: 'select' as const,
               label: 'Availability',
+              section: 'access' as const,
               value: availability,
               options: [
                 { value: 'all', label: 'All availability' },
-                { value: 'available', label: 'Available' },
+                { value: 'available', label: surface === 'play' ? 'Owned' : `Available to ${availabilityAction}` },
                 ...surface !== 'read'
                   ? [
                     { value: 'partial', label: 'Partial' },
@@ -585,6 +640,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
                 {
                   type: 'select' as const,
                   label: 'Sources',
+                  section: 'access' as const,
                   value: source,
                   options: [
                     { value: 'all', label: 'All sources' },
@@ -602,7 +658,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
           : []
       ];
     },
-    get empty() { return guidance?.text ?? (surface === 'play' && scope === 'available' ? 'No owned games match this selection. Turn off Available to browse all games.' : preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'); },
+    get empty() { return guidance?.text ?? (surface === 'play' && scope === 'available' ? 'No owned games match this selection. Clear the ownership filter to browse all games.' : preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'); },
     get emptyHref() { return guidance?.href ?? (preview && ready && !busy ? href() : undefined); },
     get emptyLink() { return guidance?.label ?? `Browse ${surface==='listen'?'music':'games'}`; }, load,
   };

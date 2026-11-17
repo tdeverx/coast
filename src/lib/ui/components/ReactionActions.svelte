@@ -9,7 +9,7 @@
   import { useClient } from '#lib/ui/client-context.js';
   import { createResource } from '#lib/ui/resource.svelte.js';
   import { createMutation } from '#lib/ui/mutation.svelte.js';
-  import { emojis } from '#lib/social/model.js';
+  import { emojis, reactionLabels } from '#lib/social/model.js';
 
   const { api, change } = useClient();
   const nested=!!getContext('coast-context-menu');
@@ -35,17 +35,17 @@
 
   reportFailure(()=>resource.error || mutation.error);
 </script>
-{#if page.data.capabilities?.social!==false}<Button menu label="React" panel {disabled} onopen={load} onclose={resource.cancel}>
- {#snippet trigger()}{#if selected}<span class="selected-emoji">{selected}</span>{:else}<Icon name="smile" size={20} />{/if}{#if nested}<span class="menu-action-label">React</span><span class="menu-chevron"><Icon name="right" /></span>{/if}{/snippet}
+{#if page.data.capabilities?.social!==false}<Button menu label="Reaction" panel {disabled} onopen={load} onclose={resource.cancel}>
+ {#snippet trigger()}{#if selected}<span class="selected-emoji">{selected}</span>{:else}<Icon name="smile" size={20} />{/if}{#if nested}<span class="menu-action-label">Reaction</span><span class="menu-chevron"><Icon name="right" /></span>{/if}{/snippet}
  <div class="reaction-strip">
-  {#each emojis as emoji}<Button item class="reaction-choice" label={emoji} checked={selected === emoji} showCheckmark={false} disabled={resource.busy || mutation.busy} keepOpen onclick={() => react(emoji)}><span class="emoji">{emoji}</span></Button>{/each}
+  {#each emojis as emoji}<Button item class="reaction-choice" label={reactionLabels[emoji]} checked={selected === emoji} showCheckmark={false} disabled={resource.busy || mutation.busy} keepOpen onclick={() => react(emoji)}><span class="emoji">{emoji}</span></Button>{/each}
  </div>
 
 </Button>{/if}
 <style>
  .selected-emoji,.emoji{font-size:var(--text-xl);line-height:var(--leading-solid);}
  .reaction-strip{display:flex;gap:0;}
- .reaction-strip :global(.reaction-choice){width:auto;min-width:40px;flex:1;padding:10px 8px;justify-content:center;}
+ .reaction-strip :global(.reaction-choice){width:auto;min-width:var(--control-height);flex:1;padding:var(--menu-item-inset);justify-content:center;}
  .reaction-strip :global(.menu-action-label){display:flex;flex-direction:column;align-items:center;gap:4px;}
  .reaction-strip :global([aria-checked="true"]){background:color-mix(in srgb,var(--white) 10%,transparent);}
 </style>

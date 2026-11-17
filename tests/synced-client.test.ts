@@ -5,7 +5,7 @@ const apiSource=await Bun.file(new URL('../src/lib/ui/client.ts',import.meta.url
 const featureError=new Bun.Transpiler({loader:'ts'}).transformSync(apiSource.slice(apiSource.indexOf('export function isFeatureDisabled'),apiSource.indexOf('export async function api<')));
 const clientUrl = moduleUrl(`${featureError}export let respond=async()=>{}; export function delivery(fn){respond=fn;} export function api(...args){return respond(...args);} export const message=e=>e.message; export class ApiError extends Error {constructor(status,details){super('fixture');this.status=status;this.details=details;}}`);
 const playbackUrl = moduleUrl(`export const player={session:{id:'playback',mediaId:'media',mediaType:'audio',edition:'',durationSeconds:100},audioQueue:[],audioIndex:0};export const alignments=[];export let stops=0;export const plays=[];export let play=async()=>{};export const playWith=fn=>play=fn;export const playMedia=async(...args)=>{plays.push(args);await play(...args);};export const playbackSnapshot=()=>({positionSeconds:10,buffering:false});export const alignPlayback=state=>alignments.push(state);export const stopPlayback=async()=>{stops++;};`);
-const readingUrl = moduleUrl(`export const reader={session:null,location:null,loading:false,rendering:false,syncing:false}; export const alignments=[];export const alignReading=async location=>alignments.push(location);export const attachReading=async session=>{reader.session=session;};export const closeReading=async()=>{reader.session=null;};`);
+const readingUrl = moduleUrl(`export const reader={session:null,location:null,loading:false,rendering:false,syncing:false}; export const alignments=[],retired=[];export const alignReading=async location=>alignments.push(location);export const attachReading=async(session,signal)=>{if(signal?.aborted)retired.push(session.id);else reader.session=session;};export const closeReading=async()=>{reader.session=null;};`);
 const modelUrl = moduleUrl('export const compatibleSource=(r,p)=>r.mediaId===p.mediaId&&r.mediaType===p.mediaType&&r.edition===(p.edition||"")&&Math.abs(r.durationSeconds-p.durationSeconds)<=2;export const timelinePosition=()=>10;export const canControl=(r,u)=>r.hostId===u||r.participants.some(p=>p.userId===u&&p.joined)&&(r.settings.playback==="everyone"||r.settings.playback==="selected"&&r.settings.controllers.includes(u));');
 const source = await Bun.file(new URL('../src/lib/playback/synced/client.svelte.ts',import.meta.url)).text();
 const code = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'client.svelte.js',generate:'client'}).js.code
@@ -143,4 +143,73 @@ test('feature withdrawal ends party polling without stopping admitted standalone
  sync.setSyncPreferences({offsetSeconds:0,keepPlaying:false});const before=playback.stops;
  client.delivery((path:string)=>path.endsWith('/heartbeat')?Promise.reject(new client.ApiError(403,{code:'feature_disabled'})):Promise.resolve({}));
  await sync.pollSynced();expect(sync.syncedPlayer.room).toBeNull();expect(playback.stops).toBe(before);
+});
+
+const sharedBook=()=>({id:'shared-reader',shared:true,workId:'book',edition:'edition',format:'pdf'});
+const bookRoom={...room,mediaType:'reading',mediaId:'book',edition:'edition',readingFormat:'pdf',reading:{format:'pdf',page:9,total:30}};
+const settle=async()=>{for(let index=0;index<20;index++)await Promise.resolve();};
+
+test('party heartbeats retain membership without aligning or replacing a disposable reader for any source',async()=>{
+ const reading=await import(readingUrl),playback=await import(playbackUrl);
+ for(const descriptor of [{},{mediaId:'different-book'},{edition:'different-edition'},{mediaType:'video'},{mediaId:null}]){
+  const next={...bookRoom,...descriptor,revision:1};sync.syncedPlayer.room=bookRoom;sync.syncedPlayer.userId='host';
+  const session=sharedBook();reading.reader.session=session;const calls:{path:string;body:any}[]=[];
+  client.delivery((path:string,body:any)=>{calls.push({path,body});return Promise.resolve(next);});
+  const aligned=reading.alignments.length,played=playback.plays.length;
+  try{
+   await sync.pollSynced();sync.setSyncPreferences({offsetSeconds:1});
+   expect(calls.map(call=>call.path)).toEqual(['synced/room/heartbeat']);expect(calls[0].body.buffering).toBe(false);
+   expect(sync.syncedPlayer.room?.revision).toBe(1);expect(reading.reader.session).toBe(session);
+   expect(reading.alignments).toHaveLength(aligned);expect(playback.plays).toHaveLength(played);
+  }finally{reading.reader.session=null;await sync.leaveSynced(true);}
+ }
+ sync.setSyncPreferences({offsetSeconds:0});
+});
+
+test('a late party heartbeat cannot replace an intervening shared reader and normal polling recovers after close',async()=>{
+ const reading=await import(readingUrl);reading.reader.session=null;sync.syncedPlayer.userId='host';sync.syncedPlayer.room=bookRoom;
+ let complete!:(value:unknown)=>void,matching=0;
+ client.delivery((path:string)=>path.endsWith('/heartbeat')?new Promise(resolve=>{complete=resolve;}):Promise.resolve({}));
+ const pending=sync.pollSynced();const session=sharedBook();reading.reader.session=session;
+ const next={...bookRoom,mediaId:'different-book',revision:1};complete(next);await pending;
+ expect(reading.reader.session).toBe(session);
+ reading.reader.session=null;
+ client.delivery((path:string)=>{if(path.includes('/matching')){matching++;return Promise.resolve({id:'party-reader',workId:next.mediaId,edition:next.edition,format:'pdf'});}return Promise.resolve(next);});
+ try{await sync.pollSynced();expect(matching).toBe(1);expect(reading.reader.session.id).toBe('party-reader');expect(reading.alignments.at(-1)).toEqual(next.reading);}
+ finally{reading.reader.session=null;await sync.leaveSynced(true);}
+});
+
+test('late party preparation retires its owner session rather than replacing a new disposable reader',async()=>{
+ const reading=await import(readingUrl);reading.reader.session=null;sync.syncedPlayer.userId='host';sync.syncedPlayer.room=bookRoom;
+ let complete!:(value:unknown)=>void,joins=0;
+ client.delivery((path:string)=>{if(path.includes('/matching'))return new Promise(resolve=>{complete=resolve;});if(path.endsWith('/join'))joins++;return Promise.resolve(bookRoom);});
+ const pending=sync.pollSynced();await settle();expect(complete).toBeDefined();
+ const session=sharedBook();reading.reader.session=session;complete({id:'late-party-reader',workId:'book',edition:'edition',format:'pdf'});await pending;
+ expect(reading.reader.session).toBe(session);expect(reading.retired.at(-1)).toBe('late-party-reader');expect(joins).toBe(0);
+ reading.reader.session=null;await sync.leaveSynced(true);
+});
+
+test('a late automatic party restore cannot replace a disposable reader or discard its remembered room',async()=>{
+ const reading=await import(readingUrl);reading.reader.session=null;stored.set('coast:synced','room');let complete!:(value:unknown)=>void;
+ const paths:string[]=[];client.delivery((path:string)=>{paths.push(path);return new Promise(resolve=>{complete=resolve;});});
+ const pending=sync.restoreSynced();const session=sharedBook();reading.reader.session=session;complete(bookRoom);await pending;
+ expect(paths).toEqual(['synced/room']);expect(reading.reader.session).toBe(session);expect(stored.get('coast:synced')).toBe('room');
+ reading.reader.session=null;stored.clear();
+});
+
+test('a rejected party membership does not close a standalone disposable reader even when keep-playing is disabled',async()=>{
+ const reading=await import(readingUrl);const session=sharedBook();reading.reader.session=session;sync.syncedPlayer.userId='host';sync.syncedPlayer.room=bookRoom;
+ sync.setSyncPreferences({keepPlaying:false});client.delivery(()=>Promise.reject(new client.ApiError(403)));
+ await sync.pollSynced();expect(sync.syncedPlayer.room).toBeNull();expect(reading.reader.session).toBe(session);
+ reading.reader.session=null;sync.setSyncPreferences({keepPlaying:true});
+});
+
+test('party preparation settling after leaving retires without replacing a successor reader',async()=>{
+ const reading=await import(readingUrl);reading.reader.session=null;sync.syncedPlayer.userId='host';sync.syncedPlayer.room=bookRoom;
+ let complete!:(value:unknown)=>void;
+ client.delivery((path:string)=>path.includes('/matching')?new Promise(resolve=>{complete=resolve;}):Promise.resolve(bookRoom));
+ const pending=sync.pollSynced();await settle();await sync.leaveSynced(true);
+ const successor={id:'successor',workId:'other',edition:'other',format:'pdf'};reading.reader.session=successor;
+ complete({id:'retired-party-preparation',workId:'book',edition:'edition',format:'pdf'});await pending;
+ expect(sync.syncedPlayer.room).toBeNull();expect(reading.reader.session).toBe(successor);expect(reading.retired.at(-1)).toBe('retired-party-preparation');reading.reader.session=null;
 });

@@ -51,3 +51,24 @@ test('avatar changes keep a safe pending read while a real role change cancels s
  held[1].resolve('current authority');await next;expect(menu.data).toBe('current authority');expect(signals).toHaveLength(2);
  menu.dispose();
 });
+
+test('check-in changes from another surface invalidate separate action snapshots without eager passive reads',async()=>{
+ const {scope}=harness();let active:string|null=null,reads=0;
+ const menus=Array.from({length:100},()=>createMenuResource(()=>null,()=>scope('same-work'),async()=>{reads++;return active;}));
+ try{
+  expect(reads).toBe(0);
+  await menus[0].open();menus[0].close();await menus[1].open();menus[1].close();
+  expect(reads).toBe(2);
+  active='checkin-from-another-surface';revision.invalidateContentRevision(['social']);
+  // Invalidating a revision does not activate the other 98 passive menus.
+  expect(reads).toBe(2);
+  await menus[0].open();menus[0].close();expect(menus[0].data).toBe(active);
+  await menus[1].open();menus[1].close();expect(menus[1].data).toBe(active);
+  expect(reads).toBe(4);
+  await menus[0].open();menus[0].close();expect(reads).toBe(4);
+  active=null;revision.invalidateContentRevision(['social']);
+  await menus[1].open();menus[1].close();expect(menus[1].data).toBeNull();
+  await menus[0].open();menus[0].close();expect(menus[0].data).toBeNull();
+  expect(reads).toBe(6);
+ }finally{menus.forEach(menu=>menu.dispose());}
+});

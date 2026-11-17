@@ -14,8 +14,8 @@ export function progressCardStyle(view: string): ProgressCardStyle | undefined {
       return { shape: 'poster', artworkStyle: 'primary', artworkPriority: 'season-show-episode' };
     case 'paused':
     case 'watchlist':
-    case 'favourites':
       return showThumbnail;
+    case 'favourites':
     case 'finished':
       return { shape: 'poster', artworkStyle: 'primary', artworkPriority: 'show-season-episode' };
   }

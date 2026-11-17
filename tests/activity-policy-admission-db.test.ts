@@ -45,7 +45,8 @@ function currentPolicy(source:string){
  };
 }
 
-// Independent original per-event visibility predicate and original scope OR.
+// Independent original per-event visibility predicate and scope OR. Canonical
+// artist admission additionally includes the artist root, as approved by the menu rollout.
 // No deduplicated keys or activity_policy reference belongs in this oracle.
 function originalPolicy(owner:string,scope:Scope,ids?:string[]):Query{
  const idFilter=sql`and (${ids===undefined} or a.id in (${ids?.length?sql.join(ids.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
@@ -56,7 +57,8 @@ function originalPolicy(owner:string,scope:Scope,ids?:string[]):Query{
    and (a.user_id=${owner}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${owner}::uuid,a.user_id) and f.user_b=greatest(${owner}::uuid,a.user_id)))
    and social_visible(a.user_id,${owner}::uuid,a.section,w.category) ${idFilter}
   ${scope.workId?sql`and (a.work_id=${scope.workId}::uuid or e.show_id=${scope.workId}::uuid or e.season_id=${scope.workId}::uuid or se.show_id=${scope.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${scope.workId}::uuid and member.child_id in(a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``}
-  ${scope.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${scope.artistId}::uuid)`:sql``}
+  ${scope.artistId?sql`and (a.work_id=${scope.artistId}::uuid and exists(select 1 from works artist where artist.id=a.work_id and artist.kind='artist')
+   or exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${scope.artistId}::uuid))`:sql``}
   ${scope.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${scope.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``}
   order by a.id`);
 }

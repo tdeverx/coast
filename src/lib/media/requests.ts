@@ -23,3 +23,22 @@ export function requestScopeFormatter(requests: MediaActionData['requests']) {
     return `${scope}${request.is4k && request.seasons.length ? ' · 4K' : ''}${multipleDestinations ? ` · ${request.destination}` : ''}`;
   };
 }
+
+/** A season can be selected when at least one eligible destination can request it. */
+export function requestSeasonChoices(destinations: readonly RequestDestination[], quality: 'standard' | 'fourK', only?: number) {
+  const choices = new Map<number, { number: number; selectable: boolean; requested: boolean; available: boolean }>();
+  for (const destination of destinations) {
+    const variant = destination.variants[quality];
+    for (const season of variant?.seasons ?? []) {
+      if (only !== undefined && season.number !== only) continue;
+      const choice = choices.get(season.number) ?? {
+        number: season.number, selectable: false, requested: false, available: false,
+      };
+      choice.selectable ||= !!variant?.requestable && !season.requested && !season.available;
+      choice.requested ||= season.requested;
+      choice.available ||= season.available;
+      choices.set(season.number, choice);
+    }
+  }
+  return [...choices.values()].sort((left, right) => left.number - right.number);
+}

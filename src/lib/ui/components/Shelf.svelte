@@ -2,11 +2,10 @@
   import { mixedCardStyle, cardAspectRatio } from '#lib/ui/mixed-card.js';
   import type { ReadonlyURL } from '$app/state';
   import { shelfControls } from '#lib/ui/shelves/controls.js';
-  import {availabilityControl} from '#lib/ui/controls/actions.js';
   import {useDetailSection} from '#lib/ui/detail-section.svelte.js';
   import type {ComponentProps} from 'svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
-  import type { FilterGroup } from '#lib/ui/controls/filters.js';
+  import { combineFilterResets, type FilterGroup, type FilterReset } from '#lib/ui/controls/filters.js';
   import { onDestroy, untrack, type Snippet } from 'svelte';
   import { createShelfSource, type ShelfConfig } from '#lib/ui/shelves/index.js';
   import type { ShelfControl } from '#lib/ui/shelves/types.js';
@@ -14,7 +13,6 @@
   import { createShelfLayout } from '#lib/ui/shelves/layout.svelte.js';
   import { createShelfContinuation } from '#lib/ui/shelves/continuation.svelte.js';
   import { lazyContent } from '#lib/ui/lazy-content.js';
-  import { liquidGlass } from '#lib/ui/materials/glass.js';
   import Pagination from './Pagination.svelte';
   import { createSequencePlayback } from '#lib/ui/controls/sequence.svelte.js';
   import Dialog from './Dialog.svelte';
@@ -37,6 +35,7 @@
   import DetailCard from './DetailCard.svelte';
   import type { InsightPanel } from '#lib/ui/insights/types.js';
   import MediaCard from './MediaCard.svelte';
+  import TextLink from './TextLink.svelte';
 
   const { api, change, preview } = useClient();
   const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
@@ -44,7 +43,7 @@
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', mixed = false, overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
-    mediaKind = 'screen', segments: customSegments, styleSegment, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
+    mediaKind = 'screen', segments: customSegments, styleSegment, controls: customControls, filterGroups = [], filterReset, actions, error = '', retry, empty, details, captionAction, body, footer,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, appendWhenReady = false, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
   }: {
@@ -73,6 +72,7 @@
     segments?: Snippet<[Pick<ComponentProps<typeof SegmentedControl>,'material'|'presentation'>]>;
     styleSegment?: string;
     filterGroups?: FilterGroup[];
+    filterReset?: FilterReset;
     controls?: Snippet;
     actions?: Snippet;
     error?: string;
@@ -167,13 +167,16 @@
   const gridPlaceholders = Array.from({length: 18}, (_, index) => index);
   const rowPlaceholders = gridPlaceholders.slice(0, 12);
   const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
+  const emptyGrid = $derived(displayLayout === 'grid' && !children && !panels && !displayItems.length &&
+    !loading && !displayError && (!!adapter || !!empty || selection.filtered));
   // A feed row prepares below the current rows. Once shown, retain its slot
   // through content refreshes so an empty result cannot pull the reader upward.
   let shown = $state(false);
   $effect(() => { if (appendWhenReady && ((count ?? 0) > 0 || displayError)) shown = true; });
   const preparing = $derived(appendWhenReady && !!adapter && !adapter.ready && !displayError);
   // Keep failed rows and user-selected empty filters reachable.
-  const hidden = $derived(preparing || !shown && hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
+  const hidden = $derived(preparing || displayLayout === 'row' && !displayError && (adapter?.hideRow ||
+    !shown && hideEmpty && !loading && !selected && !selection.filtered && count === 0 && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false));
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
@@ -200,6 +203,7 @@
     selectControl,
   ));
   const groups = $derived([...headerControls.groups, ...filterGroups.map(group => ({...group, change:(value:string)=>{selected=true;group.change(value);}}))]);
+  const resetFilters = $derived(combineFilterResets(filterReset, adapter && filterMode === 'none' ? adapter.filterReset : filterMode !== 'none' ? selection.filterReset : undefined));
   const displayMixed = $derived(adapter?.mixed ?? mixed);
   function itemStyle(item: MediaView | MediaCardPresentation, style: MediaRowStyle): MediaRowStyle {
     return displayMixed ? mixedCardStyle(item.kind, style, {shape:rail.overrideShape,artworkStyle:rail.overrideArtwork}) : style;
@@ -210,7 +214,10 @@
   const displayArtworkStyle = $derived(artworkStyle ?? adapter?.artworkStyle ?? 'auto');
   const displayArtworkPriority = $derived(adapter?.artworkPriority ?? artworkPriority);
   const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
-  const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels && (displayBusy || !!displayItems.length || !!adapter && !adapter.ready)));
+  const displayPreserveHeight = $derived(preserveHeight ?? (
+    emptyRow && (shown || selected || selection.filtered) ||
+    !children && !panels && (displayBusy || !!displayItems.length || !!adapter && !adapter.ready)
+  ));
   const displayRows = $derived(adapter?.rows ?? rows);
   const displayHasMore = $derived(continuation.hasMore);
   const displayHasPrevious = $derived(pagination?.kind === 'pages' && (pagination.firstPage ?? 1) > 1 && !!adapter?.loadPrevious);
@@ -245,17 +252,21 @@
   {#each adapter?.actions ?? [] as action}<Button item text={action.label} onclick={action.run} />{/each}
   {@render actions?.()}
 {/snippet}
-{#snippet availabilityToggles()}
- {#each headerControls.availability as control (control.label)}<Button {...availabilityControl(control.value==='available',value=>selectControl(control,value?'available':'all'))} />{/each}
-{/snippet}
 {#snippet sectionSegments()}
  {#each headerControls.segments as control (control.label)}<SegmentedControl material="clear" presentation="navigation" label={control.label} value={control.value} options={control.options??[]} onchange={value=>selectControl(control,value)} />{/each}
  {@render customSegments?.({material:'clear',presentation:'navigation'})}
 {/snippet}
 {#snippet sectionControls()}
- {@render availabilityToggles()}
- {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
+ {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} reset={resetFilters} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
  {@render customControls?.()}
+{/snippet}
+{#snippet emptyState()}
+  <div class="row-empty">
+    {#if adapter?.empty}<p class="quiet" role="status">{adapter.empty}</p>
+    {:else if empty && !selection.filtered}<div aria-live="polite">{@render empty()}</div>
+    {:else}<p class="quiet" role="status">{selection.filtered ? 'No titles in this selection.' : 'Nothing here yet'}</p>{/if}
+    {#if adapter?.emptyHref && adapter.emptyLink}<TextLink href={adapter.emptyHref} text={adapter.emptyLink} />{/if}
+  </div>
 {/snippet}
 {#if !appendWhenReady || !hidden}
 <div data-shelf use:observeRefreshDemand use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
@@ -284,13 +295,6 @@
       {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button emphasis="subtle" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
       {#if !entry.activity}{@render details?.(item as T)}{/if}
     </div>{/each}
-    {#if !loading && adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><p class="quiet" role="status">{adapter.empty}
-      {#if adapter.emptyHref}<a href={adapter.emptyHref}>{adapter.emptyLink}</a>{/if}
-    </p></div>
-    {:else if !loading && !adapter && !displayItems.length && (empty || filterMode !== 'none') && (filterMode === 'none' || !busy)}<div class="row-empty" aria-live="polite">
-      {#if filterMode !== 'none' && selection.filtered}<p class="muted">No titles in this selection.</p>
-      {:else}{@render empty?.()}{/if}
-    </div>{/if}
     {/if}
   {/snippet}
 {#if adapter?.groups}
@@ -306,8 +310,7 @@
       {#snippet segments()}
         {#each headerControls.segments as control (control.label)}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />{/each}
         {@render customSegments?.({})}
-        {@render availabilityToggles()}
-      {/snippet}
+             {/snippet}
       {#snippet previous()}{#if hasNavigation}<Button size="icon"
         label={pagedNavigation ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
         disabled={pagedNavigation ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous && !displayHasPrevious}
@@ -315,7 +318,7 @@
         onclick={pagedNavigation ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber - 1) : () => rail.scroll(-1)}
         icon="left" iconSize={20} />{/if}{/snippet}
       {#snippet controls()}
-        {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
+        {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} reset={resetFilters} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
         {@render customControls?.()}
       {/snippet}
       {#snippet next()}{#if hasNavigation}<Button size="icon"
@@ -362,8 +365,8 @@
     onscroll={() => { if(!emptyRow&&displayLayout==='row')rail.reachedEnd(); }}
     onwheel={rail.wheel}
   >
-    {#if loading || emptyRow}
-    {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
+    {#if loading}
+    <span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>
     {#each displayLayout === 'grid' ? gridPlaceholders : rowPlaceholders as placeholder (placeholder)}
       <div class="shelf-skeleton" style:--mixed-card-ratio={displayMixed ? [16/9, 2/3, 1, 2/3][placeholder % 4] : undefined} aria-hidden="true">
         {#if activitySkeleton}
@@ -385,9 +388,9 @@
         {/if}
       </div>
     {/each}
+  {:else if emptyRow || emptyGrid}{@render emptyState()}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
-  {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
   </div>
 </section>
 
@@ -418,12 +421,7 @@
   .placeholder-line.short{height:calc(var(--text-sm) * var(--leading-relaxed));}
   .reaction-placeholder{width:28px;}
   .content-row[hidden] { display:none; }
-  .rail-shell {position:relative;}
   .mixed-shell {container-type:inline-size;}
-  .rail.empty-row {overflow:hidden;scroll-snap-type:none;pointer-events:none;}
-  .empty-row :global(.skeleton) {animation:none;opacity:.5;}
-  .empty-label {position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
-  .empty-badge {padding:8px 16px;border-radius:999px;color:var(--ink);font-size:var(--text-md);font-weight:var(--weight-semibold);}
   .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:var(--media-card-radius); }
   .artwork-placeholder.round { border-radius:50%; }
   .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
@@ -500,7 +498,7 @@
     overflow: visible;
     scroll-snap-type: none;
   }
-  .grid-layout :global(.row-empty) {
+  .grid-layout .row-empty {
     grid-column: 1 / -1;
   }
   @media (max-width: 500px) {
@@ -525,6 +523,10 @@
   .rail.mixed .artwork-placeholder {height:var(--mixed-art-height);aspect-ratio:auto;}
   .rail.mixed.preserve {min-height:calc(var(--mixed-art-height) + 108px);}
   .rail.mixed.grid-layout {flex-wrap:wrap;}
+  .rail.empty-row {display:block;align-content:center;overflow:hidden;scroll-snap-type:none;}
+  .rail.empty-row::after {content:none;}
+  .rail.empty-row .row-empty {width:auto;}
+  .row-empty {display:grid;justify-items:start;gap:8px;}
 
   .credit-roles { margin-top:6px; font-size:var(--text-sm); color:var(--muted); }
   .credit-roles summary { cursor:pointer; font-weight:var(--weight-semibold); }

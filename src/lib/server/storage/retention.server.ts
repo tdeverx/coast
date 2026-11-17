@@ -18,8 +18,18 @@ export async function pruneTransientRecords() {
     // terminal observations; account effects and history remain permanent.
     const staging = await tx.execute(sql`delete from trakt_import_stages where id in (select s.id from trakt_import_stages s join outbox_actions a on a.id=s.action_id where s.updated_at < now()-interval '30 days' and a.state in ('succeeded','cancelled') order by s.updated_at limit 500 for update of s skip locked) returning id`);
     const snapshots=await tx.execute(sql`delete from provider_job_snapshots where action_id in (select s.action_id from provider_job_snapshots s join outbox_actions a on a.id=s.action_id where s.updated_at < now()-interval '30 days' and a.state in ('succeeded','cancelled') order by s.updated_at limit 500 for update of s skip locked) returning action_id`);
-    // Preserve the newest bookmark of each edition, including closed sessions.
-    const reading=await tx.execute(sql`delete from reading_sessions where id in (select s.id from reading_sessions s where s.expires_at < now()-interval '30 days' and exists(select 1 from reading_sessions newer where newer.user_id=s.user_id and newer.work_id=s.work_id and newer.edition=s.edition and newer.format=s.format and (newer.updated_at,newer.id)>(s.updated_at,s.id)) order by s.updated_at limit 500 for update of s skip locked) returning id`);
+    // Keep the newest edition bookmark in the current and restorable read.
+    const reading=await tx.execute(sql`delete from reading_sessions where id in (
+      select s.id from reading_sessions s where s.expires_at < now()-interval '30 days' and (
+        s.share_id is not null or exists(select 1 from reading_sessions newer where newer.user_id=s.user_id and newer.work_id=s.work_id and newer.share_id is null
+          and newer.bookmark_cycle=s.bookmark_cycle and newer.edition=s.edition and newer.format=s.format
+          and (s.location is null or newer.location is not null)
+          and (newer.updated_at,newer.id)>(s.updated_at,s.id))
+        or exists(select 1 from reading_progress p where p.user_id=s.user_id and p.work_id=s.work_id
+          and p.bookmark_cycle<>s.bookmark_cycle
+          and (p.reread_restore is null or p.reread_restore->>'bookmarkCycle'<>s.bookmark_cycle::text))
+      ) order by s.updated_at limit 500 for update of s skip locked
+    ) returning id`);
     // Keep identity/specification and totals permanently replay-safe. Unfinished
     // work is never expired, and existing durable history remains untouched.
     const commands=await tx.execute(sql`update task_control_commands set target_ids=null,outcomes=null,compacted_at=now()

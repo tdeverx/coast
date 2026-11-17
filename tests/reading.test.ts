@@ -30,6 +30,27 @@ describe('reading metadata and page contracts', () => {
     for (const input of [{}, { page: -1 }, { page: 1.5 }, { page: Infinity }, { page: 1000001 }, { totalPages: 0 }, { page: 11, totalPages: 10 }, { state: 'watching' }, { positionSeconds: 5 }])
       expect(v.safeParse(readingProgressInputSchema, input).success).toBe(false);
   });
+  test('dated completion and reread changes reject future dates and combined restore writes', () => {
+    const occurredAt = '2020-01-01T12:00:00.000Z';
+    expect(v.safeParse(readingProgressInputSchema, { state: 'completed', occurredAt }).success).toBe(true);
+    expect(v.safeParse(readingProgressInputSchema, { restart: true, state: 'reading', page: 0, occurredAt }).success).toBe(true);
+    const endReread = crypto.randomUUID();
+    expect(v.parse(readingProgressInputSchema, { endReread })).toEqual({ endReread });
+    for (const input of [
+      { state: 'completed', occurredAt: '2999-01-01T00:00:00.000Z' },
+      { state: 'reading', occurredAt }, { occurredAt }, { endReread, page: 2 },
+      { endReread, state: 'completed' }, { endReread, occurredAt },
+    ]) expect(v.safeParse(readingProgressInputSchema, input).success).toBe(false);
+  });
+  test('reading resets are explicit standalone commands', () => {
+    for (const reset of ['position', 'unread'] as const) {
+      expect(v.parse(readingProgressInputSchema, { reset })).toEqual({ reset });
+      for (const extra of [{ state: 'planned' }, { page: 0 }, { totalPages: null },
+        { restart: true }, { endReread: crypto.randomUUID() }, { occurredAt: '2020-01-01T00:00:00.000Z' }])
+        expect(v.safeParse(readingProgressInputSchema, { reset, ...extra }).success).toBe(false);
+    }
+    expect(v.safeParse(readingProgressInputSchema, { reset: 'history' }).success).toBe(false);
+  });
   test('catalogue pages and filters have the shared bounded vocabulary', () => {
     expect(v.parse(readingCatalogueSchema, {})).toEqual({segment:'all',sort:'default', kind: 'all', search: '', page: 1, state: 'all', available:false, personal: true });
     expect(v.safeParse(readingCatalogueSchema, { page: 0 }).success).toBe(false);

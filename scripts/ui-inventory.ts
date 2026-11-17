@@ -63,6 +63,9 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
   'src/lib/ui/work-menu/GameCommands.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Game command dialogs owned by the catalogue action composition.' },
   'src/lib/ui/work-menu/MusicCommands.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Music command dialogs owned by the catalogue action composition.' },
   'src/lib/ui/work-menu/ReadingCommands.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Reading command dialogs owned by the catalogue action composition.' },
+  'src/lib/ui/work-menu/WorkHistory.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Reading, selected-playthrough and listening history dialogs are owned by the catalogue command compositions.' },
+  'src/lib/ui/components/CheckInActions.svelte': { owner: 'src/lib/ui/components/WorkMenu.svelte', reason: 'Shared check-in actions are demonstrated through their owning media menus.' },
+  'src/lib/ui/components/ProfileBackgroundMenu.svelte': { owner: 'src/routes/profile/[username]/+page.svelte', reason: 'Profile background choices are demonstrated through the shared profile identity preview.' },
 };
 
 /** These thin routes delegate presentation to registered detail compositions. */
@@ -178,6 +181,7 @@ async function main() {
   const manifest: Record<string, ManifestEntry> = {};
   const propManifest:Record<string,{path:string;props:PreviewProp[]}>={};
   for (const path of paths) {
+    if (internalReferenceOwners[path]) continue;
     const name=path.split('/').at(-1)!.replace('.svelte','');
     manifest[name]={path,elements:[],usedBy:[],dynamicComposition:false};
     propManifest[name]={path,props:previewProps(path)};
@@ -218,6 +222,6 @@ async function main() {
   if(process.argv.includes('--check')) {
     if(await Bun.file(propFile).text()!==propContent)throw new Error('UI prop inventory is stale. Run bun run ui:inventory.');
   }else await Bun.write(propFile,propContent);
-  console.log(`UI inventory: ${paths.length} components, ${coverage.compositions} explicit compositions, ${coverage.internal} internal renderers and ${coverage.delegated} delegated routes verified.`);
+  console.log(`UI inventory: ${Object.keys(manifest).length} components, ${coverage.compositions} explicit compositions, ${coverage.internal} internal renderers and ${coverage.delegated} delegated routes verified.`);
 }
 if (import.meta.main) await main();

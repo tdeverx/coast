@@ -26,3 +26,10 @@ test('empty destinations and provider resume precision do not invent conflicts',
  expect(decideSync({positionSeconds:2037,durationSeconds:3251},{positionSeconds:2200,durationSeconds:3251})).toBe('conflict');
  expect(decideSync({positionSeconds:0,durationSeconds:1},{positionSeconds:0.3,durationSeconds:1})).toBe('remote');
 });
+test('music occurrence watermarks are internal metadata rather than competing user values',()=>{
+ expect(decideSync({value:true,playCount:3},{value:true,playCount:3,importedPlayCount:2})).toBe('agree');
+ expect(decideSync({value:true,playCount:3},{value:true,playCount:4,importedPlayCount:2})).toBe('conflict');
+ expect(decideSync({value:true,playCount:3},{value:false,playCount:0,importedPlayCount:2})).toBe('local');
+ expect(decideSync({value:false,playCount:0},{value:false,playCount:0,importedPlayCount:0,ignoredRemovedPlayCount:3})).toBe('agree');
+ expect(decideSync({value:true,playCount:3},{value:true,playCount:3,importedPlayCount:3,activeImportedPlayCount:2})).toBe('agree');
+});

@@ -15,10 +15,10 @@ function viewerIdleCutoff(db:ReturnType<typeof getSql>,vrchatMinutes:number) {
 }
 
 /** Short owner-scoped transactions allocate all links together. No provider I/O holds a DB lock. */
-export async function reserveViewer(ownerId:string,viewerId:string,force=false) {
+export async function reserveViewer(ownerId:string,viewerId:string,force=false,readingId?:string) {
   const db=getSql();
   if(!force){
-    const [recent]=await db`select v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-interval '10 seconds' and p.state<>'stopped'`;
+    const [recent]=await db`select v.desired_bitrate from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id left join reading_sessions r on r.id=v.reading_session_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and v.ended_at is null and v.last_seen_at>now()-interval '10 seconds' and (p.state<>'stopped' or r.id is not null and r.share_id=s.id and r.share_viewer_id=v.id and r.closed_at is null and r.expires_at>now()) and (${readingId??null}::uuid is null or r.id=${readingId??null}::uuid and r.closed_at is null and r.expires_at>now())`;
     if(recent?.desired_bitrate)return recent.desired_bitrate as number;
   }
   const config=await getConfig();
@@ -26,7 +26,7 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
     await tx`select pg_advisory_xact_lock(hashtextextended(${'sharing:'+ownerId},0))`;
     const [owner]=await tx`select settings from users where id=${ownerId} and not disabled`;
     if(!owner)throw new AppError(410,'The shared account is unavailable.');
-    const [viewer]=await tx`select v.id,s.target,v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() for update of s`;
+    const [viewer]=await tx`select v.id,s.target,v.last_seen_at,v.ended_at,v.desired_bitrate,p.state as playback_state from share_viewers v join playback_shares s on s.id=v.share_id left join playback_sessions p on p.id=v.playback_id left join reading_sessions r on r.id=v.reading_session_id where v.id=${viewerId} and s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now() and (${readingId??null}::uuid is null or r.id=${readingId??null}::uuid and r.share_id=s.id and r.share_viewer_id=v.id and r.closed_at is null and r.expires_at>now()) for update of s,v`;
     if(!viewer||!force&&viewer.playback_state==='stopped')throw new AppError(410,'The viewer playback session has expired.');
     if(!force&&viewer.last_seen_at&&!viewer.ended_at&&Date.now()-new Date(viewer.last_seen_at).getTime()<10_000)return {bitrate:viewer.desired_bitrate as number,cleanup:[]};
     const budget=playbackLimits(config.maxBitrateMbps,owner.settings).shared;
@@ -44,10 +44,11 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
       const allocations=[...rates].map(([id,rate])=>({id,rate}));
       await tx`update share_viewers v set desired_bitrate=r.rate from jsonb_to_recordset(${JSON.stringify(allocations)}::text::jsonb) as r(id uuid,rate integer) where v.id=r.id`;
     }
-    return {bitrate:rates.get(viewerId)??0,cleanup};
+    return {bitrate:rates.get(viewerId)??0,cleanup,endedReading:excess.length>0};
   });
   // Commit evictions even if this caller is over capacity. Provider I/O never holds the owner lock.
   for(const session of result.cleanup){try{await stopReleasedSession(session);}catch{/* Durable retry remains pending. */}}
+  if('endedReading' in result&&result.endedReading)await (await import('./reading.server')).expireSharedReadingViewers(ownerId);
   if(!result.bitrate)throw new AppError(429,'The shared playback bandwidth is full. Try again after a viewer leaves.');
   return result.bitrate;
 }
@@ -125,6 +126,8 @@ export async function releaseViewer(ownerId:string,viewerId:string,{playbackId,v
 export async function stopSharedLinkPlayback(actor: SessionUser | null, linkId: string) {
   requireAdmin(actor);
   const id = v.parse(v.pipe(v.string(), v.uuid()), linkId);
+  const [readingOwner]=await getSql()`select owner_id from playback_shares where id=${id}`;
+  if(readingOwner)await (await import('./reading.server')).closeReadingShare(readingOwner.owner_id,id);
   const sessions = await getSql().begin(async tx => {
     // Admission takes this same lock before renewing a viewer's reservation.
     const [link] = await tx`select id from playback_shares where id=${id} for update`;
@@ -168,6 +171,7 @@ export async function expireSharedViewers() {
  const {vrchatViewerIdleMinutes}=await getConfig();
  await db`delete from share_request_leases where id in (select id from share_request_leases where expires_at<=now() limit 200)`;
  await revokeInactiveShares();
+ await (await import('./reading.server')).expireSharedReadingViewers();
  const rows=await db`select v.id,s.owner_id from share_viewers v join playback_shares s on s.id=v.share_id where v.ended_at is null and v.playback_id is not null
    and (v.last_seen_at<=${viewerIdleCutoff(db,vrchatViewerIdleMinutes)}
    or s.revoked_at is not null or s.expires_at<=now()) order by v.last_seen_at limit 20`;

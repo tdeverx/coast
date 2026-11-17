@@ -24,6 +24,10 @@ const fixtureUrl=moduleUrl(`
   export const getDb=()=>fixture.database;
   export const getFeatureConfig=async()=>{fixture.state.featureReads++;return {features:{screen:true},experimentalMusic:true,experimentalGaming:fixture.state.allEnabled,experimentalBooks:fixture.state.allEnabled,experimentalComics:fixture.state.allEnabled};};
   export const screenProgressPlan=async()=>{fixture.state.planners.push('screen');return {allIds:fixture.ids(),sequenceById:new Map()};};
+  export const createScreenProgressPlanning=()=>()=>{};
+  export const screenProgressPresent=async()=>false;
+  export const nonScreenProgressPresence=async()=>({continue:false,next:false});
+  export const savedProgressPresence=async()=>({watchlist:false,favourites:false});
   export const mediumProgressIds=async(_user,options)=>{fixture.state.mediums.push(options.category);return [];};export const readingProgressIds=async()=>{fixture.state.planners.push('reading');return [];};
   export const listCandidateIds=async()=>fixture.ids();
   export const collectionCTE=()=>'';

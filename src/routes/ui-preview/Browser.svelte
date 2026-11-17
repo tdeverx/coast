@@ -4,9 +4,9 @@
   import Heading from '#lib/ui/components/Heading.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
   import {approvalStatus} from './reference';
-  let { title, options, value, change, heading: sectionHeading, thumbnail, thumbnailHeight = 44, disabled = false, search = $bindable('') }: {
+  let { title, options, value, change, heading: sectionHeading, thumbnail, thumbnailHeight = 44, disabled = false, showApproval = true, search = $bindable('') }: {
     title: string; options: {value:string;label:string;detail?:string}[]; value:string; change:(value:string)=>void;
-    heading?:Snippet; thumbnail?:Snippet<[{value:string;label:string;detail?:string}]>; thumbnailHeight?:number; disabled?:boolean; search?:string;
+    heading?:Snippet; thumbnail?:Snippet<[{value:string;label:string;detail?:string}]>; thumbnailHeight?:number; disabled?:boolean; showApproval?:boolean; search?:string;
   } = $props();
   const filtered = $derived(options.filter(option => `${option.label} ${option.detail ?? ''}`.toLowerCase().includes(search.trim().toLowerCase())));
   let scroller=$state<HTMLDivElement>();
@@ -35,7 +35,11 @@
     <Button emphasis="subtle" class="picker-option" title={option.label} {disabled} pressed={option.value === value} onclick={() => change(option.value)}>
       {#if thumbnail}<span class="picker-thumbnail" style:height={`${thumbnailHeight}px`} aria-hidden="true">{@render thumbnail(option)}</span>{/if}
       <span class="picker-label">{option.label}</span>{#if option.detail}<small class="quiet picker-detail" title={option.detail}>{option.detail}</small>{/if}
-      <span class="approval" data-approval={approvalStatus(option.value)} role="img" aria-label={`Approval ${approvalStatus(option.value)}`} title={`Approval: ${approvalStatus(option.value)}`}><Icon name="check" size={14} /></span>
+      {#if showApproval}
+        {@const approval = approvalStatus(option.value)}
+        <span class="approval" data-approval={approval} role="img" aria-label={`Approval ${approval}`}
+          title={`Approval: ${approval}`}><Icon name="check" size={14} /></span>
+      {/if}
     </Button>
   {/each}
 </div>

@@ -1,4 +1,5 @@
 import { getFeatureConfig } from '#lib/server/features.js';
+import { categoryEnabled } from '#lib/experimental.js';
 import { getConfig } from '../config';
 import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
@@ -8,9 +9,9 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
-import { progressOptionsSchema, type ProgressContent } from '../../progress';
+import { progressOptionsSchema, progressSelectionTabs, type ProgressContent } from '../../progress';
 import { continuationIds } from './continuations';
-import { profileProgress } from './profile';
+import { profileProgress, profileProgressPresence } from './profile';
 import { listsData } from './lists';
 import { AppError } from '../security/errors';
 import { requireVisible } from '#lib/social/privacy.server.js';
@@ -20,7 +21,8 @@ import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
 import { heroTitleIds } from '#lib/media/hero.js';
 import { readingCards } from '#lib/reading/query.server.js';
-import { pausedProgressPage } from './paused-progress';
+import { pausedProgressPage, pausedProgressPresent } from './paused-progress';
+import { withReadCancellation } from '../db/read-cancellation';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
 export function progressData(userId:string, raw?:Partial<import('#lib/progress.js').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
@@ -45,10 +47,39 @@ export async function progressData(userId:string, raw:unknown = {}, viewerId=use
   )) as present`);
   return {...result,emptyAllMedia:!other.present};
 }
+
+/** Only tabbed shelves ask for availability; standalone/single-view APIs keep their existing read. */
+export async function tabbedProgressData(userId:string,raw:unknown,viewerId:string,surface:'continue'|'profile',signal?:AbortSignal):Promise<ProgressContent> {
+  return withReadCancellation(signal,()=>readTabbedProgress(userId,raw,viewerId,surface));
+}
+async function readTabbedProgress(userId:string,raw:unknown,viewerId:string,surface:'continue'|'profile'):Promise<ProgressContent> {
+  const requested=v.parse(progressOptionsSchema,raw);
+  if(requested.category!=='screen'||requested.kind==='book'||requested.kind==='comic')return progressData(userId,requested,viewerId);
+  const planning=createScreenProgressPlanning(userId,viewerId);
+  const [watching,next,paused,history]=await Promise.all([
+    screenProgressPresent(userId,viewerId,'watching',planning),
+    screenProgressPresent(userId,viewerId,'up-next',planning),
+    pausedProgressPresent(userId,viewerId,'screen'),
+    surface==='profile'?profileProgressPresence(userId,viewerId):undefined,
+  ]);
+  const present={watching,'up-next':next,paused,finished:history?.finished,dropped:history?.dropped};
+  const availableViews:NonNullable<ProgressContent['availableViews']>=progressSelectionTabs(surface).flatMap(({value})=>value in present&&present[value as keyof typeof present]?[value]:[]);
+  const options=availableViews.length&&!availableViews.includes(requested.view)
+    ? {...requested,view:availableViews[0],kind:'all' as const,scope:'all' as const,page:1}
+    : requested;
+  if(!availableViews.length&&userId!==viewerId&&requested.view!=='paused')
+    await requireVisible(userId,viewerId,'progress','screen');
+  const result=availableViews.length
+    ? await readProgressData(userId,options,viewerId,planning)
+    : {...options,items:[],total:0,page:1,pages:1};
+  return {...result,availableViews};
+}
+
 async function readProgressData(
   userId: string,
   raw: unknown = {},
-  viewerId = userId
+  viewerId = userId,
+  planning?: ReturnType<typeof createScreenProgressPlanning>,
 ): Promise<ProgressContent> {
   const options = v.parse(progressOptionsSchema, raw);
   if(options.view === 'recommendations') return recommendationProgress(userId,viewerId,options);
@@ -80,7 +111,7 @@ async function readProgressData(
       pages: result.pages,
     };
   }
-  const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId);
+  const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId,{planning});
   const presentation = options.view === 'watching' ? 'continue' : 'next';
   const views = new Map(
     (await mediaViewsForIds(userId, visibleIds, viewerId, true, presentation)).map((item) => [item.id, item])
@@ -134,8 +165,8 @@ async function readingProgress(userId:string, viewerId:string, options:import('#
   return {...options,page,pages,total:count.total,items:await readingCards(userId,viewerId,rows.map(row=>row.reading_works))};
 }
 
-async function readingProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions, includeSaved=true) {
-  const config=await getFeatureConfig(viewerId);
+async function readingProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions, includeSaved=true, features?:Awaited<ReturnType<typeof getFeatureConfig>>) {
+  const config=features??await getFeatureConfig(viewerId);
   requireEnabledCategory(config,'reading');
   if(options.kind!=='all'&&!['book','comic'].includes(options.kind))throw new AppError(400,'Choose Books or Comics.');
   if(options.kind!=='all')requireEnabledCategory(config,options.kind);
@@ -175,7 +206,7 @@ export async function continueHeroId(userId: string) {
   return heroTitleIds(ids.flatMap(id => byId.has(id) ? [byId.get(id)!] : []))[0];
 }
 
-export async function screenProgressPlan(userId: string, options: import('#lib/progress.js').ProgressOptions, viewerId: string, {firstEpisode=false,sortByActivity=true}:{firstEpisode?:boolean;sortByActivity?:boolean}={}) {
+async function screenProgressInputs(userId: string, viewerId: string, firstEpisode: boolean) {
   const db = getDb();
   const {metadataSource} = await getConfig();
   const states = await db
@@ -213,6 +244,23 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
     if (next.entry.progress > 0 && !next.entry.watched && !activeIds.includes(next.entry.mediaId))
       activeIds.push(next.entry.mediaId);
   }
+  return { metadataSource, planned, activeIds, sequenceById };
+}
+
+/** A tab summary and the retained page share the episode and sequence read. */
+export function createScreenProgressPlanning(userId: string, viewerId: string, firstEpisode = false) {
+  let input: ReturnType<typeof screenProgressInputs> | undefined;
+  return () => input ??= screenProgressInputs(userId, viewerId, firstEpisode);
+}
+
+async function screenProgressMembership(
+  userId: string,
+  options: import('#lib/progress.js').ProgressOptions,
+  viewerId: string,
+  planning: ReturnType<typeof createScreenProgressPlanning>
+) {
+  const db = getDb();
+  const { metadataSource, planned, activeIds, sequenceById } = await planning();
   const queued =
     (options.view === 'up-next' || options.view === 'next')
       ? await db
@@ -240,15 +288,14 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
           ]
     ),
   ];
-  if (!candidateIds.length) return { ids: [], allIds: [], total: 0, page: 1, pages: 1, sequenceById };
-  const active = new Set(activeIds),
-    manual = new Set([...queued,...saved].map((row) => row.id));
-  const candidates = await db
-    .select({ id: s.media.id, kind: s.media.kind })
-    .from(s.media)
-    .where(
-      and(
-        inArray(s.media.id, candidateIds),
+  const member = (ids: string[]) => sql`${s.media.id} = any(${`{${ids.join(',')}}`}::uuid[])`;
+  const nextIds = [...queued.map(row => row.id), ...saved.map(row => row.id), ...sequenceById.keys(), ...planned.newSeasonIds];
+  const where = and(
+        member(candidateIds),
+        options.view === 'watching'
+          ? sql`(${member(activeIds)} or ${s.media.kind} = 'episode')`
+          : sql`not (${member(activeIds)}) and (${member(nextIds)} or ${s.media.kind} in ('season','movie') or
+              (${options.view === 'next'} and ${s.media.kind} = 'episode'))`,
         sql`case ${s.media.kind}
           when 'episode' then ${episodeHasAired(sql`${s.media.id}`, metadataSource)}
           when 'show' then exists(select 1 from episodes e where e.show_id=${s.media.id} and not e.is_special and ${episodeHasAired(sql`e.media_id`, metadataSource)})
@@ -264,8 +311,20 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
           where e.media_id = ${s.media.id} and parent.user_id = ${userId} and (parent.dropped or parent.paused))`,
         sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and paused.paused
           and paused.media_id in (${s.media.id}, (select season.show_id from seasons season where season.media_id = ${s.media.id})))`
-      )
-    )
+  );
+  return { candidateIds, sequenceById, where };
+}
+
+export async function screenProgressPlan(userId: string, options: import('#lib/progress.js').ProgressOptions, viewerId: string, {
+  firstEpisode = false, sortByActivity = true, planning = createScreenProgressPlanning(userId, viewerId, firstEpisode),
+}: { firstEpisode?: boolean; sortByActivity?: boolean; planning?: ReturnType<typeof createScreenProgressPlanning> } = {}) {
+  const db = getDb();
+  const { candidateIds, sequenceById, where } = await screenProgressMembership(userId, options, viewerId, planning);
+  if (!candidateIds.length) return { ids: [], allIds: [], total: 0, page: 1, pages: 1, sequenceById };
+  const candidates = await db
+    .select({ id: s.media.id })
+    .from(s.media)
+    .where(where)
     .orderBy(
       ...(options.view === 'watching' && sortByActivity
         ? [
@@ -274,22 +333,9 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
         : []),
       s.media.id
     );
-  const eligible = new Set(
-    candidates
-      .filter((row) =>
-        options.view === 'watching'
-          ? active.has(row.id) || row.kind === 'episode'
-          : !active.has(row.id) &&
-            (manual.has(row.id) ||
-              sequenceById.has(row.id) ||
-              planned.newSeasonIds.includes(row.id) ||
-              (options.view === 'next' && row.kind === 'episode') ||
-              row.kind === 'season' ||
-              row.kind === 'movie')
-      )
-      .map((row) => row.id)
-  );
-  let ids = (options.view === 'watching' ? candidates.map((row) => row.id) : candidateIds).filter(id => eligible.has(id));
+  const matched = candidates.map(row => row.id);
+  const eligible = new Set(matched);
+  let ids = options.view === 'watching' ? matched : candidateIds.filter(id => eligible.has(id));
   if(options.view==='next' && ids.length) {
     // An exact next episode represents its saved parent without a duplicate show card.
     const represented=await db.select({id:s.episodes.showId}).from(s.episodes).where(inArray(s.episodes.mediaId,ids));
@@ -299,6 +345,22 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
   const { page, pages } = pagination(ids.length, options.page);
   const visibleIds = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   return { ids: visibleIds, allIds: ids, page, pages, total: ids.length, sequenceById };
+}
+
+export async function screenProgressPresent(
+  userId: string, viewerId: string, view: 'watching'|'up-next',
+  planning: ReturnType<typeof createScreenProgressPlanning>,
+  includeCollectionCheck = false,
+) {
+  const options = v.parse(progressOptionsSchema, {view});
+  const {candidateIds,where} = await screenProgressMembership(userId,options,viewerId,planning);
+  if (!candidateIds.length) return false;
+  const [result] = await getDb().execute<{present:boolean}>(sql`select exists(
+    select 1 from ${s.media} where ${where}
+      and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','screen')
+      ${includeCollectionCheck ? sql`and social_visible(${userId}::uuid,${viewerId}::uuid,'collection','screen')` : sql``}
+  ) as present`);
+  return result.present;
 }
 
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */
@@ -346,6 +408,39 @@ export async function mediumProgressIds(userId:string,options:import('#lib/progr
   const {where}=mediumProgressSelection(userId,viewerId,options,includeSaved);
   const rows=await getDb().execute<{id:string}>(sql`select w.id from works w where ${where}`);
   return Array.from(rows,row=>row.id);
+}
+
+/** Keep alternate tab reads in the native game/reading membership owners. */
+export async function nonScreenProgressPresence(userId:string,viewerId:string,category:string|undefined,features:Awaited<ReturnType<typeof getFeatureConfig>>) {
+  const games=(!category||category==='game')&&categoryEnabled(features,'game');
+  const reading=(!category||category==='reading')&&categoryEnabled(features,'reading');
+  if(!games&&!reading)return {continue:false,next:false};
+  const checks=await Promise.all((['watching','up-next'] as const).map(async view=>{
+    const options=v.parse(progressOptionsSchema,{view});
+    const parts=[];
+    const queued=view==='up-next'?sql`union all select media_id from up_next where user_id=${userId}`:sql``;
+    if(games) {
+      const {where}=mediumProgressSelection(userId,viewerId,{...options,category:'game'},false);
+      parts.push(sql`exists(select 1 from (
+        select game_id as id from game_playthroughs where user_id=${userId} and status=${view==='watching'?'in-progress':'planned'}
+        ${queued}) candidate join works w on w.id=candidate.id where ${where}
+        and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','game')
+        and social_visible(${userId}::uuid,${viewerId}::uuid,${view==='up-next'?'collection':'progress'},'game'))`);
+    }
+    if(reading) {
+      const {where}=await readingProgressSelection(userId,viewerId,{...options,category:'reading'},false,features);
+      parts.push(sql`exists(select 1 from (
+        select work_id as id from reading_progress where user_id=${userId} and state=${view==='watching'?'reading':'planned'}
+        ${queued}) candidate join ${s.readingWorks} on ${s.readingWorks.id}=candidate.id
+        left join ${s.readingProgress} on ${s.readingProgress.workId}=${s.readingWorks.id} and ${s.readingProgress.userId}=${userId}
+        left join ${s.trackingState} on ${s.trackingState.mediaId}=${s.readingWorks.id} and ${s.trackingState.userId}=${userId}
+        where ${where} and social_visible(${userId}::uuid,${viewerId}::uuid,'progress',${s.readingWorks.kind})
+        and social_visible(${userId}::uuid,${viewerId}::uuid,${view==='up-next'?'collection':'progress'},${s.readingWorks.kind}))`);
+    }
+    return sql`(${sql.join(parts,sql` or `)})`;
+  }));
+  const [result]=await getDb().execute<{continue:boolean;next:boolean}>(sql`select ${checks[0]} as "continue",${checks[1]} as next`);
+  return result;
 }
 
 /** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */

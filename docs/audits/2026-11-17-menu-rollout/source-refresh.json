@@ -1,0 +1,207 @@
+{
+  "epoch": "menu-rollout-local-2026-11-17",
+  "blanketAcceptance": false,
+  "predecessorReceipts": [
+    "docs/audits/2026-11-15-invite-accounts/source-refresh.json",
+    "docs/audits/2026-11-15-invite-accounts/followup-source-refresh.json",
+    "docs/audits/2026-11-15-app-housekeeping/source-refresh.json",
+    "docs/audits/2026-11-16-recommendation-feeds/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/source-refresh.json",
+    "docs/audits/2026-11-16-provider-rows/viewport-source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/source-refresh.json",
+    "docs/audits/2026-11-17-paused-tracking/followup-source-refresh.json",
+    "docs/audits/2026-11-17-menu-read-retry/source-refresh.json",
+    "docs/audits/2026-11-17-menu-tracking/source-refresh.json"
+  ],
+  "files": {
+    "drizzle/meta/_journal.json": {
+      "previous": "0ce1ffb979de065fb469e337fc5439e2c1859318a71a5d3ef4a36dfb89e750f3",
+      "current": "d48cf38695867ba8ba6015c4c2dbad750936b2cb88939b75317656840c4c9d03"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "738440ce7c2c2238cf478c62d37d85dc003cd6c3dcaf23675819875f994fefd0",
+      "current": "5dc83da512d18be0dc366a63c2a9b51e1ddca2ccc40cb4426c3b03215ab91a76"
+    },
+    "src/lib/collection/query.server.ts": {
+      "previous": "f460c3081ee98ee6ceb8dc1b94308fb1a7918df132fc28b8e3dc75e00df64993",
+      "current": "7c0e945451a5054eef31c5936bbfedbd10142e1742d84fbf0b80c3b07b5d3cb2"
+    },
+    "src/lib/playback/client.svelte.ts": {
+      "previous": "8125a5e219092ae7f5eaf0aa7e17fe9830eb86e935defc2b3ad3c033014b2a6c",
+      "current": "3ac6287f70eb57ff2256bcc130f2983bbb1abe3f0d7fef11d20b136731846674"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "b5365b208ca344fc4fcf67c47143d8fc667a74dc265aca10a3f5d6e4b74a316a",
+      "current": "69def346a8be4015690e3adbabb696c5e33ffec4ee16dfedb91c1d949b4ef81b"
+    },
+    "src/lib/server/queries/library.ts": {
+      "previous": "7b2851d9a66923e61924f643f1e9836e82fdcf95d44c7a189ba3d4d89e0bbba2",
+      "current": "321a5981cba948db4a206a3cf677f14731df1e0d2a44a9350362636fc99ac735"
+    },
+    "src/lib/server/storage/retention.server.ts": {
+      "previous": "25c0f195a6da979c87d18174b6895776d36607ded4bca2659d994824defba341",
+      "current": "ade59ed06df07c24578c42a109c169e0c10a0e365c3bb8da6240d03f5f49a70e"
+    },
+    "src/lib/ui/component-manifest.json": {
+      "previous": "a9345d431084c72455f39657c71ff4de4be2ca3411a6eb2e5553f51b5cc4d4e0",
+      "current": "4f4b51fff44308f89263a52ad80f8aa37d52a82dafefbdb47c98321992006d82"
+    },
+    "src/lib/ui/components/PersistentPlayer.svelte": {
+      "previous": "25f492ae65233fb2f266fe0342ff986ae43ebe982849f7614d3e6f7f24b9c3e7",
+      "current": "6347a6fa310d3e8c278e2a55e6a019f1e2c1f580ee8f4f85b52c89e39693e643"
+    },
+    "src/lib/ui/shelves/library.svelte.ts": {
+      "previous": "14a37f91a6aa046e9f282b4987dd99399ae5bf205b4b0463c03a21073c2b543e",
+      "current": "d1b31ad49a858336680f1b0af5f782ac8a687f2bd09415eb11dba62ada068899"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "previous": "fef2af17d2cb961c64e62f9fe6a51ed636e6025ea52ae709ed7e8bce82efee1f",
+      "current": "d5e7e2935c34ef04177e38640426dfb8dc6206c0356fa97d9b1556a4ffeeddae"
+    },
+    "src/routes/ui-preview/+page.svelte": {
+      "previous": "aeba4180e9589ed45bba97554edd24e49e04151f36a04c6359734bb55dc502bc",
+      "current": "7b8f27582ab3c036bdeb5b0a9aca1bf38203c12f3201deb6354c5de324835cf5"
+    },
+    "src/routes/ui-preview/prop-manifest.json": {
+      "previous": "e0fc1c23e4007d801ec487321a60070989ea011fafac3f7c5ca305fc7543caec",
+      "current": "c5486f5711fd5227616beb05fba177c3330180cd8f9b9e1ef586b881e6ef8aa8"
+    },
+    "tests/fixtures/library-window.ts": {
+      "previous": "82a9187280c524d073326a0cb3ff408d21c69bbf522df0efc680be28373f5a4b",
+      "current": "e96b739e5a9c92cbbab0eebce6299dd40ca5312d1049668499eee12c45470f71"
+    },
+    "tests/library-navigation.test.ts": {
+      "previous": "4a43d6342ada8378341e47c4d41fd904b55ce70e7ee745870f608f8f0faa59ae",
+      "current": "8ab4f27fee244a365ed5763180748d6f30dc49edf40785d6b6a42210645da8bf"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "ae71b92a245058eb9225986d3b07742ad222d4950a4910e31fa570d179f3d3bc",
+      "current": "fcad665e548d5385830dcfaf18ddba205ed99bfa0f4ca356d14335d9644968f5"
+    },
+    "tests/ui-reference.test.ts": {
+      "previous": "0a71a0f6dee99cbee1d1e7237485cd2b5d476000ebb8983f9981dd08ceb07591",
+      "current": "37659f1c7f0d1486563b325af6a0f9845ed4b95936b7650250b6a8d0ee31b53b"
+    },
+    "tests/ui-source-freshness.test.ts": {
+      "previous": "ecd226783e02ad056b0932e338c592676553bd438dc70ae1c621ec9554f734fa",
+      "current": "1b6befb8b7eed7a777a11e9dae41c35b65478ddd672ad88de3c7713cb196851a"
+    }
+  },
+  "supportingFiles": {
+    "docs/behaviour.md": "03ffbabb80744a56834992d843431a550260ae23f83ae160af576e87e139bc6b",
+    "docs/design.md": "d8c4e097ca6f6c06b1e000de49d4fe9d2251b58a220b9ef2fb04c470a5973655",
+    "drizzle/0073_manual_checkins.sql": "4a7836b4e5fdade8ee33b271aa53b36f241dcd9a63a307c7a40d6690eb8e8f52",
+    "drizzle/0074_reading_reread_history.sql": "8e7407e6b6e515a1b7bf57807e7003a4c705695f622ee7ce9fb0985cf53fa04f",
+    "drizzle/meta/0073_snapshot.json": "b0abba82f4ef9095e28e3f6f2f3e7d4071a3a3497a59a5603efd738ec71a7bcb",
+    "drizzle/meta/0074_snapshot.json": "916d21436917527b613fe7ff2d5111068854aa98ce9792a1ff8761834d947481",
+    "src/app.css": "55f11a13c3601e8a25d344835f45ed5c32440b01735ae20116a3e2af18b8be4d",
+    "src/lib/core/games/service.server.ts": "d81fac8e4afcf525152f33181416b9b5e0d09885d2d27f830cfb543068d7a8a7",
+    "src/lib/core/profile/service.server.ts": "753c37879c9193532233223025758fea17606424bb791cc77a41acfc796bce57",
+    "src/lib/core/reading/service.server.ts": "06d1871634e1a30c3c82bd52dd193ebacbfe5acb2020ecceeda1918e79e71836",
+    "src/lib/games/model.ts": "dffc2c22a941ebf746e240dab5c18a3b91e67447dd36dd73beab772b2bd651a2",
+    "src/lib/library.ts": "6a9c7ec28b69fad6c50234fd0028a80f1c2c9a865c9a06e7cdc7c2700d24989f",
+    "src/lib/media/actions.ts": "48baf81284b99048912ec9e7c8e6a9ea43f7a5e3daf2af452c5deb88508d69a2",
+    "src/lib/media/requests.ts": "57efcb1e232a0041d959e42db88642891e435cc2bd9ee84bd503a46cb23b1ebb",
+    "src/lib/media/work-actions.ts": "b61bbda71ae3be3fc73f8f634e26adeb8f17d22a2e64009badc93d12763ee8e6",
+    "src/lib/music/artist-tracks.server.ts": "312e4d20bb57e82d2dd15c8ac1cc1a755257eb52c7020f47e1d5e1824ee0e006",
+    "src/lib/music/queue.server.ts": "3c986bf2c7ebf1f71caaa44ba3e07473f9debfaa3afc33b155384ebb3fc486ca",
+    "src/lib/progress-experiment.ts": "c528d8e896f682cf481b4877c78ecbc36556a41fbcea6be3d82c52023177d4a1",
+    "src/lib/progress.ts": "8dd98321ae4918d0f780879bc4d0da37916e3f24bc47d25a938645891628edc4",
+    "src/lib/reading/model.ts": "1fba3bd57f1bd58acbc044cdaed63bd352568f5c245e7b749b013a87b8f143d4",
+    "src/lib/reading/sessions.server.ts": "0a80a111b716c6c2547df737374e410d7cc53984980849e416dcde98e875c217",
+    "src/lib/recommendations/section.ts": "99aa326c0c80025a9b27ed5b7507e648c6a36df8165a503fbbf60c863a0d9dd7",
+    "src/lib/server/api/index.server.ts": "a4fa6e445b21fe930068948b2ee4f0998ddfb18575f51414511781a4fa5c1e45",
+    "src/lib/server/queries/lists.ts": "d57c333df742e70f824bd979907ecce168c60248be3988535dc80166ea23f7e0",
+    "src/lib/server/queries/media-actions.ts": "e2dfbe1042ab1f20b355a6e799b2931fd2945e2a2f793c97921f548150136e84",
+    "src/lib/server/queries/paused-progress.ts": "80bd6d49ddab4309c90f6e29cb232e8b27e0ca0ac0ae4f8d0eede5232874a8f8",
+    "src/lib/server/queries/profile.ts": "fa78d6dc1b13b18fb8bb13ca35acf2da3186aa1a64a7a58377678cd22772e9f6",
+    "src/lib/server/queries/progress.ts": "9c008ec88afcc56df03ada0726824ec9904ddf322fb18038766f2542627f4e67",
+    "src/lib/social/checkins-query.server.ts": "f20cfb44e95dd2f206fa1c125146a2671d604ded4e0291e89ba3a59df1506e6a",
+    "src/lib/social/checkins.server.ts": "a8ceb4a16664aec3938b5701dc4ab6439925cffdfe3d1a7b83b01cf620ee20d1",
+    "src/lib/social/checkins.ts": "34ba3d3ec6813a5b72bfb9356d4af7a75564750da9dcdbdcb4c7479e70876a0e",
+    "src/lib/social/presence.server.ts": "f3902e3b28aad900156a49c7a46aed892a29b7b107755ff2f318e35fef2b55cb",
+    "src/lib/social/trakt.server.ts": "a04dcdedaafc452fce5a143b92152c6e01faa689c766d223a3af4d66e491f7b9",
+    "src/lib/ui/components/Button.svelte": "45a0cf84588496d9d08f223efdb9f276016cde8102763937a7b3544434808616",
+    "src/lib/ui/components/CheckInActions.svelte": "03c8dcc28633087442d20503130b807bad7a88a790806ca1fe308ffc72efaf90",
+    "src/lib/ui/components/ChoiceGroup.svelte": "2dd0896fec8811a793a126437b13095d184026ab0e84c4139a0c97f81245b17a",
+    "src/lib/ui/components/Dialog.svelte": "f26a998325796af009ecc53263fdb4a9479e47ef2263bf0f69114a86383ba6d5",
+    "src/lib/ui/components/Icon.svelte": "29b9d20daff16bede8597144e88cb4dd154fda37af072505446c12eb6d2e9e2b",
+    "src/lib/ui/components/PartyMenu.svelte": "0def536241e1b08521b822c02e1001899017eb9bdaa44521bf3eaf8573d908de",
+    "src/lib/ui/components/Rating.svelte": "000e76c1b10feffa9ee5d7ffc4eb1ae8b29be17f87610dec78e530d757c6bc1f",
+    "src/lib/ui/components/ReactionActions.svelte": "d5090650adf44fc125c251ddde563fa1d5772f7c5f523c80fbe31cd2fdc44b62",
+    "src/lib/ui/components/RequestDialog.svelte": "aded52b2be5527db448e234d65c6aab56ea7f51061e64f14ad05d26dd16a3603",
+    "src/lib/ui/components/RowFilter.svelte": "e52c7fc3465998774a367e9ebc255ccfd929452eb9fd0fb7926f34c752f34731",
+    "src/lib/ui/components/Shelf.svelte": "7562fd05ad43f6833957fbf0083d81448c811053040e823e797488933d3a6e58",
+    "src/lib/ui/components/StreamsPanel.svelte": "dbe4f417a6c887d050dde8ec89bbcabcda2370ce789d75c57855a18788913219",
+    "src/lib/ui/components/SyncedControls.svelte": "a9cbb50797346027268a207fbb3e3597339067d4b13b6a15a096b8c180bb813a",
+    "src/lib/ui/components/WorkActions.svelte": "963427b41e4d5b6c4cd8ff13a31500751c22b35bcdeebfd4213940cb621ea3de",
+    "src/lib/ui/components/WorkListActions.svelte": "b2804efda4276d9810408490f7c3300e4bfd3f3e9b5aced7b47e52113bf8da2f",
+    "src/lib/ui/components/WorkMenu.svelte": "bbabb5853a2d043d0c7bb10f98d0655f4a46708211c5e6dc627a50185df4a089",
+    "src/lib/ui/controls/filters.ts": "923fe4e991dd980a792706cf5260ebe52e2a928e19364ab07a2247d4e5041e54",
+    "src/lib/ui/controls/menu-preview.ts": "3f6aa64f68152cb5be216c506a109190acfe5e804266484f34ede84c28da3565",
+    "src/lib/ui/controls/menu-read-retry.ts": "c1ca8a2ce3c225aaba08b82dfbe2c35502045b0077e6476d2399135eb553e379",
+    "src/lib/ui/controls/menu-resource.svelte.ts": "a1a929d1afdd829dab8942f276843c512ea8f8538e812ad0eace2100828592d4",
+    "src/lib/ui/controls/menu.svelte.ts": "7772fb488b2c45fc8c1358bdd85e519f559d5b2439a14e3043d385ae742c79e4",
+    "src/lib/ui/controls/request-options.svelte.ts": "7409bd3f4229260b1d81769ce152741b522292d4086d6feca07e9876f1d1551a",
+    "src/lib/ui/controls/requests.svelte.ts": "4f09bcf351b3c764ef4ea6a7ce775258aca5efd3140220b18a1fd4f6c5606f26",
+    "src/lib/ui/progress-card-style.ts": "90d3082cffcef84fdb319614f9e1d4c040ea27498075895f4a27e6b6dd3d3fae",
+    "src/lib/ui/shelves/controls.ts": "28368e3c838a49883d96a56753e85008416bfcaa750b24593afeb27aaeb4cfb4",
+    "src/lib/ui/shelves/credits.svelte.ts": "8969b45690d57314692117dd1d8a5d8e3c1b57a84537ba333e208f8f0e5c6246",
+    "src/lib/ui/shelves/detail.svelte.ts": "6c8f52ceddef2ad448339ef4c9f26d594bc2b74761562d0c400eb00f6ad6deae",
+    "src/lib/ui/shelves/discovery.svelte.ts": "b5c304c251a02c365cbdc52c3bc7057fd907f03ca912cac447ebae1dc85a0aff",
+    "src/lib/ui/shelves/for-you.svelte.ts": "18a210d85268c1db609c1433827ea866397890bf921caae619558df04d639115",
+    "src/lib/ui/shelves/library-feed.svelte.ts": "3b07c02c3d22208876adf3eaf30183c7f437d1126e4e846b9d03c32605195cbd",
+    "src/lib/ui/shelves/list.svelte.ts": "9ab1e49359b609952a33870de28e162885d57cb4f9b82601cb0ed21bf0ecd762",
+    "src/lib/ui/shelves/local.svelte.ts": "47bd62a8e4b506d64a4c24891d10301db48848a15a5d43df32203e8dbdfadcee",
+    "src/lib/ui/shelves/progress-experiment.svelte.ts": "775ddef9669b4479d5e5674dafad4bc696fd973e71463b7d194efceb017380e5",
+    "src/lib/ui/shelves/progress.svelte.ts": "2aacd74d80ff62b9645198bfe756c9e8eedd846ac005975a1ea5baed05ebcfeb",
+    "src/lib/ui/shelves/search.svelte.ts": "bcd159118b91fdc575a78f312bd5457c64d9ba49882518ffddb1ea9a7e48d295",
+    "src/lib/ui/shelves/types.ts": "cf0b161ca5380a5aed89248501487b016f01acda50c16bfdb114fcddaa710dd7",
+    "src/lib/ui/work-menu/CatalogueActions.svelte": "ba0fa27d61e4747cead480498d314fb68f238479228cc3a69c2a58bd3dc82b06",
+    "src/lib/ui/work-menu/GameCommands.svelte": "295aa17d23dd508c6191919dacda3a9bccd40b4bbe956c7e3593954b725a0e82",
+    "src/lib/ui/work-menu/ReadingCommands.svelte": "b83a2e75449477582c5c2d631aac7ce47226e651ebfb3ea7d1fe80685c219b04",
+    "src/routes/discover/+page.svelte": "5c9f867cee2405ae8ca6d06ac06cfcb6abdd2c2c77ec6f2c4a85b3f56d3259b4",
+    "src/routes/games/+page.svelte": "78361598389539df07676d6b19aace899fa851db06f62fdcfc6a70de6be1e1aa",
+    "src/routes/lists/+page.svelte": "7eeca1c9e68a28a65710b2024cc12fec7669f3d980369adde58b1aad1f0b1dd4",
+    "src/routes/music/+page.svelte": "604d1b8c931143c4301ea52be3a24767d79f1d861ecfee22c0f07c8ff0a69333",
+    "src/routes/progress-experiment/+page.server.ts": "26b1dc242e43ae5193dfdcedb09e8dfbc721b52d389f44c56e64549ca204d3d6",
+    "src/routes/progress/+page.server.ts": "7fcbd5e9c20617f6223af666645f1a8adbf2192eff93f4cb5e10ca6b3f837316",
+    "src/routes/ui-preview/Browser.svelte": "9f488d811a3a25b3043c87e9ca161f0e690c01671456f569f9902285f6254d76",
+    "src/routes/ui-preview/Demo.svelte": "0914b3eebb4288e75bbfb85d27631e6d2c7f4e13ff82b825d4b4ae01bb732f6b",
+    "src/routes/ui-preview/MenuFilterExample.svelte": "aeb5c6726c86bb86f1246f5537cedcb8a8d176f670a9f1b79abf80fecba608b2",
+    "src/routes/ui-preview/MenuPreviewScope.svelte": "566dd2e10a34687774f7c1f4e16f539e30e6b93b0b56ddfcd000fb6d53834bf1",
+    "src/routes/ui-preview/MenusPreview.svelte": "233b546951fd82920623aad7a1902c22c7af6a0e7be29bd4aa821fa9606be4c4",
+    "src/routes/ui-preview/PreviewExample.svelte": "50d0243e7dc458578aad43f4a27a3930f161e29ca3e745bdae46e34868227e10",
+    "src/routes/ui-preview/SocialExamples.svelte": "0c5f5dfbf93b0f1c5e1938f3ffc59cd7931e02160cc6a0f089d5886098d39cc2",
+    "src/routes/ui-preview/catalog.ts": "a0ac406be59bff1ce715a04613c5c6863136ff93dd8791b9474ff6f89918f010",
+    "src/routes/ui-preview/demo/fixtures.ts": "b01e3ce694610c8f46905cd4ea6622aade66b7a1f4076904556419cc5dd99407",
+    "src/routes/ui-preview/menu-examples.ts": "ec9a1863b4a2e51573d55b6df6d37363dec7bbc653d4ffa1be8a6c61cddda459",
+    "src/routes/ui-preview/reference.ts": "3f986b1eeed6d366f536dd8593e7819ce6f6173b71962dd035b87a04145a32bc",
+    "tests/action-library-db.test.ts": "5861d2ea752fca591d7f0b39dda699559fea233b3d01ebe5ac845f7affd6530f",
+    "tests/card-hydration-db.test.ts": "a41d3698d714af2c1d0f8d134db66523ce8b3ec50e97ff01c7d83819d1b2efac",
+    "tests/checkins-db.test.ts": "8ea57b08938563ba90982204169c607ef32f4442e5f64653173b29929d9f4b6c",
+    "tests/domain-application-db.test.ts": "40f56f7e417de5369659589a08506d298216bfbd317ab1adc6a3b379e4a3ba1e",
+    "tests/fixtures/menu-lifecycle.ts": "e7ac1001582d8075bbceb7e6db34c6c27c91a6fc79197fc81cad9d64571544cf",
+    "tests/fixtures/menu-read-retry.ts": "95b2eaed13dd9c136586a7e77f7579a6cde9a2b53462da5193b7154e463e90ba",
+    "tests/for-you-db.test.ts": "e26d956e466b015509e314ce7e79ea10a14a368d73d12c4391184803fa56f3ed",
+    "tests/games-db.test.ts": "56ee6289d0ca1fee1956ce6ec61f502ebca96d120dfdbad282a8c8584c2c1311",
+    "tests/games.test.ts": "1143136b89caadcc495ab4d67323e9336a8c417abddec98139a856ec691d91af",
+    "tests/home-data-db.test.ts": "cc5f9f6815ad5acf374b6f29210350f775f9390e131afef403513bf222ac11e7",
+    "tests/media-actions-db.test.ts": "c1367086291d8d2d7ef14647e52b3a0a45183741708c5d19be0abf1b8a171249",
+    "tests/progress-experiment-query.test.ts": "df778402aaaf47030986470d6baa574511ac3a5de8d8767794a79dc485f55f07",
+    "tests/progress-experiment-source.test.ts": "93ba183a966b79edc7ea17c949069ee5da74c6ed177552c4ce4dbb2c1db1c177",
+    "tests/reading-sessions-db.test.ts": "eb14a2c78534333e6a17b0cf1ef2c0f4089aaccb4abce226ef628c31258bd03d",
+    "tests/reading.test.ts": "4cef2aa62e195b2b3b302a086c303a39e0920299720fdc030076abcddca9505e",
+    "tests/request-dialog-lifetime.test.ts": "ea1d5639b3c1ae841bc32be75bf4444a4726a6688ea29a9b34e5fcca93645689",
+    "tests/social-db.test.ts": "6d26807f4d532ed5f33c450ee75c4ec64710fad77d7b0237a702f9a774329f6c",
+    "tests/ui-discovery-source.test.ts": "faea732b9703faa9c17763a23126c113eeecea3fa1723de72d11d2c80b8c0d12",
+    "tests/ui-for-you-source.test.ts": "1efcfe8828baab094f100396a9faf7be3b6338f8959126b8d01903b0fde75f33",
+    "tests/ui-medium-completion.test.ts": "437befe2eecc8313540313715adfa80ca20b713fce0d009bbaca98ef430082dd",
+    "tests/ui-menu-resource.test.ts": "c4375f20bb371121a027bce40daab15df3624ed297974f0d14760c768eefcf4e",
+    "tests/ui-request-controls.test.ts": "7c03238bc67b9948b27df174725f8d2769a08e32f03d2a367030a24a03cf72e0",
+    "tests/ui-shelf-continuation.test.ts": "ac81d18aa85c30b01b756c43fc7ab7af5beb8574fa95d2b3219687f2a161c9bb",
+    "tests/ui-shelf-controls.test.ts": "48de4570bd8be2b8abafd72f8297c50bb90b0d934fb51f6c4e401a9f3e69a06a"
+  },
+  "report": "docs/audits/2026-11-17-menu-rollout/source-refresh.md",
+  "reportSha256": "2816e8fe9d922b74ecd353f024a92ae9b6c466316a0b36988513ab460b72a54c"
+}

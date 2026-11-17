@@ -23,6 +23,7 @@ export function activityRelationships(viewer:string,scope:{workId?:string;artist
  if(scope.relationship===undefined)return sql``;
  return sql`target_roots(id) as (
   select id from works where id=${scope.workId??null}::uuid
+  union select id from works where id=${scope.artistId??null}::uuid and kind='artist'
   union select work_id from music_credits where artist_id=${scope.artistId??null}::uuid
   union select work_id from reading_group_members where group_id=${scope.readingGroupId??null}::uuid
  ), edges(parent_id,child_id) as (${relationshipEdges}),

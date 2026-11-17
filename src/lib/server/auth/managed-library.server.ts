@@ -157,7 +157,7 @@ export async function requireManagedReadingSession(userId:string,id:string) {
     join coast_managed_catalogue(${userId}::uuid) c on c.connection_id=s.connection_id
     join availability a on a.connection_id=c.connection_id and a.user_id=s.user_id and a.media_id=s.work_id and a.state='available'
     join provider_items p on p.id=a.provider_item_id and p.instance_id=c.instance_id
-    where s.id=${id} and s.user_id=${userId} and replace(lower(p.external_id),'-','')=replace(lower(s.external_id),'-','')
+    where s.id=${id} and s.user_id=${userId} and s.share_id is null and replace(lower(p.external_id),'-','')=replace(lower(s.external_id),'-','')
       and coast_managed_observation(a.source,a.verified_at,c.access_after) limit 1`;
   if(!source)throw new AppError(404,'This reading session is no longer available.');
 }

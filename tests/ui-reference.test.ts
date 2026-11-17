@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { load } from '../src/routes/ui-preview/+layout.server';
-import { components, elements, composedComponents, referenceSection } from '../src/routes/ui-preview/catalog';
+import { components, elements, composedComponents, menuComponents, referenceSection } from '../src/routes/ui-preview/catalog';
 import manifest from '../src/lib/ui/component-manifest.json';
 import { compositions, componentScenarios, dynamicOwners } from '../src/routes/ui-preview/reference';
-import { renderedComponents, referenceDispatches, referenceRenderers, validateRecipeDispatches, validateReferenceCoverage } from '../scripts/ui-inventory';
+import { renderedComponents, referenceDispatches, referenceRenderers, internalReferenceOwners, validateRecipeDispatches, validateReferenceCoverage } from '../scripts/ui-inventory';
 
 function sourceFiles(directory:string):string[]{
   return readdirSync(directory,{withFileTypes:true}).flatMap(entry=>{
@@ -21,11 +21,11 @@ const dynamicImports=Object.fromEntries(sourceViews.map(view=>[view.path,view.dy
 const dispatches=Object.fromEntries(Object.values(referenceRenderers).map(path=>[path,referenceDispatches(readFileSync(path,'utf8'))]));
 const reference=()=>({sources:files,components:manifest,recipes:compositions,componentScenarios,dynamicOwners,rendered,dynamicImports});
 
-test('the reference catalog covers every component once across elements and components', () => {
+test('the reference catalog covers every public component once across elements, components and menus', () => {
   const files = readdirSync(new URL('../src/lib/ui/components/', import.meta.url))
-    .filter(name => name.endsWith('.svelte')).map(name => name.slice(0, -7)).sort();
+    .filter(name => name.endsWith('.svelte') && !internalReferenceOwners[`src/lib/ui/components/${name}`]).map(name => name.slice(0, -7)).sort();
   expect(files).toEqual([...components].sort());
-  const partition = [...elements, ...composedComponents];
+  const partition = [...elements, ...composedComponents, ...menuComponents];
   expect(files).toEqual(partition.sort());
   expect(new Set(partition).size).toBe(files.length);
   expect(referenceSection('materials')).toBe('materials');
@@ -46,7 +46,7 @@ test('the permanent reference and its examples require an administrator', () => 
 test('explicit reference recipes account for every production route and feature-owned Svelte file',()=>{
   const coverage=validateReferenceCoverage(reference());
   expect(coverage.compositions).toBe(compositions.length);
-  expect(coverage.internal).toBe(16);
+  expect(coverage.internal).toBe(19);
   expect(coverage.delegated).toBe(9);
   expect(coverage.owners).toBeGreaterThan(Object.keys(manifest).length);
 });

@@ -26,6 +26,7 @@ type MenuOptions = {
   disabled: () => boolean;
   align: () => 'start' | 'end';
   upward: () => boolean;
+  inlinePreview?: boolean;
   onopen?: () => void;
   onclose?: () => void;
 };
@@ -42,12 +43,15 @@ export function createMenuController(options: MenuOptions) {
   const parent = getContext<MenuContext | undefined>('coast-context-menu');
   let stopWatching: (() => void) | undefined;
   let startWatching = () => {};
-  let open = $state(false);
+  let open = $state(!!options.inlinePreview);
   let compact = $state(false);
   let modeQuery: MediaQueryList | undefined;
   let childHidden = $state(false);
   let childClose: (() => void) | null = null;
+  let hoverOpened = false;
+  let hoverDismiss: ReturnType<typeof setTimeout> | undefined;
   let frame = 0;
+  let devicePixelRatio = 0;
   let side: 'left' | 'right' = 'right';
   let search = '';
   let lastTyped = 0;
@@ -62,10 +66,36 @@ export function createMenuController(options: MenuOptions) {
     place();
   }
 
+  function cancelHoverDismiss() {
+    clearTimeout(hoverDismiss);
+    hoverDismiss = undefined;
+  }
+
+  function hoverTrigger(event: PointerEvent) {
+    if (!parent || (modeQuery?.matches ?? compact) || event.pointerType !== 'mouse') return;
+    cancelHoverDismiss();
+    openMenu(false, false, true);
+  }
+
+  function leaveHover(event: PointerEvent) {
+    if (!hoverOpened || event.pointerType !== 'mouse') return;
+    cancelHoverDismiss();
+    // Leave time to cross the gap between the trigger and its flyout.
+    hoverDismiss = setTimeout(() => {
+      hoverDismiss = undefined;
+      const focused = document.activeElement;
+      if (options.surface()?.contains(focused) && focused?.matches(':focus-visible')) return;
+      closeMenu();
+    }, 120);
+  }
+
   function closeMenu(focus = false) {
     if (!open) return;
+    cancelHoverDismiss();
+    hoverOpened = false;
     for (const child of options.root()?.querySelectorAll<HTMLElement>('[popover]:popover-open') ?? [])
       child.hidePopover();
+    if (options.inlinePreview && !disposed) return;
     open = false;
     releaseRetention?.(); releaseRetention=undefined;
     options.onclose?.();
@@ -106,9 +136,15 @@ export function createMenuController(options: MenuOptions) {
 
   function place() {
     if (disposed || !open || !options.surface()?.matches(':popover-open') || !options.triggerNode()) return;
+    const ratio = window.devicePixelRatio || 1;
+    if (ratio !== devicePixelRatio) {
+      devicePixelRatio = ratio;
+      options.surface().style.setProperty('--menu-device-pixel', `${1 / ratio}px`);
+    }
     const anchor = options.triggerNode().getBoundingClientRect();
     const menu = options.surface().getBoundingClientRect();
     const gap = 16;
+    const snapToScreenPixel = (value: number) => Math.round(value * ratio) / ratio;
     if (parent) {
       const parentSurface = parent.surface();
       if (!parentSurface) return;
@@ -125,8 +161,8 @@ export function createMenuController(options: MenuOptions) {
             : 'left';
       const left = compact ? parentBounds.left : side === 'right' ? right : leftEdge;
       const top = compact ? parentBounds.top : anchor.top - 4;
-      options.surface().style.left = `${Math.round(Math.max(gap, Math.min(window.innerWidth - menu.width - gap, left)))}px`;
-      options.surface().style.top = `${Math.round(Math.max(gap, Math.min(window.innerHeight - menu.height - gap, top)))}px`;
+      options.surface().style.left = `${snapToScreenPixel(Math.max(gap, Math.min(window.innerWidth - menu.width - gap, left)))}px`;
+      options.surface().style.top = `${snapToScreenPixel(Math.max(gap, Math.min(window.innerHeight - menu.height - gap, top)))}px`;
       return;
     }
     const left = Math.max(
@@ -150,8 +186,8 @@ export function createMenuController(options: MenuOptions) {
       preferred >= gap && preferred + menu.height <= window.innerHeight - gap
         ? preferred
         : Math.max(gap, Math.min(window.innerHeight - menu.height - gap, alternate));
-    options.surface().style.left = `${Math.round(left)}px`;
-    options.surface().style.top = `${Math.round(top)}px`;
+    options.surface().style.left = `${snapToScreenPixel(left)}px`;
+    options.surface().style.top = `${snapToScreenPixel(top)}px`;
   }
   function schedulePlace() {
     if (disposed || !open) return;
@@ -180,9 +216,10 @@ export function createMenuController(options: MenuOptions) {
     const items = controls();
     (last ? items.at(-1) : items[0])?.focus({ preventScroll: true });
   }
-  function openMenu(focus = false, last = false) {
+  function openMenu(focus = false, last = false, fromHover = false) {
     if (disposed || options.disabled() || !options.surface() || !options.triggerNode()) return;
     if (!open) {
+      hoverOpened = fromHover;
       compact = modeQuery?.matches ?? compact;
       parent?.showChild(closeFromParent, compact);
       options.surface().showPopover();
@@ -195,7 +232,11 @@ export function createMenuController(options: MenuOptions) {
       void tick().then(place);
       options.onopen?.();
     }
-    if (focus || parent && compact) void focusFirst(last);
+    if (focus || parent && compact) {
+      hoverOpened = false;
+      cancelHoverDismiss();
+      void focusFirst(last);
+    }
   }
   function triggerKey(event: KeyboardEvent) {
     if (event.key === 'Escape' && open) {
@@ -282,6 +323,10 @@ export function createMenuController(options: MenuOptions) {
   });
 
   onMount(() => {
+    if (options.inlinePreview) {
+      options.onopen?.();
+      return () => { disposed = true; closeMenu(); };
+    }
     const query = modeQuery = window.matchMedia('(max-width: 640px), (hover: none)');
     const updateMode = () => {
       compact = query.matches;
@@ -327,7 +372,8 @@ export function createMenuController(options: MenuOptions) {
     get nested() { return !!parent; },
     get compact() { return open ? compact : modeQuery?.matches ?? compact; },
     get childHidden() { return childHidden; },
-    openAt, focusFirst, close: closeMenu, openMenu, triggerKey, menuKey, action,
+    openAt, focusFirst, close: closeMenu, closeAll, openMenu, triggerKey, menuKey, action,
+    hoverTrigger, leaveHover, cancelHoverDismiss,
     toggle(event: ToggleEvent) { if (disposed) return; if (event.newState === 'closed') closeMenu(); else { releaseRetention??=retain();open = true; startWatching(); schedulePlace(); } },
   };
 }

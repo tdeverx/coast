@@ -491,7 +491,12 @@ export async function mediaViews(
     const year = metadata.releaseDate ? Number(metadata.releaseDate.slice(0, 4)) : row.year;
     let caption: Pick<MediaView, 'captionTitle' | 'captionTitleHref' | 'captionSubtitle' | 'captionSubtitleHref'> = {};
     if (options.progressPresentation === 'continue' && episode && showTitle) {
-      caption = { captionSubtitle: showTitle, captionSubtitleHref: `/media/${episode.showId}` };
+      caption = {
+        captionTitle: showTitle,
+        captionTitleHref: `/media/${episode.showId}`,
+        captionSubtitle: title,
+        captionSubtitleHref: `/media/${row.id}`,
+      };
     } else if (options.progressPresentation === 'next') {
       const seasonId = episode?.seasonId ?? seasonById.get(row.id)?.mediaId ?? progressEpisode?.seasonId;
       const seasonNumber = episode?.seasonNumber ?? seasonById.get(row.id)?.seasonNumber ?? progressEpisode?.seasonNumber;
