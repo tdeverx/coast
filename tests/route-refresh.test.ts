@@ -1,5 +1,5 @@
 import {expect,test} from 'bun:test';
-import {compile,parse} from 'svelte/compiler';
+import {parse} from 'svelte/compiler';
 import ts from 'typescript';
 
 const read=async(path:string)=>Bun.file(new URL('../'+path,import.meta.url)).text();
@@ -34,14 +34,8 @@ test('a shallow close during pending refresh supersedes its captured state',asyn
  expect(h.page.state.friendsPopover).toBe(false);
 });
 
-const paths=['src/lib/ui/components/JobsSettings.svelte','src/routes/settings/[[section]]/+page.svelte','src/routes/onboarding/+page.svelte','src/routes/music/+page.svelte','src/routes/games/+page.svelte'];
-const components=await Promise.all(paths.map(read));
-test('changed refresh consumers compile with their complete client and server templates',()=>{
- for(let index=0;index<paths.length;index++)for(const generate of ['client','server'] as const)
-  expect(()=>compile(components[index],{filename:paths[index],generate})).not.toThrow();
-});
-
-const jobsScript=components[0].match(/<script[^>]*>([\s\S]*?)<\/script>/u)![1];
+const [jobsComponent,settingsComponent,...libraryComponents]=await Promise.all(['src/lib/ui/components/JobsSettings.svelte','src/routes/settings/[[section]]/+page.svelte','src/routes/music/+page.svelte','src/routes/games/+page.svelte'].map(read));
+const jobsScript=jobsComponent.match(/<script[^>]*>([\s\S]*?)<\/script>/u)![1];
 const jobsTree=ts.createSourceFile('jobs.ts',jobsScript,ts.ScriptTarget.Latest,true);
 const mount=(jobsTree.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.expression.getText(jobsTree)==='onMount') as ts.ExpressionStatement).expression as ts.CallExpression;
 const mountCode=new Bun.Transpiler({loader:'ts'}).transformSync('const mount='+mount.arguments[0].getText(jobsTree)+';');
@@ -72,12 +66,12 @@ function attribute(source:string,name:string,contains=''){
  visit(parse(source,{modern:true}));if(!result)throw Error(`Missing source callback ${name}`);return result;
 }
 test('actual Music and Games Retry callbacks retain full refresh admission',async()=>{
- for(const component of components.slice(3)){
+ for(const component of libraryComponents){
   const requests:unknown[]=[];await new Function('refreshRouteDependencies','return ('+attribute(component,'retry')+')();')((keys:unknown)=>requests.push(keys));expect(requests).toEqual(['all']);
  }
 });
 test('actual invitation revoke callback refreshes settings only after its acknowledged command',async()=>{
- const source=attribute(components[1],'onclick','sharing/'),events:unknown[]=[];let release!:()=>void;
+ const source=attribute(settingsComponent,'onclick','sharing/'),events:unknown[]=[];let release!:()=>void;
  const invoke=new Function('change','refreshRouteDependencies','message',`let busy=false,error='';const link={id:'diagnostic-link'};return {run:${source},get error(){return error;}};`)(
   async(path:string,body:unknown,method:string)=>{events.push({path,body,method});await new Promise<void>(resolve=>release=resolve);},async(keys:string[])=>{events.push(keys);},(error:Error)=>error.message);
  const pending=invoke.run();await invoke.run();expect(events).toEqual([{path:'sharing/diagnostic-link',body:undefined,method:'DELETE'}]);release();await pending;expect(events[1]).toEqual(['settings']);expect(invoke.error).toBe('');

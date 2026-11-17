@@ -13,13 +13,8 @@ const toast=moduleUrl((await serverComponent('src/lib/ui/components/Toast.svelte
  .replace(/import (Avatar|MediaCard) from ['"].*?['"];?/g,"const $1=()=>{};")
  .replace(/import Icon from ['"].*?['"];?/,"const Icon=()=>{};")
  .replace(/import Button from ['"].*?['"];?/,"const Button=()=>{throw Error('Server fallback must not depend on interactive controls');};"));
-// Keep the production error class and controller without importing Kit's browser
-// navigation owner. SSR must never invoke persistence, refresh or interactive UI.
-const clientSource=await Bun.file(new URL('../src/lib/ui/client.ts',import.meta.url)).text();
-const classStart=clientSource.indexOf('export class ApiError'),classEnd=clientSource.indexOf('/**',classStart);
-if(classStart<0||classEnd<classStart)throw Error('Review the production ApiError class fixture boundary.');
-const client=moduleUrl(new Bun.Transpiler({loader:'ts'}).transformSync(clientSource.slice(classStart,classEnd))+
- "export function refreshAfterChange(){throw Error('Server feedback must not refresh routes');}");
+// SSR must never invoke browser route refresh, persistence or interactive UI.
+const client=moduleUrl("export function refreshAfterChange(){throw Error('Server feedback must not refresh routes');}");
 const host=await serverComponent('src/lib/ui/components/NotificationToasts.svelte');
 const {default:NotificationToasts}=await import(moduleUrl(host
  .replace(/import \{ temporaryFeedback \} from ['"].*?['"];?/,"const temporaryFeedback=()=>false;")

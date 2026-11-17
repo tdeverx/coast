@@ -5,7 +5,7 @@ import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 let script=await componentScript('src/lib/ui/components/NotificationToasts.svelte');
 const start=script.indexOf('let { notifications'),end=script.indexOf('= $props();',start)+'= $props();'.length;
 script=script.slice(0,start)+'let notifications=$state.raw(initial),initialFailure,rich=false;'+script.slice(end);
-const source=`import {createNotificationToasts} from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))};export function create(initial,client,ApiError){const mounts=[];const onMount=run=>mounts.push(run),useClient=()=>client,refreshAfterChange=async()=>{},inboxToasts=()=>{},document={visibilityState:'visible',addEventListener(){},removeEventListener(){}};client.feedback.showNotifications=()=>()=>{};client.feedback.clearAll=client.feedback.clear;${script}
+const source=`import {createNotificationToasts} from ${JSON.stringify(import.meta.resolve('../src/lib/ui/controls/notification-toasts'))};export function create(initial,client){const mounts=[];const onMount=run=>mounts.push(run),useClient=()=>client,refreshAfterChange=async()=>{},inboxToasts=()=>{},document={visibilityState:'visible',addEventListener(){},removeEventListener(){}};client.feedback.showNotifications=()=>()=>{};client.feedback.clearAll=client.feedback.clear;${script}
  return {mount(){return mounts[0]();},replace(next){notifications=next;},dismiss(id){toasts.dismiss(notifications.find(n=>n.id===id));},retry(){return toasts.retry();},get visible(){return visible;}};}`;
 const {create}=await import(moduleUrl(compileRunes(source)));
 const settle=async()=>{for(let i=0;i<5;i++){runtime.flush();await Promise.resolve();}};
@@ -28,7 +28,7 @@ function persistentFixture(){
  const persistent={id:'persistent',title:'Notice',body:null,level:'persistent',readAt:null,toastHiddenAt:null,createdAt:new Date()};
  const normal={...persistent,id:'normal',level:'normal'};
  const client={preview:false,api:(path:string)=>new Promise<void>((resolve,reject)=>calls.push({path,resolve,reject})),feedback:{activeHost:null,current:null,failure:(text:string)=>failures.push(text),clear:()=>{},notify:()=>{}}};
- const dispose=runtime.effect_root(()=>{owner=create([persistent],client,ApiError);});runtime.flush();const cleanup=owner.mount();runtime.flush();
+ const dispose=runtime.effect_root(()=>{owner=create([persistent],client);});runtime.flush();const cleanup=owner.mount();runtime.flush();
  return {owner,calls,failures,persistent,normal,dispose(){cleanup();dispose();}};
 }
 test('persistent toast X retries suppression and drains a later normal hide without dismissing the inbox',async()=>{

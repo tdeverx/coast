@@ -142,7 +142,7 @@
     },
     "tests/notification-toasts-component.test.ts": {
       "previous": "5d95d050ce4674082db48dda6f9d2455e1569dbcb4af53efb32898199693bdc6",
-      "current": "8d7931ce4b94f457fd97a535d6141eef897e1d8cb40df668897b06699353766b"
+      "current": "c7f4a05a7f4c91f493c2601d9e92efdc01192b31e23a4a790a5eed593fe7a2d9"
     },
     "tests/notification-toasts-lifetime.test.ts": {
       "previous": "4e18910f0e036d2d8675ca08e7f47da8f96d44f68a5ca18300f646b643ea897c",
@@ -175,6 +175,22 @@
     "tests/ui-shelf-controls.test.ts": {
       "previous": "41550455c9e92cd899f75c3e40a7c390833081d3793201d96beb825cfe6dc1a7",
       "current": "8b7938cca55a2c8d1ec28bd714bf22ead370e1dfbbf83334dc01ede72d78e693"
+    },
+    "tests/auth-feedback.test.ts": {
+      "previous": "374ebd76420ea7f3724ba9e509b33c89dff64c0d07467c222d9ff23a617b0e8e",
+      "current": "51f3c34a9a80e133199d58805621e4a573f9e60e9ceea0b38440366c1c289adb"
+    },
+    "tests/avatar-picker-lifetime.test.ts": {
+      "previous": "a118ee4cb9e261029bc79a1b631b09fdd7fa7f4180370c2ec0b4d1a6f5ed0657",
+      "current": "b706d2b9825363b4f81b43a0b8f2b063d1fc5a1a53d770ccf7367bb3aa7f4321"
+    },
+    "tests/lazy-import-lifetimes.test.ts": {
+      "previous": "6e040440019a201dce6b91d15594b9a463bc02ee06a2446c2300142e2ef5efd3",
+      "current": "0fe4ff4bd7a03076920be2990c3aecb6347d9d2d12cd17f9787b1a4db7552d1e"
+    },
+    "tests/route-refresh.test.ts": {
+      "previous": "4a85de02f275cd9b83fb690517220160701d5883a0c81a9f90ff198403affe48",
+      "current": "2430747bccb4158be374546199c3a2f152715a1d44e439567c325a89ba93acda"
     }
   },
   "supportingFiles": {
@@ -186,5 +202,5 @@
     "tests/toast-stamps.test.ts": "966636f811ec756da84d160b2f8569eeb7538fca3394495911187fe005ec07a6"
   },
   "report": "docs/audits/2026-11-17-menu-status-feedback/source-refresh.md",
-  "reportSha256": "ba655ef1dae78ad74b5f91a83ca46938cb216c5779c05bcc914d5633ba7750c9"
+  "reportSha256": "931256f7586744bbd3ac8f540b198e9f4f9f1aee151ffe0aebd15ebfff368427"
 }
