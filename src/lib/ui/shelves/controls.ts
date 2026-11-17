@@ -2,7 +2,7 @@ import type { FilterGroup } from '#lib/ui/controls/filters.js';
 import { mediaTypeOptions } from '#lib/ui/filter-options.js';
 import type { ShelfControl } from './types';
 
-/** Keep navigation segments at the heading and send applicable filters to its menu. */
+/** Keep navigation and the availability shortcut at the heading, sharing menu filter state. */
 export function shelfControls(controls: ShelfControl[], select: (control: ShelfControl, value: string) => void) {
   const groups = controls.flatMap((control): FilterGroup[] => {
     if (control.type === 'segments') return [];
@@ -22,5 +22,6 @@ export function shelfControls(controls: ShelfControl[], select: (control: ShelfC
       change: value => select(control, value),
     }];
   });
-  return { segments: controls.filter(control => control.type === 'segments'), groups };
+  return { segments: controls.filter(control => control.type === 'segments'),
+    availability: controls.filter(control => control.type === 'availability'), groups };
 }

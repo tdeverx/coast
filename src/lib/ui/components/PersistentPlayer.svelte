@@ -17,6 +17,7 @@
   import { createPlaybackReports } from '#lib/playback/reports.js';
   import { createPlaybackStop, PlaybackSavePending, type PlaybackSave } from '#lib/playback/stop.js';
   import { useClient, reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
+  import { feedbackForViewer, type Feedback } from '#lib/ui/action-feedback.svelte.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { liquidGlass } from '#lib/ui/materials/glass.js';
   import Icon from './Icon.svelte';
@@ -25,7 +26,7 @@
   import Dialog from './Dialog.svelte';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
 
-  const { api, change, feedback } = useClient();
+  const { api, change } = useClient();
 
   const { player, preview } = usePlayback();
   const menuFixture = preview ? useMenuPreview() : undefined;
@@ -55,10 +56,14 @@
     closed = false;
   const reports = createPlaybackReports();
   const stopNotice = Symbol('playback final save');
+  let stopFeedback: Feedback | undefined;
   const stopSave = createPlaybackStop(state => {
-    if (state === 'saving') feedback.pending('Saving playback progress…', stopNotice);
-    else if (state === 'failed') feedback.failure('Playback progress could not be saved. Retry before starting another item.', () => stopSave.retry(), stopNotice);
-    else feedback.clear(stopNotice);
+    if (state === 'saving') stopFeedback?.pending('Saving playback progress…', stopNotice);
+    else if (state === 'failed') stopFeedback?.failure('Playback progress could not be saved. Retry before starting another item.', () => stopSave.retry(), stopNotice);
+    else {
+      stopFeedback?.clear(stopNotice);
+      stopFeedback = undefined;
+    }
   });
   const stopOwner = $derived(page.data.user?.id);
   $effect(() => { const viewer = stopOwner; return () => { void viewer; stopSave.clear(); }; });
@@ -247,13 +252,15 @@
     const cleanup = room&&!changing&&syncedPlayer.room?.id===room.id
       ? host&&!withdrawn ? syncedCommand('stop') : leaveSynced(true)
       : Promise.resolve();
-    if (send) stopSave.start(async () => {
-      await cleanup;
-      const result = await send();
-      if(result.saved&&!shared)void refreshAfterChange('tracking');
-      return result;
-    });
-    else {
+    if (send) {
+      stopFeedback = feedbackForViewer();
+      stopSave.start(async () => {
+        await cleanup;
+        const result = await send();
+        if(result.saved&&!shared)void refreshAfterChange('tracking');
+        return result;
+      });
+    } else {
       stopSave.clear();
       void cleanup;
     }
@@ -300,6 +307,7 @@
     const code = reason.code ?? media?.error?.code;
     void change(`playback/${session.id}/error`, { code: code ?? 0 }).catch(() => {});
     if (session.canFallback && !player.loading && !audioMode && !partyRoom && !sharedMode) {
+      const feedback = feedbackForViewer();
       try {
         await playMedia(session.mediaId, {
           fallbackSessionId: session.id,
@@ -587,9 +595,9 @@
     if(preview)return;
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
-  reportFailure(()=>startupImportError?'':error, ()=>{if(retryStartup)retryStartup();else return switchEdition();});
-  reportImportFailure(()=>startupImportError);
-  reportFailure(()=>trackingNotice);
+  reportFailure(()=>startupImportError?'':error, ()=>{if(retryStartup)retryStartup();else return switchEdition();}, 'current-viewer');
+  reportImportFailure(()=>startupImportError, 'current-viewer');
+  reportFailure(()=>trackingNotice, undefined, 'current-viewer');
 </script>
 {#if partiesEnabled}<SyncedControls bind:this={syncControls} />{/if}
 

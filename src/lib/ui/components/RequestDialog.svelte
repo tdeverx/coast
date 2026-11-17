@@ -8,7 +8,7 @@
   import { useClient } from '#lib/ui/client-context.js';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import type { RequestDestination } from '#lib/media/requests.js';
+  import { requestQualityStatus, type RequestDestination } from '#lib/media/requests.js';
   import { createRequestOptions } from '#lib/ui/controls/request-options.svelte.js';
 
   const { api, change } = useClient();
@@ -40,7 +40,7 @@
     selected = $state<number[]>([]),
     error = $state('');
   const destinations = $derived(initial4k
-    ? (read.value ?? []).filter(entry => entry.variants.fourK?.requestable)
+    ? (read.value ?? []).filter(entry => entry.variants.fourK)
     : read.value ?? []);
   const loaded = $derived(read.value !== undefined);
   const failure = $derived(error || read.error);
@@ -79,8 +79,23 @@
     const values = read.value;
     initial4k; initialSeasons; seasonNumber;
     if (open && values !== undefined) untrack(() => {
-      destination = destinations[0]?.id ?? '';
-      chooseDestination();
+      const intent = initialSeasons ?? (seasonNumber === undefined ? [] : [seasonNumber]);
+      const quality = initial4k ? 'fourK' : 'standard';
+      const match = (key: 'standard' | 'fourK') => {
+        const candidates = destinations.filter(entry => entry.variants[key]?.requestable);
+        const canSelect = (entry: RequestDestination, number: number) => entry.variants[key]?.seasons.some(
+          season => season.number === number && !season.requested && !season.available);
+        return candidates.find(entry => intent.every(number => canSelect(entry, number)))
+          ?? candidates.find(entry => intent.some(number => canSelect(entry, number)));
+      };
+      const primary = match(quality);
+      const fallback = !primary && !initial4k ? match('fourK') : undefined;
+      const preferred = primary ?? fallback
+        ?? destinations.find(entry => intent.some(number => entry.variants[quality]?.seasons.some(season => season.number === number)))
+        ?? destinations[0];
+      destination = preferred?.id ?? '';
+      is4k = initial4k || !!fallback;
+      chooseSeasons();
     });
   });
   async function submit() {
@@ -141,6 +156,7 @@
             >{/each}
         </div>{/if}
       {#if !variant?.requestable}<p class="small">
+          {requestQualityStatus(active ? [active] : [], is4k ? 'fourK' : 'standard')}.
           Nothing remains to request in this quality. Choose another quality or destination.
         </p>{/if}
       <label class="check"

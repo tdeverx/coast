@@ -1,16 +1,26 @@
 import {expect,test} from 'bun:test';
 import {compileModule} from 'svelte/compiler';
+import {createRawSnippet} from 'svelte';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};export const hooks=[];export const onDestroy=fn=>hooks.push(fn);`);
 const lifecycle=await import(lifecycleUrl);
+const pageUrl=moduleUrl(`import {state,get,set} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
+ const user=state(undefined);
+ export const page={data:{get user(){return get(user);}}};
+ export const setViewer=id=>set(user,id ? {id} : undefined);`);
+const {setViewer}=await import(pageUrl);
+const clientUrl=moduleUrl('export const message=cause=>cause.message;export const api=async()=>{};export const change=api,changeMany=api,createApiClient=()=>{};export const refreshAfterChange=async()=>{};');
 const source=await Bun.file(new URL('../src/lib/ui/action-feedback.svelte.ts',import.meta.url)).text();
 const compiled=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'feedback.svelte.js',generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
   .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
-  .replaceAll('./client',moduleUrl('export const message=cause=>cause.message;'));
-const {createFeedback,actionFeedback}:typeof import('../src/lib/ui/action-feedback.svelte')=await import(moduleUrl(compiled));
+  .replaceAll('$app/state',pageUrl)
+  .replaceAll('./controls/feedback-notifications',import.meta.resolve('../src/lib/ui/controls/feedback-notifications'))
+  .replaceAll('./client',clientUrl);
+const feedbackUrl=moduleUrl(compiled);
+const {createFeedback,actionFeedback}:typeof import('../src/lib/ui/action-feedback.svelte')=await import(feedbackUrl);
 
 test('isolated feedback, modal ownership and failed retries stay in their owning delivery scope',async()=>{
  const preview=createFeedback();
@@ -93,6 +103,12 @@ test('watched action labels update with an unchanged failure and retain Retry an
 });
 
 const contextSource=await Bun.file(new URL('../src/lib/ui/client-context.ts',import.meta.url)).text();
+const {useClient,reportFailure}:typeof import('../src/lib/ui/client-context')=await import(moduleUrl(
+ new Bun.Transpiler({loader:'ts'}).transformSync(contextSource)
+  .replaceAll('./action-feedback.svelte',feedbackUrl)
+  .replaceAll('./client',clientUrl)
+  .replace(/(['"])svelte\1/g,JSON.stringify(moduleUrl('export const getContext=()=>undefined,setContext=()=>{};'))),
+));
 const reporter=contextSource.slice(contextSource.indexOf('export function reportImportFailure(')).replace('export ','');
 function importReporter(feedback:ReturnType<typeof createFeedback>,preview=false){
  let reloads=0;
@@ -122,4 +138,53 @@ test('owned pending feedback stays busy, becomes retryable, and restores unrelat
  expect(feedback.current?.kind).toBe('info');expect(feedback.current?.busy).toBe(true);
  feedback.failure('Save failed',()=>{attempts++;feedback.clear(owner);},owner);
  expect(feedback.current?.busy).toBe(false);await feedback.act();expect(attempts).toBe(1);expect(feedback.current?.text).toBe('Unrelated message');
+});
+
+test('notify, pending, failure and undo records survive X and dialog host transfers without duplicate publication',async()=>{
+ const records:{id:string;text:string;kind:string;pending:boolean}[]=[];
+ const feedback=createFeedback(notice=>records.push(notice)),owner=Symbol('operation');
+ feedback.notify('Saved',async()=>{});feedback.clear();expect(records).toHaveLength(1);
+ feedback.pending('Saving',owner);const pending=records[1];
+ feedback.failure('Failed',undefined,owner);expect(records[2]).toMatchObject({id:pending.id,kind:'error',pending:false});
+ const close=feedback.host('dialog');feedback.showNotifications(createRawSnippet(()=>({render:()=>'<span>Notifications</span>'})));close();expect(records).toHaveLength(3);
+ feedback.clearAll();expect(records).toHaveLength(3);
+ feedback.recordingFailure(async()=>false,owner);expect(records).toHaveLength(3);
+ feedback.notify('Saved again',async()=>{});await feedback.act();expect(records.at(-1)?.text).toBe('Change undone.');
+});
+test('late retry errors cannot record an old viewers feedback under a new account',async()=>{
+ let viewer='one',reject!:(cause:unknown)=>void;const records:{text:string;viewer?:string}[]=[];
+ const feedback=createFeedback((notice,viewer)=>records.push({text:notice.text,viewer}),()=>viewer);
+ feedback.failure('Old account failure',()=>new Promise((_resolve,no)=>{reject=no;}));
+ const pending=feedback.act();viewer='two';reject(Error('Old retry detail'));await pending;
+ expect(records).toEqual([{text:'Old account failure',viewer:'one'}]);
+});
+
+test('a persistent error watcher can publish after sign-in without replaying its previous viewer’s error',()=>{
+ const error=runtime.state('Anonymous failure');
+ const anonymous=useClient().feedback;
+ const dispose=runtime.effect_root(()=>reportFailure(()=>runtime.get(error),undefined,'current-viewer'));
+ try {
+  runtime.flush();expect(anonymous.current?.text).toBe('Anonymous failure');
+  setViewer('signed-in');runtime.flush();expect(actionFeedback.current).toBeNull();
+  anonymous.failure('Late anonymous operation');expect(actionFeedback.current).toBeNull();
+  runtime.set(error,'New playback failure');runtime.flush();
+  expect(actionFeedback.current?.text).toBe('New playback failure');
+  expect(actionFeedback.current?.viewerId).toBe('signed-in');
+ } finally {
+  dispose();for(const hook of lifecycle.hooks.splice(0))hook();
+  anonymous.clearAll();actionFeedback.clearAll();setViewer(undefined);
+ }
+});
+
+test('departing host cleanup drops the old undo and leaves the incoming viewer’s notice intact',async()=>{
+ setViewer('first');const departing=useClient().feedback;
+ let undoCount=0;
+ try {
+  departing.notify('Saved by the first viewer',async()=>{undoCount++;});
+  setViewer('second');const arriving=useClient().feedback;
+  expect(arriving.current).toBeNull();await arriving.act();expect(undoCount).toBe(0);
+  arriving.notify('Saved by the second viewer');departing.clearAll();
+  expect(arriving.current?.text).toBe('Saved by the second viewer');
+  arriving.clearAll();setViewer('first');expect(departing.current).toBeNull();
+ } finally {departing.clearAll();actionFeedback.clearAll();setViewer(undefined);}
 });

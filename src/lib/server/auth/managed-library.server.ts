@@ -118,7 +118,7 @@ export function managedRoute(path:string, method:string) {
   if (['/','/library','/onboarding','/logout','/settings','/settings/account','/settings/appearance'].includes(path)) return true;
   if (/^\/media\/[0-9a-f-]{36}$/.test(path)) return method==='GET' || method==='HEAD';
   if (!path.startsWith('/api/v1/')) return false;
-  if (/^\/api\/v1\/notifications(?:\/(?:seen|toast-hidden|read-all|[0-9a-f-]{36}))?$/.test(path))
+  if (/^\/api\/v1\/notifications(?:\/(?:seen|toast-hidden|feedback|read-all|[0-9a-f-]{36}))?$/.test(path))
     return method==='GET'||method==='POST';
   if (/^\/api\/v1\/reading\/(?:[0-9a-f-]{36}\/session|sessions\/[0-9a-f-]{36}\/(?:manifest|file|pages\/[^/]+|heartbeat|location|close))$/.test(path))return true;
   return /^(?:session(?:\/(?:presence|heartbeat))?|playback(?:\/[0-9a-f-]{36}\/(?:error|progress|stream)(?:\/.*)?)?|artwork\/[0-9a-f-]{36}\/[0-9a-f-]{32,36}\/primary|member-invites(?:\/(?:request|[0-9a-f-]{36}))?|settings(?:\/(?:account|preferences|password))?|profile\/avatar\/[0-9a-f-]{36}\/[^/]+)$/.test(path.slice(8));

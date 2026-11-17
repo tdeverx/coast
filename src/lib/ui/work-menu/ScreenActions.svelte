@@ -22,7 +22,7 @@
     targetLabel,
     type MediaActionData,
   } from '#lib/media/actions.js';
-  import { requestSeasonChoices, type RequestDestination } from '#lib/media/requests.js';
+  import { requestQualityStatus, requestSeasonChoices, type RequestDestination } from '#lib/media/requests.js';
   import { requestStatusLabel } from '#lib/library-feed.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { message, ApiError } from '#lib/ui/client.js';
@@ -523,14 +523,22 @@
   {/if}
   {#if standard}
     {#if series}{@render seasons('standard')}
-    {:else}<Button item icon="request" disabled={!requests.canRequestStandard} onclick={() => requests.openRequest()}>Request standard version…</Button>{/if}
+    {:else}<Button item icon="request" disabled={!requests.canRequestStandard} onclick={() => requests.openRequest()}>
+      <span class="menu-season"><span>Request standard version…</span>
+        {#if !requests.canRequestStandard}<small>{requestQualityStatus(requests.requestOptions ?? [], 'standard')}</small>{/if}
+      </span>
+    </Button>{/if}
   {/if}
   {#if fourK}
     {#if standard}<div class="menu-divider" role="separator"></div>{/if}
     {#if series}
       <Button menu label="Request 4K" icon="request" panel>{@render seasons('fourK')}</Button>
     {:else}
-      <Button item icon="request" disabled={!requests.canRequest4k} onclick={() => requests.openRequest(true)}>Request 4K…</Button>
+      <Button item icon="request" disabled={!requests.canRequest4k} onclick={() => requests.openRequest(true)}>
+        <span class="menu-season"><span>Request 4K…</span>
+          {#if !requests.canRequest4k}<small>{requestQualityStatus(requests.requestOptions ?? [], 'fourK')}</small>{/if}
+        </span>
+      </Button>
     {/if}
   {/if}
   {#if requests.existingRequests.length}

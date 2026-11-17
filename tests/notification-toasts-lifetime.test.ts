@@ -10,7 +10,7 @@ function fixture(preview=false,refresh:()=>Promise<void>=async()=>{},frontOnly=f
   const resolve=()=>{signal.removeEventListener('abort',reject);yes();},reject=()=>{signal.removeEventListener('abort',reject);no(Error('Offline'));};
   calls.push({kind,ids,signal,resolve,reject});signal.addEventListener('abort',reject,{once:true});
  });
- const owner=createNotificationToasts({preview,frontOnly,hide:(ids,signal)=>invoke('hide',ids,signal),dismiss:(id,signal)=>invoke('dismiss',[id],signal),changed:()=>{},failure:text=>failures.push(text),recovered:()=>{recovered++;},refresh,refreshFailure:()=>failures.push('saved-refresh-failed'),delay:(run,ms)=>{const id=++next;timers.set(id,{run,ms});return id as unknown as ReturnType<typeof setTimeout>;},cancel:timer=>{timers.delete(timer as unknown as number);}});
+ const owner=createNotificationToasts({preview,frontOnly,hide:(ids,signal)=>invoke('hide',ids,signal),hidePersistent:(id,signal)=>invoke('persistent-hide',[id],signal),changed:()=>{},failure:text=>failures.push(text),recovered:()=>{recovered++;},refresh,refreshFailure:()=>failures.push('saved-refresh-failed'),delay:(run,ms)=>{const id=++next;timers.set(id,{run,ms});return id as unknown as ReturnType<typeof setTimeout>;},cancel:timer=>{timers.delete(timer as unknown as number);}});
  return {owner,calls,timers,failures,get recovered(){return recovered;},expire(ms=7000){const [id,timer]=[...timers].find(([,timer])=>timer.ms===ms)!;timers.delete(id);timer.run();}};
 }
 test('only a displayed temporary toast can expire',()=>{
@@ -26,13 +26,13 @@ test('only a displayed temporary toast can expire',()=>{
  f.owner.pause('first',false);f.expire();expect(f.owner.visible.map(n=>n.id)).toEqual(['pinned']);
  f.owner.dispose();
 });
-test('normal auto and manual hiding share durable writes while persistent dismissal keeps its own command',async()=>{
+test('normal auto and manual hiding share durable writes while persistent toast hiding preserves its separate manual lane',async()=>{
  const f=fixture();f.owner.mount([notice('auto'),notice('manual'),notice('persistent',{level:'persistent'})]);
  expect(f.owner.visible.map(n=>n.id)).toEqual(['auto','manual','persistent']);expect(f.timers.size).toBe(2);
  f.expire();expect(f.calls.map(c=>[c.kind,c.ids])).toEqual([['hide',['auto']]]);
  f.owner.dismiss(notice('manual'));f.owner.dismiss(notice('persistent',{level:'persistent'}));expect(f.calls).toHaveLength(1);
  f.calls[0].resolve();await settle();expect(f.calls[1].kind).toBe('hide');expect(f.calls[1].ids).toEqual(['manual']);
- f.calls[1].resolve();await settle();expect(f.calls[2].kind).toBe('dismiss');expect(f.calls[2].ids).toEqual(['persistent']);
+ f.calls[1].resolve();await settle();expect(f.calls[2].kind).toBe('persistent-hide');expect(f.calls[2].ids).toEqual(['persistent']);
  f.calls[2].resolve();await settle();expect(f.owner.visible).toEqual([]);f.owner.dispose();expect(f.timers.size).toBe(0);
 });
 test('previously unseen, older and inbox-only notices get a toast even after reopening Coast',async()=>{
@@ -112,7 +112,7 @@ test('held optional refresh never blocks the bounded write lane or retry and coa
  expect(f.calls[1].ids).toEqual(['next-0']);f.calls[1].resolve();await settle();expect(f.calls[2].ids).toHaveLength(199);
  f.calls[2].reject();await settle();expect(f.failures).toHaveLength(1);const retry=f.owner.retry();expect(f.calls[3].ids).toHaveLength(199);f.calls[3].resolve();await retry;
  expect(refreshes).toHaveLength(1);expect(f.owner.visible).toEqual([]);
- f.owner.update([notice('later',{level:'persistent'})]);f.owner.dismiss(notice('later',{level:'persistent'}));expect(f.calls[4].kind).toBe('dismiss');f.calls[4].resolve();await settle();expect(refreshes).toHaveLength(1);
+ f.owner.update([notice('later',{level:'persistent'})]);f.owner.dismiss(notice('later',{level:'persistent'}));expect(f.calls[4].kind).toBe('persistent-hide');f.calls[4].resolve();await settle();expect(refreshes).toHaveLength(1);
  refreshes[0].resolve();await settle();expect(refreshes).toHaveLength(2);expect(f.calls).toHaveLength(5);
  refreshes[1].resolve();await settle();expect(refreshes).toHaveLength(2);f.owner.dispose();expect(f.timers.size).toBe(0);
 });

@@ -2,7 +2,7 @@
   import {openNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import { onMount, tick } from 'svelte';
   import { useClient } from '#lib/ui/client-context.js';
-  import { ApiError, refreshAfterChange } from '#lib/ui/client.js';
+  import { refreshAfterChange } from '#lib/ui/client.js';
   import { temporaryFeedback } from '#lib/ui/action-feedback.svelte.js';
   import { createNotificationToasts, raiseToastStack, type ToastNotification } from '#lib/ui/controls/notification-toasts.js';
   import Toast from './Toast.svelte';
@@ -15,15 +15,8 @@
   const toasts = createNotificationToasts({
     preview,
     frontOnly: true,
-    hide: (ids,signal) => api('notifications/toast-hidden', {ids}, 'POST', {signal}),
-    dismiss: async (id,signal) => {
-      try { await api(`notifications/${id}`, {action:'dismiss'}, 'POST', {signal}); }
-      catch (cause) {
-        // A lost acknowledgement can leave the notice dismissed, deleted or no longer visible.
-        // The existing API's 404 is terminal unavailability, not proof of a new successful write.
-        if (!(cause instanceof ApiError && cause.status === 404)) throw cause;
-      }
-    },
+    hide: (ids,signal) => api('notifications/toast-hidden', {ids,includePersistent:false}, 'POST', {signal}),
+    hidePersistent: (id,signal) => api('notifications/toast-hidden', {ids:[id],includePersistent:true}, 'POST', {signal}),
     refresh: () => refreshAfterChange('notifications'),
     refreshFailure: () => delivery.notify('The page could not refresh; reload to see the latest data.'),
     changed: () => { visible = toasts.visible; },
@@ -43,6 +36,8 @@
     document.querySelector<HTMLElement>('.toasts:popover-open .toast-dismiss:not(:disabled)')?.focus({preventScroll:true});
   }
   onMount(() => {
+    const stopRecording = !preview ? delivery.recording?.connect() : undefined;
+    if(initialFailure)delivery.failure(initialFailure);
     const visibility = () => toasts.setForeground(document.visibilityState === 'visible');
     document.addEventListener('visibilitychange', visibility);
     visibility();
@@ -51,6 +46,7 @@
     return () => {
       document.removeEventListener('visibilitychange', visibility);
       toasts.dispose();
+      stopRecording?.();
       delivery.clearAll();
     };
   });

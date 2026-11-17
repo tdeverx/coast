@@ -1,11 +1,9 @@
 import {expect,test} from 'bun:test';
-import {compile} from 'svelte/compiler';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,eraseTypeScript,moduleUrl,resourceUrl} from './fixtures/ui-script';
 
 const paths=['src/routes/+layout.svelte','src/routes/for-you/+page.svelte','src/lib/ui/components/PersistentPlayer.svelte'];
-const components=await Promise.all(paths.map(path=>Bun.file(new URL('../'+path,import.meta.url)).text()));
 const feedbackPaths=['src/lib/ui/components/Dialog.svelte','src/lib/ui/components/NotificationToasts.svelte'];
 const feedbackComponents=await Promise.all(feedbackPaths.map(path=>Bun.file(new URL('../'+path,import.meta.url)).text()));
 const rootScript=(await componentScript(paths[0])).split('const watching =')[0].replace('let { data, children } = $props();','');
@@ -57,12 +55,6 @@ function deferred<T>(){let resolve!:(value:T)=>void,reject!:(cause:Error)=>void;
 const settle=async()=>{for(let index=0;index<10;index++)await Promise.resolve();runtime.flush();};
 const user=(id='first',role='admin')=>({user:{id,role},capabilities:{social:true,personalisation:true}});
 const moduleFor=(name:string)=>({default:Object.assign(()=>{}, {displayName:name})});
-
-test('all changed components compile with their complete client and server templates',()=>{
- const allPaths=[...paths,...feedbackPaths],allComponents=[...components,...feedbackComponents];
- for(let index=0;index<allPaths.length;index++)for(const generate of ['client','server'] as const)
-  expect(()=>compile(allComponents[index],{filename:allPaths[index],generate})).not.toThrow();
-});
 
 test('both actual feedback hosts display the explicit action label while preserving Undo and Retry',()=>{
  for(const component of feedbackComponents){

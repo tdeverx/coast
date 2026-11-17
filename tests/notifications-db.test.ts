@@ -3,7 +3,7 @@ import {getSql,getDb} from '../src/lib/server/db';
 import {sql} from 'drizzle-orm';
 import {notificationInbox,notificationToasts,notificationUnread,markNotification,markNotificationsRead,markNotificationsSeen} from '../src/lib/server/notifications/inbox';
 import {incomingFriendRequests} from '../src/lib/social/service.server';
-import {notify,notifyMany,inbox,hideNotificationToasts} from '../src/lib/server/notifications';
+import {notify,notifyMany,inbox,hideNotificationToasts,recordFeedbackNotifications} from '../src/lib/server/notifications';
 import type {SessionUser} from '../src/lib/server/auth';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user:SessionUser={id:crypto.randomUUID(),username:'notifications-'+crypto.randomUUID().slice(0,8),email:null,role:'user',settings:{}};
@@ -182,4 +182,56 @@ run('visible-read batches affect only the specified accessible owned notificatio
  expect(result.ids).toEqual([own[0].id]);expect(await notificationUnread(user)).toBe(1);expect(await notificationUnread(other)).toBe(1);
  expect((await notificationInbox(user)).items.find(n=>n.id===own[1].id)?.readAt).toBeNull();
  await expect(markNotificationsSeen(user,{ids:Array(61).fill(own[0].id)})).rejects.toThrow();
+});
+
+run('closing any toast preserves its unread inbox row, with explicit persistent suppression and owner isolation',async()=>{
+ const db=getSql(),normal=await notify({userId:user.id,kind:'administrator',title:'Temporary retained'}),important=await notify({userId:user.id,kind:'administrator',title:'Persistent retained',level:'persistent',locked:true});
+ try{
+  await hideNotificationToasts(user,{ids:[normal,important],includePersistent:false});
+  expect((await inbox(user,50,{toasts:true})).map(row=>row.id)).toContain(important);
+  await hideNotificationToasts(other,{ids:[important],includePersistent:true});
+  expect((await inbox(user,50,{toasts:true})).map(row=>row.id)).toContain(important);
+  await hideNotificationToasts(user,{ids:[important],includePersistent:true});
+  const rows=await db<{id:string;read_at:Date|null;dismissed_at:Date|null;toast_hidden_at:Date|null}[]>`select id,read_at,dismissed_at,toast_hidden_at from notifications where id in (${normal},${important})`;
+  expect(rows).toHaveLength(2);expect(rows.every(row=>row.read_at===null&&row.dismissed_at===null&&row.toast_hidden_at!==null)).toBe(true);
+  expect((await notificationInbox(user)).items.map(row=>row.id)).toEqual(expect.arrayContaining([normal,important]));
+ }finally{await db`delete from notifications where id in (${normal},${important})`;}
+});
+run('feedback is own-user idempotent plain text, already toast-hidden and visible to restricted owners',async()=>{
+ const db=getSql(),id=crypto.randomUUID(),notice={id,text:'Saving progress…',kind:'info' as const,pending:true};
+ const managed:SessionUser={...user,access:{libraryOnly:true}};
+ try{
+  await recordFeedbackNotifications(user,{viewerId:user.id,notices:[notice]});
+  const [first]=await db`select * from notifications where user_id=${user.id} and source_key=${'feedback:'+id}`;
+  await recordFeedbackNotifications(user,{viewerId:user.id,notices:[{...notice,text:'Progress could not be saved.',kind:'error',pending:false}]});
+  const rows=await db`select * from notifications where user_id=${user.id} and source_key=${'feedback:'+id}`;
+  expect(rows).toHaveLength(1);expect(rows[0].id).toBe(first.id);expect(rows[0].created_at).toEqual(first.created_at);
+  expect(rows[0]).toMatchObject({kind:'action-feedback',title:'Progress could not be saved.',read_at:null,dismissed_at:null,data:{feedback:{kind:'error',pending:false}}});
+  expect(rows[0].toast_hidden_at).not.toBeNull();expect((await notificationToasts(user)).some(row=>row.id===first.id)).toBe(false);
+  expect((await notificationInbox(managed)).items.find(row=>row.id===first.id)?.title).toBe('Progress could not be saved.');
+  await expect(recordFeedbackNotifications(other,{viewerId:user.id,notices:[notice]})).rejects.toMatchObject({status:409});
+  await expect(recordFeedbackNotifications(user,{viewerId:user.id,notices:[{...notice,href:'https://actor.invalid'}]})).rejects.toThrow();
+  await expect(recordFeedbackNotifications(user,{viewerId:user.id,notices:Array.from({length:21},()=>notice)})).rejects.toThrow();
+  expect((await db`select id from notifications where user_id=${other.id} and source_key=${'feedback:'+id}`)).toHaveLength(0);
+ }finally{await db`delete from notifications where user_id=${user.id} and source_key=${'feedback:'+id}`;}
+});
+run('toast stamps retain actual screen and canonical music destinations',async()=>{
+ const db=getSql(),track=crypto.randomUUID(),key='stamp-href-'+crypto.randomUUID();
+ await db`insert into works(id,category,kind) values(${track},'music','track')`;
+ await db`insert into music_works(id,kind,title) values(${track},'track','Canonical stamp')`;
+ const [setting]=await db`select value from system_settings where key='coast'`;
+ try{
+  await db`insert into system_settings(key,value) values('coast','{"experimentalMusic":true}'::jsonb)
+    on conflict(key) do update set value=system_settings.value||excluded.value`;
+  await notifyMany([{userId:user.id,kind:'administrator',title:'Screen stamp',sourceKey:key+'screen',data:{actorId:user.id,subjectId:user.id,destination:'/for-you',workId:work}},
+   {userId:user.id,kind:'administrator',title:'Music stamp',sourceKey:key+'music',data:{actorId:user.id,subjectId:user.id,destination:'/for-you',workId:track}}]);
+  const notices=await notificationToasts(user,true);
+  expect(notices.find(row=>row.title==='Screen stamp')?.media?.href).toBe('/media/'+work);
+  expect(notices.find(row=>row.title==='Music stamp')?.media?.href).toBe('/music/work/'+track);
+ }finally{
+  await db`delete from notifications where user_id=${user.id} and source_key like ${key+'%'}`;
+  await db`delete from works where id=${track}`;
+  if(setting)await db`update system_settings set value=${setting.value}::jsonb where key='coast'`;
+  else await db`delete from system_settings where key='coast'`;
+ }
 });

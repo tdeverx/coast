@@ -2,6 +2,7 @@
   import { mixedCardStyle, cardAspectRatio } from '#lib/ui/mixed-card.js';
   import type { ReadonlyURL } from '$app/state';
   import { shelfControls } from '#lib/ui/shelves/controls.js';
+  import { availabilityControl } from '#lib/ui/controls/actions.js';
   import {useDetailSection} from '#lib/ui/detail-section.svelte.js';
   import type {ComponentProps} from 'svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
@@ -252,11 +253,15 @@
   {#each adapter?.actions ?? [] as action}<Button item text={action.label} onclick={action.run} />{/each}
   {@render actions?.()}
 {/snippet}
+{#snippet availabilityToggles()}
+ {#each headerControls.availability as control (control.label)}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'), control.label)} />{/each}
+{/snippet}
 {#snippet sectionSegments()}
  {#each headerControls.segments as control (control.label)}<SegmentedControl material="clear" presentation="navigation" label={control.label} value={control.value} options={control.options??[]} onchange={value=>selectControl(control,value)} />{/each}
  {@render customSegments?.({material:'clear',presentation:'navigation'})}
 {/snippet}
 {#snippet sectionControls()}
+ {@render availabilityToggles()}
  {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} reset={resetFilters} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
  {@render customControls?.()}
 {/snippet}
@@ -310,6 +315,7 @@
       {#snippet segments()}
         {#each headerControls.segments as control (control.label)}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />{/each}
         {@render customSegments?.({})}
+        {@render availabilityToggles()}
              {/snippet}
       {#snippet previous()}{#if hasNavigation}<Button size="icon"
         label={pagedNavigation ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}

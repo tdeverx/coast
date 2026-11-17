@@ -17,9 +17,10 @@ import menuRolloutSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/sou
 import menuRolloutFollowupSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/followup-source-refresh.json';
 import menuPlaybackEligibilitySourceRefresh from '../docs/audits/2026-11-17-menu-rollout/playback-eligibility-source-refresh.json';
 import menuResolvedArtistSourceRefresh from '../docs/audits/2026-11-17-menu-rollout/resolved-artist-source-refresh.json';
+import menuStatusFeedbackSourceRefresh from '../docs/audits/2026-11-17-menu-status-feedback/source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -28,6 +29,22 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('menu status and feedback changes retain their own bounded acceptance epoch', async () => {
+  expect(menuStatusFeedbackSourceRefresh.epoch).toBe('menu-status-feedback-followup-2026-11-17');
+  expect(menuStatusFeedbackSourceRefresh.baseline).toBe('b76964dc05680bbd7d4eca2c47291ea8b07ed814');
+  expect(menuStatusFeedbackSourceRefresh.blanketAcceptance).toBe(false);
+  expect(menuStatusFeedbackSourceRefresh.sourceFrozen).toBe(true);
+  const files: Readonly<Record<string,SourceRefresh>> = menuStatusFeedbackSourceRefresh.files;
+  for(const [path,pin] of Object.entries(files))
+    await expectCurrentSource(path,pin.current,'Review covered request status, icon layout and notification delivery ownership.');
+  const supportingFiles: Readonly<Record<string,string>> = menuStatusFeedbackSourceRefresh.supportingFiles;
+  for(const [path,hash] of Object.entries(supportingFiles))
+    await expectCurrentSource(path,hash,'Review the new feedback and rendered/lifetime regression evidence.');
+  const report=await Bun.file(menuStatusFeedbackSourceRefresh.report).text();
+  for(const scope of ['b76964d','20 notices','200 records','15-second','Firefox','invalid-response','material changes'])
+    expect(report).toContain(scope);
+});
 
 test('resolved artist eligibility advances its own immutable review receipt', async () => {
   expect(menuResolvedArtistSourceRefresh.epoch).toBe('menu-resolved-artist-review-2026-11-17');

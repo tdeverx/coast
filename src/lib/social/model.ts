@@ -44,7 +44,8 @@ export const socialSettingsSchema = v.object({
 });
 export const emojis = ['❤️','😂','😮','😢','🔥'] as const;
 export const reactionLabels:Record<typeof emojis[number],string>={'❤️':'Love','😂':'Laugh','😮':'Surprised','😢':'Sad','🔥':'Fire'};
-export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string};
+export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string;feedback?:never}
+ | {feedback:{kind:'info'|'error';pending:boolean};actorId?:never;subjectId?:never;destination?:never;actions?:never;workId?:never};
 
 export function activityAction(kind:string) {
  return ({'reading-planned':'Saved','reading-reading':'Reading','reading-completed':'Read','reading-paused':'Paused','reading-dropped':'Stopped',watch:'Watched',listen:'Listened',rating:'Rated',favourite:'Favourited',collect:'Collected',collected:'Collected',watchlist:'Saved',play:'Played',played:'Played',session:'Played','game-completed':'Completed','game-in-progress':'Started','game-paused':'Paused','game-dropped':'Stopped',drop:'Stopped',restore:'Resumed',progress:'Progressed',reaction:'Reacted',checkin:'Checked-in'} as Record<string,string>)[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c=>c.toUpperCase());

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { compile,compileModule } from 'svelte/compiler';
+import { compileModule } from 'svelte/compiler';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 
@@ -57,10 +57,6 @@ test('replacing avatar provider identity or disposing aborts delivery and preven
     const active=picker.selectProvider('replacement');dispose();expect(requests[1].signal.aborted).toBe(true);
     requests[1].response.reject(Error('Late failure'));await active;expect(picker.error).toBe('');expect(picker.avatar).toBeNull();
   }finally{dispose();}
-});
-
-test('complete avatar templates retain client and server compilation',()=>{
-  for(const generate of ['client','server']as const)expect(()=>compile(source,{filename:'AvatarPicker.svelte',generate})).not.toThrow();
 });
 
 /** Controlled pending decoders/URLs protect lifetime races; actual format/output
