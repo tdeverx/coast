@@ -18,6 +18,14 @@ test('Jellyfin management credentials must access libraries and have no personal
   await expect(forbidden.verifyManagementKey()).rejects.toMatchObject({status:403});
 });
 
+test('personal subtitle access follows Jellyfin’s subtitle permission, including on admin accounts',async()=>{
+  const id='1234';
+  const adapter=(policy:Record<string,boolean>)=>new JellyfinAdapter(async()=>({Id:id,Policy:policy}),'viewer');
+  expect(await adapter({IsAdministrator:true,EnableSubtitleManagement:false}).canManageSubtitles(id)).toBe(false);
+  expect(await adapter({IsDisabled:true,EnableSubtitleManagement:true}).canManageSubtitles(id)).toBe(false);
+  expect(await adapter({EnableSubtitleManagement:true}).canManageSubtitles(id)).toBe(true);
+});
+
 test('Jellyfin searches only through OpenSubtitles results and downloads the selected provider ID', async () => {
   const calls: { path: string; method: string }[] = [];
   const signal = new AbortController().signal;

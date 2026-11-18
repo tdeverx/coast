@@ -157,7 +157,8 @@ run('personal service failures stay individual and link to the user’s connecti
   for(let i=0;i<3;i++){
    const id=crypto.randomUUID();
    await db`insert into outbox_actions(id,user_id,connection_id,kind,payload,state) values(${id},${user.id},${connection},'jellyfin.sync',${{_jobFailure:{code:i===2?'connection':'permissions'}}}::jsonb,'failed')`;
-   await notify({userId:user.id,kind:'external-action',title:'Needs attention',sourceKey:'outbox:'+id});
+   await notify({userId:user.id,kind:'external-action',title:'Needs attention',sourceKey:'outbox:'+id,
+     data:{actorId:user.id,subjectId:id,destination:'/settings/jobs'}});
   }
   const feed=await notificationInbox(user,{kind:'external-action'});expect(feed.items).toHaveLength(3);
   expect(feed.items.every(n=>n.destination==='/settings/connections')).toBe(true);

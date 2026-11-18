@@ -395,10 +395,10 @@ export class JellyfinAdapter {
   }
   async canManageSubtitles(userId: string, signal?: AbortSignal) {
     const user = v.parse(v.object({ Id: v.string(), Policy: v.object({
-      IsAdministrator: bool, EnableSubtitleManagement: bool,
+      IsDisabled: bool, EnableSubtitleManagement: bool,
     }) }), await this.call(`/Users/${encodeURIComponent(userId)}`, { signal }));
     return jellyfinItemKey(user.Id) === jellyfinItemKey(userId) &&
-      (user.Policy.IsAdministrator || user.Policy.EnableSubtitleManagement);
+      !user.Policy.IsDisabled && user.Policy.EnableSubtitleManagement;
   }
   async subtitleSources(userId: string|undefined, itemId: string, signal?: AbortSignal) {
     const result = v.parse(v.object({ MediaSources: v.optional(v.array(subtitleSourceSchema), []) }),

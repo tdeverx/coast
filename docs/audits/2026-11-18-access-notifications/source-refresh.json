@@ -73,7 +73,7 @@
     },
     "src/lib/providers/jellyfin/adapter.server.ts": {
       "previous": "dbfda69c3838d31b81a244a159ea0fdbc6eb565f90e1999c23fc8c61a7f98c40",
-      "current": "e86ec5463976c97becfe301193e2b507834eceb758fad432bc81ba024b1cdeae"
+      "current": "2962be6478337e1a6963e0e28182c61e8fb4e51355dbb0d6930c16bca7ee62f5"
     },
     "src/lib/providers/jellyfin/provisioning.server.ts": {
       "previous": "54f48f13da557476ebc1f90eeacdda5b62156bcc3263bd2f0f02a87c4a665ef7",
@@ -137,7 +137,7 @@
     },
     "src/lib/server/notifications/inbox.ts": {
       "previous": "c46c2fb90ab2d55021cb65804f1bc64ac984201338ed71625f72f9da25f62231",
-      "current": "d033d5fc8a181e0d90340ca7cc65757af7745e0d9c4b09c9d27f9566e0760232"
+      "current": "098a96f315dcc8ab649c40edca2f8ed1bffbc4ad3c801e0bb895927787198a45"
     },
     "src/lib/server/notifications/index.ts": {
       "previous": "0055dd377f2071412af413a420948ac64d6456a733572240722e2ce054b46721",
@@ -229,7 +229,7 @@
     },
     "tests/notifications-db.test.ts": {
       "previous": "c4a9f9e735767716578e118e8ee95a807ecadd91135c28618740bbc89a287081",
-      "current": "9fa512ace62cf6a0b8e4990e913ed81ac8d36a5769c645793db94e040d8d86cf"
+      "current": "b0cf80f32373da7462e67844ca051e4bc918e39ca2aa9cf62603b6da0d553fe4"
     },
     "tests/performance-audit-register.test.ts": {
       "previous": "ccbe38c8a4e3b0b6c9fa426aa941bf207e38dd3bd6c4481a797848dd2295b0d4",
@@ -241,7 +241,7 @@
     },
     "tests/subtitle-playback.test.ts": {
       "previous": "4ca6bafe64a9088263aa317090e0b7a63c2ef6cf07ba42173d6782a39cb0a690",
-      "current": "5d7d13c5d018e9def7e1047eea61da9ab6960ff358e8861a618bec1213363212"
+      "current": "45536f6afa4a0946136e8f5aeb8a4e4624958200a01787288b21471d47161968"
     },
     "tests/ui-client.test.ts": {
       "previous": "a598c7f6d583cc17cf2ac8e48be7056f1c78505206a6aa3ce6badbd41b7fd72b",
@@ -257,5 +257,5 @@
     }
   },
   "report": "docs/audits/2026-11-18-access-notifications/verification.md",
-  "reportSha256": "749b43294d3e17ca5d716bbd265db5ae1b7e5dff6d902b9998c3b6fad9429bea"
+  "reportSha256": "c4826163c43452ad6058b3c8d914bd96b11a92a7c5c04b78d1383f51cd80d4ae"
 }
