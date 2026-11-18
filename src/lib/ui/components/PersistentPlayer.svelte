@@ -373,12 +373,26 @@
   }
   function applySubtitles() {
     if (!video) return;
-    captionTrack = video.querySelector<HTMLTrackElement>(`track[data-subtitle-index="${subtitle}"]`)?.track;
+    const element=video.querySelector<HTMLTrackElement>(`track[data-subtitle-index="${subtitle}"]`);
+    captionTrack = element?.track;
     for (const track of Array.from(video.textTracks)) {
       const mode = track === captionTrack ? 'hidden' : 'disabled';
       if (track.mode !== mode) track.mode = mode;
     }
     updateCaptions();
+    if(element?.readyState===2)subtitleOutcome(subtitle,'loaded');
+  }
+  let lastSubtitleOutcome='';
+  function subtitleOutcome(index:number,outcome:'loaded'|'failed'){
+    const session=player.session;
+    const fingerprint=tracks.find(track=>track.index===index)?.fingerprint;
+    if(!subtitleSearch||preview||!session||index!==subtitle||!fingerprint)return;
+    const key=`${session.id}:${fingerprint}:${outcome}`;
+    if(lastSubtitleOutcome===key)return;
+    lastSubtitleOutcome=key;
+    void api(`playback/${session.id}/subtitles`,{index,outcome,fingerprint},'POST').catch(()=>{
+      if(lastSubtitleOutcome===key)lastSubtitleOutcome='';
+    });
   }
   function updateCaptions() {
     captions = Array.from(captionTrack?.activeCues ?? []).filter((cue): cue is VTTCue => 'getCueAsHTML' in cue);
@@ -794,6 +808,8 @@
         data-subtitle-index={track.index}
         srclang={track.language ?? 'en'}
         label={track.label}
+        onload={()=>subtitleOutcome(track.index,'loaded')}
+        onerror={()=>subtitleOutcome(track.index,'failed')}
         oncuechange={updateCaptions}
       />{/each}
   </video>

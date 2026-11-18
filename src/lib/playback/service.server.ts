@@ -28,6 +28,7 @@ import {
   users,
   providerConnections,
   providerInstances,
+  subtitlePreferences,
 } from '#lib/server/db/schema.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { instanceFetchConfig, instanceServerUrl } from '#lib/providers/instances.server.js';
@@ -522,23 +523,25 @@ async function preparePlayback(
   );
   const always = preferences.subtitlesAlways ?? config.subtitleDefault === 'always';
   const enabled = always || config.subtitleDefault === 'preferred';
-  const defaultSubtitleIndex =
-    data.subtitleIndex !== undefined
-      ? subtitles.some((s) => s.index === data.subtitleIndex)
-        ? data.subtitleIndex
-        : null
-      : enabled
-        ? (preferred?.index ?? (always ? subtitles[0]?.index : null) ?? null)
-        : null;
   signal?.throwIfAborted();
-  const [[presentation], details, sources, initialCrop] = await Promise.all([
+  const [[presentation], details, sources, initialCrop, [remembered]] = await Promise.all([
     mediaViews(userId, { ids: [item.id], limit: 1 }),
     playbackDetails([{ id: item.id, kind: item.kind, year: item.year, captionSubtitle: music?.artistNames.join(', ') }]),
     getPlaybackSourceOptions(userId, item.id),
     mediaType === 'video' && !share?.vrchatCodec && (!previous || data.edition !== undefined)
       ? providerVideoCrop(best.adapter, best.row.providerItem.externalId, source, signal)
       : null,
+    !share&&!restricted&&!fallback&&(!previous||data.edition!==undefined)&&subtitles.length>0&&data.subtitleIndex===undefined
+      ? getDb().select({fingerprint:subtitlePreferences.fingerprint}).from(subtitlePreferences).where(and(
+        eq(subtitlePreferences.userId,userId),eq(subtitlePreferences.providerItemId,best.row.providerItem.id),eq(subtitlePreferences.sourceId,source.id))).limit(1)
+      : [],
   ]);
+  const rememberedIndex=remembered?.fingerprint
+    ? source.streams.find(stream=>textSubtitle(stream)&&stream.subtitleFingerprint===remembered.fingerprint)?.index
+    : undefined;
+  const defaultSubtitleIndex=data.subtitleIndex!==undefined
+    ? subtitles.some(track=>track.index===data.subtitleIndex)?data.subtitleIndex:null
+    : enabled?(rememberedIndex??preferred?.index??(always?subtitles[0]?.index:null)??null):null;
   signal?.throwIfAborted();
   // A user has one prepared/active playback session across audio and video.
   const session=await getDb().transaction(async tx=>{

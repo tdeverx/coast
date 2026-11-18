@@ -17,9 +17,12 @@ import {
   mediaRequests,
   media,
   providerInstances,
+  providerConnections,
   users,
 } from '#lib/server/db/schema.js';
-import { eq, desc } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
+import { seerrAllows, SeerrPermission } from '#lib/providers/seerr/adapter.server.js';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { jobTimings } from '#lib/providers/job-timing.server.js';
 import { adminDemand } from '#lib/collection/demand.server.js';
 import { listBenchmarks } from '#lib/benchmarks/service.server.js';
@@ -33,17 +36,21 @@ export const load = (async ({locals, params, depends, url}) => {
     try {
       requireAdmin(locals.user);
     } catch {
-      error(403, 'Administrator access is required.');
+      error(403, 'This page requires Coast admin access.');
     }
   }
   const config = await getConfig();
+  const requestAccess=section==='admin'?await getFeatureConfig(locals.user!.id):null;
   const usersTab: 'users'|'invites'|'defaults'=section==='users' && url.searchParams.get('view')==='invites' ? 'invites' :
     section==='users' && url.searchParams.get('view')==='defaults' ? 'defaults' : 'users';
   const accounts=section==='users'&&usersTab==='users' ? await listUsers(locals.user,url.searchParams.get('before')) : {items:[],next:null};
-  const inviteAuthorities=section==='users'&&usersTab!=='users' ? await getSql()<{id:string;name:string}[]>`select c.id,i.name||' · '||u.username as name
+  const inviteAuthorities=section==='users'&&usersTab!=='users' ? await getSql()<{id:string;name:string}[]>`select i.id,i.name||' · Server API key' as name
+    from provider_instances i where i.provider='jellyfin' and i.enabled and i.credentials is not null and i.settings ? 'managementKeyGeneration'
+    union all
+    select c.id,i.name||' · '||u.username||' (checks Jellyfin admin access on selection)' as name
     from provider_connections c join users u on u.id=c.user_id and u.role='admin' and not u.disabled
     join provider_instances i on i.id=c.instance_id and i.provider='jellyfin' and i.enabled
-    where c.status='connected' and c.credentials is not null order by i.name,u.username,c.id limit 40` : [];
+    where c.status='connected' and c.credentials is not null order by name,id limit 40` : [];
   const accountState=section==='account'
     ? (await getSql()<{hasLocalPassword:boolean;initialImports:boolean}[]>`select password_hash is not null as "hasLocalPassword",
       exists(select 1 from user_onboarding where user_id=users.id and completed_at is not null
@@ -105,13 +112,23 @@ export const load = (async ({locals, params, depends, url}) => {
               title: media.title,
               destination: providerInstances.name,
               username: users.username,
+              connection: providerConnections.id,
+              permissions: providerConnections.settings,
             })
             .from(mediaRequests)
             .innerJoin(media, eq(media.id, mediaRequests.mediaId))
             .innerJoin(providerInstances, eq(providerInstances.id, mediaRequests.instanceId))
             .innerJoin(users, eq(users.id, mediaRequests.userId))
+            .leftJoin(providerConnections,and(eq(providerConnections.userId,locals.user!.id),eq(providerConnections.instanceId,mediaRequests.instanceId),eq(providerConnections.status,'connected')))
             .orderBy(desc(mediaRequests.createdAt))
             .limit(30)
+            .then(rows=>rows.map(({connection,permissions,...row})=>({...row,blocked:
+              !requestAccess?.features.requests||!requestAccess.features.screen?'Media requests are unavailable for this Coast account.':
+              !connection?'Connect your Seerr account to manage requests.':
+              !seerrAllows(Number(permissions?.seerrPermissions)||0,SeerrPermission.MANAGE_REQUESTS)?'Requires Seerr Manage Requests permission.':
+              !row.request.externalId?'Waiting for Seerr to receive this request.':
+              row.request.state!=='pending'?'This request has already been decided.':null
+            })))
         : [],
   };
 }) satisfies PageServerLoad;

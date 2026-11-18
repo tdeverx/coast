@@ -7,11 +7,12 @@ import { STEAM_BASE_URL } from './steam/adapter.server';
 import { AppError } from '#lib/server/security/errors.js';
 import { providerSchedule } from '#lib/providers/schedule.js';
 import * as v from 'valibot';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { users, providerInstances, providerConnections } from '#lib/server/db/schema.js';
 import {
   createProviderTransport,
+  ProviderHttpError,
   type ProviderFetchConfig,
   validateProviderUrl,
 } from '#lib/server/security/provider-fetch.js';
@@ -34,6 +35,8 @@ const configureSchema = v.object({
   linkedMediaInstanceId: v.optional(uuid),
   allowPrivateNetwork: v.optional(v.boolean(), false),
   apiKey: v.optional(v.string()),
+  removeJellyfinKey: v.optional(v.boolean(),false),
+  subtitleAuthority: v.optional(v.picklist(['viewer','server'])),
   accessToken: v.optional(v.string()),
   clientId: v.optional(v.string()),
   clientSecret: v.optional(v.string()),
@@ -119,8 +122,9 @@ export async function configureInstance(adminId: string, input: unknown) {
       );
     if (!linked) throw new Error('The selected Jellyfin instance does not exist.');
   }
+  const previousSecret=previous?.credentials ? JSON.parse(await decryptCredential(previous.credentials)) : {};
   const secret = {
-    ...(previous?.credentials ? JSON.parse(await decryptCredential(previous.credentials)) : {}),
+    ...previousSecret,
     ...Object.fromEntries(
       Object.entries({
         apiKey: data.apiKey,
@@ -130,6 +134,28 @@ export async function configureInstance(adminId: string, input: unknown) {
       }).filter(([, value]) => !!value)
     ),
   };
+  let managementKeyGeneration = previous?.settings.managementKeyGeneration;
+  const subtitleAuthority = data.subtitleAuthority ?? previous?.settings.subtitleAuthority ?? 'viewer';
+  if (data.provider === 'jellyfin') {
+    const oldKey = previousSecret.apiKey;
+    if (data.removeJellyfinKey) {
+      delete secret.apiKey;
+      managementKeyGeneration = undefined;
+    } else if (data.apiKey) {
+      if (!/^[a-zA-Z0-9_-]{16,256}$/.test(data.apiKey))
+        throw new AppError(400,'Enter a valid Jellyfin server API key.');
+      try {
+        await new JellyfinAdapter(transport,'coast-management',data.apiKey).verifyManagementKey();
+      } catch (cause) {
+        if (cause instanceof ProviderHttpError && [401,403].includes(cause.status))
+          throw new AppError(403,'Jellyfin rejected this key. Create a server API key in Jellyfin Dashboard → API Keys.');
+        throw cause;
+      }
+      if (data.apiKey !== oldKey || !managementKeyGeneration) managementKeyGeneration = crypto.randomUUID();
+    }
+    if (subtitleAuthority==='server' && !managementKeyGeneration && !data.removeJellyfinKey)
+      throw new AppError(400,'Save a Jellyfin server API key to enable delegated subtitle searches.');
+  }
   if (data.provider === 'steam') {
     const key = secret.apiKey ?? (previous?.credentials ? JSON.parse(await decryptCredential(previous.credentials)).apiKey : undefined);
     if (typeof key !== 'string' || !/^[a-f0-9]{32}$/i.test(key)) throw new AppError(400,'Steam requires a 32-character Web API key.');
@@ -160,22 +186,24 @@ export async function configureInstance(adminId: string, input: unknown) {
     settings: {
       ...previous?.settings,
       approved: true,
-      ...(data.provider === 'jellyfin' ? {lanUrl:lanUrl ? lanUrl.replace(/\/$/, '') : null} : {}),
+      ...(data.provider === 'jellyfin' ? {lanUrl:lanUrl ? lanUrl.replace(/\/$/, '') : null,
+        managementKeyGeneration,subtitleAuthority:data.removeJellyfinKey?'viewer':subtitleAuthority} : {}),
       allowPrivateNetwork: data.allowPrivateNetwork,
       allowedPorts: config.allowedProviderPorts,
     },
     ...(Object.keys(secret).length
       ? { credentials: await encryptCredential(JSON.stringify(secret)) }
-      : {}),
+      : data.removeJellyfinKey && data.provider==='jellyfin' ? {credentials:null} : {}),
   };
   const [row] = data.id
     ? await getDb()
         .update(providerInstances)
         .set(values)
-        .where(eq(providerInstances.id, data.id))
+        .where(and(eq(providerInstances.id,data.id),data.provider==='jellyfin'
+          ? sql`${providerInstances.credentials} is not distinct from ${previous?.credentials??null}`:undefined))
         .returning()
     : await getDb().insert(providerInstances).values(values).returning();
-  if (!row) throw new Error('The provider instance does not exist.');
+  if (!row) throw new AppError(409,'The integration changed. Reload before saving again.');
   return { id: row.id, name: row.name, provider: row.provider, baseUrl: row.baseUrl };
 }
 
@@ -209,7 +237,11 @@ export async function listProviders(userId: string, includeDisabled = false) {
         provider: instance.provider,
         name: instance.name,
         baseUrl: instance.baseUrl,
-        ...(includeDisabled && instance.provider === 'jellyfin' ? {lanUrl:typeof instance.settings.lanUrl === 'string' ? instance.settings.lanUrl : null} : {}),
+        ...(includeDisabled && instance.provider === 'jellyfin' ? {
+          lanUrl:typeof instance.settings.lanUrl === 'string' ? instance.settings.lanUrl : null,
+          managementKeyConfigured:!!instance.settings.managementKeyGeneration && !!instance.credentials,
+          subtitleAuthority:instance.settings.subtitleAuthority==='server'?'server' as const:'viewer' as const
+        } : {}),
         enabled: instance.enabled,
         schedule: providerSchedule(instance.provider, instance.settings.schedule),
         allowPrivateNetwork: instance.settings.allowPrivateNetwork === true,
@@ -299,4 +331,14 @@ export function instanceTransport(instance: typeof providerInstances.$inferSelec
       ? {...init,signal:init?.signal?AbortSignal.any([signal,init.signal]):signal}
       : init);
   };
+}
+
+/** A server key is only for explicit management calls after the caller authorizes its action. */
+export async function jellyfinManagement(instance:typeof providerInstances.$inferSelect,signal?:AbortSignal) {
+  const generation=instance.settings.managementKeyGeneration;
+  if(instance.provider!=='jellyfin'||!instance.enabled||!instance.serverIdentity||!instance.credentials||typeof generation!=='string')
+    throw new AppError(409,'Configure a Jellyfin server API key for this integration.','jellyfin_key_required');
+  await new JellyfinAdapter(instanceTransport(instance,signal),'coast-management').identity(instance.serverIdentity,signal);
+  const {apiKey}=v.parse(v.object({apiKey:v.string()}),JSON.parse(await decryptCredential(instance.credentials)));
+  return {adapter:new JellyfinAdapter(instanceTransport(instance,signal),'coast-management',apiKey),instance,generation};
 }

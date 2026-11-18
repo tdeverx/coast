@@ -959,6 +959,9 @@
                       <td>{r.destination}</td>
 
                       <td>
+                        {#if r.blocked}
+                          <span class="quiet">{r.blocked}</span>
+                        {:else}
                         <div class="row">
                           <Button
                             disabled={busy}
@@ -978,7 +981,9 @@
                                 'Decline queued.'
                               )}>Decline</Button
                           >
-                        </div></td
+                        </div>
+                        {/if}
+                      </td
                       ></tr
                     >{/each}</tbody
                 >

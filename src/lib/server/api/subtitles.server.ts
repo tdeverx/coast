@@ -1,4 +1,4 @@
-import { downloadSubtitle, searchSubtitles, subtitleOptions } from '#lib/playback/subtitles.server.js';
+import { downloadSubtitle, recordSubtitleOutcome, searchSubtitles, subtitleOptions } from '#lib/playback/subtitles.server.js';
 import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { classifyFailure, diagnosticErrorCode, logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { AppError } from '#lib/server/security/errors.js';
@@ -9,6 +9,10 @@ export async function handleSubtitles({ user, path, method, body, url, request }
   const target = { id: uuid(path[1]), session };
   const headers = { 'Cache-Control': 'private, no-store' };
   if (method !== 'GET' && method !== 'POST') throw new AppError(405, 'This subtitle action is unavailable.');
+  if(method==='POST'&&session&&body&&typeof body==='object'&&'outcome' in body){
+    await recordSubtitleOutcome(user,target,body,request.signal);
+    return Response.json({ok:true},{headers});
+  }
   const stage = method === 'GET' ? 'subtitle-options'
     : body && typeof body === 'object' && 'language' in body ? 'subtitle-search' : 'subtitle-download';
   const fields = { operation: session ? 'playback' : 'media', requestAction: 'subtitles', provider: 'jellyfin', stage,

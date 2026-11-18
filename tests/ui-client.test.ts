@@ -11,10 +11,9 @@ const revisionCode = compileModule(new Bun.Transpiler({ loader: 'ts' }).transfor
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'));
 const revisionUrl = moduleUrl(revisionCode);
 const { readContentRevision }: typeof import('../src/lib/ui/content-revision.svelte') = await import(revisionUrl);
-const feedbackUrl = moduleUrl('export const notices=[]; export function notifyAction(text){notices.push(text);}export const feedbackForViewer=()=>({notify:notifyAction});');
 const source = await Bun.file(new URL('../src/lib/ui/client.ts', import.meta.url)).text();
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(source)
-  .replaceAll('./action-feedback.svelte', feedbackUrl).replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);
+  .replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);
 const { createApiClient, refreshAfterChange, refreshRouteDependencies, capturePlaybackApi, setPlaybackApi }: typeof import('../src/lib/ui/client') = await import(moduleUrl(code));
 const { invalidations } = await import(navigationUrl);
 const { setRelationship } = await import('../src/lib/ui/relationships');
@@ -83,7 +82,9 @@ test('successful transport acknowledgement survives failed route refresh', async
   const client = createApiClient(async () => { writes++; return Response.json({ id: 'accepted' }); }, async () => { throw new Error('Route unavailable'); });
   expect(await client.change<{ id: string }>('reading/id/progress', {})).toEqual({ id: 'accepted' });
   expect(writes).toBe(1);
-  expect((await import(feedbackUrl)).notices.at(-1)).toContain('Saved.');
+  expect((await import(diagnosticsUrl)).reports.at(-1)).toMatchObject({
+    kind:'browser.request-failed',fields:{stage:'after-change-refresh',failure:'unexpected'},
+  });
 });
 
 test('cancelled optional requests cannot publish a late expiry after transport or body completion', async () => {

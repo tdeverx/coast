@@ -3,7 +3,7 @@ export {cancelAction,retryAction,promoteAction} from './task-controls.server';
 export {updateTaskActions} from './task-commands.server';
 import type { ProviderActionError } from '#lib/providers/contracts.js';
 import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
-import { maintenanceKinds, serviceTraversalKinds } from '#lib/providers/tasks.js';
+import { maintenanceKinds, serviceTasks, serviceTraversalKinds } from '#lib/providers/tasks.js';
 import { taskRetryAttentionAttempts, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '#lib/providers/job-policy.js';
 import { jobExecution, JobYield } from './execution';
 import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, ProviderQueueTimeoutError, type RequestPriority } from '../security/request-priority';
@@ -17,7 +17,9 @@ import { outboxActions, providerConnections, providerInstances, users } from '..
 import { requireAdmin, type SessionUser } from '../auth';
 import { AppError } from '../security/errors';
 import { ProviderHttpError } from '../security/provider-fetch';
-import { notify, resolveNotification } from '../notifications';
+import { notify, notifyAdministrators, resolveNotification } from '../notifications';
+import { displayLabel } from '#lib/ui/labels.js';
+import { DomainError } from '#lib/core/errors.js';
 import * as v from 'valibot';
 
 export interface OutboxAction {
@@ -198,6 +200,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
   if (error instanceof AppError && error.code === 'steam_private') return 'Steam game details are private or unavailable. Make game details readable in Steam privacy settings; previous imports are retained.';
   if (error instanceof v.ValiError) return 'The service returned unsupported data. Review diagnostics before retrying.';
   if (safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict') return 'Conflicting metadata identities need administrator review. Retrying cannot resolve the mapping.';
+  if(error instanceof DomainError)return 'Coast rejected an invalid local change. Review this task before retrying.';
   return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
 }
 
@@ -221,7 +224,46 @@ export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure
   if (error instanceof v.ValiError) return { code: 'provider.invalid-data', remedy: 'metadata', retryable: false };
   const code = safeDiagnosticErrorCode(error);
   if (code === 'catalogue.identity-conflict') return { code, remedy: 'metadata', retryable: false };
+  if(error instanceof DomainError)return {code:'local.action-rejected',remedy:'metadata',retryable:false};
+  if(error instanceof AppError&&error.code==='feature_disabled')return {code:'local.feature-disabled',remedy:'permissions',retryable:false};
   return { code: code ?? (permanent ? 'action.rejected' : 'provider.interrupted'), remedy: 'retry', retryable: !permanent };
+}
+
+const sharedAttentionKinds=new Set(['jellyfin.library','jellyfin.updates','jellyfin.streams','jellyfin.member-policy',
+  'igdb.steam-metadata','igdb.recommendations','tmdb.refresh','tmdb.recommendations','taste.refresh','benchmark.run','feature.reconcile']);
+
+async function notifyAdmins(db:ReturnType<typeof getSql>,title:string,body:string,sourceKey:string,action:OutboxAction){
+  await notifyAdministrators({
+    kind:'external-action',title,body,level:'persistent',sourceKey,
+    data:{actorId:action.userId,subjectId:action.id,destination:'/settings/jobs'},
+  },db);
+}
+
+async function notifyJobAttention(db:ReturnType<typeof getSql>,action:OutboxAction,failure:JobFailure,message:string,permanent:boolean){
+  if(failure.code==='local.feature-disabled'||failure.code==='local.provider-busy'||failure.code==='local.provider-queue-timeout')return;
+  const ownerAction=permanent&&!!action.connectionId&&!sharedAttentionKinds.has(action.kind)
+    && ['provider.authentication','provider.permission'].includes(failure.code);
+  const requestAction=permanent&&action.kind==='seerr.request';
+  const [instance]=action.instanceId?await db<{name:string;provider:string}[]>`select name,provider from provider_instances where id=${action.instanceId}`:[];
+  const provider=instance?.provider??action.kind.split('.')[0];
+  const label=instance?.name??displayLabel(provider);
+  const task=serviceTasks(provider).find(task=>task.kinds.includes(action.kind));
+  if(ownerAction||requestAction){
+    await notify({
+      userId:action.userId,kind:'external-action',title:ownerAction?`Check your ${label} connection`:'Your media request could not be sent',
+      body:ownerAction?message:`Seerr could not accept the request. Check the request status or contact a Coast admin if it keeps failing.`,
+      level:'persistent',sourceKey:`outbox:${action.id}`,
+      data:{actorId:action.userId,subjectId:action.id,destination:ownerAction?'/settings/connections':'/requests'},
+    },db);
+    return;
+  }
+  await notifyAdmins(db,`${label} · ${task?.title??displayLabel(action.kind)} needs review`,message,`job-attention:${action.id}`,action);
+}
+
+function notifySteamReview(db:ReturnType<typeof getSql>,action:OutboxAction,count:number){
+  return notifyAdmins(db,'Steam metadata matches need review',
+    `Coast skipped ${count} conflicting IGDB ${count===1?'match':'matches'} and continued importing the rest. Review the IGDB metadata job in Settings.`,
+    `admin-attention:steam-metadata:${action.instanceId??'igdb'}`,action);
 }
 
 export function retryDelayMs(attempt: number): number {
@@ -368,7 +410,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             throw new PermanentActionError('The connected account is unavailable.');
         }
         const [admission]=await getSql()`select coast_job_allowed(${action.userId}::uuid,${action.kind},${action.payload}::jsonb) as allowed`;
-        if(!admission.allowed)throw new PermanentActionError('This task is disabled by feature settings.');
+        if(!admission.allowed)throw new AppError(403,'This task is disabled by Coast feature settings.','feature_disabled');
         const handler = handlers.get(action.kind);
         if (!handler) throw new PermanentActionError('This action type is no longer supported.');
         const outcome = await handler(action);
@@ -392,8 +434,13 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
                 AND NOT EXISTS(SELECT 1 FROM outbox_actions a WHERE a.connection_id=c.id
                   AND a.account_generation=c.account_generation AND a.kind=${action.kind} AND a.state IN ('pending','running'))`;
           }
-          if (completed.length)
-            await resolveNotification(action.userId, `outbox:${action.id}`, sql);
+          if (completed.length) {
+            await resolveNotification(action.userId,`outbox:${action.id}`,sql);
+            if(action.attempts>1)await sql`delete from notifications n using users admin
+              where admin.role='admin' and n.user_id=admin.id and n.source_key=${`job-attention:${action.id}`}`;
+            if(action.kind==='igdb.steam-metadata'&&outcome?.review)
+              await notifySteamReview(sql,action,outcome.review);
+          }
         });
         const durationMs = performance.now() - started;
         void logDiagnostic(action.purpose === 'live' && durationMs < 1000 ? 'debug' : 'info', 'job.complete', {
@@ -414,6 +461,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict' ||
           (error instanceof AppError && error.code === 'steam_private') ||
           error instanceof PermanentActionError ||
+          error instanceof DomainError ||
+          error instanceof AppError&&error.code==='feature_disabled' ||
           error instanceof v.ValiError ||
           (error instanceof ProviderHttpError &&
             [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
@@ -458,21 +507,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             const until = new Date(Date.now() + retryAfter).toISOString();
             await sql`UPDATE provider_instances SET settings = jsonb_set(settings, '{jobsRetryAt}', to_jsonb(GREATEST(COALESCE(settings->>'jobsRetryAt', ''), ${until})::text), true) WHERE id = ${action.instanceId}`;
           }
-          if (permanent || action.attempts >= taskRetryAttentionAttempts)
-            await notify(
-              {
-                userId: action.userId,
-                kind: 'external-action',
-                title: error instanceof ProviderQueueBusyError ? 'Waiting for Coast capacity' : permanent
-                  ? 'An external action needs attention'
-                  : 'Waiting for a connected service',
-                body: message,
-                level: permanent ? 'persistent' : 'normal',
-                sourceKey: `outbox:${action.id}`,
-                data:{actorId:action.userId,subjectId:action.id,destination:'/settings/jobs'},
-              },
-              sql
-            );
+          if(permanent||developerMode||action.attempts===taskRetryAttentionAttempts)
+            await notifyJobAttention(sql,action,failure,message,permanent);
         });
       } finally {
         clearInterval(heartbeat);

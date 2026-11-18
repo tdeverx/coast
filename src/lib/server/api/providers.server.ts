@@ -20,6 +20,12 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
       if(path.length===2&&path[1]==='streams'&&method==='GET')result=await (await import('#lib/application/streams.server.js')).activeStreams(user,{view:url.searchParams.get('view')??'now',before:url.searchParams.get('before')??undefined});
       else if(path.length===3&&path[1]==='streams'&&path[2]==='count'&&method==='GET')result=await (await import('#lib/application/streams.server.js')).streamCount(user);
       else if(path.length===3&&path[1]==='streams'&&path[2]==='refresh'&&method==='POST')result=await (await import('#lib/application/streams.server.js')).refreshStreams(user);
+      else if(path.length===3&&path[2]==='subtitle-review'&&['GET','POST'].includes(method)){
+        requireAdmin(user);
+        const {listFailedSubtitleDownloads,removeFailedSubtitleDownload}=await import('#lib/playback/subtitles.server.js');
+        const instance=uuid(path[1]);
+        result=method==='GET'?await listFailedSubtitleDownloads(instance):await removeFailedSubtitleDownload(instance,body);
+      }
       else if (path.length === 1 && method === 'GET') result = await listProviders(uid);
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);

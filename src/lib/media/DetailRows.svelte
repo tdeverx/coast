@@ -13,9 +13,10 @@
   import MediaActivity from '#lib/ui/components/MediaActivity.svelte';
   import { communityPanels } from '#lib/ui/insights/community.js';
 
-  import type {DetailRowsModel,DetailFailure} from '#lib/ui/pages/detail-rows.js';
+  import type {DetailRowsModel} from '#lib/ui/pages/detail-rows.js';
   import type {MediaCardPresentation} from '#lib/ui/types.js';
   const { api, preview } = useClient();
+  import { reportFailure } from '#lib/ui/client-context.js';
   const canLoadPrivate = $derived(preview || !!page.data.user);
 
   let {
@@ -77,6 +78,8 @@
     trakt: canLoadPrivate && (resources.trakt.busy || (!resources.trakt.ready && !resources.trakt.error)),
   });
   const errors = $derived({ tmdb: resources.tmdb.error, trakt: resources.trakt.error });
+  reportFailure(()=>({text:errors.tmdb?`TMDB details for ${item.title} could not load. The saved title is still available.`:undefined,retry:()=>load('tmdb')}));
+  reportFailure(()=>({text:errors.trakt?`Trakt details for ${item.title} could not load. The saved title is still available.`:undefined,retry:()=>load('trakt')}));
   const community = $derived(
     sources.filter((s) => communitySource === 'all' || s === communitySource)
   );
@@ -125,20 +128,19 @@
     id:String(person.id),kind:'person',title:person.name,href:`/people/${person.id}`,poster:person.portrait,
     captionSubtitle:roles.preview+(roles.remaining?` · +${roles.remaining} roles`:'')+(roles.voice?' · Voice':''),
   };});
-  const failures=(selected:Source[]):DetailFailure[]=>selected.flatMap(source=>errors[source]?[{title:`${source==='tmdb'?'TMDB':'Trakt'} unavailable`,message:errors[source],retry:()=>load(source)}]:[]);
   const model=$derived<DetailRowsModel>({
     insights:{selection,select:value=>selection=value,activate:()=>insightsActive=true,
       href:`/media/${item.id}?section=insights&insight=${selection}&source=${communitySource}&period=${period}`,
       tabs:[
-        {value:'overview',label:'Overview',panels:[...mediaOverviewPanels(item,members,seasons),...(data.tmdb?.facts.length?[{title:'About this title',content:{kind:'facts' as const,props:{items:data.tmdb.facts}},footerLink:{href:data.tmdb.url,label:'View on TMDB ↗',external:true}}]:[])],errors:failures(['tmdb'])},
+        {value:'overview',label:'Overview',panels:[...mediaOverviewPanels(item,members,seasons),...(data.tmdb?.facts.length?[{title:'About this title',content:{kind:'facts' as const,props:{items:data.tmdb.facts}},footerLink:{href:data.tmdb.url,label:'View on TMDB ↗',external:true}}]:[])]},
         {value:'activity',label:'Your activity',content:activity,filters:[{label:'Activity period',value:period,options:[{value:'all',label:'All time'},{value:'month',label:'Last 30 days'},{value:'year',label:'Last 365 days'}],change:value=>period=value as ProfilePeriod}]},
-        {value:'community',label:'Community',panels:community.flatMap(source=>data[source]?communityPanels(data[source]!):[]),busy:community.some(source=>busy[source]),errors:failures(community),filters:[{label:'Community source',value:communitySource,options,change:value=>communitySource=value}]},
+        {value:'community',label:'Community',panels:community.flatMap(source=>data[source]?communityPanels(data[source]!):[]),busy:community.some(source=>busy[source]),filters:[{label:'Community source',value:communitySource,options,change:value=>communitySource=value}]},
       ]},
-    credits:{selection:credits.selection,select:value=>credits.selection=value,href:credits.href,activate:()=>creditsActive=true,hideEmpty:credits.selection==='cast'&&!data.tmdb?.crew.length,errors:failures(['tmdb']),groups:[
+    credits:{selection:credits.selection,select:value=>credits.selection=value,href:credits.href,activate:()=>creditsActive=true,hideEmpty:credits.selection==='cast'&&!data.tmdb?.crew.length,groups:[
       {value:'cast',label:'Cast',people:people(cast)},{value:'crew',label:'Crew',people:people(data.tmdb?.crew??[]),busy:busy.tmdb},
     ]},
     reviews:{selection:reviewSource,select:value=>reviewSource=value,options,activate:()=>reviewsActive=true,href:`/media/${item.id}?section=reviews&source=${reviewSource}`,
-      items:reviews.flatMap(source=>(data[source]?.reviews??[]).map(review=>({...review,source:data[source]!.source}))),busy:reviews.some(source=>busy[source]),errors:failures(reviews),
+      items:reviews.flatMap(source=>(data[source]?.reviews??[]).map(review=>({...review,source:data[source]!.source}))),busy:reviews.some(source=>busy[source]),errors:[],
       more:more.length?()=>Promise.all(more.map(source=>load(source,data[source]!.page+1))):undefined},
   });
 </script>

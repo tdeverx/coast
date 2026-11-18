@@ -16,7 +16,7 @@ const code=compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  import {page} from ${JSON.stringify(routeUrl)};
  export function create(getOptions,transport){
  const activity=()=>{},creditRoles=value=>({preview:value,remaining:0,voice:false}),mediaOverviewPanels=()=>[],communityPanels=()=>[];
- const callbacks=[],useClient=()=>({api:transport}),onDestroy=fn=>callbacks.push(fn);
+ const callbacks=[],useClient=()=>({api:transport}),onDestroy=fn=>callbacks.push(fn),reportFailure=()=>{};
  ${script}
  return {activate(row){if(row==='insights')insightsActive=true;else if(row==='reviews')reviewsActive=true;else creditsActive=true;},
  select(value){selection=value;},community(value){communitySource=value;},reviews(value){reviewSource=value;},

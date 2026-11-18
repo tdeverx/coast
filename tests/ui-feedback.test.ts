@@ -11,7 +11,7 @@ const pageUrl=moduleUrl(`import {state,get,set} from ${JSON.stringify(import.met
  export const page={data:{get user(){return get(user);}}};
  export const setViewer=id=>set(user,id ? {id} : undefined);`);
 const {setViewer}=await import(pageUrl);
-const clientUrl=moduleUrl('export const message=cause=>cause.message;export const api=async()=>{};export const change=api,changeMany=api,createApiClient=()=>{};export const refreshAfterChange=async()=>{};');
+const clientUrl=moduleUrl('export const message=cause=>cause.message;export const coastConnectionMessage="Connection lost";export const api=async()=>{};export const change=api,changeMany=api,createApiClient=()=>{};export const refreshAfterChange=async()=>{};');
 const source=await Bun.file(new URL('../src/lib/ui/action-feedback.svelte.ts',import.meta.url)).text();
 const compiled=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'feedback.svelte.js',generate:'client'}).js.code
   .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))

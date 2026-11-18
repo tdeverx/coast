@@ -38,7 +38,12 @@ export function getSql(): SQL {
     // Bun's idle timer also closes reserved sessions, losing those locks and
     // raising ERR_POSTGRES_IDLE_TIMEOUT. Keep this bounded pool open until closeDb.
     pools[poolKey] = new Bun.SQL(url, { max: 10, idleTimeout: 0, connectionTimeout: 10, connection: { jit: 'off' },
-      onconnect: error => evidence[evidenceKey]?.connection(error), onclose: error => evidence[evidenceKey]?.connection(error, true) });
+      onconnect: error => evidence[evidenceKey]?.connection(error),
+      onclose: error => {
+        // Native close can report pending requests during an intentional shutdown.
+        evidence[evidenceKey]?.connection(lifecycle[shutdownKey]?.started?undefined:error,true);
+      },
+    });
   }
   return pools[poolKey];
 }

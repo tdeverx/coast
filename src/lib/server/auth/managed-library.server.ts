@@ -128,10 +128,10 @@ export function managedRoute(path:string, method:string) {
 export async function reconnectManagedLibrary(userId:string,input:unknown) {
   const password=parse(pipe(string(),maxLength(4096)),input);
   checkLoginRate('managed-reconnect:'+userId);
-  const [account]=await getSql()`select coalesce(member.username,u.username) as username,p.remote_id,authority.instance_id
+ const [account]=await getSql()`select coalesce(member.username,u.username) as username,p.remote_id,coalesce(p.authority_instance_id,authority.instance_id) as instance_id
     from users u join onboarding_provisioning p on p.user_id=u.id
-    join provider_connections authority on authority.id=p.connection_id and authority.account_generation=p.account_generation
-    left join provider_connections member on member.user_id=u.id and member.instance_id=authority.instance_id
+  left join provider_connections authority on authority.id=p.connection_id and authority.account_generation=p.account_generation
+  left join provider_connections member on member.user_id=u.id and member.instance_id=coalesce(p.authority_instance_id,authority.instance_id)
     where u.id=${userId} and p.state='complete' and p.lifecycle in ('','active')
       and u.access_defaults->>'libraryOnly'='true' and coast_managed_schedule_open(p.active_defaults)`;
   if(!account?.remote_id)throw new AppError(403,'Your assigned Jellyfin account is not available. Contact an administrator.');

@@ -37,7 +37,7 @@ export function createRequestControls(options: {
     !options.data()
       ? 'Checking request availability'
       : !options.data()?.requestsEnabled
-        ? 'Connect Seerr and enable requests'
+        ? options.data()?.requestUnavailable??'Media requests are unavailable.'
         : !options.item()?.tmdbId
           ? 'Match this title with TMDB before requesting it'
           : ''

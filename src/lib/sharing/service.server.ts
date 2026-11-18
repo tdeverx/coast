@@ -1,4 +1,4 @@
-import { getFeatureConfig } from '#lib/server/features.js';
+import { featureDenialMessage,getFeatureConfig } from '#lib/server/features.js';
 import {requestPriority} from '#lib/server/security/request-priority.js';
 import { categoryEnabled } from '#lib/experimental.js';
 import * as v from 'valibot';
@@ -18,7 +18,8 @@ const uuid=v.pipe(v.string(),v.uuid());
 export const shareCookie='coast_share_viewer';
 export async function createShare(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),config=await getFeatureConfig(user.id);
- if(!config.allowPlaybackSharing||(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true))throw new AppError(403,'Playback sharing requires administrator permission.');
+ if(!config.allowPlaybackSharing)throw new AppError(403,featureDenialMessage(config.featureDenials.sharing),'feature_disabled');
+ if(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true)throw new AppError(403,'A Coast admin needs to grant playback sharing.','sharing_grant_required');
  const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false),target:v.optional(v.picklist(['website','vrchat']),'website'),videoCodec:v.optional(v.picklist(['h264','hevc']),'h264'),autoRevoke:v.optional(v.boolean(),false),trackProgress:v.optional(v.boolean(),false)}),input);
  if(data.target==='vrchat'&&!config.allowTranscoding)throw new AppError(400,'VRChat sharing requires Jellyfin transcoding.');
  if(data.target==='website'&&data.videoCodec!=='h264'||data.target==='vrchat'&&data.together)throw new AppError(400,'Choose a valid sharing destination.');
@@ -94,7 +95,8 @@ export async function assertShare(share:Record<string,any>,db=getSql()){
  from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;
  if(!current)throw new AppError(410,'This invitation is unavailable.');
  const config=await getFeatureConfig(current.owner_id,db);
- if(!config.allowPlaybackSharing||current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
+ if(current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
+ if(!config.allowPlaybackSharing)throw new AppError(410,'Playback sharing is no longer available for this link.');
  if(current.target==='vrchat'&&(!config.allowTranscoding||current.video_codec==='hevc'&&!config.allowVrchatHevc))throw new AppError(410,'This VRChat profile is disabled by the administrator.');
  if(!categoryEnabled(config,current.category)||current.together&&!config.experimentalParties)throw new AppError(410,'This medium is disabled.');
  if(['book','comic'].includes(current.kind)&&(!config.features.reader||current.target!=='website'||current.together||!current.source_id||!current.edition))throw new AppError(410,'This reading invitation is unavailable.');

@@ -5,7 +5,7 @@ import { AppError } from '../security/errors';
 import { hashToken, requireAdmin, type SessionUser } from './index';
 import { inviteDefaultsSchema, inviteLimit, jellyfinUserId, uuid, type CoastAccess, type InviteDefaults } from '#lib/auth/invites.js';
 import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
-import { applyJellyfinPreset, provisioningAuthority, validatePresetLibraries } from '#lib/providers/jellyfin/provisioning.server.js';
+import { applyJellyfinPreset, managedAccountAuthority, validatePresetLibraries } from '#lib/providers/jellyfin/provisioning.server.js';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import type { OutboxAction } from '../queue';
 import { assertJobLease } from '../queue/execution';
@@ -13,11 +13,11 @@ import { recordAccountEvent } from './invites.server';
 import { notifyMany } from '../notifications';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
-type Remote = {user_id:string;connection_id:string|null;account_generation:string;remote_id:string|null;lifecycle:string;admin_id:string|null;version:string};
+type Remote = {user_id:string;connection_id:string|null;authority_instance_id:string|null;account_generation:string;remote_id:string|null;lifecycle:string;admin_id:string|null;version:string};
 type RemoteOperation = 'disable'|'restore'|'apply';
 const idBatch = v.pipe(v.array(uuid),v.minLength(1),v.maxLength(20));
 const timestamp = v.pipe(v.string(),v.isoTimestamp());
-const remoteInTransaction = async (tx:Tx,userId:string) => [...await tx.execute<Remote>(sql`select p.user_id,p.connection_id,p.account_generation,p.remote_id,p.lifecycle,c.user_id as admin_id,p.xmin::text as version
+const remoteInTransaction = async (tx:Tx,userId:string) => [...await tx.execute<Remote>(sql`select p.user_id,p.connection_id,p.authority_instance_id,p.account_generation,p.remote_id,p.lifecycle,c.user_id as admin_id,p.xmin::text as version
   from onboarding_provisioning p left join provider_connections c on c.id=p.connection_id
   where p.user_id=${userId} and p.state='complete' for no key update of p`)] as Remote[];
 
@@ -28,15 +28,16 @@ async function stopLocalSessions(tx:Tx,userId:string) {
     where user_id=${userId} and state in ('active','paused','prepared') and expires_at>now()`);
 }
 
-async function queueRemote(tx:Tx,target:Remote,operation:RemoteOperation,reason:'manual'|'expiry'|'access',defaults?:InviteDefaults) {
-  if (!target.admin_id || !target.connection_id || !target.remote_id) {
+async function queueRemote(tx:Tx,target:Remote,operation:RemoteOperation,reason:'manual'|'expiry'|'access',defaults?:InviteDefaults,actorId?:string) {
+  const owner=target.authority_instance_id?target.user_id:target.admin_id;
+  if (!owner || !target.remote_id || !target.authority_instance_id&&!target.connection_id) {
     await tx.execute(sql`update onboarding_provisioning set lifecycle='failed' where user_id=${target.user_id}`);
     return;
   }
   const [change]=await tx.execute<{version:string}>(sql`update onboarding_provisioning set lifecycle=${operation+'-pending'},updated_at=now()
     where user_id=${target.user_id} returning xmin::text as version`);
-  await enqueueInTransaction(tx,{userId:target.admin_id,connectionId:target.connection_id,kind:'jellyfin.member-policy',
-    payload:{userId:target.user_id,version:change.version,operation,reason,previousVersion:target.version,restoreExpiry:target.lifecycle==='disabled-expiry',...(defaults ? {defaults} : {})},
+  await enqueueInTransaction(tx,{userId:owner,connectionId:target.connection_id??undefined,kind:'jellyfin.member-policy',
+    payload:{userId:target.user_id,actorId,version:change.version,operation,reason,previousVersion:target.version,restoreExpiry:target.lifecycle==='disabled-expiry',...(defaults ? {defaults} : {})},
     compactionKey:'member-policy:'+target.user_id});
 }
 
@@ -61,15 +62,15 @@ export async function accountDetails(actor:SessionUser|null,userId:string) {
   }[]>`select u.id,u.username,u.role,u.disabled,u.access_defaults as access,u.membership_expires_at as "expiresAt",
     coalesce(u.settings->>'allowPlaybackSharing'='true',false) as "sharingGranted",
     coalesce(u.membership_expires_at<=now(),false) as expired,
-    p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",p.active_defaults as defaults,p.connection_id as authority,server.name as "authorityName",i.preset_name as "presetName",o.requested_at as "setupStarted",o.completed_at as "readyAt",
+    p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",p.active_defaults as defaults,coalesce(p.authority_instance_id,p.connection_id) as authority,server.name as "authorityName",i.preset_name as "presetName",o.requested_at as "setupStarted",o.completed_at as "readyAt",
     issuer.username as inviter,seen.active_at as "lastActiveAt",g.preset_id as "memberPreset",g.quota,
     case when claim.id is not null then 'Invitation' when o.user_id is not null then 'Registration' else 'Administrator' end as source,
-    exists(select 1 from outbox_actions task where task.user_id=authority.user_id and task.connection_id=p.connection_id
+    exists(select 1 from outbox_actions task where task.user_id=case when p.authority_instance_id is not null then p.user_id else authority.user_id end and task.connection_id is not distinct from p.connection_id
       and task.compaction_key='member-policy:'||p.user_id::text and task.kind='jellyfin.member-policy' and task.state='failed'
       and task.payload->>'version'=p.xmin::text) as "remoteFailure"
     from users u left join user_onboarding o on o.user_id=u.id left join onboarding_provisioning p on p.user_id=u.id
     left join provider_connections authority on authority.id=p.connection_id
-    left join provider_instances server on server.id=authority.instance_id
+    left join provider_instances server on server.id=coalesce(p.authority_instance_id,authority.instance_id)
     left join user_presence seen on seen.user_id=u.id
     left join invite_claims claim on claim.user_id=u.id left join registration_invites i on i.id=claim.invite_id left join users issuer on issuer.id=i.created_by
     left join member_invite_grants g on g.user_id=u.id where u.id=${v.parse(uuid,userId)}`;
@@ -108,14 +109,14 @@ export async function manageAccount(actor:SessionUser|null,userId:string,raw:unk
         if(user.expired||user.applied)await stopLocalSessions(tx,userId);
         if(remote && (user.expired||user.applied)){
           const [pending]=remote.lifecycle==='disable-pending' ? await tx.execute<{eligible:boolean}>(sql`select true as eligible from outbox_actions
-            where user_id=${remote.admin_id} and connection_id=${remote.connection_id} and compaction_key=${'member-policy:'+userId}
+            where user_id=${remote.authority_instance_id?remote.user_id:remote.admin_id} and connection_id is not distinct from ${remote.connection_id}::uuid and compaction_key=${'member-policy:'+userId}
               and payload->>'version'=${remote.version} and payload->>'reason'='expiry' limit 1`) : [];
-          if(remote.lifecycle==='disabled-expiry'||pending?.eligible)await queueRemote(tx,remote,'restore','expiry');
+          if(remote.lifecycle==='disabled-expiry'||pending?.eligible)await queueRemote(tx,remote,'restore','expiry',undefined,admin.id);
         }
       } else {
         if(!remote)throw new AppError(409,'This Jellyfin account is managed outside Coast.');
         if(action==='jellyfin-restore'&&user.expired)throw new AppError(409,'Renew the membership before restoring Jellyfin access.');
-        await queueRemote(tx,remote,action==='jellyfin-disable'?'disable':'restore','manual');
+        await queueRemote(tx,remote,action==='jellyfin-disable'?'disable':'restore','manual',undefined,admin.id);
         if(action==='jellyfin-disable')await stopLocalSessions(tx,userId);
       }
     }
@@ -152,14 +153,16 @@ export async function expireMemberships() {
 }
 
 export async function executeMemberPolicy(job:OutboxAction) {
-  const {userId,version,operation,reason,defaults,previousVersion,restoreExpiry}=v.parse(v.object({userId:uuid,version:v.string(),operation:v.picklist(['disable','restore','apply']),
+  const {userId,actorId,version,operation,reason,defaults,previousVersion,restoreExpiry}=v.parse(v.object({userId:uuid,actorId:v.optional(uuid),version:v.string(),operation:v.picklist(['disable','restore','apply']),
     reason:v.picklist(['manual','expiry','access']),defaults:v.optional(inviteDefaultsSchema),previousVersion:v.optional(v.string()),restoreExpiry:v.optional(v.boolean())}),job.payload);
   const db=getSql();
-  const [target]=await db`select p.*,u.disabled,u.membership_expired_at,coalesce(u.membership_expires_at<=now(),false) as expired
-    from onboarding_provisioning p join users u on u.id=p.user_id where p.user_id=${userId} and p.connection_id=${job.connectionId}
+  const [target]=await db`select p.*,c.user_id as admin_id,u.disabled,u.membership_expired_at,coalesce(u.membership_expires_at<=now(),false) as expired
+    from onboarding_provisioning p join users u on u.id=p.user_id left join provider_connections c on c.id=p.connection_id
+    where p.user_id=${userId} and p.connection_id is not distinct from ${job.connectionId??null}::uuid
+      and case when p.authority_instance_id is not null then p.user_id else c.user_id end=${job.userId}::uuid
       and p.xmin::text=${version} and p.state='complete'`;
   if(!target)return;
-  const authority=await provisioningAuthority(job.userId,target.connection_id,target.account_generation);
+  const authority=await managedAccountAuthority(target as Parameters<typeof managedAccountAuthority>[0]);
   const remote=await authority.adapter.userForProvisioning(target.remote_id);
   if(remote.Policy.IsAdministrator!==false)throw new AppError(403,'Managed accounts must be non-administrators.');
   let lifecycle='active';
@@ -181,7 +184,7 @@ export async function executeMemberPolicy(job:OutboxAction) {
     if(target.expired)throw new AppError(409,'Renew this membership first.');
     const wasDisabled = remote.Policy.IsDisabled===true;
     const [previous]=reason==='expiry' && previousVersion ? await db`select 1 from outbox_actions
-      where user_id=${job.userId} and connection_id=${job.connectionId} and compaction_key=${'member-policy:'+userId}
+      where user_id=${job.userId} and connection_id is not distinct from ${job.connectionId??null}::uuid and compaction_key=${'member-policy:'+userId}
       and payload->>'version'=${previousVersion} and payload->>'disabledByCoast'='true' limit 1` : [];
     if(wasDisabled && (reason==='manual'||restoreExpiry||previous))
       await authority.adapter.setProvisionPolicy(target.remote_id,{...remote.Policy,IsDisabled:false});
@@ -201,12 +204,13 @@ export async function executeMemberPolicy(job:OutboxAction) {
     if(!rows.length)return;
     if (operation==='apply' && defaults) {
       await writeAccess(tx,userId,defaults.access,shareGrant(defaults));
-      const [member]=await tx.execute<{id:string}>(sql`select c.id from provider_connections c join provider_connections a on a.instance_id=c.instance_id
-        where a.id=${job.connectionId} and c.user_id=${userId} and c.status='connected' limit 1`);
+      const [member]=await tx.execute<{id:string}>(sql`select c.id from provider_connections c
+        where c.instance_id=${authority.instance.id} and c.user_id=${userId} and c.status='connected' limit 1`);
       if(member && lifecycle==='active')await enqueueInTransaction(tx,{userId,connectionId:member.id,kind:'jellyfin.sync',
         payload:{_jobPurpose:'scheduled'},compactionKey:'jellyfin.sync'});
     }
-    await tx.execute(sql`insert into account_audit(event,actor_id,subject_id) values(${'jellyfin.'+operation},${job.userId},${userId})`);
+    await tx.execute(sql`insert into account_audit(event,actor_id,subject_id)
+      values(${'jellyfin.'+operation},(select id from users where id=${actorId??target.admin_id??null}::uuid),${userId})`);
   });
 }
 
@@ -223,11 +227,11 @@ export async function reviewProvisioning(actor:SessionUser|null,userId:string,ra
     verifiedAbsent:v.optional(v.literal(true)),
   }),v.check(value=>!!value.remoteId!==!!value.verifiedAbsent,'Choose one reviewed outcome.')),raw);
   const db=getSql();
-  const [target]=await db`select p.*,u.username,c.user_id as authority from onboarding_provisioning p
-    join users u on u.id=p.user_id join provider_connections c on c.id=p.connection_id
+  const [target]=await db`select p.*,u.username,c.user_id as admin_id from onboarding_provisioning p
+    join users u on u.id=p.user_id left join provider_connections c on c.id=p.connection_id
     where p.user_id=${v.parse(uuid,userId)} and p.remote_id is null and (p.state='uncertain' or p.state='creating' and p.updated_at<now()-interval '2 minutes')`;
   if(!target)throw new AppError(409,'This account has no uncertain Jellyfin creation to review.');
-  const {adapter,instance}=await provisioningAuthority(target.authority,target.connection_id,target.account_generation);
+  const {adapter,instance}=await managedAccountAuthority(target as Parameters<typeof managedAccountAuthority>[0]);
   if(verifiedAbsent)return db.begin(async tx=>{
     const [reviewed]=await tx`update onboarding_provisioning set state='pending',updated_at=now()
       where user_id=${userId} and remote_id is null and state=${target.state} and date_trunc('milliseconds',updated_at)=${target.updated_at} returning user_id`;
@@ -267,7 +271,7 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
     const revision=draftVersion??preset.version;
     const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null;sharing_granted:boolean}>(sql`
       select u.id,u.username,u.access_defaults as access,concat(u.xmin::text,'/',p.xmin::text,'/',${revision}::text) as version,
-       p.connection_id as authority,p.lifecycle,coalesce(u.settings->>'allowPlaybackSharing'='true',false) as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
+       coalesce(p.authority_instance_id,p.connection_id) as authority,p.lifecycle,coalesce(u.settings->>'allowPlaybackSharing'='true',false) as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
       from users u left join onboarding_provisioning p on p.user_id=u.id
       where u.id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) and u.role='user'
       order by u.id ${input.confirm ? sql`for no key update of u` : sql``}`);
@@ -300,7 +304,7 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
         if(item.before.libraryOnly||item.after.libraryOnly)fenced.libraryOnly=true;
         await writeAccess(tx,item.id,fenced,grant===false ? false : null);
         const [remote]=await remoteInTransaction(tx,item.id);
-        await queueRemote(tx,remote,'apply','access',defaults);
+        await queueRemote(tx,remote,'apply','access',defaults,admin.id);
       } else {
         await writeAccess(tx,item.id,item.after,grant);
       }

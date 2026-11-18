@@ -7,7 +7,7 @@ import { rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
-import { getFeatureConfig } from '../features';
+import { featureDenialMessage,getFeatureConfig } from '../features';
 import { seerrAllows, SeerrPermission } from '../../providers/seerr/adapter.server';
 import * as s from '../db/schema';
 import { mediaViewsForIds, nextPlayable, permittedAvailability } from './media';
@@ -174,6 +174,8 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
     ],
     requestTarget,
     requestsEnabled: config.enableRequests && seerr.length > 0,
+    requestUnavailable:!config.features.requests?featureDenialMessage(config.featureDenials.requests)
+      :!seerr.length?'Ask a Coast admin to configure Seerr.':undefined,
     refreshTarget,
     playable,
     editions: [...new Set(sources.map((source) => source.edition ?? ''))],

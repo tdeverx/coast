@@ -178,7 +178,7 @@
    {#each links.data as link (link.id)}
     <MediaCard item={{...link.card,captionTitle:link.title,captionSubtitle:link.target==='vrchat'?'VRChat':'Website',rating:null}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} activityProgress={null}>
      {#snippet cornerMenu()}
-      <Button item icon="link" disabled={copying||!link.canCopy} disabledReason={link.canCopy?undefined:'This older link has no stored URL to copy.'} onclick={()=>void copyLink(link)}>Copy link</Button>
+      <Button item icon="link" disabled={copying||!link.canCopy} disabledReason={!link.canCopy?link.copyUnavailable??'This link has no saved URL.':undefined} onclick={()=>void copyLink(link)}>Copy link</Button>
       <div class="menu-divider" role="separator"></div>
       <Button item icon="close" danger disabled={acting} onclick={()=>{pendingAction={kind:'revoke',id:link.id,title:link.title};}}>Revoke link…</Button>
      {/snippet}

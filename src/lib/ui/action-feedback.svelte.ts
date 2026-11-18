@@ -1,5 +1,5 @@
 import { onDestroy, untrack, type Snippet } from 'svelte';
-import { api, message, refreshAfterChange } from './client';
+import { api, coastConnectionMessage, message, refreshAfterChange } from './client';
 import { page } from '$app/state';
 import { createFeedbackNotifications, type FeedbackRecord } from './controls/feedback-notifications';
 
@@ -13,6 +13,7 @@ export const temporaryFeedback = (notice: ActionNotice) => notice.kind === 'info
 /** One delivery channel per client scope. Preview clients never publish into the application. */
 export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=>void,viewer?:()=>string|undefined) {
   const state = $state<{ notices: ActionNotice[]; hosts: string[]; notifications?: Snippet }>({ notices: [], hosts: [] });
+  let connectionNotice:{viewer?:string;until:number}|undefined;
   const current = () => {
     const viewerId = viewer?.();
     return state.notices.findLast(notice => notice.viewerId === viewerId) ?? null;
@@ -27,7 +28,14 @@ export function createFeedback(record?:(notice:FeedbackRecord,viewerId?:string)=
   }
   function notify(text: string, undo?: () => Promise<void>) { publish({ text, undo, kind: 'info', busy: false, error: '' }); }
   function pending(text: string, owner: symbol) { publish({ text, owner, kind: 'info', busy: true, error: '' }); }
-  function failure(text: string, retry?: () => unknown, owner?: symbol, actionLabel?:string) { publish({ text, retry, owner, actionLabel, kind: 'error', busy: false, error: '' }); }
+  function failure(text: string, retry?: () => unknown, owner?: symbol, actionLabel?:string) {
+    if(text===coastConnectionMessage){
+      const viewerId=viewer?.(),now=Date.now();
+      if(connectionNotice&&connectionNotice.viewer===viewerId&&connectionNotice.until>now)return;
+      connectionNotice={viewer:viewerId,until:now+30_000};
+    }
+    publish({ text, retry, owner, actionLabel, kind: 'error', busy: false, error: '' });
+  }
   function clear(owner?: symbol) {
     const viewerId = viewer?.();
     if (owner) state.notices = state.notices.filter(value => value.viewerId !== viewerId || value.owner !== owner);

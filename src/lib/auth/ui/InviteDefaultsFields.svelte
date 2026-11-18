@@ -66,9 +66,9 @@
   </select>
 </label>{/if}
 {#if defaults.account!=='coast'}
-  {#if !accessOnly}<label class="field">Jellyfin administrator
+  {#if !accessOnly}<label class="field">Jellyfin management access
     <select value={defaults.connectionId??''} onchange={event=>{defaults.connectionId=event.currentTarget.value||undefined;defaults.folders=[];}}>
-      <option value="">Choose an account</option>
+      <option value="">Choose a server API key or Jellyfin admin account</option>
       {#each connections as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
     </select>
   </label>{/if}

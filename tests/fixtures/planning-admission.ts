@@ -30,9 +30,9 @@ function fixture(options:any={}){
 const module=async(source:string)=>{
  source=source.replace("import { requireFeature, getFeatureConfig } from '#lib/server/features.js';",`const requireFeature=(...args)=>globalThis[Symbol.for('coast.audit.planning-command-controls')].requireFeature(...args);const getFeatureConfig=()=>{throw Error('unrelated_reader');};`)
  .replace("import { getSql } from '#lib/server/db/index.js';",`const getSql=()=>globalThis[Symbol.for('coast.audit.planning-command-controls')].db;`)
- .replace(/import \{ requireFriend(?:, requireFriends)? \} from '#lib\/social\/service.server\.js';/,`const requireFriend=(...args)=>globalThis[Symbol.for('coast.audit.planning-command-controls')].requireFriend(...args);const requireFriends=(...args)=>globalThis[Symbol.for('coast.audit.planning-command-controls')].requireFriends(...args);`)
+ .replace("import { requireFriends } from '#lib/social/service.server.js';",`const requireFriends=(...args)=>globalThis[Symbol.for('coast.audit.planning-command-controls')].requireFriends(...args);`)
  .replace("import { workCards } from '#lib/collection/query.server.js';",`const workCards=()=>{throw Error('unrelated_hydration');};`)
- .replace("import { notify } from '#lib/server/notifications/index.js';",`const notify=()=>{throw Error('reminder_not_in_scope');};`);
+ .replace("import { notify, notifyMany } from '#lib/server/notifications/index.js';",`const notify=()=>{throw Error('reminder_not_in_scope');};const notifyMany=notify;`);
  let code=new Bun.Transpiler({loader:'ts'}).transformSync(source);code=code.replace(/(^\s*import[^\n]*\bfrom\s+)(['"])([^'"\n]+)\2/gm,(_m:string,lead:string,_quote:string,spec:string)=>lead+JSON.stringify(spec.startsWith('#lib/')?resolve(root,'src/lib',spec.slice(5)):Bun.resolveSync(spec,root)));return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 };
 try{

@@ -12,7 +12,22 @@ import { providerCache } from '../server/utils/provider-cache';
 import { mapConcurrent } from '../server/utils/async';
 import type { MediaInsights, PersonDetails } from '#lib/media/details.js';
 import { error } from '@sveltejs/kit';
-const insightsCache = providerCache<MediaInsights>(100, 15 * 60_000, (value) => !value.incomplete);
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+const insightsCache = providerCache<MediaInsights|null>(100, 15 * 60_000, (value) => !!value&&!value.incomplete);
+const missingInsights=providerCache<null>(100,5*60_000);
+function optionalInsights(key:string,load:()=>Promise<MediaInsights|null>) {
+  if(missingInsights.peek(key)===null)return null;
+  return insightsCache(key,async()=>{
+    try {
+      const result=await load();
+      if(!result)missingInsights.store(key,null);
+      return result;
+    }catch(cause){
+      if(cause instanceof ProviderHttpError&&[404,410].includes(cause.status))return missingInsights.store(key,null);
+      throw cause;
+    }
+  });
+}
 const peopleCache = providerCache<PersonDetails>();
 export async function personDetailData(userId:string,id:number){
  if(!Number.isSafeInteger(id)||id<1)throw new AppError(404,'This person was not found.');
@@ -50,13 +65,13 @@ export async function titleInsights(userId: string, id: string, source: string, 
   if (source === 'trakt') {
     const community = await getTraktCommunity();
     if (!community) return null;
-    return insightsCache(`trakt:${community.instanceId}:${id}:${page}`, async () => {
+    return optionalInsights(`trakt:${community.instanceId}:${id}:${page}`, async () => {
       const { adapter } = community;
       const ids = await adapter.lookupIds(
         media.kind === 'movie' ? 'movie' : 'show',
         identity.externalId
       );
-      if (!ids) error(404, 'This title is not listed on Trakt.');
+      if (!ids) return null;
       const path = `/${media.kind === 'movie' ? 'movies' : 'shows'}/${ids.trakt}${child ? `/seasons/${child.seasonNumber}` : ''}${episode ? `/episodes/${episode.episodeNumber}` : ''}`;
       return adapter.community(path, page);
     });
@@ -65,7 +80,7 @@ export async function titleInsights(userId: string, id: string, source: string, 
     adapter = await getTmdb('en-US', region);
   if (!adapter) return null;
   const path = `${media.kind === 'movie' ? 'movie' : 'tv'}/${encodeURIComponent(identity.externalId)}${child ? `/season/${child.seasonNumber}` : ''}${episode ? `/episode/${episode.episodeNumber}` : ''}`;
-  return insightsCache(`tmdb:${adapter.cacheScope}:${region}:${path}:${page}`, () => adapter.insights(path, page));
+  return optionalInsights(`tmdb:${adapter.cacheScope}:${region}:${path}:${page}`, () => adapter.insights(path, page));
 }
 export async function personDetails(id: number) {
   const adapter = await getTmdb();

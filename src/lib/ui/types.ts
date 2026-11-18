@@ -144,11 +144,6 @@ export interface PlaybackView {
   startPaused?: boolean;
   handoff?: boolean;
   playedBeforeRefresh?: number;
-  subtitles: {
-    index: number;
-    label: string;
-    language?: string;
-    url?: string;
-  }[];
+  subtitles: import('#lib/playback/subtitles.js').SubtitleTrack[];
   sources: { id: string; label: string; edition?: string }[];
 }

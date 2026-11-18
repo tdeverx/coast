@@ -8,6 +8,8 @@
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import Heading from './Heading.svelte';
+  import { createResource } from '#lib/ui/resource.svelte.js';
+  import { onDestroy } from 'svelte';
 
   import ProviderAutomation from './ProviderAutomation.svelte';
   import type { ProviderSchedule } from '#lib/providers/schedule.js';
@@ -20,6 +22,8 @@
     name: string;
     baseUrl: string;
     lanUrl?: string | null;
+    managementKeyConfigured?:boolean;
+    subtitleAuthority?:'viewer'|'server';
     enabled: boolean;
     allowPrivateNetwork: boolean;
     linkedMediaInstanceId: string | null;
@@ -36,18 +40,44 @@
     name = $state(''),
     baseUrl = $state(''),
     lanUrl = $state(''),
+    subtitleAuthority = $state<'viewer'|'server'>('viewer'),
+    removeJellyfinKey = $state(false),
     linked = $state(''),
     privateNetwork = $state(false),
     busy = $state(false),
     error = $state('');
   let changing=$state<Instance|null>(null),impact=$state<SourceImpact|null>(null);
   let deleting = $state<Instance | null>(null);
+  type SubtitleReview={itemId:string;sourceId:string;fingerprint:string;label:string;title:string};
+  const subtitleReview=createResource<SubtitleReview[]>([]);
+  onDestroy(subtitleReview.dispose);
+  let reviewInstance=$state<Instance|null>(null),removingSubtitle=$state<SubtitleReview|null>(null);
+  async function reviewSubtitles(instance:Instance){
+    if(reviewInstance?.id!==instance.id)subtitleReview.replace([]);
+    removingSubtitle=null;
+    reviewInstance=instance;
+    await subtitleReview.load(signal=>api(`providers/${instance.id}/subtitle-review`,undefined,'GET',{signal}));
+  }
+  async function removeSubtitle() {
+    if(!reviewInstance||!removingSubtitle||busy)return;
+    const instance=reviewInstance;
+    const {itemId,sourceId,fingerprint}=removingSubtitle;
+    busy=true;
+    try{
+      await api(`providers/${instance.id}/subtitle-review`,{itemId,sourceId,fingerprint},'POST');
+      feedback.notify('Subtitle removed from Jellyfin.');
+      await reviewSubtitles(instance);
+    }catch(cause){feedback.failure(message(cause));}
+    finally{busy=false;}
+  }
   function edit(instance: Instance | null) {
     editing = instance;
     provider = instance?.provider ?? 'tmdb';
     name = instance?.name ?? '';
     baseUrl = instance?.baseUrl ?? '';
     lanUrl = instance?.lanUrl ?? '';
+    subtitleAuthority = instance?.subtitleAuthority ?? 'viewer';
+    removeJellyfinKey = false;
     linked = instance?.linkedMediaInstanceId ?? '';
     privateNetwork = instance?.allowPrivateNetwork ?? false;
     error = '';
@@ -69,6 +99,8 @@
         name,
         baseUrl: ['jellyfin', 'seerr'].includes(provider) ? baseUrl : undefined,
         lanUrl: provider === 'jellyfin' ? lanUrl : undefined,
+        subtitleAuthority: provider === 'jellyfin' ? subtitleAuthority : undefined,
+        removeJellyfinKey: provider === 'jellyfin' ? removeJellyfinKey : undefined,
         linkedMediaInstanceId: linked || undefined,
         allowPrivateNetwork: privateNetwork,
       });
@@ -148,6 +180,9 @@
           >
             <Button item icon="settings" keepOpen={false} onclick={() => edit(instance)}
               >Edit integration</Button>
+            {#if instance.enabled&&instance.managementKeyConfigured}
+              <Button item keepOpen={false} onclick={()=>void reviewSubtitles(instance)}>Review subtitle downloads</Button>
+            {/if}
             <Button item
               icon={instance.enabled ? 'pause' : 'play'}
               keepOpen={false}
@@ -170,6 +205,28 @@
       <ProviderAutomation {instance} />
     </div>{/each}
 </div>
+<Dialog open={!!reviewInstance} onclose={()=>{if(!busy){reviewInstance=null;removingSubtitle=null;subtitleReview.cancel();}}} title="Subtitle downloads">
+  <div class="stack">
+    {#if removingSubtitle}
+      <p>Remove {removingSubtitle.label} for {removingSubtitle.title} from Jellyfin? This removes the subtitle for every viewer. Confirm it is broken before removing it.</p>
+      <div class="row">
+        <Button danger disabled={busy} onclick={()=>void removeSubtitle()}>Remove subtitle</Button>
+        <Button disabled={busy} onclick={()=>{removingSubtitle=null;}}>Cancel</Button>
+      </div>
+    {:else if subtitleReview.busy}
+      <p role="status">Checking subtitle downloads…</p>
+    {:else if subtitleReview.error}
+      <p role="status">{subtitleReview.error}</p>
+    {:else if subtitleReview.data.length}
+      <p>These Coast downloads failed to load. A network interruption can also cause a load failure.</p>
+      {#each subtitleReview.data as track (`${track.itemId}:${track.sourceId}:${track.fingerprint}`)}
+        <div class="spread"><span>{track.title} · {track.label}</span><Button emphasis="subtle" onclick={()=>{removingSubtitle=track;}}>Review removal</Button></div>
+      {/each}
+    {:else}
+      <p>No subtitle downloads need review.</p>
+    {/if}
+  </div>
+</Dialog>
 <Dialog open={!!changing} onclose={()=>changing=null} title="Disable this Collection source?">
   <div class="stack"><p>Existing tracking stays in Coast. Remote Trakt entries stay until their owner approves cleanup.</p>
 
@@ -234,7 +291,22 @@
           bind:value={lanUrl}
           type="url"
           placeholder="http://192.168.0.18:8096"
-        /><small>Used by the Coast server for this Jellyfin instance. Keep the public URL above. Playback quality limits still apply to every viewer.</small></Field>{/if}
+        /><small>Used by the Coast server for this Jellyfin instance. Keep the public URL above. Playback quality limits still apply to every viewer.</small></Field>
+        <Field label="Jellyfin server API key"><input name="apiKey" type="password" autocomplete="off" disabled={removeJellyfinKey} />
+          <small>{editing?.managementKeyConfigured?'Leave blank to keep the current key. ':'Optional. '}Create a key in Jellyfin Dashboard → API Keys. The key has server-wide admin access. Coast verifies it when you save.</small>
+        </Field>
+        {#if editing?.managementKeyConfigured}
+          <p class="small">Replacing this key requires new codes for unclaimed managed invites. Existing accounts keep their personal connections.</p>
+        {/if}
+        {#if editing?.managementKeyConfigured}<label class="check"><input type="checkbox" bind:checked={removeJellyfinKey} />Remove the current key</label>{/if}
+        <Field label="Subtitle search and downloads">
+          <select bind:value={subtitleAuthority} disabled={removeJellyfinKey}>
+            <option value="viewer">Use the viewer’s Jellyfin permissions</option>
+            <option value="server">Use the Jellyfin server API key</option>
+          </select>
+          <small>Viewers can only search or download subtitles for media they can play. Jellyfin needs a configured subtitle provider.</small>
+        </Field>
+      {/if}
       {#if editing && provider !== 'jellyfin'}<p class="small">
           Leave credential fields empty to keep the current credentials.
         </p>{/if}

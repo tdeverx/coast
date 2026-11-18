@@ -30,7 +30,7 @@
   <div class="stack">
     {#if invites.data.grant}
       <p>{invites.data.grant.remaining} of {invites.data.grant.quota} invites available in your rolling 30-day allowance.</p>
-    {:else if invites.data.request!=='approved'}<p>An administrator can give you access to invite people.</p>{/if}
+    {:else if invites.data.request!=='approved'&&invites.data.request!=='pending'}<p>Ask a Coast admin for permission to create an invite.</p>{/if}
     {#if (invites.data.grant?.remaining??0)>0||invites.data.request==='approved'}
         <form class="row" onsubmit={event=>{event.preventDefault();void apply(async()=>{
           const result=await api<{code:string}>('member-invites',{label},'POST');
@@ -40,11 +40,11 @@
           <Button type="submit" disabled={busy}>Create invite</Button>
         </form>
     {/if}
-    {#if invites.data.request==='pending'}<p role="status">Your request is waiting for an administrator.</p>
+    {#if invites.data.request==='pending'}<p role="status">Your request is waiting for a Coast admin.</p>
     {:else if invites.data.request==='approved'}<p>One additional invite was approved.</p>
     {:else if !invites.data.grant||!invites.data.grant.remaining}
       <form class="row" onsubmit={event=>{event.preventDefault();void apply(()=>api('member-invites/request',{note},'POST'),'Invite request sent.');}}>
-        <label class="field">Note for the administrator<input bind:value={note} maxlength="120" /></label>
+        <label class="field">Note for the Coast admin<input bind:value={note} maxlength="120" /></label>
         <Button type="submit" disabled={busy}>Request {invites.data.grant?'an extra invite':'an invite'}</Button>
       </form>
     {/if}

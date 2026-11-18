@@ -3,9 +3,9 @@ import { categoryEnabled } from '#lib/experimental.js';
 import * as v from 'valibot';
 import { getSql } from '#lib/server/db/index.js';
 import { AppError } from '#lib/server/security/errors.js';
-import { requireFriend, requireFriends } from '#lib/social/service.server.js';
+import { requireFriends } from '#lib/social/service.server.js';
 import { workCards } from '#lib/collection/query.server.js';
-import { notify } from '#lib/server/notifications/index.js';
+import { notify, notifyMany } from '#lib/server/notifications/index.js';
 import { pagination,PAGE_SIZE } from '#lib/server/queries/pagination.js';
 const uuid=v.pipe(v.string(),v.uuid());
 async function enabled(userId:string){return requireFeature(userId,'planning');}
@@ -62,5 +62,14 @@ export async function remindPlan(userId:string,id:string){
  if(!row||new Date(row.starts_at).getTime()<Date.now()||!(await getFeatureConfig(userId)).features.planning)return;
  await notify({userId,kind:'planning',sourceKey:`plan:${id}`,title:'Your plan is coming up',body:'Open Planning to start or change this plan.',data:{actorId:userId,subjectId:id,destination:'/planning',workId:row.work_id}});
  // Participants receive a plan notification only while the friendship still exists.
- if(row.party)for(const friend of row.friends){try{await requireFriend(userId,friend);}catch{continue;}await notify({userId:friend,kind:'planning',sourceKey:`plan:${id}`,title:row.username,body:`Planned a party for ${new Date(row.starts_at).toISOString()}. The host will send a party invitation when it starts.`,data:{actorId:userId,subjectId:id,workId:row.work_id,destination:'/for-you?friends=true'}});}
+ if(row.party&&row.friends.length){
+   const db=getSql();
+   const participants=await db<{id:string}[]>`select u.id from users u
+     join friendships f on f.user_a=least(u.id,${userId}::uuid) and f.user_b=greatest(u.id,${userId}::uuid) and f.state='accepted'
+     where u.id=any(${db.array(row.friends,'TEXT')}::uuid[]) and coast_feature_enabled(u.id,'parties')`;
+   const time=new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(row.starts_at));
+   await notifyMany(participants.map(friend=>({userId:friend.id,kind:'planning',sourceKey:`plan:${id}`,title:`${row.username} planned a party`,
+       body:`${time} UTC. You’ll get a separate invitation when the party starts.`,
+       data:{actorId:userId,subjectId:id,workId:row.work_id,destination:'/for-you?friends=true'}})),db);
+ }
 }

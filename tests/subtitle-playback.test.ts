@@ -2,8 +2,21 @@ import { expect, test } from 'bun:test';
 import { JellyfinAdapter } from '../src/lib/providers/jellyfin/adapter.server';
 import { planPlayback } from '../src/lib/playback/planning';
 import { qualityStreamPath } from '../src/lib/playback/quality';
+import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { addedSubtitleTrack, subtitleLanguage, type JellyfinSubtitle } from '../src/lib/playback/subtitles';
 import type { BrowserCapabilities, PlaybackSource } from '../src/lib/providers/contracts';
+
+test('Jellyfin management credentials must access libraries and have no personal user identity',async()=>{
+  const server=new JellyfinAdapter(async path=>{
+    if(path==='/Library/VirtualFolders')return [];
+    throw new ProviderHttpError(400);
+  },'server');
+  await expect(server.verifyManagementKey()).resolves.toBeUndefined();
+  const personal=new JellyfinAdapter(async path=>path==='/Library/VirtualFolders'?[]:{Id:'viewer'},'viewer');
+  await expect(personal.verifyManagementKey()).rejects.toThrow('personal Jellyfin account');
+  const forbidden=new JellyfinAdapter(async()=>{throw new ProviderHttpError(403);},'viewer');
+  await expect(forbidden.verifyManagementKey()).rejects.toMatchObject({status:403});
+});
 
 test('Jellyfin searches only through OpenSubtitles results and downloads the selected provider ID', async () => {
   const calls: { path: string; method: string }[] = [];

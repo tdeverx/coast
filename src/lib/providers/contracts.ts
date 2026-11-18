@@ -52,6 +52,7 @@ export interface MediaStream {
   isDefault?: boolean;
   isForced?: boolean;
   isExternal?: boolean;
+  subtitleFingerprint?: string;
   deliveryUrl?: string;
   deliveryMethod?: string;
   width?: number;

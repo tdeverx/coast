@@ -127,7 +127,7 @@ export function subtitleLanguage(value: string | undefined): string | undefined 
   }
 }
 
-export type SubtitleTrack = { index: number; label: string; language?: string; url?: string };
+export type SubtitleTrack = { index: number; label: string; language?: string; url?: string; fingerprint?:string };
 export type SubtitleSelection = { availabilityId: string; sourceId: string; index: number };
 export type SubtitleOptions = {
   tracks: SubtitleTrack[];
@@ -171,7 +171,8 @@ export function addedSubtitleTrack(before: JellyfinSubtitle[], after: JellyfinSu
   return matches.length === 1 ? matches[0] : undefined;
 }
 export function subtitleTrack(stream: MediaStream): SubtitleTrack {
-  return { index: stream.index, language: stream.language, label: stream.title || stream.language || `Subtitle ${stream.index + 1}` };
+  return { index: stream.index, language: stream.language, label: stream.title || stream.language || `Subtitle ${stream.index + 1}`,
+    ...(stream.subtitleFingerprint?{fingerprint:stream.subtitleFingerprint}:{}) };
 }
 export function subtitlePath(itemId: string, sourceId: string, index: number) {
   return `/Videos/${encodeURIComponent(itemId)}/${encodeURIComponent(sourceId)}/Subtitles/${index}/0/Stream.vtt`;

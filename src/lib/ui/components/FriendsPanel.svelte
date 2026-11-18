@@ -29,6 +29,7 @@
  import type {FriendEntry} from '#lib/social/model.js';
  let {open=$bindable(false),onclose,initialView='accepted'}:{open:boolean;onclose?:()=>void;initialView?:'accepted'|'pending'|'party'}=$props();
  const restricted=$derived(page.data.user?.access?.libraryOnly===true);
+ const canManageInvites=$derived(page.data.user?.role==='admin');
  let segment=$state<string>(untrack(()=>initialView)),number=$state(1),username=$state(''),busy=$state(false),failure=$state('');
  const activeSegment=$derived(restricted?'invites':segment);
  // Preview panels never observe the signed-in user's party or call its controller.
@@ -119,7 +120,12 @@
   </div>{/snippet}
  </Heading>{/snippet}
 
- {#if open&&activeSegment==='invites'}<MemberInvites />
+ {#if open&&activeSegment==='invites'}
+  {#if canManageInvites}
+   <Button href="/settings/users?view=invites" icon="user" onclick={()=>{open=false;onclose?.();}}>Manage Coast invites</Button>
+  {:else}
+   <MemberInvites />
+  {/if}
  {:else if activeSegment==='party'}
   <div class="party-list">
 

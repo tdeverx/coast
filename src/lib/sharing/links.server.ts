@@ -8,6 +8,9 @@ import type { MediaCardDisplay } from '#lib/ui/types.js';
 import { publicSharePath, viewerIdleSeconds } from './policy';
 import { assertShare } from './service.server';
 import type { ShareTarget } from './vrchat-profile';
+import { featureDenialMessage,getFeatureConfig } from '#lib/server/features.js';
+import { categoryEnabled } from '#lib/experimental.js';
+import type { MediaCategory } from '#lib/media/model.js';
 
 function activeLinks(db: ReturnType<typeof getSql>, ownerId: string) {
   return db`s.owner_id=${ownerId} and s.revoked_at is null and s.expires_at>now()`;
@@ -23,25 +26,45 @@ export async function activeShareExpiry(actor: SessionUser | null) {
 
 export async function listActiveShares(actor: SessionUser | null) {
   const user = requireUser(actor), db = getSql();
-  const rows = await db<{ id: string; workId: string; kind: 'movie'|'episode'|'track'|'book'|'comic'; target: ShareTarget; title: string; expiresAt: Date; viewers: number; canCopy: boolean }[]>`
-    select s.id,s.work_id as "workId",w.kind,s.target,coalesce(m.title,mw.title,rw.title,'Shared item') as title,s.expires_at as "expiresAt",
+  const rows = await db<{ id:string;workId:string;kind:'movie'|'episode'|'track'|'book'|'comic';category:MediaCategory;
+    target:ShareTarget;title:string;expiresAt:Date;viewers:number;canCopy:boolean;accessible:boolean;together:boolean;codec:string }[]>`
+    select s.id,s.work_id as "workId",w.kind,w.category,s.target,s.together,s.video_codec as codec,
+      coalesce(m.title,mw.title,rw.title,'Shared item') as title,s.expires_at as "expiresAt",
       s.encrypted_token is not null as "canCopy",
+      c.status='connected' and c.account_generation=s.account_generation and i.enabled and exists(
+        select 1 from availability a join provider_items pi on pi.id=a.provider_item_id
+        where a.user_id=s.owner_id and a.connection_id=s.connection_id and a.media_id=s.work_id and a.state='available'
+          and (w.kind not in ('book','comic') or replace(lower(pi.external_id),'-','')=replace(lower(s.source_id),'-',''))
+      ) as accessible,
       (select count(*)::int from share_viewers v left join playback_sessions p on p.id=v.playback_id left join reading_sessions r on r.id=v.reading_session_id
        where v.share_id=s.id and v.ended_at is null and (p.state<>'stopped' or r.closed_at is null and r.expires_at>now())
          and v.last_seen_at>now()-${viewerIdleSeconds}*interval '1 second') as viewers
     from playback_shares s
     join works w on w.id=s.work_id
+    left join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id
+    left join provider_instances i on i.id=c.instance_id
     left join media m on m.id=s.work_id
     left join music_works mw on mw.id=s.work_id
     left join reading_works rw on rw.id=s.work_id
     where ${activeLinks(db, user.id)}
     order by s.created_at desc,s.id desc limit 20
   `;
-  const cards = new Map((await workCards(user.id, user.id, [...new Set(rows.map(row => row.workId))]))
+  if(!rows.length)return [];
+  const [config,items]=await Promise.all([getFeatureConfig(user.id),workCards(user.id,user.id,[...new Set(rows.map(row=>row.workId))])]);
+  const cards = new Map(items
     .map(card => [('workId' in card ? card.workId : undefined) ?? card.id, card]));
-  return rows.map(({ workId, kind, expiresAt, ...link }) => {
+  return rows.map(({workId,kind,category,expiresAt,accessible,together,codec,canCopy,...link}) => {
     const fallback: MediaCardDisplay = { id: workId, kind, title: link.title, href: null };
-    return { ...link, expiresAt: expiresAt.toISOString(), card: cards.get(workId) ?? fallback };
+    const unavailable=!config.features.sharing?featureDenialMessage(config.featureDenials.sharing)
+      :user.role!=='admin'&&user.settings.allowPlaybackSharing!==true?'A Coast admin needs to grant playback sharing.'
+      :!categoryEnabled(config,category)?'This medium is disabled.'
+      :!accessible?'The shared Jellyfin source is no longer accessible.'
+      :together&&!config.features.parties?'This link requires Parties.'
+      :link.target==='vrchat'&&(!config.allowTranscoding||codec==='hevc'&&!config.allowVrchatHevc)?'This VRChat sharing profile is disabled.'
+      :['book','comic'].includes(kind)&&!config.features.reader?'This link requires File reader access.'
+      :undefined;
+    return {...link,canCopy:canCopy&&!unavailable,copyUnavailable:unavailable??(!canCopy?'This link has no saved URL.':undefined),
+      expiresAt:expiresAt.toISOString(),card:cards.get(workId)??fallback};
   });
 }
 
