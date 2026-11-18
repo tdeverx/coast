@@ -232,9 +232,8 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     await runQueueOnce();
     const second = await enqueueAction({ userId: member.id, kind: 'test.after', payload: {} });
     expect(await claimNextAction()).toBeNull();
-    expect((await inbox(member)).some((notice: any) => notice.kind === 'external-action')).toBe(
-      true
-    );
+    expect((await inbox(member)).some((notice: any) => notice.kind === 'external-action')).toBe(false);
+    expect((await inbox(admin)).some(notice=>notice.data&&'subjectId' in notice.data&&notice.data.subjectId===first)).toBe(true);
     await expect(
       cancelAction(admin.role === 'admin' ? { ...admin, role: 'user' } : admin, first)
     ).rejects.toThrow();
@@ -244,6 +243,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     expect((await inbox(member)).some((notice: any) => notice.kind === 'external-action')).toBe(
       false
     );
+    expect((await inbox(admin)).some(notice=>notice.data&&'subjectId' in notice.data&&notice.data.subjectId===first)).toBe(false);
     await cancelAction(admin, second);
   });
   test('ordinary and important notifications both receive toast delivery', async () => {

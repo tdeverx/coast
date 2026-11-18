@@ -43,7 +43,7 @@ export const inviteDefaultsSchema = v.pipe(v.strictObject({
   if (restricted && (input.account !== 'managed' || input.jellyfin.EnableAllFolders
     || input.jellyfin.EnableContentDeletion || input.jellyfin.EnableContentDeletionFromFolders?.length)) return false;
   return input.account === 'coast' || !!input.connectionId && (input.folders.length > 0 || input.jellyfin.EnableAllFolders === true);
-}, 'Choose a Jellyfin administrator and libraries. Restricted accounts need specific libraries and cannot delete media.'),
+}, 'Choose a Jellyfin management credential and libraries. Restricted accounts need specific libraries and cannot delete media.'),
 v.check(input => !input.sharingGrant || !(input.access.sharing===false || input.access.libraryOnly || jellyfinHasFamilyLimits(input.jellyfin)),
   'Playback sharing requires a profile that allows sharing.'),
 v.check(input => !(input.jellyfin.AccessSchedules?.length && !input.jellyfinTimeZone), 'Enter the Jellyfin server time zone for access windows.'),

@@ -9,6 +9,7 @@ import { connectJellyfin, getJellyfin } from './connection.server';
 import { AppError } from '#lib/server/security/errors.js';
 import { checkLoginRate, randomToken } from '#lib/server/auth/index.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { getInstance, jellyfinManagement } from '#lib/providers/instances.server.js';
 
 export function provisionPolicy(policy:Record<string,unknown>,folders:string[],settings:JellyfinSettings={}){
  return {...policy,IsAdministrator:false,IsDisabled:false,IsHidden:true,EnableAllFolders:false,EnabledFolders:folders,
@@ -64,9 +65,24 @@ export async function provisioningAuthority(userId:string,connectionId:string,ge
  if(!policy.administrator||policy.disabled)throw new AppError(403,'Provisioning requires an enabled Jellyfin administrator account.');
  return context;
 }
+
+export async function provisioningKeyAuthority(instanceId:string) {
+  const instance=await getInstance(instanceId,'jellyfin');
+  return jellyfinManagement(instance);
+}
+
+export async function managedAccountAuthority(target:{
+  authority_instance_id:string|null;connection_id:string|null;account_generation:string;admin_id:string|null
+}) {
+  if(target.authority_instance_id)
+    return provisioningKeyAuthority(target.authority_instance_id);
+  if(!target.admin_id||!target.connection_id)
+    throw new AppError(409,'The Jellyfin administrator connection is unavailable.');
+  return provisioningAuthority(target.admin_id,target.connection_id,target.account_generation);
+}
 export async function provisioningOffer(userId:string){
  const [offer]=await getSql()`select p.state,p.remote_id,p.updated_at,i.name,claim.setup_failed_at from onboarding_provisioning p
-  left join provider_connections c on c.id=p.connection_id left join provider_instances i on i.id=c.instance_id
+  left join provider_connections c on c.id=p.connection_id left join provider_instances i on i.id=coalesce(p.authority_instance_id,c.instance_id)
   left join invite_claims claim on claim.user_id=p.user_id where p.user_id=${userId}`;
  return offer ? {state:String(offer.state),name:String(offer.name??'Jellyfin'),
   failed:!!offer.setup_failed_at,canRetry:!!offer.remote_id && Date.now()-new Date(offer.updated_at).getTime()>120000} : null;
@@ -75,15 +91,15 @@ export async function provisionOnboarding(userId:string,input:unknown){
  checkLoginRate('provision:'+userId);
  const password=v.parse(passwordSchema,typeof input==='string'?input:v.parse(v.pipe(v.strictObject({password:passwordSchema,passwordConfirmation:v.string()}),v.check(data=>data.password===data.passwordConfirmation,'Passwords must match.')),input).password);
  const db=getSql();
- const [entry]=await db`select p.*,c.user_id as admin_id,u.username,u.password_hash,i.defaults from onboarding_provisioning p left join invite_claims claim on claim.user_id=p.user_id left join registration_invites i on i.id=claim.invite_id join provider_connections c on c.id=p.connection_id join users u on u.id=p.user_id join users admin on admin.id=c.user_id where p.user_id=${userId} and not u.disabled and not admin.disabled and admin.role='admin' and exists(select 1 from user_onboarding o where o.user_id=p.user_id and o.completed_at is null)`;
+ const [entry]=await db`select p.*,c.user_id as admin_id,u.username,u.password_hash,i.defaults from onboarding_provisioning p left join invite_claims claim on claim.user_id=p.user_id left join registration_invites i on i.id=claim.invite_id left join provider_connections c on c.id=p.connection_id join users u on u.id=p.user_id where p.user_id=${userId} and not u.disabled and coalesce(u.membership_expires_at>now(),true) and exists(select 1 from user_onboarding o where o.user_id=p.user_id and o.completed_at is null)`;
  if(!entry)throw new AppError(403,'This invitation does not include Jellyfin provisioning.');
  if(entry.defaults && (!entry.password_hash || !await Bun.password.verify(password,entry.password_hash))) throw new AppError(403,'Enter your Coast password to finish setting up Jellyfin.');
  if(['creating','uncertain'].includes(entry.state) && !(entry.remote_id && Date.now()-new Date(entry.updated_at).getTime()>120000))throw new AppError(409,'The previous creation needs administrator review. Connect again after an administrator reviews this claim.');
  if(entry.state==='complete')throw new AppError(409,'Jellyfin is already provisioned.');
  const defaults=entry.defaults as InviteDefaults|null;
- let authority:Awaited<ReturnType<typeof provisioningAuthority>>;
+ let authority:Awaited<ReturnType<typeof managedAccountAuthority>>;
  try {
-   authority=await provisioningAuthority(entry.admin_id,entry.connection_id,entry.account_generation);
+   authority=await managedAccountAuthority(entry as Parameters<typeof managedAccountAuthority>[0]);
    if(!Array.isArray(entry.folders)||!entry.folders.length&&defaults?.jellyfin.EnableAllFolders!==true)
      throw new AppError(409,'This invitation has no permitted libraries.');
    await validatePresetLibraries(authority.adapter,entry.folders,defaults?.jellyfin??{});
@@ -96,9 +112,11 @@ export async function provisionOnboarding(userId:string,input:unknown){
  let id=entry.remote_id as string|null;
  try{
   if(!id){
-   const [current]=await db`select 1 from provider_connections c join users admin on admin.id=c.user_id
-     where c.id=${entry.connection_id} and c.account_generation=${entry.account_generation} and c.status='connected' and not admin.disabled and admin.role='admin'`;
-   if(!current)throw new AppError(409,'The provisioning account changed.');
+   const [current]='generation' in authority
+     ?await db`select 1 from provider_instances where id=${entry.authority_instance_id} and enabled and credentials is not null and settings->>'managementKeyGeneration'=${authority.generation}`
+     :await db`select 1 from provider_connections c join users admin on admin.id=c.user_id
+       where c.id=${entry.connection_id} and c.account_generation=${entry.account_generation} and c.status='connected' and not admin.disabled and admin.role='admin'`;
+   if(!current)throw new AppError(409,'The Jellyfin management credential changed.');
    // The user never sees the initial random password. Access is restricted before their chosen password is set.
    const created=await authority.adapter.createUser(entry.username,randomToken());
    id=v.parse(jellyfinUserId,created.Id);

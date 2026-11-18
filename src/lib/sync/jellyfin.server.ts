@@ -989,6 +989,14 @@ export async function executeJellyfinUserState(
   );
   const { adapter, connection,instance } = await jellyfinContext(userId, connectionId,provided);
   if(data.backfill && connection.settings.reconcileTracking!==true)return;
+  const category = data.field === 'watched' ? 'history' : data.field;
+  const [work]=await getDb().select({kind:works.kind,category:works.category}).from(works).where(eq(works.id,data.mediaId));
+  const intentFilter=data.intentVersion?and(eq(reconciliationIntents.connectionId,connectionId),eq(reconciliationIntents.workId,data.mediaId),
+    eq(reconciliationIntents.category,category),eq(reconciliationIntents.version,data.intentVersion)):undefined;
+  if(!work||data.field!=='favourite'&&!['movie','episode','track'].includes(work.kind)){
+    if(intentFilter)await getDb().delete(reconciliationIntents).where(intentFilter);
+    return;
+  }
   await adapter.identity(instance.serverIdentity||undefined).catch(cause => { throw tagDiagnosticStage(cause, 'identity'); });
   const items = await getDb()
     .selectDistinct({ id: providerItems.externalId })
@@ -1002,7 +1010,6 @@ export async function executeJellyfinUserState(
         eq(availability.state, 'available')
       )
     );
-  const category = data.field === 'watched' ? 'history' : data.field;
   let desired:Record<string,unknown> =
     category === 'progress'
       ? { positionSeconds: Math.round(Number(data.value)*1000)/1000, durationSeconds: Math.round(data.durationSeconds ?? 0) }
@@ -1013,7 +1020,6 @@ export async function executeJellyfinUserState(
   if(category==='history'&&'playCount' in current)desired={...desired,playCount:data.playCount??(data.value?current.playCount:0)};
   if (!sameValue(current, desired)) return;
   if(!items.length)return; // Durable intent remains; a future successful user sync can deliver it.
-  const [work]=await getDb().select().from(works).where(eq(works.id,data.mediaId));
   for (const item of items) {
     const music = work?.category === 'music'
       ? await adapter.musicItem(connection.externalUserId!, item.id).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); })
@@ -1054,7 +1060,7 @@ export async function executeJellyfinUserState(
     } catch (cause) { throw tagDiagnosticStage(cause, 'provider-write'); }
   }
   await acknowledgeProviderValue(userId, connectionId, data.mediaId, category, desired);
-  if(data.intentVersion)await getDb().delete(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),eq(reconciliationIntents.workId,data.mediaId),eq(reconciliationIntents.category,category),eq(reconciliationIntents.version,data.intentVersion)));
+  if(intentFilter)await getDb().delete(reconciliationIntents).where(intentFilter);
 }
 
 export async function executeJellyfinScrobble(

@@ -2,7 +2,6 @@ import { browserDiagnostic, diagnosticHeaders, receiveDiagnosticLevel } from './
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
-import { feedbackForViewer } from './action-feedback.svelte';
 
 let playbackApi = '/api/v1/';
 let playbackApiRevision = 0;
@@ -18,6 +17,7 @@ export function capturePlaybackApi() {
 }
 
 export type ApiTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+export const coastConnectionMessage='Could not reach Coast. Check your connection and try again.';
 
 export class ApiError extends Error {
   constructor(
@@ -41,6 +41,19 @@ export async function api<T = unknown>(
 ): Promise<T> {
   return requestApi<T>(fetch, path, body, method, options);
 }
+function waitForReconnect(signal?:AbortSignal|null) {
+  return new Promise<void>(resolve=>{
+    const timer=setTimeout(finish,navigator.onLine?350:1200);
+    function finish() {
+      clearTimeout(timer);
+      window.removeEventListener('online',finish);
+      signal?.removeEventListener('abort',finish);
+      resolve();
+    }
+    window.addEventListener('online',finish,{once:true});
+    signal?.addEventListener('abort',finish,{once:true});
+  });
+}
 async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>, playbackBase = playbackApi): Promise<T> {
   options.signal?.throwIfAborted();
   const sharedPlayback = playbackBase === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
@@ -50,13 +63,22 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
     headers: { ...diagnosticHeaders(), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   };
-  const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, init).catch(cause => {
+  const send=()=>transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`,init);
+  const response = await send().catch(async cause=>{
+    options.signal?.throwIfAborted();
+    if(method==='GET'&&body===undefined&&cause instanceof TypeError&&typeof window!=='undefined'&&typeof navigator!=='undefined'){
+      await waitForReconnect(options.signal);
+      options.signal?.throwIfAborted();
+      if(navigator.onLine)return send();
+    }
+    throw cause;
+  }).catch(cause => {
     options.signal?.throwIfAborted();
     if (cause?.name !== 'AbortError') browserDiagnostic('browser.request-failed', {
       operation: path.split('/', 1)[0], method, failure: cause instanceof TypeError ? 'network' : 'unexpected',
       surface: sharedPlayback ? 'share' : undefined,
     });
-    throw cause;
+    throw cause instanceof TypeError?new ApiError(coastConnectionMessage,0):cause;
   });
   options.signal?.throwIfAborted();
   receiveDiagnosticLevel(response);
@@ -89,18 +111,16 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
 export function createApiClient(transport: ApiTransport, afterChange: (path: string) => Promise<void>) {
   const api = <T = unknown>(path: string, body?: unknown, method = 'POST', options: Pick<RequestInit, 'signal'> = {}) => requestApi<T>(transport, path, body, method, options);
   const change = async <T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) => {
-    const notify=feedbackForViewer().notify;
     const result = await api<T>(path, body, method,options);
-    await acknowledgeRefresh(() => afterChange(path),notify);
+    await acknowledgeRefresh(() => afterChange(path));
     return result;
   };
   const changeMany = <T = unknown>(paths: readonly string[], body?: unknown, method = 'POST') => orderedChanges<T>(api, afterChange, paths, body, method);
   return { api, change, changeMany };
 }
 export async function change<T = unknown>(path: string, body?: unknown, method = 'POST', options:Pick<RequestInit,'signal'> = {}) {
-  const notify=feedbackForViewer().notify;
   const result = await api<T>(path, body, method,options);
-  await acknowledgeRefresh(() => refreshAfterChange(path),notify);
+  await acknowledgeRefresh(() => refreshAfterChange(path));
   return result;
 }
 /** Keep each command acknowledgement, with one completion refresh for a same-domain action. */
@@ -114,7 +134,6 @@ async function orderedChanges<T>(
   body: unknown,
   method: string
 ): Promise<T[]> {
-  const notify=feedbackForViewer().notify;
   const commands = [...paths];
   if (!commands.length) return [];
   const domain = commands[0].split('/')[0];
@@ -126,13 +145,16 @@ async function orderedChanges<T>(
     return results;
   } finally {
     // A failed later command still leaves acknowledged earlier commands visible.
-    if (results.length) await acknowledgeRefresh(() => afterChange(commands[0]),notify);
+    if (results.length) await acknowledgeRefresh(() => afterChange(commands[0]));
   }
 }
 /** A failed page refresh cannot turn an acknowledged command into a failed write. */
-async function acknowledgeRefresh(refresh: () => Promise<void>,notifyAction:ReturnType<typeof feedbackForViewer>['notify']) {
+async function acknowledgeRefresh(refresh: () => Promise<void>) {
   try { await refresh(); }
-  catch { notifyAction('Saved. The page could not refresh; reload to see the latest data.'); }
+  catch (cause) {
+    if((cause as {name?:string})?.name!=='AbortError')
+      browserDiagnostic('browser.request-failed',{stage:'after-change-refresh',failure:cause instanceof TypeError?'network':'unexpected'});
+  }
 }
 export async function refreshAfterChange(path: string) {
   const domain = path.split('/')[0];

@@ -547,6 +547,20 @@
       "when": 1794950753009,
       "tag": "0077_playback_viewing_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795025195111,
+      "tag": "0078_jellyfin_management_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1795025551990,
+      "tag": "0079_subtitle_preferences",
+      "breakpoints": true
     }
   ]
 }

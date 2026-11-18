@@ -63,7 +63,7 @@ const jobKinds = new Set([
 ]);
 const requestActions = [
   'prepare', 'restore', 'progress', 'player-error', 'stream', 'subtitles', 'trailer', 'share-stream',
-  'details', 'details-enhance', 'metadata-refresh', 'feedback', 'asset', 'health',
+  'details', 'details-enhance', 'metadata-refresh', 'insights', 'feedback', 'asset', 'health',
   'reader-open', 'reader-manifest', 'reader-page', 'reader-file', 'heartbeat', 'claim',
 ] as const;
 export type DiagnosticRequestAction = typeof requestActions[number];
@@ -149,6 +149,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
     'reserveBusyMs', 'reservationBusyMs', 'queueBusyMs', 'heartbeatBusyMs', 'maintenanceBusyMs',
     'heartbeatOverlap', 'maintenanceOverlap', 'runtimeEventsDropped',
     'diagnosticPending', 'diagnosticDropped', 'diagnosticFailures',
+    'dbAcquireMs', 'dbProbeMs', 'dbActiveAgeMs', 'dbActive', 'dbWaiting',
   ]) {
     const value = input[key];
     if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1e12)
@@ -176,7 +177,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
     [
       'retention',
       'runtime', 'reserve', 'reservation', 'queue', 'heartbeat', 'maintenance',
-      'connection',
+      'connection', 'database-sample', 'after-change-refresh',
       'avatar-cleanup', 'share-cleanup', 'share-progress', 'reader-manifest',
       'backup-capture', 'backup-retention', 'backup-schedule', 'request-options', 'provider-queue',
       'identity',
@@ -213,7 +214,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'local.database-deadlock',
       'provider.timeout',
       'local.provider-busy', 'local.provider-queue-timeout',
-      'action.rejected',
+      'action.rejected', 'local.action-rejected', 'local.feature-disabled',
       'jellyfin.incomplete-library-page',
       'jellyfin.invalid-library-offset',
       'jellyfin.changed-library-page',

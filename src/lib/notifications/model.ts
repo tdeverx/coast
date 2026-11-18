@@ -8,5 +8,5 @@ export function notificationDestination(kind:string,destination?:string|null) {
  if(kind==='friend-request'||kind==='friend-accepted')return '/for-you?friends=true';
  if(kind==='recommendation'&&destination?.startsWith('/notifications'))return '/for-you?notifications=true&notificationKind=recommendation';
  if(destination?.startsWith('/')&&!destination.startsWith('//'))return destination;
- return kind==='external-action'?'/settings/jobs':kind==='sync'?'/settings/integrations':kind==='request'?'/requests':null;
+ return kind==='external-action'?'/settings/connections':kind==='sync'?'/settings/connections':kind==='request'?'/requests':null;
 }

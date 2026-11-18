@@ -2,7 +2,7 @@ import type { MediaCategory } from '#lib/media/model.js';
 import { context } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { supportsProviderField } from '#lib/providers/capabilities.js';
-import { and, eq, inArray, asc, sql } from 'drizzle-orm';
+import { and, eq, inArray, asc, sql, isNull } from 'drizzle-orm';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   providerConnections,
@@ -73,7 +73,7 @@ export async function enqueueInTransaction(
   tx: Transaction,
   action: {
     userId: string;
-    connectionId: string;
+    connectionId?: string;
     kind: string;
     payload: Record<string, unknown>;
     compactionKey?: string;
@@ -81,7 +81,7 @@ export async function enqueueInTransaction(
 ) {
   const { userId, connectionId, compactionKey } = action;
   await tx.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`${userId}:${connectionId}`},0))`
+    sql`select pg_advisory_xact_lock(hashtextextended(${`${userId}:${connectionId??'local'}`},0))`
   );
   if (compactionKey) {
     const replaced = await tx
@@ -94,7 +94,7 @@ export async function enqueueInTransaction(
       .where(
         and(
           eq(outboxActions.userId, userId),
-          eq(outboxActions.connectionId, connectionId),
+          connectionId ? eq(outboxActions.connectionId, connectionId) : isNull(outboxActions.connectionId),
           eq(outboxActions.state, 'pending'),
           eq(outboxActions.compactionKey, compactionKey)
         )

@@ -21,6 +21,7 @@ export type MediaActionData = {
   targets: MediaView[];
   requestTarget: MediaView | null;
   requestsEnabled: boolean;
+  requestUnavailable?:string;
   refreshTarget: MediaView | null;
   playable: MediaView | null;
   editions: string[];

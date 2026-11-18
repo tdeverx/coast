@@ -21,9 +21,10 @@ import menuStatusFeedbackSourceRefresh from '../docs/audits/2026-11-17-menu-stat
 import subtitlePlaybackSourceRefresh from '../docs/audits/2026-11-17-subtitle-playback/source-refresh.json';
 import diagnosticsFollowupSourceRefresh from '../docs/audits/2026-11-17-diagnostics-followup/source-refresh.json';
 import shelfSegmentsSourceRefresh from '../docs/audits/2026-11-18-shelf-segments/source-refresh.json';
+import accessNotificationsSourceRefresh from '../docs/audits/2026-11-18-access-notifications/source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {

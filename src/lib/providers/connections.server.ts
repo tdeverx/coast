@@ -49,7 +49,7 @@ export async function saveConnection(
     if (jellyfinIdentity) {
       const key=jellyfinItemKey(externalUserId);
       const [scope]=await tx.execute<{remote_id:string|null; instance_id:string|null; restricted:boolean}>(sql`
-        select p.remote_id,admin.instance_id,coalesce(u.access_defaults->>'libraryOnly'='true',false) as restricted
+        select p.remote_id,coalesce(p.authority_instance_id,admin.instance_id) as instance_id,coalesce(u.access_defaults->>'libraryOnly'='true',false) as restricted
         from users u left join onboarding_provisioning p on p.user_id=u.id
         left join provider_connections admin on admin.id=p.connection_id and admin.account_generation=p.account_generation
         where u.id=${userId} and not u.disabled and coalesce(u.membership_expires_at>now(),true)`);

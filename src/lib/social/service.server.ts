@@ -122,7 +122,8 @@ export async function recommend(userId:string,raw:unknown) {
   if(!f)throw new AppError(403,'This action is available between friends.');
   const [work]=await db`select id,category from works where id=${input.workId}`;if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Media not found.');
   const [r]=await db`insert into social_recommendations(sender_id,recipient_id,work_id) values(${userId},${input.recipientId},${input.workId}) on conflict(sender_id,recipient_id,work_id) where state='pending' do update set work_id=excluded.work_id returning id,state`;
-  await notify({userId:input.recipientId,kind:'recommendation',title:'A friend recommended something',sourceKey:'recommendation:'+r.id,data:{actorId:userId,subjectId:r.id,workId:input.workId,destination:'/for-you?notifications=true&notificationKind=recommendation',actions:['save','dismiss']}},db);
+  const [sender]=await db<{username:string}[]>`select username from users where id=${userId}`;
+  await notify({userId:input.recipientId,kind:'recommendation',title:sender?`${sender.username} sent you a recommendation`:'New recommendation',sourceKey:'recommendation:'+r.id,data:{actorId:userId,subjectId:r.id,workId:input.workId,destination:'/for-you?notifications=true&notificationKind=recommendation',actions:['save','dismiss']}},db);
   return r;
  });
 }

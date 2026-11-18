@@ -57,13 +57,16 @@ function visible(user:SessionUser,filters:NotificationFilters=defaultNotificatio
  room.media_id,recommendation.work_id,request.media_id,case when job.payload->>'mediaId'~'^[0-9a-fA-F-]{36}$' then (job.payload->>'mediaId')::uuid end,case when n.source_key~'^available:[0-9a-fA-F-]{36}$' then substring(n.source_key from 11)::uuid end) as work_id,
  job.kind as job_kind,provider.id as job_instance,job.connection_id as job_connection,job.payload->'_jobFailure'->>'code' as failure_code,provider.name as service_name,provider.provider as provider_kind,
  request.state as request_state,case when room.id is not null then case when room.ended_at is not null then 'Ended' when room.paused then 'Paused' else 'Playing' end end as session_state
- from notifications n left join outbox_actions job on n.kind='external-action' and job.id::text=split_part(n.source_key,':',2) and job.user_id=n.user_id
+ from notifications n left join outbox_actions job on n.kind='external-action'
+   and job.id=case when n.source_key~'^(outbox|job-attention):[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$' then split_part(n.source_key,':',2)::uuid end
+   and (job.user_id=n.user_id or ${user.role==='admin'} and n.source_key like 'job-attention:%')
  left join provider_connections connection on connection.id=job.connection_id
  left join provider_instances provider on provider.id=connection.instance_id or (job.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') and job.kind like provider.provider||'.%' and provider.id::text=job.payload->>'instanceId')
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true
  where n.user_id=${userId} and (not ${user.access?.libraryOnly===true} or n.kind in ('membership-expiry','action-feedback')) and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
+ and (${user.role==='admin'} or (n.source_key is null or n.source_key not like 'job-attention:%' and n.source_key not like 'admin-attention:%'))
  and (job.id is null or job.state not in ('cancelled','succeeded'))
  ), visible as (
  select n.*,w.category
@@ -80,7 +83,8 @@ async function notificationSummary(actor:SessionUser|null){
  return {unread:Number(row.count),snapshot:String(row.snapshot)};
 }
 export async function notificationUnread(actor:SessionUser|null){return (await notificationSummary(actor)).unread;}
-async function hydrate(userId:string,rows:any[]):Promise<NotificationEntry[]>{
+async function hydrate(user:SessionUser,rows:any[]):Promise<NotificationEntry[]>{
+ const userId=user.id;
  if(!rows.length)return [];
  const ids=[...new Set(rows.flatMap(row=>row.work_id?[String(row.work_id)]:[]))];
  const actorIds=[...new Set(rows.flatMap(row=>row.data?.actorId?[String(row.data.actorId)]:[]))];
@@ -97,7 +101,9 @@ async function hydrate(userId:string,rows:any[]):Promise<NotificationEntry[]>{
   const specific=['recommendation','reaction','synced-invite'].includes(row.kind);
   const artworkCard=!specific&&parent?.root_id?cards.find(card=>('workId' in card?card.workId??card.id:card.id)===parent.root_id)??card:card;
   const task=row.provider_kind?serviceTasks(row.provider_kind).find(task=>task.kinds.includes(row.job_kind)):null;
-  const jobDestination=row.job_instance&&task?`/settings/jobs#job-${row.job_instance}-${task.id}`:null;
+  const destination=row.kind==='external-action'&&row.data?.destination==='/settings/jobs'&&user.role!=='admin'
+    ? '/settings/connections':row.data?.destination;
+  const jobDestination=destination==='/settings/jobs'&&row.job_instance&&task?`/settings/jobs#job-${row.job_instance}-${task.id}`:null;
   const href=card?('href' in card?card.href:`/media/${card.id}`):null;
   return {id:row.id,kind:row.kind,title:row.title,body:row.body,createdAt:new Date(row.created_at).toISOString(),readAt:row.read_at?new Date(row.read_at).toISOString():null,locked:row.locked,actor:actor?{username:actor.username,avatar:actor.avatar,status:statuses[actor.id]??'offline'}:null,
    reaction:row.kind==='reaction'?reactions.find((reaction:{target_id:string;user_id:string;emoji:string})=>reaction.target_id===row.data?.subjectId&&reaction.user_id===row.data?.actorId)?.emoji??null:null,
@@ -105,7 +111,7 @@ async function hydrate(userId:string,rows:any[]):Promise<NotificationEntry[]>{
    friend:row.kind==='friend-accepted'?(()=>{const friend=friendCards.find(friend=>friend.userId===row.data?.actorId);const background=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===friend?.backgroundWorkId);return friend?{...friend,backgroundArtwork:background?.backdrop??background?.poster??undefined}:null;})():null,
    media:card&&!['friend-request','friend-accepted'].includes(row.kind)?{card:artworkCard??card,id:row.work_id,title:card.title,href:href!,artwork:artworkCard?.artwork?.thumb??artworkCard?.backdrop??artworkCard?.poster??null,availability:assessment?.availability??'unknown',stale:assessment?.stale??false}:null,
    sourceLabel:row.service_name?`${row.service_name}${task?' · '+task.title:''}`:null,
-   destination:jobDestination??notificationDestination(row.kind,row.data?.destination)??(row.kind==='availability'?href:null),requestState:row.request_state??null,sessionState:row.session_state??null,
+   destination:jobDestination??notificationDestination(row.kind,destination)??(row.kind==='availability'?href:null),requestState:row.request_state??null,sessionState:row.session_state??null,
    actions:row.kind==='friend-request'?['accept','decline']:row.kind==='recommendation'?['save','dismiss']:row.kind==='synced-invite'?['decline']:[],subjectId:row.data?.subjectId??null};
  });
 }
@@ -119,7 +125,7 @@ export async function notificationInbox(actor:SessionUser|null,input:unknown={})
  select n.*,to_char(n.created_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_at from visible n
  where (${cursor.before??null}::timestamptz is null or (n.created_at,n.id)<(${cursor.before??null}::timestamptz,${cursor.beforeId??null}::uuid)) order by n.created_at desc,n.id desc limit 61`;
  const page=Array.from(rows).slice(0,60) as any[],last=page.at(-1);
- return {items:await hydrate(user.id,page),hasMore:rows.length>60,next:last?{before:String(last.cursor_at),beforeId:last.id}:null,...summary};
+ return {items:await hydrate(user,page),hasMore:rows.length>60,next:last?{before:String(last.cursor_at),beforeId:last.id}:null,...summary};
 }
 export async function markNotification(actor:SessionUser|null,id:string,action:'read'|'dismiss'){
  const user=requireUser(actor);v.parse(uuid,id);

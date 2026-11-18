@@ -44,9 +44,9 @@ export async function registerAccount(input: unknown, client: string, inviteOnly
         values(${row.id},${invite?.provision_generation ? 'jellyfin' : current.registrationProvider})`;
       const provision = !!invite?.provision_generation && !choices.existingJellyfin;
       if (provision) {
-        if (!invite?.provision_connection_id) throw new AppError(409,'This invitation’s provisioning account is unavailable.');
-        await sql`insert into onboarding_provisioning(user_id,connection_id,account_generation,folders)
-          values(${row.id},${invite.provision_connection_id},${invite.provision_generation},${invite.provision_folders}::jsonb)`;
+        if (!invite?.provision_connection_id&&!invite?.provision_instance_id) throw new AppError(409,'This invitation’s Jellyfin authority is unavailable.');
+        await sql`insert into onboarding_provisioning(user_id,connection_id,authority_instance_id,account_generation,folders)
+          values(${row.id},${invite.provision_connection_id},${invite.provision_instance_id},${invite.provision_generation},${invite.provision_folders}::jsonb)`;
       }
       if (invite) {
         await sql`update registration_invites set claim_count=claim_count+1,used_at=coalesce(used_at,now()),used_by=coalesce(used_by,${row.id})
@@ -83,7 +83,7 @@ export async function onboardingServices(userId: string) {
     and p.server_identity is not null and p.settings->>'approved'='true'
     and not exists(select 1 from onboarding_provisioning job where job.user_id=${userId} and job.state<>'complete')
     and not exists(select 1 from invite_claims c join registration_invites i on i.id=c.invite_id
-      where c.user_id=${userId} and i.provision_generation is not null and not exists(
+      where c.user_id=${userId} and i.provision_generation is not null and i.provision_instance_id is distinct from p.id and not exists(
         select 1 from provider_connections a where a.id=i.provision_connection_id and a.instance_id=p.id and a.account_generation=i.provision_generation))
     order by p.name`;
 }

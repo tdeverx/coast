@@ -1,7 +1,7 @@
 import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {getSql,closeDb} from '../src/lib/server/db';
 import {updateConfig} from '../src/lib/application/configuration.server';
-import {authenticateSession,type SessionUser} from '../src/lib/server/auth';
+import {authenticateSession,hashToken,randomToken,type SessionUser} from '../src/lib/server/auth';
 import {registerAccount,beginOnboardingImports,onboardingStatus,backgroundOnboardingImports,retryBackgroundOnboardingImports} from '../src/lib/server/auth/onboarding';
 import {accountDetails,changeMemberAccess,expireMemberships,manageAccount} from '../src/lib/server/auth/account-management.server';
 import {createInvite,issueMemberInvite,inviteClaims,listInvites,memberInviteOverview,memberInviteGrant,previewInvite,regenerateInvite,requestMemberInvite,saveInvitePreset} from '../src/lib/server/auth/invites.server';
@@ -24,6 +24,25 @@ beforeAll(async()=>{
   preset=(await saveInvitePreset(admin,{name:'Coast access',defaults:{access:{sharing:false},preferences:{theme:'light'}}})).id;
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST==='1')await closeDb();});
+
+run('Coast admins use the admin workflow and replacing a server key invalidates old managed codes',async()=>{
+  await expect(requestMemberInvite(admin,{})).rejects.toMatchObject({code:'admin_invite_workflow'});
+  await expect(issueMemberInvite(admin,{})).rejects.toMatchObject({code:'admin_invite_workflow'});
+  const db=getSql(),server=crypto.randomUUID(),oldGeneration=crypto.randomUUID(),nextGeneration=crypto.randomUUID();
+  const invitation=crypto.randomUUID(),code=randomToken();
+  await db`insert into provider_instances(id,provider,name,base_url,credentials,settings) values(
+    ${server},'jellyfin','Fixture server','http://localhost:8096','fixture',${{managementKeyGeneration:oldGeneration}}::jsonb)`;
+  try {
+    await db`insert into registration_invites(id,token_hash,created_by,expires_at,provision_instance_id,provision_generation,provision_folders)
+      values(${invitation},${await hashToken(code)},${admin.id},now()+interval '1 day',${server},${oldGeneration},'[]')`;
+    await expect(previewInvite(code,'server-key')).resolves.toMatchObject({account:'managed',server:'Fixture server'});
+    await db`update provider_instances set settings=${{managementKeyGeneration:nextGeneration}}::jsonb where id=${server}`;
+    await expect(previewInvite(code,'server-key')).rejects.toMatchObject({status:400});
+    const replacement=await regenerateInvite(admin,invitation);
+    await expect(previewInvite(replacement.code,'server-key')).resolves.toMatchObject({account:'managed'});
+    await expect(previewInvite(code,'server-key')).rejects.toMatchObject({status:400});
+  }finally{await db`delete from registration_invites where provision_instance_id=${server}`;await db`delete from provider_instances where id=${server}`;}
+});
 
 run('atomic multi-use claims, one-time secrets, regeneration and friendship',async()=>{
   const invite=await createInvite(admin,{maxUses:3,presetId:preset});
@@ -117,7 +136,9 @@ run('approval without a regular grant permits exactly one invite and does not cr
   await memberInviteGrant(admin,applicant.id,{requestId:request.id,decision:'approved',presetId:preset});
   expect((await memberInviteOverview(applicant,new URLSearchParams())).request).toBe('approved');
   expect((await memberInviteOverview(applicant,new URLSearchParams())).grant).toBeNull();
-  await issueMemberInvite(applicant,{});
+  const invite=await issueMemberInvite(applicant,{});
+  await expect(previewInvite(invite.code,'one-shot')).resolves.toMatchObject({account:'coast'});
+  await registerAccount(account(invite.code,'one-shot-invitee'),'one-shot',true);
   await expect(issueMemberInvite(applicant,{})).rejects.toThrow('allowance');
 });
 

@@ -1,4 +1,5 @@
 import { requireFeature, requireFeatureInTransaction, getFeatureConfig } from '#lib/server/features.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { context, classifyFailure, diagnosticErrorCode, logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { conflictPreference } from '#lib/sync/preference.server.js';
@@ -508,8 +509,10 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
         if(insertions.length)await tx.insert(mediaRequests).values(insertions);
         // Notification persistence and the cursor are one commit: a resumed page
         // must never skip a status change whose notification was not stored.
+        const titles=new Map(notices.length?(await tx.select({id:media.id,title:media.title}).from(media)
+          .where(inArray(media.id,[...new Set(notices.map(notice=>notice.mediaId))]))).map(row=>[row.id,row.title]):[]);
         await notifyMany(notices.map(notice=>({userId,kind:'request',title:requestNoticeTitles[notice.state],
-          body:notice.state==='processing'?'Coast will notify you when the title is ready to watch.':undefined,
+          body:[titles.get(notice.mediaId),notice.state==='processing'?'Coast will notify you when it is ready to watch.':undefined].filter(Boolean).join(' · ')||undefined,
           sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state==='available'?'playable':notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:'/requests' as const}})),tx);
         await retain(tx,complete?{...point,phase:page.results.length<100?'missing':'scanning',offset:point.offset+100,next:0,after:null}:{...point,next});
         if(complete&&execution)await tx.delete(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id));
@@ -589,11 +592,16 @@ export async function manageRequest(
   requestId: string,
   action: 'cancel' | 'approve' | 'decline'
 ) {
+  if (action !== 'cancel') {
+    await requireFeature(userId,'requests');
+    await requireFeature(userId,'screen');
+  }
   const [request] = await getDb()
     .select()
     .from(mediaRequests)
     .where(eq(mediaRequests.id, requestId));
   if (!request) throw new Error('Request not found.');
+  if(action!=='cancel'&&request.state!=='pending')throw new AppError(409,'Only pending requests can be approved or declined.');
   if (!request.externalId) {
     if (request.userId !== userId || action !== 'cancel')
       throw new Error('This request cannot be changed.');
@@ -631,7 +639,7 @@ export async function manageRequest(
         eq(providerConnections.status, 'connected')
       )
     );
-  if (!connection) throw new Error('Connect your linked account before changing requests.');
+  if (!connection) throw new AppError(403,'Connect your Seerr account on this server before changing requests.','seerr_connection_required');
   const manager = seerrAllows(
     Number(connection.settings.seerrPermissions) || 0,
     SeerrPermission.MANAGE_REQUESTS
@@ -641,7 +649,7 @@ export async function manageRequest(
       ? !manager && (request.userId !== userId || request.state !== 'pending')
       : !manager
   )
-    throw new Error('You do not have permission to change this request.');
+    throw new AppError(403,action==='cancel'?'Cancel your own pending request or use an account with Seerr Manage Requests permission.':'Your connected Seerr account needs Manage Requests permission.','seerr_manage_requests_required');
   await enqueueAction({
     userId,
     connectionId: connection.id,
@@ -684,6 +692,10 @@ export async function executeSeerrRequest(action: OutboxAction, resolveAccount: 
 export async function executeSeerrManagement(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {
   const data = v.parse(v.object({requestId:uuid,action:v.picklist(['cancel','approve','decline']),
     resolved:v.optional(v.boolean(),false),expectedState:v.optional(v.string())}),action.payload);
+  if(data.action!=='cancel'){
+    await requireFeature(action.userId,'requests');
+    await requireFeature(action.userId,'screen');
+  }
   const [request] = await getDb().select().from(mediaRequests).where(eq(mediaRequests.id,data.requestId));
   if (!request?.externalId) return;
   const { adapter, connection, scope } = await resolveAccount(action.userId,request.instanceId,queuedSeerrAccount(action));

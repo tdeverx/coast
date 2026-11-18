@@ -26,6 +26,7 @@ export function requestDiagnostics(url: URL): { operation: string; requestAction
     if (domain === 'admin' && id === 'backups') return { operation: 'backup' };
     if (domain === 'notifications' && id === 'feedback') return { operation, requestAction: 'feedback' };
     if (domain === 'media') {
+      if (action === 'insights') return { operation, requestAction: 'insights' };
       if (action === 'subtitles' || action === 'trailer') return { operation, requestAction: action };
       if (action === 'refresh') return { operation, requestAction: 'metadata-refresh' };
       if (id && !action) return { operation, requestAction: detailAction(url) };

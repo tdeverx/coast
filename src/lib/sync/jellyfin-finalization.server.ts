@@ -1,6 +1,6 @@
 import { and, eq, asc, sql } from 'drizzle-orm';
 import type { Database } from '#lib/server/db/index.js';
-import { trackingState, musicProgress, reconciliationIntents } from '#lib/server/db/schema.js';
+import { trackingState, musicProgress, reconciliationIntents, works } from '#lib/server/db/schema.js';
 import { enqueueInTransaction } from './changes.server';
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 export const JELLYFIN_FINALIZATION_BATCH = 100;
@@ -17,8 +17,15 @@ export async function reconcileJellyfinBatch(tx: Transaction, userId: string, co
     if (cursor.phase === 'done')
         return cursor;
     if (cursor.phase === 'screen') {
-        const states = await tx.select().from(trackingState).where(and(eq(trackingState.userId, userId), sql `(${trackingState.favourite} or ${trackingState.watched} or ${trackingState.positionSeconds}>0)`, cursor.workId ? sql `${trackingState.mediaId}>${cursor.workId}::uuid` : sql `true`)).orderBy(asc(trackingState.mediaId)).limit(JELLYFIN_FINALIZATION_BATCH);
-        const watchedIds = states.filter(state => state.watched).map(state => state.mediaId);
+        const states = await tx.select({
+            mediaId:trackingState.mediaId,favourite:trackingState.favourite,watched:trackingState.watched,
+            positionSeconds:trackingState.positionSeconds,durationSeconds:trackingState.durationSeconds,kind:works.kind,
+        }).from(trackingState).innerJoin(works,eq(works.id,trackingState.mediaId))
+          .where(and(eq(trackingState.userId,userId),sql`(${trackingState.favourite} or
+            ${works.kind} in ('movie','episode') and (${trackingState.watched} or ${trackingState.positionSeconds}>0))`,
+            cursor.workId?sql`${trackingState.mediaId}>${cursor.workId}::uuid`:undefined))
+          .orderBy(asc(trackingState.mediaId)).limit(JELLYFIN_FINALIZATION_BATCH);
+        const watchedIds = states.filter(state => state.watched&&(state.kind==='movie'||state.kind==='episode')).map(state => state.mediaId);
         // An agreed baseline alone can be stale. Skip seeding watched jobs only
         // when the current scan confirms that every available source is watched.
         // Explicit intents already in the table still go through the enqueue phase.
@@ -37,6 +44,8 @@ export async function reconcileJellyfinBatch(tx: Transaction, userId: string, co
         for (const state of states) {
             if (state.favourite)
                 rows.push({ connectionId, workId: state.mediaId, category: 'favourite', value: { value: true } });
+            // Jellyfin aggregate playback state is derived from actual episode records.
+            if (state.kind!=='movie'&&state.kind!=='episode') continue;
             if (state.watched && !alreadyWatched.has(state.mediaId))
                 rows.push({ connectionId, workId: state.mediaId, category: 'history', value: { value: true } });
             if (state.positionSeconds > 0)

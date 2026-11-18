@@ -94,7 +94,7 @@ export function requireUser(actor: SessionUser | null | undefined): SessionUser 
 }
 export function requireAdmin(actor: SessionUser | null | undefined): SessionUser {
   const user = requireUser(actor);
-  if (user.role !== 'admin') throw new AppError(403, 'Administrator access is required.');
+  if (user.role !== 'admin') throw new AppError(403, 'Coast Administrator access is required.', 'coast_admin_required');
   return user;
 }
 

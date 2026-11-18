@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { emptyInviteDefaults, inviteBatchLimit, inviteCode, inviteDefaultsSchema, inviteLabel, inviteLimit, jellyfinSettingsSchema, jellyfinUserId, provisioningAccessWindows, uuid, type InviteDefaults } from '#lib/auth/invites.js';
 import { jellyfinConfigurationSchema, jellyfinHasFamilyLimits } from '#lib/auth/jellyfin-preset.js';
 import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
-import { provisioningAuthority, validatePresetLibraries } from '#lib/providers/jellyfin/provisioning.server.js';
+import { provisioningAuthority, provisioningKeyAuthority, validatePresetLibraries } from '#lib/providers/jellyfin/provisioning.server.js';
 import { AppError } from '../security/errors';
 import { getSql } from '../db';
 import { checkLoginRate, hashToken, randomToken, requireAdmin, requireUser, type SessionUser } from './index';
@@ -17,10 +17,15 @@ export async function recordAccountEvent(db: Db, event: string, actor: string | 
   await db`insert into account_audit(event,actor_id,subject_id) values(${event},${actor},${subject})`;
 }
 
-async function inviteAuthority(connectionId:string) {
-  const [connection]=await getSql()`select user_id from provider_connections where id=${v.parse(uuid,connectionId)}`;
-  if(!connection)throw new AppError(404,'Jellyfin administrator connection not found.');
-  return provisioningAuthority(connection.user_id,connectionId);
+async function inviteAuthority(authorityId:string) {
+  const id=v.parse(uuid,authorityId);
+  const [connection]=await getSql()`select user_id from provider_connections where id=${id}`;
+  if(connection) {
+    const context=await provisioningAuthority(connection.user_id,id);
+    return {adapter:context.adapter,connection:id,instance:null,generation:context.connection.accountGeneration};
+  }
+  const context=await provisioningKeyAuthority(id);
+  return {adapter:context.adapter,connection:null,instance:id,generation:context.generation};
 }
 
 export async function inviteJellyfinAuthority(actor:SessionUser|null,connectionId:string) {
@@ -32,7 +37,7 @@ async function validateJellyfin(defaults: InviteDefaults) {
   if (defaults.account === 'coast') return null;
   const authority = await inviteAuthority(defaults.connectionId!);
   await validatePresetLibraries(authority.adapter,defaults.folders,defaults.jellyfin);
-  return authority.connection.accountGeneration;
+  return authority;
 }
 
 export async function saveInvitePreset(actor: SessionUser | null, raw: unknown) {
@@ -79,15 +84,15 @@ async function prepareCodes(count: number) {
   return Promise.all(Array.from({length:count},async () => { const code = randomToken(); return {code,hash:await hashToken(code)}; }));
 }
 
-async function issueInvites(db: Db, userId: string, input: Issue, defaults: InviteDefaults, generation: string | null,
+async function issueInvites(db: Db, userId: string, input: Issue, defaults: InviteDefaults, authority: Awaited<ReturnType<typeof validateJellyfin>>,
   codes: Awaited<ReturnType<typeof prepareCodes>>, preset?: {id:string; name:string}, member = false, approved = false) {
   const expiresAt = new Date(Date.now() + input.days * 86400000);
   const rows = await db<{id:string;token_hash:string}[]>`
     with issued as (
       insert into registration_invites
-        (token_hash,created_by,expires_at,provision_connection_id,provision_generation,provision_folders,preset_id,preset_name,defaults,label,max_uses,member_issued,approval_issued)
-      select token_hash,${userId},${expiresAt},${defaults.account === 'coast' ? null : defaults.connectionId!},
-        ${generation},${defaults.folders}::jsonb,${preset?.id ?? null},${preset?.name ?? null},${defaults}::jsonb,${input.label},${input.maxUses},${member},${approved}
+        (token_hash,created_by,expires_at,provision_connection_id,provision_instance_id,provision_generation,provision_folders,preset_id,preset_name,defaults,label,max_uses,member_issued,approval_issued)
+      select token_hash,${userId},${expiresAt},${authority?.connection??null},${authority?.instance??null},
+        ${authority?.generation??null},${defaults.folders}::jsonb,${preset?.id ?? null},${preset?.name ?? null},${defaults}::jsonb,${input.label},${input.maxUses},${member},${approved}
       from unnest(${db.array(codes.map(entry=>entry.hash),'TEXT')}::text[]) token_hash
       returning id,token_hash
     ), logged as (
@@ -130,7 +135,7 @@ export async function listInvites(actor: SessionUser | null, search: URLSearchPa
   const db = getSql();
   const rows = await db<{id:string; createdAt:Date; expiresAt:Date; usedAt:Date|null; revokedAt:Date|null; maxUses:number; claimCount:number; hasSetupFailure:boolean; provisionConnectionId:string|null; presetName:string|null; label:string; issuer:string|null; username:string|null; status:typeof statusValues[number]}[]>`
     select i.id,i.created_at as "createdAt",i.expires_at as "expiresAt",i.used_at as "usedAt",i.revoked_at as "revokedAt",
-      i.max_uses as "maxUses",i.claim_count as "claimCount",i.provision_connection_id as "provisionConnectionId",
+      i.max_uses as "maxUses",i.claim_count as "claimCount",coalesce(i.provision_instance_id,i.provision_connection_id) as "provisionConnectionId",
       i.preset_name as "presetName",i.label,${failed} as "hasSetupFailure", owner.username as issuer, claimant.username,${statusSql(db)} as status
     from registration_invites i left join users owner on owner.id=i.created_by
     left join users claimant on not ${member} and claimant.id=i.used_by
@@ -156,11 +161,19 @@ export async function revokeInvite(actor: SessionUser | null, id: string, member
 
 export async function regenerateInvite(actor: SessionUser | null, id: string) {
   const admin = requireAdmin(actor);
+  v.parse(uuid,id);
   const [{code,hash}] = await prepareCodes(1);
   return getSql().begin(async db => {
+    const [authority]=await db<{instance:string|null;generation:string|null}[]>`
+      select i.provision_instance_id as instance,p.settings->>'managementKeyGeneration' as generation
+      from registration_invites i left join provider_instances p on p.id=i.provision_instance_id and p.enabled and p.credentials is not null
+      where i.id=${id} for update of i`;
+    if(authority?.instance&&!authority.generation)
+      throw new AppError(409,'Reconnect the Jellyfin server API key before replacing this invitation.');
+    const generation=authority?.generation??null;
     // Member codes are single-use. Rotating an unclaimed code in place
     // preserves the original issuance date and consumes one quota slot.
-    const [memberCode] = await db`update registration_invites set token_hash=${hash}
+    const [memberCode] = await db`update registration_invites set token_hash=${hash},provision_generation=coalesce(${generation}::uuid,provision_generation)
       where id=${v.parse(uuid,id)} and member_issued and claim_count=0 and max_uses=1
         and revoked_at is null and expires_at>now() returning id,expires_at as "expiresAt"`;
     if(memberCode){
@@ -171,8 +184,8 @@ export async function regenerateInvite(actor: SessionUser | null, id: string) {
       where id=${v.parse(uuid,id)} and not member_issued and revoked_at is null and expires_at>now() and claim_count<max_uses returning *`;
     if (!old) throw new AppError(409,'This invitation has no active uses to replace.');
     const [replacement] = await db`insert into registration_invites
-      (token_hash,created_by,expires_at,provision_connection_id,provision_generation,provision_folders,preset_id,preset_name,defaults,label,max_uses,member_issued)
-      select ${hash},created_by,expires_at,provision_connection_id,provision_generation,provision_folders,preset_id,preset_name,defaults,label,max_uses-claim_count,member_issued
+      (token_hash,created_by,expires_at,provision_connection_id,provision_instance_id,provision_generation,provision_folders,preset_id,preset_name,defaults,label,max_uses,member_issued)
+      select ${hash},created_by,expires_at,provision_connection_id,provision_instance_id,coalesce(${generation}::uuid,provision_generation),provision_folders,preset_id,preset_name,defaults,label,max_uses-claim_count,member_issued
       from registration_invites where id=${old.id} returning id,expires_at as "expiresAt"`;
     await recordAccountEvent(db,'invite.revoked',admin.id,old.id);
     await recordAccountEvent(db,'invite.issued',admin.id,replacement.id);
@@ -183,15 +196,17 @@ export async function regenerateInvite(actor: SessionUser | null, id: string) {
 export async function findRedeemableInvite(db: Db, tokenHash: string, lock = false) {
   const [invite] = await db<{
     id:string; created_by:string|null; inviter:string|null; defaults:InviteDefaults|null; preset_name:string|null;
-    provision_connection_id:string|null; provision_generation:string|null; provision_folders:string[]|null; instance_name:string|null;
+    provision_connection_id:string|null; provision_instance_id:string|null; provision_generation:string|null; provision_folders:string[]|null; instance_name:string|null;
   }[]>`select i.id,i.created_by,coalesce(nullif(u.settings#>>'{profile,displayName}',''),u.username) as inviter,
-    i.defaults,i.preset_name,i.provision_connection_id,i.provision_generation,i.provision_folders,p.name as instance_name
+    i.defaults,i.preset_name,i.provision_connection_id,i.provision_instance_id,i.provision_generation,i.provision_folders,p.name as instance_name
     from registration_invites i left join users u on u.id=i.created_by and not u.disabled and (u.membership_expires_at is null or u.membership_expires_at>now())
-    left join provider_connections c on c.id=i.provision_connection_id left join provider_instances p on p.id=c.instance_id
+    left join provider_connections c on c.id=i.provision_connection_id left join provider_instances p on p.id=coalesce(i.provision_instance_id,c.instance_id)
     where i.token_hash=${tokenHash} and i.claim_count<i.max_uses and i.revoked_at is null and i.expires_at>now()
-      and (not i.member_issued or (u.id is not null and exists(select 1 from member_invite_grants where user_id=u.id)))
-      and (i.provision_generation is null or (c.status='connected' and c.account_generation=i.provision_generation and p.enabled
-        and exists(select 1 from users admin where admin.id=c.user_id and admin.role='admin' and not admin.disabled)))
+      and (not i.member_issued or (u.id is not null and (i.approval_issued or exists(select 1 from member_invite_grants where user_id=u.id))))
+      and (i.provision_generation is null or p.enabled and (
+        i.provision_instance_id is not null and p.credentials is not null and p.settings->>'managementKeyGeneration'=i.provision_generation::text
+        or c.status='connected' and c.account_generation=i.provision_generation
+          and exists(select 1 from users admin where admin.id=c.user_id and admin.role='admin' and not admin.disabled)))
     ${lock ? db`for update of i` : db``}`;
   return invite;
 }
@@ -263,6 +278,7 @@ async function memberInviteCandidate(db:Db,userId:string) {
 
 export async function issueMemberInvite(actor:SessionUser|null, raw:unknown) {
   const user=requireUser(actor);
+  if(user.role==='admin')throw new AppError(409,'Create invites in Settings → Accounts → Invites.','admin_invite_workflow');
   const {label}=v.parse(v.strictObject({label:v.optional(inviteLabel,'')}),raw);
   const db=getSql();
   const preset=await memberInviteCandidate(db,user.id);
@@ -282,6 +298,7 @@ export async function issueMemberInvite(actor:SessionUser|null, raw:unknown) {
 
 export async function requestMemberInvite(actor:SessionUser|null, raw:unknown) {
   const user=requireUser(actor);
+  if(user.role==='admin')throw new AppError(409,'Create invites in Settings → Accounts → Invites.','admin_invite_workflow');
   const {note}=v.parse(v.strictObject({note:v.optional(inviteLabel,'')}),raw);
   const db=getSql();
   await db.begin(async tx=>{

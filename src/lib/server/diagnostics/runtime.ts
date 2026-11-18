@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { DiagnosticStore, diagnosticStore, logDiagnostic, diagnosticErrorCode } from './index';
 import { dataDirectory } from '../security/credentials';
 import { enabled } from '#lib/diagnostics.js';
+import { getSql } from '../db';
 
 // Resource history has its own quota; provider/job chatter cannot rotate it out.
 export const runtimeSampleStore = new DiagnosticStore(() => join(dataDirectory(), 'runtime', 'samples'), 4096);
@@ -132,3 +133,27 @@ export class RuntimeEvidence {
 const key = Symbol.for('coast.runtime.evidence');
 const shared = globalThis as typeof globalThis & {[key]?: RuntimeEvidence};
 export const runtimeEvidence = shared[key] ??= new RuntimeEvidence();
+
+let lastPoolSample=-Infinity,poolSampleRunning=false;
+/** Schedule one read-only snapshot after a slow response. No request owns the probe's connection. */
+export async function sampleSlowDatabaseUse(fields:{operation:string;requestAction?:string;durationMs:number}) {
+  const now=performance.now();
+  if(poolSampleRunning||now-lastPoolSample<60_000||!enabled('info',diagnosticStore.level))return;
+  lastPoolSample=now;
+  poolSampleRunning=true;
+  try{
+    const connection=await getSql().reserve();
+    const acquired=performance.now();
+    try{
+      const [activity]=await connection`select count(*) filter(where state='active')::int as "dbActive",
+        count(*) filter(where state='active' and wait_event_type is not null)::int as "dbWaiting",
+        extract(epoch from coalesce(max(clock_timestamp()-query_start) filter(where state='active'),interval '0'))::float8*1000 as "dbActiveAgeMs"
+        from pg_stat_activity where datname=current_database() and usename=current_user
+          and backend_type='client backend' and pid<>pg_backend_pid()`;
+      const end=performance.now();
+      void logDiagnostic('info','runtime.operation',{...fields,...activity,stage:'database-sample',
+        dbAcquireMs:acquired-now,dbProbeMs:end-acquired,reservationInFlight:runtimeEvidence.measurements().reservationInFlight});
+    }finally{connection.release();}
+  }catch{/* Diagnostics must stay independent of the request and its outcome. */}
+  finally{poolSampleRunning=false;}
+}

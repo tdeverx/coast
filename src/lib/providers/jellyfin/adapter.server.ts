@@ -28,6 +28,7 @@ const streamSchema = v.object({
   Channels: num,
   Language: str,
   DisplayTitle: str,
+  Path: str,
   IsDefault: bool,
   IsForced: bool,
   IsExternal: bool,
@@ -113,6 +114,11 @@ const canonicalIdProviders = new Set(['tmdb', 'imdb', 'tvdb']);
 export function jellyfinAuthorization(deviceId: string, token?: string) {
   return `MediaBrowser Client="Coast", Device="Coast Web", DeviceId="${deviceId.replace(/[^\w-]/g, '')}", Version="0.1.0"${token ? `, Token="${token.replace(/["\\\r\n]/g, '')}"` : ''}`;
 }
+function subtitleFingerprint(track: {Path?:string|null;IsExternal:boolean;Index:number;Codec?:string|null;Language?:string|null;DisplayTitle?:string|null}) {
+  if(track.IsExternal&&!track.Path)return undefined;
+  const identity=track.IsExternal?['file',track.Path]:['embedded',track.Index,track.Codec,track.Language,track.DisplayTitle];
+  return new Bun.CryptoHasher('sha256').update(JSON.stringify(identity)).digest('hex');
+}
 function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
   return {
     id: data.Id,
@@ -137,13 +143,17 @@ function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
       isDefault: s.IsDefault,
       isForced: s.IsForced,
       isExternal: s.IsExternal,
+      subtitleFingerprint:s.Type==='Subtitle'?subtitleFingerprint(s):undefined,
       deliveryUrl: s.DeliveryUrl || undefined,
       deliveryMethod: s.DeliveryMethod || undefined,
       width: s.Width ?? undefined,
       height: s.Height ?? undefined,
       frameRate: s.RealFrameRate ?? s.AverageFrameRate ?? undefined,
     })),
-    raw: data,
+    // Availability persists this snapshot. Absolute subtitle paths stay on the adapter side.
+    raw: data.MediaStreams?.some(stream=>stream.Path!=null)
+      ? {...data,MediaStreams:data.MediaStreams.map(({Path:_path,...stream})=>stream)}
+      : data,
   };
 }
 function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
@@ -241,6 +251,16 @@ export class JellyfinAdapter {
   }
   async setProvisionPassword(id:string,password:string){await this.call(`/Users/Password?userId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({NewPw:password,ResetPassword:false})});}
   async virtualFolders(){return v.parse(v.array(v.object({ItemId:v.string(),Name:v.optional(v.string())})),await this.call('/Library/VirtualFolders'));}
+  async verifyManagementKey() {
+    await this.virtualFolders();
+    try { await this.call('/Users/Me'); }
+    catch(cause) {
+      // Jellyfin returns 400 when the accepted credential has no signed-in user.
+      if(cause instanceof ProviderHttpError&&cause.status===400)return;
+      throw cause;
+    }
+    throw new AppError(400,'Use a Jellyfin Dashboard API key. This credential is linked to a personal Jellyfin account.');
+  }
   async sessions(userId:string) {
     const sessions=v.parse(v.array(v.object({UserId:v.optional(v.string()),NowPlayingItem:v.optional(v.nullable(v.object({Id:v.string(),Type:v.optional(v.string())}))),PlayState:v.optional(v.nullable(v.object({IsPaused:v.optional(v.boolean(),false)})))})),await this.call('/Sessions?ActiveWithinSeconds=120'));
     // Administrator accounts may see everyone; never import another user's live session.
@@ -375,14 +395,14 @@ export class JellyfinAdapter {
   }
   async canManageSubtitles(userId: string, signal?: AbortSignal) {
     const user = v.parse(v.object({ Id: v.string(), Policy: v.object({
-      IsAdministrator: bool, EnableSubtitleManagement: bool,
+      IsDisabled: bool, EnableSubtitleManagement: bool,
     }) }), await this.call(`/Users/${encodeURIComponent(userId)}`, { signal }));
     return jellyfinItemKey(user.Id) === jellyfinItemKey(userId) &&
-      (user.Policy.IsAdministrator || user.Policy.EnableSubtitleManagement);
+      !user.Policy.IsDisabled && user.Policy.EnableSubtitleManagement;
   }
-  async subtitleSources(userId: string, itemId: string, signal?: AbortSignal) {
+  async subtitleSources(userId: string|undefined, itemId: string, signal?: AbortSignal) {
     const result = v.parse(v.object({ MediaSources: v.optional(v.array(subtitleSourceSchema), []) }),
-      await this.call(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo?${new URLSearchParams({ userId })}`, { signal }));
+      await this.call(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo${userId?'?'+new URLSearchParams({userId}):''}`, { signal }));
     return result.MediaSources.map(source => ({
       id: source.Id,
       label: source.Name || 'Original',
@@ -390,6 +410,7 @@ export class JellyfinAdapter {
         type: 'Subtitle' as const, index: stream.Index, codec: stream.Codec ?? undefined,
         title: stream.DisplayTitle ?? undefined, language: stream.Language ?? undefined,
         external: stream.IsExternal, forced: stream.IsForced, sdh: stream.IsHearingImpaired, path: stream.Path,
+        subtitleFingerprint:subtitleFingerprint(stream),
       })),
     }));
   }
@@ -404,6 +425,9 @@ export class JellyfinAdapter {
   }
   async downloadSubtitle(itemId: string, resultId: string) {
     await this.call(`/Items/${encodeURIComponent(itemId)}/RemoteSearch/Subtitles/${encodeURIComponent(resultId)}`, { method: 'POST' });
+  }
+  async deleteExternalSubtitle(itemId:string,index:number) {
+    await this.call(`/Videos/${encodeURIComponent(itemId)}/Subtitles/${index}`,{method:'DELETE'});
   }
   /** Hydrate only missing shared mappings under this account's access policy. */
   async items(userId: string, ids: string[]): Promise<AvailableItem[]> {

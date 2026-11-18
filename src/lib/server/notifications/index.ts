@@ -88,6 +88,11 @@ export async function notify(input: NotificationInput, database: NotificationDat
   return (await notifyMany([input], database))[0];
 }
 
+export async function notifyAdministrators(input:Omit<NotificationInput,'userId'>,database=getSql()) {
+  const admins=await database<{id:string}[]>`select id from users where role='admin' and not disabled and coalesce(membership_expires_at>now(),true)`;
+  return notifyMany(admins.map(({id})=>({...input,userId:id})),database);
+}
+
 /** A rendered action toast has already been delivered: retain its plain text in
  * this actor's inbox atomically, without presenting a second server toast. */
 export async function recordFeedbackNotifications(actor:SessionUser|null,input:unknown){
@@ -127,7 +132,14 @@ export async function inbox(actor: SessionUser | null, limit = 50, filters:{kind
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id),user.access?.libraryOnly?sql`${notifications.kind} in ('membership-expiry','action-feedback')`:undefined,sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread||filters.toasts?isNull(notifications.readAt):undefined,filters.toasts?isNull(notifications.toastHiddenAt):undefined))
+    .where(and(eq(notifications.userId, user.id),user.access?.libraryOnly?sql`${notifications.kind} in ('membership-expiry','action-feedback')`:undefined,sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,
+      user.role!=='admin'?sql`(${notifications.sourceKey} is null or ${notifications.sourceKey} not like 'job-attention:%'
+        and ${notifications.sourceKey} not like 'admin-attention:%')`:undefined,
+      sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action'
+        and job.id=case when ${notifications.sourceKey}~'^(outbox|job-attention):[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$' then split_part(${notifications.sourceKey},':',2)::uuid end
+        and (job.user_id=${notifications.userId} or ${user.role==='admin'} and ${notifications.sourceKey} like 'job-attention:%')
+        and job.state in ('cancelled','succeeded'))`,
+      filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread||filters.toasts?isNull(notifications.readAt):undefined,filters.toasts?isNull(notifications.toastHiddenAt):undefined))
     .orderBy(...(filters.toasts
       ? [sql`row_number() over (
           partition by (${notifications.locked} or ${notifications.level} = 'persistent')

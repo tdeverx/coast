@@ -340,11 +340,12 @@ export async function importTraktFromAdapter(
           deleted: true,
         });
   }
-  await notify({
+  if (imported||review)await notify({
     userId,
     kind: 'sync',
     title: 'Trakt import complete',
-    body: `Imported ${imported} changes${review ? `; ${review} changes need review` : ''}. Coast remains your tracker.`,
+    body: `Imported ${imported} ${imported===1?'change':'changes'}.${review ? ` ${review} need review in Sync conflicts.` : ''}`,
+    data:{actorId:userId,subjectId:connectionId,destination:review?'/settings/pending':'/settings/connections'},
     sourceKey: `trakt-import:${connectionId}`,
   });
   return { imported, review };

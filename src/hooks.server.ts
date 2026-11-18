@@ -6,6 +6,7 @@ import {onboardingPending} from '#lib/server/auth/onboarding.js';
 import {isPublicReadPath} from '#lib/social/public.server.js';
 import { context, diagnosticRequest, logDiagnostic, classifyFailure, diagnosticStore, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { requestDiagnostics, requestDiagnosticLevel } from '#lib/server/diagnostics/request.js';
+import { sampleSlowDatabaseUse } from '#lib/server/diagnostics/runtime.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { featureEnabled } from '#lib/experimental.js';
 import { experimentalPathFeature } from '#lib/server/experimental.js';
@@ -138,6 +139,8 @@ export const handle: Handle = async ({ event, resolve }) => {
       const durationMs = performance.now() - started;
       void logDiagnostic(requestDiagnosticLevel(status, durationMs, fields.requestAction), 'request.complete',
         { ...fields, status, durationMs });
+      if(durationMs>=4000&&status<500&&['library','progress','requests','media','discovery','collection'].includes(fields.operation))
+        void sampleSlowDatabaseUse({...fields,durationMs});
     };
     if (!self)
       void logDiagnostic('debug', 'request.start', fields);

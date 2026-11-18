@@ -845,6 +845,23 @@ export const diagnostics = pgTable('diagnostics', {
   detail: jsonb('detail').$type<JsonObject>().notNull().default({}),
   createdAt: createdAt(),
 }, t => [index('diagnostics_retention_idx').on(t.createdAt)]);
+export const subtitlePreferences = pgTable('subtitle_preferences',{
+  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+  providerItemId:uuid('provider_item_id').notNull().references(()=>providerItems.id,{onDelete:'cascade'}),
+  sourceId:text('source_id').notNull(),
+  fingerprint:text('fingerprint').notNull(),
+},t=>[primaryKey({columns:[t.userId,t.providerItemId,t.sourceId]})]);
+
+export const subtitleDownloads = pgTable('subtitle_downloads',{
+  providerItemId:uuid('provider_item_id').notNull().references(()=>providerItems.id,{onDelete:'cascade'}),
+  sourceId:text('source_id').notNull(),
+  fingerprint:text('fingerprint').notNull(),
+  label:text('label').notNull(),
+  createdAt:createdAt(),
+  lastLoadedAt:timestamp('last_loaded_at',{withTimezone:true}),
+  failedAt:timestamp('failed_at',{withTimezone:true}),
+},t=>[primaryKey({columns:[t.providerItemId,t.sourceId,t.fingerprint]})]);
+
 export const playbackSessions = pgTable('playback_sessions', {
   accountGeneration:uuid('account_generation'),
   shareId:uuid('share_id'),
@@ -1303,6 +1320,7 @@ export const registrationInvites = pgTable('registration_invites', {
   id: uuid('id').primaryKey().defaultRandom(),
   tokenHash: text('token_hash').notNull().unique(),
   provisionConnectionId:uuid('provision_connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+  provisionInstanceId:uuid('provision_instance_id').references(()=>providerInstances.id,{onDelete:'set null'}),
   provisionGeneration:uuid('provision_generation'),
   provisionFolders:jsonb('provision_folders').$type<string[]>(),
   presetId: uuid('preset_id').references(() => invitePresets.id, {onDelete:'set null'}),
@@ -1447,6 +1465,7 @@ export const apiWebhooks = pgTable('api_webhooks', {
 export const onboardingProvisioning = pgTable('onboarding_provisioning',{
  userId:uuid('user_id').primaryKey().references(()=>users.id,{onDelete:'cascade'}),
  connectionId:uuid('connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+ authorityInstanceId:uuid('authority_instance_id').references(()=>providerInstances.id,{onDelete:'set null'}),
  accountGeneration:uuid('account_generation').notNull(),folders:jsonb('folders').$type<string[]>().notNull(),
  remoteId:text('remote_id'),state:text('state').notNull().default('pending'),updatedAt:updatedAt(),
  lifecycle: text('lifecycle').notNull().default(''),

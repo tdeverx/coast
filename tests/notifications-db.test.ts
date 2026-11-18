@@ -149,7 +149,7 @@ run('request updates are separate and ordered by notification date',async()=>{
  const feed=await notificationInbox(user,{segment:'requests'});expect(feed.items).toHaveLength(3);expect(feed.items[0].title).toBe('Request available');
  expect(feed.items.map(n=>n.title)).toEqual(['Request available','Request approved','Request pending']);
 });
-run('service failures stay individual and link to their job card',async()=>{
+run('personal service failures stay individual and link to the user’s connection',async()=>{
  const db=getSql(),instance=crypto.randomUUID(),connection=crypto.randomUUID();
  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Fixture Jellyfin','http://localhost:8096')`;
  await db`insert into provider_connections(id,user_id,instance_id) values(${connection},${user.id},${instance})`;
@@ -157,10 +157,11 @@ run('service failures stay individual and link to their job card',async()=>{
   for(let i=0;i<3;i++){
    const id=crypto.randomUUID();
    await db`insert into outbox_actions(id,user_id,connection_id,kind,payload,state) values(${id},${user.id},${connection},'jellyfin.sync',${{_jobFailure:{code:i===2?'connection':'permissions'}}}::jsonb,'failed')`;
-   await notify({userId:user.id,kind:'external-action',title:'Needs attention',sourceKey:'outbox:'+id});
+   await notify({userId:user.id,kind:'external-action',title:'Needs attention',sourceKey:'outbox:'+id,
+     data:{actorId:user.id,subjectId:id,destination:'/settings/jobs'}});
   }
   const feed=await notificationInbox(user,{kind:'external-action'});expect(feed.items).toHaveLength(3);
-  expect(feed.items.every(n=>n.destination===`/settings/jobs#job-${instance}-jellyfin.sync`)).toBe(true);
+  expect(feed.items.every(n=>n.destination==='/settings/connections')).toBe(true);
   expect(feed.items.every(n=>n.sourceLabel?.startsWith('Fixture Jellyfin'))).toBe(true);
   const unreadBefore=await notificationUnread(user);
   await db`update outbox_actions set state='cancelled' where connection_id=${connection} and payload->'_jobFailure'->>'code'='permissions'`;
