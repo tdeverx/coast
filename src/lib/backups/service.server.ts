@@ -5,6 +5,7 @@ import { getConfig } from '#lib/server/config.js';
 import { getSql } from '#lib/server/db/index.js';
 import { dataDirectory } from '#lib/server/security/credentials.js';
 import { AppError } from '#lib/server/security/errors.js';
+import { classifyFailure, diagnosticErrorCode, logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { captureBackup, pruneBackups, recipientCertificate } from './archive.server';
 import { defaultBackupPolicy, dueBackupDay, type BackupPolicy, type BackupStatus } from './model';
 
@@ -129,18 +130,25 @@ async function work(signal: AbortSignal) {
       scheduledDay: scheduled ? day : job.scheduledDay,
     };
     await saveValue(connection, jobKey, running);
+    const started = performance.now();
+    const captureSignal = AbortSignal.any([signal, AbortSignal.timeout(20 * 60_000)]);
     let snapshot: Job['latest'];
     try {
       if (!policy.recipient) throw new Error('Missing recovery certificate.');
       snapshot = await captureBackup({
         data: dataDirectory(), recipient: policy.recipient, database,
-        signal: AbortSignal.any([signal, AbortSignal.timeout(20 * 60_000)]),
+        signal: captureSignal,
         beforePublish: async () => {
           const [owner] = await connection`select pg_backend_pid() as backend`;
           if (owner.backend !== lock.backend) throw new Error('Backup database lease changed.');
         },
       });
-    } catch {
+    } catch (cause) {
+      const failure = classifyFailure(captureSignal.aborted ? captureSignal.reason : cause);
+      void logDiagnostic(signal.aborted ? 'warn' : 'error', 'job.failed', {
+        operation: 'backup', stage: 'backup-capture', failure, errorCode: diagnosticErrorCode(cause),
+        durationMs: performance.now() - started,
+      });
       await saveValue(connection, jobKey, {
         ...running, state: 'failed',
         error: signal.aborted ? 'Coast stopped before the backup finished.' :
@@ -151,10 +159,16 @@ async function work(signal: AbortSignal) {
     let warning: string | null = null;
     try {
       await pruneBackups(dataDirectory(), policy.keep, snapshot.name);
-    } catch {
+    } catch (cause) {
       warning = 'Backup saved. Coast could not remove older snapshots.';
+      void logDiagnostic('warn', 'job.failed', {
+        operation: 'backup', stage: 'backup-retention', failure: classifyFailure(cause), errorCode: diagnosticErrorCode(cause),
+      });
     }
     await saveValue(connection, jobKey, { ...running, state: 'completed', latest: snapshot, error: warning });
+    void logDiagnostic('info', 'job.complete', {
+      operation: 'backup', stage: 'backup-capture', durationMs: performance.now() - started,
+    });
   } finally {
     try {
       if (acquired) await connection`select pg_advisory_unlock(hashtextextended(${lease}, 0))`;
@@ -168,11 +182,16 @@ export function startBackupScheduler() {
   if (!backupDatabase()) return () => {};
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
+  let failed = false;
   const tick = async () => {
     try {
       await work(controller.signal);
-    } catch {
-      // A database outage must not stop the scheduler.
+      failed = false;
+    } catch (cause) {
+      if (!failed && !controller.signal.aborted) void logDiagnostic('error', 'job.failed', {
+        operation: 'backup', stage: 'backup-schedule', failure: classifyFailure(cause), errorCode: diagnosticErrorCode(cause),
+      });
+      failed = true;
     } finally {
       if (!controller.signal.aborted) timer = setTimeout(() => void tick(), 15_000).unref();
     }

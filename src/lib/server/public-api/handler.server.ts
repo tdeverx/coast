@@ -11,7 +11,8 @@ import { sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { DomainError } from '#lib/core/errors.js';
-import { logDiagnostic,classifyFailure } from '#lib/server/diagnostics/index.js';
+import { logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
+import { requestDiagnostics } from '#lib/server/diagnostics/request.js';
 import { authenticateApiToken } from './tokens.server';
 import { publicProgress } from './progress.server';
 import { publicWork,publicPage } from './response';
@@ -88,7 +89,11 @@ const publicApiResponse:RequestHandler=async event=>{
  }catch(cause) {
   const invalid=v.isValiError(cause),known=cause instanceof AppError||cause instanceof DomainError;
   const status=invalid?400:known?cause.status:503;
-  if(!invalid&&!known)void logDiagnostic('error','application.failed',{failure:classifyFailure(cause)});
+  const failure = classifyFailure(cause);
+  if (request.signal.aborted && failure === 'aborted') return new Response(null, { status: 499, headers });
+  if (status >= 500) void logDiagnostic('error', 'application.failed', {
+    ...requestDiagnostics(url), method: request.method, status, failure, errorCode: diagnosticErrorCode(cause),
+  });
   return Response.json({error:{code:invalid?'invalid_input':known?cause.code:'service_unavailable',message:invalid?'Check the supplied parameters.':known?cause.message:'This request could not be completed.'}},{status,headers:{...headers,...(status===401?{'www-authenticate':'Bearer realm="Coast"'}:{}),...(status===429?{'retry-after':'60'}:{})}});
  }
 };

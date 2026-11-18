@@ -40,7 +40,7 @@ export async function importJellyfinReading(context:Context,books:JellyfinBook[]
    const missing=cause instanceof ProviderHttpError&&cause.status===404||cause instanceof AppError&&cause.status===404&&cause.code==='not_found';
    const conflict=(cause instanceof AppError||cause instanceof DomainError)&&['reading_identity_conflict','identity_conflict'].includes(cause.code);
    if(!missing&&!conflict)throw cause;
-   await logDiagnostic('warn','application.failed',{operation:'library',stage:'item-import',provider:'jellyfin',code:conflict?'catalogue.identity-conflict':'provider.item-unavailable',count:1});
+   await logDiagnostic('warn','application.failed',{operation:'library',stage:'item-import',provider:'jellyfin',errorCode:conflict?'catalogue.identity-conflict':'provider.item-unavailable',count:1});
   }
   await options.checkpoint?.(index+1);
  }

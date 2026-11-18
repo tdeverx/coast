@@ -4,7 +4,8 @@ import { getFeatureConfig } from '#lib/server/features.js';
 import {managedRoute} from '#lib/server/auth/managed-library.server.js';
 import {onboardingPending} from '#lib/server/auth/onboarding.js';
 import {isPublicReadPath} from '#lib/social/public.server.js';
-import { context, logDiagnostic, classifyFailure, diagnosticStore } from '#lib/server/diagnostics/index.js';
+import { context, diagnosticRequest, logDiagnostic, classifyFailure, diagnosticStore, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
+import { requestDiagnostics, requestDiagnosticLevel } from '#lib/server/diagnostics/request.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { featureEnabled } from '#lib/experimental.js';
 import { experimentalPathFeature } from '#lib/server/experimental.js';
@@ -125,68 +126,40 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
   if (platformStopping()) return Response.json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   const id = correlationId(event.request.headers.get('x-coast-correlation-id'));
-  return withRequestConfig(() => context.run(id, async () => {
+  const requestId = crypto.randomUUID();
+  return withRequestConfig(() => context.run(id, () => diagnosticRequest.run(requestId, async () => {
     const started = performance.now();
     // Readiness must not first block on a separate, unbounded settings query.
     if (event.url.pathname !== '/api/v1/health') await refreshDiagnosticConfig();
-    const diagnosticRequest = event.url.pathname.startsWith('/api/v1/diagnostics');
-    const segment = event.url.pathname.split('/')[3];
-    const operation = [
-      'playback',
-      'providers',
-      'settings',
-      'admin',
-      'media',
-      'collection',
-      'library',
-      'progress',
-      'lists',
-      'notifications',
-      'requests',
-    ].includes(segment)
-      ? segment
-      : ['collection', 'library', 'progress'].includes(event.url.pathname.split('/')[1])
-        ? event.url.pathname.split('/')[1]
-        : ['login', 'setup', 'logout'].includes(event.url.pathname.split('/')[1])
-          ? 'auth'
-          : 'other';
-    if (!diagnosticRequest)
-      void logDiagnostic('debug', 'request.start', { method: event.request.method, operation });
+    const self = event.url.pathname.startsWith('/api/v1/diagnostics');
+    const fields = { ...requestDiagnostics(event.url), method: event.request.method };
+    const complete = (status: number) => {
+      if (self) return;
+      const durationMs = performance.now() - started;
+      void logDiagnostic(requestDiagnosticLevel(status, durationMs, fields.requestAction), 'request.complete',
+        { ...fields, status, durationMs });
+    };
+    if (!self)
+      void logDiagnostic('debug', 'request.start', fields);
     try {
       const response = await applicationHandle({ event, resolve });
       response.headers.set('x-coast-correlation-id', id);
+      response.headers.set('x-coast-request-id', requestId);
       response.headers.set('x-coast-diagnostic-level', diagnosticStore.level);
       // Ingestion and level polling must not log their own traffic.
-      if (!diagnosticRequest)
-        void logDiagnostic(
-          response.status >= 500 ? 'error' : response.status >= 400 ? 'warn' : 'info',
-          'request.complete',
-          {
-            method: event.request.method,
-            operation,
-            status: response.status,
-            durationMs: performance.now() - started,
-          }
-        );
+      complete(response.status);
       return response;
     } catch (error) {
       if (isRedirect(error) || isHttpError(error)) {
-        if (!diagnosticRequest)
-          void logDiagnostic(error.status >= 400 ? 'warn' : 'info', 'request.complete', {
-          operation,
-          status: error.status,
-          method: event.request.method,
-            durationMs: performance.now() - started,
-        });
-      } else
-        void logDiagnostic('error', 'request.failed', {
-        operation,
-        failure: classifyFailure(error),
-          durationMs: performance.now() - started,
-      });
+        complete(error.status);
+      } else if (!self) {
+        const failure = classifyFailure(error);
+        void logDiagnostic(failure === 'aborted' ? 'debug' : 'error', 'request.failed',
+          { ...fields, failure, errorCode: diagnosticErrorCode(error), durationMs: performance.now() - started });
+      }
       throw error;
     }
-  }));
+  })));
 };
 export const handleError: import('@sveltejs/kit/hooks').HandleServerError = ({ kind, error }) => {
   // Kit 3 also reports safe application/framework/validation errors here.

@@ -6,8 +6,8 @@ import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
 import { maintenanceKinds, serviceTraversalKinds } from '#lib/providers/tasks.js';
 import { taskRetryAttentionAttempts, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '#lib/providers/job-policy.js';
 import { jobExecution, JobYield } from './execution';
-import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, type RequestPriority } from '../security/request-priority';
-import { context, logDiagnostic, classifyFailure } from '../diagnostics';
+import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, ProviderQueueTimeoutError, type RequestPriority } from '../security/request-priority';
+import { context, logDiagnostic, classifyFailure, diagnosticErrorCode } from '../diagnostics';
 import { runtimeEvidence } from '../diagnostics/runtime';
 import { refreshDiagnosticConfig,getConfig } from '../config';
 import { correlationId } from '../../diagnostics';
@@ -208,6 +208,7 @@ export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure
     if(error.reason==='identity')return {code:'provider.identity',remedy:'connection',retryable:false};
     return {code:'action.rejected',remedy:'metadata',retryable:false};
   }
+  if (error instanceof ProviderQueueTimeoutError) return {code:'local.provider-queue-timeout',remedy:'retry',retryable:true};
   if (error instanceof ProviderQueueBusyError) return {code:'local.provider-busy',remedy:'retry',retryable:true};
   if (classifyFailure(error) === 'timeout') return { code: 'provider.timeout', remedy: 'retry', retryable: true };
   if(error instanceof AppError && error.code === 'steam_private')return {code:'provider.permission',remedy:'permissions',retryable:false};
@@ -249,13 +250,8 @@ export function validationDiagnostic(error: unknown) {
 
 /** Map known scan invariants to stable codes without exposing arbitrary error messages. */
 export function safeDiagnosticErrorCode(error: unknown) {
-  // Drizzle wraps the Bun PostgreSQL error as its cause. Inspect only the fixed
-  // SQLSTATE, never SQL text/parameters or arbitrary exception messages.
-  let cause=error;
-  for(let depth=0;depth<5&&cause instanceof Error;depth++){
-    if('code' in cause&&cause.code==='40P01'||'errno' in cause&&cause.errno==='40P01')return 'local.database-deadlock';
-    cause=cause.cause;
-  }
+  const systemCode = diagnosticErrorCode(error);
+  if (systemCode) return systemCode;
   if (!(error instanceof Error)) return undefined;
   const codes: Record<string, string> = {
     'Jellyfin returned an incomplete library page.': 'jellyfin.incomplete-library-page',
@@ -273,7 +269,8 @@ export function safeDiagnosticErrorCode(error: unknown) {
 /** A short, controlled execution phase helps diagnose failures without storing error text. */
 export function tagDiagnosticStage(error: unknown, stage: string) {
   if (error && typeof error === 'object') {
-    Object.defineProperty(error, 'diagnosticStage', { value: stage, configurable: true });
+    try { Object.defineProperty(error, 'diagnosticStage', { value: stage, configurable: true }); }
+    catch { /* A frozen error must reach its original owner. */ }
   }
   return error;
 }
@@ -351,7 +348,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
     return await providerJob.run(action.id, () => jobExecution.run({id:action.id,userId:action.userId,kind:action.kind,payload:action.payload,attempts:action.attempts,purpose:action.purpose ?? 'interactive',started:performance.now(),checkpoints:0}, () => requestPriority.run(action.priority??1, () => context.run(action.correlationId, async () => {
       const started = performance.now();
       const startedAt=new Date();
-      void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
+      void logDiagnostic('debug', 'job.start', { actionId: action.id, jobKind: action.kind, attempts: action.attempts });
       const heartbeat = setInterval(() => {
         void runtimeEvidence.track('heartbeat', () => reserved`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`).catch(
           () => {}
@@ -398,11 +395,13 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           if (completed.length)
             await resolveNotification(action.userId, `outbox:${action.id}`, sql);
         });
-        void logDiagnostic('info', 'job.complete', {
+        const durationMs = performance.now() - started;
+        void logDiagnostic(action.purpose === 'live' && durationMs < 1000 ? 'debug' : 'info', 'job.complete', {
           actionId: action.id,
+          jobKind: action.kind,
           accountGeneration: action.accountGeneration,
           attempts: action.attempts,
-          durationMs: performance.now() - started,
+          durationMs,
         });
       } catch (error) {
         if(error instanceof JobYield) {
@@ -411,16 +410,6 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           void logDiagnostic('debug','job.yield',{actionId:action.id,durationMs:performance.now()-started});
           return true;
         }
-        void logDiagnostic('error', 'job.failed', {
-          actionId: action.id,
-          accountGeneration: action.accountGeneration,
-          attempts: action.attempts,
-          failure: classifyFailure(error),
-          status: error instanceof ProviderHttpError ? error.status : undefined,
-          errorCode: safeDiagnosticErrorCode(error) ?? jobFailureDetail(error, error instanceof PermanentActionError).code,
-          stage: safeDiagnosticStage(error),
-          durationMs: performance.now() - started,
-        });
         const permanent =
           safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict' ||
           (error instanceof AppError && error.code === 'steam_private') ||
@@ -431,6 +420,19 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
         const developerMode=(await getConfig()).developerMode;
         const message = developerMode?'Automatic retries are paused in developer mode. Review this failure and Retry when ready.':jobFailureMessage(error, permanent);
         const failure:JobFailure = {...jobFailureDetail(error, permanent),stage:safeDiagnosticStage(error),validation:validationDiagnostic(error)};
+        void logDiagnostic(permanent || developerMode || action.attempts >= taskRetryAttentionAttempts ? 'error' : 'warn', 'job.failed', {
+          actionId: action.id,
+          jobKind: action.kind,
+          accountGeneration: action.accountGeneration,
+          attempts: action.attempts,
+          failure: classifyFailure(error),
+          status: error instanceof ProviderHttpError ? error.status : undefined,
+          errorCode: failure.code,
+          stage: failure.stage,
+          retryable: !permanent && !developerMode,
+          backfill: action.payload.backfill === true ? true : undefined,
+          durationMs: performance.now() - started,
+        });
         const retryAfter =
           error instanceof ProviderHttpError
             ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))

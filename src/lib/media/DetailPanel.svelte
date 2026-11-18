@@ -48,7 +48,7 @@
      if(controller.signal.aborted)return;
      enhancement=api<{kind:string;data:EnhancedDetails}>(`media/details?href=${encodeURIComponent(target.href)}&enhance=true`,undefined,'GET',{signal:controller.signal})
       .then(enhanced=>{if(enhanced.kind!=='screen')throw new Error('This title changed. Open its details again.');return enhanced.data;})
-      .catch(()=>({...result.data,requestable:false,refreshUnavailable:true}));
+      .catch(()=>({...result.data,requestable:false}));
     }else if(result.kind==='reading')ReadingDetails=(await import('#lib/reading/Details.svelte')).default;
     else if(result.kind==='game')GameDetails=(await import('#lib/games/Details.svelte')).default;
     else if(result.kind==='music')MusicDetails=(await import('#lib/music/Details.svelte')).default;
@@ -80,7 +80,7 @@
   {:else if view.detail.kind==='reading-group'&&GroupDetails}<GroupDetails detailHref={view.href} data={view.detail.data}/>
   {:else if view.detail.kind==='remote-game'&&RemoteGameDetails}<RemoteGameDetails detailHref={view.href} data={view.detail.data}/>
   {:else if view.detail.kind==='person'&&PersonDetails}<PersonDetails detailHref={view.href} data={view.detail.data}/>
-  {:else if view.detail.kind==='screen'&&Details&&view.enhancement}<Details modal detailHref={view.href} {editionName} data={{...view.detail.data,requestable:false,refreshUnavailable:false,enhancement:view.enhancement}}/>{/if}
+  {:else if view.detail.kind==='screen'&&Details&&view.enhancement}<Details modal detailHref={view.href} {editionName} data={{...view.detail.data,requestable:false,enhancement:view.enhancement}}/>{/if}
  {/each}
  </div>
 </DetailOverlay>

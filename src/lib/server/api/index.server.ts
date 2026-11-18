@@ -36,7 +36,8 @@ import { missingDemand, adminDemand } from '#lib/collection/demand.server.js';
 import { musicHistory, musicArtistTrackChoices, removeMusicListen, resetMusicPosition } from '#lib/music/history.server.js';
 import {musicChildren} from '#lib/music/details.server.js';
 import { logMusic } from '#lib/music/persistence.server.js';
-import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
+import { logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
+import { requestDiagnostics } from '#lib/server/diagnostics/request.js';
 import { discoveryContent, discoveryParameters } from '#lib/server/queries/discovery.js';
 import { libraryContent } from '#lib/server/queries/library-content.js';
 import { sequenceSourceSchema } from '#lib/media/sequence.js';
@@ -355,7 +356,9 @@ export const handler: RequestHandler = async (event) => {
       const failure=providerApiError(error);
       return Response.json(failure.body,{status:failure.status,headers:failure.headers});
     }
-    void logDiagnostic('error', path[0] === 'playback' ? 'playback.failed' : 'application.failed', { failure: classifyFailure(error) });
+    void logDiagnostic('error', path[0] === 'playback' ? 'playback.failed' : 'application.failed', {
+      ...requestDiagnostics(url), method, failure: classifyFailure(error), errorCode: diagnosticErrorCode(error),
+    });
     return Response.json(
       {
         code: 'service_unavailable',

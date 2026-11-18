@@ -86,8 +86,9 @@ test('actual structured storage bounds queued writes and counts filesystem failu
   try {
     await Promise.all(Array.from({length: 1000}, () => store.write('info', 'runtime.sample',
       {rssBytes: 100, error: Error('SECRET'), parameters: ['private']})));
-    expect(store.metrics()).toMatchObject({diagnosticPending: 0, diagnosticDropped: 1000 - storageLimits.pending});
-    expect((await store.recent()).length).toBeLessThanOrEqual(storageLimits.pending);
+    const routineBudget = storageLimits.pending - storageLimits.warningReserve;
+    expect(store.metrics()).toMatchObject({diagnosticPending: 0, diagnosticDropped: 1000 - routineBudget});
+    expect((await store.recent()).length).toBeLessThanOrEqual(routineBudget);
     expect(await readFile(join(directory, '0.jsonl'), 'utf8')).not.toContain('SECRET');
     const failed = new DiagnosticStore(() => '/dev/null/unwritable');
     await expect(failed.write('info', 'runtime.sample', {rssBytes: 1})).resolves.toBeUndefined();
@@ -113,11 +114,11 @@ test('provider rotation cannot discard resource history, and hot restarts cannot
   const directory = await mkdtemp(join(tmpdir(), 'coast-sample-retention-'));
   const previous = process.env.COAST_DATA_DIR;
   const level = diagnosticStore.level;
-  let now = 0;
+  let now = 0, snapshots = 0;
   process.env.COAST_DATA_DIR = directory;
   diagnosticStore.level = 'info';
   try {
-    const evidence = new RuntimeEvidence(undefined, async () => ({rssBytes: 42}), () => now);
+    const evidence = new RuntimeEvidence(undefined, async () => { snapshots++; return {rssBytes: 42}; }, () => now);
     await evidence.sample();
     await evidence.sample();
     expect(await runtimeSampleStore.recent()).toHaveLength(1);
@@ -132,6 +133,9 @@ test('provider rotation cannot discard resource history, and hot restarts cannot
     diagnosticStore.level = 'off';
     now += 60_001; await evidence.sample();
     expect(await runtimeSampleStore.recent()).toHaveLength(2);
+    diagnosticStore.level = 'warn';
+    now += 60_001; await evidence.sample();
+    expect(snapshots).toBe(2);
   } finally {
     if (previous === undefined) delete process.env.COAST_DATA_DIR; else process.env.COAST_DATA_DIR = previous;
     diagnosticStore.level = level;

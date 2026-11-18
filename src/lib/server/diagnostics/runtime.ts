@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DiagnosticStore, diagnosticStore, logDiagnostic } from './index';
+import { DiagnosticStore, diagnosticStore, logDiagnostic, diagnosticErrorCode } from './index';
 import { dataDirectory } from '../security/credentials';
+import { enabled } from '#lib/diagnostics.js';
 
 // Resource history has its own quota; provider/job chatter cannot rotate it out.
 export const runtimeSampleStore = new DiagnosticStore(() => join(dataDirectory(), 'runtime', 'samples'), 4096);
@@ -14,16 +15,9 @@ function persist(event: 'runtime.sample' | 'runtime.operation', fields: Record<s
 
 export const runtimeStages = ['reserve', 'reservation', 'queue', 'heartbeat', 'maintenance'] as const;
 export type RuntimeStage = (typeof runtimeStages)[number];
-const databaseCodes = ['ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
-  'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK', '53300', '57014', '57P01', '57P02', '57P03'] as const;
 /** Error text, SQL, parameters and provider identities never enter these events. */
 export function runtimeErrorCode(error: unknown): string {
-  try {
-    if (!error || typeof error !== 'object') return 'unknown';
-    for (const code of [(error as {code?: unknown}).code, (error as {errno?: unknown}).errno])
-      if (databaseCodes.includes(code as typeof databaseCodes[number])) return String(code);
-    return 'unknown';
-  } catch { return 'unknown'; }
+  return diagnosticErrorCode(error) ?? 'unknown';
 }
 type Measurements = Record<string, number>;
 type Sink = (event: 'runtime.sample' | 'runtime.operation', fields: Record<string, unknown>) => unknown;
@@ -90,7 +84,7 @@ export class RuntimeEvidence {
       const durationMs = Math.max(0, this.clock() - started);
       if (failed) this.counters.operationFailures++;
       if (failed || durationMs >= 1000)
-        this.operation({stage, durationMs, errorCode: runtimeErrorCode(error), failed});
+        this.operation({stage, durationMs, errorCode: failed ? runtimeErrorCode(error) : undefined, failed});
     };
   }
   connection(error: unknown, closed = false) {
@@ -114,6 +108,7 @@ export class RuntimeEvidence {
     return values;
   }
   async sample() {
+    if (this.sink === persist && !enabled('info', diagnosticStore.level)) return;
     if (this.sampling || this.clock() - this.sampledAt < 60_000) return;
     this.sampling = true;
     this.sampledAt = this.clock();

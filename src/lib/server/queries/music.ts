@@ -5,7 +5,7 @@ import { musicLibrary } from '#lib/music/service.server.js';
 import { musicBrowseSchema } from '#lib/providers/jellyfin/music.server.js';
 import { musicCard } from '#lib/music/presentation.js';
 import { mapConcurrent } from '#lib/server/utils/async.js';
-import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
+import { logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { pageNumberSchema, requestedPageInterval } from './pagination';
 import { pageInterval, type PageWindow } from '#lib/page-window.js';
 import { AppError } from '#lib/server/security/errors.js';
@@ -53,7 +53,10 @@ export async function musicBrowseData(userId: string, url: URL,signal?:AbortSign
         };
       } catch (cause) {
         signal?.throwIfAborted();
-        await logDiagnostic('error', 'application.failed', { failure: classifyFailure(cause) });
+        void logDiagnostic('warn', 'application.failed', {
+          operation: 'music', stage: 'library-page', provider: 'jellyfin',
+          failure: classifyFailure(cause), errorCode: diagnosticErrorCode(cause),
+        });
         return {
           items: [],
           total: 0,

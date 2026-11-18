@@ -10,11 +10,11 @@ import {chromium,type Browser} from '@playwright/test';
 const root=new URL('../',import.meta.url).pathname;
 const modules:Record<string,{source:string;svelte?:boolean;runes?:boolean}>={
  entry:{source:`import {mount,flushSync,unmount} from 'svelte';import Panel from '${root}src/lib/media/DetailPanel.svelte';import {page} from '$app/state';
- const component=mount(Panel,{target:document.body});window.fixture={navigate(href){flushSync(()=>{page.state.mediaDetailHref=href;});},refresh(){flushSync(()=>{page.data.revision++;});},viewer(id){flushSync(()=>{page.data.user={id};});},requests:[],disposals:[],destroy(){return unmount(component);}};`},
+ const component=mount(Panel,{target:document.body});window.fixture={navigate(href){flushSync(()=>{page.state.mediaDetailHref=href;});},refresh(){flushSync(()=>{page.data.revision++;});},viewer(id){flushSync(()=>{page.data.user={id};});},requests:[],disposals:[],failures:[],destroy(){return unmount(component);}};`},
  route:{runes:true,source:`export const page=$state({state:{mediaDetailHref:undefined,mediaDetailDepth:1},url:new URL('http://fixture/library'),data:{user:{id:'viewer'},revision:0,capabilities:{screen:true,music:true,games:true,reading:true}}});`},
  client:{source:`export class ApiError extends Error{constructor(status){super('denied');this.status=status;}}export const message=e=>e.message;export const isFeatureDisabled=e=>e.featureDisabled===true;export function api(path,body,method,{signal}){return new Promise((resolve,reject)=>window.fixture.requests.push({path,signal,resolve,reject}));}`},
  navigation:{source:`export function closeMediaDetails(){}export function backMediaDetails(){}`},
- context:{source:`export const reportFailure=()=>{};`},
+ context:{runes:true,source:`export const reportFailure=read=>{$effect(()=>{const text=read();if(text)window.fixture.failures.push(text);});};`},
  player:{runes:true,source:`export const player=$state({visible:false});`},
  reader:{runes:true,source:`export const reader=$state({visible:false});`},
  visibility:{source:`export const playbackVisible=p=>p.visible;`},
@@ -30,9 +30,13 @@ for(const family of ['screen','reading','game','music','reading-group','remote-g
 const detailsSource=await Bun.file(root+'src/lib/media/Details.svelte').text();
 const enhancementEffect=detailsSource.match(/  \$effect\(\(\) => \{\n    const pending = data.enhancement;[\s\S]*?\n  \}\);/)?.[0];
 if(!enhancementEffect)throw Error('Review actual Details enhancement lifetime before updating its compiled fixture.');
-modules.screen={svelte:true,source:`<script>import {onDestroy} from 'svelte';let {data,detailHref}=$props();let enriched=$state(null);const view=$derived(enriched??data);const initialId=data.item.id;
+const detailFeedback=detailsSource.split('\n').find(line=>line.startsWith('  reportFailure(()=>error || episodeTracking.error'));
+if(!detailFeedback)throw Error('Review actual Details feedback before updating its compiled fixture.');
+modules.screen={svelte:true,source:`<script>import {onDestroy} from 'svelte';import {reportFailure} from '#lib/ui/client-context.js';let {data,detailHref}=$props();let enriched=$state(null);const view=$derived(enriched??data);const initialId=data.item.id;
+let error=$state('');const episodeTracking=$state({error:''});
 ${enhancementEffect}
-onDestroy(()=>window.fixture.disposals.push({family:'screen',initialId,id:data.item.id,href:detailHref}));</script><main data-kind="screen" data-href={detailHref} data-episodes={view.episodes?.length??-1} data-refresh={view.refreshUnavailable?'yes':'no'}>{view.item.title}</main>`};
+${detailFeedback}
+onDestroy(()=>window.fixture.disposals.push({family:'screen',initialId,id:data.item.id,href:detailHref}));</script><main data-kind="screen" data-href={detailHref} data-episodes={view.episodes?.length??-1} data-enhanced={enriched?'yes':'no'}>{view.item.title}</main>`};
 
 const aliases:Record<string,string>={
  '$app/state':'route','#lib/ui/client.js':'client','#lib/ui/client-context.js':'context','#lib/ui/media-navigation.js':'navigation',
@@ -49,7 +53,7 @@ beforeAll(async()=>{
  if(!browserEnabled)return;
  const result=await Bun.build({entrypoints:['panel-fixture:entry'],target:'browser',conditions:['browser'],plugins:[{name:'detail-panel-runtime',setup(build){
   build.onResolve({filter:/^panel-fixture:/},args=>({path:args.path.slice('panel-fixture:'.length),namespace:'panel-fixture'}));
-  build.onResolve({filter:/^\$app\/|^#lib\//},args=>aliases[args.path]?{path:aliases[args.path],namespace:'panel-fixture'}:{path:root+'src/lib/'+args.path.slice('#lib/'.length)+'.ts'});
+  build.onResolve({filter:/^\$app\/|^#lib\//},args=>aliases[args.path]?{path:aliases[args.path],namespace:'panel-fixture'}:{path:root+'src/lib/'+args.path.slice('#lib/'.length).replace(/\.js$/,'')+'.ts'});
   build.onLoad({filter:/.*/,namespace:'panel-fixture'},args=>{const mod=modules[args.path];return {contents:mod.svelte?compile(mod.source,{filename:args.path+'.svelte',generate:'client'}).js.code:mod.runes?compileModule(mod.source,{filename:args.path+'.svelte.js',generate:'client'}).js.code:mod.source,loader:'js',resolveDir:root};});
   build.onLoad({filter:/\.svelte$/},async args=>({contents:compile(await Bun.file(args.path).text(),{filename:args.path,generate:'client'}).js.code,loader:'js',resolveDir:root}));
  }}]});
@@ -129,7 +133,7 @@ async function showScreen(f:any,href:string,title:string,episodes:number){
  await f.page.waitForFunction((title:string)=>document.querySelector('[data-kind="screen"]')?.textContent===title,title);
  return{initial,enhancement:await requestIndex(f,true)};
 }
-async function snapshot(f:any){return f.page.locator('[data-kind="screen"]').evaluate((node:HTMLElement)=>({title:node.textContent,href:node.dataset.href,episodes:node.dataset.episodes,refresh:node.dataset.refresh}));}
+async function snapshot(f:any){return f.page.locator('[data-kind="screen"]').evaluate((node:HTMLElement)=>({title:node.textContent,href:node.dataset.href,episodes:node.dataset.episodes,enhanced:node.dataset.enhanced}));}
 browserTest('captured Reviews enhancement cannot replace a newer full Overview after late resolve or rejection',async()=>{
  for(const reject of [false,true]){
   const f=await fixture();try{
@@ -139,10 +143,10 @@ browserTest('captured Reviews enhancement cannot replace a newer full Overview a
    const current=await showScreen(f,overviewHref,'Saved full overview',2);
    expect(await f.page.evaluate((index:number)=>(window as any).fixture.requests[index].signal.aborted,old.enhancement)).toBe(true);
    await resolveAt(f,old.enhancement,{kind:'screen',data:screenData('Stale compact',0)},reject);
-   expect(await snapshot(f)).toEqual({title:'Saved full overview',href:overviewHref,episodes:'2',refresh:'no'});
-   await resolveAt(f,current.enhancement,{kind:'screen',data:{...screenData('Enhanced full overview',3),requestable:true,refreshUnavailable:false}});
+   expect(await snapshot(f)).toEqual({title:'Saved full overview',href:overviewHref,episodes:'2',enhanced:'no'});
+   await resolveAt(f,current.enhancement,{kind:'screen',data:{...screenData('Enhanced full overview',3),requestable:true}});
    await f.page.waitForFunction(()=>document.querySelector('[data-kind="screen"]')?.textContent==='Enhanced full overview');
-   expect(await snapshot(f)).toEqual({title:'Enhanced full overview',href:overviewHref,episodes:'3',refresh:'no'});expect(f.errors).toEqual([]);
+   expect(await snapshot(f)).toEqual({title:'Enhanced full overview',href:overviewHref,episodes:'3',enhanced:'yes'});expect(f.errors).toEqual([]);
   }finally{await f.close();}
  }
 });
@@ -155,7 +159,7 @@ browserTest('same-href revision, viewer replacement and close fence held screen 
   const revisionEnhancement=await requestIndex(f,true);
   expect(await f.page.evaluate((i:number)=>(window as any).fixture.requests[i].signal.aborted,first.enhancement)).toBe(true);
   await resolveAt(f,first.enhancement,{kind:'screen',data:screenData('Late pre-revision',8)});
-  expect(await snapshot(f)).toEqual({title:'Revised reviews',href:reviewsHref,episodes:'0',refresh:'no'});
+  expect(await snapshot(f)).toEqual({title:'Revised reviews',href:reviewsHref,episodes:'0',enhanced:'no'});
   await f.page.evaluate(()=>(window as any).fixture.viewer('replacement-viewer'));
   await f.page.locator('[data-overlay]').waitFor({state:'detached'});const viewerInitial=await requestIndex(f,false);
   await resolveAt(f,revisionEnhancement,{kind:'screen',data:screenData('Late old viewer',9)});
@@ -168,11 +172,12 @@ browserTest('same-href revision, viewer replacement and close fence held screen 
   expect(await f.page.locator('[data-overlay]').count()).toBe(0);expect(f.errors).toEqual([]);
  }finally{await f.close();}
 });
-browserTest('wrong-kind enhanced envelope retains its captured saved screen payload and refresh fallback',async()=>{
+browserTest('failed optional enhancement retains saved screen details without action feedback',async()=>{
  const f=await fixture();try{
   const current=await showScreen(f,reviewsHref,'Saved screen fallback',0);
   await resolveAt(f,current.enhancement,{kind:'reading',data:{item:{id:'controlled-different-kind',title:'Wrong medium'}}});
-  await f.page.waitForFunction(()=>document.querySelector('[data-kind="screen"]')?.getAttribute('data-refresh')==='yes');
-  expect(await snapshot(f)).toEqual({title:'Saved screen fallback',href:reviewsHref,episodes:'0',refresh:'yes'});expect(f.errors).toEqual([]);
+  await f.page.waitForFunction(()=>document.querySelector('[data-kind="screen"]')?.getAttribute('data-enhanced')==='yes');
+  expect(await snapshot(f)).toEqual({title:'Saved screen fallback',href:reviewsHref,episodes:'0',enhanced:'yes'});
+  expect(await f.page.evaluate(()=>(window as any).fixture.failures)).toEqual([]);expect(f.errors).toEqual([]);
  }finally{await f.close();}
 });

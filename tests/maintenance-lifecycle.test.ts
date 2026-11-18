@@ -20,7 +20,8 @@ mock.module(lib+'server/storage/retention.server.ts',()=>({pruneTransientRecords
 mock.module(lib+'server/auth/account-management.server.ts',()=>({expireMemberships:async()=>{memberships++;}}));
 mock.module(lib+'server/config.ts',()=>({getConfig:async()=>({developerMode})}));
 mock.module(lib+'server/diagnostics/runtime.ts',()=>({runtimeEvidence:{track:(_stage,operation)=>operation()}}));
-mock.module(lib+'server/diagnostics/index.ts',()=>({context:{getStore:()=>null},logDiagnostic:async(...args)=>{logs.push(args);}}));
+mock.module(lib+'server/diagnostics/index.ts',()=>({context:{getStore:()=>null},classifyFailure:()=> 'unexpected',
+ diagnosticErrorCode:()=>undefined,logDiagnostic:async(...args)=>{logs.push(args);}}));
 mock.module(lib+'providers/instances.server.ts',()=>({requireProviderAdmin:async()=>{},getInstance:async()=>({provider:'jellyfin'})}));
 mock.module(lib+'server/db/index.ts',()=>({getDb:()=>({transaction:async()=>{schedules++;await scheduleGate.promise;return {queued:0,active:0,connections:0,busy:false};}}),getSql:()=>{throw new Error('Unexpected database access');},closeDb:async()=>{}}));
 globalThis.setInterval=(callback,interval)=>{check(interval===60000,'wrong maintenance interval');timer=callback;return {unref(){}};};
@@ -41,7 +42,7 @@ try{
  developerMode=true;timer();await settle();
  check(cleanup===3&&schedules===4,'developer mode skipped cleanup or scheduled ordinary work');
  developerMode=false;cleanupResult=()=>Promise.reject(new Error('synthetic stop failure'));timer();await settle();
- check(cleanup===4&&schedules===5&&logs.some(row=>row[1]==='job.failed'),'cleanup failure blocked ordinary work or escaped logging');
+ check(cleanup===4&&schedules===5&&logs.some(row=>row[0]==='warn'&&row[1]==='job.failed'&&row[2].stage==='share-cleanup'),'cleanup failure blocked ordinary work or escaped logging');
  cleanupResult=()=>Promise.resolve();timer();await settle();
  check(cleanup===5&&schedules===6,'failed cleanup did not release its retry slot');
 }finally{maintenance.stopProviderMaintenance();}

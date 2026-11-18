@@ -35,7 +35,7 @@ import {
 } from '#lib/server/db/schema.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
-import { PermanentActionError } from '#lib/server/queue/index.js';
+import { PermanentActionError, tagDiagnosticStage } from '#lib/server/queue/index.js';
 import { notify } from '#lib/server/notifications/index.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { ingestMetadata } from '#lib/catalogue/service.server.js';
@@ -989,7 +989,7 @@ export async function executeJellyfinUserState(
   );
   const { adapter, connection,instance } = await jellyfinContext(userId, connectionId,provided);
   if(data.backfill && connection.settings.reconcileTracking!==true)return;
-  await adapter.identity(instance.serverIdentity||undefined);
+  await adapter.identity(instance.serverIdentity||undefined).catch(cause => { throw tagDiagnosticStage(cause, 'identity'); });
   const items = await getDb()
     .selectDistinct({ id: providerItems.externalId })
     .from(availability)
@@ -1015,8 +1015,11 @@ export async function executeJellyfinUserState(
   if(!items.length)return; // Durable intent remains; a future successful user sync can deliver it.
   const [work]=await getDb().select().from(works).where(eq(works.id,data.mediaId));
   for (const item of items) {
-    const music=work?.category==='music'?await adapter.musicItem(connection.externalUserId!,item.id):null;
-    const remote = music?{played:!!music.playCount,favourite:music.favourite,positionSeconds:music.positionSeconds??0}:(await adapter.item(connection.externalUserId!, item.id)).userData;
+    const music = work?.category === 'music'
+      ? await adapter.musicItem(connection.externalUserId!, item.id).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); })
+      : null;
+    const remote = music ? { played: !!music.playCount, favourite: music.favourite, positionSeconds: music.positionSeconds ?? 0 }
+      : (await adapter.item(connection.externalUserId!, item.id).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); })).userData;
     if (remote) {
       const remoteEmpty=data.field==='watched'?!remote.played:data.field==='favourite'?!remote.favourite:!remote.positionSeconds;
       if(remoteEmpty){
@@ -1036,20 +1039,19 @@ export async function executeJellyfinUserState(
             }
           : { value: data.field === 'watched' ? remote.played : (remote.favourite ?? false),...(music&&category==='history'?{playCount:music.playCount??0}:{}) },
         { source: 'jellyfin',importRemote:connection.settings.importPlayback!==false }
-      );
+      ).catch(cause => { throw tagDiagnosticStage(cause, 'reconcile'); });
       if (decision === 'conflict' || decision === 'remote') return;
     }
-    if (data.field === 'progress')
-      await adapter.setProgress(connection.externalUserId!, item.id, Number(data.value));
-    else if(music && data.field==='watched')await adapter.setListeningSummary(connection.externalUserId!,item.id,Number(desired.playCount));
-    else if(music && data.field==='favourite')await adapter.setMusicFavourite(connection.externalUserId!,item.id,Boolean(data.value));
-    else
-      await adapter.setUserState(
-        connection.externalUserId!,
-        item.id,
-        data.field,
-        Boolean(data.value)
-      );
+    try {
+      if (data.field === 'progress')
+        await adapter.setProgress(connection.externalUserId!, item.id, Number(data.value));
+      else if (music && data.field === 'watched')
+        await adapter.setListeningSummary(connection.externalUserId!, item.id, Number(desired.playCount));
+      else if (music && data.field === 'favourite')
+        await adapter.setMusicFavourite(connection.externalUserId!, item.id, Boolean(data.value));
+      else
+        await adapter.setUserState(connection.externalUserId!, item.id, data.field, Boolean(data.value));
+    } catch (cause) { throw tagDiagnosticStage(cause, 'provider-write'); }
   }
   await acknowledgeProviderValue(userId, connectionId, data.mediaId, category, desired);
   if(data.intentVersion)await getDb().delete(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),eq(reconciliationIntents.workId,data.mediaId),eq(reconciliationIntents.category,category),eq(reconciliationIntents.version,data.intentVersion)));

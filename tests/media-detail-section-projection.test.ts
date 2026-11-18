@@ -61,7 +61,7 @@ test('the initial read and both successful enrichment rereads keep one demand an
   const load=compile(source,{detailsData:async(...args:any[])=>{reads.push(args);return saved;},requestOptions:async(_u:string,_id:string,signal:AbortSignal)=>{signals.push(signal);return[{id:'destination'}];},ensureDetails:async(...args:any[])=>{refreshes.push(args);return true;}},'loadMediaDetails');
   const initial=await load('owner','screen',controller.signal,includeChildren);const enhanced=await initial.enhancement;
   expect(reads).toEqual(Array.from({length:3},()=>['owner','screen',includeChildren]));expect(refreshes).toEqual([['owner','screen'],['owner','parent']]);
-  expect(signals).toEqual([controller.signal]);expect(enhanced.requestable).toBe(true);expect(enhanced.refreshUnavailable).toBe(false);
+  expect(signals).toEqual([controller.signal]);expect(enhanced.requestable).toBe(true);
  }
 });
 
@@ -70,7 +70,7 @@ test('presentation dispatch keeps normalized section in both initial and enhance
  const tableQuery:any={from:()=>tableQuery,where:()=>tableQuery,limit:()=>Promise.resolve([{category:'screen'}])};
  const forbidden=()=>{throw Error('Unrequested medium');};
  const dispatch=compile(source,{eq,works:s.works,getDb:()=>({select:()=>tableQuery}),AppError,mediaDetailTarget:target.mediaDetailTarget,screenDetailChildren:target.screenDetailChildren,
-  detailsData:async(...args:any[])=>{reads.push(args);return{item:{id:args[1]}};},loadMediaDetails:async(...args:any[])=>{enhancements.push(args);return{enhancement:Promise.resolve({item:{id:args[1]},requestable:true,refreshUnavailable:false})};},readingDetails:forbidden,gameDetailData:forbidden,gameProviderDetailData:forbidden,musicDetailData:forbidden,musicSourceDetailData:forbidden,readingRemoteDetail:forbidden,readingGroupDetail:forbidden,personDetailData:forbidden},'({workDetailData,mediaDetailData})');
+  detailsData:async(...args:any[])=>{reads.push(args);return{item:{id:args[1]}};},loadMediaDetails:async(...args:any[])=>{enhancements.push(args);return{enhancement:Promise.resolve({item:{id:args[1]},requestable:true})};},readingDetails:forbidden,gameDetailData:forbidden,gameProviderDetailData:forbidden,musicDetailData:forbidden,musicSourceDetailData:forbidden,readingRemoteDetail:forbidden,readingGroupDetail:forbidden,personDetailData:forbidden},'({workDetailData,mediaDetailData})');
  const id=crypto.randomUUID();
  for(const section of [undefined,'reviews','credits','activity',crypto.randomUUID(),'insights']){
   const href=`/media/${id}`+(section?`?section=${section}`:'');const demand=target.screenDetailChildren(section);

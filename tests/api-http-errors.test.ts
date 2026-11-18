@@ -6,12 +6,13 @@ import {DomainError} from '../src/lib/core/errors';
 import {ProviderActionError} from '../src/lib/providers/contracts';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
 import {providerApiError} from '../src/lib/server/security/provider-api-error';
-import {classifyFailure} from '../src/lib/server/diagnostics';
+import {classifyFailure,diagnosticErrorCode} from '../src/lib/server/diagnostics';
+import {requestDiagnostics} from '../src/lib/server/diagnostics/request';
 
 // Exercise the current catch owners with real installed error classes. Only the
 // diagnostic write is inert; these authored cases do not exercise HTTP or data.
 const dependencies={json,isHttpError,v,AppError,DomainError,ProviderActionError,ProviderHttpError,
-  providerApiError,classifyFailure,logDiagnostic:async()=>{}};
+  providerApiError,classifyFailure,diagnosticErrorCode,requestDiagnostics,logDiagnostic:async()=>{}};
 const owners={central:'../src/lib/server/api/index.server.ts',
   insights:'../src/routes/api/v1/media/[id]/insights/+server.ts'} as const;
 const catches=Object.fromEntries(await Promise.all(Object.entries(owners).map(async([owner,path])=>{
@@ -22,11 +23,12 @@ const catches=Object.fromEntries(await Promise.all(Object.entries(owners).map(as
     throw Error('Review the API catch owner before updating its error contract.');
   const body=source.slice(start+marker.length,end);
   return [owner,new Function(...Object.keys(dependencies),owner==='central'?'error':'cause',
-    'request','path','source',`return (async()=>{${body}})();`) as (...args:unknown[])=>Promise<Response>];
+    'request','path','source','url','method',`return (async()=>{${body}})();`) as (...args:unknown[])=>Promise<Response>];
 }))) as Record<keyof typeof owners,(...args:unknown[])=>Promise<Response>>;
 async function invoke(owner:keyof typeof owners,cause:unknown,aborted=false,path='library',source='tmdb'){
   const controller=new AbortController();if(aborted)controller.abort();
-  const response=await catches[owner](...Object.values(dependencies),cause,{signal:controller.signal},[path],source);
+  const request=new Request(`https://fixture.invalid/api/v1/${path}`,{signal:controller.signal});
+  const response=await catches[owner](...Object.values(dependencies),cause,request,[path],source,new URL(request.url),request.method);
   return {status:response.status,body:await response.text(),retryAfter:response.headers.get('retry-after')};
 }
 const known=(status:number)=>{try{error(status,'Known request failure.');}catch(cause){return cause;}};

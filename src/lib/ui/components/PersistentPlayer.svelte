@@ -249,6 +249,7 @@
     if (audioMode) { playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = true; }
     lastReport = Date.now();
     void report('start');
+    tracePlayback('playback.playing');
   }
   let lastTouchTap:{at:number;x:number;y:number}|null=null;
   let lastTouchAt=-Infinity;
@@ -340,8 +341,8 @@
     switchingVideo = undefined;
     failedSessionId = session.id;
     clearStreamFailure();
-    tracePlayback('playback.failed');
     const code = reason.code ?? media?.error?.code;
+    tracePlayback('playback.failed', { status: reason.status, code, failure: 'media', stage: 'player' });
     void change(`playback/${session.id}/error`, { code: code ?? 0 }).catch(() => {});
     if (session.canFallback && !player.loading && !audioMode && !partyRoom && !sharedMode) {
       const feedback = feedbackForViewer();
@@ -733,9 +734,15 @@
     };
   });
   let lastTiming = 0;
-  function tracePlayback(event: import('#lib/diagnostics.js').DiagnosticEvent) {
+  function tracePlayback(event: import('#lib/diagnostics.js').DiagnosticEvent, details?: Record<string, unknown>) {
     if(preview)return;
-    browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
+    browserDiagnostic(event, {
+      sessionId: player.session?.id, mediaType: player.session?.mediaType, delivery: player.session?.kind,
+      durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0,
+      bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0,
+      positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState,
+      code: media?.error?.code, ...details,
+    });
   }
   reportFailure(()=>startupImportError?'':error, ()=>{if(retryStartup)retryStartup();else return switchEdition();}, 'current-viewer');
   reportImportFailure(()=>startupImportError, 'current-viewer');
@@ -776,7 +783,7 @@
     onplay={() => {
       if (!audioMode) player.paused = false;
     }}
-    onplaying={() => { if (audioMode) return; playing(); tracePlayback('playback.playing'); }}
+  onplaying={() => { if (!audioMode) playing(); }}
     onpause={() => { if (!audioMode) paused(); }}
     onended={() => { if (!audioMode) void ended(); }}
     onerror={() => { if (!audioMode) nativeFailure(); }}

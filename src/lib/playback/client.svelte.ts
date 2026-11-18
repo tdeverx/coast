@@ -1,6 +1,6 @@
 import { PlaybackSavePending } from '#lib/playback/stop.js';
 import { browserDiagnostic } from '#lib/ui/diagnostics.js';
-import { api, capturePlaybackApi } from '#lib/ui/client.js';
+import { ApiError, api, capturePlaybackApi } from '#lib/ui/client.js';
 import { feedbackForViewer } from '#lib/ui/action-feedback.svelte.js';
 import { consumeSubtitle, pendingSubtitle } from './subtitle-selection.svelte';
 import type { PlaybackView } from '#lib/ui/types.js';
@@ -193,7 +193,10 @@ export async function playMedia(
   } catch (error) {
     if(!current())return;
     if(syncSwitch&&player.session)await controller?.stop();
-    browserDiagnostic('playback.failed', { failure: 'unexpected' });
+    // HTTP outcomes have a server request event and a detailed preparation result.
+    if (!(error instanceof ApiError) && !(error instanceof PlaybackSavePending)) browserDiagnostic('playback.failed', {
+      stage: 'player', mediaType: player.preparationMediaType, failure: error instanceof TypeError ? 'network' : 'unexpected',
+    });
     throw error;
   } finally {
     if(current()){preparing=undefined;player.loading = false;releasePreparation?.();releasePreparation=undefined;}

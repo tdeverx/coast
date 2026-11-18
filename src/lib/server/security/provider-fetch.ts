@@ -1,5 +1,5 @@
 import { assertJobFeaturePolicy, JobYield } from '#lib/server/queue/execution.js';
-import { logDiagnostic, classifyFailure, context } from '../diagnostics';
+import { logDiagnostic, classifyFailure, context, diagnosticRequest } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { AppError } from './errors';
@@ -118,7 +118,7 @@ function limitedBody(
   max: number,
   controller: AbortController,
   timeout: number,
-  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string; callerSignal?: AbortSignal | null; deadline?: number }
+  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string; requestId?: string; stream?: boolean; callerSignal?: AbortSignal | null; deadline?: number }
 ) {
   const reader = body.getReader();
   let bytes = 0;
@@ -144,11 +144,11 @@ function limitedBody(
         }
         bytes += result.value.byteLength;
         if (bytes > max) {
-          void logDiagnostic(
-            'error',
+          if (diagnostics.stream) void logDiagnostic(
+            'warn',
             'provider.failed',
-            { provider: diagnostics.provider, failure: 'validation' },
-            diagnostics.correlationId
+            { provider: diagnostics.provider, failure: 'validation', stage: 'response-body' },
+            diagnostics.correlationId, diagnostics.requestId
           );
           controller.abort();
           await reader.cancel();
@@ -157,14 +157,16 @@ function limitedBody(
         }
         output.enqueue(result.value);
       } catch (error) {
-        void logDiagnostic(
-          cancelled || diagnostics.callerSignal?.aborted ? 'info' : 'error',
+        const failure = classifyFailure(controller.signal.aborted ? controller.signal.reason : error);
+        if (diagnostics.stream) void logDiagnostic(
+          cancelled || failure === 'aborted' ? 'debug' : 'warn',
           'provider.failed',
           {
             provider: diagnostics.provider,
-            failure: classifyFailure(controller.signal.aborted ? controller.signal.reason : error),
+            failure,
+            stage: 'response-body',
           },
-          diagnostics.correlationId
+          diagnostics.correlationId, diagnostics.requestId
         );
         output.error(controller.signal.aborted ? controller.signal.reason : error);
       } finally {
@@ -252,6 +254,8 @@ async function providerFetch(
         ? limitedBody(response.body, max, controller, options.stream ? 30_000 : timeout, {
             provider: config.provider,
             correlationId: context.getStore(),
+            requestId: diagnosticRequest.getStore(),
+            stream: options.stream,
             callerSignal: init.signal,
             deadline: options.stream ? undefined : deadline,
           })
@@ -317,6 +321,8 @@ export async function secureProviderFetch(
   options: { stream?: boolean; maxBytes?: number } = {}
 ): Promise<Response> {
   const started = performance.now();
+  let providerWaitMs: number | undefined;
+  let stage = 'provider-queue';
   void logDiagnostic('trace', 'provider.start', {
     provider: config.provider,
     method: init.method || 'GET',
@@ -324,10 +330,13 @@ export async function secureProviderFetch(
   });
   try {
     const perform = async () => {
+      providerWaitMs = performance.now() - started;
+      stage = 'provider-read';
       await assertJobFeaturePolicy();
       const response = await providerFetch(config, path, init, options);
       if (options.stream) return response;
       // Buffer the bounded body before releasing the lane, not a multi-hour media stream.
+      stage = 'response-body';
       const bytes = await response.arrayBuffer();
       if(response.status===429)deferProviderRequests(new URL(config.baseUrl).origin,(retryAfterSeconds(response.headers.get('retry-after'))??60)*1000);
       return new Response([204,205,304].includes(response.status) ? null : bytes, {status:response.status,statusText:response.statusText,headers:response.headers});
@@ -336,22 +345,33 @@ export async function secureProviderFetch(
     // below its 200-per-resource hourly budget without a second hidden queue.
     const interval = config.provider === 'openlibrary' ? 1100 : config.provider === 'comic-vine' ? 18_100 : config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
     const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined,config.queueTimeoutMs);
-    void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
+    const durationMs = performance.now() - started;
+    const { status } = response;
+    const success = response.ok || status === 304;
+    const routine = durationMs < 1000 && (options.stream || status === 304);
+    const level = success ? (routine ? 'debug' : 'info') : status === 404 && !options.stream ? 'info' : 'warn';
+    void logDiagnostic(level, 'provider.complete', {
       provider: config.provider,
       method: init.method || 'GET',
-      status: response.status,
-      failure: response.ok ? undefined : 'http',
-      durationMs: performance.now() - started,
+      status,
+      failure: success ? undefined : 'http',
+      durationMs, providerWaitMs,
       stream: !!options.stream,
     });
     return response;
   } catch (error) {
     // Policy withdrawal yields before any upstream request; it is worker control flow.
     if (error instanceof JobYield) throw error;
-    void logDiagnostic(init.signal?.aborted ? 'info' : 'error', 'provider.failed', {
+    const failure = classifyFailure(init.signal?.aborted ? init.signal.reason : error);
+    const durationMs = performance.now() - started;
+    const status = error instanceof AppError ? error.status : undefined;
+    void logDiagnostic(failure === 'aborted' ? 'debug' : 'warn', 'provider.failed', {
       provider: config.provider,
-      failure: classifyFailure(error),
-      durationMs: performance.now() - started,
+      failure, status, stage,
+      providerWaitMs: providerWaitMs ?? (failure === 'local-queue-timeout' ? durationMs : undefined),
+      method: init.method || 'GET',
+      stream: !!options.stream,
+      durationMs,
     });
     throw error;
   }

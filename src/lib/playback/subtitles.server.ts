@@ -176,7 +176,7 @@ export async function downloadSubtitle(user: SessionUser, target: Target, body: 
         source: source.availabilityId ? { availabilityId: source.availabilityId, sourceId: after.id } : undefined,
       };
     }
-    throw new AppError(502, 'Jellyfin did not confirm the new subtitle. Check the available tracks before downloading again.');
+    throw new AppError(502, 'Jellyfin did not confirm the new subtitle. Check the available tracks before downloading again.', 'subtitle_unconfirmed');
   })().finally(() => downloads.delete(key));
   downloads.set(key, { ticket: input.ticket, promise });
   return promise;
