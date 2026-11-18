@@ -5,11 +5,12 @@ import type {ProgressExperimentContent} from '../src/lib/progress-experiment';
 // Exercise the real mixed query builder and hydrator boundary with an authored
 // candidate set. Native SQL/metadata equivalence is checked separately on dev data.
 const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
-const state={allEnabled:false,planners:[] as string[],count:95,queries:[] as {sql:string;params:unknown[]}[],hydrated:[] as string[][],viewers:[] as string[],mediums:[] as string[],comic:false,abortAtCount:undefined as AbortController|undefined,featureReads:0,historyReads:0};
+const state={allEnabled:false,planners:[] as string[],count:95,queries:[] as {sql:string;params:unknown[]}[],hydrated:[] as string[][],viewers:[] as string[],mediums:[] as string[],comic:false,abortAtCount:undefined as AbortController|undefined,featureReads:0,historyReads:0,sharedLater:false,savedPresence:[] as {viewer:string;includeFavourites:boolean}[]};
 const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const ids=()=>Array.from({length:state.count},(_,index)=>id(index+1));
 const database=drizzle(async(query,params)=>{
   state.queries.push({sql:query,params});
+  if(query.endsWith('as dropped'))return {rows:[{finished:false,dropped:false}]};
   if(query.startsWith('select count(')){
     state.abortAtCount?.abort();return {rows:[[state.count]]};
   }
@@ -27,7 +28,12 @@ const fixtureUrl=moduleUrl(`
   export const createScreenProgressPlanning=()=>()=>{};
   export const screenProgressPresent=async()=>false;
   export const nonScreenProgressPresence=async()=>({continue:false,next:false});
-  export const savedProgressPresence=async()=>({watchlist:false,favourites:false});
+  export const savedProgressPresence=async(_owner,viewer,_category,_config,includeFavourites)=>{
+    fixture.state.savedPresence.push({viewer,includeFavourites});
+    return {watchlist:fixture.state.sharedLater,favourites:false};
+  };
+  export const pausedProgressPresent=async()=>false;
+  export const pausedProgressPage=async()=>{throw Error('Unexpected paused page');};
   export const mediumProgressIds=async(_user,options)=>{fixture.state.mediums.push(options.category);return [];};export const readingProgressIds=async()=>{fixture.state.planners.push('reading');return [];};
   export const listCandidateIds=async()=>fixture.ids();
   export const collectionCTE=()=>'';
@@ -37,7 +43,7 @@ const fixtureUrl=moduleUrl(`
 `);
 const fixture=await import(fixtureUrl);fixture.install({database,state,ids});
 let code=new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL('../src/lib/server/queries/progress-experiment.ts',import.meta.url)).text());
-for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./progress'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
+for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./progress','./paused-progress'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
 const resolve:Record<string,string>={
   'valibot':import.meta.resolve('valibot'),'drizzle-orm':import.meta.resolve('drizzle-orm'),
   '#lib/experimental.js':import.meta.resolve('../src/lib/experimental'),
@@ -48,7 +54,6 @@ const resolve:Record<string,string>={
   '../db/read-cancellation':import.meta.resolve('../src/lib/server/db/read-cancellation'),
   '../experimental':import.meta.resolve('../src/lib/server/experimental'),
   './media':import.meta.resolve('../src/lib/server/queries/media'),
-  './paused-progress':import.meta.resolve('../src/lib/server/queries/paused-progress'),
   './viewing-recency':import.meta.resolve('../src/lib/server/queries/viewing-recency'),
   '#lib/core/tracking/rewatch.server.js':import.meta.resolve('../src/lib/core/tracking/rewatch.server'),
   './pagination':import.meta.resolve('../src/lib/server/queries/pagination'),
@@ -56,7 +61,7 @@ const resolve:Record<string,string>={
 };
 for(const [path,resolved]of Object.entries(resolve))code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(resolved)}`);
 const {progressExperimentData}:typeof import('../src/lib/server/queries/progress-experiment')=await import(moduleUrl(code));
-const reset=()=>{state.allEnabled=false;state.planners=[];state.count=95;state.queries=[];state.hydrated=[];state.viewers=[];state.mediums=[];state.comic=false;state.abortAtCount=undefined;state.featureReads=0;state.historyReads=0;};
+const reset=()=>{state.allEnabled=false;state.planners=[];state.count=95;state.queries=[];state.hydrated=[];state.viewers=[];state.mediums=[];state.comic=false;state.abortAtCount=undefined;state.featureReads=0;state.historyReads=0;state.sharedLater=false;state.savedPresence=[];};
 
 test('row demand hydrates twenty cards while expanded pages preserve exact totals and the sixty-card boundary',async()=>{
   reset();
@@ -128,4 +133,19 @@ test('action-scoped Progress only admits its own planner before count and hydrat
   if(category==='screen')expect(state.queries[0].params).toContain('screen');
   else expect(state.hydrated).toEqual([]);
  }
+});
+
+test('profile Watching can open directly on Later and hydrates only its visible preview',async()=>{
+ reset();
+ const owner=id(999),viewer=id(998);
+ const options={preview:true,viewerId:viewer,segments:'profile' as const};
+ const empty=await progressExperimentData(owner,{},options);
+ expect(empty.availableViews).toEqual([]);
+ expect(state.hydrated).toEqual([]);
+ state.sharedLater=true;
+ const later=await progressExperimentData(owner,{},options);
+ expect(later).toMatchObject({view:'watchlist',availableViews:['watchlist']});
+ expect(state.savedPresence).toEqual([{viewer,includeFavourites:false},{viewer,includeFavourites:false}]);
+ expect(state.hydrated).toEqual([ids().slice(0,20)]);
+ expect(state.queries.find(query=>query.sql.startsWith('select count('))?.params).toContain('collection');
 });

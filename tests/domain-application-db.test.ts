@@ -900,7 +900,7 @@ suite('application PostgreSQL read models', () => {
       userId: c,
       mediaId: movie,
       instanceId: instance,
-      state:index%2?'approved' as const:'pending' as const,
+      state:index%2===0?'pending' as const:index%4===1?'approved' as const:'processing' as const,
       createdAt: new Date(1700000000000 + index * 1000),
     }));
     await getDb()
@@ -919,10 +919,14 @@ suite('application PostgreSQL read models', () => {
     expect(last.page).toBe(2);
     expect(last.requests.map((row) => row.id)).toEqual([requests[0].id]);
     expect((await requestList(a)).requests).toEqual([]);
-    const approved=await requestList(c,1,undefined,{state:'approved',kind:'movie',pageSize:20});
-    expect(approved.total).toBe(30);expect(approved.pages).toBe(2);expect(approved.requests).toHaveLength(20);
-    expect(approved.requests.every(request=>request.state==='approved')).toBe(true);
-    expect((await requestList(c,2,undefined,{state:'approved',kind:'movie',pageSize:20})).requests).toHaveLength(10);
+    for(const state of ['approved','processing'] as const){
+      const filters={state,kind:'movie' as const,pageSize:10};
+      const firstPage=await requestList(c,1,undefined,filters);
+      const secondPage=await requestList(c,2,undefined,filters);
+      expect(firstPage.total).toBe(15);expect(firstPage.pages).toBe(2);expect(firstPage.requests).toHaveLength(10);
+      expect([...firstPage.requests,...secondPage.requests].map(request=>request.id))
+        .toEqual(requests.filter(request=>request.state===state).reverse().map(request=>request.id));
+    }
     expect((await requestList(c,1,undefined,{state:'approved',kind:'show'})).total).toBe(0);
     expect(first.requests.every(row=>row.requester.username)).toBe(true);
     await expect(requestList(c,1,undefined,{allUsers:true})).rejects.toMatchObject({status:403});

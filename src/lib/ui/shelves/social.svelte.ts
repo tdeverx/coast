@@ -20,7 +20,7 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
  let relationship=$state(untrack(()=>get().relationship??'all'));
  let audience=$state(untrack(()=>get().audience??'all')),mediaKind=$state(untrack(()=>get().mediaKind??'all')),period=$state(untrack(()=>get().period??'all')),activityType=$state(untrack(()=>get().activityType??'all'));
  const filtersEnabled=$derived(get().audience!==undefined&&get().surface!=='popular');
- function resetFilters(){audience='all';mediaKind='all';period='all';activityType='all';return load();}
+ function resetFilters(){return selectFilters({audience:'all',mediaKind:'all',period:'all',activityType:'all'});}
  const targetKey=()=>JSON.stringify([page.data.user?.id,page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,category,get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship!==undefined?relationship:undefined,audience,mediaKind,period,activityType]);
  const initial = untrack(() => get().initial);
  const resource = createResource<Feed>(initial ? {...initial,scope:untrack(targetKey)} : { items: [], hasMore: false, next: null }, !!initial);
@@ -29,16 +29,17 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
   if (append && resource.busy) return;
   refresh.clear();
   if(page.data.capabilities?.social===false){resource.replace({items:[],hasMore:false,next:null});return;}
-  if(category!=='all'&&!categoryEnabled({...page.data,features:page.data.capabilities},category)){
-    if(get().category){resource.replace({items:[],hasMore:false,next:null});return;}
-    const next=mediumOptions({...page.data,features:page.data.capabilities})[0]?.value;
+  if(category!=='all'&&!categoryEnabled(mediaConfig,category)){
+    if(get().category&&!get().mediums){resource.replace({items:[],hasMore:false,next:null});return;}
+    const next=mediumOptionsForViewer[0]?.value;
     if(!next){resource.replace({items:[],hasMore:false,next:null});return;}
     category=next;
+    if(filtersEnabled)({mediaKind,activityType}=compatibleFilters(next));
   }
   if(resource.data.scope!==targetKey())append=false;
   const requestedWork=targetKey(),scoped=!!(get().workId||get().artistId||get().readingGroupId);
   const query = new URLSearchParams({ category,...(filtersEnabled?{audience,mediaKind,period,activityType}:{}), ...(get().relationship!==undefined?{relationship}:{}),...(get().workId?{workId:get().workId!}:{}),...(get().artistId?{artistId:get().artistId!}:{}),...(get().readingGroupId?{readingGroupId:get().readingGroupId!}:{}), ...(append && resource.data.next ? resource.data.next : {}) });
-  await resource.load(async signal => {const result=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?${query}`, undefined, 'GET', { signal });signal.throwIfAborted();if(!append&&!result.items.length&&!scoped&&get().mediums&&category!=='all'&&get().layout!=='grid'){const any=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?category=all`,undefined,'GET',{signal});return {...result,scope:requestedWork,emptyAllMedia:!any.items.length};}return {...result,scope:requestedWork};}, {
+  await resource.load(async signal => {const result=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?${query}`, undefined, 'GET', { signal });signal.throwIfAborted();if(!append&&!result.items.length&&!scoped&&!filtersEnabled&&get().mediums&&category!=='all'&&get().layout!=='grid'){const any=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?category=all`,undefined,'GET',{signal});return {...result,scope:requestedWork,emptyAllMedia:!any.items.length};}return {...result,scope:requestedWork};}, {
    merge: (previous, result) => ({ ...result, items: uniqueItems(append ? [...previous.items, ...result.items] : result.items, item => item.entryId ?? item.id) }),
   });
  }
@@ -67,23 +68,54 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
    previousScope=scope;previousRefresh=key;
   });
  });
- function selectFilters(patch:Partial<ActivityFilters>){
-  if(Object.entries(patch).every(([key,value])=>({audience,mediaKind,period,activityType})[key as keyof ActivityFilters]===value))return;
+ function selectFilters(patch:Partial<ActivityFilters>,nextCategory=category){
+  const mediumChanged=nextCategory!==category;
+  if(!mediumChanged&&Object.entries(patch).every(([key,value])=>({audience,mediaKind,period,activityType})[key as keyof ActivityFilters]===value))return;
+  category=nextCategory;
   audience=patch.audience??audience;mediaKind=patch.mediaKind??mediaKind;period=patch.period??period;activityType=patch.activityType??activityType;
   if(get().layout==='grid'&&!location.embedded&&!preview){
    const url=new URL(location.url.href);for(const [key,value] of Object.entries({audience,mediaKind,period,activityType}))url.searchParams.set(key,value);
+   if(mediumChanged){url.searchParams.set('view',actionFromCategory(category));url.searchParams.delete('category');}
    for(const key of ['before','beforeId','beforeKnown','beforeRelationship','page'])url.searchParams.delete(key);
-   resource.cancel();void goto(url,{replace:true,reset:false,state:page.state});return;
+   resource.cancel();return goto(url,{replace:true,reset:false,state:page.state});
   }
-  void load();
+  return load();
  }
- const typeOptions=$derived(mediaTypeOptions({...page.data,features:page.data.capabilities}).filter(option=>option.value==='all'||category==='all'||(category==='screen'?['movie','show'].includes(option.value):category==='reading'?['book','comic'].includes(option.value):category==='music'?['album','track'].includes(option.value):option.value==='game')));
+ const mediaConfig=$derived({...page.data,features:page.data.capabilities});
+ const mediumOptionsForViewer=$derived(mediumOptions(mediaConfig));
+ function mediaOptions(medium:string){
+  return mediaTypeOptions(mediaConfig).filter(option=>option.value==='all'||medium==='all'||(medium==='screen'?['movie','show'].includes(option.value):medium==='reading'?['book','comic'].includes(option.value):medium==='music'?['album','track'].includes(option.value):option.value==='game'));
+ }
+ const typeOptions=$derived(mediaOptions(category));
+ function compatibleFilters(medium:string):Pick<ActivityFilters,'mediaKind'|'activityType'>{
+  return {
+   mediaKind:mediaOptions(medium).some(option=>option.value===mediaKind)?mediaKind:'all',
+   activityType:activityTypeOptions(medium).some(option=>option.value===activityType)?activityType:'all',
+  };
+ }
+ function selectMedium(value:string){
+  if(value===category||!mediumOptionsForViewer.some(option=>option.value===value))return;
+  if(!filtersEnabled){category=value;void load();return;}
+  void selectFilters(compatibleFilters(value),value);
+ }
  onDestroy(resource.dispose);
  return {
-    get pagination() { return { kind: 'cursor' as const, hasMore: resource.data.hasMore }; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&view=${actionFromCategory(category)}`);if(get().relationship===undefined&&!filtersEnabled)return href;const url=new URL(href,page.url.href);if(get().relationship!==undefined)url.searchParams.set('relationship',relationship);if(filtersEnabled)for(const [key,value] of Object.entries({audience,mediaKind,period,activityType}))url.searchParams.set(key,value);return url.pathname+url.search;}, get shape(){return category==='music'?'square' as const:category==='reading'||category==='game'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'||category==='music'||category==='game'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;}, get filters():ShelfControl[]{if(filtersEnabled)return [];return get().relationship!==undefined?[{type:'segments' as const,label:'Activity selection',value:relationship,options:workFriendOptions(get().relationshipKind),change:(value:string)=>{relationship=value as WorkFriendFilter;void load();}}]:get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, get controls():ShelfControl[]{return !filtersEnabled?[]:[{type:'select',section:'activity',label:'Audience',value:audience,options:activityAudienceOptions,change:value=>selectFilters({audience:value as ActivityFilters['audience']})},...(typeOptions.length>2?[{type:'select' as const,label:category==='reading'?'Reading type':'Media type',value:mediaKind,options:typeOptions,change:(value:string)=>selectFilters({mediaKind:value as ActivityFilters['mediaKind']})}]:[]),{type:'select',section:'activity',label:'Activity type',value:activityType,options:activityTypeOptions(category),change:value=>selectFilters({activityType:value as ActivityFilters['activityType']})},{type:'select',section:'activity',label:'Time period',value:period,options:[{value:'all',label:'All time'},{value:'month',label:'Past month'},{value:'year',label:'Past year'}],change:value=>selectFilters({period:value as ActivityFilters['period']})}];},
+    get pagination() { return { kind: 'cursor' as const, hasMore: resource.data.hasMore }; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&view=${actionFromCategory(category)}`);if(get().relationship===undefined&&!filtersEnabled)return href;const url=new URL(href,page.url.href);if(get().relationship!==undefined)url.searchParams.set('relationship',relationship);if(filtersEnabled)for(const [key,value] of Object.entries({audience,mediaKind,period,activityType}))url.searchParams.set(key,value);return url.pathname+url.search;}, get shape(){return category==='music'?'square' as const:category==='reading'||category==='game'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'||category==='music'||category==='game'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;},
+  get filters():ShelfControl[]{
+   if(!filtersEnabled&&get().relationship!==undefined)return [{type:'segments',label:'Activity selection',value:relationship,options:workFriendOptions(get().relationshipKind),change:value=>{relationship=value as WorkFriendFilter;void load();}}];
+   if(!get().mediums||!mediumOptionsForViewer.length)return [];
+   return [{type:'segments',label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptionsForViewer,change:selectMedium}];
+  },
+  get controls():ShelfControl[]{return !filtersEnabled?[]:[{type:'select',section:'activity',label:'Audience',value:audience,options:activityAudienceOptions,change:value=>selectFilters({audience:value as ActivityFilters['audience']})},...(typeOptions.length>2?[{type:'select' as const,label:category==='reading'?'Reading type':'Media type',value:mediaKind,options:typeOptions,change:(value:string)=>selectFilters({mediaKind:value as ActivityFilters['mediaKind']})}]:[]),{type:'select',section:'activity',label:'Activity type',value:activityType,options:activityTypeOptions(category),change:value=>selectFilters({activityType:value as ActivityFilters['activityType']})},{type:'select',section:'activity',label:'Time period',value:period,options:[{value:'all',label:'All time'},{value:'month',label:'Past month'},{value:'year',label:'Past year'}],change:value=>selectFilters({period:value as ActivityFilters['period']})}];},
   get filterReset(){return filtersEnabled?{disabled:audience==='all'&&mediaKind==='all'&&period==='all'&&activityType==='all',run:resetFilters}:undefined;},
   get emptyConfirmed(){return !filtersEnabled&&(!get().mediums || resource.data.emptyAllMedia===true);},
   get items() { if(resource.data.scope!==targetKey())return []; return resource.data.items; }, get ready() { return resource.ready; }, get busy() { return resource.busy; },
   get error() { return resource.error; }, get activated() { return resource.activated; },
-  get empty(){return !resource.ready||resource.busy?'Loading activity…':get().surface==='popular'?'Visible activity from friends in the last 30 days appears here.':filtersEnabled?audience==='you'?'Your recent activity appears here.':'Activity shared by friends appears here.':'Your activity and shared activity from friends appear here.';}, load };
+  get empty(){
+   if(!resource.ready||resource.busy)return 'Loading activity…';
+   if(get().surface==='popular')return 'Visible activity from friends in the last 30 days appears here.';
+   if(filtersEnabled&&audience==='you')return 'Your recent activity appears here.';
+   if(filtersEnabled&&audience==='friends')return 'Activity shared by friends appears here.';
+   return 'Your activity and shared activity from friends appear here.';
+  }, load };
 }

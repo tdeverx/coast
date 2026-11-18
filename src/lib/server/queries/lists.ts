@@ -81,7 +81,7 @@ function savedListCondition(userId:string,input:v.InferOutput<typeof listsOption
 }
 
 /** Fixed existential checks for the shared Progress saved tabs. */
-export async function savedProgressPresence(userId:string,viewerId:string,category:string,config:Awaited<ReturnType<typeof getFeatureConfig>>) {
+export async function savedProgressPresence(userId:string,viewerId:string,category:string,config:Awaited<ReturnType<typeof getFeatureConfig>>,includeFavourites:boolean) {
   const allowed=and(enabledCategories(sql`${s.works.category}`,config),selectedCategory(sql`${s.works.category}`,category),sql`${s.works.category}<>'music'`);
   const presence=(view:'watchlist'|'favourites')=>{
     const input=v.parse(listsOptionsSchema,{view,category,filter:'to-watch'});
@@ -90,7 +90,7 @@ export async function savedProgressPresence(userId:string,viewerId:string,catego
       left join ${s.media} on ${s.media.id}=${s.works.id} where ${where}
       and social_visible(${userId}::uuid,${viewerId}::uuid,${view==='favourites'?'favourites':'collection'},${s.works.category}))`;
   };
-  const [result]=await getDb().execute<{watchlist:boolean;favourites:boolean}>(sql`select ${presence('watchlist')} as watchlist,${presence('favourites')} as favourites`);
+  const [result]=await getDb().execute<{watchlist:boolean;favourites:boolean}>(sql`select ${presence('watchlist')} as watchlist,${includeFavourites?presence('favourites'):sql`false`} as favourites`);
   return result;
 }
 

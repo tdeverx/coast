@@ -143,7 +143,7 @@ async function progressExperimentPresence(
     nonScreenProgressPresence(userId,viewerId,category,config),
     pausedProgressPresent(userId,viewerId,category),
     segments==='profile'?historyPresence():undefined,
-    segments==='overview'?savedProgressPresence(userId,viewerId,category??'all',config):undefined,
+    savedProgressPresence(userId,viewerId,category??'all',config,segments==='overview'),
   ]);
   const present:Partial<Record<ProgressExperimentContent['view'],boolean>>={
     continue:continuing||other.continue,next:next||other.next,paused,...history,...saved,

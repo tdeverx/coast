@@ -42,7 +42,7 @@
     {:else if section === 'popular'}
       <Shelf source={{type:'social',surface:'popular',layout:'grid',category}} />
     {:else}
-      <Shelf source={{type:'social',layout:'grid',category,...data.activityFilters}} />
+      <Shelf source={{type:'social',layout:'grid',category,mediums:true,...data.activityFilters}} />
     {/if}
   {:else}
     {#if !data.heroes.length}<Heading variant="page" title="For You" />{/if}
@@ -56,7 +56,7 @@
     {#if page.data.capabilities.social}<Shelf source={{type:'progress',surface:'recommendations',category,actionScoped:true}} />{/if}
     {#if data.action==='listen'}<Shelf source={{type:'progress',surface:'watchlist',category,actionScoped:true}}/><Shelf source={{type:'progress',surface:'favourites',category,actionScoped:true}}/>{/if}
     {#if data.action!=='listen'&&page.data.experiments.planning}<Shelf source={{type:'recommendation',feature:'upcoming',category}} />{/if}
-    {#if page.data.capabilities.social}<Shelf source={{type:'social',category,audience:'friends'}} />{/if}
+    {#if page.data.capabilities.social}<Shelf source={{type:'social',category,mediums:true,audience:'all'}} />{/if}
     {#if page.data.capabilities?.personalisation&&DynamicFeed}<DynamicFeed {category} />{/if}
   {/if}
   {/if}

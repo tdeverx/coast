@@ -99,7 +99,7 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   }
   return {
     get filterReset(){return {disabled:current.kind==='all'&&current.scope==='all',run:()=>update({kind:'all',scope:'all'})};},
-    get title(){return 'Progress';},
+    get title(){return get().username?'Watching':'Progress';},
     get items(){
       if(loadedOwner!==ownerKey||scopedCategory&&resource.data.category!==scopedCategory||resource.data.view!==view||resource.data.kind!==current.kind||resource.data.scope!==current.scope)return [];
       const items=resource.data.items.filter(item=>!['album','track','artist'].includes(item.kind)&&categoryEnabled({...page.data,features:page.data.capabilities},item.kind==='game'?'game':['book','comic'].includes(item.kind)?item.kind:'screen'));

@@ -4,8 +4,9 @@ import type {ShelfItem} from './ui/shelves/types';
 const trackingTabs = [
   {value:'continue',label:'Continue'}, {value:'next',label:'Next'}, {value:'paused',label:'Paused'},
 ];
-export const progressExperimentTabs = [...trackingTabs,{value:'watchlist',label:'Later'},{value:'favourites',label:'Favourites'}];
-export const profileProgressExperimentTabs = [...trackingTabs,{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
+const laterTab = {value:'watchlist',label:'Later'};
+export const progressExperimentTabs = [...trackingTabs,laterTab,{value:'favourites',label:'Favourites'}];
+export const profileProgressExperimentTabs = [...trackingTabs,laterTab,{value:'finished',label:'Finished'},{value:'dropped',label:'Dropped'}];
 export const progressExperimentSchema = v.object({
   category:v.optional(v.picklist(['screen','game','reading'])),
   view:v.optional(v.picklist(['continue','next','paused','watchlist','favourites','finished','dropped']),'continue'),

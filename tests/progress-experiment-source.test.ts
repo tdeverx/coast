@@ -161,11 +161,12 @@ test('expanded requests keep full pages and never inherit preview mode',async()=
   finally{dispose();}
 });
 
-test('profile Progress orders Paused before Finished and preserves the owner in row reads and expanded links',async()=>{
+test('profile Watching includes Later and preserves the owner in row reads and expanded links',async()=>{
   const paths:string[]=[];client.setDelivery(async(path:string)=>{paths.push(path);return content();});
   const {result,dispose}=source({username:'profile owner'});
   try{
-    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','paused','finished','dropped']);
+    expect(result.title).toBe('Watching');
+    expect(result.filters[0].options?.map(option=>option.value)).toEqual(['continue','next','paused','watchlist','finished','dropped']);
     const continueKey=result.resetKey;
     result.filters[0].change('finished');await settle();
     expect(result.resetKey).not.toBe(continueKey);
@@ -176,6 +177,10 @@ test('profile Progress orders Paused before Finished and preserves the owner in 
     result.filters[0].change('paused');await settle();
     expect(new URL(paths[3],'http://fixture').searchParams.get('view')).toBe('paused');
     expect(new URL(result.href!,'http://fixture').searchParams.get('view')).toBe('paused');
+    result.filters[0].change('watchlist');await settle();
+    const later=new URL(result.href!,'http://fixture').searchParams;
+    expect(later.get('username')).toBe('profile owner');expect(later.get('view')).toBe('watchlist');
+    expect(new URL(paths[4],'http://fixture').searchParams.get('view')).toBe('watchlist');
   }finally{dispose();}
 });
 

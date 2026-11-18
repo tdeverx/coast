@@ -1,6 +1,5 @@
 <script lang="ts">
   import ProfileBackgroundMenu from '#lib/ui/components/ProfileBackgroundMenu.svelte';
-  const dev=import.meta.env.DEV;
   import { goto } from '$app/navigation';
   import { reportFailure } from '#lib/ui/client-context.js';
   import { homeShelves } from '#lib/ui/shelves/home.js';
@@ -589,27 +588,8 @@
       {@render favourites('row')}
     {/if}
 
-    {#if page.data.user && (dev || data.visibility.progress)}
-      {#if dev}<Shelf source={{type:'progress-experiment',username:data.username}} hideEmpty={false} />
-      {:else}
-      <Shelf
-        source={{
-          type: 'progress',
-          surface: "profile",
-          username: data.username
-        }}
-      />
-      {/if}
-    {/if}
-
-    {#if data.visibility.collection && page.data.user}
-      <Shelf
-        source={{
-          type: 'progress',
-          surface: "watchlist",
-          username: data.username
-        }}
-      />
+    {#if page.data.user && (data.visibility.progress || data.visibility.collection)}
+      <Shelf source={{type:'progress-experiment',username:data.username}} hideEmpty={false} />
     {/if}
 
     {#if data.mediaRows}

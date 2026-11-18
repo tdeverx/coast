@@ -27,7 +27,7 @@ test('mixed destinations preserve segment/filter selections and reject invalid f
   expect(sectionTarget('/progress-experiment?view=later',url)).toBeNull();
   expect(sectionTarget('/progress-experiment?view=finished&kind=comic&username=another-user',url)).toMatchObject({source:{type:'progress-experiment',username:'another-user',filters:{view:'finished',kind:'comic'}}});
   expect(v.safeParse(progressExperimentSchema,{view:'dropped'}).success).toBe(true);
-  expect(profileProgressExperimentTabs.slice(1,4).map(tab=>tab.label)).toEqual(['Next','Paused','Finished']);
+  expect(profileProgressExperimentTabs.map(tab=>tab.label)).toEqual(['Continue','Next','Paused','Later','Finished','Dropped']);
   expect(sectionTarget('/progress-experiment?view=paused',url)).toMatchObject({source:{type:'progress-experiment',filters:{view:'paused'}}});
   expect(v.safeParse(progressExperimentSchema,{view:'watchlist',page:0}).success).toBe(false);
   expect(progressExperimentTabs.find(tab=>tab.value==='watchlist')?.label).toBe('Later');

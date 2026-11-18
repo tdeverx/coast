@@ -38,11 +38,12 @@ test('requests keep state/type filters server-side and withdraw stale owner or d
  let source!:ReturnType<typeof createLibraryFeedSource>;
  const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'requests',layout:'grid'})));await settle();
  try{
-  expect(source.filters[0].value).toBe('available');expect(source.filters[0].options?.map(option=>option.value)).toEqual(['available','pending','approved','processing','declined']);
+  expect(source.filters[0]).toMatchObject({type:'segments',value:'available'});
+  expect(source.filters[0].options?.map(option=>option.label)).toEqual(['Available','Processing','Accepted','Pending','Declined']);
   const first=source.load();calls[0].resolve(result(['old-owner']));await first;await settle();
   expect(source.enrichSocial).toBe(false);expect(source.pagination).toMatchObject({infinite:true,controls:'none'});
-  source.filters[0].change('approved');source.controls[0].change('show');expect(calls[1].signal.aborted).toBe(true);
-  expect(calls[2].url.searchParams.get('state')).toBe('approved');expect(calls[2].url.searchParams.get('kind')).toBe('show');
+  source.filters[0].change('processing');source.controls[0].change('show');expect(calls[1].signal.aborted).toBe(true);
+  expect(calls[2].url.searchParams.get('state')).toBe('processing');expect(calls[2].url.searchParams.get('kind')).toBe('show');
   route.page.data.user.id='new-owner';await settle();expect(calls[2].signal.aborted).toBe(true);expect(source.items).toEqual([]);
   calls[1].resolve(result(['stale']));calls[2].resolve(result(['stale']));calls[3].resolve(result(['new-owner']));await settle();
   expect(source.items.map(item=>item.id)).toEqual(['new-owner']);

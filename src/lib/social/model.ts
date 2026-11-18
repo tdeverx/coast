@@ -2,7 +2,7 @@ import * as v from 'valibot';
 export const audiences = ['friends','public','private'] as const;
 export const activityAudiences = ['all','friends','you'] as const;
 export type ActivityAudience = typeof activityAudiences[number];
-export const activityAudienceOptions = [{value:'all',label:'All'},{value:'friends',label:'Friends'},{value:'you',label:'Me'}];
+export const activityAudienceOptions = [{value:'all',label:'Me and friends'},{value:'friends',label:'Friends'},{value:'you',label:'Me'}];
 export const activityTypes=['all','consumed','progress','saved','favourites','ratings','collected','dropped'] as const;
 export const activityTypeEvents:Record<Exclude<typeof activityTypes[number],'all'>,string[]>={
  consumed:['watch','listen','play','played','session','game-completed','reading-completed'],
