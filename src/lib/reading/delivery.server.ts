@@ -1,9 +1,13 @@
 import { readingCache, readingLease } from './cache.server';
 import { readingDeliverySource } from './sessions.server';
 import { AppError } from '#lib/server/security/errors.js';
+import { classifyFailure, context, diagnosticErrorCode, diagnosticRequest, logDiagnostic } from '#lib/server/diagnostics/index.js';
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" };
 /** One operation streams progress, then its version-bound layout. No progress jobs or polling. */
 export async function readingManifest(userId: string, id: string, request: Request, shareId?:string) {
+    const started = performance.now();
+    const correlation = context.getStore(), requestId = diagnosticRequest.getStore();
+    const fields = { operation: 'reading', stage: 'reader-manifest', sessionId: id, surface: shareId ? 'share' : undefined };
     const source = await readingDeliverySource(userId, id, request.signal, shareId);
     const cache = await readingCache(), lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
     const releaseOperation = cache.claim(lease, entry);
@@ -22,6 +26,8 @@ export async function readingManifest(userId: string, id: string, request: Reque
                     // A long acquisition cannot publish after its reader/version was withdrawn.
                     await readingDeliverySource(userId, id, signal, shareId);
                     delivered = true;
+                    void logDiagnostic('info', 'reading.ready', { ...fields, durationMs: performance.now() - started },
+                        correlation, requestId);
                     yield { manifest: entry.manifest };
                     return;
                 }
@@ -31,8 +37,15 @@ export async function readingManifest(userId: string, id: string, request: Reque
             }
         }
         catch (cause) {
-            if (!signal.aborted)
+            if (!signal.aborted) {
+                const error = entry.error ?? cause;
+                const failure = classifyFailure(error);
+                void logDiagnostic(failure === 'aborted' ? 'debug' : 'warn', 'reading.failed', {
+                    ...fields, failure, status: cause instanceof AppError ? cause.status : undefined,
+                    errorCode: diagnosticErrorCode(error), durationMs: performance.now() - started,
+                }, correlation, requestId);
                 yield { error: cause instanceof AppError ? cause.message : 'This reading archive could not be prepared.' };
+            }
         }
         finally {
             if (!delivered)

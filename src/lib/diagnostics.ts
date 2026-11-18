@@ -1,3 +1,5 @@
+import { serviceTraversalKinds } from './providers/tasks';
+
 /** Shared, closed vocabulary: browser input and arbitrary exceptions never become log text. */
 export const diagnosticLevels = ['off', 'error', 'warn', 'info', 'debug', 'trace'] as const;
 export type DiagnosticLevel = (typeof diagnosticLevels)[number];
@@ -16,6 +18,7 @@ export const diagnosticEvents = [
   'job.failed',
   'browser.error',
   'browser.rejection',
+  'browser.request-failed',
   'playback.start',
   'playback.ready',
   'playback.playing',
@@ -23,12 +26,53 @@ export const diagnosticEvents = [
   'playback.pause',
   'playback.seek',
   'playback.timing',
+  'playback.operation',
   'playback.failed',
+  'reading.ready',
+  'reading.failed',
   'application.failed',
   'runtime.sample',
   'runtime.operation',
 ] as const;
 export type DiagnosticEvent = (typeof diagnosticEvents)[number];
+export const browserDiagnosticLevels = {
+  'browser.error': 'error',
+  'browser.rejection': 'error',
+  'browser.request-failed': 'warn',
+  'playback.failed': 'error',
+  'playback.start': 'debug',
+  'playback.ready': 'debug',
+  'playback.playing': 'info',
+  'playback.waiting': 'debug',
+  'playback.pause': 'debug',
+  'playback.seek': 'debug',
+  'playback.timing': 'trace',
+} as const satisfies Partial<Record<DiagnosticEvent, DiagnosticLevel>>;
+export const systemDiagnosticCodes = [
+  'ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
+  'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK',
+  '22P02', '23502', '23503', '23505', '25P02', '40001', '42703', '42P01',
+  '53300', '55000', '55P03', '57014', '57P01', '57P02', '57P03',
+  'EACCES', 'EDQUOT', 'EIO', 'ENOENT', 'ENOSPC', 'EPERM', 'EROFS',
+] as const;
+const jobKinds = new Set([
+  ...serviceTraversalKinds, 'feature.reconcile', 'benchmark.run', 'webhook.deliver', 'planning.reminder', 'social.checkin-complete',
+  'jellyfin.member-policy', 'jellyfin.reconcile', 'jellyfin.user-state', 'jellyfin.scrobble',
+  'trakt.checkin', 'trakt.progress', 'trakt.scrobble', 'trakt.list-delete', 'trakt.list-export', 'trakt.export',
+  'seerr.manage', 'seerr.request', 'history.remove',
+]);
+const requestActions = [
+  'prepare', 'restore', 'progress', 'player-error', 'stream', 'subtitles', 'trailer', 'share-stream',
+  'details', 'details-enhance', 'metadata-refresh', 'feedback', 'asset', 'health',
+  'reader-open', 'reader-manifest', 'reader-page', 'reader-file', 'heartbeat', 'claim',
+] as const;
+export type DiagnosticRequestAction = typeof requestActions[number];
+export const diagnosticOperations = new Set([
+  'application', 'artwork', 'auth', 'admin', 'backup', 'catalogue', 'collection', 'conflicts', 'continue', 'discover',
+  'for-you', 'games', 'library', 'lists', 'media', 'music', 'notifications', 'people', 'planning',
+  'playback', 'profile', 'progress', 'providers', 'queue', 'ratings', 'reading', 'requests',
+  'search', 'session', 'settings', 'sharing', 'social', 'synced', 'tracking', 'up-next', 'webhooks', 'other',
+]);
 export const eventMessages: Record<DiagnosticEvent, string> = {
   'request.complete': 'Request completed.',
   'request.start': 'Request started.',
@@ -44,6 +88,7 @@ export const eventMessages: Record<DiagnosticEvent, string> = {
   'job.failed': 'Background job failed.',
   'browser.error': 'Browser error detected.',
   'browser.rejection': 'Unhandled browser rejection detected.',
+  'browser.request-failed': 'Browser request failed.',
   'playback.start': 'Playback preparation started.',
   'playback.ready': 'Playback prepared.',
   'playback.playing': 'Playback playing.',
@@ -51,7 +96,10 @@ export const eventMessages: Record<DiagnosticEvent, string> = {
   'playback.pause': 'Playback paused.',
   'playback.seek': 'Playback seeking.',
   'playback.timing': 'Playback timing sample.',
+  'playback.operation': 'Playback operation completed.',
   'playback.failed': 'Playback failed.',
+  'reading.ready': 'Reading archive ready.',
+  'reading.failed': 'Reading operation failed.',
   'application.failed': 'Application action failed.',
   'runtime.sample': 'Runtime resource and concurrency sample.',
   'runtime.operation': 'Runtime operation timing or failure.',
@@ -63,11 +111,14 @@ export function enabled(level: DiagnosticLevel, threshold: DiagnosticLevel) {
     diagnosticLevels.indexOf(level) <= diagnosticLevels.indexOf(threshold)
   );
 }
-export function correlationId(value?: unknown): string {
+export function knownDiagnosticId(value?: unknown): string | undefined {
   return typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
     ? value.toLowerCase()
-    : randomId();
+    : undefined;
+}
+export function correlationId(value?: unknown): string {
+  return knownDiagnosticId(value) ?? randomId();
 }
 export function randomId() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -82,7 +133,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
   const result: Record<string, number | string | boolean> = {};
   for (const key of [
     'status',
-    'durationMs',
+    'durationMs', 'providerWaitMs', 'negotiationMs',
     'positionSeconds',
     'readyState',
     'networkState',
@@ -105,39 +156,34 @@ export function safeFields(input: Record<string, unknown> = {}) {
   }
   if (['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].includes(String(input.method)))
     result.method = String(input.method);
+  if (requestActions.includes(input.requestAction as DiagnosticRequestAction)) result.requestAction = String(input.requestAction);
+  if (typeof input.jobKind === 'string' && jobKinds.has(input.jobKind)) result.jobKind = input.jobKind;
+  if (['runtime', 'script', 'style', 'image', 'media', 'resource', 'promise'].includes(String(input.browserSource)))
+    result.browserSource = String(input.browserSource);
+  if (['AbortError','TimeoutError','NetworkError','NotAllowedError','TypeError','SyntaxError','RangeError','ReferenceError','SecurityError'].includes(String(input.browserError)))
+    result.browserError = String(input.browserError);
+  if (input.mediaType === 'video' || input.mediaType === 'audio') result.mediaType = input.mediaType;
+  if (['direct', 'hls'].includes(String(input.delivery))) result.delivery = String(input.delivery);
+  if (['start', 'reconfigure', 'fallback', 'shared'].includes(String(input.playbackChange))) result.playbackChange = String(input.playbackChange);
   if (
-    ['network', 'timeout', 'http', 'validation', 'unexpected', 'aborted', 'media', 'local-busy'].includes(
+    ['network', 'timeout', 'http', 'validation', 'unexpected', 'aborted', 'media', 'local-busy', 'local-queue-timeout'].includes(
       String(input.failure)
     )
   )
     result.failure = String(input.failure);
-  if (
-    [
-      'application',
-      'playback',
-      'providers',
-      'settings',
-      'admin',
-      'media',
-      'collection',
-      'library',
-      'progress',
-      'lists',
-      'notifications',
-      'requests',
-      'auth',
-      'other',
-    ].includes(String(input.operation))
-  )
-    result.operation = String(input.operation);
+  if (typeof input.operation === 'string' && diagnosticOperations.has(input.operation)) result.operation = input.operation;
   if (
     [
       'retention',
       'runtime', 'reserve', 'reservation', 'queue', 'heartbeat', 'maintenance',
       'connection',
+      'avatar-cleanup', 'share-cleanup', 'share-progress', 'reader-manifest',
+      'backup-capture', 'backup-retention', 'backup-schedule', 'request-options', 'provider-queue',
       'identity',
       'checkpoint-read',
       'library-page',
+      'provider-read', 'provider-write', 'metadata-refresh', 'metadata-read',
+      'source-negotiation', 'response-body', 'player', 'crop', 'subtitle-options', 'subtitle-search', 'subtitle-download', 'subtitle-confirmation',
       'item-import',
       'checkpoint-write',
       'reconcile',
@@ -156,9 +202,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (
     [
       'provider.authentication',
-      'ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
-      'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK',
-      '53300', '57014', '57P01', '57P02', '57P03', 'unknown',
+      ...systemDiagnosticCodes, 'unknown',
       'provider.identity',
       'provider.permission',
       'provider.item-unavailable',
@@ -168,7 +212,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'provider.interrupted',
       'local.database-deadlock',
       'provider.timeout',
-      'local.provider-busy',
+      'local.provider-busy', 'local.provider-queue-timeout',
       'action.rejected',
       'jellyfin.incomplete-library-page',
       'jellyfin.invalid-library-offset',
@@ -184,6 +228,11 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (['jellyfin', 'trakt', 'tmdb', 'seerr', 'igdb', 'steam', 'openlibrary', 'comic-vine'].includes(String(input.provider)))
     result.provider = String(input.provider);
   if (typeof input.stream === 'boolean') result.stream = input.stream;
+  if (input.surface === 'public-api' || input.surface === 'share') result.surface = input.surface;
+  const relatedRequestId = knownDiagnosticId(input.relatedRequestId);
+  if (relatedRequestId) result.relatedRequestId = relatedRequestId;
+  if (typeof input.backfill === 'boolean') result.backfill = input.backfill;
+  if (typeof input.retryable === 'boolean') result.retryable = input.retryable;
   if (typeof input.failed === 'boolean') result.failed = input.failed;
   if (['start', 'stop'].includes(String(input.phase))) result.phase = String(input.phase);
   if (typeof input.bunVersion === 'string' && /^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(input.bunVersion)) result.bunVersion = input.bunVersion;

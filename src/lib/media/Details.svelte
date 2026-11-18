@@ -60,7 +60,7 @@
     episodesOpen = $state(false),
     seasonNumber = $state(1),
     episodeCount = $state(10);
-  reportFailure(()=>error || episodeTracking.error || (view.refreshUnavailable ? 'Metadata could not be refreshed. Showing the saved details.' : ''));
+  reportFailure(()=>error || episodeTracking.error);
 </script>
 
 {#snippet episodeAction(episode: MediaView)}

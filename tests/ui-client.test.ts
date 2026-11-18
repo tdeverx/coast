@@ -5,7 +5,7 @@ import { compileModule } from 'svelte/compiler';
 const moduleUrl = (source: string) => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const navigationUrl = moduleUrl('export const invalidations=[]; export let refreshes=0,fullInvalidations=0; export async function invalidate(key){invalidations.push(key);} export async function invalidateAll(){fullInvalidations++;} export async function refreshAll(){refreshes++;}');
 const stateUrl=moduleUrl('export const page={state:{}};');
-const diagnosticsUrl = moduleUrl('export const received={count:0}; export const diagnosticHeaders=()=>({}); export const receiveDiagnosticLevel=()=>{received.count++;};');
+const diagnosticsUrl = moduleUrl('export const received={count:0}; export const reports=[]; export const diagnosticHeaders=()=>({}); export const receiveDiagnosticLevel=()=>{received.count++;}; export const browserDiagnostic=(kind,fields)=>reports.push({kind,fields});');
 const revisionSource = await Bun.file(new URL('../src/lib/ui/content-revision.svelte.ts', import.meta.url)).text();
 const revisionCode = compileModule(new Bun.Transpiler({ loader: 'ts' }).transformSync(revisionSource), { filename: 'content-revision.svelte.js', generate: 'client' }).js.code
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'));
@@ -141,9 +141,13 @@ test('already-cancelled optional requests admit no transport', async () => {
 
 test('an invalid success body cannot acknowledge a write or start its refresh', async () => {
   let refreshes = 0;
-  const client = createApiClient(async () => new Response('<html>Unavailable</html>'), async () => { refreshes++; });
+  const id = crypto.randomUUID();
+  const client = createApiClient(async () => new Response('<html>Unavailable</html>', { headers: { 'x-coast-request-id': id } }), async () => { refreshes++; });
   await expect(client.change('notifications/id', {})).rejects.toMatchObject({status:502, message:'The server returned an invalid response. Please try again.'});
   expect(refreshes).toBe(0);
+  expect((await import(diagnosticsUrl)).reports.at(-1)).toMatchObject({
+    kind: 'browser.request-failed', fields: { operation: 'notifications', failure: 'validation', status: 200, relatedRequestId: id },
+  });
   const valid = createApiClient(async () => Response.json(null), async () => {});
   expect(await valid.api('optional',undefined,'GET')).toBeNull();
 });

@@ -35,7 +35,7 @@ import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
 import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
-import { logDiagnostic, classifyFailure, context } from '#lib/server/diagnostics/index.js';
+import { logDiagnostic, classifyFailure, context, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import {
   enqueueTraktChangeInTransaction,
@@ -222,7 +222,19 @@ async function managedPlaybackAccess(userId:string,workId:string,connectionId?:s
 
 export async function startPlayback(userId: string,input: unknown,
   share?: PlaybackShare, signal?:AbortSignal) {
-  return requestPriority.run(0,()=>preparePlayback(userId,input,share,signal));
+  const started = performance.now();
+  try {
+    return await requestPriority.run(0, () => preparePlayback(userId, input, share, signal));
+  } catch (error) {
+    const failure = classifyFailure(signal?.aborted ? signal.reason : error);
+    const status = error instanceof AppError ? error.status : undefined;
+    const level = failure === 'aborted' ? 'debug' : status && status < 500 ? 'warn' : 'error';
+    void logDiagnostic(level, 'playback.failed', {
+      requestAction: 'prepare', status, failure, errorCode: diagnosticErrorCode(error),
+      durationMs: performance.now() - started,
+    });
+    throw error;
+  }
 }
 export async function verifyPlaybackResume(userId: string, sessionId: string) {
   const policy = await requireFeature(userId, 'playback');
@@ -343,6 +355,8 @@ async function preparePlayback(
     share?.vrchatCodec ? vrchatMaximumBitrate : Infinity, fallback?.maxBitrate ?? Infinity);
   if(share&&maximum<minimumSharedBitrate)throw new Error('Shared playback requires a bitrate limit of at least 0.5 Mbps.');
   const providerDeviceId = share ? crypto.randomUUID() : userId;
+  const negotiationStarted = performance.now();
+  const playbackChange = share ? 'shared' : previous ? 'reconfigure' : fallback ? 'fallback' : 'start';
   let providerBusy: ProviderQueueBusyError | undefined;
   let providerFailed = false;
   for (const row of rows) {
@@ -398,9 +412,13 @@ async function preparePlayback(
       if (error instanceof ProviderQueueBusyError) providerBusy ??= error;
       if (error instanceof AppError && error.code === 'playback_source_unavailable') continue;
       providerFailed = true;
-      void logDiagnostic('error', 'playback.failed', { failure: classifyFailure(error) });
+      void logDiagnostic('warn', 'playback.failed', {
+        stage: 'source-negotiation', provider: 'jellyfin', mediaType, playbackChange,
+        failure: classifyFailure(error), errorCode: diagnosticErrorCode(error),
+      });
     }
   }
+  const negotiationMs = performance.now() - negotiationStarted;
   signal?.throwIfAborted();
   candidates.sort((a, b) => comparePlaybackPlans(a.plan, b.plan));
   const best = candidates[0];
@@ -586,7 +604,10 @@ async function preparePlayback(
   return prepared;
   });
   if(signal?.aborted){await getDb().update(playbackSessions).set({state:'stopped',cleanupPending:!!share,updatedAt:new Date()}).where(eq(playbackSessions.id,session.id));signal.throwIfAborted();}
-  void logDiagnostic('info', 'playback.ready', { sessionId: session.id, durationMs: performance.now() - started });
+  void logDiagnostic('info', 'playback.ready', {
+    sessionId: session.id, mediaType, delivery: session.delivery, playbackChange,
+    durationMs: performance.now() - started, negotiationMs,
+  });
 
   return {
     id: session.id,
@@ -1065,7 +1086,7 @@ export async function streamTrailer(
 
 export async function recordPlaybackError(userId: string, sessionId: string, code: unknown) {
   const [session] = await getDb()
-    .select({ id: playbackSessions.id })
+    .select({ id: playbackSessions.id, mediaType: playbackSessions.mediaType, delivery: playbackSessions.delivery })
     .from(playbackSessions)
     .where(
       and(eq(playbackSessions.id, v.parse(uuid, sessionId)), eq(playbackSessions.userId, userId))
@@ -1073,6 +1094,9 @@ export async function recordPlaybackError(userId: string, sessionId: string, cod
   if (!session) throw new Error('Playback session not found.');
   void logDiagnostic('error', 'playback.failed', {
     sessionId: session.id,
+    stage: 'player',
+    mediaType: session.mediaType,
+    delivery: session.delivery,
     failure: 'media',
     code: typeof code === 'number' && Number.isInteger(code) && code >= 0 && code <= 4 ? code : 0,
   });

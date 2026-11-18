@@ -2,20 +2,8 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireAdmin, requireUser } from '#lib/server/auth/index.js';
 import { diagnosticStore, logDiagnostic } from '#lib/server/diagnostics/index.js';
-import { safeFields, type DiagnosticEvent } from '#lib/diagnostics.js';
+import { safeFields, browserDiagnosticLevels } from '#lib/diagnostics.js';
 import { AppError } from '#lib/server/security/errors.js';
-const events: Record<string, 'error' | 'debug' | 'trace'> = {
-  'browser.error': 'error',
-  'browser.rejection': 'error',
-  'playback.failed': 'error',
-  'playback.start': 'debug',
-  'playback.ready': 'debug',
-  'playback.playing': 'debug',
-  'playback.waiting': 'debug',
-  'playback.pause': 'debug',
-  'playback.seek': 'debug',
-  'playback.timing': 'trace',
-};
 export const GET: RequestHandler = async ({ locals, url }) => {
   try {
     requireUser(locals.user);
@@ -77,10 +65,11 @@ export const POST: RequestHandler = async ({ locals, request }) => {
     } catch {
       error(400);
     }
-    if (!input || !Object.hasOwn(events, input.event)) error(400);
+    if (!input || typeof input.event !== 'string' || !Object.hasOwn(browserDiagnosticLevels, input.event)) error(400);
+    const event = input.event as keyof typeof browserDiagnosticLevels;
     await logDiagnostic(
-      events[input.event],
-      input.event as DiagnosticEvent,
+      browserDiagnosticLevels[event],
+      event,
       safeFields(input.fields)
     );
     return new Response(null, { status: 204 });

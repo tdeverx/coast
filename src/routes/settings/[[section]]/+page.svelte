@@ -1289,8 +1289,10 @@
               <input type="number" min="1" max="365" step="1" required disabled={busy} bind:value={policy.diagnosticMaxAgeDays} />
             </label>
             <p class="small">
-              Info is the default. Debug and Trace enable verbose lifecycle and playback timing
-              events. Changes apply while Coast is running. The defaults are 256 MiB and seven days.
+              Info includes routine outcomes and slow requests. Warn shows problems Coast can
+              recover from, and Error shows failed operations that need attention. Debug adds
+              lifecycle and cancelled requests. Trace adds playback samples and provider starts.
+              Changes apply while Coast is running. The defaults are 256 MiB and seven days.
               Oldest application diagnostics are removed when either limit is reached. Lowering
               a limit removes older logs on the next read or write. Resource history, security
               and audit records are kept separately.
@@ -1319,7 +1321,7 @@
         {#if data.diagnostics.length}<div class="stack">
             {#each data.diagnostics as event}<details class="panel">
                 <summary
-                  ><strong>{event.kind}</strong> · {event.message}<small
+                  ><strong>{event.level} · {event.kind}</strong> · {event.message}<small
                     style="display:block;margin-top:6px"
                     >{new Date(event.createdAt).toLocaleString()}</small
                   ></summary
@@ -1328,6 +1330,7 @@
                     {
                       level: event.level,
                       correlationId: event.correlationId,
+                      requestId: event.requestId,
                       ...event.detail,
                     },
                     null,

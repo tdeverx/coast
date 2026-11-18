@@ -11,7 +11,7 @@ try {
   await page.goto(`${origin}/setup`);
   await page.waitForTimeout(1000);
   const setup = page.url().endsWith('/setup');
-  await page.getByLabel('Username', { exact: true }).fill('diagnostic-browser-admin');
+  await page.locator('input[name="username"]').fill('diagnostic-browser-admin');
   await page.locator('input[name="password"]').fill('Diagnostic-test-passphrase-2026!');
   if (setup) {
     await page.locator('input[name="displayName"]').fill('Diagnostic administrator');
@@ -43,7 +43,7 @@ try {
     );
     await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
     expect((await saved).ok()).toBe(true);
-    await expect(page.getByRole('status')).toHaveText('Diagnostic logging updated.');
+    await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
     expect((await (await page.request.get(`${origin}/api/v1/diagnostics`)).json()).level).toBe(
       level
     );
@@ -53,8 +53,16 @@ try {
   }
   await selector.selectOption('trace');
   await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
-  await expect(page.getByRole('status')).toHaveText('Diagnostic logging updated.');
+  await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
   const id = crypto.randomUUID();
+  const spoofedRequestId = crypto.randomUUID();
+  const health = await page.request.get(`${origin}/api/v1/health`, {
+    headers: { 'x-coast-correlation-id': id, 'x-coast-request-id': spoofedRequestId },
+  });
+  expect(health.ok()).toBe(true);
+  const requestId = health.headers()['x-coast-request-id'];
+  expect(requestId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(requestId).not.toBe(spoofedRequestId);
   const result = await page.request.post(`${origin}/api/v1/diagnostics`, {
     headers: { origin, 'x-coast-correlation-id': id },
     data: {
@@ -86,9 +94,15 @@ try {
   expect(content).toContain(id);
   expect(content).toContain('playback.timing');
   expect(content).toContain('browser.error');
+  const rows = content.trim().split('\n').map(line => JSON.parse(line));
+  expect(rows).toContainEqual(expect.objectContaining({
+    kind: 'request.complete', level: 'debug', correlationId: id, requestId,
+    detail: expect.objectContaining({ requestAction: 'health', status: 200 }),
+  }));
+  expect(content).not.toContain(spoofedRequestId);
   await selector.selectOption('info');
   await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
-  await expect(page.getByRole('status')).toHaveText('Diagnostic logging updated.');
+  await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
   await mkdir('/tmp/coast-diagnostic-evidence', { recursive: true });
   await page.screenshot({ path: '/tmp/coast-diagnostic-evidence/settings.png', fullPage: true });
   // Create a synthetic member through the existing administrative API.
@@ -102,7 +116,7 @@ try {
   const memberPage = await context.newPage();
   await memberPage.goto(`${origin}/login`);
   await memberPage.waitForTimeout(1000);
-  await memberPage.getByLabel('Username', { exact: true }).fill(memberName);
+  await memberPage.locator('input[name="username"]').fill(memberName);
   await memberPage.locator('input[name="password"]').fill('Diagnostic-member-passphrase-2026!');
   await memberPage.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(memberPage).toHaveURL(/\/for-you$/);

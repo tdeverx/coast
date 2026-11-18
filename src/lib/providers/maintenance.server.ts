@@ -18,7 +18,7 @@ import {
 } from '#lib/server/db/schema.js';
 import { getConfig } from '#lib/server/config.js';
 import { correlationId } from '#lib/diagnostics.js';
-import { context, logDiagnostic } from '#lib/server/diagnostics/index.js';
+import { context, logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { runtimeEvidence } from '#lib/server/diagnostics/runtime.js';
 import { requireProviderAdmin, getInstance } from '#lib/providers/instances.server.js';
 
@@ -293,15 +293,15 @@ function runAvatarCleanup() {
   if (avatarCleanup || Date.now() < avatarRetentionDue) return;
   avatarCleanup = Promise.resolve().then(() => pruneUnusedAvatars()).then(result => {
     avatarRetentionDue = Date.now() + (result.more ? 60_000 : 3600_000);
-    if (result.removed) void logDiagnostic('info', 'job.complete', {stage:'retention',count:result.removed});
-  }, () => {
+    if (result.removed) void logDiagnostic('info', 'job.complete', {stage:'avatar-cleanup',count:result.removed});
+  }, cause => {
     avatarRetentionDue = Date.now() + 60_000;
-    void logDiagnostic('error', 'job.failed', {stage:'retention',failure:'unexpected'});
+    void logDiagnostic('warn', 'job.failed', {stage:'avatar-cleanup',failure:classifyFailure(cause),errorCode:diagnosticErrorCode(cause)});
   }).finally(() => {avatarCleanup=null;});
 }
 async function maintenanceTick() {
-  if (!sharedCleanup) sharedCleanup = Promise.resolve().then(()=>expireSharedViewers()).then(()=>{},()=>{
-    void logDiagnostic('error','job.failed',{failure:'unexpected'});
+  if (!sharedCleanup) sharedCleanup = Promise.resolve().then(()=>expireSharedViewers()).then(()=>{},cause=>{
+    void logDiagnostic('warn','job.failed',{operation:'sharing',stage:'share-cleanup',failure:classifyFailure(cause),errorCode:diagnosticErrorCode(cause)});
   }).finally(()=>{sharedCleanup=null;});
   if((await getConfig()).developerMode)return;
   runAvatarCleanup();
@@ -316,19 +316,17 @@ async function maintenanceTick() {
 }
 
 function runMaintenance() {
-  return maintenancePass ??= runtimeEvidence.track('maintenance', maintenanceTick).finally(()=>{maintenancePass=null;});
+  return maintenancePass ??= runtimeEvidence.track('maintenance', maintenanceTick).catch(() => {
+    // Runtime evidence owns scheduling failures, including the original error code.
+  }).finally(()=>{maintenancePass=null;});
 }
 export function startProviderMaintenance() {
   if (maintenanceTimer) return;
   maintenanceTimer = setInterval(() => {
-    void runMaintenance().catch(() =>
-      logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
-    );
+    void runMaintenance();
   }, 60000);
   maintenanceTimer.unref();
   process.once('SIGTERM', stopProviderMaintenance);
   process.once('SIGINT', stopProviderMaintenance);
-  void runMaintenance().catch(() =>
-    logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
-  );
+  void runMaintenance();
 }

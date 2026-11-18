@@ -23,6 +23,6 @@ export const load = (async (event) => {
   if (reading) return { reading: await readingDetailLoad(reading.kind)(event) };
 
   const includeChildren=screenDetailChildren(event.url.searchParams.get('section'));
-  if(!locals.user){const initial={...(await (await import('#lib/social/public.server.js')).publicDetails(params.id,includeChildren)),requestable:false,refreshUnavailable:false};return {...initial,enhancement:Promise.resolve(initial)};}
+  if(!locals.user){const initial={...(await (await import('#lib/social/public.server.js')).publicDetails(params.id,includeChildren)),requestable:false};return {...initial,enhancement:Promise.resolve(initial)};}
   return loadMediaDetails(locals.user.id, params.id, event.request.signal,includeChildren);
 }) satisfies PageServerLoad;

@@ -9,18 +9,23 @@ import {
   enabled,
   safeFields,
   correlationId,
+  knownDiagnosticId,
+  systemDiagnosticCodes,
   type DiagnosticLevel,
   type DiagnosticEvent,
 } from '../../diagnostics';
 
 export const context = new AsyncLocalStorage<string>();
+export const diagnosticRequest = new AsyncLocalStorage<string>();
 export const storageLimits = {
   segmentBytes: 1024 * 1024,
   segments: 256,
   retentionMs: 7 * 86400_000,
   pending: 128,
+  warningReserve: 32,
+  errorReserve: 16,
 };
-type DiagnosticRow = {createdAt: string; level: DiagnosticLevel; kind: DiagnosticEvent; message: string; correlationId: string | undefined; detail: ReturnType<typeof safeFields>};
+type DiagnosticRow = {createdAt: string; level: DiagnosticLevel; kind: DiagnosticEvent; message: string; correlationId: string; requestId?: string; detail: ReturnType<typeof safeFields>};
 export type DiagnosticRetention = { maxSizeMiB: number; maxAgeDays: number };
 export class DiagnosticStore {
   retention: DiagnosticRetention = { maxSizeMiB: storageLimits.segments, maxAgeDays: 7 };
@@ -91,14 +96,16 @@ export class DiagnosticStore {
     level: DiagnosticLevel,
     event: DiagnosticEvent,
     fields: Record<string, unknown> = {},
-    id = context.getStore()
+    id = context.getStore(),
+    requestId = diagnosticRequest.getStore(),
   ) {
     if (
       !enabled(level, this.level) ||
       !diagnosticEvents.includes(event)
     )
       return Promise.resolve();
-    if (this.pending >= storageLimits.pending) { this.dropped++; return Promise.resolve(); }
+    const reserve = level === 'error' ? 0 : level === 'warn' ? storageLimits.errorReserve : storageLimits.warningReserve;
+    if (this.pending >= storageLimits.pending - reserve) { this.dropped++; return Promise.resolve(); }
     let line: string;
     try {
       line =
@@ -108,6 +115,7 @@ export class DiagnosticStore {
           kind: event,
           message: eventMessages[event],
           correlationId: correlationId(id),
+          requestId: knownDiagnosticId(requestId),
           detail: safeFields(fields),
         }) + '\n';
     } catch {
@@ -174,6 +182,7 @@ export class DiagnosticStore {
               kind: row.kind,
               message: eventMessages[row.kind as DiagnosticEvent],
               correlationId: correlationId(row.correlationId),
+              requestId: knownDiagnosticId(row.requestId),
               detail: safeFields(row.detail),
             });
           } catch { /* Invalid records must not hide the next eligible event. */ }
@@ -200,8 +209,23 @@ export class DiagnosticStore {
 }
 export const diagnosticStore = new DiagnosticStore();
 export const logDiagnostic = diagnosticStore.write.bind(diagnosticStore);
+/** Walk known error wrappers and retain only fixed system codes. */
+export function diagnosticErrorCode(error: unknown) {
+  try {
+    let cause = error;
+    for (let depth = 0; depth < 5 && cause && typeof cause === 'object'; depth++) {
+      const { code, errno, cause: next } = cause as { code?: unknown; errno?: unknown; cause?: unknown };
+      if (code === '40P01' || errno === '40P01') return 'local.database-deadlock';
+      for (const known of systemDiagnosticCodes) if (code === known || errno === known) return known;
+      cause = next;
+    }
+  } catch { /* Diagnostics cannot replace the original exception. */ }
+}
 export function classifyFailure(error: unknown) {
   if (error instanceof Error && error.name === 'ProviderQueueBusyError') return 'local-busy';
+  if (error instanceof Error && error.name === 'ProviderQueueTimeoutError') return 'local-queue-timeout';
+  if (error instanceof Error && error.name === 'ProviderHttpError') return 'http';
+  if (error instanceof Error && error.name === 'ValiError') return 'validation';
   if (error instanceof Error && error.name === 'TimeoutError') return 'timeout';
   if (error instanceof Error && error.name === 'AbortError') return 'aborted';
   if (error instanceof TypeError) return 'network';

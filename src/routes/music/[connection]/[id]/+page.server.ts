@@ -3,7 +3,7 @@ import {AppError} from '#lib/server/security/errors.js';
 import * as v from 'valibot';
 import { musicSourceDetailData } from '#lib/music/detail.server.js';
 import { jellyfinMusicIdSchema } from '#lib/providers/jellyfin/music.server.js';
-import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
+import { logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({locals, params, url, depends,request}) => {
@@ -19,11 +19,12 @@ export const load: PageServerLoad = async ({locals, params, url, depends,request
   if (!Number.isInteger(page) || page < 1 || page > 42949673)
     error(400, 'Choose a positive music page number.');
   return await musicSourceDetailData(locals.user.id, params.connection, params.id,page,request.signal).catch(
-    async (cause) => {
+    (cause) => {
       request.signal.throwIfAborted();
       if(cause instanceof AppError)error(cause.status,cause.message);
-      await logDiagnostic('error', 'application.failed', {
-        failure: classifyFailure(cause),
+      void logDiagnostic('error', 'application.failed', {
+        operation: 'music', stage: 'metadata-read', provider: 'jellyfin',
+        failure: classifyFailure(cause), errorCode: diagnosticErrorCode(cause),
       });
       error(503, 'This music item is unavailable. Return to Music and try again.');
     }

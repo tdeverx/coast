@@ -3,6 +3,8 @@ import { type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { claimShare, shareCookie, sharedState, startShared, sharedProgress, sharedStream, shareViewer } from '#lib/sharing/service.server.js';
 import { AppError } from '#lib/server/security/errors.js';
+import { logDiagnostic, classifyFailure, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
+import { requestDiagnostics } from '#lib/server/diagnostics/request.js';
 import { releaseViewer } from '#lib/sharing/leases.server.js';
 import {externalStream} from '#lib/sharing/external.server.js';
 import {startSharedReading,sharedReadingResource,touchSharedReading,closeSharedReading} from '#lib/sharing/reading.server.js';
@@ -41,7 +43,12 @@ const handler: RequestHandler = async ({ request, params, cookies, locals, url }
   }
   throw new AppError(404, 'Endpoint not found.');
  } catch (error) {
+  const failure = classifyFailure(error);
+  if (request.signal.aborted && failure === 'aborted') return new Response(null, { status: 499, headers });
   const status = error instanceof AppError ? error.status : v.isValiError(error) ? 400 : 503;
+  if (status >= 500) void logDiagnostic('error', 'application.failed', {
+    ...requestDiagnostics(url), method: request.method, status, failure, errorCode: diagnosticErrorCode(error),
+  });
   return Response.json({ error: error instanceof AppError ? error.message : status === 400 ? 'Check the supplied fields.' : 'Playback is currently unavailable.' }, { status, headers });
  }
 };

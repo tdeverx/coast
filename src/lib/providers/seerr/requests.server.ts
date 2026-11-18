@@ -1,5 +1,5 @@
 import { requireFeature, requireFeatureInTransaction, getFeatureConfig } from '#lib/server/features.js';
-import { context } from '#lib/server/diagnostics/index.js';
+import { context, classifyFailure, diagnosticErrorCode, logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { conflictPreference } from '#lib/sync/preference.server.js';
 import * as v from 'valibot';
@@ -213,9 +213,15 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
       signal?.throwIfAborted();
       // A recently verified dialog can still create durable work during an outage. Dispatch always rechecks it.
       const status = (error as { status?: number }).status;
+      const invalid = v.isValiError(error);
+      if (invalid || !(error instanceof ProviderActionError) && (status === undefined || status === 429 || status >= 500))
+        void logDiagnostic('warn', 'application.failed', {
+          operation: 'requests', stage: 'request-options', provider: 'seerr', status,
+          failure: classifyFailure(error), errorCode: invalid ? 'provider.invalid-data' : diagnosticErrorCode(error),
+        });
       if (
         error instanceof ProviderActionError ||
-        error instanceof v.ValiError ||
+        invalid ||
         (status !== undefined && status !== 429 && status < 500)
       )
         continue;

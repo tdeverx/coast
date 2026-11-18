@@ -1,4 +1,5 @@
 import {
+  browserDiagnosticLevels,
   diagnosticLevels,
   correlationId,
   enabled,
@@ -9,6 +10,7 @@ import {
 export let browserCorrelationId = '';
 let level: DiagnosticLevel = 'info';
 let sent = 0,
+  routineSent = 0,
   windowStarted = 0;
 export function diagnosticHeaders(): Record<string, string> {
   try {
@@ -28,18 +30,17 @@ export function receiveDiagnosticLevel(response: Response) {
 }
 export function browserDiagnostic(event: DiagnosticEvent, fields: Record<string, unknown> = {}) {
   try {
-    const severity =
-      event.endsWith('failed') || event.startsWith('browser.')
-        ? 'error'
-        : event === 'playback.timing'
-          ? 'trace'
-          : 'debug';
+    if (!Object.hasOwn(browserDiagnosticLevels, event)) return;
+    const severity = browserDiagnosticLevels[event as keyof typeof browserDiagnosticLevels];
     if (!enabled(severity, level)) return;
     if (Date.now() - windowStarted > 60_000) {
-      sent = 0;
+      sent = routineSent = 0;
       windowStarted = Date.now();
     }
-    if (sent++ >= 50) return;
+    // Keep capacity for failures even during sustained playback at Trace.
+    if (sent >= 50 || severity !== 'error' && routineSent >= 40) return;
+    sent++;
+    if (severity !== 'error') routineSent++;
     void fetch('/api/v1/diagnostics', {
       method: 'POST',
       headers: { ...diagnosticHeaders(), 'content-type': 'application/json' },
@@ -53,8 +54,16 @@ export function browserDiagnostic(event: DiagnosticEvent, fields: Record<string,
 export function installBrowserDiagnostics() {
   let stopped = false, pending = false;
   const controller = new AbortController();
-  const onError = () => browserDiagnostic('browser.error', { failure: 'unexpected' });
-  const onRejection = () => browserDiagnostic('browser.rejection', { failure: 'unexpected' });
+  const onError = (event: Event) => {
+    const tag = event.target instanceof Element ? event.target.tagName : '';
+    const browserSource = tag === 'SCRIPT' ? 'script' : tag === 'LINK' ? 'style' : tag === 'IMG' ? 'image'
+      : tag === 'VIDEO' || tag === 'AUDIO' ? 'media' : tag ? 'resource' : 'runtime';
+    const cause = event instanceof ErrorEvent ? event.error : undefined;
+    browserDiagnostic('browser.error', { failure: 'unexpected', browserSource, browserError: cause instanceof Error ? cause.name : undefined });
+  };
+  const onRejection = (event: PromiseRejectionEvent) => browserDiagnostic('browser.rejection', {
+    failure: 'unexpected', browserSource: 'promise', browserError: event.reason instanceof Error ? event.reason.name : undefined,
+  });
   window.addEventListener('error', onError, true);
   window.addEventListener('unhandledrejection', onRejection);
   const refresh = () => {

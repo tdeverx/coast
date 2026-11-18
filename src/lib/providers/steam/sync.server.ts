@@ -6,7 +6,7 @@ import { getSteam } from './connection.server';
 import { steamOwnedGameSchema, type SteamOwnedGame } from './adapter.server';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { ProviderQueueBusyError } from '#lib/server/security/request-priority.js';
-import { PermanentActionError, enqueueAction, type OutboxAction } from '#lib/server/queue/index.js';
+import { PermanentActionError, enqueueAction, tagDiagnosticStage, type OutboxAction } from '#lib/server/queue/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { importIgdbMetadata } from '#lib/core/games/service.server.js';
@@ -119,9 +119,9 @@ export async function syncSteamMetadata(action:OutboxAction){
   let refreshed=resume?.refreshed??0,deferred=resume?.deferred??0;
   for(let index=resume?.next??0;index<ids.length;index+=50){
     const batch=ids.slice(index,index+50);
-    const matches=await igdbSteamMatches(instance.id,batch);
+    const matches=await igdbSteamMatches(instance.id,batch).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); });
     const accepted=matches.filter(match=>match.identities.some(identity=>identity.provider==='steam'&&batch.includes(identity.externalId)));
-    for(const match of accepted)await importIgdbMetadata(match);
+    for(const match of accepted)await importIgdbMetadata(match).catch(cause => { throw tagDiagnosticStage(cause, 'item-import'); });
     refreshed+=accepted.length;
     const matched=new Set(accepted.flatMap(match=>match.identities.filter(identity=>identity.provider==='steam').map(identity=>identity.externalId)));
     deferred+=batch.filter(id=>!matched.has(id)).length;

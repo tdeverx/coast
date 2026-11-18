@@ -1,4 +1,4 @@
-import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
+import { browserDiagnostic, diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
@@ -44,11 +44,19 @@ export async function api<T = unknown>(
 async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>, playbackBase = playbackApi): Promise<T> {
   options.signal?.throwIfAborted();
   const sharedPlayback = playbackBase === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
-  const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, {
+  const init = {
     ...options,
     method,
     headers: { ...diagnosticHeaders(), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
+  };
+  const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, init).catch(cause => {
+    options.signal?.throwIfAborted();
+    if (cause?.name !== 'AbortError') browserDiagnostic('browser.request-failed', {
+      operation: path.split('/', 1)[0], method, failure: cause instanceof TypeError ? 'network' : 'unexpected',
+      surface: sharedPlayback ? 'share' : undefined,
+    });
+    throw cause;
   });
   options.signal?.throwIfAborted();
   receiveDiagnosticLevel(response);
@@ -57,7 +65,14 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
     .catch((cause) => {
       if (cause?.name === 'AbortError') throw cause;
       options.signal?.throwIfAborted();
-      if (response.ok) throw new ApiError('The server returned an invalid response. Please try again.', 502);
+      if (response.ok) {
+        browserDiagnostic('browser.request-failed', {
+          operation: path.split('/', 1)[0], method, failure: 'validation', stage: 'response-body',
+          status: response.status, relatedRequestId: response.headers.get('x-coast-request-id'),
+          surface: sharedPlayback ? 'share' : undefined,
+        });
+        throw new ApiError('The server returned an invalid response. Please try again.', 502);
+      }
       return { error: 'The server could not complete this request.' };
     });
   options.signal?.throwIfAborted();
