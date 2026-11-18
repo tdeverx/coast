@@ -67,12 +67,14 @@ async function profileSummary(
   const options = v.parse(profileOptionsSchema, input);
   const db = getDb();
   const [screenVisibility,config]=await Promise.all([profileVisibility(userId,viewerId),getFeatureConfig(viewerId)]);
-  const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean}>(sql`select
+  const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean;progress:boolean;collection:boolean}>(sql`select
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',category)),false) as favourites,
-    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',category)),false) as ratings
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',category)),false) as ratings,
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'progress',category)) filter(where category<>'music'),false) as progress,
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'collection',category)) filter(where category<>'music'),false) as collection
     from (values ('screen'),('music'),('game'),('book'),('comic')) categories(category)
     where ${enabledCategories(sql`category`,config)}`);
-  const visibility={...screenVisibility,favourites:sharedVisibility.favourites,ratings:sharedVisibility.ratings};
+  const visibility={...screenVisibility,...sharedVisibility};
   if(!Object.values(visibility).some(Boolean))throw new AppError(404,'Profile not found.');
   if(options.view==='history')await requireVisible(userId,viewerId,'activity','screen');
   if(options.view==='favourites'&&!visibility.favourites||options.view==='ratings'&&!visibility.ratings)

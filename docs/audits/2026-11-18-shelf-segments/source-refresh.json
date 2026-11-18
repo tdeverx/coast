@@ -1,0 +1,69 @@
+{
+  "epoch": "shelf-segments-local-2026-11-18",
+  "baseline": "1e0c2f5ef4ad6f16f645183eec97ec3d3ceaab89",
+  "blanketAcceptance": false,
+  "files": {
+    "docs/behaviour.md": {
+      "previous": "dd4b8caf9d0f377fcc5f662e554160a05e826bc4df5549ae6ab0712680c3ba8e",
+      "current": "b1df0f0e1967eed85c847fc4c9294bd8278c58e489eb6bca1f90dbba50120b07"
+    },
+    "src/lib/progress-experiment.ts": {
+      "previous": "c528d8e896f682cf481b4877c78ecbc36556a41fbcea6be3d82c52023177d4a1",
+      "current": "963d7ab8558951b236916b4a1547c7f88068ac027bc58171b3847ef931bebbf2"
+    },
+    "src/lib/server/queries/lists.ts": {
+      "previous": "d57c333df742e70f824bd979907ecce168c60248be3988535dc80166ea23f7e0",
+      "current": "319e3934b08305b2ac306a9329068a219dd11845c3912fd2a3070517b33710ae"
+    },
+    "src/lib/server/queries/profile.ts": {
+      "previous": "fa78d6dc1b13b18fb8bb13ca35acf2da3186aa1a64a7a58377678cd22772e9f6",
+      "current": "bc2b9bb8e7cc54e22fde6de43dca2b2566aca2cd2201b48a865f99f758604760"
+    },
+    "src/lib/server/queries/progress-experiment.ts": {
+      "previous": "2908e26c00a67bef220848362486da0dd399edd7a7a2ef0f671a58fddbab2e41",
+      "current": "8232bcfb563383f4f098b1905330dd8915ecd1aeae02f964e60723a95e96a6ca"
+    },
+    "src/lib/social/model.ts": {
+      "previous": "e862a16c39b4e3c82062a1baf191d406d3f86da41c18210c75b18c46574569a7",
+      "current": "a8a6095f4f29d4579578d74a2b3466c51d2749343239b81e0b1defd46bac6e66"
+    },
+    "src/lib/ui/shelves/library-feed.svelte.ts": {
+      "previous": "872b310a320146cae5c57c66892369d6989345f15547e15fba460ec5a3acf830",
+      "current": "6e0aeba6e9f111af0dbbe4eec9de5cf17d3b5d802c1ee189f0c3483725923ad7"
+    },
+    "src/lib/ui/shelves/progress-experiment.svelte.ts": {
+      "previous": "34f9df3ddffffac8efedcd72d10f89ab8e03a4da26a7b5802eeab457ddb1b252",
+      "current": "135cdd147dd08e35b01f142467a6ab5ef9ece02ebd827357fb127d1523c97300"
+    },
+    "src/lib/ui/shelves/social.svelte.ts": {
+      "previous": "b8e29e4aa162ce6e7eb8eb2cd2d5dc37fa16873bcddc88b13948860e28a5983b",
+      "current": "e9cf884cb1fa81baf2067b20ac2722651c0f831eee7561331c2629185a734923"
+    },
+    "src/routes/profile/[username]/+page.svelte": {
+      "previous": "1c9761e4fdb80eb4232fa71f3e731bc4afbe36f6f13a7a0154d0190d26b72f2d",
+      "current": "e30cc034be50073f1ec40c146ff85349e7811ab9a6b0f5d9dec2f64df9d8b4b6"
+    },
+    "src/routes/ui-preview/MenuFilterExample.svelte": {
+      "previous": "a6e506def93d41733d0c7f84c3c7c7c2734a36d4a45c47a8ef481ebb0932f1fa",
+      "current": "06f9d74fbcb994f1cdf56774f2711d1c96e1fb42ce59a0a540467e1991bf66ca"
+    },
+    "tests/domain-application-db.test.ts": {
+      "previous": "40f56f7e417de5369659589a08506d298216bfbd317ab1adc6a3b379e4a3ba1e",
+      "current": "e183322f4842a82b61ebd50fed24b7c740a9c868489f0fc6aedd2c092316d5b7"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "899d7ac501ec87841e9389b5d6c8fd6d047c7b7bed2093d5a9af086607e3fcf1",
+      "current": "ccbe38c8a4e3b0b6c9fa426aa941bf207e38dd3bd6c4481a797848dd2295b0d4"
+    },
+    "tests/progress-experiment-query.test.ts": {
+      "previous": "df778402aaaf47030986470d6baa574511ac3a5de8d8767794a79dc485f55f07",
+      "current": "0c62334fb91c2aee47a510b62ab5844cd1b851e0f21c99a060eaae616e2ef797"
+    },
+    "tests/progress-experiment-source.test.ts": {
+      "previous": "93ba183a966b79edc7ea17c949069ee5da74c6ed177552c4ce4dbb2c1db1c177",
+      "current": "62eba3e163ec6d8100df43e808c0b251a14d78643665dff5c81a1fe90b39810d"
+    }
+  },
+  "report": "docs/audits/2026-11-18-shelf-segments/review.md",
+  "reportSha256": "74fe02b17cb87f3ac11682e0fe6a45bbe6ce795cb0c9deb87411cfdf3fb28295"
+}

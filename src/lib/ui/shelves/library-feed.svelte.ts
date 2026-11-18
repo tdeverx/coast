@@ -47,11 +47,11 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
   const refreshKey=$derived(JSON.stringify([page.data.user?.id,page.data.user?.role,get().feature,get().action,
     page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,
     contentRevisionKey(page.data,['tracking'])]));
-  let previous=untrack(()=>refreshKey),previousOwner=untrack(()=>page.data.user?.id),suppliedKind=untrack(()=>get().kind),suppliedState=untrack(()=>get().state);
-  $effect(()=>{const key=refreshKey,owner=page.data.user?.id,nextKind=get().kind,nextState=get().state;untrack(()=>{
+  let previous=untrack(()=>refreshKey),previousOwner=untrack(()=>page.data.user?.id),suppliedKind=untrack(()=>get().kind),suppliedState=untrack(()=>get().state??'available');
+  $effect(()=>{const key=refreshKey,owner=page.data.user?.id,nextKind=get().kind,nextState=get().state??'available';untrack(()=>{
     let selectionChanged=false;
     if(nextKind!==suppliedKind){suppliedKind=nextKind;if(nextKind!==undefined&&nextKind!==kind){kind=nextKind;selectionChanged=true;}}
-    if(nextState!==suppliedState){suppliedState=nextState;if(nextState!==undefined&&nextState!==state){state=nextState;selectionChanged=true;}}
+    if(nextState!==suppliedState){suppliedState=nextState;if(nextState!==state){state=nextState;selectionChanged=true;}}
     if(key===previous&&!selectionChanged)return;previous=key;
     const activated=resource.activated||resource.ready;
     if(owner!==previousOwner){previousOwner=owner;resource.replace(empty());}
@@ -61,7 +61,7 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
   onDestroy(resource.dispose);
   function choose(field:'kind'|'state',value:string){if(field==='kind'){if(value===kind)return;kind=value;}else{if(value===state)return;state=value;}void load(1);}
   return {
-    get filterReset(){const defaultKind=get().feature==='requests'||get().action?'all':'movie';return {disabled:kind===defaultKind&&(get().feature!=='requests'||state==='available'),run:()=>{kind=defaultKind;state='available';return load(1);}};},
+    get filterReset(){const defaultKind=get().feature==='requests'||get().action?'all':'movie';return {disabled:kind===defaultKind,run:()=>{kind=defaultKind;return load(1);}};},
     get enrichSocial(){return get().feature!=='requests';},
     get title(){return get().feature==='recent'?'Recently added':'Requests';},
     get items(){return enabled()&&resource.data.scope===scope?resource.data.items:[];},
@@ -71,7 +71,7 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
     get shape(){return get().feature==='requests'?'fanart' as const:kind==='music'||get().action==='listen'?'square' as const:'poster' as const;},
     get artworkStyle(){return get().feature==='requests'?'thumb' as const:'primary' as const;},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:true,infinite:get().layout==='grid',controls:'none' as const};},
-    get filters():ShelfControl[]{return get().feature==='recent'?[]:[{type:'select',label:'Request status',value:state,options:[...requestSegments],change:value=>choose('state',value)}];},
+    get filters():ShelfControl[]{return get().feature==='recent'?[]:[{type:'segments',label:'Request status',value:state,options:[...requestSegments],change:value=>choose('state',value)}];},
     get controls():ShelfControl[]{return get().feature==='requests'?[{type:'select',label:'Media type',value:kind,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>choose('kind',value)}]:[
       ...(types.length>1?[{type:'select' as const,label:get().action==='read'?'Reading type':'Media type',value:kind,options:[...(get().action?[{value:'all',label:'All'}]:[]),...types],change:(value:string)=>choose('kind',value)}]:[]),
     ];},

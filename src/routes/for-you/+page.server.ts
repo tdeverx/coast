@@ -10,7 +10,7 @@ export const load = (async ({ locals, depends, url }) => {
   const config=await getFeatureConfig(locals.user!.id);
   url=actionUrl(url,locals.user!.settings?.action,config);
   const action=resolveAction(url.searchParams,locals.user!.settings?.action,config);
-  const filters=v.safeParse(activityFiltersSchema,url.searchParams.get('section')==='activity'?{...Object.fromEntries(url.searchParams),audience:url.searchParams.get('audience')??'friends'}:{audience:'friends'});
+  const filters=v.safeParse(activityFiltersSchema,url.searchParams.get('section')==='activity'?Object.fromEntries(url.searchParams):{});
   if(!filters.success)error(400,'Choose valid Activity filters.');
   return {action,activityFilters:filters.output,...(url.searchParams.get('section')||action!=='watch'?{heroes:[],heroNext:null}:await homeData(locals.user!.id))};
 }) satisfies PageServerLoad;

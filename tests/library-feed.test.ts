@@ -23,7 +23,7 @@ test('feed inputs reject unbounded paging and invalid selections, and expanded r
  expect(v.safeParse(requestFeedSchema,{state:'unknown'}).success).toBe(false);
  expect(v.safeParse(requestFeedSchema,{kind:'book'}).success).toBe(false);
  expect(v.safeParse(recentLibrarySchema,{page:1_000_001}).success).toBe(false);
- expect(sectionTarget('/for-you?section=requests&state=approved&kind=show',new URL('http://coast/'))).toMatchObject({source:{type:'library-feed',feature:'requests',state:'approved',kind:'show',layout:'grid'}});
+ expect(sectionTarget('/for-you?section=requests&state=processing&kind=show',new URL('http://coast/'))).toMatchObject({source:{type:'library-feed',feature:'requests',state:'processing',kind:'show',layout:'grid'}});
  expect(sectionTarget('/for-you?section=recent&kind=comic',new URL('http://coast/'))).toMatchObject({source:{type:'library-feed',feature:'recent',kind:'comic',layout:'grid'}});
 });
 
@@ -41,7 +41,7 @@ test('cancelled request reads stop before opening a database projection',async()
 test('combined Recently added and expanded discovery links preserve their action',()=>{
  const base=new URL('http://coast/');
  expect(sectionTarget('/for-you?section=recent&view=read&kind=all',base)).toMatchObject({source:{type:'library-feed',feature:'recent',action:'read',kind:'all'}});
- expect(sectionTarget('/for-you?section=activity&view=listen',base)).toMatchObject({source:{type:'social',category:'music',mediums:false}});
+ expect(sectionTarget('/for-you?section=activity&view=listen',base)).toMatchObject({source:{type:'social',category:'music',mediums:true,audience:'all'}});
  expect(sectionTarget('/discover?section=recent&view=read',base)).toMatchObject({source:{type:'discovery',surface:'read',scoped:true}});
  expect(sectionTarget('/progress-experiment?category=game&view=next',base)).toMatchObject({source:{type:'progress-experiment',category:'game'}});
 });

@@ -41,8 +41,8 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   if(section==='recent'&&['all','movie','show','music','game','book','comic'].includes(get('kind',action?'all':'movie')))source={type:'library-feed',feature:'recent',action,layout:'grid',kind:get('kind',action?'all':'movie')};
   else if(section==='requests'&&(!action||action==='watch')&&['all','movie','show'].includes(get('kind','all'))&&['available','pending','approved','processing','declined'].includes(get('state','available')))source={type:'library-feed',feature:'requests',layout:'grid',kind:get('kind','all'),state:get('state','available')};
   else if(['activity','popular'].includes(section)){
-   const filters=v.safeParse(activityFiltersSchema,{...Object.fromEntries(p),audience:get('audience','friends')});if(section==='activity'&&!filters.success)return null;
-   source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:!action,layout:'grid',...(section==='activity'&&filters.success?filters.output:{})};
+   const filters=v.safeParse(activityFiltersSchema,Object.fromEntries(p));if(section==='activity'&&!filters.success)return null;
+   source={type:'social',surface:section==='popular'?'popular':'activity',category,mediums:section==='activity'||!action,layout:'grid',...(section==='activity'&&filters.success?filters.output:{})};
   }
   else source=recommendationSectionSource(url,category as DynamicMedium,'personal');
  }else if(url.pathname==='/discover'){

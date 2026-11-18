@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 // @ts-expect-error The rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,resourceUrl} from './fixtures/ui-script';
-const routeUrl=moduleUrl(compileRunes(`export const page=$state({url:new URL('http://fixture/for-you'),data:{user:{id:'viewer'},capabilities:{social:true},experimentalBooks:true,experimentalComics:true,contentRevision:{social:'one'}}});`));
+const routeUrl=moduleUrl(compileRunes(`export const page=$state({url:new URL('http://fixture/for-you'),data:{user:{id:'viewer'},capabilities:{social:true},experimentalBooks:true,experimentalComics:true,experimentalGaming:true,experimentalMusic:true,contentRevision:{social:'one'}}});`));
 const lifecycleUrl=moduleUrl(`export {untrack} from '${import.meta.resolve('svelte/internal/client')}';const hooks=[];export const onDestroy=fn=>hooks.push(fn);export const destroy=()=>hooks.splice(0).forEach(fn=>fn());`);
 const refreshUrl=moduleUrl(compileRunes(await Bun.file(new URL('../src/lib/ui/shelves/refresh.svelte.ts',import.meta.url)).text())
  .replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
@@ -98,7 +98,7 @@ test('Activity audience and menu selections restart the cursor, preserve links a
  client.set((path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>new Promise(resolve=>calls.push({url:new URL(path,'http://fixture'),signal:options.signal,finish:resolve})));
  let source!:ReturnType<typeof createSocialSource>;const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'screen',audience:'friends'})));runtime.flush();
  try{
-  expect(calls).toHaveLength(0);expect(source.filters).toEqual([]);expect(source.controls.find(control=>control.label==='Audience')?.options?.map(option=>option.label)).toEqual(['All','Friends','Me']);
+  expect(calls).toHaveLength(0);expect(source.filters).toEqual([]);expect(source.controls.find(control=>control.label==='Audience')?.options?.map(option=>option.label)).toEqual(['Me and friends','Friends','Me']);
   expect(source.controls.map(control=>control.label)).toEqual(['Audience','Media type','Activity type','Time period']);
   const first=source.load();calls[0].finish(feed('all',true));await first;
   const more=source.load(2,true);source.controls.find(control=>control.label==='Audience')!.change('you');expect(calls[1].signal.aborted).toBe(true);expect(source.items).toEqual([]);
@@ -110,4 +110,36 @@ test('Activity audience and menu selections restart the cursor, preserve links a
   const href=new URL(source.href!,'http://fixture');expect(href.searchParams.get('audience')).toBe('you');expect(href.searchParams.get('activityType')).toBe('ratings');expect(href.searchParams.get('view')).toBe('watch');
   const next=source.load(2,true);expect(calls[4].url.searchParams.get('audience')).toBe('you');expect(calls[4].url.searchParams.get('activityType')).toBe('ratings');expect(calls[4].url.searchParams.has('before')).toBe(true);calls[4].finish(feed('older'));await next;
  }finally{lifecycle.destroy();dispose();}
+});
+
+test('For You Activity loads only the selected medium and clears incompatible filters on a switch',async()=>{
+ const {page}=await import(routeUrl);
+ const paths:URL[]=[];
+ client.set(async(path:string)=>{paths.push(new URL(path,'http://fixture'));return {...feed('empty'),items:[]};});
+ let source!:ReturnType<typeof createSocialSource>;
+ const dispose=runtime.effect_root(()=>source=createSocialSource(()=>({type:'social',category:'screen',mediums:true,audience:'all'})));runtime.flush();
+ try{
+  expect(source.filters[0]).toMatchObject({type:'segments',value:'screen'});
+  expect(source.filters[0].options?.map(option=>option.label)).toEqual(['Watching','Playing','Listening','Reading']);
+  await source.load();
+  expect(paths).toHaveLength(1);
+  expect(paths[0].searchParams.get('audience')).toBe('all');
+  source.controls.find(control=>control.label==='Media type')!.change('movie');
+  source.controls.find(control=>control.label==='Activity type')!.change('progress');
+  source.controls.find(control=>control.label==='Time period')!.change('month');
+  source.filters[0].change('music');
+  await settle();
+  expect(paths).toHaveLength(5);
+  const next=paths[4].searchParams;
+  expect(Object.fromEntries(next)).toEqual({category:'music',audience:'all',mediaKind:'all',period:'month',activityType:'all'});
+  expect(source.controls.find(control=>control.label==='Media type')?.options?.map(option=>option.value)).toEqual(['all','album','track']);
+  expect(new URL(source.href!,'http://fixture').searchParams.get('view')).toBe('listen');
+  source.filterReset!.run();await settle();
+  expect(paths[5].searchParams.get('category')).toBe('music');
+  source.controls.find(control=>control.label==='Media type')!.change('album');await settle();
+  page.data.experimentalMusic=false;await settle();
+  expect(paths).toHaveLength(8);
+  expect(Object.fromEntries(paths[7].searchParams)).toMatchObject({category:'screen',mediaKind:'all'});
+  expect(source.filters[0].options?.map(option=>option.label)).toEqual(['Watching','Playing','Reading']);
+ }finally{lifecycle.destroy();dispose();page.data.experimentalMusic=true;}
 });

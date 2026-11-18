@@ -9,11 +9,13 @@ export const recentLibrarySchema=v.object({
   preview:v.optional(v.boolean(),false),
 });
 export const requestStates=[
-  {value:'all',label:'All'}, {value:'available',label:'Available'}, {value:'pending',label:'Pending'},
-  {value:'approved',label:'Accepted'}, {value:'processing',label:'In progress'}, {value:'declined',label:'Declined'},
+  {value:'all',label:'All'}, {value:'available',label:'Available'}, {value:'processing',label:'In progress'},
+  {value:'approved',label:'Accepted'}, {value:'pending',label:'Pending'}, {value:'declined',label:'Declined'},
   {value:'cancelled',label:'Cancelled'}, {value:'failed',label:'Failed'},
 ] as const;
-export const requestSegments=requestStates.filter(state=>!['all','cancelled','failed'].includes(state.value));
+export const requestSegments=requestStates
+  .filter(state=>!['all','cancelled','failed'].includes(state.value))
+  .map(state=>state.value==='processing'?{...state,label:'Processing'}:state);
 export const requestFeedSchema=v.object({
   state:v.optional(v.picklist(['available','pending','approved','processing','declined']),'available'),
   kind:v.optional(v.picklist(['all','movie','show']),'all'),

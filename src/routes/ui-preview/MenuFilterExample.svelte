@@ -1,7 +1,6 @@
 <script lang="ts">
   import RowFilter from '#lib/ui/components/RowFilter.svelte';
   import { libraryGenres, librarySegments, librarySelections, librarySortOptions, libraryTitles, type LibrarySurface } from '#lib/library.js';
-  import { requestSegments } from '#lib/library-feed.js';
   import { progressTabs } from '#lib/progress.js';
   import { activityAudienceOptions, activityTypeOptions, workFriendOptions } from '#lib/social/model.js';
   import { shelfControls } from '#lib/ui/shelves/controls.js';
@@ -21,7 +20,7 @@
       :medium==='read'?[{value:'book',label:'Books'},{value:'comic',label:'Comics'},{value:'series',label:'Series'}]:[];
     const statusLabel=medium==='watch'?'Watch status':medium==='play'?'Playthrough status':'Reading status';
     const result:ShelfControl[]=[];
-    if(typeOptions.length)result.push(pick(medium==='read'?'Reading type':'Media type',[{value:'all',label:'All media'},...typeOptions]));
+    if(typeOptions.length)result.push(pick(medium==='read'?'Reading type':'Media type',[{value:'all',label:'All media'},...(context==='requests'?typeOptions.filter(option=>option.value==='movie'||option.value==='show'):typeOptions)]));
     if(medium==='all')result.push(pick('Medium',[{value:'all',label:'All media'},...Object.entries(libraryTitles).map(([value,label])=>({value,label}))]));
     if(isLibrary){
       if(values.status && medium!=='all' && medium!=='listen')result.push(pick(statusLabel,librarySelections[medium]));
@@ -33,7 +32,6 @@
     }else{
       if(['episodes','seasons'].includes(context)&&medium==='watch')result.push(pick('Watch status',[all,{value:'unwatched',label:'Unwatched'},{value:'watched',label:'Watched'}]));
       if(context==='episodes'&&medium==='watch')result.push({...pick('Show specials',[all,{value:'show',label:'Show'}]),type:'select'});
-      if(context==='requests'&&medium==='watch')result.push(pick('Request status',[all,...requestSegments]));
       if(context==='credits')result.push(pick('Department',[all,...['Acting','Directing','Writing'].map(label=>({value:label,label}))]));
       if(context==='progress')result.push(pick('Progress',[all,...(medium==='watch'||medium==='all'?progressTabs:librarySelections[medium])]));
       if(values.available)result.push({...pick(available[medium],undefined,'access'),type:'availability'});
