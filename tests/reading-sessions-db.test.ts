@@ -42,7 +42,7 @@ run('reading from beginning preserves the saved bookmark until the new session a
 run('heartbeats, reopened sessions and EPUB layout changes preserve bookmark time',async()=>{
  const edition='7'.repeat(64);
  const session=await prepareReading(users[0],work,local('epub',edition));
- const bookmark={format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0};
+ const bookmark={format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0} as const;
  await moveReading(users[0],session.id,bookmark);
  const before=(await ownedReadingSession(users[0],session.id)).positionUpdatedAt;
  expect(before).toBeInstanceOf(Date);

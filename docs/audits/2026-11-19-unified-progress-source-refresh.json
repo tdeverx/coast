@@ -57,7 +57,7 @@
     },
     "tests/reading-sessions-db.test.ts": {
       "previous": "1d84ad75c1ab7b96ff65f60d4d64e59c1febb542fd4f4070495b4de3d8a15a5a",
-      "current": "e98fd13c49f1c4b14eb57cd2fcc018ac60b3319d65eb85fec8f15c97e93fca79"
+      "current": "65986381807b60aed8ec7ec850c2214aa2491169ca9b4f596372303b10ce1b80"
     },
     "tests/show-next-db.test.ts": {
       "previous": "54cda48807a98591b96442e2faf4c57ef28a1228c30fb52d3ba657904e0e7379",
