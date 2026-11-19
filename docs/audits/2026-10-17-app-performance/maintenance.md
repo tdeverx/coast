@@ -80,14 +80,14 @@ python3 docs/audits/2026-10-17-app-performance/consolidate.py
 python3 docs/audits/2026-10-17-app-performance/render-implementation-ledger.py
 python3 docs/audits/2026-10-17-app-performance/render-remaining-work.py
 python3 docs/audits/2026-10-17-app-performance/render-remaining-work.py --check
-python3 docs/audits/2026-10-17-app-performance/verify-report-integrity.py \
+python3 -B docs/audits/2026-10-17-app-performance/verify-report-integrity.py \
   --output docs/audits/2026-10-17-app-performance/evidence/implementation-report-integrity.json
 git diff --check
 ```
 
 The default remaining-work renderer first requires the curated open IDs to match the ledger, then refreshes only its current ledger-identity stamp when needed. Its `--check` mode is read-only and rejects a stale stamp. It does not change statuses, options, source pins or runtime acceptance.
 
-The integrity check covers record identity, the open set, rendered statuses, local links and explicit current source/artifact pins. It does not certify runtime completeness. Its toast adoption branch now checks the immutable review patch/manifest hashes, all 14 current candidate files, reverse applicability and the successful normal rollout receipt. A forward apply failure is expected after adoption. Historical staged checks remain separately retained.
+The October integrity check covers record identity, the open set, rendered statuses, links and historical source and artifact pins. It verifies matching bytes in Git history and the published archive. Toast and avatar adoption checks reconstruct their publication-era files before checking reverse applicability. The report lists unavailable historical runtime and companion pins separately. For current source, run the maintained audit register with `bun test tests/performance-audit-register.test.ts` and attach an exact source refresh when an audited owner changes.
 
 An issue remains partial while required actual cohorts or acceptance are missing. Document the next experiment, competing options, observed costs and approval boundary. Do not close it because the common tests pass or the report is large.
 

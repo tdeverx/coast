@@ -78,6 +78,7 @@ test('Progress is lazy, requests only a row preview, and does not refetch unchan
 
 test('Progress gives every tab its own shape and artwork defaults',()=>{
   const {result,dispose}=source({username:'owner',initial:content()});
+  const overview=source({initial:content()});
   const defaults=[
     ['continue','fanart','thumb','episode-season-show'],
     ['next','poster','primary','season-show-episode'],
@@ -89,13 +90,14 @@ test('Progress gives every tab its own shape and artwork defaults',()=>{
   client.setDelivery(async()=>content());
   try{
     for(const [view,shape,artworkStyle,artworkPriority] of defaults){
-      result.filters[0].change(view);
-      expect(result).toMatchObject({shape,artworkStyle,artworkPriority});
+      const shelf=view==='favourites'?overview.result:result;
+      shelf.filters[0].change(view);
+      expect(shelf).toMatchObject({shape,artworkStyle,artworkPriority});
     }
-  }finally{dispose();}
+  }finally{dispose();overview.dispose();}
 });
 
-test('Progress reuses settled segment visibility for filter changes and hides an all-empty row after refresh',async()=>{
+test('Progress keeps empty segments disabled and reuses settled availability for filter changes',async()=>{
  const calls:URL[]=[];
  client.setDelivery(async(path:string)=>{
   const request=new URL(path,'http://fixture/');calls.push(request);
@@ -106,7 +108,13 @@ test('Progress reuses settled segment visibility for filter changes and hides an
  const {result,dispose}=source();
  try {
   await result.load();
-  expect(result.filters[0]).toMatchObject({value:'favourites',options:[{value:'favourites',label:'Favourites'}]});
+  const segment=result.filters[0];
+  expect(segment.value).toBe('favourites');
+  expect(segment.options?.map(({value,disabled})=>[value,disabled])).toEqual([
+    ['continue',true],['next',true],['paused',true],['watchlist',true],['favourites',false],
+  ]);
+  segment.change('continue');await settle();
+  expect(calls).toHaveLength(1);
   expect(result.items.map(item=>item.id)).toEqual(['favourite']);
   expect(calls[0].searchParams.has('segments')).toBe(true);
   result.controls[0].change('show');await settle();
@@ -116,7 +124,7 @@ test('Progress reuses settled segment visibility for filter changes and hides an
   route.replace(data('two'));await settle();
   expect(calls[2].searchParams.has('segments')).toBe(true);
   expect(result.hideRow).toBe(true);
-  expect(result.filters.some(control=>control.type==='segments')).toBe(false);
+  expect(result.filters[0].options?.every(option=>option.disabled)).toBe(true);
  } finally {dispose();}
 });
 

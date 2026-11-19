@@ -35,7 +35,7 @@ export function slidingPill(root: HTMLElement) {
   const pointerOver = (event: PointerEvent) => {
     if (event.pointerType === 'touch') return;
     const item = itemFrom(event.target, root);
-    if (item) schedule(item);
+    if (item) schedule(item.matches(':disabled') ? undefined : item);
   };
   const focusIn = (event: FocusEvent) => {
     const item = itemFrom(event.target, root);

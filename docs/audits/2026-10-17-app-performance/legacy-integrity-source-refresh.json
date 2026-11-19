@@ -1,0 +1,17 @@
+{
+  "epoch": "legacy-audit-integrity-2026-11-18",
+  "baseline": "2a2a564a1959f74cd2081c7139f3b5443d9e7718",
+  "blanketAcceptance": false,
+  "files": {
+    "docs/audits/2026-10-17-app-performance/maintenance.md": {
+      "previous": "9a3d1c1e2944c032252753e4b8e192eeb5c4b7c7334413cd894dd223b736d9a4",
+      "current": "a045bcb3f61293dd9f2fef42aa4c652d3bafab489cb59a36956103dca4020ed6"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "af603ab940a8b7551178eb94fafebd1cea46d013a010f719769481e35ff3b4aa",
+      "current": "bdc4278199fd599226dad5443266cac4141cdbbbc11b85fe6cef1049bedad962"
+    }
+  },
+  "report": "docs/audits/2026-10-17-app-performance/publication.md",
+  "reportSha256": "bb286ebf290d35601a0a627b4fd2d097316a52f4ab4ae5de3cdf932b2c5f8001"
+}

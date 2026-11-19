@@ -1,4 +1,5 @@
 import {beforeAll,afterAll,expect,test} from 'bun:test';
+import {eq} from 'drizzle-orm';
 import {getDb,getSql,closeDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
@@ -201,7 +202,7 @@ run('Progress presents episode and season captions with the correct artwork hier
  await check('finished',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-poster','/season-poster','/episode-poster']);
 });
 
-run('Progress publishes only nonempty segments and falls forward without hydrating an empty tab',async()=>{
+run('Progress reports which segments have content and falls forward without hydrating an empty tab',async()=>{
  const db=getDb(),owner=crypto.randomUUID(),film=crypto.randomUUID();
  await db.insert(s.users).values({id:owner,username:`progress-segments-${owner}`});
  await db.insert(s.media).values({id:film,kind:'movie',title:'Favourite only'});
@@ -228,6 +229,40 @@ run('Progress publishes only nonempty segments and falls forward without hydrati
   .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
  expect(await tabbedProgressData(owner,{view:'finished'},owner,'profile'))
   .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
+});
+
+run('Continue sorts current positions and excludes cleared reading bookmarks without erasing tracking or history',async()=>{
+ const db=getDb(),raw=getSql(),owner=crypto.randomUUID();
+ const date=(day:number)=>new Date(Date.UTC(2024,0,day));
+ await raw`update system_settings set value=value||'{"experimentalBooks":true,"experimentalComics":true}'::jsonb where key='coast'`;
+ await db.insert(s.users).values({id:owner,username:`positions-${owner}`});
+ const {id:comic}=await importReading({provider:'comic-vine',externalId:'4000-987654320',kind:'comic',title:'Comic at page one',authors:[],subjects:[],sourceUrl:'https://comicvine.gamespot.com/issue/4000-987654320/'});
+ const {id:book}=await importReading({provider:'openlibrary',externalId:'OL987654320W',kind:'book',title:'Book with an EPUB bookmark',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL987654320W'});
+ const comicProgress=await updateReading(owner,comic,{page:1,totalPages:24});
+ const bookProgress=await updateReading(owner,book,{state:'reading'});
+ await db.update(s.readingProgress).set({updatedAt:date(2)}).where(eq(s.readingProgress.userId,owner));
+ const expiresAt=new Date(Date.now()+60_000);
+ await db.insert(s.readingSessions).values([
+  {userId:owner,workId:comic,bookmarkCycle:comicProgress.bookmarkCycle,format:'cbz',edition:'comic',location:{format:'cbz',page:1,total:24},updatedAt:date(2),expiresAt},
+  {userId:owner,workId:book,bookmarkCycle:bookProgress.bookmarkCycle,format:'epub',edition:'epub',location:{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0},updatedAt:date(4),expiresAt},
+ ]);
+ const history=()=>raw`select id,page from reading_history where user_id=${owner} and work_id=${comic} order by id`;
+ const before=await history();
+ expect(before).toHaveLength(1);
+ await db.insert(s.trackingState).values({userId:owner,mediaId:comic,collected:true,updatedAt:date(6)});
+ await db.insert(s.gamePlaythroughs).values([
+  {userId:owner,gameId:game,status:'completed',completedAt:date(1),createdAt:date(1),updatedAt:date(5)},
+  {userId:owner,gameId:game,status:'in-progress',createdAt:date(2),updatedAt:date(1)},
+ ]);
+ const ids=({items}:{items:{id:string}[]})=>items.map(item=>item.id);
+ expect(ids(await progressExperimentData(owner,{}))).toEqual([book,comic,game]);
+ expect(ids(await progressData(owner,{category:'reading'}))).toEqual([book,comic]);
+ expect(await updateReading(owner,comic,{reset:'position'})).toMatchObject({page:0,state:'reading'});
+ expect(await updateReading(owner,book,{reset:'position'})).toMatchObject({page:0,state:'reading'});
+ expect(await progressExperimentData(owner,{category:'reading'},{segments:'overview'})).toMatchObject({availableViews:[],items:[]});
+ expect(ids(await progressExperimentData(owner,{}))).toEqual([game]);
+ expect(ids(await progressData(owner,{category:'reading'}))).toEqual([]);
+ expect(await history()).toEqual(before);
 });
 
 run('Paused reuses the current playthrough and reading states with progress privacy',async()=>{

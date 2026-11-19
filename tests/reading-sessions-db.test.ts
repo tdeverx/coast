@@ -250,6 +250,7 @@ run('reading files share metadata but never grant another account cached availab
   const {progressData}=await import('../src/lib/server/queries/progress');
  const {workAssessments,collectionData}=await import('../src/lib/collection/query.server');
  const sql=getSql(),instance=crypto.randomUUID(),connections=[crypto.randomUUID(),crypto.randomUUID()],generations=[crypto.randomUUID(),crypto.randomUUID()];
+ await updateReading(users[0],work,{state:'reading',page:1,totalPages:4});
  await sql`INSERT INTO provider_instances(id,provider,name,base_url) VALUES(${instance},'jellyfin','Reading permissions fixture','https://fixture.invalid')`;
  try{
   for(let index=0;index<2;index++)await sql`INSERT INTO provider_connections(id,instance_id,user_id,status,account_generation) VALUES(${connections[index]},${instance},${users[index]},'connected',${generations[index]})`;

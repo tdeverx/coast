@@ -93,7 +93,9 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   const ownerKey = $derived(JSON.stringify([route.data.user?.id,username,getOptions().category,route.data.capabilities,route.data.experimentalMusic,route.data.experimentalGaming,route.data.experimentalBooks,route.data.experimentalComics]));
   let loadedOwner = $state(untrack(() => ownerKey));
   const views=$derived(loadedOwner===ownerKey?content.availableViews:undefined);
-  const options=$derived((selectionSurface?progressSelectionTabs(selectionSurface):[]).filter(option=>!views||views.includes(option.value)));
+  const options=$derived((selectionSurface?progressSelectionTabs(selectionSurface):[]).map(option=>({
+    ...option,disabled:views!==undefined&&!views.includes(option.value),
+  })));
   const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics,route.data.capabilities]));
   const summaryEpoch=$derived(JSON.stringify([ownerKey,refreshKey,category,selectionSurface]));
   let confirmedEpoch=untrack(()=>initial?.availableViews?summaryEpoch:undefined);
@@ -305,6 +307,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
               value: tab,
               options,
               change: (value: string) => {
+                if(value===tab||!options.some(option=>option.value===value&&!option.disabled))return;
                 tab = value;
                 void select();
               }
