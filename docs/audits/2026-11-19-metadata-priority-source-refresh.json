@@ -1,6 +1,6 @@
 {
   "epoch": "metadata-priority-local-2026-11-19",
-  "baseline": "99574982ef33e081e765dc1efc5c4c0532d18a20",
+  "baseline": "92c9211e93e766a99048caa12792569c3774bc59",
   "blanketAcceptance": false,
   "files": {
     "drizzle/meta/_journal.json": {
@@ -100,8 +100,8 @@
       "current": "7faee6b766e8e898eb0b2996730f633db6389556dc8f1de3e7acb227402adf84"
     },
     "src/lib/server/queries/progress.ts": {
-      "previous": "1227ed8cdb9586ee0c93c5c96fb8844fcf4f6c9353534a599de038281e88907c",
-      "current": "d401d7357055e2d567798de72b967de0b609f9231a0874fe1ccd11fb5ce116a3"
+      "previous": "8e1a24a4bcf40ddbc4027a525da12f3c434e0bfd9f412b348e100e120aa6c916",
+      "current": "258c29fb1f2ce06273ba4f764efc45f88e7e405b15918e67f2eebc9b0bcac1a4"
     },
     "src/routes/settings/[[section]]/+page.svelte": {
       "previous": "7bb0c4dae16abdf22e9e850c9cc44ce79c1307a720fcaaebe436e9f7ce44a883",
