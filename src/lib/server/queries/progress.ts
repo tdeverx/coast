@@ -348,7 +348,8 @@ async function screenProgressMembership(
   ];
   const member = (ids: string[]) => sql`${s.media.id} = any(${`{${ids.join(',')}}`}::uuid[])`;
   const aired = (id: SQL) => episodeHasAiredForProgress(id, metadataSource);
-  const nextIds = [...queued.map(row => row.id), ...saved.map(row => row.id), ...sequenceById.keys(), ...planned.newSeasonIds];
+  const sequenceIds = [...sequenceById.keys()];
+  const nextIds = [...queued.map(row => row.id), ...saved.map(row => row.id), ...sequenceIds, ...planned.newSeasonIds];
   const where = and(
         member(candidateIds),
         options.view === 'watching'
@@ -368,8 +369,12 @@ async function screenProgressMembership(
         options.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined,
         sql`not exists (select 1 from episodes e join tracking_state parent on parent.media_id in (e.show_id,e.season_id)
           where e.media_id = ${s.media.id} and parent.user_id = ${userId} and (parent.dropped or parent.paused))`,
-        sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and (paused.paused or paused.dropped or (${options.view}<>'watching' and paused.watched and ${rewatchBoundary(userId,sql`paused.media_id`)} is null))
-          and paused.media_id in (${s.media.id}, (select season.show_id from seasons season where season.media_id = ${s.media.id})))`
+        sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and (paused.paused or paused.dropped)
+          and paused.media_id in (${s.media.id}, (select season.show_id from seasons season where season.media_id = ${s.media.id})))`,
+        // Occurrence-aware sequence planning has already evaluated completion for its own run.
+        options.view === 'watching' ? undefined : sql`(${member(sequenceIds)} or not exists (
+          select 1 from tracking_state t where t.user_id=${userId} and t.media_id=${s.media.id}
+          and t.watched and ${rewatchBoundary(userId,sql`${s.media.id}`)} is null))`
   );
   return { candidateIds, sequenceById, where };
 }

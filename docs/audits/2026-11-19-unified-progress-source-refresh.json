@@ -41,7 +41,7 @@
     },
     "src/lib/server/queries/progress.ts": {
       "previous": "fa460b14758829aeecd27d7f6edb75bc1daafd8b586776fa95ca5e2b066f1472",
-      "current": "1227ed8cdb9586ee0c93c5c96fb8844fcf4f6c9353534a599de038281e88907c"
+      "current": "8e1a24a4bcf40ddbc4027a525da12f3c434e0bfd9f412b348e100e120aa6c916"
     },
     "src/lib/server/queries/show-next.ts": {
       "previous": "fbfd62838788c7be2276c9ba0cd2f7b8b67077e7f298a661ca395300c9162561",
