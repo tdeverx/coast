@@ -3,6 +3,7 @@
   import AdminInviteSettings from '#lib/auth/ui/AdminInviteSettings.svelte';
   import AccountAccessControls from '#lib/auth/ui/AccountAccessControls.svelte';
   import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
+  import { metadataFamilies, metadataProviders, sourcePreference, type MetadataFamily, type MetadataProviderName } from '#lib/catalogue/metadata/resolve.js';
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
   import { featureDefinitions, administratorFeatures, type PersonalFeature } from '#lib/features.js';
   import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
@@ -100,7 +101,12 @@
   });
   const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
   function readPreferences() {
-    const preferences = structuredClone({ ...data.defaults, ...page.data.user?.settings });
+    const defaults = data.defaults;
+    const settings = page.data.user?.settings;
+    const preferences = structuredClone({
+      ...defaults, ...settings,
+      subtitleLanguages: settings?.subtitleLanguages ?? defaults.subtitleLanguages,
+    });
     if (preferences.notificationLevel === 'silent') preferences.notificationLevel = null;
     return preferences;
   }
@@ -108,6 +114,20 @@
     const config = data.config ? structuredClone(data.config) : null;
     if (config?.notificationLevel === 'silent') config.notificationLevel = 'normal';
     return config;
+  }
+  const sourceLabels = { jellyfin: 'Jellyfin', tmdb: 'TMDB', trakt: 'Trakt' };
+  const sourceOrders = metadataProviders.flatMap(first =>
+    metadataProviders.filter(second => second !== first).map(second => [first, second,
+      metadataProviders.find(third => third !== first && third !== second)!] satisfies [MetadataProviderName, MetadataProviderName, MetadataProviderName]));
+  const familyLabels = { details: 'Details and genres', artwork: 'Artwork', release: 'Release dates and airtimes' };
+  function chooseSourceOrder(family: MetadataFamily, value: string) {
+    if (!policy) return;
+    const order = value === 'local-preferred' || value === 'tmdb-only' ? value
+      : sourceOrders.find(sources => sources.join(',') === value);
+    if (!order) return;
+    const current = policy.metadataSource;
+    const settings = typeof current === 'object' ? current : {details:current,artwork:current,release:current};
+    policy.metadataSource = {...settings,[family]:order};
   }
   function restoreDraft() {
     prefs = readPreferences();
@@ -1223,13 +1243,20 @@
           <fieldset class="panel stack" id="metadata" disabled={busy}>
             <legend class="sr-only">Metadata</legend>
             <h3>Metadata</h3>
-            <label class="field"
-              >Shared metadata source<select bind:value={policy.metadataSource}
-                ><option value="local-preferred">Prefer local server metadata</option><option
-                  value="tmdb-only">TMDB exclusively</option
-                ></select
-              ></label
-            >
+            <p class="small muted">Film and TV sources are checked in order for each field. Personal choices and admin overrides still apply. Jellyfin artwork requires server access.</p>
+            {#each metadataFamilies as family (family)}
+              {@const preference = sourcePreference(policy.metadataSource, family)}
+              <SettingsRow title={familyLabels[family]}>
+                <select aria-label={familyLabels[family]} value={Array.isArray(preference) ? preference.join(',') : preference}
+                  onchange={event => chooseSourceOrder(family, event.currentTarget.value)}>
+                  <option value="local-preferred">Coast default</option>
+                  <option value="tmdb-only">TMDB snapshots only</option>
+                  {#each sourceOrders as order (order[0] + order[1])}
+                    <option value={order.join(',')}>{order.map(source => sourceLabels[source]).join(' → ')}</option>
+                  {/each}
+                </select>
+              </SettingsRow>
+            {/each}
             <label class="check"
               ><input type="checkbox" bind:checked={policy.cacheTmdbArtwork} />Cache TMDB artwork on
               this server</label

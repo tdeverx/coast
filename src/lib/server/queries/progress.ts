@@ -20,7 +20,7 @@ import { applySequenceEntry, hasPermittedMediaSource, mediaViewsForIds } from '.
 import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
 import { heroTitleIds } from '#lib/media/hero.js';
-import { readingCards } from '#lib/reading/query.server.js';
+import { readingCards, readingCardColumns } from '#lib/reading/query.server.js';
 import { pausedProgressPage, pausedProgressPresent } from './paused-progress';
 import { withReadCancellation } from '../db/read-cancellation';
 
@@ -203,7 +203,7 @@ export function decorateProgressCards(items:MediaView[], sequenceById:Awaited<Re
 async function readingProgress(userId:string, viewerId:string, options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
   const {where,progressVisible}=readingProgressSelection(userId,viewerId,options,await getFeatureConfig(viewerId));
   const db=getDb();
-  const base=()=>db.select().from(s.readingWorks)
+  const base=()=>db.select(readingCardColumns).from(s.readingWorks)
     .leftJoin(s.readingProgress,and(eq(s.readingProgress.workId,s.readingWorks.id),eq(s.readingProgress.userId,userId)))
     .leftJoin(s.trackingState,and(eq(s.trackingState.mediaId,s.readingWorks.id),eq(s.trackingState.userId,userId)));
   const [count]=await db.select({total:sql<number>`count(*)::int`}).from(s.readingWorks)
@@ -217,7 +217,7 @@ async function readingProgress(userId:string, viewerId:string, options:import('#
     : sql`greatest(case when ${progressVisible} and ${s.readingProgress.state}='planned' then ${s.readingProgress.updatedAt} end,
         (select n.created_at from up_next n where n.user_id=${userId} and n.media_id=${s.readingWorks.id}))`;
   const rows=await base().where(where).orderBy(sql`${order} desc nulls last`,s.readingWorks.id).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
-  return {...options,page,pages,total:count.total,items:await readingCards(userId,viewerId,rows.map(row=>row.reading_works))};
+  return {...options,page,pages,total:count.total,items:await readingCards(userId,viewerId,rows)};
 }
 
 function readingProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions, config:Awaited<ReturnType<typeof getFeatureConfig>>) {

@@ -10,7 +10,7 @@ import { PermanentActionError, type OutboxAction } from '#lib/server/queue/index
 import { collectionCTE } from '#lib/collection/query.server.js';
 import { collectionFreshnessSql } from '#lib/collection/freshness.server.js';
 import { serverBuildIdentity } from '#lib/server/build-identity.js';
-import { getConfig } from '#lib/server/config.js';
+import { getConfig, type CoastConfig } from '#lib/server/config.js';
 import { enabledCategories } from '#lib/server/experimental.js';
 import type { MediumFeatures } from '#lib/experimental.js';
 import { journalGroups, type JournalEntry } from '#lib/profile/journal.js';
@@ -139,10 +139,10 @@ async function environment(database:SQL, data:Awaited<ReturnType<typeof dataset>
 const memory=()=>{const {rss,heapUsed,external}=process.memoryUsage();return {rss,heapUsed,external};};
 
 /** These are the actual probe queries, with the same enabled media as Collection. */
-export function benchmarkCollectionQueries(userId: string, config: MediumFeatures) {
+export function benchmarkCollectionQueries(userId: string, config: MediumFeatures & Partial<Pick<CoastConfig,'metadataSource'>>) {
   const enabled = enabledCategories(statement`category`, config);
   return {
-    membership: statement`${collectionCTE(userId,userId,'all','personal')} select count(*)::int as total,
+    membership: statement`${collectionCTE(userId,userId,'all','personal','all',config.metadataSource)} select count(*)::int as total,
       (select jsonb_agg(page) from (select * from collection where ${enabled} order by lower(title),id limit 60) page) as items from collection where ${enabled}`,
     assessmentCohort: statement`select t.media_id as id from tracking_state t join works w on w.id=t.media_id
       where t.user_id=${userId} and ${enabledCategories(statement`w.category`,config)} order by t.media_id limit 60`,
@@ -198,7 +198,7 @@ export async function executeBenchmark(action:OutboxAction) {
         await probe('Collection membership and page',async()=>{const [row]=await database.unsafe(page.sql,page.params);return row?.items?.length??0;});
         const cohort=dialect.sqlToQuery(queries.assessmentCohort);
         const ids=(await database.unsafe(cohort.sql,cohort.params)).map((row:Record<string,any>)=>row.id as string);
-        const assessment=dialect.sqlToQuery(statement`${collectionCTE(action.userId,action.userId,'all',ids)} select count(*)::int as total,md5(jsonb_agg(a order by a.id)::text) as result from assessments a`);
+        const assessment=dialect.sqlToQuery(statement`${collectionCTE(action.userId,action.userId,'all',ids,'all',config.metadataSource)} select count(*)::int as total,md5(jsonb_agg(a order by a.id)::text) as result from assessments a`);
         await probe('Collection assessment',async()=>{const [row]=await database.unsafe(assessment.sql,assessment.params);return Number(row?.total??0);});
         const entries=Array.from({length:6000},(_,index)=>({id:`fixture-${index}`,eventId:`fixture-event-${index}`,kind:'movie',title:'Benchmark fixture',watchedAt:`2026-01-${String(28-Math.floor(index/250)).padStart(2,'0')}T12:00:00Z`,source:'fixture',rewatched:false}) as JournalEntry);
         const days=journalGroups(entries).map(day=>day.date);

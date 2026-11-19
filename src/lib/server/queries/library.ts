@@ -1,3 +1,5 @@
+import { sourcePreference } from '#lib/catalogue/metadata/resolve.js';
+import { snapshotRank } from '#lib/catalogue/metadata/release-date.server.js';
 import {librarySegmentCondition} from './library-segments';
 import {librarySortValues,librarySegmentValues} from '#lib/library.js';
 import {libraryOrder} from './library-order';
@@ -76,8 +78,8 @@ async function libraryRead(userId:string,rawOptions:unknown,firstPage?:number,si
     ? sql`exists(select 1 from unnest(coalesce(
     (select genres from metadata_overrides where media_id=${s.media.id}),
     (select genres from metadata_snapshots where media_id=${s.media.id} and genres is not null
-      and (${config.metadataSource !== 'tmdb-only'} or provider='tmdb')
-      order by case provider when 'jellyfin' then 0 when 'tmdb' then 1 else 2 end, updated_at desc limit 1),
+      and (${sourcePreference(config.metadataSource,'details') !== 'tmdb-only'} or provider='tmdb')
+      order by ${snapshotRank(config.metadataSource,'details',sql`provider`)}, updated_at desc, id limit 1),
     ${s.media.genres})) g where lower(g)=lower(${input.genre}))`
     : undefined;
   const segment=await librarySegmentCondition(userId,userId,input.segment,s.media.id,'screen');

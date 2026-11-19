@@ -37,7 +37,7 @@ function snapshotValues(metadata: Metadata) {
         ? metadata.releaseDate
         : null,
     runtimeMinutes: metadata.runtimeMinutes ?? null,
-    genres: metadata.genres ?? [],
+    genres: metadata.genres ?? null,
     certificate: metadata.certificate ?? null,
   };
 }
@@ -140,7 +140,7 @@ export async function ingestMetadata(
           releaseDate: values.releaseDate,
           year: values.releaseDate ? Number(values.releaseDate.slice(0, 4)) : null,
           runtimeMinutes: values.runtimeMinutes,
-          genres: values.genres,
+          genres: values.genres ?? [],
         })
         .returning();
       mediaId = created.id;
@@ -204,12 +204,16 @@ export async function ingestMetadata(
     const [snapshot] = await tx.select().from(metadataSnapshots).where(snapshotKey).limit(1);
     const suppliedValues = Object.fromEntries(
       Object.entries(values).filter(
-        ([key]) => options.complete || metadata[key as keyof typeof values] !== undefined
+        ([key]) => (options.complete && key !== 'genres') || metadata[key as keyof typeof values] !== undefined
       )
     );
     const raw = {
       ...(snapshot?.raw ?? {}),
       ...Object.fromEntries(Object.entries(metadata).filter(([, value]) => value !== undefined)),
+      ...(metadata.facts ? { facts: {
+        ...((snapshot?.raw.facts as Metadata['facts']) ?? {}),
+        ...Object.fromEntries(Object.entries(metadata.facts).filter(([, value]) => value !== undefined)),
+      } } : {}),
       ...(metadata.artwork && !metadata.artworkUpdatedAt
         ? {
             artwork: {

@@ -11,7 +11,7 @@ import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { getConfig } from '../config';
-import { resolveMetadata } from '../../catalogue/metadata/resolve';
+import { resolveMetadata, sourceOrder, sourcePreference } from '../../catalogue/metadata/resolve';
 import { AppError } from '../security/errors';
 import { PAGE_SIZE } from './pagination';
 import type { MediaView, WorkSummary } from '../../ui/types';
@@ -149,7 +149,7 @@ export async function screenWorkSummaries(userId: string, ids: string[], viewerI
   const [rows,snapshots,overrides,locks,preferences,userRows,config]=await Promise.all([
     db.select({id:s.media.id,kind:s.media.kind,title:s.media.title,originalTitle:s.media.originalTitle,
       releaseDate:s.media.releaseDate,year:s.media.year}).from(s.media).where(inArray(s.media.id,ids)),
-    db.select({mediaId:s.metadataSnapshots.mediaId,title:s.metadataSnapshots.title,originalTitle:s.metadataSnapshots.originalTitle,
+    db.select({id:s.metadataSnapshots.id,mediaId:s.metadataSnapshots.mediaId,title:s.metadataSnapshots.title,originalTitle:s.metadataSnapshots.originalTitle,
       releaseDate:s.metadataSnapshots.releaseDate,provider:s.metadataSnapshots.provider,updatedAt:s.metadataSnapshots.updatedAt})
       .from(s.metadataSnapshots).where(inArray(s.metadataSnapshots.mediaId,ids)),
     db.select({mediaId:s.metadataOverrides.mediaId,title:s.metadataOverrides.title,originalTitle:s.metadataOverrides.originalTitle,
@@ -165,7 +165,7 @@ export async function screenWorkSummaries(userId: string, ids: string[], viewerI
   return rows.map(row=>{
     const metadata=resolveMetadata({fallback:row,snapshots:bySnapshot.get(row.id),override:byOverride.get(row.id),
       locks:byLock.get(row.id)?.map(lock=>lock.field),user:byPreference.get(row.id),
-      policy:config.metadataSource==='tmdb-only'?'tmdb-only':'local-first',preferOriginalTitle:userRows[0]?.originalTitles}).values;
+      policy:config.metadataSource,preferOriginalTitle:userRows[0]?.originalTitles}).values;
     return {id:row.id,kind:row.kind,title:metadata.title??row.title,
       year:metadata.releaseDate?Number(metadata.releaseDate.slice(0,4)):row.year};
   });
@@ -399,33 +399,46 @@ export async function mediaViews(
         ...artworkById.get(row.mediaId),
       });
   }
+  const artworkPreference = sourcePreference(config.metadataSource,'artwork');
   const metadataById = new Map(artworkMedia.map((row) => [row.id, resolveArtworkMetadata(row)]));
   function resolveArtworkMetadata(row: typeof s.media.$inferSelect) {
     const edition=editionById.get(row.id);
     if(options.editionName!==undefined&&ids.includes(row.id)&&!edition)throw new AppError(404,'This edition is no longer available.');
-    return resolveMetadata({
-      fallback: row,
-      snapshots: edition?[
+    const snapshots = edition?[
         {...editionSnapshot(edition.snapshot??{},edition.durationSeconds),provider:'jellyfin',updatedAt:edition.updatedAt!,region:settings.region},
         ...(snapshotById.get(row.id)??[]).filter(snapshot=>snapshot.provider!=='jellyfin'),
-      ]:snapshotById.get(row.id),
+      ]:snapshotById.get(row.id) ?? [];
+    const art = artworkById.get(row.id);
+    const artworkSnapshot = {provider:'jellyfin',updatedAt:edition?.updatedAt ?? row.updatedAt,
+      posterPath:art?.primary,backdropPath:art?.backdrop};
+    return resolveMetadata({
+      fallback:row,
+      snapshots: Array.isArray(artworkPreference) && (art?.primary || art?.backdrop)
+        ? [...snapshots,artworkSnapshot] : snapshots,
       override: overrideById.get(row.id),
       locks: lockById.get(row.id)?.map((lock) => lock.field),
       user: preferenceById.get(row.id),
-      policy: config.metadataSource === 'tmdb-only' ? 'tmdb-only' : 'local-first',
+      policy: config.metadataSource,
       preferOriginalTitle: settings.originalTitles,
       region: settings.region,
     }).values;
   }
+  const artworkProviderOrder = sourceOrder(config.metadataSource,'artwork');
   function artworkFor(id: string, kind: s.MediaKind) {
     const tmdbImages: ArtworkImages = {};
     for (const snapshot of (snapshotById.get(id) ?? [])
       .filter((snapshot) => snapshot.provider === 'tmdb')
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())) {
-      for (const key of artworkKeys)
-        tmdbImages[key] ||= tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork) || undefined;
+      for (const key of artworkKeys) {
+        if (tmdbImages[key]) continue;
+        const image = tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork);
+        if (image) tmdbImages[key] = image;
+      }
     }
-    const images = config.metadataSource === 'tmdb-only' ? tmdbImages : { ...tmdbImages, ...artworkById.get(id) };
+    const local = artworkById.get(id);
+    const images = artworkPreference === 'tmdb-only' ? tmdbImages
+      : artworkProviderOrder.indexOf('tmdb') < artworkProviderOrder.indexOf('jellyfin') ? { ...local, ...tmdbImages }
+      : { ...tmdbImages, ...local };
     const values = metadataById.get(id);
     images.primary = tmdbArtworkUrl(values?.posterPath, config.cacheTmdbArtwork) || images.primary;
     const backdrop = tmdbArtworkUrl(values?.backdropPath, config.cacheTmdbArtwork);

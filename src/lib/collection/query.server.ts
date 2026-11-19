@@ -18,7 +18,7 @@ import { mediaViews, screenWorkSummaries } from '#lib/server/queries/media.js';
 import { profileUser } from '#lib/server/queries/profile-user.js';
 import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '#lib/server/queries/pagination.js';
 import type { MediaCardPresentation, MediaView, WorkSummary } from '#lib/ui/types.js';
-import { readingCards } from '#lib/reading/query.server.js';
+import { readingCards, readingCardColumns } from '#lib/reading/query.server.js';
 import { musicWorkCredits } from '#lib/music/credits.server.js';
 import { readingCard } from '#lib/reading/presentation.js';
 
@@ -383,7 +383,7 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
       where credit.artist_id=music_works.id and c.status='connected' and i.enabled and i.provider='jellyfin'
     )`}).from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
     readingIds.length&&(config.experimentalBooks||config.experimentalComics)
-      ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
+      ? db.select(readingCardColumns).from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
       : Promise.resolve([]),
   ]);
   const [mappings,credits] = await Promise.all([musicRows.length && viewerId ? db.select({

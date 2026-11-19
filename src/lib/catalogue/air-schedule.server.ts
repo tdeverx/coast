@@ -21,7 +21,7 @@ export async function saveTraktAirSchedule(tx: Transaction, instanceId: string, 
   await tx.execute(sql`
     with calendar as (
       select * from jsonb_to_recordset(${JSON.stringify(calendar)}::text::jsonb) as row(
-        "traktId" text,"tmdbId" text,"episodeTmdbId" text,season integer,episode integer,"firstAiredAt" text,schedule jsonb)
+        "traktId" text,"tmdbId" text,"episodeTmdbId" text,season integer,episode integer,"firstAiredAt" text,schedule jsonb,"showFacts" jsonb,"episodeFacts" jsonb)
     ), shows as (
       select calendar.*, matched.id as show_id from calendar
       cross join lateral (
@@ -30,12 +30,12 @@ export async function saveTraktAirSchedule(tx: Transaction, instanceId: string, 
         having count(distinct i.media_id)=1
       ) matched
     ), timing as (
-      (select distinct on (show_id) show_id as id,jsonb_build_object('airSchedule',schedule) as raw from shows
-        where schedule is not null order by show_id,"firstAiredAt" desc nulls last)
+      (select distinct on (show_id) show_id as id,jsonb_strip_nulls(jsonb_build_object('airSchedule',schedule,'facts',"showFacts")) as raw from shows
+        where schedule is not null or "showFacts" is not null order by show_id,"firstAiredAt" desc nulls last)
       union all
-      (select distinct on (e.media_id) e.media_id,jsonb_build_object('firstAiredAt',shows."firstAiredAt")
+      (select distinct on (e.media_id) e.media_id,jsonb_strip_nulls(jsonb_build_object('firstAiredAt',shows."firstAiredAt",'facts',shows."episodeFacts"))
         from shows join episodes e on e.show_id=shows.show_id and e.season_number=shows.season and e.episode_number=shows.episode
-        where shows."firstAiredAt" is not null and (shows."episodeTmdbId" is null or not exists(
+        where (shows."firstAiredAt" is not null or shows."episodeFacts" is not null) and (shows."episodeTmdbId" is null or not exists(
           select 1 from external_ids i where i.provider='tmdb' and i.media_kind='episode'
           and ((i.external_id=shows."episodeTmdbId" and i.media_id<>e.media_id)
             or (i.media_id=e.media_id and i.external_id<>shows."episodeTmdbId"))))
@@ -43,7 +43,9 @@ export async function saveTraktAirSchedule(tx: Transaction, instanceId: string, 
     ) insert into metadata_snapshots(media_id,provider,instance_id,raw)
     select id,'trakt',${instanceId},raw from timing
     on conflict (media_id,provider,(coalesce(instance_id,'00000000-0000-0000-0000-000000000000'::uuid)),language,region)
-    do update set raw=metadata_snapshots.raw||excluded.raw,updated_at=now()
+    do update set raw=metadata_snapshots.raw||excluded.raw||
+      case when excluded.raw?'facts' then jsonb_build_object('facts',coalesce(metadata_snapshots.raw->'facts','{}')||(excluded.raw->'facts')) else '{}'::jsonb end,
+      updated_at=now()
     where not (metadata_snapshots.raw @> excluded.raw)`);
 }
 

@@ -1,3 +1,4 @@
+import type { GameCatalogueFacts } from '#lib/games/model.js';
 import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
 import { AppError } from '../../server/security/errors';
@@ -16,9 +17,15 @@ const tokenSchema = v.object({
 });
 const name = v.object({ name: v.pipe(v.string(), v.minLength(1), v.maxLength(250)) });
 const image = v.object({ image_id: v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]+$/), v.maxLength(100)) });
+const score = v.fallback(v.optional(v.pipe(v.number(),v.minValue(0),v.maxValue(100))),undefined);
+const votes = v.fallback(v.optional(v.pipe(v.number(),v.safeInteger(),v.minValue(0))),undefined);
+const release = v.object({ id:v.number(), date:v.optional(v.number()), human:v.optional(v.string()), platform:v.optional(name) });
 const gameFields = {
   id: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Number.MAX_SAFE_INTEGER)),
   name: name.entries.name,
+  game_status: v.fallback(v.optional(v.object({status:v.string()})),undefined),
+  rating:score, rating_count:votes, aggregated_rating:score, aggregated_rating_count:votes,
+  release_dates: v.fallback(v.optional(v.array(release)),undefined),
   summary: v.optional(v.pipe(v.string(), v.maxLength(50000))),
   first_release_date: v.optional(v.pipe(v.number(), v.integer(), v.minValue(-62135596800), v.maxValue(253402300799))),
   cover: v.optional(image),
@@ -36,7 +43,7 @@ const gameFields = {
   })), v.maxLength(500)), []),
 };
 const remoteGame=v.object({...gameFields,parent_game:v.optional(v.object(gameFields)),version_parent:v.optional(v.object(gameFields))});
-const fields = 'external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,keywords.id,keywords.name,themes.id,themes.name,game_modes.id,game_modes.name,player_perspectives.id,player_perspectives.name,franchises.id,franchises.name';
+const fields = 'game_status.status,rating,rating_count,aggregated_rating,aggregated_rating_count,release_dates.date,release_dates.human,release_dates.platform.name,external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,keywords.id,keywords.name,themes.id,themes.name,game_modes.id,game_modes.name,player_perspectives.id,player_perspectives.name,franchises.id,franchises.name';
 const cardFields = 'name,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name';
 const expandedFields=fields+',parent_game.'+fields.split(',').join(',parent_game.')+',version_parent.'+fields.split(',').join(',version_parent.');
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000));
@@ -44,6 +51,17 @@ export const IGDB_PAGE_SIZE = 60;
 
 function mapGame(game:v.InferOutput<typeof remoteGame>) {
   const companies = game.involved_companies;
+  const facts: GameCatalogueFacts = {
+    ...(game.game_status ? {status:game.game_status.status.slice(0,100)} : {}),
+    ...(game.rating !== undefined ? {audience:{score:game.rating,votes:game.rating_count,scale:100}} : {}),
+    ...(game.aggregated_rating !== undefined ? {critics:{score:game.aggregated_rating,votes:game.aggregated_rating_count,scale:100}} : {}),
+    ...(game.release_dates ? {releaseDates:game.release_dates.slice(0,40).map(release=>({
+      id:String(release.id), label:release.human?.slice(0,100), platform:release.platform?.name,
+      date:release.date !== undefined && release.date >= -62135596800 && release.date <= 253402300799
+        ? new Date(release.date * 1000).toISOString().slice(0,10) : undefined,
+    }))} : {}),
+  };
+
   return {
     identities: game.external_games.flatMap(item => {
       try { const url=new URL(item.url??'');const id=url.pathname.match(/^\/app\/([1-9][0-9]*)(?:\/|$)/)?.[1];
@@ -51,6 +69,7 @@ function mapGame(game:v.InferOutput<typeof remoteGame>) {
       } catch { return []; }
     }),
     category: 'game' as const, provider: 'igdb' as const, externalId: String(game.id),
+    catalogueFacts: Object.keys(facts).length ? facts : undefined,
     title: game.name, overview: game.summary ?? null,
     releaseDate: game.first_release_date === undefined ? null : new Date(game.first_release_date * 1000).toISOString().slice(0, 10),
     posterPath: game.cover ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg` : null,

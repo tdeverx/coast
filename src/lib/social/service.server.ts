@@ -102,7 +102,7 @@ export async function react(userId:string,raw:unknown) {
 }
 export async function recommendations(userId:string,page=1,availableOnly=false) {
  const config=await requireFeature(userId,'social');
- const rows=await collectionRead(sql`${collectionCTE(userId,userId)}
+ const rows=await collectionRead(sql`${collectionCTE(userId,userId,'all','all','all',config.metadataSource)}
  select r.id,r.state,r.sender_id as "senderId",r.recipient_id as "recipientId",r.work_id as "workId",r.created_at as "createdAt",u.username
  from social_recommendations r join users u on u.id=case when r.sender_id=${userId} then r.recipient_id else r.sender_id end join works w on w.id=r.work_id
  where (r.recipient_id=${userId} or r.sender_id=${userId}) and coast_feature_enabled(u.id,'social') and not u.disabled and ${enabledCategories(sql`w.category`,config)}

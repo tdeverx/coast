@@ -10,6 +10,26 @@ export interface CastMember {
   character: string;
   portrait?: string;
 }
+export interface CatalogueFacts {
+  status?: string;
+  tagline?: string;
+  originalLanguage?: string;
+  languages?: string[];
+  countries?: string[];
+  networks?: { id?: string; name: string }[];
+  studios?: { id?: string; name: string }[];
+  credits?: { id: string; name: string; role: string }[];
+  audience?: { score: number; votes?: number; scale: 10 | 100 };
+  lastAiredOn?: string;
+  seasonCount?: number;
+  episodeCount?: number;
+  nextEpisode?: { title?: string; date?: string; season?: number; episode?: number } | null;
+  budgetUsd?: number;
+  revenueUsd?: number;
+  sortTitle?: string;
+  episodeType?: string;
+}
+
 export interface Metadata {
   provider: string;
   externalId: string;
@@ -22,6 +42,7 @@ export interface Metadata {
   artwork?: ArtworkImages;
   artworkUpdatedAt?: string;
   releaseDate?: string;
+  facts?: CatalogueFacts;
   airSchedule?: { time: string; timeZone?: string; weekday?: number };
   runtimeMinutes?: number;
   genres?: string[];

@@ -1,3 +1,4 @@
+import { getConfig } from '#lib/server/config.js';
 import { and,eq,sql,inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
@@ -63,7 +64,7 @@ export async function desiredProjection(userId:string,configuration:ProjectionCo
   const blocked=(configuration.source==='server'||configuration.availableOnly)&&((Number(freshness[0]?.total??0)===0&&Number(freshness[0]?.excluded??0)===0)||Number(freshness[0]?.uncertain??0)>0);
   const roots=configuration.source==='server'?sql`select distinct a.media_id as id from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled and ${selected} and not coalesce(${excluded},false)`:
     sql`select c.id from collection c where exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'origin' in ('direct','inherited') and (${configuration.source}='personal' or r->>'relationship'='collected'))`;
-  const rows=await collectionRead(sql`${collectionCTE(userId,userId)}, roots as (${roots}) select distinct a.id,a.title,a.kind,a.release_date,e.show_id,e.season_number,e.episode_number
+  const rows=await collectionRead(sql`${collectionCTE(userId,userId,'all','all','all',(await getConfig()).metadataSource)}, roots as (${roots}) select distinct a.id,a.title,a.kind,a.release_date,e.show_id,e.season_number,e.episode_number
     from roots r join descendants d on d.root=r.id join assessments a on a.id=d.id left join episodes e on e.media_id=a.id
     where a.kind in ('movie','episode') and (a.id=r.id and (a.release_date is null or a.release_date::date<=current_date) or a.release_date::date<=current_date)
     and (${!configuration.availableOnly&&configuration.source!=='server'} or exists(select 1 from availability av join provider_connections c on c.id=av.connection_id join provider_instances i on i.id=c.instance_id where av.user_id=${userId} and av.media_id=a.id and av.state='available' and c.status='connected' and i.enabled and ${selected} and not coalesce(${excluded},false)))`);

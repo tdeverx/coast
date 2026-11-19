@@ -22,6 +22,11 @@ const documentSchema = v.object({
   subject: v.optional(labels, []),
   first_publish_year: v.optional(year),
   cover_i: v.optional(coverId),
+  edition_count: v.optional(v.pipe(v.number(),v.integer(),v.minValue(0))),
+  language: v.fallback(v.optional(labels),undefined),
+  editions: v.fallback(v.optional(v.object({docs:v.array(v.object({
+    key:editionKey,title:label,language:v.optional(labels),publisher:v.optional(labels),
+  }))})),undefined),
   edition_key: v.optional(v.pipe(v.array(editionKey), v.maxLength(10000))),
 });
 const total = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(Number.MAX_SAFE_INTEGER));
@@ -130,7 +135,7 @@ export class OpenLibraryAdapter {
       if (canonicalWorkId(work.key) !== id) throw new AppError(502, 'Open Library returned a different work identity.', 'openlibrary_unavailable');
       // Work JSON contains author references. One exact indexed lookup supplies
       // names and edition references without requesting every author or edition.
-      const result = await this.searchRequest(`key:/works/${id}`, 1, 1);
+      const result = await this.searchRequest(`key:/works/${id}`, 1, 1, undefined, undefined, `${fields},language,edition_count,editions,editions.key,editions.title,editions.language,editions.publisher`);
       const indexed = result.docs.find(document => canonicalWorkId(document.key) === id);
       const metadata = mapDocument(indexed ?? { key: work.key, title: work.title, author_name: [], subject: [] });
       const overview = work.description ? readingPlainText(typeof work.description === 'string' ? work.description : work.description.value).slice(0, 5000) : undefined;
@@ -152,6 +157,18 @@ export class OpenLibraryAdapter {
       return {
         ...metadata, title, overview: overview || undefined,
         subjects, kind: openLibraryKind(subjects),
+        facts: {openLibrary:{
+          ...(indexed?.language ? {languages:cleanLabels(indexed.language,24)} : {}),
+          ...(indexed?.edition_count !== undefined ? {editionCount:indexed.edition_count} : {}),
+          ...(indexed?.editions ? {editionSample:indexed.editions.docs.slice(0,3).flatMap(edition => {
+            const title=readingPlainText(edition.title).slice(0,250);
+            return title ? [{id:edition.key.replace(/^\/books\//,''),title,
+              ...(edition.language ? {languages:cleanLabels(edition.language,12)} : {}),
+              ...(edition.publisher ? {publishers:cleanLabels(edition.publisher,8)} : {}),
+            }] : [];
+          })} : {}),
+          ...(work.first_publish_date ? {firstPublished:readingPlainText(work.first_publish_date).slice(0,100)} : {}),
+        }},
         ...(identities.length === 1 ? { identities } : {}),
         coverUrl: cover ? `https://covers.openlibrary.org/b/id/${cover}-L.jpg?default=false` : metadata.coverUrl,
       };

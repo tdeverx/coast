@@ -14,8 +14,20 @@ const title = v.object({
   ids,
 });
 const seriesAirs = v.nullish(v.object({day:v.nullish(v.string()),time:v.nullish(v.string()),timezone:v.nullish(v.string())}));
+const titleFacts=v.object({status:v.nullish(v.string()), tagline:v.nullish(v.string()), language:v.nullish(v.string()), country:v.nullish(v.string()),
+  network:v.nullish(v.string()), rating:v.nullish(v.number()), votes:v.nullish(v.number()), aired_episodes:v.nullish(v.number())});
 const publicTitle = v.object({ ...title.entries, overview: v.nullish(v.string()), released: v.nullish(v.string()),
-  first_aired: v.nullish(v.string()), airs:seriesAirs, genres: v.optional(v.array(v.string()), []), });
+  first_aired: v.nullish(v.string()), airs:seriesAirs, genres: v.optional(v.array(v.string())),...titleFacts.entries });
+function traktTitleFacts(item:v.InferOutput<typeof titleFacts>):Metadata['facts'] {
+  const facts = {
+    status:item.status?.slice(0,100), tagline:item.tagline?.slice(0,500),
+    originalLanguage:item.language??undefined, countries:item.country?[item.country]:undefined,
+    networks:item.network?[{name:item.network.slice(0,250)}]:undefined,
+    episodeCount:item.aired_episodes??undefined,
+    audience:item.rating!=null&&item.votes?{score:item.rating,votes:item.votes,scale:10 as const}:undefined,
+  };
+  return Object.values(facts).some(value=>value!==undefined)?facts:undefined;
+}
 const episode = v.object({
   season: v.number(),
   number: v.number(),
@@ -25,8 +37,8 @@ const episode = v.object({
 });
 const calendarEntry = v.object({
   first_aired: v.nullish(v.string()),
-  show: v.object({ids, airs:seriesAirs}),
-  episode: v.object({season:v.number(),number:v.number(),ids}),
+  show: v.object({ids, airs:seriesAirs,...titleFacts.entries}),
+  episode: v.object({season:v.number(),number:v.number(),ids,episode_type:v.nullish(v.string())}),
 });
 const weekdays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 function seriesAirSchedule(airs: v.InferOutput<typeof calendarEntry>['show']['airs']):Metadata['airSchedule'] {
@@ -99,14 +111,18 @@ export class TraktAdapter {
     const records=v.parse(v.pipe(v.array(calendarEntry),v.maxLength(5000)),
       await this.call(`/calendars/all/shows/${encodeURIComponent(startDate)}/8?extended=full`));
     return records.filter(({episode})=>Number.isSafeInteger(episode.season)&&episode.season>=0&&Number.isSafeInteger(episode.number)&&episode.number>0)
-      .map(({show,episode,first_aired})=>({
+      .map(({show,episode,first_aired})=>{
+        const facts=traktTitleFacts(show);
+        return {
         traktId:String(show.ids.trakt),tmdbId:show.ids.tmdb ? String(show.ids.tmdb) : undefined,
         episodeTmdbId:episode.ids.tmdb ? String(episode.ids.tmdb) : undefined,
         season:episode.season,episode:episode.number,
         firstAiredAt:first_aired&&v.is(v.pipe(v.string(),v.isoTimestamp()),first_aired)&&Number.isFinite(Date.parse(first_aired))
           ? new Date(first_aired).toISOString() : undefined,
         schedule:seriesAirSchedule(show.airs),
-      }));
+        ...(facts ? {showFacts:facts} : {}),
+        ...(episode.episode_type ? {episodeFacts:{episodeType:episode.episode_type.slice(0,100)}} : {}),
+      };});
   }
   async browse(kind: DiscoverKind, order: 'trending' | 'popular' | 'anticipated', genre?: string, signal?: AbortSignal): Promise<Metadata[]> {
     const params = new URLSearchParams({page:'1',limit:'20',extended:'full'});
@@ -117,6 +133,7 @@ export class TraktAdapter {
     return items.slice(0,20).filter(item=>Number.isSafeInteger(item.ids.trakt)&&item.ids.trakt>0).map(item => ({
       kind, provider:'trakt', externalId:String(item.ids.trakt), title:item.title, overview:item.overview??undefined,
       releaseDate:(item.released || item.first_aired)?.slice(0,10), runtimeMinutes:item.runtime??undefined, genres:item.genres,
+      facts:traktTitleFacts(item),
       ...(kind==='show'&&item.airs?{airSchedule:seriesAirSchedule(item.airs)}:{}),
       externalIds:{...(item.ids.tmdb ? {tmdb:String(item.ids.tmdb)} : {}), ...(item.ids.imdb ? {imdb:item.ids.imdb} : {}),
         ...(kind==='show' && item.ids.tvdb ? {tvdb:String(item.ids.tvdb)} : {})},

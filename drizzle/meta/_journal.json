@@ -568,6 +568,13 @@
       "when": 1795117900383,
       "tag": "0080_reading_position_clock",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1795118525165,
+      "tag": "0081_catalogue_facts",
+      "breakpoints": true
     }
   ]
 }
