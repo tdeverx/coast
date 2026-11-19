@@ -66,6 +66,10 @@ TMDB details now retain bounded production, audience, language, credit and episo
 
 The performance pass checked card, summary, filter, episode and persistence boundaries. Source order changes resolve at read time without rewriting the catalogue, queuing a backfill or changing card-page size. Screen card queries still project only their needed snapshot columns. Reading and game card queries exclude the new facts, and stored comic credits can avoid a provider request. The Open Library edition sample comes from the existing exact indexed work request. Jellyfin's extra fields are limited to the catalogue job. Scheduled Trakt observations still use one calendar window, and identical observations skip writes. The migration adds two defaulted JSONB columns. PostgreSQL fixtures checked admin authorization, invalid orders, resolution parity and retained partial observations.
 
-Detailed edition pages, additional aliases, broader music metadata and provider data still outside these projections stay in their existing owners. No production backfill, browser walkthrough or live latency comparison was run.
+Detailed edition pages, additional aliases, broader music metadata and provider data still outside these projections stay in their existing owners. Production coverage will grow through the existing refreshes. The SQL measurements use synthetic PostgreSQL data.
+
+A PostgreSQL plan comparison over 60 works from a catalogue of 6,000 works and 18,000 snapshots returned the same dates under the existing policy. The custom order selected its preferred provider. All three tested plans used 243 shared buffer hits, with median execution times between 0.21 and 0.26 ms.
+
+Firefox 157 verified all three selectors at 1,440 px and 390 px. After saving, the form settled and reloaded the exact stored orders with no page errors. A non-admin received HTTP 403. The settings save also retains default subtitle languages when the account has no override.
 
 Implementation references [TMDB TV details](https://developer.themoviedb.org/reference/tv-series-details), [Jellyfin item fields](https://raw.githubusercontent.com/jellyfin/jellyfin/master/MediaBrowser.Model/Querying/ItemFields.cs), [Trakt API](https://trakt.docs.apiary.io/), [Open Library Search API](https://openlibrary.org/dev/docs/api/search) and [IGDB game fields](https://api-docs.igdb.com/#game).

@@ -1,6 +1,6 @@
 {
   "epoch": "metadata-priority-local-2026-11-19",
-  "baseline": "92c9211e93e766a99048caa12792569c3774bc59",
+  "baseline": "356c86305f3c14c4ea06deeda9ce9eeec7a35d75",
   "blanketAcceptance": false,
   "files": {
     "drizzle/meta/_journal.json": {
@@ -105,7 +105,7 @@
     },
     "src/routes/settings/[[section]]/+page.svelte": {
       "previous": "7bb0c4dae16abdf22e9e850c9cc44ce79c1307a720fcaaebe436e9f7ce44a883",
-      "current": "3942e5997257a4474a9c903ccf4717ebb6304cc782de7dcadd6d66d0dbe416b8"
+      "current": "0deb1c51e358ea9226e5f6620b23f64e0213e184cfdd29a700dd50efdc0d7774"
     },
     "src/routes/ui-preview/CatalogueExamples.svelte": {
       "previous": "fe0bb348b8e5bfab08311bd9303e8879bfb9d6af97dfd980029f87c46126993f",
@@ -145,5 +145,5 @@
     }
   },
   "report": "docs/audits/2026-11-19-integration-metadata.md",
-  "reportSha256": "15453bce0ca3cbf66919f4c992f6d0fe094d53dc61350b00e1629868cab2b797"
+  "reportSha256": "2171d55b89e35fc0fed2e202e9ca744cfb4a46c010ef8ac9b3b9f87fca11f555"
 }

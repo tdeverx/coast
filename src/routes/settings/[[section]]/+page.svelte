@@ -101,7 +101,12 @@
   });
   const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
   function readPreferences() {
-    const preferences = structuredClone({ ...data.defaults, ...page.data.user?.settings });
+    const defaults = data.defaults;
+    const settings = page.data.user?.settings;
+    const preferences = structuredClone({
+      ...defaults, ...settings,
+      subtitleLanguages: settings?.subtitleLanguages ?? defaults.subtitleLanguages,
+    });
     if (preferences.notificationLevel === 'silent') preferences.notificationLevel = null;
     return preferences;
   }
@@ -1249,9 +1254,9 @@
               </select>
             </label>
             {#if typeof policy.metadataSource === 'object'}
-              <p class="small muted">Coast checks sources in order for each field. Personal choices and admin overrides still apply. Artwork from Jellyfin requires access to the server.</p>
+              <p class="small muted">Coast uses the first source with a value for each field. Personal choices and admin overrides still apply. Jellyfin artwork requires server access.</p>
               {#each metadataFamilies as family (family)}
-                <SettingsRow title={familyLabels[family]} description="Highest priority first">
+                <SettingsRow title={familyLabels[family]}>
                   <select aria-label={familyLabels[family]} value={policy.metadataSource[family].join(',')}
                     onchange={event => chooseSourceOrder(family, event.currentTarget.value)}>
                     {#each sourceOrders as order (order[0] + order[1])}
