@@ -11,7 +11,7 @@ import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { getConfig } from '../config';
-import { resolveMetadata, sourceOrder } from '../../catalogue/metadata/resolve';
+import { resolveMetadata, sourceOrder, sourcePreference } from '../../catalogue/metadata/resolve';
 import { AppError } from '../security/errors';
 import { PAGE_SIZE } from './pagination';
 import type { MediaView, WorkSummary } from '../../ui/types';
@@ -399,6 +399,7 @@ export async function mediaViews(
         ...artworkById.get(row.mediaId),
       });
   }
+  const artworkPreference = sourcePreference(config.metadataSource,'artwork');
   const metadataById = new Map(artworkMedia.map((row) => [row.id, resolveArtworkMetadata(row)]));
   function resolveArtworkMetadata(row: typeof s.media.$inferSelect) {
     const edition=editionById.get(row.id);
@@ -412,7 +413,7 @@ export async function mediaViews(
       posterPath:art?.primary,backdropPath:art?.backdrop};
     return resolveMetadata({
       fallback:row,
-      snapshots: typeof config.metadataSource==='object' && (art?.primary || art?.backdrop)
+      snapshots: Array.isArray(artworkPreference) && (art?.primary || art?.backdrop)
         ? [...snapshots,artworkSnapshot] : snapshots,
       override: overrideById.get(row.id),
       locks: lockById.get(row.id)?.map((lock) => lock.field),
@@ -428,11 +429,14 @@ export async function mediaViews(
     for (const snapshot of (snapshotById.get(id) ?? [])
       .filter((snapshot) => snapshot.provider === 'tmdb')
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())) {
-      for (const key of artworkKeys)
-        tmdbImages[key] ||= tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork) || undefined;
+      for (const key of artworkKeys) {
+        if (tmdbImages[key]) continue;
+        const image = tmdbArtworkUrl(snapshot.artwork?.[key], config.cacheTmdbArtwork);
+        if (image) tmdbImages[key] = image;
+      }
     }
     const local = artworkById.get(id);
-    const images = config.metadataSource === 'tmdb-only' ? tmdbImages
+    const images = artworkPreference === 'tmdb-only' ? tmdbImages
       : artworkProviderOrder.indexOf('tmdb') < artworkProviderOrder.indexOf('jellyfin') ? { ...local, ...tmdbImages }
       : { ...tmdbImages, ...local };
     const values = metadataById.get(id);

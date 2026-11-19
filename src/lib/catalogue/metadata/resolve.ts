@@ -7,21 +7,29 @@ export type MetadataFamily = (typeof metadataFamilies)[number];
 const provider = v.picklist(metadataProviders);
 const order = v.pipe(v.tuple([provider, provider, provider]),
   v.check(values => new Set(values).size === metadataProviders.length, 'Choose each source once.'));
+const preset = v.picklist(['local-preferred', 'tmdb-only']);
+const preference = v.union([preset, order]);
 export const metadataSourceSchema = v.union([
-  v.picklist(['local-preferred', 'tmdb-only']),
-  v.strictObject({ details: order, artwork: order, release: order }),
+  preset,
+  v.strictObject({ details: preference, artwork: preference, release: preference }),
 ]);
 export type MetadataSource = v.InferOutput<typeof metadataSourceSchema>;
 export type MetadataPolicy = MetadataSource | 'local-first';
 
 const tmdbSources = ['tmdb'] as const;
 
-export function sourceOrder(policy: MetadataPolicy | undefined, family: MetadataFamily): readonly MetadataProviderName[] {
-  if (policy === 'tmdb-only') return tmdbSources;
-  return typeof policy === 'object' ? policy[family] : metadataProviders;
+export function sourcePreference(policy: MetadataPolicy | undefined, family: MetadataFamily) {
+  if (typeof policy === 'object') return policy[family];
+  return policy === 'tmdb-only' ? policy : 'local-preferred';
 }
 
-export function compareMetadataSnapshots(sources: readonly string[], a: MetadataSnapshot, b: MetadataSnapshot) {
+export function sourceOrder(policy: MetadataPolicy | undefined, family: MetadataFamily): readonly MetadataProviderName[] {
+  const preference = sourcePreference(policy, family);
+  if (preference === 'tmdb-only') return tmdbSources;
+  return Array.isArray(preference) ? preference : metadataProviders;
+}
+
+function compareMetadataSnapshots(sources: readonly string[], a: MetadataSnapshot, b: MetadataSnapshot) {
   const rank = (provider: string) => { const index = sources.indexOf(provider); return index < 0 ? sources.length : index; };
   return rank(a.provider) - rank(b.provider) ||
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime() ||
@@ -89,8 +97,7 @@ const present = (value: unknown) => value !== undefined && value !== null;
 /** Pure field-by-field resolution: snapshots are never mutated by preference or override. */
 export function resolveMetadata(input: ResolutionInput): ResolvedMetadata {
   const locked = new Set(input.locks ?? []);
-  const snapshots = (input.snapshots ?? [])
-    .filter(snapshot => input.policy !== 'tmdb-only' || snapshot.provider === 'tmdb');
+  const snapshots = input.snapshots ?? [];
   const ranked = new Map<readonly string[], MetadataSnapshot[]>();
   const values: MetadataValues = {};
   const provenance: ResolvedMetadata['provenance'] = {};
@@ -103,7 +110,8 @@ export function resolveMetadata(input: ResolutionInput): ResolvedMetadata {
     const sources = sourceOrder(input.policy, family);
     let candidates = ranked.get(sources);
     if (!candidates) {
-      candidates = [...snapshots].sort((a, b) => compareMetadataSnapshots(sources, a, b));
+      candidates = snapshots.filter(snapshot => sources !== tmdbSources || snapshot.provider === 'tmdb')
+        .sort((a, b) => compareMetadataSnapshots(sources, a, b));
       ranked.set(sources, candidates);
     }
     const provider = candidates.find(

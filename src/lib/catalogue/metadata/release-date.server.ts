@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { sourceOrder, type MetadataFamily, type MetadataSource } from './resolve';
+import { sourceOrder, sourcePreference, type MetadataFamily, type MetadataSource } from './resolve';
 
 const overrideDate = (id: SQL) => sql`(select o.release_date from metadata_overrides o where o.media_id=${id})`;
 const storedDate = (id: SQL) => sql`(select fallback.release_date from media fallback where fallback.id=${id})`;
@@ -16,7 +16,7 @@ export function effectiveReleaseDate(id: SQL, policy: MetadataSource) {
     ${overrideDate(id)},
     (select snapshot.release_date from metadata_snapshots snapshot
       where snapshot.media_id=${id} and snapshot.release_date is not null
-        and (${policy !== 'tmdb-only'} or snapshot.provider='tmdb')
+        and (${sourcePreference(policy,'release') !== 'tmdb-only'} or snapshot.provider='tmdb')
       order by ${datePreference(policy)} limit 1),
     ${storedDate(id)})`.mapWith(
       value => value instanceof Date ? value.toISOString().slice(0, 10) : String(value)
@@ -32,7 +32,7 @@ export function episodeHasAired(id: SQL, policy: MetadataSource, { includeToday 
 
 /** Prefer the episode timestamp, then the series' zoned schedule. */
 export function episodeHasAiredForProgress(id: SQL, policy: MetadataSource) {
-  if(policy==='tmdb-only')return episodeHasAired(id,policy,{includeToday:false});
+  if(sourcePreference(policy,'release')==='tmdb-only')return episodeHasAired(id,policy,{includeToday:false});
   const today=sql`(now() at time zone 'UTC')::date`;
   const series=sql`(select (resolved.air_date+(timing.raw->'airSchedule'->>'time')::time)
     at time zone (timing.raw->'airSchedule'->>'timeZone')

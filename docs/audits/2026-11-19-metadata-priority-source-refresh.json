@@ -13,11 +13,11 @@
     },
     "src/lib/catalogue/metadata/release-date.server.ts": {
       "previous": "2f53f1cfb7aef3dba50e7bbdab89d26959842b4c6369bb887af7fd1ed31fd9e0",
-      "current": "f9202e987099649f4f5eac17b54daad2979ee0aa5c7addd8ad7e8fa1a550e3b1"
+      "current": "ff34cc4db0b6431e6ec6b91d1c42f19424d2baefb8faa546d7abf6d4c0b80d1a"
     },
     "src/lib/catalogue/metadata/resolve.ts": {
       "previous": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
-      "current": "bfdce145dbd17158b7e352bb76c2de2bd7e00eac6afd58d7d38e67a1e3d9240d"
+      "current": "4a6bec964ce787a12736b31e5a66e3b9835e2d18f2273d43b7311e10fb7c4349"
     },
     "src/lib/catalogue/overrides/service.server.ts": {
       "previous": "185d8e80155d06a0a9409a83e76a2d50184515453688ffd6fb947c84e4ecb18a",
@@ -93,11 +93,11 @@
     },
     "src/lib/server/queries/library.ts": {
       "previous": "321a5981cba948db4a206a3cf677f14731df1e0d2a44a9350362636fc99ac735",
-      "current": "af12fd63400ab3f4458ade7799b81e4a3b64b86b204e42eacc65adc913f0108d"
+      "current": "757ea9fc8e0c668547d03b34aeba316f9b2b2f34a2b397e3fe814c10be941e4a"
     },
     "src/lib/server/queries/media.ts": {
       "previous": "c5ea72f700935cc812ae4104c2db5a4f2cadc981ad549aa91f0df1a53e01a224",
-      "current": "7faee6b766e8e898eb0b2996730f633db6389556dc8f1de3e7acb227402adf84"
+      "current": "08639ac2019314c0279c428618d6870135c4094a652108e350120de1b2ab507a"
     },
     "src/lib/server/queries/progress.ts": {
       "previous": "8e1a24a4bcf40ddbc4027a525da12f3c434e0bfd9f412b348e100e120aa6c916",
@@ -105,7 +105,7 @@
     },
     "src/routes/settings/[[section]]/+page.svelte": {
       "previous": "7bb0c4dae16abdf22e9e850c9cc44ce79c1307a720fcaaebe436e9f7ce44a883",
-      "current": "0deb1c51e358ea9226e5f6620b23f64e0213e184cfdd29a700dd50efdc0d7774"
+      "current": "4135df0238d22b310e88bb9890d1517217e0efded10cfb39e692aaf1dc30284f"
     },
     "src/routes/ui-preview/CatalogueExamples.svelte": {
       "previous": "fe0bb348b8e5bfab08311bd9303e8879bfb9d6af97dfd980029f87c46126993f",
@@ -125,7 +125,7 @@
     },
     "tests/settings-db.test.ts": {
       "previous": "0343cb2dcf022b9c355dc6e9446494fa0a6e3332cdf62345941efa68af07f3a7",
-      "current": "bc6141253b86b5481e9f2079f66e948a3aa67a4f866c7bfeb1d041f3ca3ee39d"
+      "current": "2b6c7e416adacf462fa3d88266eef793d90d11f498e030428233a40d6f62510f"
     },
     "src/lib/benchmarks/service.server.ts": {
       "previous": "2c6b42090a6d4c2cf8fa1dd6ac71cc1b08071177fef9d554ab8fadbe48094004",
@@ -142,8 +142,12 @@
     "src/lib/social/service.server.ts": {
       "previous": "8d714601557fb59531a915941558141a8c756382f064a50d619e7789d03d8d2f",
       "current": "8da7b70c4e2152a0bffb25805dd79a0e1ea386f3ba6eec36b125c67e7a6de6bc"
+    },
+    "tests/tmdb-artwork-scope-db.test.ts": {
+      "previous": "29b906a4db5c57c017938aba02c20bb667e39f7e5d13d0cd188b2b8175ce9de3",
+      "current": "843afbdd78b47bc2c94eaaaa5370fe3931ee35d0be000f85f13ff89fd9cd64c0"
     }
   },
   "report": "docs/audits/2026-11-19-integration-metadata.md",
-  "reportSha256": "2171d55b89e35fc0fed2e202e9ca744cfb4a46c010ef8ac9b3b9f87fca11f555"
+  "reportSha256": "6fbbbe0469ab27c2b029f094657d35a89651a00be841be422e6bcc499eacec89"
 }

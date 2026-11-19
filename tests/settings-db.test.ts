@@ -124,6 +124,11 @@ describe.skipIf(!enabled)('settings persistence', () => {
         (select s.provider from metadata_snapshots s where s.media_id=${item.id} and s.genres is not null
           order by ${snapshotRank(config.metadataSource,'details',sql`s.provider`)},s.updated_at desc,s.id limit 1) as provider`);
       expect(resolved).toMatchObject({date:card.releaseDate,provider:'trakt'});
+      await updateConfig(admin,{metadataSource:{...sources,details:'tmdb-only'}});
+      expect((await mediaViewsForIds(admin.id,[item.id]))[0]).toMatchObject({
+        title:base.title,genres:base.genres,releaseDate:'2000-06-01',poster:base.posterPath,
+      });
+      await updateConfig(admin,{metadataSource:sources});
       await ingestMetadata({kind:'movie',provider:'trakt',externalId:'55120',title:'Sparse update'},{mediaId:item.id,complete:true});
       expect((await mediaViewsForIds(admin.id,[item.id]))[0].genres).toEqual(['Comedy']);
       await ingestMetadata({kind:'movie',provider:'trakt',externalId:'55120',title:'Explicit empty genres',genres:[]},{mediaId:item.id});
