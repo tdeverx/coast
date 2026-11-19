@@ -20,6 +20,9 @@ import { pageInterval } from '#lib/page-window.js';
 
 const uuid = (value: string) => v.parse(v.pipe(v.string(), v.uuid()), value);
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+const {catalogueFacts:_catalogueFacts,...gameCardColumns}=getTableColumns(games);
+type GameCardWork=Omit<typeof games.$inferSelect,'catalogueFacts'>;
+
 const minutesPlayed = sql<number>`coalesce((select sum(minutes_played) from game_sessions where playthrough_id = game_playthroughs.id), 0)`.mapWith(Number);
 const playthroughFields = {
   id: gamePlaythroughs.id, gameId: gamePlaythroughs.gameId, platform: gamePlaythroughs.platform,
@@ -71,7 +74,7 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   if (!totals.total && searchQuery) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(games).where(where); }
   const { page, pages } = pagination(totals.total, requestedPage);
   const bounds = pageInterval(pages, page, interval?.firstPage);
-  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), libraryOrder(sort,{title:games.title,added:games.createdAt,id:games.id},sql`${games.title} asc, ${games.id} asc`))
+  const items = await db.select({...gameCardColumns,available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), libraryOrder(sort,{title:games.title,added:games.createdAt,id:games.id},sql`${games.title} asc, ${games.id} asc`))
     .limit(interval ? (page - bounds.firstPage + 1) * PAGE_SIZE : limit).offset((bounds.firstPage - 1) * PAGE_SIZE);
   // Ranking and preference hydration retain each native page's original semantics.
   const presented = [], counts: number[] = [];
@@ -108,7 +111,7 @@ export async function gameDetails(userId: string | null, gameId: string) {
     join provider_connections c on c.sync_account_id=a.account_id join provider_instances i on i.id=c.instance_id
     where c.user_id=${userId} and c.status='connected' and i.provider='steam' and i.enabled and a.game_id=${gameId}`) : [];
   const enriched=(await gamePresentationMetadata([gameId],[game],userId)).get(gameId)??game;
-  return { ...enriched, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
+  return { ...enriched, catalogueFacts:game.catalogueFacts, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
 /** Menu choices load labels only; session totals and provider state stay out of this read. */
@@ -233,7 +236,7 @@ export async function removeGameSession(userId:string,id:string,sessionId:string
 
 /** Refresh provider-owned metadata while retaining the game's ID and all private playthroughs. */
 export async function importIgdbMetadata(metadata: import('../../providers/igdb/adapter.server').IgdbGame, parentKnown=true) {
-  const { category, provider, externalId, identities: linked = [], parent,tasteFeatures,...values } = metadata;
+  const { category, provider, externalId, identities: linked = [], parent,tasteFeatures,catalogueFacts,...values } = metadata;
   // Embedded parent fields omit the parent's own parent relation. Only a full
   // root observation may revoke that work's previous verified relationship.
   const parentGame=parent?await importIgdbMetadata(parent,false):null;
@@ -246,10 +249,10 @@ export async function importIgdbMetadata(metadata: import('../../providers/igdb/
     const identity=known[0];
     let game: typeof games.$inferSelect;
     if (identity) {
-      [game] = await tx.update(games).set({ ...values, updatedAt: new Date() })
+      [game] = await tx.update(games).set({ ...values, ...(catalogueFacts ? {catalogueFacts:sql`${games.catalogueFacts} || ${JSON.stringify(catalogueFacts)}::jsonb`} : {}), updatedAt: new Date() })
         .where(eq(games.id, identity.gameId)).returning();
     } else {
-      [game] = await tx.insert(games).values(values).returning();
+      [game] = await tx.insert(games).values({...values,catalogueFacts}).returning();
     }
     for (const id of identities) {
       await tx.insert(gameExternalIds).values({gameId:game.id,...id}).onConflictDoNothing();
@@ -264,9 +267,9 @@ export async function importIgdbMetadata(metadata: import('../../providers/igdb/
 }
 
 /** Borrow only presentation fields from a verified main game; retain the variant's identity/title. */
-export async function gamePresentationMetadata(ids:string[],records?:typeof games.$inferSelect[],viewerId:string|null=null){
+export async function gamePresentationMetadata(ids:string[],records?:GameCardWork[],viewerId:string|null=null){
   if(!ids.length)return new Map<string,typeof games.$inferSelect>();
-  const db=getDb(),rows=records??await db.select().from(games).where(sql`${games.id} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
+  const db=getDb(),rows=records??await db.select(gameCardColumns).from(games).where(sql`${games.id} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
   if(!rows.length)return new Map<string,typeof games.$inferSelect>();
   const parents=await db.select({gameId:gameVariants.gameId,parent:games}).from(gameVariants).innerJoin(games,eq(games.id,gameVariants.parentId)).where(sql`${gameVariants.gameId} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
   const preferences=await presentationPreferences(viewerId,ids);

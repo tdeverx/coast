@@ -111,7 +111,7 @@ export async function getMetadataEditor(userId: string, mediaId: string) {
           eq(userMetadataPreferences.mediaId, mediaId)
         )
       );
-    const policy = config.metadataSource === 'tmdb-only' ? 'tmdb-only' : 'local-first';
+    const policy = config.metadataSource;
     const resolved = resolveMetadata({
       fallback: item,
       snapshots,

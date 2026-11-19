@@ -12,6 +12,12 @@ import { defaultConfig, getConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
 import { diagnosticStore } from '../src/lib/server/diagnostics';
 
+import { eq, sql } from 'drizzle-orm';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
+import { effectiveReleaseDate, snapshotRank } from '../src/lib/catalogue/metadata/release-date.server';
+import { mediaViewsForIds, screenWorkSummaries } from '../src/lib/server/queries/media';
+import { metadataSnapshots, works } from '../src/lib/server/db/schema';
+
 const target = process.env.TEST_DATABASE_URL;
 const enabled = !!target && new URL(target).pathname.startsWith('/coast_settings_test');
 describe.skipIf(!enabled)('settings persistence', () => {
@@ -86,6 +92,48 @@ describe.skipIf(!enabled)('settings persistence', () => {
       (await getSql()`SELECT count(*)::int AS count FROM diagnostic_setting_audit`)[0].count
     ).toBe(1);
   });
+  test('metadata priorities are admin-only and agree across card, summary and SQL readers', async () => {
+    const original = await getConfig();
+    const sources = {
+      details: ['trakt','tmdb','jellyfin'], artwork: ['tmdb','jellyfin','trakt'], release: ['jellyfin','tmdb','trakt'],
+    } satisfies import('../src/lib/catalogue/metadata/resolve').MetadataSource;
+    await expect(updateConfig(member,{metadataSource:sources})).rejects.toThrow('Administrator');
+    await expect(updateConfig(admin,{metadataSource:{...sources,release:['tmdb','tmdb','trakt']}})).rejects.toThrow();
+    const base = {kind:'movie' as const,provider:'tmdb' as const,externalId:'9871251',title:'Global title',
+      releaseDate:'2000-07-01',genres:['Drama'],posterPath:'https://image.tmdb.org/t/p/w780/fixture.jpg',
+      facts:{status:'Released',networks:[{id:'10',name:'Network'}]}};
+    const item = await ingestMetadata(base,{complete:true});
+    try {
+      await ingestMetadata({...base,facts:{originalLanguage:'en'}});
+      const [saved] = await getDb().select({raw:metadataSnapshots.raw}).from(metadataSnapshots)
+        .where(eq(metadataSnapshots.mediaId,item.id));
+      expect(saved.raw.facts).toMatchObject({status:'Released',networks:[{id:'10',name:'Network'}],originalLanguage:'en'});
+      await ingestMetadata({kind:'movie',provider:'trakt',externalId:'55120',title:'Trakt title',
+        genres:['Comedy'],releaseDate:'2000-08-01'},{mediaId:item.id});
+      await ingestMetadata({kind:'movie',provider:'jellyfin',externalId:'local-test',title:'Local title',
+        genres:['Local genre'],releaseDate:'2000-06-01'},{mediaId:item.id});
+      await updateConfig(admin,{metadataSource:sources});
+      const config = await getConfig();
+      expect(config.metadataSource).toEqual(sources);
+      const [card] = await mediaViewsForIds(admin.id,[item.id]);
+      const [summary] = await screenWorkSummaries(admin.id,[item.id]);
+      expect(card).toMatchObject({title:'Trakt title',releaseDate:'2000-06-01',genres:['Comedy'],poster:base.posterPath});
+      expect(summary).toMatchObject({title:card.title,year:card.year});
+      const [resolved] = await getDb().execute<{date:string;provider:string}>(sql`select
+        ${effectiveReleaseDate(sql`${item.id}::uuid`,config.metadataSource)}::text as date,
+        (select s.provider from metadata_snapshots s where s.media_id=${item.id} and s.genres is not null
+          order by ${snapshotRank(config.metadataSource,'details',sql`s.provider`)},s.updated_at desc,s.id limit 1) as provider`);
+      expect(resolved).toMatchObject({date:card.releaseDate,provider:'trakt'});
+      await ingestMetadata({kind:'movie',provider:'trakt',externalId:'55120',title:'Sparse update'},{mediaId:item.id,complete:true});
+      expect((await mediaViewsForIds(admin.id,[item.id]))[0].genres).toEqual(['Comedy']);
+      await ingestMetadata({kind:'movie',provider:'trakt',externalId:'55120',title:'Explicit empty genres',genres:[]},{mediaId:item.id});
+      expect((await mediaViewsForIds(admin.id,[item.id]))[0].genres).toEqual([]);
+    } finally {
+      await updateConfig(admin,{metadataSource:original.metadataSource});
+      await getDb().delete(works).where(eq(works.id,item.id));
+    }
+  });
+
   test('the selected action persists as a validated partial preference',async()=>{
     await updateUserSettings(member,{action:'listen'});
     expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.action).toBe('listen');

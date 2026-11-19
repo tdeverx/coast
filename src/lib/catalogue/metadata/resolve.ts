@@ -1,3 +1,33 @@
+import * as v from 'valibot';
+
+export const metadataProviders = ['jellyfin', 'tmdb', 'trakt'] as const;
+export const metadataFamilies = ['details', 'artwork', 'release'] as const;
+export type MetadataProviderName = (typeof metadataProviders)[number];
+export type MetadataFamily = (typeof metadataFamilies)[number];
+const provider = v.picklist(metadataProviders);
+const order = v.pipe(v.tuple([provider, provider, provider]),
+  v.check(values => new Set(values).size === metadataProviders.length, 'Choose each source once.'));
+export const metadataSourceSchema = v.union([
+  v.picklist(['local-preferred', 'tmdb-only']),
+  v.strictObject({ details: order, artwork: order, release: order }),
+]);
+export type MetadataSource = v.InferOutput<typeof metadataSourceSchema>;
+export type MetadataPolicy = MetadataSource | 'local-first';
+
+const tmdbSources = ['tmdb'] as const;
+
+export function sourceOrder(policy: MetadataPolicy | undefined, family: MetadataFamily): readonly MetadataProviderName[] {
+  if (policy === 'tmdb-only') return tmdbSources;
+  return typeof policy === 'object' ? policy[family] : metadataProviders;
+}
+
+export function compareMetadataSnapshots(sources: readonly string[], a: MetadataSnapshot, b: MetadataSnapshot) {
+  const rank = (provider: string) => { const index = sources.indexOf(provider); return index < 0 ? sources.length : index; };
+  return rank(a.provider) - rank(b.provider) ||
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime() ||
+    (a.id ?? '').localeCompare(b.id ?? '');
+}
+
 export const metadataFields = [
   'title',
   'originalTitle',
@@ -22,6 +52,7 @@ export interface MetadataValues {
   certificate?: string | null;
 }
 export interface MetadataSnapshot extends MetadataValues {
+  id?: string;
   provider: string;
   updatedAt: Date | string;
   region?: string;
@@ -38,13 +69,16 @@ export interface ResolutionInput {
         updatedAt?: Date | string;
       })
     | null;
-  policy?: 'local-first' | 'tmdb-only';
+  policy?: MetadataPolicy;
   preferOriginalTitle?: boolean;
   region?: string;
 }
 export interface FieldProvenance {
   source: string;
   updatedAt: Date | string | null;
+  instanceId?: string;
+  region?: string;
+  language?: string;
 }
 export interface ResolvedMetadata {
   values: MetadataValues;
@@ -55,23 +89,24 @@ const present = (value: unknown) => value !== undefined && value !== null;
 /** Pure field-by-field resolution: snapshots are never mutated by preference or override. */
 export function resolveMetadata(input: ResolutionInput): ResolvedMetadata {
   const locked = new Set(input.locks ?? []);
-  const snapshots = [...(input.snapshots ?? [])]
-    .filter((snapshot) => input.policy !== 'tmdb-only' || snapshot.provider === 'tmdb')
-    .sort((a, b) => {
-      const priority = (snapshot: MetadataSnapshot) =>
-        snapshot.provider === 'jellyfin' ? 0 : snapshot.provider === 'tmdb' ? 1 : 2;
-      return (
-        priority(a) - priority(b) ||
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
-    });
+  const snapshots = (input.snapshots ?? [])
+    .filter(snapshot => input.policy !== 'tmdb-only' || snapshot.provider === 'tmdb');
+  const ranked = new Map<readonly string[], MetadataSnapshot[]>();
   const values: MetadataValues = {};
   const provenance: ResolvedMetadata['provenance'] = {};
   for (const field of metadataFields) {
     const userValue =
       input.user && field in input.user ? input.user[field as keyof typeof input.user] : undefined;
     const overrideValue = input.override?.[field];
-    const provider = snapshots.find(
+    const family = field === 'posterPath' || field === 'backdropPath' ? 'artwork'
+      : field === 'releaseDate' ? 'release' : 'details';
+    const sources = sourceOrder(input.policy, family);
+    let candidates = ranked.get(sources);
+    if (!candidates) {
+      candidates = [...snapshots].sort((a, b) => compareMetadataSnapshots(sources, a, b));
+      ranked.set(sources, candidates);
+    }
+    const provider = candidates.find(
       (snapshot) =>
         present(snapshot[field]) &&
         (field !== 'certificate' || !input.region || snapshot.region === input.region)
@@ -85,7 +120,10 @@ export function resolveMetadata(input: ResolutionInput): ResolvedMetadata {
       provenance[field] = { source: 'administrator', updatedAt: input.override?.updatedAt ?? null };
     } else if (provider) {
       value = provider[field];
-      provenance[field] = { source: provider.provider, updatedAt: provider.updatedAt };
+      provenance[field] = { source: provider.provider, updatedAt: provider.updatedAt,
+        ...(provider.instanceId ? {instanceId:provider.instanceId} : {}),
+        ...(provider.language ? {language:provider.language} : {}),
+        ...(provider.region ? {region:provider.region} : {}) };
     } else {
       value = input.fallback[field];
       if (present(value)) provenance[field] = { source: 'coast', updatedAt: null };

@@ -5,16 +5,19 @@ import {getDb,getSql} from '#lib/server/db/index.js';
 import {readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
 import {pageNumberSchema,pagination,PAGE_SIZE} from '#lib/server/queries/pagination.js';
 import {readingProviderDetails} from '#lib/providers/reading.server.js';
-import {readingWork,readingCards} from './query.server';
+import {readingWork,readingCards,readingCardColumns} from './query.server';
 import type {ReadingCredit} from './model';
 
 /** Reuse the bounded metadata cache only after the Credits row becomes visible. */
 export async function readingCredits(userId:string,id:string):Promise<ReadingCredit[]>{
  const item=await readingWork(userId,id);
  if(item.kind!=='comic')return item.authors.map(name=>({name,role:'Author'}));
- const [identity]=await getDb().select({id:workIdentifiers.externalId}).from(workIdentifiers)
+ const [identity]=await getDb().select({id:workIdentifiers.externalId,
+  credits:sql<ReadingCredit[] | null>`${readingWorks.catalogueFacts}#>'{comicVine,credits}'`})
+  .from(workIdentifiers).innerJoin(readingWorks,eq(readingWorks.id,workIdentifiers.workId))
   .where(and(eq(workIdentifiers.workId,id),eq(workIdentifiers.provider,'comic-vine'))).limit(1);
  if(!identity)return item.authors.map(name=>({name,role:'Author'}));
+ if(identity.credits)return identity.credits;
  const credits=(await readingProviderDetails(item.kind,identity.id)).credits??item.authors.map(name=>({name,role:'Writer'}));
  return [...new Map(credits.map(person=>[JSON.stringify([person.name,person.role]),person])).values()];
 }
@@ -29,7 +32,7 @@ export async function relatedReading(userId:string,id:string,requested=1){
  const where=and(eq(readingWorks.kind,item.kind),sql`${readingWorks.id}<>${id}::uuid`,sql`(${readingWorks.authors} && ${authorNames} or ${readingWorks.subjects} && ${subjectNames})`);
  const [totals]=await db.select({total:sql<number>`count(*)::int`}).from(readingWorks).where(where);
  const paging=pagination(totals.total,page);
- const rows=await db.select().from(readingWorks).where(where).orderBy(desc(sql`${authors}*4+${subjects}`),asc(readingWorks.title),asc(readingWorks.id)).limit(PAGE_SIZE).offset((paging.page-1)*PAGE_SIZE);
+ const rows=await db.select(readingCardColumns).from(readingWorks).where(where).orderBy(desc(sql`${authors}*4+${subjects}`),asc(readingWorks.title),asc(readingWorks.id)).limit(PAGE_SIZE).offset((paging.page-1)*PAGE_SIZE);
  return {...paging,total:totals.total,items:await readingCards(userId,userId,rows)};
 }
 

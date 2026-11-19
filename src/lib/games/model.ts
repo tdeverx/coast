@@ -1,3 +1,10 @@
+export interface GameCatalogueFacts {
+  status?: string;
+  audience?: { score: number; votes?: number; scale: 100 };
+  critics?: { score: number; votes?: number; scale: 100 };
+  releaseDates?: { id: string; date?: string; label?: string; platform?: string }[];
+}
+
 import * as v from 'valibot';
 
 export const gameStatuses = ['planned', 'in-progress', 'completed', 'paused', 'dropped'] as const;

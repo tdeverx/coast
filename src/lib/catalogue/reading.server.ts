@@ -4,7 +4,7 @@ import { getDb } from '#lib/server/db/index.js';
 import { readingWorks, readingGroups, readingGroupMembers, workIdentifiers, works, workFeatures } from '#lib/server/db/schema.js';
 import {namedFeatures} from '#lib/social/taste-profile.js';
 import { DomainError } from '#lib/core/errors.js';
-import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata } from '#lib/reading/model.js';
+import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata, type ReadingCatalogueFacts } from '#lib/reading/model.js';
 import { getConfig } from '#lib/server/config.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
 
@@ -19,6 +19,19 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   coverUrl: v.optional(v.pipe(v.string(), v.url(), v.maxLength(2000))),
   sourceUrl: v.pipe(v.string(), v.url(), v.maxLength(2000)),
   credits:v.optional(v.pipe(v.array(v.strictObject({name:label,role:label})),v.maxLength(100))),
+  facts:v.optional(v.strictObject({
+    openLibrary:v.optional(v.strictObject({
+      languages:v.optional(v.pipe(v.array(label),v.maxLength(24))),
+      editionCount:v.optional(v.pipe(v.number(),v.safeInteger(),v.minValue(0))),
+      firstPublished:v.optional(v.pipe(v.string(),v.maxLength(100))),
+      editionSample:v.optional(v.pipe(v.array(v.strictObject({
+        id:openLibraryEditionIdSchema, title:label,
+        languages:v.optional(v.pipe(v.array(label),v.maxLength(12))),
+        publishers:v.optional(v.pipe(v.array(label),v.maxLength(8))),
+      })),v.maxLength(3))),
+    })),
+    comicVine:v.optional(v.strictObject({coverDate:v.optional(v.pipe(v.string(),v.isoDate()))})),
+  })),
   authors: v.pipe(v.array(label), v.maxLength(50)),
   subjects: v.pipe(v.array(label), v.maxLength(100)),
   publishedYear: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(9999))),
@@ -31,19 +44,25 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   group:v.optional(readingGroupSchema),
 }), v.check((item) => item.provider === readingProviderForId(item.externalId)
   && v.safeParse(readingReferenceSchema, { kind: item.kind, externalId: item.externalId }).success
+  && (!item.facts?.openLibrary || item.provider === 'openlibrary')
+  && (!item.facts?.comicVine || item.provider === 'comic-vine')
   && (item.kind === 'comic' || !(item.identities ?? []).some(identity => identity.provider === 'comic-vine')),  'Choose a valid provider work identity.'));
 
 /** Provider details arrive before this transaction; verified IDs never merge through a title match. */
 export async function importReading(metadata: ReadingMetadata) {
   const input = v.parse(readingMetadataSchema, metadata);
   requireEnabledCategory(await getConfig(), input.kind);
-  const { identities: aliases = [], group, credits: _credits, ...metadataValues } = input;
+  const { identities: aliases = [], group, credits, facts, ...metadataValues } = input;
   const identities = [...new Map([{ provider: input.provider, externalId: input.externalId }, ...aliases]
     .map(identity => [`${identity.provider}:${identity.externalId}`, identity])).values()]
     .sort((a, b) => `${a.provider}:${a.externalId}`.localeCompare(`${b.provider}:${b.externalId}`));
+  const catalogueFacts: ReadingCatalogueFacts | undefined = input.provider === 'comic-vine' && credits !== undefined
+    ? { comicVine: {...facts?.comicVine, credits:[...new Map(credits.map(person=>[JSON.stringify([person.name,person.role]),person])).values()]} }
+    : facts;
   const values = {
     ...metadataValues,
     editionIds: input.editionIds ?? [],
+    catalogueFacts: catalogueFacts ?? {},
     releaseDate: input.releaseDate ?? null,
     overview: input.overview ?? null,
     coverUrl: input.coverUrl ?? null,
@@ -81,13 +100,19 @@ export async function importReading(metadata: ReadingMetadata) {
         await tx.update(workIdentifiers).set({ kind: 'comic' }).where(eq(workIdentifiers.workId, existing.id));
       }
       // Alternate-source enrichment never changes UUIDs or overwrites primary metadata.
-      const update = existing.provider === input.provider && existing.externalId === input.externalId ? values : {
+      const update = existing.provider === input.provider && existing.externalId === input.externalId ? {...values} : {
         overview: existing.overview ?? values.overview,
         coverUrl: existing.coverUrl ?? values.coverUrl,
         pageCount: existing.pageCount ?? values.pageCount,
         authors: existing.authors.length ? existing.authors : values.authors,
         subjects: [...new Set([...existing.subjects, ...values.subjects])].slice(0, 100),
       };
+      const mergedFacts = {
+        ...existing.catalogueFacts,
+        ...(catalogueFacts?.openLibrary ? {openLibrary:{...existing.catalogueFacts.openLibrary,...catalogueFacts.openLibrary}} : {}),
+        ...(catalogueFacts?.comicVine ? {comicVine:{...existing.catalogueFacts.comicVine,...catalogueFacts.comicVine}} : {}),
+      };
+      Object.assign(update,{catalogueFacts:mergedFacts});
       const changed = Object.entries(update).some(([field, value]) => JSON.stringify(existing[field as keyof typeof existing]) !== JSON.stringify(value));
       item = changed ? (await tx.update(readingWorks).set({ ...update, updatedAt: new Date() }).where(eq(readingWorks.id, existing.id)).returning())[0] : existing;
     } else {

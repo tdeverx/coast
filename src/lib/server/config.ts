@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { metadataSourceSchema } from '#lib/catalogue/metadata/resolve.js';
 import { administratorFeatures } from '#lib/features.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { diagnosticLevels } from '../diagnostics';
@@ -36,7 +37,7 @@ export const configSchema = v.object({
   maxBitrateMbps: v.pipe(v.number(), v.minValue(1), v.maxValue(1000)),
   cacheTmdbArtwork: v.boolean(),
   cacheServerArtwork: v.optional(v.boolean(),false),
-  metadataSource: v.picklist(['local-preferred', 'tmdb-only']),
+  metadataSource: metadataSourceSchema,
   notificationLevel: v.picklist(['silent', 'normal', 'persistent']),
   allowNotificationSilencing: v.boolean(),
   subtitleDefault: v.picklist(['off', 'preferred', 'always']),

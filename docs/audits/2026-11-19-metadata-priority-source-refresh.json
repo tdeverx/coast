@@ -1,0 +1,149 @@
+{
+  "epoch": "metadata-priority-local-2026-11-19",
+  "baseline": "99574982ef33e081e765dc1efc5c4c0532d18a20",
+  "blanketAcceptance": false,
+  "files": {
+    "drizzle/meta/_journal.json": {
+      "previous": "a4c9ce59cb46d4ec39e7d99d72c784c267f34e71a9e9ab1f67fc5b62b6ac4dcf",
+      "current": "1e1d5da428f6376f76f588819eda4017f8c80554464fd34d7e3315846e02d5c9"
+    },
+    "src/lib/catalogue/air-schedule.server.ts": {
+      "previous": "7127e807dc7b7c51c32b823849ab9ee189a4b5460647a46d429f426f40a1c172",
+      "current": "c973f0ccb8da2dc054314d55aefaf65e2eff97f067d24b19f95952c60b1ddef9"
+    },
+    "src/lib/catalogue/metadata/release-date.server.ts": {
+      "previous": "2f53f1cfb7aef3dba50e7bbdab89d26959842b4c6369bb887af7fd1ed31fd9e0",
+      "current": "f9202e987099649f4f5eac17b54daad2979ee0aa5c7addd8ad7e8fa1a550e3b1"
+    },
+    "src/lib/catalogue/metadata/resolve.ts": {
+      "previous": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+      "current": "bfdce145dbd17158b7e352bb76c2de2bd7e00eac6afd58d7d38e67a1e3d9240d"
+    },
+    "src/lib/catalogue/overrides/service.server.ts": {
+      "previous": "185d8e80155d06a0a9409a83e76a2d50184515453688ffd6fb947c84e4ecb18a",
+      "current": "761982d9b14003a9866d71a623b9184851ee7c3d234594fc8d0d6df9afb366a5"
+    },
+    "src/lib/catalogue/reading.server.ts": {
+      "previous": "3c2179b2c65b8ab00321b2747fc946135f842414cc2e19cdebd6e20c4d43284b",
+      "current": "eb08f088dd2f83dbfa11453622e9b09690a2c464208587e24240d8f75e383b4f"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "95452981ed91d9df259f93c25aff7b39ee04863d293e243f3cc20cd5ca6df382",
+      "current": "d62b47f9b971bb5b4764ab5116e29306624416ee3db2198f0a6ed6a7b4ae1d16"
+    },
+    "src/lib/collection/query.server.ts": {
+      "previous": "4f1ee643a8a7653f09b1184d40dea760d9e932c47c85e6f86436715aa6f62932",
+      "current": "606628acbfedd9be961132cf2f6080de8a3780c68707c2de4d4e8f2d44b024c2"
+    },
+    "src/lib/core/games/service.server.ts": {
+      "previous": "ba49c67e884cae5baf3e354cb8371ecc0d88372901c5b6843ec6907355ec615c",
+      "current": "c2107483abd906f389c3b52d45b1489c49284172723cf7530842aa8f0a86ce42"
+    },
+    "src/lib/games/model.ts": {
+      "previous": "dffc2c22a941ebf746e240dab5c18a3b91e67447dd36dd73beab772b2bd651a2",
+      "current": "d3ecf4777343cb9eb9154013e48f6fc568d32f0edcfd384e9594d2ce1a2e0ed8"
+    },
+    "src/lib/providers/comic-vine/adapter.server.ts": {
+      "previous": "ffe3dc17c11d6ca584d3972784660ecfae8c08c2bb5ab9e3989a78dbc9cc9d2b",
+      "current": "15fcd96c8fba8172bf931109d780bc747c735120b373c53cc50ed6e93670c1a8"
+    },
+    "src/lib/providers/contracts.ts": {
+      "previous": "cb79c046b4d78346ac0a4edc95586381d65cfea251bcd54d56d8183c671c5f22",
+      "current": "85c03b6bcbb813b17fba1cc60a92a437b910d81dd5aae19aa797ce667395f0e8"
+    },
+    "src/lib/providers/igdb/adapter.server.ts": {
+      "previous": "fd513be98ea680f5f2825bf955fbe3a044cf2e0448fd6e8329e24d6eea8094da",
+      "current": "87ce90739319b51c9f81e7031c21db24c3fc7f3f7934ed71638dca315795c83d"
+    },
+    "src/lib/providers/jellyfin/adapter.server.ts": {
+      "previous": "88fd9592bc1c7acb3c0fa38eeb3394f1b672f2a21b5732da88785be1203d17c2",
+      "current": "64be9dc33e7869d7764ada37ac88155f23c1d765f7d059995e760d77758afb5e"
+    },
+    "src/lib/providers/openlibrary/adapter.server.ts": {
+      "previous": "f3a96e0ffffd41c9fc763a2d378c4d9355c7e30aa58da0d06f41ca3c8873609b",
+      "current": "d504bcc45f96861c55190c0180f101530dc2cb1a17018e63a3ac417233e3d053"
+    },
+    "src/lib/providers/tmdb/adapter.server.ts": {
+      "previous": "7868c53e987fcdb375ade36c1d7beb85e0dc01a488063b8937a3859c3967f55f",
+      "current": "074725f65e3375743a9e2aa02b989ae2b1bce6b4e0439bd617384cccf4181b30"
+    },
+    "src/lib/providers/trakt/adapter.server.ts": {
+      "previous": "1dbf3add07d09471897de5f800e6648f7939e69209f01d4fbc2d25fe4685e010",
+      "current": "e01af691beeb4be4c08c6a05dd05c7bc663a5cec2dfa737af055efb8d9ab8d63"
+    },
+    "src/lib/reading/detail.server.ts": {
+      "previous": "2848ac0bc5b3a5c2c4ba4f9d7fc031fdd5923d5fc22fa81827f825e3b60b7e55",
+      "current": "22b5977f40e8bc3146c936eeccf1fbb18a40e3beec54ea2c24bf3e3071150218"
+    },
+    "src/lib/reading/model.ts": {
+      "previous": "97a4d61f8acdf3f38ff3bf26db1110631a330ed25eb5fd2cf1ae60dd2b2cd8fb",
+      "current": "54c220069491cd8871ec0b2e4e15e5548c885011f38ad5f5d7b286e6105260ea"
+    },
+    "src/lib/reading/query.server.ts": {
+      "previous": "b115bfec152129f379a03ce3b765b3d1118bf2e9d444350b8631d8b711c015fa",
+      "current": "d933613a2c1d010ac1fba1a60278bab35b29b7a58e08b834b25470897570d901"
+    },
+    "src/lib/server/config.ts": {
+      "previous": "fa843007b37ba4ecddd3468b5ee760037d4972b1b69af70a21e78cb322850d40",
+      "current": "4d6b598851a516f567e92705f57a4513c212b256e1d8ba90eaeaa31fcdea978a"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "87239ff4ead16265ed6f4a271b32266a8ff80cc764686fc8440489a0f2a26dd3",
+      "current": "b650ff620cca04c806d477924135eb086d4d4b2924dc67b5cd0a9c93a7713533"
+    },
+    "src/lib/server/queries/library.ts": {
+      "previous": "321a5981cba948db4a206a3cf677f14731df1e0d2a44a9350362636fc99ac735",
+      "current": "af12fd63400ab3f4458ade7799b81e4a3b64b86b204e42eacc65adc913f0108d"
+    },
+    "src/lib/server/queries/media.ts": {
+      "previous": "c5ea72f700935cc812ae4104c2db5a4f2cadc981ad549aa91f0df1a53e01a224",
+      "current": "7faee6b766e8e898eb0b2996730f633db6389556dc8f1de3e7acb227402adf84"
+    },
+    "src/lib/server/queries/progress.ts": {
+      "previous": "1227ed8cdb9586ee0c93c5c96fb8844fcf4f6c9353534a599de038281e88907c",
+      "current": "d401d7357055e2d567798de72b967de0b609f9231a0874fe1ccd11fb5ce116a3"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "previous": "7bb0c4dae16abdf22e9e850c9cc44ce79c1307a720fcaaebe436e9f7ce44a883",
+      "current": "3942e5997257a4474a9c903ccf4717ebb6304cc782de7dcadd6d66d0dbe416b8"
+    },
+    "src/routes/ui-preview/CatalogueExamples.svelte": {
+      "previous": "fe0bb348b8e5bfab08311bd9303e8879bfb9d6af97dfd980029f87c46126993f",
+      "current": "9152a7cb936bce820b9b5d65f691208e9bc46c44517ad565e8be5ccf21e44e61"
+    },
+    "tests/igdb.test.ts": {
+      "previous": "88180553ff9f8b57605696436c49218c21b9cd3ecb4acd29351d761114b5b33b",
+      "current": "2f9533dd5a324289abb2c3fb278be875c920ca8de7d7f3b18449a6275d4274ad"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "5a5affb9da6fc60bb2cff2e5a802394711dfc81a5c89572de257de7bb051a780",
+      "current": "346dc50a0bf9f8a7692d9f5aa2260b9f2d8de774eec4894a2e007fa664e6ca87"
+    },
+    "tests/reading-db.test.ts": {
+      "previous": "4112bc5b1c9d8734c0e328d8c32b7b0a7af447c319513c6c2e3c13a16d23e1e0",
+      "current": "25eef60924a6e9ba5aefbe28b502c71fc585cbbbbc8ce7fa988e06e838d64101"
+    },
+    "tests/settings-db.test.ts": {
+      "previous": "0343cb2dcf022b9c355dc6e9446494fa0a6e3332cdf62345941efa68af07f3a7",
+      "current": "bc6141253b86b5481e9f2079f66e948a3aa67a4f866c7bfeb1d041f3ca3ee39d"
+    },
+    "src/lib/benchmarks/service.server.ts": {
+      "previous": "2c6b42090a6d4c2cf8fa1dd6ac71cc1b08071177fef9d554ab8fadbe48094004",
+      "current": "5af33d5299578bbb6b5555b08fe835763f893692649f9d324de0ed28baee92c6"
+    },
+    "src/lib/collection/demand.server.ts": {
+      "previous": "ca47163a62d564f852921e36232a3f63a952206e1ab2222b9f7a74d5812050fc",
+      "current": "58e863c4952af9dcfda99f5925363f68b8ea7aed5cce8bcccbca325d1c526c85"
+    },
+    "src/lib/collection/projection.server.ts": {
+      "previous": "46e824db5f737d7a178cfbf9c3ae0d6831c2d5e9a0bc36662d26e22bb5eab801",
+      "current": "cfdda0c0bdd129b361e54783ca071036819f6ea10f6c8fc93b025b2b6fe5614e"
+    },
+    "src/lib/social/service.server.ts": {
+      "previous": "8d714601557fb59531a915941558141a8c756382f064a50d619e7789d03d8d2f",
+      "current": "8da7b70c4e2152a0bffb25805dd79a0e1ea386f3ba6eec36b125c67e7a6de6bc"
+    }
+  },
+  "report": "docs/audits/2026-11-19-integration-metadata.md",
+  "reportSha256": "15453bce0ca3cbf66919f4c992f6d0fe094d53dc61350b00e1629868cab2b797"
+}

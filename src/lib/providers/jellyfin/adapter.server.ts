@@ -79,6 +79,12 @@ const itemSchema = v.object({
     })
   ),
   OriginalTitle: str,
+  SortName: str,
+  Status: str,
+  CommunityRating: num,
+  Taglines: v.fallback(v.optional(v.array(v.string())),undefined),
+  Studios: v.fallback(v.optional(v.array(v.object({Id:str,Name:v.string()}))),undefined),
+  People: v.fallback(v.optional(v.array(v.object({Id:str,Name:v.string(),Role:str,Type:str}))),undefined),
   Overview: str,
   ProductionYear: num,
   PremiereDate: str,
@@ -91,7 +97,7 @@ const itemSchema = v.object({
   ParentId: str,
   SeriesId: str,
   ProviderIds: v.optional(v.record(v.string(), v.string()), {}),
-  Genres: v.optional(v.array(v.string()), []),
+  Genres: v.nullish(v.array(v.string())),
   OfficialRating: str,
   CustomRating: str,
   SourceType: str,
@@ -195,7 +201,14 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
       releaseDate: i.PremiereDate?.slice(0, 10),
       airSchedule: kind==='show'&&i.AirTime ? {time:i.AirTime} : undefined,
       runtimeMinutes: i.RunTimeTicks ? Math.round(i.RunTimeTicks / 600000000) : undefined,
-      genres: i.Genres,
+      genres: i.Genres ?? undefined,
+      facts: {
+        status:i.Status?.slice(0,100), sortTitle:i.SortName?.slice(0,250), tagline:i.Taglines?.[0]?.slice(0,500),
+        audience:i.CommunityRating != null ? {score:i.CommunityRating,scale:10} : undefined,
+        studios:i.Studios?.slice(0,24).map(studio=>({id:studio.Id??undefined,name:studio.Name.slice(0,250)})),
+        credits:i.People?.slice(0,40).flatMap(person=>person.Id&&person.Type
+          ? [{id:person.Id,name:person.Name.slice(0,250),role:(person.Role||person.Type).slice(0,150)}] : []),
+      },
       certificate: i.OfficialRating || undefined,
       externalIds: Object.fromEntries(
         Object.entries(i.ProviderIds)
@@ -316,7 +329,7 @@ export class JellyfinAdapter {
       includeItemTypes: 'Movie,Series,Season,Episode',
       // Source identities/editions are needed for per-user access. Individual
       // streams are obtained from playback info when playback is requested.
-      fields: scope === 'user' ? 'DateCreated,MediaSources,RecursiveItemCount,Tags,CustomRating,ParentId' : 'DateCreated,ProviderIds,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,Tags,CustomRating,ParentId',
+      fields: scope === 'user' ? 'DateCreated,MediaSources,RecursiveItemCount,Tags,CustomRating,ParentId' : 'DateCreated,ProviderIds,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,Tags,CustomRating,ParentId,AirTime,SortName,Taglines,Studios',
       enableImages: String(scope === 'library'),
       enableUserData: String(scope === 'user'),
       enableImageTypes: artworkKeys.map((type) => artworkTypes[type].jellyfin).join(','),

@@ -7,6 +7,8 @@ const credentials = () => ({ clientId: crypto.randomUUID(), clientSecret: 'fixtu
 const token = { access_token: 'fixture-token', expires_in: 3600, token_type: 'bearer' };
 const fixture = {
   id: 1942, name: 'Fixture game', summary: 'A game', first_release_date: 1431993600,
+  rating: 78, rating_count: 11,
+  release_dates:[{id:703,date:1431993600,human:'May 19, 2015',platform:{name:'PC'}}],
   cover: { image_id: 'cover123' }, artworks: [{ image_id: 'art123' }],
   platforms: [{ name: 'PC' }, { name: 'PC' }], genres: [{ name: 'Role-playing (RPG)' }],
   involved_companies: [
@@ -19,6 +21,8 @@ test('IGDB maps expanded metadata and derives artwork only from validated image 
   const game = mapIgdbGame(fixture);
   expect(game.externalId).toBe('1942');
   expect(game.releaseDate).toBe('2015-05-19');
+  expect(game.catalogueFacts).toMatchObject({audience:{score:78,votes:11,scale:100},
+    releaseDates:[{id:'703',date:'2015-05-19',platform:'PC'}]});
   expect(game.platforms).toEqual(['PC']);
   expect(game.developers).toEqual(['Developer']);
   expect(game.publishers).toEqual(['Publisher']);

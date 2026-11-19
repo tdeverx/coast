@@ -504,6 +504,24 @@ suite('experimental reading identity, private state and bounded local reads', ()
     expect(Array.from(indexes)).toHaveLength(1);
   });
 
+  test('verified comic credits and book facts survive partial imports without a credits fetch',async()=>{
+    const ol={...book,kind:'comic' as const,externalId:'OL977000020W',sourceUrl:'https://openlibrary.org/works/OL977000020W'};
+    const saved=await importReading({...ol,facts:{openLibrary:{languages:['eng'],editionCount:4}}});
+    fixtureIds.add(saved.id);
+    const credits=[{name:'Fixture writer',role:'Writer'},{name:'Fixture artist',role:'Inker'}];
+    const cv={...comic,externalId:'4000-977000020',sourceUrl:'https://comicvine.gamespot.com/issue/4000-977000020/',
+      identities:[{provider:'openlibrary' as const,externalId:ol.externalId}]};
+    expect((await importReading({...cv,credits,facts:{comicVine:{coverDate:'2002-07-01'}}})).id).toBe(saved.id);
+    const refresh=await importReading(cv);
+    expect(refresh.catalogueFacts).toEqual({openLibrary:{languages:['eng'],editionCount:4},
+      comicVine:{coverDate:'2002-07-01',credits}});
+    const metadata=spyOn(readingProviders,'readingProviderDetails').mockRejectedValue(Error('No provider call expected'));
+    try {
+      expect(await readingCredits(owner,saved.id)).toEqual(credits);
+      expect(metadata).not.toHaveBeenCalled();
+    } finally {metadata.mockRestore();}
+  });
+
   test('detail credits reuse exact provider identity without changing canonical authors',async()=>{
     const metadata=spyOn(readingProviders,'readingProviderDetails').mockResolvedValue({...comic,credits:[{name:'Writer',role:'writer'},{name:'Artist',role:'penciler'},{name:'Artist',role:'penciler'}]});
     try{

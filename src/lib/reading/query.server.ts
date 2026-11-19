@@ -20,6 +20,9 @@ import { searchDocument, searchSql } from '#lib/server/queries/search-ranking.js
 
 import { pageInterval } from '#lib/page-window.js';
 
+export const { catalogueFacts: _catalogueFacts, ...readingCardColumns } = getTableColumns(readingWorks);
+type ReadingCardWork = Omit<typeof readingWorks.$inferSelect,'catalogueFacts'>;
+
 const uuid = v.pipe(v.string(), v.uuid());
 /** Resolve exact identity before fetching a preview; saved metadata survives source outages. */
 export async function readingStoredWorkId(kind: ReadingKind, externalId: string) {
@@ -48,7 +51,7 @@ export const readingCatalogueSchema = v.object({
 export async function readingWork(userId: string, id: string) {
   v.parse(uuid, userId); v.parse(uuid, id);
   const db = getDb();
-  const [item] = await db.select({...getTableColumns(readingWorks),
+  const [item] = await db.select({...readingCardColumns,
     available:sql<boolean>`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${id}::uuid and a.user_id=${userId}::uuid and a.state='available' and c.status='connected' and i.enabled)`,
     hasEditions:sql<boolean>`exists(select 1 from work_identifiers wi where wi.work_id=${id}::uuid and wi.provider='openlibrary')`,
   }).from(readingWorks).where(eq(readingWorks.id,id));
@@ -101,14 +104,14 @@ export async function readingCatalogue(userId: string, raw: unknown = {}, firstP
   if (!totals.total && search) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(readingWorks).where(where); }
   const { page, pages } = pagination(totals.total, input.page);
   const bounds = pageInterval(pages, page, interval?.firstPage);
-  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), libraryOrder(input.sort,{title:readingWorks.title,added:readingWorks.createdAt,id:readingWorks.id},sql`${readingWorks.title} asc, ${readingWorks.id} asc`)).limit((page - bounds.firstPage + 1) * PAGE_SIZE).offset((bounds.firstPage - 1) * PAGE_SIZE);
+  const items = await db.select(readingCardColumns).from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), libraryOrder(input.sort,{title:readingWorks.title,added:readingWorks.createdAt,id:readingWorks.id},sql`${readingWorks.title} asc, ${readingWorks.id} asc`)).limit((page - bounds.firstPage + 1) * PAGE_SIZE).offset((bounds.firstPage - 1) * PAGE_SIZE);
   // SQL has ranked both canonical metadata and the viewer's private aliases
   // before paging. Rescoring raw titles here would demote alias-only matches.
   return { items, total: totals.total, page, pages, ...(interval ? { range: { ...bounds, counts: Array.from({length:page-bounds.firstPage+1}, (_,index)=>items.slice(index*PAGE_SIZE,(index+1)*PAGE_SIZE).length) } } : {}) };
 }
 
 /** Hydrate private page progress for only the selected card page, respecting the actual category. */
-export async function readingCards(ownerId: string, viewerId: string | null, items: typeof readingWorks.$inferSelect[]) {
+export async function readingCards(ownerId: string, viewerId: string | null, items: ReadingCardWork[]) {
   if (!items.length) return [];
   const progress = await getDb().select({ progress: readingProgress }).from(readingProgress)
     .innerJoin(readingWorks, eq(readingWorks.id, readingProgress.workId))
@@ -130,7 +133,7 @@ export async function readingProviderCards(userId: string, metadata: ReadingMeta
   if (!metadata.length) return [];
   const identities = metadata.flatMap(item => [{ provider: item.provider, externalId: item.externalId, kind: item.kind },
     ...(item.identities ?? []).map(identity => ({ ...identity, kind: item.kind }))]);
-  const registered = await getDb().select({ identity: workIdentifiers, work: readingWorks }).from(workIdentifiers)
+  const registered = await getDb().select({ identity: workIdentifiers, work: readingCardColumns }).from(workIdentifiers)
     .innerJoin(readingWorks, eq(readingWorks.id, workIdentifiers.workId)).where(and(
       enabledCategories(sql`${readingWorks.kind}`, config),
       or(...identities.map(identity => and(eq(workIdentifiers.provider, identity.provider),

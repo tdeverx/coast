@@ -32,6 +32,7 @@ const castMember = v.object({
 });
 const crewMember=v.object({id:v.number(),name:v.string(),job:v.optional(v.string(),'')});
 const keyword=v.object({id:v.number(),name:v.string()});
+const organisation = v.object({id:v.optional(v.number()),name:v.string()});
 const credits = v.object({
   crew:v.optional(v.array(crewMember),[]),
   cast: v.array(castMember),
@@ -43,12 +44,20 @@ const detail = v.object({
   aggregate_credits: v.optional(credits),
   recommendations: v.optional(result),
   ...item.entries,
+  status: text, tagline: text, original_language: text, last_air_date: text,
+  number_of_seasons: number, number_of_episodes: number, budget: number, revenue: number,
+  vote_average: number, vote_count: number,
+  networks: v.fallback(v.optional(v.array(organisation)),undefined),
+  production_companies: v.fallback(v.optional(v.array(organisation)),undefined),
+  production_countries: v.fallback(v.optional(v.array(v.object({iso_3166_1:v.string()}))),undefined),
+  spoken_languages: v.fallback(v.optional(v.array(v.object({iso_639_1:v.string()}))),undefined),
+  next_episode_to_air: v.nullish(v.object({ name:text, air_date:text, season_number:number, episode_number:number })),
   images: v.optional(
     v.object({
       logos: v.optional(v.array(v.object({ file_path: v.string(), iso_639_1: text })), []),
     })
   ),
-  genres: v.optional(v.array(v.object({ name: v.string() })), []),
+  genres: v.nullish(v.array(v.object({ name: v.string() }))),
   seasons: v.optional(
     v.array(
       v.object({ ...item.entries, id: v.optional(v.number(), 0), season_number: v.number() })
@@ -190,6 +199,23 @@ export class TmdbAdapter implements MetadataProvider {
       )
     );
     const metadata = mapItem(data, kind, this.language, this.region);
+    const organisations = (items: v.InferOutput<typeof organisation>[] | undefined) =>
+      items?.slice(0, 24).map(item => ({id: item.id === undefined ? undefined : String(item.id), name: item.name.slice(0, 250)}));
+    const next = data.next_episode_to_air;
+    metadata.facts = {
+      status: data.status?.slice(0, 100), tagline: data.tagline?.slice(0, 500),
+      originalLanguage: data.original_language ?? undefined,
+      languages: data.spoken_languages?.slice(0, 24).map(item => item.iso_639_1),
+      countries: data.production_countries?.slice(0, 24).map(item => item.iso_3166_1),
+      networks: organisations(data.networks), studios: organisations(data.production_companies),
+      lastAiredOn: data.last_air_date || undefined,
+      seasonCount: data.number_of_seasons ?? undefined, episodeCount: data.number_of_episodes ?? undefined,
+      budgetUsd: data.budget || undefined, revenueUsd: data.revenue || undefined,
+      audience: data.vote_average != null && data.vote_count
+        ? {score:data.vote_average, votes:data.vote_count, scale:10} : undefined,
+      nextEpisode: next ? { title:next.name?.slice(0,250),date:next.air_date??undefined,
+        season:next.season_number??undefined,episode:next.episode_number??undefined } : next,
+    };
     const logos = data.images?.logos ?? [];
     const logo =
       logos.find((image) => image.iso_639_1 === this.language.split('-')[0]) ??
@@ -208,6 +234,9 @@ export class TmdbAdapter implements MetadataProvider {
       }));
     const feature=(person:{id:number;name:string})=>({id:`tmdb:${person.id}`,name:person.name});
     const crew=data.credits?.crew??[];
+    if(data.credits) metadata.facts.credits=crew.filter(person=>person.job).slice(0,40).map(person=>({
+      id:String(person.id), name:person.name.slice(0,250), role:person.job.slice(0,150),
+    }));
     metadata.tasteFeatures={
       tags:[...(data.keywords?.keywords??[]),...(data.keywords?.results??[])].map(feature),
       cast:(data.aggregate_credits?.cast??data.credits?.cast??[]).slice(0,20).map(feature),
@@ -219,7 +248,7 @@ export class TmdbAdapter implements MetadataProvider {
       .filter((entry) => entry.id !== data.id)
       .slice(0, 20)
       .map((entry) => mapItem(entry, kind, this.language, this.region));
-    metadata.genres = data.genres.map((x) => x.name);
+    metadata.genres = data.genres?.map((x) => x.name);
     metadata.externalIds = {
       tmdb: String(data.id),
       ...(data.external_ids?.imdb_id ? { imdb: data.external_ids.imdb_id } : {}),

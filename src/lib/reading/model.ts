@@ -89,6 +89,15 @@ export function openLibraryKind(subjects: string[]): ReadingKind {
 }
 
 export type ReadingCredit={name:string;role:string};
+export interface ReadingCatalogueFacts {
+  openLibrary?: {
+    languages?: string[];
+    editionCount?: number;
+    firstPublished?: string;
+    editionSample?: { id: string; title: string; languages?: string[]; publishers?: string[] }[];
+  };
+  comicVine?: { credits?: ReadingCredit[]; coverDate?: string };
+}
 export interface ReadingMetadata {
   provider: ReadingProvider;
   externalId: string;
@@ -98,8 +107,9 @@ export interface ReadingMetadata {
   coverUrl?: string;
   sourceUrl: string;
   authors: string[];
-  /** On-demand provider credits; not a second canonical person catalogue. */
+  /** Provider roles retain their source identity. */
   credits?: ReadingCredit[];
+  facts?: ReadingCatalogueFacts;
   subjects: string[];
   publishedYear?: number;
   releaseDate?: string;

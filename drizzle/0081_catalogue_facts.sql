@@ -1,0 +1,2 @@
+ALTER TABLE "games" ADD COLUMN "catalogue_facts" jsonb DEFAULT '{}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "reading_works" ADD COLUMN "catalogue_facts" jsonb DEFAULT '{}'::jsonb NOT NULL;
