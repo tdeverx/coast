@@ -1,3 +1,6 @@
+import { getConfig, type CoastConfig } from '#lib/server/config.js';
+import { episodeHasAiredForProgress } from '#lib/catalogue/metadata/release-date.server.js';
+import { rewatchFields } from '#lib/core/tracking/rewatch.server.js';
 import {librarySegmentCondition} from '#lib/server/queries/library-segments.js';
 import { activeCheckinSql } from '#lib/social/checkins-query.server.js';
 import {librarySortValues,librarySegmentValues} from '#lib/library.js';
@@ -62,7 +65,7 @@ export async function collectionRead(statement:SQL){
 }
 
 /** All personal predicates and access assessment happen before the 60-item card query. */
-export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all', projection: 'complete' | 'status' = 'complete') {
+export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all', metadataSource: CoastConfig['metadataSource'] = 'local-preferred') {
   // Personal shelves only traverse their relationships and ancestors. Full inventory
   // remains an explicit scope for server projections; item menus scope to requested IDs.
   // Personal roots depend on evidence; explicit-ID closures are independent.
@@ -70,6 +73,8 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
   const seeds = scope === 'all' ? sql`select id from works`
     : scope === 'personal' ? sql`select distinct d.id from direct d join works w on w.id=d.id where ${selectedCategory(sql`w.category`,category)}`
     : scope.length ? sql`select id from works where id in (${sql.join(scope.map(id => sql`${id}::uuid`), sql`,`)})` : sql`select id from works where false`;
+  const canAdvance=(episode:SQL,state:SQL)=>sql`not coalesce(${state}.dropped,false) and not coalesce(${state}.paused,false)
+    and not (${rewatchFields(ownerId,episode,state).watched}) and ${episodeHasAiredForProgress(episode,metadataSource)}`;
   return sql`with recursive
   visibility as materialized (
     select category,
@@ -95,9 +100,9 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     where not e.is_special${scopedParent(sql`e.show_id`)} and (t.watched or t.position_seconds>0)
   ), active_shows as materialized (
     select observed.id from observed_shows observed where exists(
-      select 1 from episodes remaining join media m on m.id=remaining.media_id left join tracking_state rt on rt.media_id=remaining.media_id and rt.user_id=${ownerId}
-      where remaining.show_id=observed.id and not remaining.is_special and not coalesce(rt.watched,false)
-        and (m.release_date is null or m.release_date<=current_date))
+      select 1 from episodes remaining left join tracking_state rt on rt.media_id=remaining.media_id and rt.user_id=${ownerId}
+      where remaining.show_id=observed.id and not remaining.is_special
+        and ${canAdvance(sql`remaining.media_id`,sql`rt`)})
   ), observed_albums as materialized (
     select distinct r.parent_id as id from media_relationships r join music_works mw on mw.id=r.child_id
     where r.kind='contains'${scopedParent(sql`r.parent_id`)} and mw.kind='track' and (
@@ -210,11 +215,16 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
       (pi.snapshot->>'expectedMembers' is null or (pi.snapshot->>'expectedMembers')::integer=coalesce(edition.total,counts.total)))) as complete
       from scoped_works w left join music_works mu on mu.id=w.id left join member_counts counts on counts.root=w.id left join music_editions edition on edition.id=w.id
   ), next_episodes as (
-    select distinct on (e.show_id) e.show_id,e.media_id from episodes e
-      join media em on em.id=e.media_id left join tracking_state t on t.media_id=e.media_id and t.user_id=${ownerId}
-    where not e.is_special${scopedParent(sql`e.show_id`)} and not coalesce(t.watched,false) and not coalesce(t.dropped,false)
-      and (em.release_date is null or em.release_date<=current_date)
-    order by e.show_id,e.season_number,e.episode_number
+    select show.id as show_id,next.media_id from scoped_works show
+    join lateral (
+      select e.media_id from episodes e
+      left join tracking_state t on t.media_id=e.media_id and t.user_id=${ownerId}
+      left join tracking_state season on season.media_id=e.season_id and season.user_id=${ownerId}
+      where e.show_id=show.id and not e.is_special and not coalesce(season.dropped or season.paused,false)
+        and ${canAdvance(sql`e.media_id`,sql`t`)}
+      order by e.season_number,e.episode_number,e.media_id limit 1
+    ) next on true
+    where show.kind='show' and not exists(select 1 from tracking_state root where root.user_id=${ownerId} and root.media_id=show.id and (root.dropped or root.paused))
   ), next_music as (
     select distinct on (r.parent_id) r.parent_id,child.id from media_relationships r
       join music_works child on child.id=r.child_id left join music_progress mp on mp.track_id=child.id and mp.user_id=${ownerId}
@@ -223,7 +233,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     order by r.parent_id,(coalesce(mp.position_seconds,0)>0) desc,
       (case when mp.position_seconds>0 then mp.updated_at end) desc nulls last,
       (l.track_id is not null or coalesce(mp.play_count,0)>0),r.position,child.id
-  ), assessments as ${projection === 'status' ? sql`not materialized` : sql`materialized`} (
+  ), assessments as materialized (
     select w.id,w.created_at,w.category,w.kind,coalesce(m.title,g.title,mu.title,rw.title,w.kind) as title,
       coalesce(m.release_date,g.release_date,mu.release_date,rw.release_date)::text as release_date,
       coalesce(c.stale,false) as stale,
@@ -256,7 +266,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
 const mapAssessment = (row: Record<string, any>): WorkAssessment => ({ id: row.id, category: row.category, kind: row.kind, title: row.title, releaseDate: row.release_date, availability: row.availability, stale: row.stale, reasons: row.reasons, active: row.active, completed: row.completed, dropped: row.dropped, nextId: row.next_id });
 export async function workAssessments(ownerId: string, viewerId: string, ids: string[], source='all') {
   if (!ids.length) return [];
-  const result = await collectionRead(sql`${collectionCTE(ownerId, viewerId, source, ids)} select a.*,coalesce(c.reasons,'[]'::jsonb) as reasons from assessments a left join collection c on c.id=a.id where a.id in ${sql`(${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`}`);
+  const result = await collectionRead(sql`${collectionCTE(ownerId, viewerId, source, ids, 'all', (await getConfig()).metadataSource)} select a.*,coalesce(c.reasons,'[]'::jsonb) as reasons from assessments a left join collection c on c.id=a.id where a.id in ${sql`(${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`}`);
   return Array.from(result).map(mapAssessment);
 }
 /** Shared action data is local and loaded only when the existing menu opens. */
@@ -422,7 +432,7 @@ async function collectionPage(viewerId: string, raw: unknown={}, username?: stri
     and (${input.source}='all' or exists(select 1 from descendants d join availability a on a.media_id=d.id where d.root=c.id and a.user_id=${viewerId} and a.connection_id::text=${input.source}))`;
   const order=libraryOrder(input.sort,{title:sql`title`,added:sql`created_at`,id:sql`id`});
   const selectedOrder=libraryOrder(input.sort,{title:sql`selected.title`,added:sql`selected.created_at`,id:sql`selected.id`});
-  const result=await collectionRead(sql`${collectionCTE(ownerId,viewerId,input.source,'personal',input.category)}, filtered as (select c.* from collection c where ${condition}), totals as (select count(*)::int as total from filtered)
+  const result=await collectionRead(sql`${collectionCTE(ownerId,viewerId,input.source,'personal',input.category,config.metadataSource)}, filtered as (select c.* from collection c where ${condition}), totals as (select count(*)::int as total from filtered)
     select totals.total,coalesce((select jsonb_agg(selected order by ${selectedOrder}) from
       (select * from filtered order by ${order} limit ${interval ? sql`(least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))
           - least(${interval.firstPage},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int)) + 1)*${PAGE_SIZE}` : sql`${PAGE_SIZE}`}

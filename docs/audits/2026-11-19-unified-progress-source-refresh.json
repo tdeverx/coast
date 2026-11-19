@@ -1,0 +1,73 @@
+{
+  "epoch": "unified-progress-local-2026-11-19",
+  "baseline": "1d53ea8959e1d02255f76db2256e784ee3c67594",
+  "blanketAcceptance": false,
+  "files": {
+    "drizzle/meta/_journal.json": {
+      "previous": "fa9783e0dfc27e633ccc5bda933e8d68db360b1e5e0de0573fff64196065d42d",
+      "current": "a4c9ce59cb46d4ec39e7d99d72c784c267f34e71a9e9ab1f67fc5b62b6ac4dcf"
+    },
+    "src/lib/collection/query.server.ts": {
+      "previous": "d1103071d5e6e3c29188b68acb3376fcc9a415729bd143ade4d53b57b6f611bb",
+      "current": "4f1ee643a8a7653f09b1184d40dea760d9e932c47c85e6f86436715aa6f62932"
+    },
+    "src/lib/core/lists/sequence.server.ts": {
+      "previous": "5904eca1dda6bae17dbd84ae8be8d86d987d17bb7631e6dfde5ff08e0af5a25a",
+      "current": "3f8319869ed83058153f725274d4361df2e73fe1df538d503988c21c651c8958"
+    },
+    "src/lib/core/tracking/rewatch.server.ts": {
+      "previous": "22e33133f5286eee039abdf2937824097d56ea9a652dffd9b693777f72b2f897",
+      "current": "f242776a16470c8662c464ee4d7e41eba22af7e66410dbad71d6ec12c40b5451"
+    },
+    "src/lib/reading/sessions.server.ts": {
+      "previous": "a6c3a9ca992620e2b63ea770c8d35f9d7c27a1e7399720d4eb8840ff3e9bae35",
+      "current": "b434b2479fa0b59056bc120b5360acc3718798ae801f369ecf07bdcfe7cbadf6"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "d6d78b0ff78d93c295cb42a4dff44b826d4b21d141521b3d8c9a322bebede309",
+      "current": "87239ff4ead16265ed6f4a271b32266a8ff80cc764686fc8440489a0f2a26dd3"
+    },
+    "src/lib/server/queries/library-segments.ts": {
+      "previous": "e7bb35f1bb586ccc48517c9c8be6fb834002d6bc1bf1c762636511f066b1082a",
+      "current": "5044757edb32f5eb762f6f7860e9572ac62204aa357957a394e27f3192265c67"
+    },
+    "src/lib/server/queries/profile.ts": {
+      "previous": "bc2b9bb8e7cc54e22fde6de43dca2b2566aca2cd2201b48a865f99f758604760",
+      "current": "8bb375cc149f671a0acd50c5a0e072fe20551141146b519ab7b677709c772cc4"
+    },
+    "src/lib/server/queries/progress-experiment.ts": {
+      "previous": "dae8cf0dc85e8a0e11d10b483fd4773d7a37dc54ed2e0cf35591f86ea2773b47",
+      "current": "34236e41f359063fa4a42b51059f8f6554ff1f89d3a7ca1398b477a04d7be959"
+    },
+    "src/lib/server/queries/progress.ts": {
+      "previous": "fa460b14758829aeecd27d7f6edb75bc1daafd8b586776fa95ca5e2b066f1472",
+      "current": "8e1a24a4bcf40ddbc4027a525da12f3c434e0bfd9f412b348e100e120aa6c916"
+    },
+    "src/lib/server/queries/show-next.ts": {
+      "previous": "fbfd62838788c7be2276c9ba0cd2f7b8b67077e7f298a661ca395300c9162561",
+      "current": "a15d5ac33ef1d0a07d0df4e4353e549d989781c43f59060d0ab72705a9e67e48"
+    },
+    "tests/for-you-db.test.ts": {
+      "previous": "8c1ac43869e1368d1af34c428051f9d53612fe53395c08e0e453520c5f6d2fde",
+      "current": "16dc1d62e749c2a3cc2e0ffea728e828d467ddb6716cea7ea359886182934026"
+    },
+    "tests/progress-experiment-query.test.ts": {
+      "previous": "efbd16343e135baa70f67d95f3be13a93c8b3acfd2339dc397043ca418b89793",
+      "current": "ab75a9718c078eb1db7139b1d0e6a5e82156fd9b9f5ffd7e8c57c03a37403fde"
+    },
+    "tests/reading-sessions-db.test.ts": {
+      "previous": "1d84ad75c1ab7b96ff65f60d4d64e59c1febb542fd4f4070495b4de3d8a15a5a",
+      "current": "65986381807b60aed8ec7ec850c2214aa2491169ca9b4f596372303b10ce1b80"
+    },
+    "tests/show-next-db.test.ts": {
+      "previous": "54cda48807a98591b96442e2faf4c57ef28a1228c30fb52d3ba657904e0e7379",
+      "current": "97b9fa296d9aed03642e5f38bb104c6f277ac5ea636b3422b7e95c8b7e0a36f1"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "bdc4278199fd599226dad5443266cac4141cdbbbc11b85fe6cef1049bedad962",
+      "current": "5a5affb9da6fc60bb2cff2e5a802394711dfc81a5c89572de257de7bb051a780"
+    }
+  },
+  "report": "docs/audits/2026-11-19-progress-logic.md",
+  "reportSha256": "61941f6c471b7cf3831bbc2bb05daa4879e3402705eb9fc4f3dcd3e6949c421e"
+}

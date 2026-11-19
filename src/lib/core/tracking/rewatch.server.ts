@@ -6,7 +6,7 @@ import { media, rewatches, trackingState } from '../../server/db/schema';
 import { DomainError } from '../errors';
 
 /** A viewing boundary, never a mutation of canonical watched history. */
-export function rewatchBoundary(userId: string, mediaId: SQL) {
+export function rewatchBoundary(userId: string | SQL, mediaId: SQL) {
   return sql<Date | null>`(select max(r.started_at) from rewatches r where r.user_id=${userId}
     and (r.media_id=${mediaId}
       or r.media_id in (select e.show_id from episodes e where e.media_id=${mediaId})
@@ -14,7 +14,7 @@ export function rewatchBoundary(userId: string, mediaId: SQL) {
       or r.media_id in (select se.media_id from seasons se where se.show_id=${mediaId})
       or r.media_id in (select se.show_id from seasons se where se.media_id=${mediaId})))`;
 }
-export function rewatchFields(userId: string, mediaId: SQL, state = sql`tracking_state`) {
+export function rewatchFields(userId: string | SQL, mediaId: SQL, state = sql`tracking_state`) {
   const boundary = rewatchBoundary(userId, mediaId);
   return {
     watched: sql<boolean>`coalesce(${state}.watched,false) and (${boundary} is null or ${state}.last_watched_at >= ${boundary})`,

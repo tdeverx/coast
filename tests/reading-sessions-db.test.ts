@@ -1,7 +1,7 @@
 import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {getDb,getSql} from '../src/lib/server/db';
 import {getConfig,type CoastConfig} from '../src/lib/server/config';
-import {prepareReading,moveReading,ownedReadingSession,closeReading,matchingReading,linkedReadingSources} from '../src/lib/reading/sessions.server';
+import {prepareReading,moveReading,touchReading,ownedReadingSession,closeReading,matchingReading,linkedReadingSources} from '../src/lib/reading/sessions.server';
 import {updateReading} from '../src/lib/core/reading/service.server';
 import {createRoom,inviteParticipant,joinRoom,commandRoom,roomState} from '../src/lib/playback/synced/service.server';
 import {presence} from '../src/lib/social/presence.server';
@@ -38,6 +38,23 @@ run('reading from beginning preserves the saved bookmark until the new session a
  await closeReading(users[0],started.id);
  expect((await prepareReading(users[0],other,local('pdf',edition))).location).toEqual({format:'pdf',page:1,total:8});
  }finally{await getSql()`DELETE FROM works WHERE id=${other}`;}
+});
+run('heartbeats, reopened sessions and EPUB layout changes preserve bookmark time',async()=>{
+ const edition='7'.repeat(64);
+ const session=await prepareReading(users[0],work,local('epub',edition));
+ const bookmark={format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0} as const;
+ await moveReading(users[0],session.id,bookmark);
+ const before=(await ownedReadingSession(users[0],session.id)).positionUpdatedAt;
+ expect(before).toBeInstanceOf(Date);
+ await touchReading(users[0],session.id);
+ expect((await ownedReadingSession(users[0],session.id)).positionUpdatedAt).toEqual(before);
+ const reopened=await prepareReading(users[0],work,local('epub',edition));
+ expect(reopened.location).toEqual(bookmark);
+ await moveReading(users[0],reopened.id,{...bookmark,fraction:0.1});
+ expect((await ownedReadingSession(users[0],reopened.id)).positionUpdatedAt).toEqual(before);
+ await closeReading(users[0],reopened.id);
+ await closeReading(users[0],session.id);
+ await updateReading(users[0],work,{reset:'position'});
 });
 run('reading sessions are private, bounded and resume the same edition',async()=>{
  const s=await prepareReading(users[0],work,local());expect(s.url).toBeNull();

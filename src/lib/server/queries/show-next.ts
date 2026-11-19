@@ -1,8 +1,10 @@
-import { and, asc, eq, exists, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { rewatchFields } from '#lib/core/tracking/rewatch.server.js';
 import { getDb } from '#lib/server/db/index.js';
 import * as s from '#lib/server/db/schema.js';
+import { getConfig } from '#lib/server/config.js';
+import { episodeHasAiredForProgress } from '#lib/catalogue/metadata/release-date.server.js';
 import { requireFeature } from '#lib/server/features.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { mediaViewsForIds, permittedAvailability } from './media';
@@ -13,6 +15,7 @@ export async function showNext(userId: string, showId: string, requestedPage?: n
   v.parse(v.pipe(v.string(), v.uuid()), showId);
   if (requestedPage !== undefined) v.parse(pageNumberSchema, requestedPage);
   await requireFeature(userId, 'screen');
+  const {metadataSource} = await getConfig();
   const db = getDb();
   const [show] = await db.select({ kind: s.media.kind }).from(s.media).where(eq(s.media.id, showId));
   if (show?.kind !== 'show') throw new AppError(404, 'This show was not found.');
@@ -28,7 +31,7 @@ export async function showNext(userId: string, showId: string, requestedPage?: n
     eq(s.episodes.isSpecial, false),
     sql`not coalesce(${s.trackingState.dropped}, false)`,
     sql`not (${state.watched})`,
-    or(isNull(s.media.releaseDate), lte(s.media.releaseDate, new Date().toISOString().slice(0, 10)))
+    episodeHasAiredForProgress(sql`${s.media.id}`,metadataSource)
   );
   const ordered = db.select({
     id: s.media.id,
