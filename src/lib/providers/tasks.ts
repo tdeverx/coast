@@ -3,6 +3,7 @@ export const maintenanceKinds = [
   'taste.refresh',
   'catalogue.user-scan',
   'tmdb.refresh',
+  'trakt.air-schedule',
   'tmdb.recommendations','igdb.recommendations','trakt.recommendations',
   'jellyfin.library',
   'jellyfin.sync',
@@ -90,6 +91,8 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
     ];
   if (provider === 'trakt')
     return [recommendations,
+      { id:'air-schedule',title:'Episode airtimes',description:'Refresh broadcast times for known shows and episodes using the Trakt calendar.',
+        kinds:['trakt.air-schedule'],scope:'metadata',interval:'catalogueIntervalMinutes',enabled:'catalogueEnabled' },
       {
         id:'live',title:'Live activity',description:'Read watching activity while idle or active. Outbound check-ins use each account’s scrobble preference.',kinds:['trakt.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled',
       },

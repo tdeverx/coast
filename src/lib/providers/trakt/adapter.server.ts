@@ -13,8 +13,9 @@ const title = v.object({
   runtime: v.nullish(v.number()),
   ids,
 });
+const seriesAirs = v.nullish(v.object({day:v.nullish(v.string()),time:v.nullish(v.string()),timezone:v.nullish(v.string())}));
 const publicTitle = v.object({ ...title.entries, overview: v.nullish(v.string()), released: v.nullish(v.string()),
-  first_aired: v.nullish(v.string()), genres: v.optional(v.array(v.string()), []), });
+  first_aired: v.nullish(v.string()), airs:seriesAirs, genres: v.optional(v.array(v.string()), []), });
 const episode = v.object({
   season: v.number(),
   number: v.number(),
@@ -22,6 +23,20 @@ const episode = v.object({
   runtime: v.nullish(v.number()),
   ids,
 });
+const calendarEntry = v.object({
+  first_aired: v.nullish(v.string()),
+  show: v.object({ids, airs:seriesAirs}),
+  episode: v.object({season:v.number(),number:v.number(),ids}),
+});
+const weekdays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+function seriesAirSchedule(airs: v.InferOutput<typeof calendarEntry>['show']['airs']):Metadata['airSchedule'] {
+  if(!airs?.time||!/^([01]\d|2[0-3]):[0-5]\d$/.test(airs.time)||!airs.timezone)return;
+  try {
+    const timeZone=new Intl.DateTimeFormat('en',{timeZone:airs.timezone}).resolvedOptions().timeZone;
+    const weekday=weekdays.indexOf(airs.day?.toLowerCase()??'');
+    return {time:airs.time,timeZone,...weekday>=0?{weekday}:{}};
+  }catch{return;}
+}
 const season = v.object({
   number: v.number(),
   title: v.nullish(v.string()),
@@ -79,6 +94,20 @@ export class TraktAdapter {
       },
     });
   }
+  /** A single bounded calendar window supplies episode times and the recurring series schedule. */
+  async airSchedule(startDate: string) {
+    const records=v.parse(v.pipe(v.array(calendarEntry),v.maxLength(5000)),
+      await this.call(`/calendars/all/shows/${encodeURIComponent(startDate)}/8?extended=full`));
+    return records.filter(({episode})=>Number.isSafeInteger(episode.season)&&episode.season>=0&&Number.isSafeInteger(episode.number)&&episode.number>0)
+      .map(({show,episode,first_aired})=>({
+        traktId:String(show.ids.trakt),tmdbId:show.ids.tmdb ? String(show.ids.tmdb) : undefined,
+        episodeTmdbId:episode.ids.tmdb ? String(episode.ids.tmdb) : undefined,
+        season:episode.season,episode:episode.number,
+        firstAiredAt:first_aired&&v.is(v.pipe(v.string(),v.isoTimestamp()),first_aired)&&Number.isFinite(Date.parse(first_aired))
+          ? new Date(first_aired).toISOString() : undefined,
+        schedule:seriesAirSchedule(show.airs),
+      }));
+  }
   async browse(kind: DiscoverKind, order: 'trending' | 'popular' | 'anticipated', genre?: string, signal?: AbortSignal): Promise<Metadata[]> {
     const params = new URLSearchParams({page:'1',limit:'20',extended:'full'});
     if (genre) params.set('genres',genre);
@@ -88,6 +117,7 @@ export class TraktAdapter {
     return items.slice(0,20).filter(item=>Number.isSafeInteger(item.ids.trakt)&&item.ids.trakt>0).map(item => ({
       kind, provider:'trakt', externalId:String(item.ids.trakt), title:item.title, overview:item.overview??undefined,
       releaseDate:(item.released || item.first_aired)?.slice(0,10), runtimeMinutes:item.runtime??undefined, genres:item.genres,
+      ...(kind==='show'&&item.airs?{airSchedule:seriesAirSchedule(item.airs)}:{}),
       externalIds:{...(item.ids.tmdb ? {tmdb:String(item.ids.tmdb)} : {}), ...(item.ids.imdb ? {imdb:item.ids.imdb} : {}),
         ...(kind==='show' && item.ids.tvdb ? {tvdb:String(item.ids.tvdb)} : {})},
     }));

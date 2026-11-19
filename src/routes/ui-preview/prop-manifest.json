@@ -3592,7 +3592,7 @@
     "props": [
       {
         "name": "options",
-        "type": "{ value: string; label: string }[]",
+        "type": "SegmentOption[]",
         "optional": false,
         "bindable": false,
         "kind": "data",

@@ -4,7 +4,7 @@ export const observationKinds = [
   'jellyfin.library', 'jellyfin.sync', 'jellyfin.bootstrap', 'jellyfin.delta',
   'catalogue.user-scan', 'trakt.import', 'trakt.lists-import', 'seerr.sync',
   'steam.sync', 'steam.achievements', 'igdb.steam-metadata',
-  'tmdb.refresh', 'tmdb.recommendations', 'igdb.recommendations', 'trakt.recommendations',
+  'tmdb.refresh', 'tmdb.recommendations', 'igdb.recommendations', 'trakt.recommendations', 'trakt.air-schedule',
 ];
 const kinds = (values: string[]) => `(${values.map(value => `'${value}'`).join(',')})`;
 /** Unknown/bulk effects keep the conservative whole-account barrier. Different

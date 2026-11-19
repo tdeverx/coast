@@ -327,3 +327,30 @@ run('forced metadata refresh retains its finite batch across cooperative yields'
     expect(calls).toHaveLength(2);expect(new Set(calls).size).toBe(2);
   }finally{await getDb().delete(s.outboxActions).where(eq(s.outboxActions.id,id));}
 });
+
+run('shared Trakt airtimes are scheduled once and fetched without a member account',async()=>{
+  const {encryptCredential}=await import('../src/lib/server/security/credentials');
+  const {TraktAdapter}=await import('../src/lib/providers/trakt/adapter.server');
+  const {refreshTraktAirSchedule}=await import('../src/lib/catalogue/air-schedule.server');
+  const {jobExecution}=await import('../src/lib/server/queue/execution');
+  const db=getDb(),trakt=crypto.randomUUID(),kind='trakt.air-schedule';
+  const credentials=await encryptCredential(JSON.stringify({clientId:'app-id',clientSecret:'app-secret'}));
+  await db.insert(s.providerInstances).values({id:trakt,provider:'trakt',name:'Airtime fixture',baseUrl:'https://fixture.invalid',credentials});
+  const original=TraktAdapter.prototype.airSchedule;
+  let reads=0;
+  TraktAdapter.prototype.airSchedule=async()=>{reads++;return [];};
+  try{
+    expect((await runProviderJob(admin,trakt,'metadata',kind)).queued).toBe(1);
+    expect(await runProviderJob(admin,trakt,'metadata',kind)).toMatchObject({queued:0,active:1});
+    const [action]=await listActions({id:admin,username:'fixture',role:'admin'} as Parameters<typeof listActions>[0]).then(rows=>rows.filter(row=>row.kind===kind));
+    expect(action).toMatchObject({instanceId:trakt,connectionId:null});
+    await db.update(s.outboxActions).set({state:'running',attempts:1}).where(eq(s.outboxActions.id,action.id));
+    const job={id:action.id,userId:admin,connectionId:null,kind,payload:{instanceId:trakt},attempts:1,correlationId:crypto.randomUUID()};
+    await expect(jobExecution.run({...job,purpose:'manual',started:performance.now(),checkpoints:0},()=>refreshTraktAirSchedule(job,trakt))).resolves.toEqual({checked:0});
+    expect(reads).toBe(1);
+  }finally{
+    TraktAdapter.prototype.airSchedule=original;
+    await db.delete(s.outboxActions).where(eq(s.outboxActions.kind,kind));
+    await db.delete(s.providerInstances).where(eq(s.providerInstances.id,trakt));
+  }
+});

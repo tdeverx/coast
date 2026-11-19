@@ -16,7 +16,7 @@ Statements below about a staged candidate, pending approval, absent column or fo
 
 The user selected suppression that survives later windows and reloads. The 14-file candidate is implemented and verified in `/private/tmp/coast-toast-stage-20261018`; **the toast candidate has not been adopted into normal application source or schema**. Rollout is blocked by actual normal-dev migration drift, in addition to needing approval for any real-installation schema change. Do not run the broad staged migrator.
 
-Exact [candidate patch](/private/tmp/coast-toast-stage-20261018/candidate/durable-toast.patch), SHA-256 `933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6`. The [source manifest](evidence/implementation-toast-source-manifest.json) lists all 14 paths and before/candidate hashes. `git apply --check` passes against the current worktree. No commit, push, dependency or visual redesign is included.
+Exact [candidate patch](candidates/toast/durable-toast.patch), SHA-256 `933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6`. The [source manifest](evidence/implementation-toast-source-manifest.json) lists all 14 paths and before/candidate hashes. `git apply --check` passes against the current worktree. No commit, push, dependency or visual redesign is included.
 
 ## Shared ownership and behavior
 

@@ -41,9 +41,13 @@ const fixtureUrl=moduleUrl(`
   export const decorateProgressCards=()=>{};
   export const workCards=async(_owner,viewer,ids)=>{fixture.state.viewers.push(viewer);fixture.state.hydrated.push(ids);return ids.map(id=>({id,title:id,kind:fixture.state.comic?'comic':'movie'}));};
 `);
+const progressQuery=import.meta.resolve('../src/lib/server/queries/progress');
 const fixture=await import(fixtureUrl);fixture.install({database,state,ids});
 let code=new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL('../src/lib/server/queries/progress-experiment.ts',import.meta.url)).text());
-for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./progress','./paused-progress'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
+const progressFixtureUrl=moduleUrl(`export * from ${JSON.stringify(fixtureUrl)};
+  export {gameProgressRecency,readingProgressRecency} from ${JSON.stringify(progressQuery)};`);
+code=code.replaceAll('from "./progress"',`from ${JSON.stringify(progressFixtureUrl)}`);
+for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./paused-progress'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
 const resolve:Record<string,string>={
   'valibot':import.meta.resolve('valibot'),'drizzle-orm':import.meta.resolve('drizzle-orm'),
   '#lib/experimental.js':import.meta.resolve('../src/lib/experimental'),

@@ -2,6 +2,7 @@
   import { slidingPill } from '#lib/ui/materials/sliding-pill.js';
   import {liquidGlass} from '#lib/ui/materials/glass.js';
   import type {GlassVariant} from '#lib/ui/materials/presets.js';
+  import type {SegmentOption} from '#lib/ui/controls/filters.js';
   let {
     options,
     value = $bindable(),
@@ -9,7 +10,7 @@
     label,material,presentation='standard',
   }: {
     label?: string;material?:GlassVariant;presentation?:'standard'|'navigation';
-    options: { value: string; label: string }[];
+    options: SegmentOption[];
     value: string;
     onchange?: (value: string) => void;
   } = $props();
@@ -29,7 +30,8 @@
   <div class="segmented-control" role="group" aria-label={label} use:slidingPill>
     {#each options as option}<button
         type="button"
-        aria-pressed={value === option.value}
+        disabled={option.disabled}
+        aria-pressed={!option.disabled && value === option.value}
         onclick={() => {
           value = option.value;
           onchange?.(value);
@@ -55,6 +57,7 @@
     flex: none;
     white-space: nowrap;
   }
+  .segmented-control > button:disabled {color:var(--muted);opacity:.55;cursor:default;}
   .control-viewport {max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-radius:inherit;}
   .picker-container.glass {background:var(--coast-glass-fill);}
   .navigation button {padding-inline:18px;}

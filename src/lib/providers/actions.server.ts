@@ -48,6 +48,8 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('steam.sync', async action => (await import('#lib/providers/steam/sync.server.js')).syncSteam(action));
   register('steam.achievements', async action => (await import('#lib/providers/steam/sync.server.js')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('#lib/catalogue/maintenance.server.js')).scanUserCatalogue(action));
+  register('trakt.air-schedule', async action => (await import('#lib/catalogue/air-schedule.server.js'))
+    .refreshTraktAirSchedule(action,v.parse(uuid,action.payload.instanceId)));
   for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('#lib/recommendations/providers.server.js')).refreshProviderRecommendations(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);

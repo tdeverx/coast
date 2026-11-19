@@ -61,7 +61,7 @@ function visible(user:SessionUser,filters:NotificationFilters=defaultNotificatio
    and job.id=case when n.source_key~'^(outbox|job-attention):[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$' then split_part(n.source_key,':',2)::uuid end
    and (job.user_id=n.user_id or ${user.role==='admin'} and n.source_key like 'job-attention:%')
  left join provider_connections connection on connection.id=job.connection_id
- left join provider_instances provider on provider.id=connection.instance_id or (job.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') and job.kind like provider.provider||'.%' and provider.id::text=job.payload->>'instanceId')
+ left join provider_instances provider on provider.id=connection.instance_id or (job.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','trakt.air-schedule') and job.kind like provider.provider||'.%' and provider.id::text=job.payload->>'instanceId')
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true

@@ -22,6 +22,7 @@ export interface Metadata {
   artwork?: ArtworkImages;
   artworkUpdatedAt?: string;
   releaseDate?: string;
+  airSchedule?: { time: string; timeZone?: string; weekday?: number };
   runtimeMinutes?: number;
   genres?: string[];
   tasteFeatures?: import('#lib/social/taste-profile.js').TasteFeatures;

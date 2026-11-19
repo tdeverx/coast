@@ -1,4 +1,5 @@
 import {beforeAll,afterAll,expect,test} from 'bun:test';
+import {eq} from 'drizzle-orm';
 import {getDb,getSql,closeDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
@@ -14,6 +15,8 @@ import {updateReading} from '../src/lib/core/reading/service.server';
 import {importReading} from '../src/lib/catalogue/reading.server';
 import {cardArtwork} from '../src/lib/media/artwork';
 import {progressCardStyle} from '../src/lib/ui/progress-card-style';
+import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
+import {saveTraktAirSchedule} from '../src/lib/catalogue/air-schedule.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),friend=crypto.randomUUID();
 const show=crypto.randomUUID(),season=crypto.randomUUID(),episodes=[crypto.randomUUID(),crypto.randomUUID()],game=crypto.randomUUID(),track=crypto.randomUUID();
@@ -81,7 +84,7 @@ run('an actively watched saved show remains in Continue rather than duplicating 
  expect((await progressData(user,{view:'next',kind:'show'})).items).toHaveLength(0);
 });
 
-run('Progress and Next omit future and undated episodes before counts and become eligible on their air date',async()=>{
+run('Progress and Next omit today’s, future and undated episodes before counts',async()=>{
  const db=getDb(),owner=crypto.randomUUID(),series=crypto.randomUUID(),seasonId=crypto.randomUUID();
  const [aired,future,undated]=Array.from({length:3},()=>crypto.randomUUID());
  await db.insert(s.users).values({id:owner,username:`aired-${owner}`});
@@ -104,11 +107,54 @@ run('Progress and Next omit future and undated episodes before counts and become
  const season=await detailsData(owner,seasonId);
  expect(season.item.trackingProgress).toEqual({unit:'episodes',value:1,total:1});
  expect(season.episodes.map(item=>item.id)).toEqual([aired,future,undated]);
- await db.insert(s.metadataOverrides).values({mediaId:future,releaseDate:new Date().toISOString().slice(0,10)});
+ const date=(daysAgo:number)=>new Date(Date.now()-daysAgo*86_400_000).toISOString().slice(0,10);
+ await db.insert(s.metadataOverrides).values({mediaId:future,releaseDate:date(0)});
+ for(const view of ['watching','next','up-next'] as const){
+  expect(await progressData(owner,{view})).toMatchObject({items:[],total:0});
+ }
+ expect(await progressExperimentData(owner,{category:'screen',view:'continue'},{preview:true})).toMatchObject({items:[],total:0});
+ expect(await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).toMatchObject({items:[],total:0});
+ expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
+ await db.update(s.metadataOverrides).set({releaseDate:date(1)}).where(eq(s.metadataOverrides.mediaId,future));
  expect((await progressData(owner,{view:'watching'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).items.map(item=>item.id)).toEqual([future]);
- expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
+ expect(await progressExperimentData(owner,{category:'screen',view:'next',scope:'available'},{preview:true})).toMatchObject({items:[],total:0});
+});
+
+run('Progress prefers the episode airtime and falls back to a time-zoned series schedule',async()=>{
+ const db=getDb(),owner=crypto.randomUUID(),series=crypto.randomUUID(),seasonId=crypto.randomUUID(),next=crypto.randomUUID();
+ const today=new Date().toISOString().slice(0,10);
+ await db.insert(s.users).values({id:owner,username:`schedule-${owner}`});
+ await db.insert(s.media).values([{id:series,kind:'show',title:'Scheduled show'},{id:seasonId,kind:'season',title:'Season 1'},
+   {id:next,kind:'episode',title:'Scheduled episode',releaseDate:today}]);
+ await db.insert(s.shows).values({mediaId:series});
+ await db.insert(s.seasons).values({mediaId:seasonId,showId:series,seasonNumber:1});
+ await db.insert(s.episodes).values({mediaId:next,showId:series,seasonId,seasonNumber:1,episodeNumber:1});
+ await db.insert(s.externalIds).values({mediaId:series,mediaKind:'show',provider:'tmdb',externalId:'987654309'});
+ await db.insert(s.upNext).values({userId:owner,mediaId:next});
+ const [instance]=await db.insert(s.providerInstances).values({provider:'trakt',name:'Schedule fixture',baseUrl:'https://fixture.invalid'}).returning({id:s.providerInstances.id});
+ const store=async(firstAiredAt:string|null,time:string,timezone:string)=>{
+   const adapter=new TraktAdapter(async path=>{
+     expect(path).toBe(`/calendars/all/shows/${today}/8?extended=full`);
+     return [{first_aired:firstAiredAt,show:{ids:{tmdb:987654309,trakt:987654308},airs:{time,timezone}},
+       episode:{season:1,number:1,ids:{trakt:987654307}}}];
+   },'fixture','fixture');
+   const schedule=await adapter.airSchedule(today);
+   await db.transaction(tx=>saveTraktAirSchedule(tx,instance.id,schedule));
+ };
+ const progress=()=>progressExperimentData(owner,{view:'next'},{preview:true});
+ await store(new Date(Date.now()+3_600_000).toISOString(),'00:00','Pacific/Kiritimati');
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await db.update(s.media).set({releaseDate:'2020-01-01'}).where(eq(s.media.id,next));
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await db.update(s.media).set({releaseDate:today}).where(eq(s.media.id,next));
+ await store(new Date(Date.now()-3_600_000).toISOString(),'23:59','Pacific/Honolulu');
+ expect(await progress()).toMatchObject({items:[{id:next,available:false}],total:1});
+ await db.delete(s.metadataSnapshots).where(eq(s.metadataSnapshots.mediaId,next));
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await store(null,'00:00','Pacific/Kiritimati');
+ expect(await progress()).toMatchObject({items:[{id:next,available:false}],total:1});
 });
 
 run('pausing a movie or whole show hides each progress entry and preserves the position, queue and rewatch history',async()=>{
@@ -201,7 +247,7 @@ run('Progress presents episode and season captions with the correct artwork hier
  await check('finished',series,{title:'Caption series',captionSubtitle:'A named collection'},['/show-poster','/season-poster','/episode-poster']);
 });
 
-run('Progress publishes only nonempty segments and falls forward without hydrating an empty tab',async()=>{
+run('Progress reports which segments have content and falls forward without hydrating an empty tab',async()=>{
  const db=getDb(),owner=crypto.randomUUID(),film=crypto.randomUUID();
  await db.insert(s.users).values({id:owner,username:`progress-segments-${owner}`});
  await db.insert(s.media).values({id:film,kind:'movie',title:'Favourite only'});
@@ -228,6 +274,40 @@ run('Progress publishes only nonempty segments and falls forward without hydrati
   .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
  expect(await tabbedProgressData(owner,{view:'finished'},owner,'profile'))
   .toMatchObject({availableViews:['finished'],view:'finished',items:[{id:film}]});
+});
+
+run('Continue sorts current positions and excludes cleared reading bookmarks without erasing tracking or history',async()=>{
+ const db=getDb(),raw=getSql(),owner=crypto.randomUUID();
+ const date=(day:number)=>new Date(Date.UTC(2024,0,day));
+ await raw`update system_settings set value=value||'{"experimentalBooks":true,"experimentalComics":true}'::jsonb where key='coast'`;
+ await db.insert(s.users).values({id:owner,username:`positions-${owner}`});
+ const {id:comic}=await importReading({provider:'comic-vine',externalId:'4000-987654320',kind:'comic',title:'Comic at page one',authors:[],subjects:[],sourceUrl:'https://comicvine.gamespot.com/issue/4000-987654320/'});
+ const {id:book}=await importReading({provider:'openlibrary',externalId:'OL987654320W',kind:'book',title:'Book with an EPUB bookmark',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL987654320W'});
+ const comicProgress=await updateReading(owner,comic,{page:1,totalPages:24});
+ const bookProgress=await updateReading(owner,book,{state:'reading'});
+ await db.update(s.readingProgress).set({updatedAt:date(2)}).where(eq(s.readingProgress.userId,owner));
+ const expiresAt=new Date(Date.now()+60_000);
+ await db.insert(s.readingSessions).values([
+  {userId:owner,workId:comic,bookmarkCycle:comicProgress.bookmarkCycle,format:'cbz',edition:'comic',location:{format:'cbz',page:1,total:24},updatedAt:date(2),expiresAt},
+  {userId:owner,workId:book,bookmarkCycle:bookProgress.bookmarkCycle,format:'epub',edition:'epub',location:{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0},updatedAt:date(4),expiresAt},
+ ]);
+ const history=()=>raw`select id,page from reading_history where user_id=${owner} and work_id=${comic} order by id`;
+ const before=await history();
+ expect(before).toHaveLength(1);
+ await db.insert(s.trackingState).values({userId:owner,mediaId:comic,collected:true,updatedAt:date(6)});
+ await db.insert(s.gamePlaythroughs).values([
+  {userId:owner,gameId:game,status:'completed',completedAt:date(1),createdAt:date(1),updatedAt:date(5)},
+  {userId:owner,gameId:game,status:'in-progress',createdAt:date(2),updatedAt:date(1)},
+ ]);
+ const ids=({items}:{items:{id:string}[]})=>items.map(item=>item.id);
+ expect(ids(await progressExperimentData(owner,{}))).toEqual([book,comic,game]);
+ expect(ids(await progressData(owner,{category:'reading'}))).toEqual([book,comic]);
+ expect(await updateReading(owner,comic,{reset:'position'})).toMatchObject({page:0,state:'reading'});
+ expect(await updateReading(owner,book,{reset:'position'})).toMatchObject({page:0,state:'reading'});
+ expect(await progressExperimentData(owner,{category:'reading'},{segments:'overview'})).toMatchObject({availableViews:[],items:[]});
+ expect(ids(await progressExperimentData(owner,{}))).toEqual([game]);
+ expect(ids(await progressData(owner,{category:'reading'}))).toEqual([]);
+ expect(await history()).toEqual(before);
 });
 
 run('Paused reuses the current playthrough and reading states with progress privacy',async()=>{

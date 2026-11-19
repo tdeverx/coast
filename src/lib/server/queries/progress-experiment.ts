@@ -9,7 +9,7 @@ import {getDb} from '../db';
 import * as s from '../db/schema';
 import {listCandidateIds,savedProgressPresence} from './lists';
 import {enabledCategories} from '../experimental';
-import {createScreenProgressPlanning,decorateProgressCards,mediumProgressIds,nonScreenProgressPresence,readingProgressIds,screenProgressPlan,screenProgressPresent} from './progress';
+import {createScreenProgressPlanning,decorateProgressCards,gameProgressRecency,mediumProgressIds,nonScreenProgressPresence,readingProgressIds,readingProgressRecency,screenProgressPlan,screenProgressPresent} from './progress';
 import {hasPermittedWorkSource} from './media';
 import {viewingRecency} from './viewing-recency';
 import {rewatchBoundary} from '#lib/core/tracking/rewatch.server.js';
@@ -86,13 +86,13 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
     .orderBy(saved
       ? sql`(select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=${s.works.id}) desc nulls last`
       : sql`greatest(
-        case when ${s.works.category}='screen' then greatest(${rewatchBoundary(userId,sql`${s.works.id}`)},${viewingRecency(userId,sql`coalesce((select e.show_id from episodes e where e.media_id=${s.works.id}),${s.works.id})`)})
-        else greatest(
-          (select max(g.updated_at) from game_playthroughs g where g.user_id=${userId} and g.game_id=${s.works.id}),
-          (select p.updated_at from reading_progress p where p.user_id=${userId} and p.work_id=${s.works.id})
-        ) end,
-        case when ${options.view}='next' then (select n.created_at from up_next n where n.user_id=${userId} and n.media_id=${s.works.id}) end,
-        ${history?sql`(select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=${s.works.id})`:sql`null::timestamptz`}
+        case ${s.works.category}
+          when 'screen' then greatest(${rewatchBoundary(userId,sql`${s.works.id}`)},${viewingRecency(userId,sql`coalesce((select e.show_id from episodes e where e.media_id=${s.works.id}),${s.works.id})`)},
+            ${history?sql`(select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=${s.works.id})`:sql`null::timestamptz`})
+          when 'game' then ${gameProgressRecency(userId,sql`${s.works.id}`,options.view)}
+          else ${readingProgressRecency(userId,sql`${s.works.id}`,options.view)}
+        end,
+        ${options.view==='next'?sql`(select n.created_at from up_next n where n.user_id=${userId} and n.media_id=${s.works.id})`:sql`null::timestamptz`}
       ) desc nulls last`,s.works.id).limit(pageSize).offset((page-1)*pageSize);
   signal?.throwIfAborted();
   const presentation = options.view==='continue' || options.view==='next' ? options.view : options.view==='dropped' ? undefined : 'saved';

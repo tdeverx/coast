@@ -164,8 +164,10 @@ export async function scheduleProviderMaintenance(
     const [tmdb] = await tx.select({ id: providerInstances.id }).from(providerInstances).where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true), sql`${providerInstances.credentials} is not null`)).limit(1);
     const taste=options.instanceId?{queued:0,active:0}:await (await import('#lib/social/taste-cache.server.js')).scheduleTasteRefresh(tx);
     const metadata = await (await import('#lib/catalogue/maintenance.server.js')).scheduleMetadataRefresh(tx, options);
+    const airtimes = await (await import('#lib/catalogue/air-schedule.server.js')).scheduleTraktAirSchedule(tx,config,options);
     const recommendations=await (await import('#lib/recommendations/providers.server.js')).scheduleRecommendationRefresh(tx,options);
-    metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
+    metadata.queued+=recommendations.queued+taste.queued+airtimes.queued;
+    metadata.active+=recommendations.active+taste.active+airtimes.active;
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances, role:users.role })
       .from(providerConnections)
@@ -238,7 +240,7 @@ export async function scheduleProviderMaintenance(
           || (options.task && options.task !== 'all' && options.task !== task.scope)
           || !taskSchedulingEnabled(instance.provider, instance.enabled, task, schedule, config, options.force)) continue;
         // Metadata/recommendation schedulers above own their record/seed-specific evidence.
-        if (kind.endsWith('.recommendations')) continue;
+        if (kind.endsWith('.recommendations')||kind==='trakt.air-schedule') continue;
         const accounts = eligibleTaskAccounts(kind, linked, schedule, instance.settings, !!tmdb);
         const shared = jobIdentityScope(kind) === 'instance';
         const sharedJobs = jobs.filter(job => job.kind === kind && linked.some(account => account.id === job.connectionId));

@@ -85,7 +85,7 @@ function accountOrderBlockedSql(action:string,_connection:string,cached=true) {
 }
 
 function featureTransitionBlockedSql(action:string) {
-  return `(${action}.kind in ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','taste.refresh') and exists(
+  return `(${action}.kind in ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','trakt.air-schedule','taste.refresh') and exists(
     select 1 from outbox_actions transition where transition.kind='feature.reconcile' and transition.state in ('pending','running','failed')
       and (transition.payload->>'subjectId' is null or transition.payload->>'subjectId'=${action}.user_id::text)
       and ${action}.created_at<=(transition.payload->>'cutoff')::timestamptz))`;
@@ -112,7 +112,7 @@ export function queueSelectionSql(urgentOnly=false,lock=false) {
     select candidate.id from outbox_actions candidate
     left join provider_connections connection on connection.id=candidate.connection_id
     left join provider_instances instance on instance.id=connection.instance_id or
-      (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and candidate.kind like instance.provider||'.%' and instance.id::text=candidate.payload->>'instanceId')
+      (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') and candidate.kind like instance.provider||'.%' and instance.id::text=candidate.payload->>'instanceId')
     where candidate.state='pending' and (${!urgentOnly} or ${jobPrioritySql('candidate','connection')}<3)
       and ${pendingEligibleSql('candidate','connection','instance')}
     order by ${agedPrioritySql('candidate','connection')},candidate.next_attempt_at,candidate.created_at,candidate.id
@@ -158,7 +158,7 @@ export async function enqueueAction(input: {
             (${jobIdentityScope(input.kind)}='account' AND a.user_id=${input.userId} AND a.connection_id IS NOT DISTINCT FROM ${input.connectionId||null}::uuid AND a.account_generation IS NOT DISTINCT FROM (SELECT account_generation FROM provider_connections WHERE id=${input.connectionId||null}::uuid) AND a.state IN ('pending','running','failed')) OR
             (${jobIdentityScope(input.kind)}='instance' AND (a.state IN ('pending','running') OR (a.state='failed' AND a.user_id=${input.userId} AND a.connection_id IS NOT DISTINCT FROM ${input.connectionId||null}::uuid AND a.account_generation IS NOT DISTINCT FROM (SELECT account_generation FROM provider_connections WHERE id=${input.connectionId||null}::uuid))) AND (
               (${input.connectionId||null}::uuid IS NOT NULL AND c.instance_id=(SELECT instance_id FROM provider_connections WHERE id=${input.connectionId||null}::uuid)) OR
-              (${input.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
+              (${input.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
             ))
           ) LIMIT 1 FOR UPDATE OF a`;
       if (existing) {
@@ -230,7 +230,7 @@ export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure
 }
 
 const sharedAttentionKinds=new Set(['jellyfin.library','jellyfin.updates','jellyfin.streams','jellyfin.member-policy',
-  'igdb.steam-metadata','igdb.recommendations','tmdb.refresh','tmdb.recommendations','taste.refresh','benchmark.run','feature.reconcile']);
+  'igdb.steam-metadata','igdb.recommendations','tmdb.refresh','tmdb.recommendations','trakt.air-schedule','taste.refresh','benchmark.run','feature.reconcile']);
 
 async function notifyAdmins(db:ReturnType<typeof getSql>,title:string,body:string,sourceKey:string,action:OutboxAction){
   await notifyAdministrators({
@@ -337,7 +337,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
     await sql`update outbox_actions set state='cancelled',last_error='Disabled in feature settings.',updated_at=now() where id in (select id from outbox_actions where state in ('pending','failed') and not coast_job_allowed(user_id,kind,payload) order by id limit 100 for update skip locked)`;
     const [row] =
       await sql`UPDATE outbox_actions SET state = 'running', attempts = attempts + 1, locked_at = NOW(), updated_at = NOW()
-        WHERE id = (${database.unsafe(queueSelectionSql(urgentOnly,true))}) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
+        WHERE id = (${database.unsafe(queueSelectionSql(urgentOnly,true))}) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
     const initial = row && ['jellyfin.bootstrap','jellyfin.sync','trakt.import','trakt.lists-import','steam.sync'].includes(row.kind)
       ? (await sql`SELECT NOT EXISTS(SELECT 1 FROM outbox_actions WHERE connection_id=${row.connection_id} AND kind=${row.kind} AND account_generation IS NOT DISTINCT FROM ${row.account_generation}::uuid AND state='succeeded') AND NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind=${'initial:'+row.kind+':'+row.account_generation} AND completed_at IS NOT NULL) AND (${row.kind}<>'jellyfin.sync' OR NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind='jellyfin-personal' AND completed_at IS NOT NULL AND scan_id IS NULL)) AS first`)[0].first : false;
     return row
@@ -572,7 +572,7 @@ export async function listActions(actor: SessionUser | null) {
     return db<{id:string}[]>`${db.unsafe(queueOrderCteSql(independentQueueKinds,automaticQueueKinds))}
       select outbox_actions.id from outbox_actions
       left join provider_connections on provider_connections.id=outbox_actions.connection_id
-      left join provider_instances on provider_instances.id=provider_connections.instance_id or (outbox_actions.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and outbox_actions.kind like provider_instances.provider||'.%' and provider_instances.id::text=outbox_actions.payload->>'instanceId')
+      left join provider_instances on provider_instances.id=provider_connections.instance_id or (outbox_actions.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') and outbox_actions.kind like provider_instances.provider||'.%' and provider_instances.id::text=outbox_actions.payload->>'instanceId')
       where outbox_actions.state=${state} order by ${db.unsafe(order)} limit ${limits[state]}`;
   }));
   const ids = recent.flat().map(row=>row.id);
@@ -624,7 +624,7 @@ async function actionDetails(ids: string[]) {
     .from(outboxActions)
     .innerJoin(users, eq(users.id, outboxActions.userId))
     .leftJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
-    .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and ${outboxActions.kind} like ${providerInstances.provider}||'.%' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
+    .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') and ${outboxActions.kind} like ${providerInstances.provider}||'.%' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
     .where(inArray(outboxActions.id, ids))
     .orderBy(
       sql`case ${outboxActions.state} when 'running' then 0 when 'pending' then 1 when 'failed' then 2 else 3 end`,

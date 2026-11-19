@@ -1,0 +1,22 @@
+{
+  ".svelte-kit/tsconfig.json": "c01d35eee60b3cb21e230c392c72c947234d7f406b83959a042a63e09db454c4",
+  "node_modules/@sveltejs/kit/package.json": "4a12466ff8570bd0a141c8082e6acb6673af30ec53f6b5a38aa7718abe6e715f",
+  "node_modules/@sveltejs/kit/src/exports/index.js": "ebada8fb940a7ebf75abfef7564150ad4b7f7c799ce8b50bb23eeba439034a9f",
+  "node_modules/@sveltejs/kit/src/exports/internal/index.js": "4929fe0fe4c24e6f6b049cf4122693dd4e4c3d7ee5474fd48161266f1a288bb7",
+  "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+  "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae",
+  "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c",
+  "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+  "node_modules/svelte/package.json": "5a0d57cb27afe0365075723a85b19123006e3c8f00a518283272773f52b9b2dc",
+  "node_modules/svelte/src/compiler/index.js": "875855ca6aed120cd7b3919582ea67e62ec79ed2c03b60d5d6311cafdfd6ce0b",
+  "node_modules/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js": "0fa6039d0c41f993ed752cea2b2f21483e8b999528c71ac4987d09d4e71da32a",
+  "node_modules/svelte/src/compiler/phases/3-transform/client/visitors/shared/events.js": "d2b12086a4043cb05982315de5d385e994f49fad46cccbc19133e467bf0d7bc7",
+  "node_modules/svelte/src/index-client.js": "6cfcb7b6eec91f8bdc364298177efab5e1a2f9e8e115f4f24086d54ea1795487",
+  "node_modules/svelte/src/internal/client/dom/elements/attributes.js": "de87c650c48ef1e72e9a6828bf15e0d867fdebf9c33b16dd58d0ef380f52cb28",
+  "node_modules/svelte/src/internal/client/dom/elements/events.js": "21e9cf6139ed152cd4c4071cc4f75e0a3dda61128175b488f177be6a76c38713",
+  "node_modules/svelte/src/internal/client/index.js": "5b16e981b8093b9c49512fc642c1b8364e8b1f4a3e3a4731446cc70032c523a9",
+  "node_modules/svelte/src/internal/client/reactivity/effects.js": "e5fe83a0b7580836ecee8f9cd985ef8de920a711fd1ced77579bc854101d07b6",
+  "node_modules/svelte/src/internal/client/runtime.js": "9105167919723d5c5d5b21dcd09bf1030251e0771516f25c0e1841e00a06b3c7",
+  "node_modules/svelte/src/utils.js": "1dfabb5beaa255fb949653afa14016085d0e99d04a194655fd0e192dbb967d6d",
+  "node_modules/typescript/lib/typescript.js": "3ae902c92cc44dace175c0e69e13a4b0899f6983c6121d76b9ab8dd5795e7675"
+}

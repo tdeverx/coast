@@ -2,16 +2,21 @@
 
 The public PR contains application code, maintained tests, current reports and a portable archive of historical protocols/source/numerical evidence. The separate Comic Lab experiment is excluded. This keeps the application diff reviewable instead of exceeding GitHub's file-list limit.
 
-## Unpack the verification archive
+## Verify and browse the evidence
 
-Install the exact frozen dependencies and generate the SvelteKit config first (`bun install --frozen-lockfile`, then `bun --bun svelte-kit sync`). The integrity checker fingerprints those installed files. From the repository root:
+From a checkout with Coast’s Git history, run the integrity checker directly against the committed archive:
+
+```sh
+python3 -B docs/audits/2026-10-17-app-performance/verify-report-integrity.py --output /tmp/coast-audit-integrity.json
+```
+
+The [publication manifest](artifact-publication.json) records the archive checksum and each explicit projection or omission. The checker reads the archive without extracting it and uses Git history for older source and report revisions. It lists the exact hashes of unavailable generated files and installed dependencies. It also reports companion pins when a sibling Coast plugin checkout is absent. These checks attest to retained evidence at its recorded epoch.
+
+To open individual archived artifacts in a local viewer, extract a copy with:
 
 ```sh
 tar -xzf docs/audits/2026-10-17-app-performance/verification-artifacts.tar.gz -C docs/audits/2026-10-17-app-performance
-python3 docs/audits/2026-10-17-app-performance/verify-report-integrity.py --output /tmp/coast-audit-integrity.json
 ```
-
-The [publication manifest](artifact-publication.json) records the archive checksum and each explicit projection/omission. Historical artifact links in reports resolve locally after extraction. Unpacked directories are ignored by Git; the archive and manifest are committed. Source/protocol snapshots, numerical observations, rejected trials and native assertion outcomes retain their original epochs. No old runtime test is rerun by unpacking or checking hashes.
 
 ## Private verification images
 

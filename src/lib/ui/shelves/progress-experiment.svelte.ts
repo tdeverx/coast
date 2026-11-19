@@ -28,8 +28,9 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   const ownerKey=$derived(JSON.stringify([page.data.user?.id,get().username,scopedCategory]));
   let loadedOwner=$state(untrack(()=>ownerKey));
   const views=$derived(loadedOwner===ownerKey?resource.data.availableViews:undefined);
-  const tabs=$derived((get().username?profileProgressExperimentTabs:progressExperimentTabs).filter(tab=>
-    !views||views.includes(tab.value as ProgressExperimentOptions['view'])));
+  const tabs=$derived((get().username?profileProgressExperimentTabs:progressExperimentTabs).map(tab=>({
+    ...tab,disabled:views!==undefined&&!views.includes(tab.value as ProgressExperimentOptions['view']),
+  })));
   const empty=():ProgressExperimentContent=>({view,...current,items:[],total:0,page:1,pages:1});
   const parameters=(number=1)=>new URLSearchParams({...(scopedCategory?{category:scopedCategory}:{}),view,...current,page:String(number),...(get().username?{username:get().username!}:{})});
   const href=(number=1)=>'/progress-experiment?'+parameters(number);
@@ -115,7 +116,10 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
     get resetKey(){return JSON.stringify([ownerKey,view,current.kind,current.scope]);},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:false,controls:layout==='grid'?'both' as const:'none' as const};},
     get filters():ShelfControl[]{return [
-      ...tabs.length?[{type:'segments' as const,label:'Progress selection',value:view,options:tabs,change:(value:string)=>{if(value===view)return;view=value as typeof view;void load();}}]:[],
+      {type:'segments',label:'Progress selection',value:view,options:tabs,change:value=>{
+        if(value===view||!tabs.some(tab=>tab.value===value&&!tab.disabled))return;
+        view=value as typeof view;void load();
+      }},
       {type:'availability',label:scopedCategory==='screen'?'Available to watch only':scopedCategory==='reading'?'Available to read only':scopedCategory==='game'?'Available to play only':'Available only',value:current.scope,change:value=>update({scope:value as Filters['scope']})},
     ];},
     get controls():ShelfControl[]{return scopedCategory==='game'?[]:[{type:'select',label:scopedCategory==='reading'?'Reading type':'Media type',value:current.kind,options:mediaTypeOptions({...page.data,experimentalMusic:false,features:page.data.capabilities}).filter(option=>!scopedCategory||option.value==='all'||(scopedCategory==='screen'?['movie','show'].includes(option.value):['book','comic'].includes(option.value))),change:value=>update({kind:value as Filters['kind']})}];},
