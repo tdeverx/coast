@@ -16,6 +16,8 @@ export function effectiveReleaseDate(id: SQL, policy: CoastConfig['metadataSourc
 }
 
 /** An unknown date is not evidence that an episode has aired. */
-export function episodeHasAired(id: SQL, policy: CoastConfig['metadataSource']) {
-  return sql<boolean>`coalesce(${effectiveReleaseDate(id, policy)} <= (now() at time zone 'UTC')::date, false)`;
+export function episodeHasAired(id: SQL, policy: CoastConfig['metadataSource'], { includeToday = true } = {}) {
+  // Episode dates have no broadcast time. Progress can require a full elapsed day.
+  const comparison = includeToday ? sql`<=` : sql`<`;
+  return sql<boolean>`coalesce(${effectiveReleaseDate(id, policy)} ${comparison} (now() at time zone 'UTC')::date, false)`;
 }

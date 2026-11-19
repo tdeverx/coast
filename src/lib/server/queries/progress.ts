@@ -330,6 +330,7 @@ async function screenProgressMembership(
     ),
   ];
   const member = (ids: string[]) => sql`${s.media.id} = any(${`{${ids.join(',')}}`}::uuid[])`;
+  const aired = (id: SQL) => episodeHasAired(id, metadataSource, { includeToday: false });
   const nextIds = [...queued.map(row => row.id), ...saved.map(row => row.id), ...sequenceById.keys(), ...planned.newSeasonIds];
   const where = and(
         member(candidateIds),
@@ -338,9 +339,9 @@ async function screenProgressMembership(
           : sql`not (${member(activeIds)}) and (${member(nextIds)} or ${s.media.kind} in ('season','movie') or
               (${options.view === 'next'} and ${s.media.kind} = 'episode'))`,
         sql`case ${s.media.kind}
-          when 'episode' then ${episodeHasAired(sql`${s.media.id}`, metadataSource)}
-          when 'show' then exists(select 1 from episodes e where e.show_id=${s.media.id} and not e.is_special and ${episodeHasAired(sql`e.media_id`, metadataSource)})
-          when 'season' then exists(select 1 from episodes e where e.season_id=${s.media.id} and not e.is_special and ${episodeHasAired(sql`e.media_id`, metadataSource)})
+          when 'episode' then ${aired(sql`${s.media.id}`)}
+          when 'show' then exists(select 1 from episodes e where e.show_id=${s.media.id} and not e.is_special and ${aired(sql`e.media_id`)})
+          when 'season' then exists(select 1 from episodes e where e.season_id=${s.media.id} and not e.is_special and ${aired(sql`e.media_id`)})
           else true end`,
         options.kind === 'movie'
           ? eq(s.media.kind, 'movie')

@@ -5,7 +5,19 @@
   "files": {
     "docs/behaviour.md": {
       "previous": "b1df0f0e1967eed85c847fc4c9294bd8278c58e489eb6bca1f90dbba50120b07",
-      "current": "3d51c70a92ac4b0b2a308e299be06311eab1714255bc748ef5784cb232f3bda7"
+      "current": "c186b381049381960a48852c9273d38ab84c9219f4591440979999e24f853b53"
+    },
+    "src/lib/catalogue/metadata/release-date.server.ts": {
+      "previous": "ac47618f1eb775029e9b728ce735ab095b6f4f8ffd2ded023eb11fa34d5ec2b3",
+      "current": "8c1a417de999a3684fd992d54812d4ad70800448b5748f20c0fdcd5a77284304"
+    },
+    "src/lib/server/queries/continuations.ts": {
+      "previous": "7a8a4537245a87715d3de6a3487d97c379420d3788446ad3256aa4e5380f9081",
+      "current": "fbfe38802f31dec08c9f059eab73fa903ab7c842b0c257b4027ff02704329bf6"
+    },
+    "src/lib/server/queries/progress-card-context.ts": {
+      "previous": "53f998c06a501fac8e3029dc11043993f15d9417abd702ed903658e318c82e5e",
+      "current": "2f8d6c4d824c9bc2741438e28a0f9b50ae2c451338f0269c8308db14fee35d0e"
     },
     "src/lib/server/queries/progress-experiment.ts": {
       "previous": "8232bcfb563383f4f098b1905330dd8915ecd1aeae02f964e60723a95e96a6ca",
@@ -13,7 +25,7 @@
     },
     "src/lib/server/queries/progress.ts": {
       "previous": "bda63500ca8ed7fd67481c45e0b0d786fe6134c78c8d2ace0a6571947d9dff03",
-      "current": "46ded38ddc9f895b2415042bd7cdd9e1dc52299c0a62325e0bdb65de09b7d200"
+      "current": "18d4b74ee8bd59f902b4120d2be3d9c982f4717c9afe9aa7e0efa928cb5ea995"
     },
     "src/lib/ui/components/SegmentedControl.svelte": {
       "previous": "7043dda13a2e9750eb2b9f6ea5bf28bb655a310a27a8efed95ddbac1ffc26c60",
@@ -45,7 +57,7 @@
     },
     "tests/for-you-db.test.ts": {
       "previous": "69cae6d6e109a1ea4ff75a6287d03a10649de87dbb71565b8c8da7510afcf9df",
-      "current": "8df9b303169ebb539af172fdc6e6f7b3a4724733def39f39dab6cd4196e96ca1"
+      "current": "339168f0d014ca28a1a6d3553e654f1f95877dfa791f2bba0191632ba625bbf7"
     },
     "tests/progress-experiment-query.test.ts": {
       "previous": "0c62334fb91c2aee47a510b62ab5844cd1b851e0f21c99a060eaae616e2ef797",
@@ -61,5 +73,5 @@
     }
   },
   "report": "docs/audits/2026-11-19-progress-segments.md",
-  "reportSha256": "18394734a0deb1ced9e8daad2dc9d6881cf1f6601d13f4691f4500576fe2005e"
+  "reportSha256": "200d0464875b097c50942b5b97df43bf6ea60326fa539e6396fda3eeac550cf3"
 }

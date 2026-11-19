@@ -100,7 +100,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
       )
       .where(
         and(
-          episodeHasAired(sql`${s.episodes.mediaId}`, metadataSource),
+          episodeHasAired(sql`${s.episodes.mediaId}`, metadataSource, { includeToday: false }),
           or(
             sql`exists(select 1 from rewatches r where r.user_id=${userId} and r.media_id in (${s.episodes.showId},${s.episodes.seasonId},${s.episodes.mediaId}))`,
             inArray(

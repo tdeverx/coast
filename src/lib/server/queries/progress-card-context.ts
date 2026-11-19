@@ -20,7 +20,7 @@ export async function progressEpisodes(
   if (!targets.length || !presentation || presentation === 'continue') return [];
   const resume = presentation === 'paused' || presentation === 'next';
   const state = rewatchFields(userId, sql`e.media_id`, sql`tracking`);
-  const aired = resume ? episodeHasAired(sql`e.media_id`, (await (config ?? getConfig())).metadataSource) : undefined;
+  const aired = resume ? episodeHasAired(sql`e.media_id`, (await (config ?? getConfig())).metadataSource, { includeToday: presentation !== 'next' }) : undefined;
   return getDb().execute<EpisodeContext>(sql`
     select root.id as "rootId", choice.media_id as "episodeId",
       coalesce(choice.season_id, fallback.media_id) as "seasonId",

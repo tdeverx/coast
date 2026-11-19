@@ -82,7 +82,7 @@ run('an actively watched saved show remains in Continue rather than duplicating 
  expect((await progressData(user,{view:'next',kind:'show'})).items).toHaveLength(0);
 });
 
-run('Progress and Next omit future and undated episodes before counts and become eligible on their air date',async()=>{
+run('Progress and Next omit today’s, future and undated episodes before counts',async()=>{
  const db=getDb(),owner=crypto.randomUUID(),series=crypto.randomUUID(),seasonId=crypto.randomUUID();
  const [aired,future,undated]=Array.from({length:3},()=>crypto.randomUUID());
  await db.insert(s.users).values({id:owner,username:`aired-${owner}`});
@@ -105,11 +105,19 @@ run('Progress and Next omit future and undated episodes before counts and become
  const season=await detailsData(owner,seasonId);
  expect(season.item.trackingProgress).toEqual({unit:'episodes',value:1,total:1});
  expect(season.episodes.map(item=>item.id)).toEqual([aired,future,undated]);
- await db.insert(s.metadataOverrides).values({mediaId:future,releaseDate:new Date().toISOString().slice(0,10)});
+ const date=(daysAgo:number)=>new Date(Date.now()-daysAgo*86_400_000).toISOString().slice(0,10);
+ await db.insert(s.metadataOverrides).values({mediaId:future,releaseDate:date(0)});
+ for(const view of ['watching','next','up-next'] as const){
+  expect(await progressData(owner,{view})).toMatchObject({items:[],total:0});
+ }
+ expect(await progressExperimentData(owner,{category:'screen',view:'continue'},{preview:true})).toMatchObject({items:[],total:0});
+ expect(await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).toMatchObject({items:[],total:0});
+ expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
+ await db.update(s.metadataOverrides).set({releaseDate:date(1)}).where(eq(s.metadataOverrides.mediaId,future));
  expect((await progressData(owner,{view:'watching'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).items.map(item=>item.id)).toEqual([future]);
- expect((await detailsData(owner,seasonId)).item.trackingProgress).toEqual({unit:'episodes',value:1,total:2});
+ expect(await progressExperimentData(owner,{category:'screen',view:'next',scope:'available'},{preview:true})).toMatchObject({items:[],total:0});
 });
 
 run('pausing a movie or whole show hides each progress entry and preserves the position, queue and rewatch history',async()=>{
