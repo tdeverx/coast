@@ -12,7 +12,7 @@ function transact<T>(tx: SQL | undefined, run: (sql: SQL) => Promise<T>): Promis
   return tx ? run(tx) : getSql().begin(run) as Promise<T>;
 }
 export function taskInstanceSql(action:string,connection:string) {
-  return `coalesce(${connection}.instance_id::text,case when ${action}.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') then ${action}.payload->>'instanceId' end)`;
+  return `coalesce(${connection}.instance_id::text,case when ${action}.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule') then ${action}.payload->>'instanceId' end)`;
 }
 export function currentTaskGenerationSql(action:string,connection:string) {
   return `(${connection}.id is null or ${action}.account_generation is null or ${action}.account_generation=${connection}.account_generation)`;

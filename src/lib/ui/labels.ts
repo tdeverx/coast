@@ -40,6 +40,7 @@ const labels: Record<string, string> = {
   'tmdb.recommendations':'Refresh TMDB recommendations',
   'igdb.recommendations':'Refresh similar games',
   'trakt.recommendations':'Refresh Trakt recommendations',
+  'trakt.air-schedule':'Refresh episode airtimes',
   'jellyfin.library': 'Scan shared Jellyfin library',
   'jellyfin.bootstrap': 'Import Jellyfin personal activity',
   'igdb.steam-metadata': 'Match Steam game metadata',

@@ -15,6 +15,8 @@ import {updateReading} from '../src/lib/core/reading/service.server';
 import {importReading} from '../src/lib/catalogue/reading.server';
 import {cardArtwork} from '../src/lib/media/artwork';
 import {progressCardStyle} from '../src/lib/ui/progress-card-style';
+import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
+import {saveTraktAirSchedule} from '../src/lib/catalogue/air-schedule.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),friend=crypto.randomUUID();
 const show=crypto.randomUUID(),season=crypto.randomUUID(),episodes=[crypto.randomUUID(),crypto.randomUUID()],game=crypto.randomUUID(),track=crypto.randomUUID();
@@ -118,6 +120,41 @@ run('Progress and Next omit today’s, future and undated episodes before counts
  expect((await progressData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([future]);
  expect((await progressExperimentData(owner,{category:'screen',view:'next'},{preview:true})).items.map(item=>item.id)).toEqual([future]);
  expect(await progressExperimentData(owner,{category:'screen',view:'next',scope:'available'},{preview:true})).toMatchObject({items:[],total:0});
+});
+
+run('Progress prefers the episode airtime and falls back to a time-zoned series schedule',async()=>{
+ const db=getDb(),owner=crypto.randomUUID(),series=crypto.randomUUID(),seasonId=crypto.randomUUID(),next=crypto.randomUUID();
+ const today=new Date().toISOString().slice(0,10);
+ await db.insert(s.users).values({id:owner,username:`schedule-${owner}`});
+ await db.insert(s.media).values([{id:series,kind:'show',title:'Scheduled show'},{id:seasonId,kind:'season',title:'Season 1'},
+   {id:next,kind:'episode',title:'Scheduled episode',releaseDate:today}]);
+ await db.insert(s.shows).values({mediaId:series});
+ await db.insert(s.seasons).values({mediaId:seasonId,showId:series,seasonNumber:1});
+ await db.insert(s.episodes).values({mediaId:next,showId:series,seasonId,seasonNumber:1,episodeNumber:1});
+ await db.insert(s.externalIds).values({mediaId:series,mediaKind:'show',provider:'tmdb',externalId:'987654309'});
+ await db.insert(s.upNext).values({userId:owner,mediaId:next});
+ const [instance]=await db.insert(s.providerInstances).values({provider:'trakt',name:'Schedule fixture',baseUrl:'https://fixture.invalid'}).returning({id:s.providerInstances.id});
+ const store=async(firstAiredAt:string|null,time:string,timezone:string)=>{
+   const adapter=new TraktAdapter(async path=>{
+     expect(path).toBe(`/calendars/all/shows/${today}/8?extended=full`);
+     return [{first_aired:firstAiredAt,show:{ids:{tmdb:987654309,trakt:987654308},airs:{time,timezone}},
+       episode:{season:1,number:1,ids:{trakt:987654307}}}];
+   },'fixture','fixture');
+   const schedule=await adapter.airSchedule(today);
+   await db.transaction(tx=>saveTraktAirSchedule(tx,instance.id,schedule));
+ };
+ const progress=()=>progressExperimentData(owner,{view:'next'},{preview:true});
+ await store(new Date(Date.now()+3_600_000).toISOString(),'00:00','Pacific/Kiritimati');
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await db.update(s.media).set({releaseDate:'2020-01-01'}).where(eq(s.media.id,next));
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await db.update(s.media).set({releaseDate:today}).where(eq(s.media.id,next));
+ await store(new Date(Date.now()-3_600_000).toISOString(),'23:59','Pacific/Honolulu');
+ expect(await progress()).toMatchObject({items:[{id:next,available:false}],total:1});
+ await db.delete(s.metadataSnapshots).where(eq(s.metadataSnapshots.mediaId,next));
+ expect(await progress()).toMatchObject({items:[],total:0});
+ await store(null,'00:00','Pacific/Kiritimati');
+ expect(await progress()).toMatchObject({items:[{id:next,available:false}],total:1});
 });
 
 run('pausing a movie or whole show hides each progress entry and preserves the position, queue and rewatch history',async()=>{

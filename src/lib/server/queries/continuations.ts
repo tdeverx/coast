@@ -5,7 +5,7 @@ import { getDb } from '../db';
 import * as s from '../db/schema';
 import { permittedMediaSources } from './media';
 import { getConfig, type CoastConfig } from '../config';
-import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
+import { episodeHasAiredForProgress } from '#lib/catalogue/metadata/release-date.server.js';
 
 type EpisodeEntry = {
   id: string;
@@ -100,7 +100,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
       )
       .where(
         and(
-          episodeHasAired(sql`${s.episodes.mediaId}`, metadataSource, { includeToday: false }),
+          episodeHasAiredForProgress(sql`${s.episodes.mediaId}`, metadataSource),
           or(
             sql`exists(select 1 from rewatches r where r.user_id=${userId} and r.media_id in (${s.episodes.showId},${s.episodes.seasonId},${s.episodes.mediaId}))`,
             inArray(

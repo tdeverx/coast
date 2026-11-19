@@ -46,12 +46,13 @@ async function traktApp(instance: typeof providerInstances.$inferSelect) {
 }
 
 /** Public catalogue reads never use a member's access token or trigger personal sync. */
-export async function getTraktCommunity() {
+export async function getTraktCommunity(instanceId?: string) {
   if (!(await getConfig()).enableTrakt) return null;
   const [instance] = await getDb()
     .select()
     .from(providerInstances)
-    .where(and(eq(providerInstances.provider, 'trakt'), eq(providerInstances.enabled, true)))
+    .where(and(eq(providerInstances.provider, 'trakt'), eq(providerInstances.enabled, true),
+      instanceId ? eq(providerInstances.id,instanceId) : undefined))
     .orderBy(providerInstances.id)
     .limit(1);
   if (!instance?.credentials) return null;

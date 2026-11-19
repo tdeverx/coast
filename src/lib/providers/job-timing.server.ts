@@ -33,7 +33,8 @@ export async function jobTimings(): Promise<JobTiming[]> {
       union all select null::uuid,k.kind,i.id::text,coast_job_allowed(null,k.kind,'{}'::jsonb),
       (select updated_at from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state='succeeded' order by updated_at desc limit 1),null::text,
       exists(select 1 from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
-      from provider_instances i cross join lateral unnest(case when i.provider='tmdb' then ARRAY['tmdb.refresh','tmdb.recommendations'] else ARRAY['igdb.recommendations'] end) as k(kind) where i.provider in ('tmdb','igdb')`,
+      from provider_instances i cross join lateral unnest(case i.provider when 'tmdb' then ARRAY['tmdb.refresh','tmdb.recommendations']
+        when 'trakt' then ARRAY['trakt.air-schedule'] else ARRAY['igdb.recommendations'] end) as k(kind) where i.provider in ('tmdb','trakt','igdb')`,
     sql<{ instance_id: string; due: Date | null }[]>`with pool as materialized (
       select e.media_id,coalesce(s.region,'GB') as region,
         max(s.updated_at) filter(where s.raw->>'detailLoaded'='true') as refreshed,
@@ -53,7 +54,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       from provider_connections c cross join unnest(${sql.array([...new Set(['jellyfin','trakt','steam','seerr','tmdb','igdb'].flatMap(provider=>serviceTasks(provider).flatMap(task=>task.kinds)))], 'TEXT')}) k(kind)
       join lateral(select * from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state in ('succeeded','failed','cancelled') and (a.account_generation is null or a.account_generation=c.account_generation) order by a.updated_at desc,a.id desc limit 1) a on true
       union all select i.id,a.kind,a.id,a.state,a.updated_at,a.payload->'_jobOutcome',a.last_error
-      from provider_instances i cross join unnest(ARRAY['tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata']) k(kind)
+      from provider_instances i cross join unnest(ARRAY['tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata','trakt.air-schedule']) k(kind)
       join lateral(select * from outbox_actions a where a.connection_id is null and a.kind=k.kind and a.kind like i.provider||'.%' and a.payload->>'instanceId'=i.id::text and a.state in ('succeeded','failed','cancelled') order by a.updated_at desc,a.id desc limit 1) a on true
     ) select distinct on(instance_id,kind) * from latest order by instance_id,kind,at desc,id desc`,
   ]);
@@ -89,8 +90,8 @@ export async function jobTimings(): Promise<JobTiming[]> {
       const fresh = accountDue.filter(({ due }) => due.completed > 0 && now - due.completed <= due.interval * 2).length;
       const metadataAt = metadataDue.find(entry => entry.instance_id === instance.id)?.due;
       const metadata = kind === 'tmdb.refresh';
-      const sharedRecommendations = ['tmdb.recommendations', 'igdb.recommendations'].includes(kind);
-      if (sharedRecommendations) {
+      const sharedMetadata = ['tmdb.recommendations', 'igdb.recommendations', 'trakt.air-schedule'].includes(kind);
+      if (sharedMetadata) {
         const latest = last.length ? Math.max(...last) : 0;
         result.push({ instanceId: instance.id, kind,
           nextAt: enabled && instance.configured && !sharedEvidence.blocked ? new Date(Math.max(now, taskDue(task, schedule, instance.settings, { id: instance.id, externalUserId: null, role: 'admin', settings: {} }, sharedEvidence, now).at!)).toISOString() : null,

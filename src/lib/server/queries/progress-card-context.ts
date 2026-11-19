@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
+import { episodeHasAired, episodeHasAiredForProgress } from '#lib/catalogue/metadata/release-date.server.js';
 import { rewatchFields } from '#lib/core/tracking/rewatch.server.js';
 import type { MediaKind } from '#lib/ui/types.js';
 import { getConfig, type CoastConfig } from '../config';
@@ -20,7 +20,8 @@ export async function progressEpisodes(
   if (!targets.length || !presentation || presentation === 'continue') return [];
   const resume = presentation === 'paused' || presentation === 'next';
   const state = rewatchFields(userId, sql`e.media_id`, sql`tracking`);
-  const aired = resume ? episodeHasAired(sql`e.media_id`, (await (config ?? getConfig())).metadataSource, { includeToday: presentation !== 'next' }) : undefined;
+  const airtime = presentation==='next' ? episodeHasAiredForProgress : episodeHasAired;
+  const aired = resume ? airtime(sql`e.media_id`, (await (config ?? getConfig())).metadataSource) : undefined;
   return getDb().execute<EpisodeContext>(sql`
     select root.id as "rootId", choice.media_id as "episodeId",
       coalesce(choice.season_id, fallback.media_id) as "seasonId",

@@ -1,7 +1,7 @@
 import { getFeatureConfig } from '#lib/server/features.js';
 import { categoryEnabled } from '#lib/experimental.js';
 import { getConfig } from '../config';
-import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
+import { episodeHasAiredForProgress } from '#lib/catalogue/metadata/release-date.server.js';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import type { MediaView } from '#lib/ui/types.js';
@@ -330,7 +330,7 @@ async function screenProgressMembership(
     ),
   ];
   const member = (ids: string[]) => sql`${s.media.id} = any(${`{${ids.join(',')}}`}::uuid[])`;
-  const aired = (id: SQL) => episodeHasAired(id, metadataSource, { includeToday: false });
+  const aired = (id: SQL) => episodeHasAiredForProgress(id, metadataSource);
   const nextIds = [...queued.map(row => row.id), ...saved.map(row => row.id), ...sequenceById.keys(), ...planned.newSeasonIds];
   const where = and(
         member(candidateIds),

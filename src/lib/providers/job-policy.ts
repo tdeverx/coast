@@ -10,7 +10,7 @@ export const taskRetryAttentionAttempts = 3;
 
 /** Scheduling scope does not determine whose work a job represents. */
 export function jobIdentityScope(kind: string): 'account' | 'instance' {
-  return ['jellyfin.library', 'jellyfin.streams', 'jellyfin.updates', 'tmdb.refresh', 'tmdb.recommendations', 'igdb.recommendations', 'igdb.steam-metadata'].includes(kind)
+  return ['jellyfin.library', 'jellyfin.streams', 'jellyfin.updates', 'tmdb.refresh', 'tmdb.recommendations', 'igdb.recommendations', 'igdb.steam-metadata', 'trakt.air-schedule'].includes(kind)
     ? 'instance' : 'account';
 }
 
