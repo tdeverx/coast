@@ -59,7 +59,8 @@ run('Playing and Listening use concrete activity and retain feature/privacy gate
  expect((await progressData(user,{category:'game',view:'next'})).items).toHaveLength(0);
  await getSql()`update game_playthroughs set status='completed',completed_at=now() where user_id=${user}`;
  expect((await progressData(user,{category:'game'})).items).toHaveLength(0);
- expect((await progressData(user,{category:'game',view:'next'})).items.map(i=>i.id)).toEqual([game]);
+ expect((await progressData(user,{category:'game',view:'next'})).items).toEqual([]);
+ expect((await progressData(user,{category:'game',view:'finished'})).items.map(i=>i.id)).toEqual([game]);
 });
 run('grouped episode activity uses the show and a concise count with a privacy-safe actor',async()=>{
  const db=getSql();for(let i=0;i<episodes.length;i++)await db`insert into social_activity(user_id,work_id,source_key,event_kind,section,source,occurred_at) values(${friend},${episodes[i]},${'for-you:'+episodes[i]},'watch','activity','coast',now()+${i}*interval '1 minute')`;
@@ -288,8 +289,8 @@ run('Continue sorts current positions and excludes cleared reading bookmarks wit
  await db.update(s.readingProgress).set({updatedAt:date(2)}).where(eq(s.readingProgress.userId,owner));
  const expiresAt=new Date(Date.now()+60_000);
  await db.insert(s.readingSessions).values([
-  {userId:owner,workId:comic,bookmarkCycle:comicProgress.bookmarkCycle,format:'cbz',edition:'comic',location:{format:'cbz',page:1,total:24},updatedAt:date(2),expiresAt},
-  {userId:owner,workId:book,bookmarkCycle:bookProgress.bookmarkCycle,format:'epub',edition:'epub',location:{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0},updatedAt:date(4),expiresAt},
+  {userId:owner,workId:comic,bookmarkCycle:comicProgress.bookmarkCycle,format:'cbz',edition:'comic',location:{format:'cbz',page:1,total:24},positionUpdatedAt:date(2),updatedAt:date(2),expiresAt},
+  {userId:owner,workId:book,bookmarkCycle:bookProgress.bookmarkCycle,format:'epub',edition:'epub',location:{format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:0},positionUpdatedAt:date(4),updatedAt:date(4),expiresAt},
  ]);
  const history=()=>raw`select id,page from reading_history where user_id=${owner} and work_id=${comic} order by id`;
  const before=await history();
@@ -300,6 +301,9 @@ run('Continue sorts current positions and excludes cleared reading bookmarks wit
   {userId:owner,gameId:game,status:'in-progress',createdAt:date(2),updatedAt:date(1)},
  ]);
  const ids=({items}:{items:{id:string}[]})=>items.map(item=>item.id);
+ expect(ids(await progressExperimentData(owner,{}))).toEqual([book,comic,game]);
+ expect(ids(await progressData(owner,{category:'reading'}))).toEqual([book,comic]);
+ await db.update(s.readingSessions).set({updatedAt:date(7)}).where(eq(s.readingSessions.workId,comic));
  expect(ids(await progressExperimentData(owner,{}))).toEqual([book,comic,game]);
  expect(ids(await progressData(owner,{category:'reading'}))).toEqual([book,comic]);
  expect(await updateReading(owner,comic,{reset:'position'})).toMatchObject({page:0,state:'reading'});
@@ -538,4 +542,25 @@ run('merged relationship segments cover reading, games, music and their verified
   await raw`update users set settings=${{social:{sections:{progress:'private'}}}}::jsonb where id=${peer}::uuid`;
   expect((await activityFeed(viewer,{workId:comic,relationship:'consumed'})).items).toEqual([]);expect((await activityFeed(viewer,{workId:game,relationship:'progress'})).items).toEqual([]);
  }finally{await raw`update system_settings set value=${config}::jsonb where key='coast'`;}
+});
+
+
+run('queue-only reading and dropped games have the same native and profile Progress membership',async()=>{
+ const owner=crypto.randomUUID();
+ const sql=getSql(),db=getDb();
+ await db.insert(s.users).values({id:owner,username:`progress-parity-${owner}`});
+ await sql`update system_settings set value=jsonb_set(value,'{experimentalBooks}','true'::jsonb) where key='coast'`;
+ const book=await importReading({provider:'openlibrary',externalId:'OL9874126W',title:'Planned book fixture',kind:'book',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL9874126W'});
+ try {
+  await db.insert(s.upNext).values([{userId:owner,mediaId:book.id},{userId:owner,mediaId:game}]);
+  await db.insert(s.gamePlaythroughs).values({userId:owner,gameId:game,status:'dropped'});
+  expect((await progressData(owner,{category:'reading',view:'up-next'})).items.map(item=>item.id)).toEqual([book.id]);
+  expect((await progressData(owner,{category:'game',view:'up-next'})).items).toEqual([]);
+  expect((await progressExperimentData(owner,{view:'next'})).items.map(item=>item.id)).toEqual([book.id]);
+  expect(await progressExperimentData(owner,{category:'game',view:'dropped'},{preview:true,segments:'profile'}))
+    .toMatchObject({availableViews:['dropped'],items:[{id:game}]});
+ } finally {
+  await sql`delete from users where id=${owner}`;
+  await sql`delete from works where id=${book.id}`;
+ }
 });

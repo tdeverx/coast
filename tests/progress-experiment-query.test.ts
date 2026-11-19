@@ -36,8 +36,8 @@ const fixtureUrl=moduleUrl(`
   export const pausedProgressPage=async()=>{throw Error('Unexpected paused page');};
   export const mediumProgressIds=async(_user,options)=>{fixture.state.mediums.push(options.category);return [];};export const readingProgressIds=async()=>{fixture.state.planners.push('reading');return [];};
   export const listCandidateIds=async()=>fixture.ids();
-  export const collectionCTE=()=>'';
-  export const collectionRead=async()=>{fixture.state.historyReads++;return fixture.ids().map(id=>({id}));};
+  export const profileProgressPresence=async()=>({finished:false,dropped:false});
+  export const screenProgressHistoryIds=async()=>{fixture.state.historyReads++;return fixture.ids();};
   export const decorateProgressCards=()=>{};
   export const workCards=async(_owner,viewer,ids)=>{fixture.state.viewers.push(viewer);fixture.state.hydrated.push(ids);return ids.map(id=>({id,title:id,kind:fixture.state.comic?'comic':'movie'}));};
 `);
@@ -47,7 +47,7 @@ let code=new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL(
 const progressFixtureUrl=moduleUrl(`export * from ${JSON.stringify(fixtureUrl)};
   export {gameProgressRecency,readingProgressRecency} from ${JSON.stringify(progressQuery)};`);
 code=code.replaceAll('from "./progress"',`from ${JSON.stringify(progressFixtureUrl)}`);
-for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./paused-progress'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
+for(const path of ['#lib/collection/query.server.js','../features','../db','./lists','./paused-progress','./profile'])code=code.replaceAll(`from "${path}"`,`from ${JSON.stringify(fixtureUrl)}`);
 const resolve:Record<string,string>={
   'valibot':import.meta.resolve('valibot'),'drizzle-orm':import.meta.resolve('drizzle-orm'),
   '#lib/experimental.js':import.meta.resolve('../src/lib/experimental'),
@@ -114,7 +114,7 @@ test('saved segments retain bounded hydration and reading collection lookup stay
   }
 });
 
-test('profile Finished/Dropped reuse state assessment and keep viewer privacy before count and hydration',async()=>{
+test('profile Finished/Dropped use direct tracking membership and keep viewer privacy before count and hydration',async()=>{
   for(const view of ['continue','next','watchlist','favourites','finished','dropped'] as const){
     reset();
     const owner=id(999),viewer=id(998);

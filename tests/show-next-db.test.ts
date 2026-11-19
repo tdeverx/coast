@@ -124,3 +124,13 @@ run('Available scopes both the episode sequence and its anchor to the viewer’s
     expect((await showNext(viewer,show,undefined,true)).items).toEqual([]);
   }finally{await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instanceId));}
 });
+
+
+run('an undated episode remains browsable without becoming the suggested target',async()=>{
+  const {show,episodes}=await fixture(3),db=getDb();
+  await db.update(s.media).set({releaseDate:null}).where(eq(s.media.id,episodes[1]));
+  await db.insert(s.trackingState).values({userId:viewer,mediaId:episodes[0],watched:true,lastWatchedAt:new Date()});
+  const result=await showNext(viewer,show);
+  expect(result.items.map(item=>item.id)).toEqual([episodes[0],episodes[2],episodes[1]]);
+  expect(result.focusId).toBe(episodes[2]);
+});

@@ -14,7 +14,7 @@ export async function librarySegmentCondition(ownerId:string,viewerId:string,seg
   if(segment==='continue'||segment==='next'){
     const options=v.parse(progressOptionsSchema,{view:segment==='continue'?'watching':'up-next',category:category==='reading'?'reading':category,scope:'all'});
     const ids=category==='screen'?(await screenProgressPlan(ownerId,options,viewerId,{firstEpisode:segment==='next',sortByActivity:false})).allIds
-      :category==='game'?await mediumProgressIds(ownerId,options,false,viewerId):await readingProgressIds(ownerId,options,false,viewerId);
+      :category==='game'?await mediumProgressIds(ownerId,options,viewerId):await readingProgressIds(ownerId,options,viewerId);
     const candidates=sql`${`{${ids.join(',')}}`}::uuid[]`;
     return sql`${visible('progress')} and (${id}=any(${candidates}) or exists(select 1 from episodes e where e.show_id=${id} and e.media_id=any(${candidates})) or exists(select 1 from seasons season where season.show_id=${id} and season.media_id=any(${candidates})))`;
   }

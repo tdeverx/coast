@@ -1170,6 +1170,7 @@ export const readingSessions = pgTable('reading_sessions', {
   edition: text('edition').notNull(),
   bookmarkCycle: uuid('bookmark_cycle').notNull().default('00000000-0000-0000-0000-000000000000'),
   location: jsonb('location').$type<ReadingLocation>(),
+  positionUpdatedAt: timestamp('position_updated_at', { withTimezone: true }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   closedAt: timestamp('closed_at', { withTimezone: true }),
   createdAt: createdAt(), updatedAt: updatedAt(),

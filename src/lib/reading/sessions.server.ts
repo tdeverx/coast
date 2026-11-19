@@ -134,9 +134,9 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
    if(!source)throw new AppError(410,'Reconnect this reading source.');
   }
   const {bookmarkCycle}=user;
-  const [previous]=await tx.select({location:readingSessions.location}).from(readingSessions).where(and(eq(readingSessions.userId,userId),eq(readingSessions.workId,workId),eq(readingSessions.bookmarkCycle,bookmarkCycle),eq(readingSessions.edition,edition),eq(readingSessions.format,format),isNull(readingSessions.shareId),sql`${readingSessions.location} is not null`)).orderBy(desc(readingSessions.updatedAt),desc(readingSessions.id)).limit(1);
+  const [previous]=await tx.select({location:readingSessions.location,positionUpdatedAt:sql<Date>`coalesce(${readingSessions.positionUpdatedAt},${readingSessions.createdAt})`.mapWith(readingSessions.createdAt)}).from(readingSessions).where(and(eq(readingSessions.userId,userId),eq(readingSessions.workId,workId),eq(readingSessions.bookmarkCycle,bookmarkCycle),eq(readingSessions.edition,edition),eq(readingSessions.format,format),isNull(readingSessions.shareId),sql`${readingSessions.location} is not null`)).orderBy(sql`coalesce(${readingSessions.positionUpdatedAt},${readingSessions.createdAt}) desc`,desc(readingSessions.createdAt),desc(readingSessions.id)).limit(1);
   signal?.throwIfAborted();
-  const [prepared]=await tx.insert(readingSessions).values({userId,workId,format,edition,bookmarkCycle,connectionId,accountGeneration,externalId,location:input.fromBeginning?null:previous?.location??null,expiresAt:new Date(Date.now()+86400000)}).returning();
+  const [prepared]=await tx.insert(readingSessions).values({userId,workId,format,edition,bookmarkCycle,connectionId,accountGeneration,externalId,location:input.fromBeginning?null:previous?.location??null,positionUpdatedAt:input.fromBeginning?null:previous?.positionUpdatedAt??null,expiresAt:new Date(Date.now()+86400000)}).returning();
   signal?.throwIfAborted();
   return prepared;
  });
@@ -168,7 +168,12 @@ export async function moveReading(userId:string,id:string,raw:unknown) {
  await getDb().transaction(async tx=>{
   await requireFeatureInTransaction(tx,userId,'reader');
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
-  const saved=await tx.update(readingSessions).set({location,updatedAt:new Date()}).where(and(eq(readingSessions.id,id),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()))).returning({id:readingSessions.id});
+  const now=new Date();
+  const samePosition = location.format==='epub'
+    ? sql`${readingSessions.location}->>'cfi'=${location.cfi}`
+    : sql`(${readingSessions.location}->>'page')::int=${location.page}`;
+  const positionUpdatedAt=sql`case when ${samePosition} then coalesce(${readingSessions.positionUpdatedAt},${readingSessions.createdAt}) else ${now.toISOString()}::timestamptz end`;
+  const saved=await tx.update(readingSessions).set({location,updatedAt:now,positionUpdatedAt}).where(and(eq(readingSessions.id,id),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()))).returning({id:readingSessions.id});
   if(!saved.length)throw new AppError(410,'This reading session has ended.');
   // Reopening a completed edition does not create a reread. EPUB CFIs also do
   // not overwrite the page count of a user's physical edition.

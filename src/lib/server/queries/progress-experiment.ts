@@ -3,7 +3,7 @@ import {and, eq, inArray, ne, sql} from 'drizzle-orm';
 import {categoryEnabled} from '#lib/experimental.js';
 import {progressExperimentSchema,progressExperimentTabs,profileProgressExperimentTabs, type ProgressExperimentContent} from '#lib/progress-experiment.js';
 import {progressOptionsSchema} from '#lib/progress.js';
-import {collectionCTE,collectionRead,workCards} from '#lib/collection/query.server.js';
+import {workCards} from '#lib/collection/query.server.js';
 import {getFeatureConfig} from '../features';
 import {getDb} from '../db';
 import * as s from '../db/schema';
@@ -16,15 +16,8 @@ import {rewatchBoundary} from '#lib/core/tracking/rewatch.server.js';
 import {pagination, PAGE_SIZE} from './pagination';
 import {ROW_BATCH_SIZE} from '#lib/page-window.js';
 import {withReadCancellation} from '../db/read-cancellation';
-import {libraryTrackingCondition} from './library';
+import {profileProgressPresence,screenProgressHistoryIds} from './profile';
 import {pausedProgressPage,pausedProgressPresent} from './paused-progress';
-
-const historySource=(userId:string)=>sql`from assessments a left join ${s.media} on ${s.media.id}=a.id
-  left join ${s.trackingState} on ${s.trackingState.mediaId}=a.id and ${s.trackingState.userId}=${userId}`;
-const historyMembership=(userId:string,view:'finished'|'dropped')=>sql`a.category<>'music' and case when a.category='screen' then
-  ${view==='finished'?sql`a.kind in ('movie','show')`:sql`a.kind in ('movie','show','season','episode','collection')`}
-  and ${libraryTrackingCondition(userId,view==='finished'?'watched':'dropped')}
-  else ${view==='finished'?sql`a.completed and not a.dropped`:sql`a.dropped`} end`;
 
 type ReadOptions={preview?:boolean;signal?:AbortSignal;viewerId?:string;segments?:'overview'|'profile'};
 
@@ -50,17 +43,17 @@ async function progressExperimentRead(userId:string,raw:unknown,{preview,signal,
   const saved=options.view==='watchlist'||options.view==='favourites';
   const history=options.view==='finished'||options.view==='dropped';
   const view=options.view==='continue'?'watching':'up-next';
-  const base=v.parse(progressOptionsSchema,{view,scope:options.scope});
-  const wants=(category:string)=>(!options.category||options.category===category)&&!saved&&!history&&categoryEnabled(config,category)&&(options.kind==='all'||(category==='screen'?['movie','show'].includes(options.kind):category==='reading'?['book','comic'].includes(options.kind):options.kind==='game'));
-  const [screen,games,reading]=await Promise.all([
-    wants('screen')?screenProgressPlan(userId,base,viewerId,{firstEpisode:options.view==='next',sortByActivity:false,planning}):undefined,
-    wants('game')?mediumProgressIds(userId,{...base,category:'game'},false,viewerId):[],
-    wants('reading')?readingProgressIds(userId,{...base,category:'reading'},false,viewerId):[],
+  const base=v.parse(progressOptionsSchema,{view:history?options.view:view,scope:options.scope});
+  const wants=(category:string)=>(!options.category||options.category===category)&&!saved&&categoryEnabled(config,category)&&(options.kind==='all'||(category==='screen'?['movie','show'].includes(options.kind):category==='reading'?['book','comic'].includes(options.kind):options.kind==='game'));
+  const [screen,games,reading,screenHistory]=await Promise.all([
+    wants('screen')&&!history?screenProgressPlan(userId,base,viewerId,{firstEpisode:options.view==='next',sortByActivity:false,planning}):undefined,
+    wants('game')?mediumProgressIds(userId,{...base,category:'game'},viewerId,config):[],
+    wants('reading')?readingProgressIds(userId,{...base,category:'reading',kind:options.kind==='book'||options.kind==='comic'?options.kind:'all'},viewerId,config):[],
+    wants('screen')&&history?screenProgressHistoryIds(userId,viewerId,options.view==='finished'?'watched':'dropped'):[],
   ]);
   signal?.throwIfAborted();
-  const historyRows=history?await collectionRead(sql`${collectionCTE(userId,viewerId,'all','personal',options.category??'all','status')}
-    select a.id ${historySource(userId)} where ${historyMembership(userId,options.view as 'finished'|'dropped')}`):[];
-  const candidates=history?historyRows.map(row=>row.id as string):saved?await listCandidateIds(userId,{view:options.view,category:options.category??'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId):[...new Set([...(screen?.allIds??[]),...games,...reading])];
+  const candidates=saved?await listCandidateIds(userId,{view:options.view,category:options.category??'all',filter:'to-watch',scope:options.scope,kind:options.kind},viewerId)
+    : [...new Set([...(screen?.allIds??[]),...screenHistory,...games,...reading])];
   signal?.throwIfAborted();
   if(!candidates.length)return {...options,...segmentSummary,items:[],total:0,page:1,pages:1};
   const available=hasPermittedWorkSource(viewerId,options.category);
@@ -128,25 +121,16 @@ async function progressExperimentPresence(
   planning:ReturnType<typeof createScreenProgressPlanning>,segments:'overview'|'profile',
 ):Promise<NonNullable<ProgressExperimentContent['availableViews']>> {
   const screen=(!category||category==='screen')&&categoryEnabled(config,'screen');
-  async function historyPresence() {
-    const contains=(view:'finished'|'dropped')=>sql`exists(select 1 ${historySource(userId)} where ${historyMembership(userId,view)}
-      and ${enabledCategories(sql`a.category`,config)}
-      and social_visible(${userId}::uuid,${viewerId}::uuid,'progress',a.category))`;
-    const [result]=await getDb().execute<{finished:boolean;dropped:boolean}>(sql`
-      ${collectionCTE(userId,viewerId,'all','personal',category??'all','status')}
-      select ${contains('finished')} as finished,${contains('dropped')} as dropped`);
-    return result;
-  }
   const [continuing,next,other,paused,history,saved]=await Promise.all([
     screen?screenProgressPresent(userId,viewerId,'watching',planning):false,
     screen?screenProgressPresent(userId,viewerId,'up-next',planning,true):false,
-    nonScreenProgressPresence(userId,viewerId,category,config),
+    nonScreenProgressPresence(userId,viewerId,category,config,segments==='profile'),
     pausedProgressPresent(userId,viewerId,category),
-    segments==='profile'?historyPresence():undefined,
+    screen&&segments==='profile'?profileProgressPresence(userId,viewerId):undefined,
     savedProgressPresence(userId,viewerId,category??'all',config,segments==='overview'),
   ]);
   const present:Partial<Record<ProgressExperimentContent['view'],boolean>>={
-    continue:continuing||other.continue,next:next||other.next,paused,...history,...saved,
+    continue:continuing||other.continue,next:next||other.next,paused,finished:history?.finished||other.finished,dropped:history?.dropped||other.dropped,...saved,
   };
   return (segments==='profile'?profileProgressExperimentTabs:progressExperimentTabs)
     .map(tab=>tab.value as ProgressExperimentContent['view']).filter(view=>present[view]);

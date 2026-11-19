@@ -500,18 +500,32 @@ function profileProgressWhere(userId:string, selected:'watched'|'progress'|'drop
   );
 }
 
-export async function profileProgressPresence(userId:string,viewerId:string) {
-  // A completed show has at least one watched episode. Start both lookups
+// A completed show has at least one watched episode. Start both lookups
   // from this owner's tracking rows instead of scanning the catalogue.
-  const candidates=(status:'watched'|'dropped')=>sql`select t.media_id as id from tracking_state t
+function screenHistorySource(userId:string,status:'watched'|'dropped') {
+  const candidates=sql`select t.media_id as id from tracking_state t
     where t.user_id=${userId} and ${status==='watched'?sql`t.watched`:sql`t.dropped`}
     ${status==='watched'?sql`union select e.show_id from tracking_state t join episodes e on e.media_id=t.media_id
       where t.user_id=${userId} and t.watched and not e.is_special`:sql``}`;
-  const presence=(status:'watched'|'dropped')=>sql`exists(select 1 from (${candidates(status)}) candidate
+  return sql`from (${candidates}) candidate
     join ${s.media} on ${s.media.id}=candidate.id
     left join ${s.trackingState} on ${s.trackingState.mediaId}=${s.media.id} and ${s.trackingState.userId}=${userId}
+    `;
+}
+
+function screenHistoryMembership(userId:string,viewerId:string,status:'watched'|'dropped') {
+  return sql`${screenHistorySource(userId,status)}
     where ${profileProgressWhere(userId,status,{},viewerId)}
-      and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','screen'))`;
+    and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','screen')`;
+}
+
+export async function screenProgressHistoryIds(userId:string,viewerId:string,status:'watched'|'dropped') {
+  const rows=await getDb().execute<{id:string}>(sql`select candidate.id ${screenHistoryMembership(userId,viewerId,status)}`);
+  return Array.from(rows,row=>row.id);
+}
+
+export async function profileProgressPresence(userId:string,viewerId:string) {
+  const presence=(status:'watched'|'dropped')=>sql`exists(select 1 ${screenHistoryMembership(userId,viewerId,status)})`;
   const [result]=await getDb().execute<{finished:boolean;dropped:boolean}>(sql`select ${presence('watched')} as finished,${presence('dropped')} as dropped`);
   return result;
 }
@@ -526,31 +540,15 @@ export async function profileProgress(
   const selected = v.parse(v.picklist(['watched', 'progress', 'dropped']), status);
   const requested = v.parse(pageNumberSchema, requestedPage);
   const where = profileProgressWhere(userId,selected,filters,viewerId);
-  const [count] = await getDb()
-    .select({ total: sql<number>`count(*)::int` })
-    .from(s.media)
-    .leftJoin(
-      s.trackingState,
-      and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId))
-    )
-    .where(where);
-  const { page, pages } = pagination(count.total, requested);
-  const rows = await getDb()
-    .select({ id: s.media.id })
-    .from(s.media)
-    .leftJoin(
-      s.trackingState,
-      and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId))
-    )
-    .where(where)
-    .orderBy(
-      selected === 'watched'
-        ? sql`${viewingRecency(userId)} desc nulls last`
-        : sql`${s.trackingState.updatedAt} desc nulls last`,
-      s.media.id
-    )
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE);
+  const source=selected==='progress' ? sql`from ${s.media}
+    left join ${s.trackingState} on ${s.trackingState.mediaId}=${s.media.id} and ${s.trackingState.userId}=${userId}`
+    : screenHistorySource(userId,selected);
+  const db=getDb();
+  const [count]=await db.execute<{total:number}>(sql`select count(*)::int as total ${source} where ${where}`);
+  const {page,pages}=pagination(count.total,requested);
+  const order=selected==='watched'?viewingRecency(userId):sql`${s.trackingState.updatedAt}`;
+  const rows=await db.execute<{id:string}>(sql`select ${s.media.id} ${source} where ${where}
+    order by ${order} desc nulls last,${s.media.id} limit ${PAGE_SIZE} offset ${(page-1)*PAGE_SIZE}`);
   const hasMore = page < pages;
   const views = new Map(
     (await mediaViews(userId, { ids: rows.map((row) => row.id), limit: PAGE_SIZE, progressPresentation: selected === 'watched' ? 'saved' : undefined }, viewerId)).map(

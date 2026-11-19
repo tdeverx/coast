@@ -35,7 +35,7 @@ function hasReadingPosition(userId: string, workId: SQL, page: SQL, cycle: SQL) 
 
 function readingPositionRecency(userId: string, workId: SQL) {
   return sql`greatest(case when ${s.readingProgress.page}>0 then ${s.readingProgress.updatedAt} end,
-    (select max(b.updated_at) ${readingBookmarks(userId,workId,sql`${s.readingProgress.bookmarkCycle}`)}))`;
+    (select max(coalesce(b.position_updated_at,b.created_at)) ${readingBookmarks(userId,workId,sql`${s.readingProgress.bookmarkCycle}`)}))`;
 }
 
 export function readingProgressRecency(userId: string, workId: SQL, view: string) {
@@ -44,6 +44,20 @@ export function readingProgressRecency(userId: string, workId: SQL, view: string
     : view==='next' ? sql`case when ${s.readingProgress.state}='planned' then ${s.readingProgress.updatedAt} end`
     : sql`${s.readingProgress.updatedAt}`;
   return sql`(select ${recency} from ${s.readingProgress} where ${s.readingProgress.userId}=${userId} and ${s.readingProgress.workId}=${workId})`;
+}
+
+type ProgressView = import('#lib/progress.js').ProgressOptions['view'];
+
+function nativeProgressSeed(userId:string,category:'reading'|'game'|'music',view:ProgressView) {
+  const next=view==='up-next'||view==='next';
+  const queue=next?sql`union select media_id from up_next where user_id=${userId}`:sql``;
+  const candidates=category==='reading' ? sql`select work_id as id from reading_progress where user_id=${userId}
+    and state=${view==='watching'?'reading':view==='finished'?'completed':view==='dropped'?'dropped':'planned'}`
+    : category==='game' ? sql`select distinct game_id as id from game_playthroughs where user_id=${userId}
+      and status=${view==='watching'?'in-progress':view==='finished'?'completed':view==='dropped'?'dropped':'planned'}`
+    : next ? sql`select media_id as id from up_next where user_id=${userId}`
+    : sql`select track_id as id from music_progress where user_id=${userId} and position_seconds>0`;
+  return sql`(${candidates} ${category==='music'?sql``:queue}) seed`;
 }
 
 function currentGamePlaythrough(userId: string, workId: SQL, projection: SQL) {
@@ -187,7 +201,7 @@ export function decorateProgressCards(items:MediaView[], sequenceById:Awaited<Re
 
 /** A single local page shares Continue/Next/saved rows without treating pages as playback. */
 async function readingProgress(userId:string, viewerId:string, options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
-  const {where,progressVisible,saved}=await readingProgressSelection(userId,viewerId,options);
+  const {where,progressVisible}=readingProgressSelection(userId,viewerId,options,await getFeatureConfig(viewerId));
   const db=getDb();
   const base=()=>db.select().from(s.readingWorks)
     .leftJoin(s.readingProgress,and(eq(s.readingProgress.workId,s.readingWorks.id),eq(s.readingProgress.userId,userId)))
@@ -201,13 +215,12 @@ async function readingProgress(userId:string, viewerId:string, options:import('#
     : options.view==='dropped' ? sql`${s.readingProgress.updatedAt}`
     : options.view==='watchlist'||options.view==='favourites' ? sql`${s.trackingState.updatedAt}`
     : sql`greatest(case when ${progressVisible} and ${s.readingProgress.state}='planned' then ${s.readingProgress.updatedAt} end,
-        case when ${saved} then ${s.trackingState.updatedAt} end)`;
+        (select n.created_at from up_next n where n.user_id=${userId} and n.media_id=${s.readingWorks.id}))`;
   const rows=await base().where(where).orderBy(sql`${order} desc nulls last`,s.readingWorks.id).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
   return {...options,page,pages,total:count.total,items:await readingCards(userId,viewerId,rows.map(row=>row.reading_works))};
 }
 
-async function readingProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions, includeSaved=true, features?:Awaited<ReturnType<typeof getFeatureConfig>>) {
-  const config=features??await getFeatureConfig(viewerId);
+function readingProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions, config:Awaited<ReturnType<typeof getFeatureConfig>>) {
   requireEnabledCategory(config,'reading');
   if(options.kind!=='all'&&!['book','comic'].includes(options.kind))throw new AppError(400,'Choose Books or Comics.');
   if(options.kind!=='all')requireEnabledCategory(config,options.kind);
@@ -219,13 +232,17 @@ async function readingProgressSelection(userId:string,viewerId:string,options:im
     : options.view==='watching' ? sql`${state}='reading' and ${hasReadingPosition(userId,sql`${s.readingWorks.id}`,sql`${s.readingProgress.page}`,sql`${s.readingProgress.bookmarkCycle}`)}`
     : options.view==='finished' ? sql`${state}='completed'`
     : options.view==='dropped' ? sql`${state}='dropped'`
-    : sql`((${includeSaved ? saved : sql`false`}) or (${options.view}<>'watchlist' and (${state}='planned' or (${!includeSaved} and exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=${s.readingWorks.id}))))) and coalesce(${state} not in ('reading','paused','completed','dropped'),true)`;
+    : options.view==='watchlist' ? saved
+    : sql`${progressVisible} and social_visible(${userId}::uuid,${viewerId}::uuid,'collection',${s.readingWorks.kind})
+      and (${state}='planned' or exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=${s.readingWorks.id}))
+      and coalesce(${state} not in ('reading','paused','completed','dropped'),true)`;
   const available=sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${s.readingWorks.id} and a.user_id=${viewerId} and c.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled)`;
-  const where=and(enabledCategories(sql`${s.readingWorks.kind}`,config),options.kind==='all'?undefined:eq(s.readingWorks.kind,options.kind as 'book'|'comic'),selection,options.scope==='available'?available:undefined);
-  return {where,progressVisible,saved};
+  const seed=options.view==='watchlist'||options.view==='favourites'?undefined:sql`${s.readingWorks.id} in (select seed.id from ${nativeProgressSeed(userId,'reading',options.view)})`;
+  const where=and(seed,enabledCategories(sql`${s.readingWorks.kind}`,config),options.kind==='all'?undefined:eq(s.readingWorks.kind,options.kind as 'book'|'comic'),selection,options.scope==='available'?available:undefined);
+  return {where,progressVisible};
 }
-export async function readingProgressIds(userId:string,options:import('#lib/progress.js').ProgressOptions,includeSaved=true,viewerId=userId) {
-  const {where}=await readingProgressSelection(userId,viewerId,options,includeSaved);
+export async function readingProgressIds(userId:string,options:import('#lib/progress.js').ProgressOptions,viewerId=userId,features?:Awaited<ReturnType<typeof getFeatureConfig>>) {
+  const {where}=readingProgressSelection(userId,viewerId,options,features??await getFeatureConfig(viewerId));
   const rows=await getDb().select({id:s.readingWorks.id}).from(s.readingWorks)
     .leftJoin(s.readingProgress,and(eq(s.readingProgress.workId,s.readingWorks.id),eq(s.readingProgress.userId,userId)))
     .leftJoin(s.trackingState,and(eq(s.trackingState.mediaId,s.readingWorks.id),eq(s.trackingState.userId,userId))).where(where);
@@ -351,7 +368,7 @@ async function screenProgressMembership(
         options.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined,
         sql`not exists (select 1 from episodes e join tracking_state parent on parent.media_id in (e.show_id,e.season_id)
           where e.media_id = ${s.media.id} and parent.user_id = ${userId} and (parent.dropped or parent.paused))`,
-        sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and paused.paused
+        sql`not exists (select 1 from tracking_state paused where paused.user_id = ${userId} and (paused.paused or paused.dropped or (${options.view}<>'watching' and paused.watched and ${rewatchBoundary(userId,sql`paused.media_id`)} is null))
           and paused.media_id in (${s.media.id}, (select season.show_id from seasons season where season.media_id = ${s.media.id})))`
   );
   return { candidateIds, sequenceById, where };
@@ -408,7 +425,7 @@ export async function screenProgressPresent(
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */
 async function mediumProgress(userId:string, viewerId:string, options:import('#lib/progress.js').ProgressOptions):Promise<ProgressContent> {
   requireEnabledCategory(await getFeatureConfig(viewerId),options.category);
-  if(['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for this medium.');
+  if(options.category==='music'&&['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for Music.');
   const saved=options.view==='watchlist'||options.view==='favourites';
   if(saved) {
     const list=await listsData(userId,{...options,filter:'to-watch'},viewerId);
@@ -419,11 +436,10 @@ async function mediumProgress(userId:string, viewerId:string, options:import('#l
   const [count]=await db.execute<{total:number}>(sql`select count(*)::int as total from works w where ${where}`);
   const {page,pages}=pagination(count.total,options.page);
   const continuing=options.view==='watching';
-  const activity=options.category==='game' ? gameProgressRecency(userId,sql`w.id`,continuing?'continue':'next')
+  const activity=options.category==='game' ? gameProgressRecency(userId,sql`w.id`,continuing?'continue':options.view==='finished'||options.view==='dropped'?options.view:'next')
     : continuing ? sql`(select p.updated_at from music_progress p where p.user_id=${userId} and p.track_id=w.id)` : sql`null`;
-  const order=continuing ? activity : sql`greatest(${activity},
-    (select n.created_at from up_next n where n.user_id=${userId} and n.media_id=w.id),
-    (select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=w.id and t.watchlist and not t.dropped))`;
+  const order=continuing||options.view==='finished'||options.view==='dropped' ? activity : sql`greatest(${activity},
+    (select n.created_at from up_next n where n.user_id=${userId} and n.media_id=w.id))`;
   const rows=await db.execute<{id:string;available:boolean}>(sql`select w.id,${available} as available from works w where ${where} order by ${order} desc nulls last,w.id
     limit ${PAGE_SIZE} offset ${(page-1)*PAGE_SIZE}`);
   const availability=new Map(Array.from(rows).map(row=>[row.id,row.available]));
@@ -431,60 +447,57 @@ async function mediumProgress(userId:string, viewerId:string, options:import('#l
   return {...options,page,pages,total:count.total,items:cards.map(card=>({...card,available:availability.get(('workId' in card ? card.workId : undefined)??card.id)??false}))};
 }
 
-function mediumProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions,includeSaved=true) {
+function mediumProgressSelection(userId:string,viewerId:string,options:import('#lib/progress.js').ProgressOptions) {
+  const game=options.category==='game';
   const gameStatus=currentGamePlaythrough(userId,sql`w.id`,sql`g.status`);
-  const active=options.category==='game'
-    ? sql`${gameStatus} in (${options.view==='watching'?sql`'in-progress'`:sql`'in-progress','paused'`})`
-    : sql`exists(select 1 from music_progress p where p.user_id=${userId} and p.track_id=w.id and p.position_seconds>0 and (p.duration_seconds is null or p.position_seconds<p.duration_seconds))`;
-  const planned=sql`(${includeSaved} and exists(select 1 from tracking_state t where t.user_id=${userId} and t.media_id=w.id and t.watchlist and not t.dropped))
-    or exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=w.id)
-    ${options.category==='game'?sql`or ${gameStatus}='planned'`:sql``}`;
+  const active=sql`exists(select 1 from music_progress p where p.user_id=${userId} and p.track_id=w.id and p.position_seconds>0 and (p.duration_seconds is null or p.position_seconds<p.duration_seconds))`;
+  const queued=sql`exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=w.id)`;
+  const next=options.view==='next'||options.view==='up-next';
+  const selection=options.view==='watching' ? game?sql`${gameStatus}='in-progress'`:active
+    : options.view==='finished' ? sql`${gameStatus}='completed'`
+    : options.view==='dropped' ? sql`${gameStatus}='dropped'`
+    : game ? sql`(${queued} or ${gameStatus}='planned') and coalesce(${gameStatus}='planned',true)`
+    : sql`${queued} and not ${active}`;
   const available=sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id
     where a.user_id=${viewerId} and c.user_id=${viewerId} and c.status='connected' and i.enabled and a.state='available' and
     (a.media_id=w.id or exists(select 1 from media_relationships r where r.parent_id=w.id and r.child_id=a.media_id and r.kind='contains')))`;
-  const where=sql`w.category=${options.category} and social_visible(${userId}::uuid,${viewerId}::uuid,${options.view==='watching'?'progress':'collection'},${options.category})
-    and (${options.scope}='all' or ${available}) and ${options.view==='watching'?sql`coalesce((${active}),false)`:sql`(${planned}) and not coalesce((${active}),false)`}`;
+  const seed=nativeProgressSeed(userId,game?'game':'music',options.view);
+  const where=sql`w.id in (select seed.id from ${seed}) and w.category=${options.category} and social_visible(${userId}::uuid,${viewerId}::uuid,'progress',${options.category})
+    ${next?sql`and social_visible(${userId}::uuid,${viewerId}::uuid,'collection',${options.category})`:sql``}
+    and (${options.scope}='all' or ${available}) and (${selection})`;
   return {where,available};
 }
 
 /** Lightweight candidates only; card hydration remains after mixed pagination. */
-export async function mediumProgressIds(userId:string,options:import('#lib/progress.js').ProgressOptions,includeSaved=true,viewerId=userId) {
-  requireEnabledCategory(await getFeatureConfig(viewerId),options.category);
-  const {where}=mediumProgressSelection(userId,viewerId,options,includeSaved);
+export async function mediumProgressIds(userId:string,options:import('#lib/progress.js').ProgressOptions,viewerId=userId,features?:Awaited<ReturnType<typeof getFeatureConfig>>) {
+  requireEnabledCategory(features??await getFeatureConfig(viewerId),options.category);
+  const {where}=mediumProgressSelection(userId,viewerId,options);
   const rows=await getDb().execute<{id:string}>(sql`select w.id from works w where ${where}`);
   return Array.from(rows,row=>row.id);
 }
 
 /** Keep alternate tab reads in the native game/reading membership owners. */
-export async function nonScreenProgressPresence(userId:string,viewerId:string,category:string|undefined,features:Awaited<ReturnType<typeof getFeatureConfig>>) {
+export async function nonScreenProgressPresence(userId:string,viewerId:string,category:string|undefined,features:Awaited<ReturnType<typeof getFeatureConfig>>,includeHistory=false) {
   const games=(!category||category==='game')&&categoryEnabled(features,'game');
   const reading=(!category||category==='reading')&&categoryEnabled(features,'reading');
-  if(!games&&!reading)return {continue:false,next:false};
-  const checks=await Promise.all((['watching','up-next'] as const).map(async view=>{
+  if(!games&&!reading)return {continue:false,next:false,finished:false,dropped:false};
+  const views = includeHistory ? ['watching','up-next','finished','dropped'] as const : ['watching','up-next'] as const;
+  const checks=views.map(view=>{
     const options=v.parse(progressOptionsSchema,{view});
     const parts=[];
-    const queued=view==='up-next'?sql`union all select media_id from up_next where user_id=${userId}`:sql``;
     if(games) {
-      const {where}=mediumProgressSelection(userId,viewerId,{...options,category:'game'},false);
-      parts.push(sql`exists(select 1 from (
-        select game_id as id from game_playthroughs where user_id=${userId} and status=${view==='watching'?'in-progress':'planned'}
-        ${queued}) candidate join works w on w.id=candidate.id where ${where}
-        and social_visible(${userId}::uuid,${viewerId}::uuid,'progress','game')
-        and social_visible(${userId}::uuid,${viewerId}::uuid,${view==='up-next'?'collection':'progress'},'game'))`);
+      const {where}=mediumProgressSelection(userId,viewerId,{...options,category:'game'});
+      parts.push(sql`exists(select 1 from works w where ${where})`);
     }
     if(reading) {
-      const {where}=await readingProgressSelection(userId,viewerId,{...options,category:'reading'},false,features);
-      parts.push(sql`exists(select 1 from (
-        select work_id as id from reading_progress where user_id=${userId} and state=${view==='watching'?'reading':'planned'}
-        ${queued}) candidate join ${s.readingWorks} on ${s.readingWorks.id}=candidate.id
+      const {where}=readingProgressSelection(userId,viewerId,{...options,category:'reading'},features);
+      parts.push(sql`exists(select 1 from ${s.readingWorks}
         left join ${s.readingProgress} on ${s.readingProgress.workId}=${s.readingWorks.id} and ${s.readingProgress.userId}=${userId}
-        left join ${s.trackingState} on ${s.trackingState.mediaId}=${s.readingWorks.id} and ${s.trackingState.userId}=${userId}
-        where ${where} and social_visible(${userId}::uuid,${viewerId}::uuid,'progress',${s.readingWorks.kind})
-        and social_visible(${userId}::uuid,${viewerId}::uuid,${view==='up-next'?'collection':'progress'},${s.readingWorks.kind}))`);
+        where ${where})`);
     }
     return sql`(${sql.join(parts,sql` or `)})`;
-  }));
-  const [result]=await getDb().execute<{continue:boolean;next:boolean}>(sql`select ${checks[0]} as "continue",${checks[1]} as next`);
+  });
+  const [result]=await getDb().execute<{continue:boolean;next:boolean;finished:boolean;dropped:boolean}>(sql`select ${checks[0]} as "continue",${checks[1]} as next, ${checks[2]??sql`false`} as finished, ${checks[3]??sql`false`} as dropped`);
   return result;
 }
 
