@@ -66,7 +66,7 @@
     requestable = false,
     hero = false,
     menuOnly = false,
-    showTrigger = false,editionName,entryActions,
+    showTrigger = false,editionName,entryActions,tasteAction,
   }: {
     item: MediaView;editionName?:string;
     context?: 'discover' | 'details' | 'home';
@@ -76,6 +76,7 @@
     menuOnly?: boolean;
     showTrigger?: boolean;
     entryActions?: Snippet;
+    tasteAction?: Snippet<[string?]>;
   } = $props();
   type View =
     | 'root'
@@ -763,6 +764,7 @@
           editAdmin = true;
           editOpen = true;
         }}>Edit metadata…</Button>{/if}
+    {@render tasteAction?.(active.id)}
   {/if}
 {/snippet}
 {#if readOnly()}<Button href={`/media/${item.id}`} size="hero">Learn more</Button>{:else}

@@ -49,6 +49,19 @@ test('initial failure retains one manual close and grants no native close author
 test('terminal refresh withdraws native close authority before a late callback can repeat its manual close',async()=>{
  const f=fixture();try{f.navigate(href);await f.answer();expect(f.controller.hasNativeCloseOwner).toBe(true);f.refresh();await f.fail(403);expect(f.controller.open).toBe(false);expect(f.controller.resolved).toBeNull();expect(f.controller.hasNativeCloseOwner).toBe(false);expect(f.calls).toEqual(['close']);f.controller.emitNativeClose();expect(f.calls).toEqual(['close']);}finally{f.destroy();}
 });
+test('refreshing a now-private friend taste section removes the displayed comparison after a 404',async()=>{
+ const f=fixture();
+ try{
+  f.navigate('/profile/former-friend?section=taste');
+  f.current().resolve({kind:'profile',data:{username:'former-friend'}});
+  await f.drain();
+  expect(f.controller.open).toBe(true);
+  f.refresh();await f.fail(404);
+  expect(f.controller.resolved).toBeNull();
+  expect(f.controller.open).toBe(false);
+  expect(f.calls).toEqual(['close']);
+ }finally{f.destroy();}
+});
 test('a resolved presenter retains ordinary user close while generic refresh and viewer reset preserve their contracts',async()=>{
  const f=fixture();try{f.navigate(href);await f.answer();f.refresh();await f.fail(500);expect(f.controller.open).toBe(true);expect(f.controller.hasNativeCloseOwner).toBe(true);expect(f.calls).toEqual([]);f.controller.emitNativeClose();expect(f.calls).toEqual(['close']);f.calls.length=0;f.controller.viewer('replacement');runtime.flush();expect(f.controller.resolved).toBeNull();expect(f.controller.hasNativeCloseOwner).toBe(false);f.controller.emitNativeClose();expect(f.calls).toEqual([]);f.navigate(undefined);expect(f.controller.hasNativeCloseOwner).toBe(false);}finally{f.destroy();}
 });

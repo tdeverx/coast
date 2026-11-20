@@ -55,7 +55,10 @@ export async function removeReadingHistory(userId:string,workId:string,entryId:s
     requireEnabledCategory(await getConfig(tx),work.kind);
     await requireFeatureInTransaction(tx,userId,work.kind);
     const removed=await tx.delete(readingHistory).where(and(eq(readingHistory.id,entryId),eq(readingHistory.userId,userId),eq(readingHistory.workId,workId))).returning({id:readingHistory.id});
-    if(removed.length)await tx.delete(socialActivity).where(and(eq(socialActivity.userId,userId),eq(socialActivity.workId,workId),eq(socialActivity.sourceKey,`reading:${entryId}`)));
+    if(removed.length){
+      await tx.delete(socialActivity).where(and(eq(socialActivity.userId,userId),eq(socialActivity.workId,workId),eq(socialActivity.sourceKey,`reading:${entryId}`)));
+      await tx.execute(sql`select coast_bump_content_revision(${userId},'tracking')`);
+    }
     return {removed:removed.length>0};
   });
 }

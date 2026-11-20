@@ -1,4 +1,5 @@
 import { tmdbArtwork } from './artwork';
+import { tmdbCastFeatures, tmdbCrewFeatures } from './taste-credits';
 import * as v from 'valibot';
 import { tmdbInsights, tmdbPerson } from './details.server';
 import type { DiscoverKind, Metadata, MetadataProvider, ProviderTransport } from '../contracts';
@@ -31,6 +32,10 @@ const castMember = v.object({
   roles: v.optional(v.array(v.object({ character: v.string() })), []),
 });
 const crewMember=v.object({id:v.number(),name:v.string(),job:v.optional(v.string(),'')});
+const releaseCreditFields = {
+  crew: v.fallback(v.optional(v.array(crewMember)),undefined),
+  guest_stars: v.fallback(v.optional(v.array(castMember)),undefined),
+};
 const keyword=v.object({id:v.number(),name:v.string()});
 const organisation = v.object({id:v.optional(v.number()),name:v.string()});
 const credits = v.object({
@@ -42,6 +47,8 @@ const detail = v.object({
   keywords:v.optional(v.object({keywords:v.optional(v.array(keyword),[]),results:v.optional(v.array(keyword),[])})),
   credits: v.optional(credits),
   aggregate_credits: v.optional(credits),
+  created_by: v.fallback(v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),[]),
+  ...releaseCreditFields,
   recommendations: v.optional(result),
   ...item.entries,
   status: text, tagline: text, original_language: text, last_air_date: text,
@@ -64,7 +71,7 @@ const detail = v.object({
     ),
     []
   ),
-  episodes: v.optional(v.array(item), []),
+  episodes: v.optional(v.array(v.object({...item.entries,...releaseCreditFields})), []),
   external_ids: v.optional(v.object({ imdb_id: text, tvdb_id: number })),
   belongs_to_collection: v.nullish(v.object({ id: v.number(), name: v.string() })),
   videos: v.optional(
@@ -122,6 +129,34 @@ function mapItem(
     episodeNumber: data.episode_number ?? undefined,
   };
 }
+function crewFacts(people:v.InferOutput<typeof crewMember>[]) {
+  const credits=new Map<string,{id:string;name:string;role:string}>();
+  for(const person of people){
+    if(!person.job)continue;
+    const key=person.id+':'+person.job;
+    if(!credits.has(key))credits.set(key,{id:String(person.id),name:person.name.slice(0,250),role:person.job.slice(0,150)});
+  }
+  return [...credits.values()];
+}
+
+type ReleaseCredits=Pick<v.InferOutput<typeof detail>,'credits'|'crew'|'guest_stars'>;
+function releaseCredits(data:ReleaseCredits):Pick<Metadata,'cast'|'facts'|'tasteFeatures'> {
+  if(!data.credits&&!data.crew&&!data.guest_stars)return {};
+  const regulars=data.credits?.cast??[];
+  const guests=[...(data.guest_stars??[]),...(data.credits?.guest_stars??[])];
+  const people=new Map([...regulars,...guests].map(person=>[person.id,person]));
+  const crew=crewFacts([...(data.credits?.crew??[]),...(data.crew??[])]);
+  return {
+    cast:data.credits||data.guest_stars?[...people.values()].map(person=>({
+      id:person.id,name:person.name,character:person.character??'',portrait:tmdbArtwork(person.profile_path),
+    })):undefined,
+    facts:data.credits||data.crew?{credits:crew.slice(0,40)}:undefined,
+    // Embedded season summaries carry a subset of the episode's credits. Save those in the
+    // snapshot while leaving the normalized row from a full episode refresh intact.
+    tasteFeatures:data.credits?{cast:tmdbCastFeatures([...guests,...regulars]),...tmdbCrewFeatures(crew)}:undefined,
+  };
+}
+
 export class TmdbAdapter implements MetadataProvider {
   constructor(
     private request: ProviderTransport,
@@ -233,15 +268,13 @@ export class TmdbAdapter implements MetadataProvider {
         portrait: tmdbArtwork(person.profile_path, 'original'),
       }));
     const feature=(person:{id:number;name:string})=>({id:`tmdb:${person.id}`,name:person.name});
-    const crew=data.credits?.crew??[];
-    if(data.credits) metadata.facts.credits=crew.filter(person=>person.job).slice(0,40).map(person=>({
-      id:String(person.id), name:person.name.slice(0,250), role:person.job.slice(0,150),
-    }));
+    const creators=kind==='show'?data.created_by.map(person=>({...person,job:'Creator'})):[];
+    const crew=crewFacts([...creators,...(data.credits?.crew??[])]);
+    if(data.credits||creators.length)metadata.facts.credits=crew.slice(0,40);
     metadata.tasteFeatures={
       tags:[...(data.keywords?.keywords??[]),...(data.keywords?.results??[])].map(feature),
-      cast:(data.aggregate_credits?.cast??data.credits?.cast??[]).slice(0,20).map(feature),
-      directors:crew.filter(person=>person.job==='Director').map(feature),
-      writers:crew.filter(person=>['Writer','Screenplay','Story','Creator'].includes(person.job)).map(feature),
+      cast:tmdbCastFeatures(data.aggregate_credits?.cast??data.credits?.cast??[]),
+      ...tmdbCrewFeatures(crew),
       franchises:data.belongs_to_collection?[{id:`tmdb:${data.belongs_to_collection.id}`,name:data.belongs_to_collection.name}]:[],
     };
     metadata.recommendations = (data.recommendations?.results ?? [])
@@ -309,21 +342,10 @@ export class TmdbAdapter implements MetadataProvider {
       ...mapItem(data, 'season', this.language, this.region),
       externalId: `${showId}:season:${seasonNumber}`,
       seasonNumber,
-      cast: [
-        ...new Map(
-          [...(data.credits?.cast ?? []), ...(data.credits?.guest_stars ?? [])].map((p) => [
-            p.id,
-            p,
-          ])
-        ).values(),
-      ].map((p) => ({
-        id: p.id,
-        name: p.name,
-        character: p.character ?? '',
-        portrait: tmdbArtwork(p.profile_path),
-      })),
+      ...releaseCredits(data),
       children: data.episodes.map((x) => ({
         ...mapItem(x, 'episode', this.language, this.region),
+        ...releaseCredits(x),
         seasonNumber,
       })),
     };
@@ -342,19 +364,7 @@ export class TmdbAdapter implements MetadataProvider {
       ...mapItem(data, 'episode', this.language, this.region),
       seasonNumber,
       episodeNumber,
-      cast: [
-        ...new Map(
-          [...(data.credits?.cast ?? []), ...(data.credits?.guest_stars ?? [])].map((p) => [
-            p.id,
-            p,
-          ])
-        ).values(),
-      ].map((p) => ({
-        id: p.id,
-        name: p.name,
-        character: p.character ?? '',
-        portrait: tmdbArtwork(p.profile_path),
-      })),
+      ...releaseCredits(data),
     };
   }
   insights(path: string, page = 1) {

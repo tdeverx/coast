@@ -5,7 +5,7 @@ import { AppError } from '#lib/server/security/errors.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url, params, depends, request }) => {
-  depends('coast:tracking', 'coast:social');
+  depends('coast:session', 'coast:tracking', 'coast:social');
   try {
     const row = await loadProfileRow(params.username, locals.user?.id ?? null, url, request.signal);
     if (row) {

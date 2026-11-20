@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { categoryEnabled } from '#lib/experimental.js';
   import type { ProfileTaste } from '#lib/profile/details.server.js';
   import { comparisonMedia, comparisonSignals } from '#lib/social/taste.js';
   import { displayLabel } from '#lib/ui/labels.js';
@@ -17,9 +16,8 @@
     navigate: (href: string) => void;
   } = $props();
 
-  const features = $derived({ ...page.data, features: page.data.capabilities });
   const media = $derived(comparisonMedia.flatMap(option => {
-    if (!categoryEnabled(features, option.category)) return [];
+    if (!page.data.capabilities[option.category]) return [];
     const result = data.comparison.media.find(({ medium }) => medium === option.value);
     return result ? [{ ...result, label: option.label }] : [];
   }));

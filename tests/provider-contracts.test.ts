@@ -42,7 +42,7 @@ describe('TMDB boundary and relevant metadata', () => {
       let requests=0;
       const adapter=new TmdbAdapter(async path=>{
         requests++;expect(path).toContain('keywords');expect(path).toContain('credits');
-        return {id:10,title:'Film',name:'Show',keywords:kind==='movie'?{keywords:[{id:1,name:'Space travel'}]}:{results:[{id:1,name:'Space travel'}]},credits:{cast:[{id:2,name:'Actor'}],crew:[{id:3,name:'Director',job:'Director'},{id:4,name:'Writer',job:'Screenplay'}]},belongs_to_collection:{id:5,name:'Series'}};
+        return {id:10,title:'Film',name:'Show',keywords:kind==='movie'?{keywords:[{id:1,name:'Space travel'}]}:{results:[{id:1,name:'Space travel'}]},credits:{cast:[{id:2,name:'Actor'}],crew:[{id:3,name:'Director',job:'Director'},{id:4,name:'Writer',job:'Screenplay'},{id:6,name:'Score credit',job:'Original Music Composer'},{id:7,name:'Camera credit',job:'Director of Photography'}]},belongs_to_collection:{id:5,name:'Series'}};
       });
       const result=await adapter.details(kind,'10',false);
       expect(requests).toBe(1);
@@ -50,8 +50,56 @@ describe('TMDB boundary and relevant metadata', () => {
       expect(result.tasteFeatures?.cast?.[0].name).toBe('Actor');
       expect(result.tasteFeatures?.directors?.[0].name).toBe('Director');
       expect(result.tasteFeatures?.writers?.[0].name).toBe('Writer');
+      expect(result.tasteFeatures?.composers).toEqual([{id:'tmdb:6',name:'Score credit'}]);
+      expect(result.tasteFeatures?.cinematographers).toEqual([{id:'tmdb:7',name:'Camera credit'}]);
       expect(result.tasteFeatures?.franchises?.[0].name).toBe('Series');
     }
+  });
+  test('series creator credits stay distinct from actual writing credits',async()=>{
+    let calls=0;
+    const adapter=new TmdbAdapter(async()=>{
+      calls++;
+      return {id:10,name:'Series',created_by:[{id:7,name:'Co-creator'},{id:8,name:'Creator'}],
+        credits:{cast:[],crew:[{id:7,name:'Co-creator',job:'Screenplay'}]}};
+    });
+    const result=await adapter.details('show','10',false);
+    expect(calls).toBe(1);
+    expect(result.tasteFeatures?.writers).toEqual([{id:'tmdb:7',name:'Co-creator'}]);
+    expect(result.facts?.credits).toContainEqual({id:'8',name:'Creator',role:'Creator'});
+  });
+  test('season and episode credits preserve guest cast and typed crew using their existing detail requests',async()=>{
+    const regulars=Array.from({length:25},(_,i)=>({id:100+i,name:'Actor '+i}));
+    const guest={id:2,name:'Guest',character:'Visitor'};
+    const episodeCrew=[{id:3,name:'Episode director',job:'Director'},{id:4,name:'Episode writer',job:'Teleplay'},
+      {id:5,name:'Episode composer',job:'Original Music Composer'},{id:6,name:'Episode camera',job:'Director of Photography'}];
+    const seasonCrew=[{id:7,name:'Season writer',job:'Writer'}];
+    const paths:string[]=[];
+    const adapter=new TmdbAdapter(async path=>{
+      paths.push(path);
+      if(path.includes('/episode/'))return {id:20,crew:episodeCrew,guest_stars:[guest],
+        credits:{cast:regulars,guest_stars:[guest],crew:episodeCrew}};
+      return {id:10,credits:{cast:regulars,crew:seasonCrew},episodes:[
+        {id:20,episode_number:1,guest_stars:[guest],crew:episodeCrew},{id:21,episode_number:2},
+      ]};
+    });
+    const season=await adapter.season('1',1),episode=await adapter.episode('1',1,1);
+    expect(paths).toHaveLength(2);
+    for(const path of paths)expect(new URL(path,'https://example.invalid').searchParams.get('append_to_response')).toBe('credits');
+    expect(season.tasteFeatures?.writers).toEqual([{id:'tmdb:7',name:'Season writer'}]);
+    expect(episode.tasteFeatures?.directors).toEqual([{id:'tmdb:3',name:'Episode director'}]);
+    expect(episode.tasteFeatures?.writers).toEqual([{id:'tmdb:4',name:'Episode writer'}]);
+    expect(episode.tasteFeatures?.composers).toEqual([{id:'tmdb:5',name:'Episode composer'}]);
+    expect(episode.tasteFeatures?.cinematographers).toEqual([{id:'tmdb:6',name:'Episode camera'}]);
+    expect(episode.tasteFeatures?.cast?.[0]).toEqual({id:'tmdb:2',name:'Guest'});
+    expect(episode.tasteFeatures?.cast).toHaveLength(20);
+    expect(episode.cast?.map(person=>person.id)).toEqual([...regulars.map(person=>person.id),guest.id]);
+    expect(episode.facts?.credits).toHaveLength(episodeCrew.length);
+    const [embedded,shell]=season.children!;
+    expect(embedded.cast).toEqual([{...guest,portrait:undefined}]);
+    expect(embedded.facts?.credits).toEqual(episode.facts?.credits);
+    expect(embedded.tasteFeatures).toBeUndefined();
+    expect(shell.cast).toBeUndefined();
+    expect(shell.facts).toBeUndefined();
   });
   test('search excludes people, preserves translated and original titles', async () => {
     const adapter = new TmdbAdapter(async (path) => {

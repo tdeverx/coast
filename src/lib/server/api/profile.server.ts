@@ -5,9 +5,25 @@ import { mediaDetailTarget } from '#lib/media/detail-target.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import { tasteDimensions, tasteMedia } from '#lib/social/taste-profile.js';
+import type { TasteScoreMode } from '#lib/social/taste-cache.server.js';
 
 import * as v from 'valibot';
-import { type ApiContext } from './context.server';
+import { uuid, type ApiContext } from './context.server';
+
+/** Always score against the signed-in viewer, including when inspecting someone else's profile. */
+export async function itemTasteResponse({ uid, url, request }: ApiContext, mode: TasteScoreMode = 'published'): Promise<Response> {
+ const workId = uuid(url.searchParams.get('workId'));
+ const match = await withReadCancellation(request.signal, async () => {
+   if (url.searchParams.has('group')) {
+     const group = v.parse(v.picklist(['collection', 'reading-group']), url.searchParams.get('group'));
+     const { collectionTaste } = await import('#lib/social/collection-taste.server.js');
+     return collectionTaste(uid, workId, group, mode);
+   }
+   const { titleTaste } = await import('#lib/social/taste-cache.server.js');
+   return titleTaste(uid, workId, mode);
+ });
+ return Response.json({ match }, { headers: { 'Cache-Control': 'private, no-store' } });
+}
 
 export async function handleProfile(context: ApiContext): Promise<Response | undefined> {
  const { uid, subjectId, path, method, url, body } = context;
@@ -66,13 +82,11 @@ export async function handleProfile(context: ApiContext): Promise<Response | und
  } else if (path[0] === 'profile' && path[1] === 'taste-affinities' && path.length === 2 && method === 'GET') {
       const medium = v.parse(v.picklist(tasteMedia.map(({value})=>value)),url.searchParams.get('medium'));
       const dimension = v.parse(v.picklist(tasteDimensions),url.searchParams.get('dimension'));
-      const page = v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(20)),Number(url.searchParams.get('page')??1));
-      const {personalTasteAffinities}=await import('#lib/social/taste-cache.server.js');
+      const {personalTasteAffinities,maxTasteAffinityPage}=await import('#lib/social/taste-cache.server.js');
+      const page = v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(maxTasteAffinityPage)),Number(url.searchParams.get('page')??1));
       return Response.json(await withReadCancellation(context.request.signal,()=>personalTasteAffinities(uid,medium,dimension,page)));
  } else if (path[0] === 'profile' && path[1] === 'taste-match' && path.length === 2 && method === 'GET') {
-      const workId = v.parse(v.pipe(v.string(), v.uuid()), url.searchParams.get('workId'));
-      const { titleTaste } = await import('#lib/social/taste-cache.server.js');
-      return Response.json({ match: await withReadCancellation(context.request.signal, () => titleTaste(uid, workId)) });
+      return itemTasteResponse(context);
  } else if (path[0] === 'profile' && path.length === 1 && method === 'POST') result = await updateProfile(uid, body); else return undefined;
  return Response.json(result ?? { ok: true });
 }

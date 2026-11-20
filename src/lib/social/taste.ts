@@ -1,12 +1,35 @@
 import {buildTasteProfile,tasteDimensions,tasteMedia,type TasteFeatures} from './taste-profile';
 export const comparisonMedia = tasteMedia.map(({ comparison: value, label, category }) => ({ value, label, category }));
 export const comparisonMediaValues = ['all', ...comparisonMedia.map(medium => medium.value)] as const;
-export const comparisonSignals = ['ratings','genres','reactions','interests',...tasteDimensions.filter(dimension => dimension !== 'genres')] as const;
+export const comparisonSignals = ['ratings','ratingOrder','genres','reactions','interests',...tasteDimensions.filter(dimension => dimension !== 'genres')] as const;
 export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean;features?:TasteFeatures};
 type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
 function cosine(a:Map<string,number>,b:Map<string,number>) {
  const dot=[...a].reduce((s,[k,n])=>s+n*(b.get(k)??0),0),norm=Math.sqrt([...a.values()].reduce((s,n)=>s+n*n,0)*[...b.values()].reduce((s,n)=>s+n*n,0));
  return norm?100*dot/norm:null;
+}
+/** Spearman agreement over the same titles, giving tied star ratings their average rank. */
+function ratingOrder(pairs:number[][]){
+ if(pairs.length<5)return null;
+ function centeredRanks(column:number){
+  const values=pairs.map(pair=>pair[column]);
+  const counts=new Map<number,number>();
+  for(const value of values)counts.set(value,(counts.get(value)??0)+1);
+  if(counts.size<3)return null;
+  const ranks=new Map<number,number>();
+  let below=0;
+  for(const value of [...counts.keys()].sort((a,b)=>a-b)){
+   const count=counts.get(value)!;
+   ranks.set(value,below+(count-pairs.length)/2);
+   below+=count;
+  }
+  return values.map(value=>ranks.get(value)!);
+ }
+ const a=centeredRanks(0),b=centeredRanks(1);
+ if(!a||!b)return null;
+ let dot=0,left=0,right=0;
+ for(let i=0;i<a.length;i++){dot+=a[i]*b[i];left+=a[i]**2;right+=b[i]**2;}
+ return 50*(1+Math.max(-1,Math.min(1,dot/Math.sqrt(left*right))));
 }
 export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  const byId=new Map(right.map(w=>[w.id,w]));
@@ -18,8 +41,10 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  const leftGenres=genres(leftEligible),rightGenres=genres(rightEligible);
  const ai=new Set(left.filter(w=>w.interest).map(w=>w.id)),bi=new Set(right.filter(w=>w.interest).map(w=>w.id));
  const shared=[...ai].filter(id=>bi.has(id)).length,union=new Set([...ai,...bi]).size;
+ const order=ratingOrder(ratingPairs);
  const signals:Record<string,TasteSignal>={
-  ratings:{score:ratingPairs.length>=5?100*(1-ratingPairs.reduce((s,[a,b])=>s+Math.abs(a-b),0)/ratingPairs.length/4.5):null,shared:ratingPairs.length,left:left.filter(w=>w.rating!=null).length,right:right.filter(w=>w.rating!=null).length,weight:40},
+  ratings:{score:ratingPairs.length>=5?100*(1-ratingPairs.reduce((s,[a,b])=>s+Math.abs(a-b),0)/ratingPairs.length/4.5):null,shared:ratingPairs.length,left:left.filter(w=>w.rating!=null).length,right:right.filter(w=>w.rating!=null).length,weight:order===null?40:28},
+  ratingOrder:{score:order,shared:ratingPairs.length,left:ratingPairs.length,right:ratingPairs.length,weight:12},
   genres:{score:leftEligible.length>=5&&rightEligible.length>=5?cosine(leftGenres,rightGenres):null,
     shared:[...leftGenres.keys()].filter(genre=>rightGenres.has(genre)).length,left:leftEligible.length,right:rightEligible.length,weight:30},
   reactions:{score:reactionPairs.length>=5?100*reactionPairs.filter(([a,b])=>a===b).length/reactionPairs.length:null,shared:reactionPairs.length,left:left.filter(w=>w.reaction).length,right:right.filter(w=>w.reaction).length,weight:20},
@@ -31,7 +56,7 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  for(const dimension of tasteDimensions.filter(value=>value!=='genres')){
   const av=(a.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2)),bv=(b.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2));
   const rightValues=new Map(bv.map(v=>[v.id,v.value]));
-  signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),rightValues):null,shared:av.reduce((shared,v)=>shared+(rightValues.has(v.id)?1:0),0),left:av.length,right:bv.length,weight:dimension==='publishers'?2:5};
+  signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),rightValues):null,shared:av.reduce((shared,v)=>shared+(rightValues.has(v.id)?1:0),0),left:av.length,right:bv.length,weight:dimension==='decades'?0:dimension==='publishers'?2:5};
  }
  const qualified=Object.values(signals).filter(s=>s.score!==null),weight=qualified.reduce((s,v)=>s+v.weight,0);
  return {signals,score:weight?qualified.reduce((s,v)=>s+v.score!*v.weight,0)/weight:null};

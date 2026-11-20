@@ -85,7 +85,7 @@ export async function importReading(metadata: ReadingMetadata) {
     if (existingIds.length > 1)
       throw new DomainError('These identities already belong to separate saved works. Resolve the conflict before combining them.', 409, 'identity_conflict');
     async function saveFeatures(workId: string) {
-      const features = { genres: namedFeatures(input.subjects), tags: namedFeatures(input.subjects), writers: namedFeatures(input.authors), ...(input.seriesTitle ? { franchises: namedFeatures([input.seriesTitle]) } : {}) };
+      const features = { tags: namedFeatures(input.subjects), writers: namedFeatures(input.authors), ...(input.seriesTitle ? { franchises: namedFeatures([input.seriesTitle]) } : {}) };
       await tx.insert(workFeatures).values({ workId, provider: input.provider, features, updatedAt: new Date() })
         .onConflictDoUpdate({ target: [workFeatures.workId, workFeatures.provider], set: { features: sql`excluded.features`, updatedAt: new Date() }, setWhere: sql`${workFeatures.features} is distinct from excluded.features` });
     }

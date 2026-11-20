@@ -118,7 +118,7 @@ export async function loadProfileDetails(username: string, viewerId: string | nu
     } : null,
     isOwner,
     canCompareTaste: user.canCompareTaste,
-    taste,
+    taste: taste && { ...taste, viewerId },
     personalTaste,
     activity,
     lists,

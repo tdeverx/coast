@@ -3,6 +3,7 @@ import { requireAdmin, createUser, deleteUser, updateUser } from '#lib/server/au
 import { AppError } from '#lib/server/security/errors.js';
 import { systemHealth } from '#lib/server/notifications/index.js';
 import { uuid, type ApiContext } from './context.server';
+import { itemTasteResponse } from './profile.server';
 import { listBenchmarks, startBenchmark } from '#lib/benchmarks/service.server.js';
 
 export async function handleAdmin(context: ApiContext): Promise<Response | undefined> {
@@ -10,6 +11,8 @@ export async function handleAdmin(context: ApiContext): Promise<Response | undef
  let result: unknown;
  if (path[0] === 'admin') {
       requireAdmin(user);
+      if (path[1] === 'taste-score' && path.length === 2 && method === 'GET')
+        return itemTasteResponse(context, 'recalculate');
       if(path[1]==='featured-hero'&&path.length===2&&method==='POST')
         result=await (await import('#lib/application/featured-hero.server.js')).updateFeaturedHero(user,body);
       else if (path[1] === 'users' && path.length === 2 && method === 'POST')

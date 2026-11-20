@@ -1,13 +1,19 @@
 import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
-import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql,titleTaste} from '../src/lib/social/taste-cache.server';
+import {personalTaste,personalTasteAffinities,refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql,titleTaste,titleTastes,maxTasteBatchSize} from '../src/lib/social/taste-cache.server';
+import {handleProfile} from '../src/lib/server/api/profile.server';
+import {handleAdmin} from '../src/lib/server/api/admin.server';
+import type {ApiContext} from '../src/lib/server/api/context.server';
 import {recommendationRows} from '../src/lib/recommendations/query.server';
 import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service.server';
+import {TmdbAdapter} from '../src/lib/providers/tmdb/adapter.server';
+import {ingestMetadata} from '../src/lib/catalogue/service.server';
 import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
 import {track} from '../src/lib/core/tracking/service.server';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
 import * as featureReads from '../src/lib/social/work-features.server';
+import * as permissions from '../src/lib/server/features';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
@@ -33,7 +39,10 @@ run('task computes private bounded scores and excludes stale cached rankings',as
   await track(user,{mediaId:ids[0],action:'drop',value:true});
  const [current]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user}::uuid`);expect(score.revision).not.toBe(current.revision);
  await refreshTasteCaches();const [updated]=await sql`select revision from user_taste_profiles where user_id=${user} and medium='movie'`;expect(updated.revision).toBe(current.revision);
- expect(await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`).toHaveLength(0);
+ // Hiding a favourite from progress does not undo the user's explicit preference.
+ const [rebuilt]=await sql`select score,revision from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;
+ expect(rebuilt.revision).toBe(current.revision);expect(rebuilt.score).toBeGreaterThan(50);
+ expect(await sql`select 1 from user_taste_scores where user_id=${user} and revision=${score.revision}`).toHaveLength(0);
 });
 run('taste metadata retains complementary sources and resolves genres with the configured priority',async()=>{
  const sql=getSql(),id=ids[3];
@@ -149,4 +158,223 @@ run('taste jobs defer concurrent personal edits once and commit the frozen curso
   expect(saved.checkpoint).toEqual({...checkpoint,next:1,checked:1,deferred:1});
   expect(await db`select medium,revision,profile,updated_at from user_taste_profiles where user_id=${user} order by medium`).toEqual(before);
  }finally{reads.mockRestore();await db`delete from outbox_actions where id=${job}`;}
+});
+
+run('lifetime profiles include retained history and all affinities across pages',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),movies=Array.from({length:625},()=>crypto.randomUUID());
+ const keys=db.array(movies,'UUID');
+ await db`insert into users(id,username) values(${viewer},${'taste-lifetime-'+viewer})`;
+ try{
+  await db`insert into media(id,kind,title,genres)
+    select id,'movie','Lifetime movie '||n,array['Drama'] from unnest(${keys}::uuid[]) with ordinality as item(id,n)`;
+  await db`insert into work_features(work_id,provider,features)
+    select id,'tmdb',jsonb_build_object('tags',jsonb_build_array(jsonb_build_object('id','tag-'||n,'name','Tag '||n)))
+    from unnest(${keys}::uuid[]) with ordinality as item(id,n)`;
+  await db`insert into tracking_events(user_id,media_id,action,applied,occurred_at)
+    select ${viewer},id,'watch',true,now()-make_interval(days=>n::int)
+    from unnest(${keys}::uuid[]) with ordinality as item(id,n)`;
+  await db`insert into tracking_events(user_id,media_id,action,applied)
+    values(${viewer},${movies.at(-1)},'watch',true)`;
+  await db`insert into ratings(user_id,media_id,value) values
+    (${viewer},${movies[0]},5),(${viewer},${movies[1]},3.5),(${viewer},${movies.at(-1)},2)`;
+
+  await refreshTasteCaches();
+
+  const movie=(await personalTaste(viewer)).find(profile=>profile.medium==='movie');
+  expect(movie).toMatchObject({works:625,worksWithSignals:625,ratings:3,medianRating:3.5,explicitWorks:3,inferredWorks:622,
+    consumedWorks:625,repeatedWorks:0,
+    signals:{tags:{count:625}}});
+  const [saved]=await db`select profile from user_taste_profiles where user_id=${viewer} and medium='movie'`;
+  const [,name,affinity,support,,negative,explicit]=saved.profile.dimensions.tags.find((entry:unknown[])=>entry[0]==='tag-625');
+  expect(name).toBe('Tag 625');expect(support).toBe(1);expect(explicit).toBe(1);
+  expect(affinity).toBeLessThan(0);expect(negative).toBeGreaterThan(0);
+  expect(await personalTasteAffinities(viewer,'movie','tags',25)).toMatchObject({pages:25,items:Array(25).fill(expect.objectContaining({samples:1}))});
+  expect(await personalTasteAffinities(viewer,'movie','tags',26)).toEqual({items:[],pages:25});
+  expect(await personalTasteAffinities(other,'movie','tags',1)).toEqual({items:[],pages:1});
+
+  await db`update user_taste_profiles set updated_at=now()-interval '6 days' where user_id=${viewer}`;
+  expect((await getDb().transaction(tx=>scheduleTasteRefresh(tx))).queued).toBe(0);
+  await db`update user_taste_profiles set updated_at=now()-interval '8 days' where user_id=${viewer} and medium='movie'`;
+  expect((await getDb().transaction(tx=>scheduleTasteRefresh(tx))).queued).toBe(1);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from media where id=any(${keys}::uuid[])`;
+ }
+});
+
+run('private profile and match reads withdraw old source permissions immediately',async()=>{
+ const db=getSql(),owner=crypto.randomUUID();
+ await db`insert into users(id,username) values(${owner},${'taste-policy-'+owner})`;
+ try{
+  for(const id of ids.slice(0,2))await track(owner,{mediaId:id,action:'favourite',value:true});
+  await refreshTasteCaches();
+  const saved=await titleTaste(owner,ids[2]);
+  expect(saved?.score).toBeGreaterThan(50);
+  // A warmed result and the on-demand scorer use the same reference and explanation.
+  const spy=spyOn(featureReads,'workTasteFeatures');
+  try{
+   expect(await titleTaste(owner,ids[2])).toEqual(saved);
+   expect(spy).not.toHaveBeenCalled();
+   const adminRequest=new Request('http://coast.test/api/v1/admin/taste-score?'+new URLSearchParams({workId:ids[2],username:'another-viewer'}));
+   const adminContext={uid:owner,subjectId:other,method:'GET',request:adminRequest,url:new URL(adminRequest.url),path:['admin','taste-score'],
+    user:{id:owner,username:'tester',email:null,settings:{},role:'admin'}} as ApiContext;
+   await expect(handleAdmin({...adminContext,user:{...adminContext.user,role:'user'}})).rejects.toMatchObject({status:403});
+   // The testing action always evaluates current metadata. It must not publish a new result.
+   await db`update user_taste_scores set breakdown=jsonb_set(breakdown,'{score}','7') where user_id=${owner} and work_id=${ids[2]}`;
+   const adminResponse=await handleAdmin(adminContext);
+   expect(adminResponse!.headers.get('cache-control')).toContain('no-store');
+   expect(await adminResponse!.json()).toEqual({match:saved});
+   expect(spy).toHaveBeenCalledTimes(1);
+   expect((await titleTaste(owner,ids[2]))?.score).toBe(7);
+   const unavailable=new URL(adminRequest.url);
+   unavailable.searchParams.set('workId',crypto.randomUUID());
+   expect(await (await handleAdmin({...adminContext,url:unavailable}))!.json()).toEqual({match:null});
+   spy.mockClear();
+   await db`delete from user_taste_scores where user_id=${owner} and work_id=${ids[2]}`;
+   expect(await titleTaste(owner,ids[2])).toEqual(saved);
+   expect(spy).toHaveBeenCalledTimes(1);
+   spy.mockClear();
+   const missing=crypto.randomUUID(),lookups=await titleTastes(owner,[ids[0],ids[1],ids[2].toUpperCase(),ids[0],missing]);
+   expect(lookups.size).toBe(3);
+   expect(lookups.get(ids[2].toUpperCase())??null).toEqual(saved);
+   expect(lookups.has(missing)).toBe(false);
+   expect(spy.mock.calls).toHaveLength(1);
+   expect(new Set(spy.mock.calls[0][0])).toEqual(new Set(ids.slice(0,3)));
+   await expect(titleTastes(owner,Array(maxTasteBatchSize+1).fill(ids[0]))).rejects.toMatchObject({status:400});
+   const request=new Request('http://coast.test/api/v1/profile/taste-match?'+new URLSearchParams({workId:ids[2]}));
+   const context={uid:owner,subjectId:other,request,url:new URL(request.url),method:'GET',path:['profile','taste-match']} as ApiContext;
+   const response=await handleProfile(context);
+   expect(await response!.json()).toEqual({match:saved});
+   const abort=new AbortController();abort.abort();
+   await expect(handleProfile({...context,request:new Request(request,{signal:abort.signal})})).rejects.toMatchObject({name:'AbortError'});
+  }finally{spy.mockRestore();}
+  await db`update users set access_defaults='{"social":false}' where id=${owner}`;
+  expect(await personalTaste(owner)).toEqual([]);
+  expect(await personalTasteAffinities(owner,'movie','genres',1)).toEqual({items:[],pages:1});
+  expect(await titleTaste(owner,ids[2])).toBeNull();
+  expect((await titleTastes(owner,ids)).size).toBe(0);
+  await refreshTasteCaches();
+  expect((await personalTaste(owner)).find(profile=>profile.medium==='movie')?.works).toBe(2);
+ }finally{await db`delete from users where id=${owner}`;}
+});
+
+run('a withdrawn medium or personalisation permission is checked again when private taste is read',async()=>{
+ const db=getSql(),owner=crypto.randomUUID();
+ await db`insert into users(id,username) values(${owner},${'taste-withdraw-'+owner})`;
+ try{
+  for(const id of ids.slice(0,2))await track(owner,{mediaId:id,action:'favourite',value:true});
+  await refreshTasteCaches();
+  const admit=permissions.requireFeature;
+  for(const feature of ['screen','personalisation'] as const){
+   await db`update users set settings='{}' where id=${owner}`;
+   const gate=spyOn(permissions,'requireFeature').mockImplementationOnce(async(...args)=>{
+    const config=await admit(...args);
+    await db`update users set settings=${{features:{[feature]:false}}}::jsonb where id=${owner}`;
+    return config;
+   });
+   try{
+    if(feature==='screen')expect((await personalTaste(owner)).map(entry=>entry.medium)).not.toContain('movie');
+    else expect(await personalTasteAffinities(owner,'movie','cast',1)).toEqual({items:[],pages:1});
+    expect(gate).toHaveBeenCalledTimes(1);
+   }finally{gate.mockRestore();}
+  }
+ }finally{await db`delete from users where id=${owner}`;}
+});
+
+run('one observed work is retained in the summary without preparing or hydrating unscoreable targets',async()=>{
+ const db=getSql(),owner=crypto.randomUUID();
+ await db`insert into users(id,username) values(${owner},${'taste-single-'+owner})`;
+ try{
+  await track(owner,{mediaId:ids[0],action:'favourite',value:true});
+  await refreshTasteCaches();
+  expect((await personalTaste(owner)).find(entry=>entry.medium==='movie')?.works).toBe(1);
+  expect(await db`select 1 from user_taste_scores where user_id=${owner}`).toHaveLength(0);
+  const read=spyOn(featureReads,'workTasteFeatures');
+  try{
+   const match=await titleTaste(owner,ids[2]);
+   expect(match).toEqual({score:null,confidence:0,dimensions:{},reasons:[],matches:0});
+   expect(read).not.toHaveBeenCalled();
+  }finally{read.mockRestore();}
+ }finally{await db`delete from users where id=${owner}`;}
+});
+
+run('linked tracks use the album reference on warm and on-demand item reads',async()=>{
+ const db=getSql(),owner=crypto.randomUUID(),albums=Array.from({length:7},()=>crypto.randomUUID()),trackId=crypto.randomUUID(),artistId=crypto.randomUUID();
+ const workIds=db.array([...albums,trackId],'UUID');
+ await db`insert into users(id,username) values(${owner},${'taste-album-'+owner})`;
+ try{
+  await db`insert into works(id,category,kind)
+   select id,'music',case when id=${trackId} then 'track' else 'album' end from unnest(${workIds}::uuid[]) items(id)`;
+  await db`insert into music_works(id,kind,title,artist_names)
+   select id,kind,'Album fixture',case when kind='album' then array['Repeated artist'] else array['Different track credit'] end
+   from works where id=any(${workIds}::uuid[])`;
+  await db`insert into works(id,category,kind) values(${artistId},'music','artist')`;
+  await db`insert into music_works(id,kind,title) values(${artistId},'artist','Repeated artist')`;
+  await db`insert into music_credits(work_id,artist_id,role)
+   select id,${artistId},'album-artist' from unnest(${db.array(albums,'UUID')}::uuid[]) as a(id)`;
+  await db`insert into media_relationships(parent_id,child_id,kind,position) values(${albums[6]},${trackId},'contains',1)`;
+  for(const id of albums.slice(0,6))await track(owner,{mediaId:id,action:'favourite',value:true});
+  await refreshTasteCaches();
+  const expected=await titleTaste(owner,albums[6]);
+  expect(expected?.score).toBeGreaterThan(50);
+  const [revision]=await db`select revision from user_taste_profiles where user_id=${owner} and medium='music'`;
+  await db`insert into user_taste_scores(user_id,work_id,score,confidence,revision,breakdown)
+   values(${owner},${albums[6]},${expected!.score},${expected!.confidence},${revision.revision},${expected}::jsonb)
+   on conflict(user_id,work_id) do nothing`;
+  expect(await titleTaste(owner,trackId)).toEqual(expected);
+  await db`delete from user_taste_scores where user_id=${owner}`;
+  expect(await titleTaste(owner,trackId)).toEqual(expected);
+  const guest=crypto.randomUUID();
+  await db`insert into works(id,category,kind) values(${guest},'music','artist')`;
+  try{
+   await db`insert into music_works(id,kind,title) values(${guest},'artist','Unfamiliar track artist')`;
+   await db`insert into music_credits(work_id,artist_id,role) values(${trackId},${guest},'artist')`;
+   const read=spyOn(featureReads,'workTasteFeatures');
+   try{
+    const batch=await titleTastes(owner,[trackId,albums[6]]);
+    expect(read.mock.calls).toHaveLength(1);
+    expect(new Set(read.mock.calls[0][0])).toEqual(new Set([trackId,albums[6]]));
+    expect(batch.get(trackId)?.score).toBeNull();
+    expect(batch.get(albums[6])??null).toEqual(expected);
+   }finally{read.mockRestore();}
+  }finally{await db`delete from works where id=${guest}`;}
+ }finally{
+  await db`delete from users where id=${owner}`;
+  await db`delete from works where id=any(${workIds}::uuid[]) or id=${artistId}`;
+ }
+});
+
+run('verified episode credits score the individual item while uncredited episodes reuse their show',async()=>{
+ const db=getSql(),owner=crypto.randomUUID(),shows=Array.from({length:7},()=>crypto.randomUUID()),episodes=[crypto.randomUUID(),crypto.randomUUID()];
+ const season=crypto.randomUUID(),target=shows[6],showIds=db.array(shows,'UUID');
+ await db`insert into users(id,username) values(${owner},${'taste-episode-'+owner})`;
+ try{
+  await db`insert into media(id,kind,title) select id,'show','Show' from unnest(${showIds}::uuid[]) t(id)`;
+  await db`insert into shows(media_id) select id from unnest(${showIds}::uuid[]) t(id)`;
+  await db`insert into media(id,kind,title) values(${episodes[0]},'episode','Guest'),(${episodes[1]},'episode','Regular')`;
+  await db`insert into episodes(media_id,show_id,season_number,episode_number) values(${episodes[0]},${target},1,1),(${episodes[1]},${target},1,2)`;
+  await db`insert into work_features(work_id,provider,features)
+   select id,'tmdb','{"directors":[{"id":"tmdb:17","name":"Familiar director"}]}'::jsonb from unnest(${showIds}::uuid[]) t(id)`;
+  const tmdb=new TmdbAdapter(async()=>({id:820011,name:'Guest',credits:{cast:[],crew:[{id:45,name:'Guest director',job:'Director'}]}}));
+  await ingestMetadata(await tmdb.episode('820010',1,1),{mediaId:episodes[0],showId:target});
+  await db`insert into media(id,kind,title) values(${season},'season','Guest season')`;
+  await db`insert into seasons(media_id,show_id,season_number) values(${season},${target},1)`;
+  await db`insert into metadata_snapshots(media_id,provider,raw) values
+   (${season},'tmdb','{"facts":{"credits":[{"id":"45","name":"Guest director","role":"Director"}]}}')`;
+  for(const id of shows.slice(0,6))await track(owner,{mediaId:id,action:'favourite',value:true});
+  await refreshTasteCaches();
+  const read=spyOn(featureReads,'workTasteFeatures');
+  try{
+   const matches=await titleTastes(owner,[target,...episodes,season]);
+   expect(matches.get(season)?.score).toBeNull();
+   expect(matches.get(target)?.score).toBeGreaterThan(50);
+   expect(matches.get(episodes[1])).toEqual(matches.get(target));
+   expect(matches.get(episodes[0])?.score).toBeNull();
+   expect(read.mock.calls).toHaveLength(1);
+   expect(new Set(read.mock.calls[0][0])).toEqual(new Set([target,episodes[0],season]));
+  }finally{read.mockRestore();}
+ }finally{
+  await db`delete from users where id=${owner}`;
+  await db`delete from media where id=any(${db.array([...shows,...episodes,season],'UUID')}::uuid[])`;
+ }
 });
