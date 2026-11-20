@@ -12,7 +12,7 @@
 
   let {
     children, hero = true, item, items = [], collection, parents = [], context = 'details', next = null,
-    requestable = false, heroActions, commands = [], links = [], sections = [], error = '', back,
+    requestable = false, heroActions, heroContent, commands = [], links = [], sections = [], error = '', back,
     details = false, page, editionName,heroAlignment='left', class: className = '',
   }: {
     children?: Snippet;
@@ -25,6 +25,7 @@
     next?: MediaView | null;
     requestable?: boolean;
     heroActions?: Snippet;
+    heroContent?: Snippet;
     commands?: PageCommand[];
     links?: { href: string; label: string }[];
     sections?: PageSection[];
@@ -34,7 +35,7 @@
     page?: boolean;
     class?: string;
   } = $props();
-  const hasHero = $derived(hero && (collection ? heroTitleIds(collection.items).length > 0 : !!item || items.length > 0));
+  const hasHero = $derived(!!heroContent || hero && (collection ? heroTitleIds(collection.items).length > 0 : !!item || items.length > 0));
   reportFailure(()=>error);
 </script>
 
@@ -42,7 +43,8 @@
   {#each commands as command}<Button size={command.size} icon={command.icon} emphasis={command.emphasis} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
   {@render heroActions?.()}
 {/snippet}
-{#if hasHero}<MediaHero alignment={heroAlignment} {editionName} {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
+{#if heroContent}{@render heroContent()}
+{:else if hasHero}<MediaHero alignment={heroAlignment} {editionName} {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
 <div class={`content ${className}`} class:details class:page={page ?? !hasHero} class:route-content={!hasHero && !details}>
   {#if back}<Button emphasis="subtle" href={back.href} icon="left">{back.label}</Button>{/if}
 

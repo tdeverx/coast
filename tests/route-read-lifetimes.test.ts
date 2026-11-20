@@ -3,7 +3,9 @@ import {expect,test} from 'bun:test';
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,moduleUrl,resourceUrl,svelteUrl} from './fixtures/ui-script';
 
-const profileScript=(await componentScript('src/routes/profile/[username]/+page.svelte')).replace('let { data } = $props();','');
+const profileScript=(await componentScript('src/lib/profile/Details.svelte'))
+ .replace(/let \{ data, modal = false, detailHref \}: \{[\s\S]*?\} = \$props\(\);/, 'const modal=false,detailHref=undefined;')
+ .replace('const sectionId = $props.id();','const sectionId = "profile-fixture";');
 const onboardingScript=(await componentScript('src/routes/onboarding/+page.svelte'))
  .replace(/\bimport\s*[\s\S]*?\bfrom\s*['"][^'"]+['"];?/g,'').replace('let {data,form}=$props();','');
 const {createProfile,createOnboarding}=await import(moduleUrl(compileRunes(`
@@ -11,7 +13,9 @@ const {createProfile,createOnboarding}=await import(moduleUrl(compileRunes(`
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function createProfile(initial,api,change){
   let data=$state(initial);const cleanups=[],onDestroy=callback=>cleanups.push(callback);
-  const setContext=()=>{},reportFailure=()=>{},page={url:new URL('https://example.invalid/profile/owner')};
+  const setContext=()=>{},reportFailure=()=>{},useClient=()=>({feedback:{}}),page={url:new URL('https://example.invalid/profile/owner')};
+  const profilePath=username=>'/profile/'+encodeURIComponent(username);
+  const useDetailSection=()=>undefined;
   const message=error=>error.message;
   ${profileScript}
   return {chooseFavourites,choosePeriod,setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());},

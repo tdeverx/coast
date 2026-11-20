@@ -261,12 +261,6 @@
                         : 'Unavailable in installation settings.'} Your choice is remembered.`
                   : undefined}
               >
-                {#snippet details()}
-                  {#if key === 'requests'}
-                    <a class="small" href="/requests">Manage existing requests</a>
-                  {/if}
-                {/snippet}
-
                 <input
                   type="checkbox"
                   aria-label={title}

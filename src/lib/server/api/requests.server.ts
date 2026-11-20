@@ -17,9 +17,9 @@ export async function handleRequests(context: ApiContext): Promise<Response | un
         await requireFeature(uid,'requests');await requireFeature(uid,'screen');
         const options=v.parse(requestFeedSchema,{state:url.searchParams.get('state')??undefined,kind:url.searchParams.get('kind')??undefined,page:url.searchParams.has('page')?Number(url.searchParams.get('page')):undefined,preview:url.searchParams.get('preview')==='true'});
         const admin=context.user.role==='admin';
-        const data=await requestList(uid,options.page,undefined,{...options,pageSize:options.preview?ROW_BATCH_SIZE:PAGE_SIZE,allUsers:admin},context.request.signal);
+        const data=await requestList(uid,options.page,undefined,{...options,pageSize:options.preview?ROW_BATCH_SIZE:PAGE_SIZE,allUsers:admin,summarizeStates:true},context.request.signal);
         context.request.signal.throwIfAborted();
-        result={page:data.page,pages:data.pages,total:data.total,items:data.requests.flatMap(request=>request.item?[requestFeedCard(request.item,request,admin?request.requester:undefined)]:[])};
+        result={page:data.page,pages:data.pages,total:data.total,availableStates:data.availableStates,items:data.requests.flatMap(request=>request.item?[requestFeedCard(request.item,request,admin?request.requester:undefined)]:[])};
       }else if (path[1] === 'options' && method === 'GET') {
         const options = await requestOptions(uid, uuid(url.searchParams.get('mediaId')), context.request.signal);
         result = {

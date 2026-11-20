@@ -57,6 +57,7 @@
 <style>
   .row-header {
     display: flex;
+    min-block-size: var(--segment-height);
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;

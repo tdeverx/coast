@@ -1,6 +1,7 @@
 import {expect,test} from 'bun:test';
 import * as v from 'valibot';
-import {and,desc,eq,inArray,sql} from 'drizzle-orm';
+import {and,desc,eq,inArray,sql,type SQL} from 'drizzle-orm';
+import {PgDialect} from 'drizzle-orm/pg-core';
 import * as s from '../src/lib/server/db/schema';
 import {profileOptionsSchema,profileSectionData} from '../src/lib/server/queries/profile';
 import {periodStart} from '../src/lib/profile/period';
@@ -89,7 +90,12 @@ const profileSource=await Bun.file(new URL('../src/lib/server/queries/profile.ts
 const profileFunctions=profileSource.slice(profileSource.indexOf('async function profileSummary('),profileSource.indexOf('export async function profileActivity('));
 test('insight projection reuses identical totals without activating profile cards or preferences',async()=>{
   let executions=0,hydrated=0,userReads=0;
-  const db={execute:async()=>++executions%2===1?[{favourites:true,ratings:true}]:[{total:10,unique:9,movies:7,episodes:2,filtered:10}],
+  const dialect=new PgDialect();
+  const db={execute:async(query:SQL)=>{
+    if(dialect.sqlToQuery(query).sql.includes('order by a.occurred_at desc,a.id desc limit 1'))return [];
+    return ++executions%2===1?[{favourites:true,ratings:true,activityCategories:['screen'],progressCategories:['screen']}]:
+      [{total:10,unique:9,movies:7,episodes:2,filtered:10}];
+  },
     select:(projection:Record<string,unknown>)=>{
       let table:unknown;
       const query:any={from:(next:unknown)=>{table=next;return query;},where:()=>query,innerJoin:()=>query,leftJoin:()=>query,orderBy:()=>query,limit:()=>query,offset:()=>query,
@@ -134,12 +140,12 @@ test('profile section handlers select the narrow requested reader',async()=>{
 });
 
 test('section projections preserve favourite order/pins without page-only cards',async()=>{
-  const favourite=crypto.randomUUID(),featured=crypto.randomUUID(),background=crypto.randomUUID();
+  const favourite=crypto.randomUUID(),background=crypto.randomUUID();
   let userReads=0;const hydrated:string[][]=[];
   const db={execute:async()=>[],select:(projection:Record<string,unknown>)=>{
     let table:unknown;const query:any={from:(value:unknown)=>{table=value;return query;},where:()=>query,innerJoin:()=>query,leftJoin:()=>query,orderBy:()=>query,limit:()=>query,offset:()=>query,
       then:(resolve:(value:unknown)=>unknown)=>{
-        if(table===s.users){userReads++;return Promise.resolve([{settings:{profile:{backgroundMode:'fixed',backgroundMediaId:background,featuredMediaId:featured,pinnedFavourites:[favourite],favouriteOrder:[favourite]}}}]).then(resolve);}
+        if(table===s.users){userReads++;return Promise.resolve([{settings:{profile:{backgroundMode:'fixed',backgroundMediaId:background,pinnedFavourites:[favourite],favouriteOrder:[favourite]}}}]).then(resolve);}
         if(table===s.works)throw Error('Unexpected page-only background validation');
         expect(projection).toHaveProperty('id');return Promise.resolve([{id:favourite}]).then(resolve);
       }};return query;

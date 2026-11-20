@@ -485,16 +485,12 @@
 </script>
 
 {#snippet requestManagement(request: MediaActionData['requests'][number])}
+  <Button item disabled>{requestStatusLabel(request.state)}</Button>
+  {#if request.canApprove || request.canCancel || request.canDecline}<div class="menu-divider" role="separator"></div>{/if}
   {#if request.canApprove}<Button item
       icon="check"
       disabled={busy}
       onclick={() => manageRequest(request, 'approve')}>Approve request…</Button>{/if}
-  <Button item icon="arrow" href={`/requests?request=${request.id}`}
-    >View request · {requestStatusLabel(request.state)}</Button>
-  {#if request.canCancel || request.canDecline}<div
-      class="menu-divider"
-      role="separator"
-    ></div>{/if}
   {#if request.canDecline}<Button item
       icon="close"
       danger

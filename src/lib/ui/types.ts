@@ -71,7 +71,7 @@ export interface MediaView {
   captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
   captionActor?: {username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus;profileHref?:string|null};
   captionDate?:string;
-  captionStatus?:{label:string;href:string;icon:'check'|'clock'|'close';tone:'positive'|'pending'|'negative'};
+  captionStatus?:{label:string;icon:'check'|'clock'|'close';tone:'positive'|'pending'|'negative'};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;

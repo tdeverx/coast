@@ -11,6 +11,7 @@ const client=await import(clientUrl),lifecycle=await import(lifecycleUrl);
 const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/social.svelte.ts',import.meta.url)).text())
  .replaceAll('$app/state',routeUrl).replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
  .replaceAll('$app/navigation',moduleUrl('export const goto=async()=>{};'))
+ .replaceAll('#lib/ui/media-navigation.js',moduleUrl('export const navigateMedia=async()=>{};'))
  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl('export const useShelfLocation=()=>({embedded:true});'))
  .replaceAll('#lib/ui/filter-options.js',import.meta.resolve('../src/lib/ui/filter-options'))
  .replaceAll('#lib/ui/content-revision.svelte.js',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.social;'))

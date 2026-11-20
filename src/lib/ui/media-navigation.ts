@@ -1,6 +1,6 @@
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
-import { mediaDetailTarget } from '#lib/media/detail-target.js';
+import { detailPanelHref, detailPanelUrl, mediaDetailTarget, panelAddress } from '#lib/media/detail-target.js';
 import { sectionTarget } from '#lib/ui/section-target.js';
 import { player } from '#lib/playback/client.svelte.js';
 import { captureShelfPosition } from './shelf-position';
@@ -11,22 +11,27 @@ let opening: Promise<void> = Promise.resolve();
 let closingState: App.PageState | undefined;
 
 function overlayTarget(href: string, section = false) {
-  return page.data.user && !page.url.pathname.startsWith('/ui-preview')
-    ? mediaDetailTarget(href,page.url) ?? (section || page.state.mediaDetailHref ? sectionTarget(href,page.url) : null)
+  const target = page.data.user && !page.url.pathname.startsWith('/ui-preview')
+    ? mediaDetailTarget(href,page.url) ?? (section || detailPanelHref(panelAddress(page),page.state) ? sectionTarget(href,page.url) : null)
     : null;
+  return target && 'kind' in target && target.kind === 'profile' && page.data.user?.access?.libraryOnly ? null : target;
 }
-export function openMediaDetails(href:string,section=false){
+export function openMediaDetails(href:string,section=false,replace=false){
  const target=overlayTarget(href,section);if(!target)return false;
   if (player.session) player.browsing = true;
-  const address = page.url.href, viewer = page.data.user?.id;
+  const address = detailPanelUrl(panelAddress(page)).href, viewer = page.data.user?.id;
+  const isCurrent = () => detailPanelUrl(panelAddress(page)).href === address && page.data.user?.id === viewer;
   // Native shallow goto is asynchronous. Keep a saved parent entry ahead of its
   // child and compute each queued click from the last committed panel state.
   opening = opening.then(async () => {
-    if (page.url.href !== address || page.data.user?.id !== viewer) return;
-  if (page.state.mediaDetailHref !== target.href) {
+    if (!isCurrent()) return;
+    const parentHref = detailPanelHref(panelAddress(page),page.state);
+  if (parentHref !== target.href) {
     let parent = page.state;
 
-    if (parent.mediaDetailHref) {
+    const fromLink = parent.mediaDetailFromLink ?? (!!parentHref && !parent.mediaDetailHref);
+    const replaceCurrent = replace && !!parentHref;
+    if (parentHref && !replaceCurrent) {
       const rail = [
         ...document.querySelectorAll<HTMLElement>('.detail-scroll [data-shelf-location]')
       ].find((node) => node.closest('dialog')?.hasAttribute('open'));
@@ -38,22 +43,24 @@ export function openMediaDetails(href:string,section=false){
         parent = {
           ...parent,
           mediaDetailHref: href,
+          mediaDetailFromLink: fromLink,
           mediaDetailShelf: { href, position }
         };
 
-        if (page.url.href !== address || page.data.user?.id !== viewer) return;
-    await goto(page.url.href, { shallow: true, reset: false, replace: true, state: parent });
+        if (!isCurrent()) return;
+        await goto(detailPanelUrl(panelAddress(page), href), { shallow: true, reset: false, replace: true, state: parent });
       }
     }
 
-    if (page.url.href !== address || page.data.user?.id !== viewer) return;
-    await goto(page.url.href, {
-      shallow: true, reset: false,
+    if (!isCurrent()) return;
+    await goto(detailPanelUrl(panelAddress(page), target.href), {
+      shallow: true, reset: false, replace: replaceCurrent,
       state: {
         ...parent,
         mediaDetailShelf: undefined,
         mediaDetailHref: target.href,
-        mediaDetailDepth: parent.mediaDetailHref ? (parent.mediaDetailDepth ?? 1) + 1 : 1
+        mediaDetailFromLink: fromLink,
+        mediaDetailDepth: replaceCurrent ? parent.mediaDetailDepth ?? 1 : parentHref ? (parent.mediaDetailDepth ?? 1) + 1 : 1
       }
     });
   }
@@ -61,16 +68,21 @@ export function openMediaDetails(href:string,section=false){
   }).catch(cause => actionFeedback.failure(message(cause)));
   return true;
 }
-export async function navigateMedia(href:string,options?:Parameters<typeof goto>[1]){if(openMediaDetails(href))await opening;else await goto(href,options);}
+export async function navigateMedia(href:string,options?:Parameters<typeof goto>[1]){if(openMediaDetails(href,false,options?.replace))await opening;else await goto(href,options);}
 export async function backMediaDetails(){await opening;if((page.state.mediaDetailDepth??1)>1)history.back();}
 export async function closeMediaDetails() {
   await opening;
   const state = page.state;
-  if (!state.mediaDetailHref || state === closingState) return;
+  if (!detailPanelHref(panelAddress(page),state) || state === closingState) return;
   // The dialog remains modal until the history entry changes. Several close
   // gestures during that traversal still belong to the same entry.
   closingState = state;
-  history.go(-(state.mediaDetailDepth ?? 1));
+  if (state.mediaDetailDepth && !state.mediaDetailFromLink) history.go(-state.mediaDetailDepth);
+  else await goto(detailPanelUrl(panelAddress(page)), {
+    shallow: true, reset: false, replace: true,
+    state: { ...state, mediaDetailHref: undefined, mediaDetailDepth: undefined,
+      mediaDetailFromLink: undefined, mediaDetailShelf: undefined },
+  });
 }
 /** One delegated listener covers anchors, Buttons, menus, heroes and future detail links. */
 export function mediaDetailLinks(node:HTMLElement){

@@ -1,6 +1,7 @@
 import {expect,test} from 'bun:test';
 import {parse} from 'svelte/compiler';
 import ts from 'typescript';
+import {detailPanelHref,panelAddress} from '../src/lib/media/detail-target';
 
 const read=async(path:string)=>Bun.file(new URL('../'+path,import.meta.url)).text();
 function functionSource(source:string,name:string){
@@ -16,8 +17,8 @@ const {create,deferred,turn:runtimeTurn}=await import('./fixtures/navigation-run
 /** Use the installed Kit 3 refresh owner with controlled render/load boundaries. */
 function navigation(){
  const h=create(kit).value;
- const refreshRouteDependencies=new Function('page','refreshAll','invalidate',functionSource(client,'refreshRouteDependencies')+';return refreshRouteDependencies;')(
-  h.page,()=>h.invalidate('refresh'),()=>h.invalidate('invalidate',{resetState:true}));
+ const refreshRouteDependencies=new Function('page','refreshAll','invalidate','detailPanelHref','panelAddress',functionSource(client,'refreshRouteDependencies')+';return refreshRouteDependencies;')(
+  h.page,()=>h.invalidate('refresh'),()=>h.invalidate('invalidate',{resetState:true}),detailPanelHref,panelAddress);
  return {...h,refreshRouteDependencies};
 }
 

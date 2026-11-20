@@ -1,4 +1,7 @@
-import {buildTasteProfile,tasteDimensions,type TasteFeatures} from './taste-profile';
+import {buildTasteProfile,tasteDimensions,tasteMedia,type TasteFeatures} from './taste-profile';
+export const comparisonMedia = tasteMedia.map(({ comparison: value, label, category }) => ({ value, label, category }));
+export const comparisonMediaValues = ['all', ...comparisonMedia.map(medium => medium.value)] as const;
+export const comparisonSignals = ['ratings','genres','reactions','interests',...tasteDimensions.filter(dimension => dimension !== 'genres')] as const;
 export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean;features?:TasteFeatures};
 type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
 function cosine(a:Map<string,number>,b:Map<string,number>) {
@@ -10,12 +13,15 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  const ratingPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.rating!=null&&other?.rating!=null?[[w.rating,other.rating]]:[];});
  const reactionPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.reaction&&other?.reaction?[[w.reaction,other.reaction]]:[];});
  const eligible=(items:TasteWork[])=>items.filter(w=>w.consumed||w.interest||w.rating!=null);
- const genres=(items:TasteWork[])=>{const map=new Map<string,number>();for(const w of eligible(items).filter(work=>work.rating==null||work.rating>=2.5))for(const genre of new Set(w.genres.map(g=>g.toLowerCase())))map.set(genre,(map.get(genre)??0)+1);return map;};
+ const genres=(items:TasteWork[])=>{const map=new Map<string,number>();for(const w of items.filter(work=>work.rating==null||work.rating>=2.5))for(const genre of new Set(w.genres.map(g=>g.toLowerCase())))map.set(genre,(map.get(genre)??0)+1);return map;};
+ const leftEligible=eligible(left),rightEligible=eligible(right);
+ const leftGenres=genres(leftEligible),rightGenres=genres(rightEligible);
  const ai=new Set(left.filter(w=>w.interest).map(w=>w.id)),bi=new Set(right.filter(w=>w.interest).map(w=>w.id));
  const shared=[...ai].filter(id=>bi.has(id)).length,union=new Set([...ai,...bi]).size;
  const signals:Record<string,TasteSignal>={
   ratings:{score:ratingPairs.length>=5?100*(1-ratingPairs.reduce((s,[a,b])=>s+Math.abs(a-b),0)/ratingPairs.length/4.5):null,shared:ratingPairs.length,left:left.filter(w=>w.rating!=null).length,right:right.filter(w=>w.rating!=null).length,weight:40},
-  genres:{score:eligible(left).length>=5&&eligible(right).length>=5?cosine(genres(left),genres(right)):null,shared:0,left:eligible(left).length,right:eligible(right).length,weight:30},
+  genres:{score:leftEligible.length>=5&&rightEligible.length>=5?cosine(leftGenres,rightGenres):null,
+    shared:[...leftGenres.keys()].filter(genre=>rightGenres.has(genre)).length,left:leftEligible.length,right:rightEligible.length,weight:30},
   reactions:{score:reactionPairs.length>=5?100*reactionPairs.filter(([a,b])=>a===b).length/reactionPairs.length:null,shared:reactionPairs.length,left:left.filter(w=>w.reaction).length,right:right.filter(w=>w.reaction).length,weight:20},
   interests:{score:ai.size>=5&&bi.size>=5&&union?100*shared/union:null,shared,left:ai.size,right:bi.size,weight:10},
  };

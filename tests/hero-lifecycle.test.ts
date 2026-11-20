@@ -4,7 +4,7 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,svelteUrl} from './fixtures/ui-script';
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(svelteUrl)};export const onMount=()=>{};`);
 const stubUrl=moduleUrl(compileRunes(`
- export const page=$state({data:{capabilities:{playback:true,screen:true}},state:{mediaDetailHref:null}});
+ export const page=$state({data:{capabilities:{playback:true,screen:true}},state:{mediaDetailHref:null},url:new URL('https://example.invalid/')});
  export const reader=$state({visible:false}),heroPlayer=$state({id:null,url:null,visible:false,paused:false,playing:false,ready:false,crop:null,generation:0,muted:true,outcome:'idle'}),player={session:null,browsing:false,paused:true};
  export const requests=[],presentations=[];
  export const useClient=()=>({api:(path,body,method,options)=>new Promise(resolve=>requests.push({path,signal:options?.signal,resolve}))});
@@ -17,6 +17,7 @@ const source=(await Bun.file(new URL('../src/lib/ui/heroes/presentation.svelte.t
  .replace("from './cycle'",`from ${JSON.stringify(import.meta.resolve('../src/lib/ui/heroes/cycle.ts'))}`)
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
  .replaceAll(/from ['"]\$app\/state['"]/g,`from ${JSON.stringify(stubUrl)}`)
+ .replace("from '#lib/media/detail-target.js'",`from ${JSON.stringify(new URL('../src/lib/media/detail-target.ts',import.meta.url).href)}`)
  .replaceAll(/from ['"]#lib\/[^'"]+['"]/g,`from ${JSON.stringify(stubUrl)}`);
 const {createHeroPresentation}=await import(moduleUrl(compileRunes(source)));
 const playbackSource=(await Bun.file(new URL('../src/lib/ui/heroes/playback.svelte.ts',import.meta.url)).text())

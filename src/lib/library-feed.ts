@@ -22,13 +22,13 @@ export const requestFeedSchema=v.object({
   page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1_000_000)),1),
   preview:v.optional(v.boolean(),false),
 });
-export type LibraryFeedContent={items:ShelfItem[];page:number;pages:number;total:number};
+export type LibraryFeedContent={items:ShelfItem[];page:number;pages:number;total:number;availableStates?:string[]};
 export const requestStatusLabel=(state:string)=>requestStates.find(option=>option.value===state)?.label??'Unknown';
 export function requestFeedCard(item:MediaView,request:{id:string;state:string;destination:string;createdAt:Date|string},actor?:{username:string;avatar?:string|null}):MediaView{
   const label=requestStatusLabel(request.state);
   return {...item,entryId:request.id,captionActor:actor,
     captionSubtitle:`Requested · ${request.destination}`,captionDate:actor?new Date(request.createdAt).toISOString():undefined,
-    captionStatus:{label,href:`/requests?request=${request.id}`,
+    captionStatus:{label,
       icon:['available','approved'].includes(request.state)?'check':['pending','processing'].includes(request.state)?'clock':'close',
       tone:request.state==='available'?'positive':['pending','approved','processing'].includes(request.state)?'pending':'negative'},
   };

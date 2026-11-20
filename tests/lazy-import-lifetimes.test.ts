@@ -21,12 +21,14 @@ const imports=(source:string)=>eraseTypeScript(source)
 const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(`
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
+ import {detailPanelHref, detailPanelUrl, panelAddress} from ${JSON.stringify(new URL('../src/lib/media/detail-target.ts',import.meta.url).href)};
  export function createRoot(initial,transport,inPreview=false){
   let data=$state(initial);const reader=$state({visible:false,session:null}),page=$state({state:{},url:new URL('https://example.invalid/library')});
   const cleanups=[],onDestroy=callback=>cleanups.push(callback),feedback=[],reportFailure=(read,retry)=>feedback.push({read,retry});
   let reloads=0;const useClient=()=>({preview:inPreview,feedback:{watch:(read,retry)=>feedback.push({read,retry})}}),window={location:{reload:()=>reloads++}};
   ${imports(importReporter)}
   const replaceState=(_url,state)=>{page.state=state;};
+  const notificationSegments=[],friendViews=[], streamViews=[],linkedPanelView=()=>undefined;
   ${imports(rootScript)}
   return {feedback,get reloads(){return reloads;},get components(){return {Reader,StreamsPanel,MediaDetailPanel,NotificationInbox,FriendsPanel};},
    setReader(value){reader.visible=value;},setReadingSession(value){reader.session=value;},setState(next){page.state=next;},setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());}};

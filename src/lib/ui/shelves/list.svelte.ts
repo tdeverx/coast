@@ -1,4 +1,5 @@
 import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
+import {profileRowPath} from '#lib/profile/url.js';
 
 import { onDestroy, untrack } from 'svelte';
 import { goto } from '$app/navigation';
@@ -25,6 +26,8 @@ export type ListSourceOptions = {
   custom?: boolean;
     filters?:{kind:string;scope:string};
   layout?: 'row' | 'grid';
+  profile?: string;
+  page?: number;
   initial?: Content;
   onitems?: (items: MediaView[], selection: string) => void;
     ondelete?: () => void;
@@ -38,6 +41,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
     title,
     custom = false,
     layout = 'row',
+    profile,
     initial,
     onitems,
     ondelete,
@@ -62,12 +66,13 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   const filter = 'all';
   let arranging = $state(false);
   const selection = $derived(`${view}:${content.kind}:${content.filter}`);
-  const href = (number = 1) =>
-    `/lists?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
+  const href = (number = 1) => profile
+    ? profileRowPath(profile, 'list', new URLSearchParams({ list: view, kind, scope, page: String(number) }))
+    : `/lists?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
   $effect(() => {
     if (ready) onitems?.(content.items.filter((item):item is MediaView=>!('href' in item)), selection);
   });
-  async function load(number = 1,append=false) {
+  async function load(number = getOptions().page ?? 1,append=false) {
     const path = `lists/content?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
 
     const result = await resource.load((signal) => api<Content>(path, undefined, 'GET', { signal }), {
@@ -113,6 +118,10 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
       return content.items;
     },
 
+    get mixed() {
+      return true;
+    },
+
     get busy() {
       return busy;
     },
@@ -137,11 +146,11 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
       return [
         {
           type: 'availability',
-          label: 'Available to play only',
+          label: 'Available only',
           value: scope,
           change: (value) => {
             scope = value as typeof scope;
-            void load();
+            void load(1);
           }
         }
       ];
@@ -159,7 +168,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
           value: kind,
           change: (value) => {
             kind = value as Content['kind'];
-            void load();
+            void load(1);
           }
         }
       ];
@@ -178,7 +187,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
               arranging = !arranging;
             }
           },
-          { label: 'Delete list', run: () => ondelete?.() }
+          ...(ondelete ? [{ label: 'Delete list', run: ondelete }] : [])
         ]
         : [];
     },
@@ -213,7 +222,9 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
     },
 
     get empty() {
-      return ready ? 'No titles in this selection.' : 'Loading titles…';
+      if (!ready) return 'Loading titles…';
+      if (kind !== 'all' || scope !== 'all') return 'No titles match these filters.';
+      return 'Add titles to this list from their menus.';
     },
     retryLabel: 'Retry',
     load

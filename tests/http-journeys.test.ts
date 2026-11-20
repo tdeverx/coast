@@ -84,8 +84,8 @@ suite('Coast HTTP journeys', () => {
       '/library',
       '/discover',
       '/search?q=Coast',
-      '/lists',
-      '/requests',
+      `/profile/${username}?section=lists`,
+      '/for-you?view=watch&section=requests',
       '/settings',
       '/settings/connections',
       '/settings/admin',
@@ -96,5 +96,10 @@ suite('Coast HTTP journeys', () => {
       expect(response.status, `${path} returns successfully`).toBe(200);
       expect(await response.text()).not.toContain('Internal Error');
     }
+    const lists = await fetch(`${base}/lists`, { headers: { cookie }, redirect: 'manual' });
+    expect(lists.status).toBe(307);
+    expect(lists.headers.get('location')).toBe(`/profile/${username}?section=lists`);
+    const oldRequests = await fetch(`${base}/requests`, { headers: { cookie }, redirect: 'manual' });
+    expect(oldRequests.status).toBe(404);
   });
 });

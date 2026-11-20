@@ -13,7 +13,7 @@ const modules:Record<string,{source:string;svelte?:boolean;runes?:boolean}>={
  const component=mount(Panel,{target:document.body});window.fixture={navigate(href){flushSync(()=>{page.state.mediaDetailHref=href;});},refresh(){flushSync(()=>{page.data.revision++;});},viewer(id){flushSync(()=>{page.data.user={id};});},requests:[],disposals:[],failures:[],destroy(){return unmount(component);}};`},
  route:{runes:true,source:`export const page=$state({state:{mediaDetailHref:undefined,mediaDetailDepth:1},url:new URL('http://fixture/library'),data:{user:{id:'viewer'},revision:0,capabilities:{screen:true,music:true,games:true,reading:true}}});`},
  client:{source:`export class ApiError extends Error{constructor(status){super('denied');this.status=status;}}export const message=e=>e.message;export const isFeatureDisabled=e=>e.featureDisabled===true;export function api(path,body,method,{signal}){return new Promise((resolve,reject)=>window.fixture.requests.push({path,signal,resolve,reject}));}`},
- navigation:{source:`export function closeMediaDetails(){}export function backMediaDetails(){}`},
+ navigation:{source:`export function closeMediaDetails(){}export function backMediaDetails(){}export function navigateMedia(){}`},
  context:{runes:true,source:`export const reportFailure=read=>{$effect(()=>{const text=read();if(text)window.fixture.failures.push(text);});};`},
  player:{runes:true,source:`export const player=$state({visible:false});`},
  reader:{runes:true,source:`export const reader=$state({visible:false});`},
@@ -38,6 +38,8 @@ ${enhancementEffect}
 ${detailFeedback}
 onDestroy(()=>window.fixture.disposals.push({family:'screen',initialId,id:data.item.id,href:detailHref}));</script><main data-kind="screen" data-href={detailHref} data-episodes={view.episodes?.length??-1} data-enhanced={enriched?'yes':'no'}>{view.item.title}</main>`};
 
+modules.profile={svelte:true,source:`<script>let {data}=$props();</script><main data-kind="profile">{data.username}</main>`};
+
 const aliases:Record<string,string>={
  '$app/state':'route','#lib/ui/client.js':'client','#lib/ui/client-context.js':'context','#lib/ui/media-navigation.js':'navigation',
  '#lib/playback/client.svelte.js':'player','#lib/reading/client.svelte.js':'reader','#lib/playback/visibility.js':'visibility',
@@ -45,6 +47,7 @@ const aliases:Record<string,string>={
  '#lib/ui/components/DetailOverlay.svelte':'overlay','#lib/ui/pages/SectionDetails.svelte':'row',
  '#lib/media/Details.svelte':'screen','#lib/reading/Details.svelte':'reading','#lib/games/Details.svelte':'game',
  '#lib/music/Details.svelte':'music','#lib/reading/GroupDetails.svelte':'reading-group','#lib/games/RemoteDetails.svelte':'remote-game','#lib/media/PersonDetails.svelte':'person',
+ '#lib/profile/Details.svelte':'profile',
 };
 const browserEnabled=process.env.COAST_TEST_BROWSER==='1';
 const browserTest=browserEnabled?test:test.skip;

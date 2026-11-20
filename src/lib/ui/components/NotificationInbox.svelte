@@ -22,9 +22,10 @@
  import {createOperation} from '#lib/ui/operation.svelte.js';
  import {activityDateLabel} from '#lib/social/model.js';
  import {notificationKinds,notificationSegments,defaultNotificationFilters,type NotificationEntry,type NotificationResult,type NotificationFilters} from '#lib/notifications/model.js';
- let {open=$bindable(false),initialKind='all',initialFilters,onclose}:{open:boolean;initialKind?:string;initialFilters?:NotificationFilters;onclose?:()=>void}=$props();
+ let {open=$bindable(false),initialKind='all',initialFilters,initialSegment,onclose,onselectView}:{open:boolean;initialKind?:string;initialFilters?:NotificationFilters;initialSegment?:NotificationFilters['segment'];onclose?:()=>void;onselectView?:(value:NotificationFilters['segment'])=>void}=$props();
  const {api,change,preview}=useClient();
- let criteria=$state<NotificationFilters>(untrack(()=>({...defaultNotificationFilters,kind:notificationKinds.some(k=>k.value===initialKind)?initialKind:'all',...initialFilters})));
+ let criteria=$state<NotificationFilters>(untrack(()=>({...defaultNotificationFilters,kind:notificationKinds.some(k=>k.value===initialKind)?initialKind:'all',...initialFilters,segment:initialSegment??initialFilters?.segment??'all'})));
+ $effect(()=>{criteria.segment=initialSegment??initialFilters?.segment??'all';});
  const resource=createResource<NotificationResult>({items:[],hasMore:false,next:null,unread:0,snapshot:''});
  const operation=createOperation(useRetention());
  const clock=useClock('minute',()=>open&&!preview);
@@ -111,7 +112,7 @@
 
 {#snippet inboxHeading()}
   <Heading title="Notifications">
-   {#snippet heading()}<SegmentedControl label="Notification category" value={criteria.segment} options={[...notificationSegments]} onchange={value=>criteria.segment=value as NotificationFilters['segment']}/>{/snippet}
+   {#snippet heading()}<SegmentedControl label="Notification category" value={criteria.segment} options={[...notificationSegments]} onchange={value=>{const segment=value as NotificationFilters['segment'];criteria.segment=segment;onselectView?.(segment);}}/>{/snippet}
    {#snippet actions()}<div class="notification-header-actions">{@render inboxFilters()}<Button size="icon" icon="close" label="Close notifications" onclick={()=>{open=false;onclose?.();}} /></div>{/snippet}
   </Heading>
  {/snippet}

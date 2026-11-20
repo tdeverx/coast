@@ -251,9 +251,9 @@ async function notifyJobAttention(db:ReturnType<typeof getSql>,action:OutboxActi
   if(ownerAction||requestAction){
     await notify({
       userId:action.userId,kind:'external-action',title:ownerAction?`Check your ${label} connection`:'Your media request could not be sent',
-      body:ownerAction?message:`Seerr could not accept the request. Check the request status or contact a Coast admin if it keeps failing.`,
+      body:ownerAction?message:'Seerr could not accept the request. Try again or contact a Coast admin if it keeps failing.',
       level:'persistent',sourceKey:`outbox:${action.id}`,
-      data:{actorId:action.userId,subjectId:action.id,destination:ownerAction?'/settings/connections':'/requests'},
+      data:{actorId:action.userId,subjectId:action.id,destination:ownerAction?'/settings/connections':'/for-you?view=watch'},
     },db);
     return;
   }

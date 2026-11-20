@@ -1,4 +1,5 @@
 <script lang="ts">
+ import type { Snippet } from 'svelte';
  import Field from './Field.svelte';
  import Avatar from './Avatar.svelte';
  import Button from './Button.svelte';
@@ -6,8 +7,9 @@
  import {message} from '#lib/ui/client.js';
  import {useClient, reportFailure } from '#lib/ui/client-context.js';
  const {fetch:requestAvatar}=useClient();
- let {avatar=$bindable(null),reading=$bindable(false),name,disabled=false,choices}:{avatar?:string|null;reading?:boolean;name:string;disabled?:boolean;choices:{id:string;provider:string;name:string}[]}=$props();
+ let {avatar=$bindable(null),reading=$bindable(false),name,disabled=false,choices,preview}:{avatar?:string|null;reading?:boolean;name:string;disabled?:boolean;choices:{id:string;provider:string;name:string}[];preview?:Snippet<[string|null, Snippet]>}=$props();
  let error=$state(''),iconChoice=$state('');
+ let uploadInput = $state<HTMLInputElement>();
  const iconChoices=$derived(choices),busy=$derived(disabled);
  let avatarVersion=0;
  let providerRequest:AbortController|undefined;
@@ -88,28 +90,55 @@
       await prepareAvatar(image,version);
     }catch(cause){if(version===avatarVersion&&!controller.signal.aborted)error=message(cause);}finally{if(version===avatarVersion)reading=false;if(providerRequest===controller)providerRequest=undefined;}
   }
+  function clearAvatar() {
+    cancelRead();
+    iconChoice = '';
+    avatar = null;
+  }
+  function chooseImage() {
+    if (!uploadInput) return;
+    uploadInput.value = '';
+    uploadInput.click();
+  }
+  const choiceLabel = (choice: typeof choices[number]) =>
+    `${choice.provider === 'jellyfin' ? 'Jellyfin' : 'Trakt'} · ${choice.name}`;
   reportFailure(()=>error);
 </script>
-    <div class="avatar-row">
-      <Avatar name={name} src={avatar} label="Avatar preview" class="preview" size={80} />
-      <div class="stack">
-        <Field label="Avatar" class=""><input
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            onchange={selectAvatar}
-            disabled={busy || reading}
-          /></Field>{#if avatar}<Button
-            emphasis="subtle"
-            onclick={() => {
-              cancelRead();
-              avatar = null;
-              reading = false;
-            }}>Remove avatar</Button
-          >{/if}
-      </div>
+{#snippet avatarMenu()}
+  <Button item icon="image" disabled={busy || reading} onclick={chooseImage}>Upload image</Button>
+  {#if iconChoices.length}
+    <Button menu label="Import from" icon="link" disabled={busy || reading}>
+      {#each iconChoices as choice (choice.id)}
+        <Button item disabled={busy || reading} onclick={() => void selectProvider(choice.id)}>{choiceLabel(choice)}</Button>
+      {/each}
+    </Button>
+  {/if}
+  {#if avatar}
+    <div class="menu-divider" role="separator"></div>
+    <Button item icon="close" danger disabled={busy} onclick={clearAvatar}>Remove avatar</Button>
+  {/if}
+{/snippet}
+{#if preview}
+  <input hidden aria-label="Avatar file" type="file" bind:this={uploadInput}
+    accept="image/png,image/jpeg,image/webp,image/gif" onchange={selectAvatar}
+    disabled={busy || reading} />
+  {@render preview(avatar, avatarMenu)}
+{:else}
+  <div class="avatar-row">
+    <Avatar name={name} src={avatar} label="Avatar preview" class="preview" size={80} />
+    <div class="stack">
+      <Field label="Avatar" class=""><input
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onchange={selectAvatar}
+        disabled={busy || reading}
+      /></Field>
+      {#if avatar}<Button emphasis="subtle" disabled={busy} onclick={clearAvatar}>Remove avatar</Button>{/if}
     </div>
-    {#if iconChoices.length}<RowFilter selection groups={[{label:"Connected profile icon", value:iconChoice, options:[{value:'',label:'Choose a connected service'},...iconChoices.map(choice=>({value:choice.id,label:`${choice.provider==='jellyfin'?'Jellyfin':'Trakt'} · ${choice.name}`}))], change:value=>{if(!busy&&!reading)void selectProvider(value);}}]} />{/if}
-    <p class="small">Saved locally in Coast. GIFs keep their animation; other images are cropped to a square. Visibility follows your privacy settings.</p>
+  </div>
+  {#if iconChoices.length}<RowFilter selection groups={[{label:"Connected profile icon", value:iconChoice, options:[{value:'',label:'Choose a connected service'},...iconChoices.map(choice=>({value:choice.id,label:choiceLabel(choice)}))], change:value=>{if(!busy&&!reading)void selectProvider(value);}}]} />{/if}
+  <p class="small">Saved locally in Coast. GIFs keep their animation; other images are cropped to a square. Visibility follows your privacy settings.</p>
+{/if}
 <style>
   .avatar-row {
     display: flex;

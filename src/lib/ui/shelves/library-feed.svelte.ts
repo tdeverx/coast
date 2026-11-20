@@ -71,7 +71,13 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
     get shape(){return get().feature==='requests'?'fanart' as const:kind==='music'||get().action==='listen'?'square' as const:'poster' as const;},
     get artworkStyle(){return get().feature==='requests'?'thumb' as const:'primary' as const;},
     get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:true,infinite:get().layout==='grid',controls:'none' as const};},
-    get filters():ShelfControl[]{return get().feature==='recent'?[]:[{type:'segments',label:'Request status',value:state,options:[...requestSegments],change:value=>choose('state',value)}];},
+    get filters():ShelfControl[]{
+      if(get().feature==='recent')return [];
+      const available=resource.data.scope===scope?resource.data.availableStates:undefined;
+      return [{type:'segments',label:'Request status',value:state,
+        options:requestSegments.map(option=>({...option,disabled:available!==undefined&&!available.includes(option.value)})),
+        change:value=>choose('state',value)}];
+    },
     get controls():ShelfControl[]{return get().feature==='requests'?[{type:'select',label:'Media type',value:kind,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>choose('kind',value)}]:[
       ...(types.length>1?[{type:'select' as const,label:get().action==='read'?'Reading type':'Media type',value:kind,options:[...(get().action?[{value:'all',label:'All'}]:[]),...types],change:(value:string)=>choose('kind',value)}]:[]),
     ];},

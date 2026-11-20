@@ -23,7 +23,7 @@ import { updateProfile } from '../src/lib/core/profile/service.server';
 import { streamAvatar } from '../src/lib/core/profile/avatar-storage.server';
 import { track } from '../src/lib/core/tracking/service.server';
 import { progressData } from '../src/lib/server/queries/progress';
-import { profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
+import { profileBackground, profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
 import { importReading } from '../src/lib/catalogue/reading.server';
 import { updateReading } from '../src/lib/core/reading/service.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
@@ -243,7 +243,6 @@ run('reading profile privacy follows each work category even when screen content
       expect(favourites.favourites[0].trackingProgress).toBeUndefined();
       expect(favourites.profile.pinnedFavourites).toEqual(comics);
       expect(favourites.profile.favouriteOrder).toEqual(comics);
-      expect(favourites.featured).toBeNull();
       expect(favourites.profile.featuredMediaId).toBeUndefined();
       expect(favourites.profile.featuredNote).toBeUndefined();
       const rated = await profileData(reader, { view: 'ratings' }, now, viewer);
@@ -254,7 +253,9 @@ run('reading profile privacy follows each work category even when screen content
     }
     expect((await profileData(reader, { view: 'favourites' }, now)).total).toBe(2);
     expect((await profileData(reader, { view: 'ratings' }, now)).total).toBe(2);
-    expect((await profileData(reader, {}, now)).profile.featuredMediaId).toBe(books[0]);
+    const ownProfile = (await profileData(reader, {}, now)).profile;
+    expect(ownProfile.featuredMediaId).toBeUndefined();
+    expect(ownProfile.featuredNote).toBeUndefined();
   });
 });
 
@@ -389,8 +390,9 @@ run(
         avatar: 'data:image/svg+xml;base64,PHN2Zz4=',
       })
     ).rejects.toThrow();
-    await updateProfile(owner, { action: 'background', mediaId: null });
-    expect((await profileData(owner)).background).toBeNull();
+    expect(await updateProfile(owner, { action: 'background', mediaId: null }))
+      .toMatchObject({ backgroundMode: 'activity', backgroundMediaId: null });
+    expect((await profileData(owner)).profile.backgroundMode).toBe('activity');
   }
 );
 
@@ -453,21 +455,15 @@ run('Other includes all remaining genres and opens matching history', async () =
 });
 
 run(
-  'profile preferences, crop and feature persist independently and remain owner scoped',
+  'profile preferences and background position persist independently',
   async () => {
     await updateProfile(owner, { action: 'preferences', period: 'month', favouriteKind: 'movie' });
     await updateProfile(owner, { action: 'position', value: 72 });
-    await updateProfile(owner, { action: 'feature', mediaId: ids[0], note: 'A favourite story.' });
     const view = await profileData(owner);
     expect(view.profile.period).toBe('month');
     expect(view.profile.favouriteKind).toBe('movie');
     expect(view.profile.backgroundPosition).toBe(72);
-    expect(view.featured?.id).toBe(ids[0]);
-    await expect(
-      updateProfile(other, { action: 'feature', mediaId: ids[0], note: '' })
-    ).rejects.toThrow();
     await expect(updateProfile(owner, { action: 'position', value: 101 })).rejects.toThrow();
-    await updateProfile(owner, { action: 'feature', mediaId: null, note: '' });
   }
 );
 run('activity search, type, repeats and rating drill-down filter the correct records', async () => {
@@ -810,12 +806,23 @@ run('last activity is the default background and respects viewer activity privac
   await getSql()`insert into social_activity(id,user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${eventId},${owner},${ids[0]},'watch','activity','coast',${'background:'+eventId},now())`;
   const own=await profileData(owner);
   expect(own.profile.backgroundMode).toBe('activity');expect(own.background?.id).toBe(ids[0]);
+  expect((await profileBackground(owner,owner,own.profile))?.id).toBe(own.background?.id);
   expect((await profileData(owner,{},new Date(),other)).background).toBeNull();
+  expect(await profileBackground(owner,other,own.profile)).toBeNull();
   expect((await profileData(owner,{},new Date(),null)).background).toBeNull();
   await updateProfile(owner,{action:'background',mediaId:ids[1]});
-  expect((await profileData(owner)).background?.id).toBe(ids[1]);
-  await updateProfile(owner,{action:'background-mode',mode:'activity'});
+  const fixed=await profileData(owner);
+  expect(fixed.background?.id).toBe(ids[1]);
+  expect((await profileBackground(owner,owner,fixed.profile))?.id).toBe(fixed.background?.id);
+  const edit = { action: 'edit', displayName: 'Space fan', bio: 'Quiet films.', avatar: null };
+  expect(await updateProfile(owner, { ...edit, background: { mediaId: ids[1], position: { x: 24, y: 68 } } }))
+    .toMatchObject({ displayName: edit.displayName, backgroundPositionX: 24, backgroundPosition: 68 });
+  await updateProfile(owner, { ...edit, background: { mediaId: ids[1], position: null } });
+  expect((await profileData(owner)).profile.backgroundMode).toBe('activity');
   expect((await profileData(owner)).background?.id).toBe(ids[0]);
+  await expect(updateProfile(owner, { ...edit, displayName: 'Stale edit', background: { mediaId: ids[1], position: { x: 80, y: 40 } } }))
+    .rejects.toThrow('The profile background changed.');
+  expect((await profileData(owner)).profile.displayName).toBe(edit.displayName);
  }finally{await getSql()`delete from social_activity where id=${eventId}`;await db.update(users).set({settings:saved.settings}).where(eq(users.id,owner));}
 });
 

@@ -1,5 +1,5 @@
 import {expect,test} from 'bun:test';
-import {mediaDetailTarget} from '../src/lib/media/detail-target';
+import {detailPanelHref,detailPanelUrl,mediaDetailTarget} from '../src/lib/media/detail-target';
 import {moduleUrl} from './fixtures/ui-script';
 import {readingHref} from '../src/lib/reading/presentation';
 import {detailHref} from '../src/lib/ui/pages/detail-rows';
@@ -12,6 +12,9 @@ test('shared detail routing covers local media, source previews, reading groups,
  expect(mediaDetailTarget(`/games/${id}?playthrough=${other}&page=2&section=activity`,base)).toMatchObject({playthrough:other,page:2});
  for(const query of ['section=progress&view=episodes&available=true&specials=true','section=progress&view=seasons&available=false','section=seasons&rowKind=all&rowProgress=unwatched&rowAvailable=true','section=credits&credits=crew','section=activity&relationship=lists','section=all&type=show&department=Acting&available=true'])expect(mediaDetailTarget(`/media/${id}?${query}`,base)).not.toBeNull();
  expect(mediaDetailTarget(`/media/${id}?edition=Director%27s+Cut`,base)?.edition).toBe("Director's Cut");
+ expect(mediaDetailTarget('/profile/alice?section=lists',base)).toMatchObject({kind:'profile',username:'alice',section:'lists'});
+ expect(mediaDetailTarget('/profile/alice?section=taste&medium=movies&overlap=onlyYou',base)).toMatchObject({kind:'profile',username:'alice',section:'taste'});
+ expect(mediaDetailTarget('/profile/alice?view=history&q=drama',base)?.kind).toBe('profile');
 });
 test('reading section links retain provider identity until a canonical work exists',()=>{
  for(const [provider,externalId] of [['openlibrary','OL123W'],['comic-vine','4000-123']] as const){
@@ -32,8 +35,8 @@ const boundaryUrl=moduleUrl(`
  export const player={session:null,browsing:false,paused:false};export const calls=[];
  let entries=[],position=0;
  export function reset(){page.data.user={id:'viewer'};page.url=new URL('https://coast.invalid/for-you?friends=true');page.state={friendsPopover:true};player.session=null;player.browsing=false;player.paused=false;calls.length=0;entries=[{url:page.url,state:page.state}];position=0;}
- export function pushState(url,state){entries=entries.slice(0,position+1);entries.push({url,state});position++;page.state=state;calls.push(['push',url.href,state]);}
- export function replaceState(url,state){entries[position]={url,state};page.state=state;calls.push(['replace',url.href,state]);}
+ export function pushState(url,state){entries=entries.slice(0,position+1);entries.push({url,state});position++;page.url=url;page.state=state;calls.push(['push',url.href,state]);}
+ export function replaceState(url,state){entries[position]={url,state};page.url=url;page.state=state;calls.push(['replace',url.href,state]);}
  export const document={querySelectorAll:()=>[]};
  export const actionFeedback={failure:error=>{throw Error(error);}};export const message=error=>String(error);
  export async function goto(href,options){if(options?.shallow){const url=new URL(href,page.url);if(options.replace)replaceState(url,options.state);else pushState(url,options.state);}else calls.push(['goto',href,options]);}
@@ -51,15 +54,23 @@ const code=new Bun.Transpiler({loader:'ts'}).transformSync(source)
  .replaceAll('#lib/media/detail-target.js',new URL('../src/lib/media/detail-target.ts',import.meta.url).href);
 const navigation=await import(moduleUrl(`import {history,MouseEvent,HTMLAnchorElement,document} from '${boundaryUrl}';\n${code}`));
 const boundary=await import(boundaryUrl);
-test('nested detail links retain the underlying URL, support Back/Forward history and close the whole trail',async()=>{
+test('nested detail links keep underlying route and filter values in their URL, support Back/Forward history and close the whole trail',async()=>{
  boundary.reset();boundary.player.session={mediaType:'video'};
  expect(navigation.openMediaDetails(`/media/${id}`)).toBe(true);await navigation.navigateMedia(`/media/${id}`);
  await navigation.navigateMedia(`/media/${other}?section=credits`);
- expect(boundary.page.url.href).toBe(base.href);expect(boundary.page.state).toMatchObject({mediaDetailDepth:2,friendsPopover:true});
+ expect(detailPanelUrl(boundary.page.url).href).toBe(base.href);expect(boundary.page.url.searchParams.get('detail')).toBe(`/media/${other}?section=credits`);expect(boundary.page.state).toMatchObject({mediaDetailDepth:2,friendsPopover:true});
  expect(boundary.player).toMatchObject({browsing:true,paused:false});
  await navigation.backMediaDetails();expect(boundary.page.state.mediaDetailHref).toBe(`/media/${id}`);
  boundary.history.go(1);expect(boundary.page.state.mediaDetailHref).toBe(`/media/${other}?section=credits`);
  await navigation.closeMediaDetails();expect(boundary.page.state).toEqual({friendsPopover:true});
+});
+test('changing profile sections replaces the current panel entry', async () => {
+ boundary.reset();
+ await navigation.navigateMedia('/profile/alice');
+ await navigation.navigateMedia('/profile/alice?section=lists', {replace:true});
+ expect(boundary.page.state).toMatchObject({mediaDetailDepth:1,mediaDetailHref:'/profile/alice?section=lists'});
+ await navigation.closeMediaDetails();
+ expect(boundary.page.state).toEqual({friendsPopover:true});
 });
 test('repeated close gestures request one traversal while the detail entry is current', async () => {
  boundary.reset();
@@ -107,6 +118,23 @@ test('row title links use the panel without intercepting ordinary main navigatio
  expect(navigation.openMediaDetails(href)).toBe(false);
  const root=new boundary.Node(),link=new boundary.HTMLAnchorElement(href);link.setAttribute('data-detail-section','');
  const controller=navigation.mediaDetailLinks(root),event=new boundary.MouseEvent([link]);root.send('click',event);
- expect(event.defaultPrevented).toBe(true);await navigation.navigateMedia(href);expect(boundary.page.state.mediaDetailHref).toBe(href);expect(boundary.page.url.href).toBe(base.href);
+ expect(event.defaultPrevented).toBe(true);await navigation.navigateMedia(href);expect(boundary.page.state.mediaDetailHref).toBe(href);expect(detailPanelUrl(boundary.page.url).href).toBe(base.href);expect(boundary.page.url.searchParams.get('detail')).toBe(href);
  controller.destroy();
+});
+
+test('a stable detail link restores the exact target without browser history and closes on its base page', async () => {
+ boundary.reset();
+ const target = '/profile/alice?section=lists';
+ boundary.page.url = detailPanelUrl(base, target);
+ expect(detailPanelHref(boundary.page.url, {})).toBe(target);
+ await navigation.navigateMedia('/profile/alice?section=insights', {replace:true});
+ expect(boundary.page.url.searchParams.get('detail')).toBe('/profile/alice?section=insights');
+ expect(boundary.page.state.mediaDetailFromLink).toBe(true);
+ await navigation.closeMediaDetails();
+ expect(boundary.page.url.href).toBe(base.href);
+ for (const raw of ['//outside.invalid/media', '/\\outside.invalid/media', 'https://other.invalid/', '']) {
+   const url = new URL(base);
+   url.searchParams.set('detail', raw);
+   expect(detailPanelHref(url, {})).toBeUndefined();
+ }
 });

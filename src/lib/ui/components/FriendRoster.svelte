@@ -1,4 +1,5 @@
 <script lang="ts">
+ import {profileTastePath} from '#lib/profile/url.js';
  import {statusLabels} from '#lib/social/status.js';
  import {activityDateLabel, type FriendEntry} from '#lib/social/model.js';
  import {useClock} from '#lib/ui/clock.svelte.js';
@@ -35,7 +36,7 @@
       {/if}
      </p>
     {/snippet}
-    {#snippet actions()}{#if friend.state==='accepted'}<Button menu label={`Actions for ${friend.username}`}><Button item icon="user" href={`/profile/${encodeURIComponent(friend.username)}`}>Profile</Button>{#if friend.canCompare}<Button item icon="heart" href={`/taste/${friend.userId}`}>Taste & overlap</Button>{/if}{#if friend.activity}<Button item icon="play" href={friend.activity.href}>View activity</Button>{/if}{#if oninvite}<Button item icon="party" disabled={busy||inviteDisabled} keepOpen={false} onclick={()=>oninvite?.(friend.userId)}>Invite to party</Button>{/if}<div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>{removal={friendId:friend.id,targetUserId:friend.userId,username:friend.username,viewerId:userId};}}>Remove friend…</Button></Button>
+    {#snippet actions()}{#if friend.state==='accepted'}<Button menu label={`Actions for ${friend.username}`}><Button item icon="user" href={`/profile/${encodeURIComponent(friend.username)}`}>Profile</Button>{#if friend.canCompare}<Button item icon="heart" href={profileTastePath(friend.username)}>Taste & overlap</Button>{/if}{#if friend.activity}<Button item icon="play" href={friend.activity.href}>View activity</Button>{/if}{#if oninvite}<Button item icon="party" disabled={busy||inviteDisabled} keepOpen={false} onclick={()=>oninvite?.(friend.userId)}>Invite to party</Button>{/if}<div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>{removal={friendId:friend.id,targetUserId:friend.userId,username:friend.username,viewerId:userId};}}>Remove friend…</Button></Button>
    {:else if friend.requestedBy===userId}<Button emphasis="subtle" disabled={busy} onclick={()=>act(`social/friends/${friend.id}`,{action:'cancel'})}>Cancel</Button>
    {:else}<Button disabled={busy} onclick={()=>act(`social/friends/${friend.id}`,{action:'accept'})}>Accept</Button><Button emphasis="subtle" disabled={busy} onclick={()=>act(`social/friends/${friend.id}`,{action:'decline'})}>Decline</Button>{/if}{/snippet}
    </IdentityCard>

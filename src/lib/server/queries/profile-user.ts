@@ -4,9 +4,17 @@ import { users } from '../db/schema';
 import { AppError } from '../security/errors';
 
 /** Public profile reads require a signed-in viewer at the route/API boundary. */
-export async function profileUser(username: string) {
+export async function profileUser(username: string, viewerId?: string) {
+  const ownerId = sql`${users}.id`;
+  const canCompareTaste = viewerId ? sql<boolean>`exists (
+    select 1 from friendships f where f.user_a=least(${viewerId}::uuid,${ownerId})
+      and f.user_b=greatest(${viewerId}::uuid,${ownerId}) and f.state='accepted'
+      and coast_feature_enabled(${viewerId}::uuid,'social') and coast_feature_enabled(${ownerId},'social')
+      and coast_feature_enabled(${viewerId}::uuid,'personalisation') and coast_feature_enabled(${ownerId},'personalisation')
+      and social_visible(${ownerId},${viewerId}::uuid,'insights')
+  )` : sql<boolean>`false`;
   const [user] = await getDb()
-    .select({ id: users.id, username: users.username, settings: users.settings })
+    .select({ id: users.id, username: users.username, settings: users.settings, canCompareTaste })
     .from(users)
     .where(
       and(sql`lower(${users.username}) = ${username.toLowerCase()}`, eq(users.disabled, false))

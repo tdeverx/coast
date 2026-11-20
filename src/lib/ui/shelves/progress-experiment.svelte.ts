@@ -10,9 +10,10 @@ import {contentRevisionKey} from '#lib/ui/content-revision.svelte.js';
 import {categoryEnabled} from '#lib/experimental.js';
 import {mediaTypeOptions} from '#lib/ui/filter-options.js';
 import {progressCardStyle} from '#lib/ui/progress-card-style.js';
+import {profileRowPath} from '#lib/profile/url.js';
 import type {ShelfSource, ShelfControl} from './types';
 
-export type ProgressExperimentSourceOptions={category?:'screen'|'game'|'reading';type:'progress-experiment';username?:string;layout?:'row'|'grid';initial?:ProgressExperimentContent;filters?:ProgressExperimentOptions};
+export type ProgressExperimentSourceOptions={category?:'screen'|'game'|'reading';type:'progress-experiment';username?:string;title?:string;profile?:boolean;showEmpty?:boolean;layout?:'row'|'grid';initial?:ProgressExperimentContent;filters?:ProgressExperimentOptions};
 export function createProgressExperimentSource(get:()=>ProgressExperimentSourceOptions):ShelfSource {
   const {api,preview}=useClient(),location=useShelfLocation();
   const initial=$derived(get().initial);
@@ -33,8 +34,13 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   })));
   const empty=():ProgressExperimentContent=>({view,...current,items:[],total:0,page:1,pages:1});
   const parameters=(number=1)=>new URLSearchParams({...(scopedCategory?{category:scopedCategory}:{}),view,...current,page:String(number),...(get().username?{username:get().username!}:{})});
-  const href=(number=1)=>'/progress-experiment?'+parameters(number);
-  async function load(number=1,append=false) {
+  const href=(number=1)=>{
+    const request=parameters(number),{profile,username}=get();
+    if(!profile||!username)return '/progress-experiment?'+request;
+    request.delete('username');
+    return profileRowPath(username,'progress',request);
+  };
+  async function load(number=get().filters?.page??1,append=false) {
     const request=parameters(number);
     if(layout==='row')request.set('preview','true');
     const requestedOwner=ownerKey;
@@ -79,7 +85,7 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
       previousKey=key;previousInitial=next;
       // An authoritative route response already includes the revision; do not start a duplicate GET.
       if(next&&initialChanged){view=next.view;preferences[view]={kind:next.kind,scope:next.scope};loadedOwner=owner;resource.replace(next);confirmedEpoch=next.availableViews?summaryEpoch:undefined;}
-      else if(ownerChanged){const active=resource.activated||resource.ready;resource.replace(empty());if(active)void load();}
+      else if(ownerChanged){const active=resource.activated||resource.ready;resource.replace(empty());if(active)void load(1);}
       else if(revisionChanged&&(resource.activated||resource.ready))void load(layout==='row'?1:resource.data.page);
     });
   });
@@ -96,18 +102,18 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
   function update(patch:Partial<Filters>){
     const next={...current,...patch};
     if(next.kind===current.kind&&next.scope===current.scope)return;
-    preferences[view]=next;void load();
+    preferences[view]=next;void load(1);
   }
   return {
     get filterReset(){return {disabled:current.kind==='all'&&current.scope==='all',run:()=>update({kind:'all',scope:'all'})};},
-    get title(){return get().username?'Watching':'Progress';},
+    get title(){return get().title ?? (get().username?'Watching':'Progress');},
     get items(){
       if(loadedOwner!==ownerKey||scopedCategory&&resource.data.category!==scopedCategory||resource.data.view!==view||resource.data.kind!==current.kind||resource.data.scope!==current.scope)return [];
       const items=resource.data.items.filter(item=>!['album','track','artist'].includes(item.kind)&&categoryEnabled({...page.data,features:page.data.capabilities},item.kind==='game'?'game':['book','comic'].includes(item.kind)?item.kind:'screen'));
       return items;
     },
     get busy(){return resource.busy;},get ready(){return resource.ready;},get error(){return resource.error;},
-    get hideRow(){return views?.length===0;},
+    get hideRow(){return !get().showEmpty && views?.length===0;},
     get activated(){return resource.activated;},
     get href(){return layout==='row'?href():undefined;},
     get shape(){return style?.shape??'poster';},
@@ -118,7 +124,7 @@ export function createProgressExperimentSource(get:()=>ProgressExperimentSourceO
     get filters():ShelfControl[]{return [
       {type:'segments',label:'Progress selection',value:view,options:tabs,change:value=>{
         if(value===view||!tabs.some(tab=>tab.value===value&&!tab.disabled))return;
-        view=value as typeof view;void load();
+        view=value as typeof view;void load(1);
       }},
       {type:'availability',label:scopedCategory==='screen'?'Available to watch only':scopedCategory==='reading'?'Available to read only':scopedCategory==='game'?'Available to play only':'Available only',value:current.scope,change:value=>update({scope:value as Filters['scope']})},
     ];},

@@ -17,7 +17,7 @@ const { create: createStreams } = await import(moduleUrl(streamCode));
 const operationUrl = moduleUrl(compileRunes((await Bun.file(new URL('../src/lib/ui/operation.svelte.ts', import.meta.url)).text())
   .replace("import { message } from './client';", 'const message=error=>error.message;')));
 const noticeScript = (await componentScript('src/lib/ui/components/NotificationInbox.svelte'))
-  .replace("let {open=$bindable(false),initialKind='all',initialFilters,onclose}:{open:boolean;initialKind?:string;initialFilters?:NotificationFilters;onclose?:()=>void}=$props();", "let open=$state(true),initialKind='all',initialFilters,onclose;");
+  .replace(/let \{open=\$bindable\(false\)[\s\S]+?\}=\$props\(\);/, "let open=$state(true),initialKind='all',initialFilters,initialSegment,onclose,onselectView;");
 const noticeCode = compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource,uniqueItems} from ${JSON.stringify(resourceUrl)};
  import {createOperation} from ${JSON.stringify(operationUrl)};
@@ -29,7 +29,7 @@ const noticeCode = compileRunes(`import {untrack} from ${JSON.stringify(svelteUr
  }`);
 const { create: createInbox } = await import(moduleUrl(noticeCode));
 const friendsScript=(await componentScript('src/lib/ui/components/FriendsPanel.svelte'))
-  .replace(/let \{open=\$bindable\(false\)[\s\S]+?\}=\$props\(\);/, "let open=$state(true),onclose,initialView='accepted';");
+  .replace(/let \{open=\$bindable\(false\)[\s\S]+?\}=\$props\(\);/, "let open=$state(true),onclose,initialView='accepted',onselectView;");
 const friendsCode=compileRunes(`import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(transport){

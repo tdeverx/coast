@@ -3,6 +3,8 @@ import { goto } from '$app/navigation';
 
 export function openStreams() {
         const url = new URL(window.location.href);
+        if (url.searchParams.get('streams') === 'true') return;
+        url.searchParams.delete('panelView');
 
         url.searchParams.delete('friends');
         url.searchParams.delete('notifications');
@@ -23,6 +25,7 @@ export function openStreams() {
 export function closeStreams() {
         const url = new URL(window.location.href);
 
+        if (url.searchParams.get('streams') === 'true') url.searchParams.delete('panelView');
         url.searchParams.delete('streams');
 
         goto(url, {

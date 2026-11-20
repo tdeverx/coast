@@ -14,9 +14,14 @@
  const failureText=(items:DetailFailure[]=[])=>items.map(value=>value.message).join(' ');
  const retryFailures=(items:DetailFailure[]=[])=>Promise.all(items.map(value=>value.retry()));
 </script>
-{#snippet creditSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Credits selection" value={model.credits!.selection} onchange={model.credits!.select} options={model.credits!.groups.map(({value,label})=>({value,label}))} />{/snippet}
-{#snippet reviewSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Review source" value={model.reviews!.selection} options={model.reviews!.options} onchange={value=>model.reviews!.select?.(value)} />{/snippet}
-{#snippet insightSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Insights selection" value={model.insights!.selection} onchange={model.insights!.select} options={model.insights!.tabs.map(({value,label})=>({value,label}))} />{/snippet}
+{#snippet creditSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Credits selection" value={model.credits!.selection} onchange={model.credits!.select} options={model.credits!.groups.map(({value,label,people,busy})=>({value,label,disabled:!busy&&!model.credits!.errors?.length&&!people.length}))} />{/snippet}
+{#snippet reviewSegments(style:SegmentStyle)}
+ {@const reviews = model.reviews!}
+ <SegmentedControl {...style} label="Review source" value={reviews.selection}
+   options={reviews.options}
+   onchange={value=>reviews.select?.(value)} />
+{/snippet}
+{#snippet insightSegments(style:SegmentStyle)}<SegmentedControl {...style} label="Insights selection" value={model.insights!.selection} onchange={model.insights!.select} options={model.insights!.tabs.map(({value,label,panels,content,busy,confirmed,errors})=>({value,label,disabled:confirmed!==false&&!!panels&&!panels.length&&!content&&!busy&&!errors?.length}))} />{/snippet}
 {#if model.credits&&(!section||section==='credits')}
  <Shelf segments={model.credits.groups.length>1?creditSegments:undefined} styleSegment={model.credits.selection} title="Credits" size="circle" artworkOptions={false} preserveHeight layout={section?'grid':'row'} href={!section?model.credits.href:undefined} onactivate={model.credits.activate} itemCount={credit?.people.length??0} error={failureText(model.credits.errors)} retry={()=>retryFailures(model.credits?.errors)} hideEmpty={model.credits.hideEmpty??false} busy={credit?.busy}>
   {#snippet children(style)}{#each credit?.people??[] as person(person.id)}<MediaCard item={person} shape={style.shape} artworkStyle={style.artworkStyle} overlay={style.overlay}/>{/each}{/snippet}

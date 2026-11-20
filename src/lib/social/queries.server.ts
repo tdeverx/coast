@@ -7,13 +7,13 @@ import {sql,type SQL} from 'drizzle-orm';
 import * as v from 'valibot';
 import {workCards} from '#lib/collection/query.server.js';
 const uuid=v.pipe(v.string(),v.uuid());
-export const feedOptionsSchema=v.object({...activityFiltersSchema.entries,category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
+export const feedOptionsSchema=v.object({...activityFiltersSchema.entries,category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),profileId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
 export async function activityFeed(userId:string,raw:unknown={},activityIds?:string[]) {
  if(activityIds)v.parse(v.pipe(v.array(uuid),v.maxLength(60)),activityIds);
  const o=v.parse(feedOptionsSchema,raw);
- const audienceScope=(actor:SQL)=>o.audience==='you'?sql`${actor}=${userId}::uuid`:o.audience==='friends'?sql`${actor}<>${userId}::uuid`:sql`true`;
- if(o.relationship!==undefined)v.parse(v.literal(true),!!(o.workId||o.artistId||o.readingGroupId));
- const scoped=!!(o.workId||o.artistId||o.readingGroupId)||activityIds!==undefined;
+ const audienceScope=(actor:SQL)=>o.profileId?sql`${actor}=${o.profileId}::uuid`:o.audience==='you'?sql`${actor}=${userId}::uuid`:o.audience==='friends'?sql`${actor}<>${userId}::uuid`:sql`true`;
+ if(o.relationship!==undefined)v.parse(v.literal(true),!o.profileId&&!!(o.workId||o.artistId||o.readingGroupId));
+ const scoped=!!(o.profileId||o.workId||o.artistId||o.readingGroupId)||activityIds!==undefined;
  const activityScope=sql`and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
  const workScope=o.workId?sql`and (a.work_id=${o.workId}::uuid or e.show_id=${o.workId}::uuid or e.season_id=${o.workId}::uuid or se.show_id=${o.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${o.workId}::uuid and member.child_id in (a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``;
  const artistScope=o.artistId?sql`and (a.work_id=${o.artistId}::uuid and exists(select 1 from music_works artist where artist.id=a.work_id and artist.kind='artist')
@@ -34,7 +34,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  // semijoin keeps each event once even when several structural paths match.
  const admitted=scoped?sql`${admittedWork}admitted_activity as materialized (
   select a.* from social_activity a
-  where true ${activityScope} ${o.workId?sql`and a.work_id in(select work_id from admitted_work_ids)`:sql``} ${artistScope} ${readingGroupScope}
+  where ${o.profileId?sql`a.user_id=${o.profileId}::uuid`:sql`true`} ${activityScope} ${o.workId?sql`and a.work_id in(select work_id from admitted_work_ids)`:sql``} ${artistScope} ${readingGroupScope}
  ), `:sql``;
  const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean;displayWorkId:string;rootId:string;avatar:string|null;episodeCodes:string[];rating:number|null;minutes:number|null;rewatch:boolean;trackTitle:string|null;listenNumber:number;readingPage:number|null;readingTotal:number|null;isRelationship:boolean;relationships:string[]}>(sql`
  with recursive ${admitted}${activityRelationships(userId,o)} activity_policy_keys as materialized (
@@ -45,13 +45,15 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
   select k.user_id,k.section,k.category from activity_policy_keys k
   where coast_category_enabled(${userId}::uuid,k.category)
    and (k.user_id=${userId}::uuid or coast_feature_enabled(k.user_id,'social') and coast_feature_enabled(${userId}::uuid,'social'))
-   and (k.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,k.user_id) and f.user_b=greatest(${userId}::uuid,k.user_id)))
+   ${o.profileId
+     ? sql`and social_visible(k.user_id,${userId}::uuid,'activity',k.category)`
+     : sql`and (k.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,k.user_id) and f.user_b=greatest(${userId}::uuid,k.user_id)))`}
    and social_visible(k.user_id,${userId}::uuid,k.section,k.category)
  ), visible_raw as (
   select a.*,w.category,w.kind,u.username,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id,
    case when e.media_id is not null then 'S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') end as episode_code,
    history.page as reading_page,history.total_pages as reading_total,rating.value as rating, session.minutes_played as minutes,coalesce(tracking.rewatch,false) as rewatch,music.title as track_title
-  from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id join users u on u.id=a.user_id
+  from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id join users u on u.id=a.user_id and not u.disabled
   join activity_policy policy on policy.user_id=a.user_id and policy.section is not distinct from a.section and policy.category is not distinct from w.category
   left join reading_history history on history.id=substring(a.source_key from '^reading:([0-9a-f-]{36})$')::uuid
   left join music_works music on music.id=a.work_id

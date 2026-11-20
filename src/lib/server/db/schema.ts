@@ -32,6 +32,8 @@ export type ProfileSettings = {
   backgroundMediaId?: string | null;
   backgroundMode?: 'fixed' | 'activity';
   backgroundPosition?: number;
+  backgroundPositionX?: number;
+  /** Retired settings that can still be present in stored profile JSON. */
   featuredMediaId?: string | null;
   featuredNote?: string;
   period?: 'month' | 'year' | 'all';

@@ -9,7 +9,7 @@ import {progressSurface,type ProgressOptions} from '#lib/progress.js';
 import {validPageInterval} from '#lib/page-window.js';
 import {activityFiltersSchema} from '#lib/social/model.js';
 /** Only linked row destinations; ordinary navigation to these pages stays unchanged. */
-export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href:string;source:ShelfConfig}|{href:string;profile:{username:string;section:'insights'|'favourites';period:'all'|'month'|'year';kind:string;scope:string}})|null{
+export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):{href:string;source:ShelfConfig}|null{
  let url:URL;try{url=new URL(href,base.href);}catch{return null;}
  if(url.origin!==base.origin||!['http:','https:'].includes(url.protocol)||url.href.includes('#')||url.username||url.password||url.href.length>2048)return null;
  const p=url.searchParams,get=(key:string,fallback='')=>p.get(key)??fallback;
@@ -52,12 +52,23 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
   if((section==='trending'||section==='recent')&&['all','book','comic'].includes(kind))
    source={type:'discovery',scoped:p.has('view'),section,surface,kind:kind as 'all'|'book'|'comic',layout:'grid'};
   else source=recommendationSectionSource(url,actionCategories[surface],'generic');
- }else if(/^\/profile\/[^/]+$/.test(url.pathname)){
+ }else if(/^\/profile\/[^/]+\/?$/.test(url.pathname)){
   let username:string;try{username=decodeURIComponent(url.pathname.split('/')[2]);}catch{return null;}
-  const view=get('section',get('view','overview')),period=get('period','all');
-  if(!['all','month','year'].includes(period))return null;
-  if(view==='insights'||view==='favourites')return {href:url.pathname+url.search,profile:{username,section:view,period:period as 'all'|'month'|'year',kind:get('kind','all'),scope:get('scope','all')}};
-  if(view==='history')source={type:'journal',layout:'grid',today:new Date().toISOString().slice(0,10),filters:{username,period,activityKind:get('type','all'),query:get('q'),genre:get('genre')||undefined,repeats:get('repeats')==='true',from:get('from')||undefined,to:get('to')||undefined}};
+  const view=get('section');
+  if(view==='progress'){
+   const filters=v.safeParse(progressExperimentSchema,progressExperimentParameters(url));
+   if(!filters.success||!filters.output.category)return null;
+   const category=filters.output.category;
+   const title=category==='game'?'Playing':category==='reading'?'Reading':'Watching';
+   source={type:'progress-experiment',layout:'grid',category,filters:filters.output,username,title,profile:true};
+  }else if(view==='list'){
+   const list=get('list');
+   if(!/^[a-f0-9-]{36}$/i.test(list)&&!['watchlist','favourites'].includes(list))return null;
+   const number=Number(get('page','1'));
+   if(!validPageInterval(number,number))return null;
+   source={type:'list',view:list,title:list==='watchlist'?'Watchlist':list==='favourites'?'Favourites':'List',
+    custom:!['watchlist','favourites'].includes(list),layout:'grid',filters:{kind:get('kind','all'),scope:get('scope','all')},profile:username,page:number};
+  }
  }else if(url.pathname==='/lists'&&(/^[a-f0-9-]{36}$/i.test(get('view'))||['watchlist','favourites'].includes(get('view')))){
   source={type:'list',view:get('view'),title:get('view')==='watchlist'?'Watchlist':get('view')==='favourites'?'Favourites':'List',custom:!['watchlist','favourites'].includes(get('view')),layout:'grid',filters:{kind:get('kind','all'),scope:get('scope','all')}};
  }

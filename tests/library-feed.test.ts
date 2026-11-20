@@ -14,7 +14,7 @@ test('request cards retain request identity and use a status indicator without m
  for(const [state,label,icon] of [['pending','Pending','clock'],['approved','Accepted','check'],['available','Available','check'],['failed','Failed','close'],['cancelled','Cancelled','close'],['declined','Declined','close']]){
   const card=requestFeedCard(item,{id:'request',state,destination:'Seerr',createdAt:'2026-10-21T12:00:00Z'},{username:'owner'});
   expect(card.id).toBe('movie');expect(card.entryId).toBe('request');expect(card.captionActor?.username).toBe('owner');
-  expect(card.captionStatus).toMatchObject({label,icon,href:'/requests?request=request'});
+  expect(card.captionStatus).toMatchObject({label,icon});
   expect(card.captionDate).toBe('2026-10-21T12:00:00.000Z');expect(card.captionActivity).toBeUndefined();
  }
 });
@@ -27,7 +27,7 @@ test('feed inputs reject unbounded paging and invalid selections, and expanded r
  expect(sectionTarget('/for-you?section=recent&kind=comic',new URL('http://coast/'))).toMatchObject({source:{type:'library-feed',feature:'recent',kind:'comic',layout:'grid'}});
 });
 
-test('ordinary request cards omit the requester header while retaining the status action',()=>{
+test('ordinary request cards omit the requester header while retaining the status indicator',()=>{
  const card=requestFeedCard({id:'movie',kind:'movie',title:'A title'} as MediaView,{id:'request',state:'pending',destination:'Seerr',createdAt:new Date()});
  expect(card.captionActor).toBeUndefined();expect(card.captionDate).toBeUndefined();
  expect(card.captionStatus?.label).toBe('Pending');

@@ -1,15 +1,15 @@
 <script lang="ts">
   let {
     items,
-  }: { items: { label: string; value: string | number; detail?: string; text?: boolean }[] } =
+  }: { items: { label: string; value: string | number | null; detail?: string; text?: boolean }[] } =
     $props();
 </script>
 
 <dl class="metrics">
   {#each items as item}<div>
       <dt>{item.label}</dt>
-      <dd class:copy={item.text}>
-        {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+      <dd class:copy={item.text} class:missing={item.value === null}>
+        {typeof item.value === 'number' ? item.value.toLocaleString() : item.value ?? 'No data'}
       </dd>
       {#if item.detail}<p>{item.detail}</p>{/if}
     </div>{/each}
@@ -48,6 +48,7 @@
     letter-spacing: var(--tracking-tight);
     line-height: var(--leading-normal);
   }
+  dd.missing { color: var(--muted); }
   p {
     order: 2;
     margin: 0;

@@ -97,9 +97,3 @@ export async function presentationContent(userId: string, url: URL,signal?:Abort
     failure: 'Games could not be loaded. Please try again.',
   }));
 }
-
-// Only configuration is needed during SSR; off-screen providers load when their rows approach.
-export async function mediaRows(personal = false, userId: string | null = null) {
-  const config=await getFeatureConfig(userId);
-  return { experimentalMusic:config.experimentalMusic, experimentalGaming:config.experimentalGaming, experimentalBooks:config.experimentalBooks, experimentalComics:config.experimentalComics, personal };
-}

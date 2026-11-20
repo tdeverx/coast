@@ -1,4 +1,4 @@
-import { onMount, untrack, tick } from 'svelte';
+import { untrack, tick } from 'svelte';
 import { page } from '$app/state';
 import { usePlayback } from '#lib/playback/context.svelte.js';
 import { noCrop, resolveFrameCrop, videoFitStyle } from '#lib/playback/crop.js';
@@ -59,7 +59,8 @@ export function createHeroPlayback(get:()=>{id?:string;active:boolean;size:{widt
   });
   $effect(() => {
     if (preview) return; if (video) video.muted = heroPlayer.muted; });
-  onMount(() => {
+  $effect(() => {
+    if (!video) return;
     const update = () => (foreground = !document.hidden);
     update();
     document.addEventListener('visibilitychange', update);

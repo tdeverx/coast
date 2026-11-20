@@ -60,7 +60,6 @@
   let Pagination = $state<typeof import('#lib/ui/components/Pagination.svelte').default>(null!);
   let PlaybackTimeline = $state<typeof import('#lib/ui/components/PlaybackTimeline.svelte').default>(null!);
   let ProfileEditor = $state<typeof import('#lib/ui/components/ProfileEditor.svelte').default>(null!);
-  let ProfileFeatureEditor = $state<typeof import('#lib/ui/components/ProfileFeatureEditor.svelte').default>(null!);
   let ProfileRecap = $state<typeof import('#lib/ui/components/ProfileRecap.svelte').default>(null!);
   let ProviderAutomation = $state<typeof import('#lib/ui/components/ProviderAutomation.svelte').default>(null!);
   let QueueList = $state<typeof import('#lib/ui/components/QueueList.svelte').default>(null!);
@@ -110,7 +109,7 @@
   function openStyleMenu() { styleMenu?.openAt({ x: 24, y: 84 }); }
   const options=[{value:'all',label:'All'},{value:'watching',label:'Watching'},{value:'completed',label:'Completed'}];
   const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
-  const recipes: Record<string,string[]> = {"PersistentPlayer":[],"SyncedControls":[],"OperationProgress":["OperationProgress","Button"],"SettingsRow":["SettingsRow","Button"],"Toast":["Toast","Button"],"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "Brand": ["Brand", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaDetails":["MediaDetails"],"DetailOverlay":["DetailOverlay","MediaDetails","Button"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "TextLink": ["TextLink"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
+  const recipes: Record<string,string[]> = {"PersistentPlayer":[],"SyncedControls":[],"OperationProgress":["OperationProgress","Button"],"SettingsRow":["SettingsRow","Button"],"Toast":["Toast","Button"],"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "Brand": ["Brand", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaDetails":["MediaDetails"],"DetailOverlay":["DetailOverlay","MediaDetails","Button"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "TextLink": ["TextLink"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
   $effect(() => {
     const selected = name;
     ready = false;
@@ -166,7 +165,6 @@
         case 'Pagination': Pagination = module.default; break;
         case 'PlaybackTimeline': PlaybackTimeline = module.default; break;
         case 'ProfileEditor': ProfileEditor = module.default; break;
-        case 'ProfileFeatureEditor': ProfileFeatureEditor = module.default; break;
         case 'ProfileRecap': ProfileRecap = module.default; break;
         case 'ProviderAutomation': ProviderAutomation = module.default; break;
         case 'QueueList': QueueList = module.default; break;
@@ -197,7 +195,7 @@
 
 <div class="demo" onsubmitcapture={event => event.preventDefault()} onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
   {#if ready}
-    {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
+    {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','RequestDialog'].includes(name)}
       <Button  onclick={() => open = true}>Open example</Button>
     {/if}
     {#if name==='AvatarPicker'}<AvatarPicker name="Coast" choices={scenario==='connected'?[{id,provider:'jellyfin',name:'Preview Jellyfin'}]:[]} />
@@ -317,9 +315,22 @@
     {:else if name==='PlaybackTimeline'}
       <PlaybackTimeline mediaId={id} title={movie.title} detail="2026 · Movie" current={position} duration={6600} onseek={(value)=>position=value} />
     {:else if name==='ProfileEditor'}
-      <ProfileEditor bind:open profile={{displayName:"Preview profile",bio:"A demo profile."}} username="preview" />
-    {:else if name==='ProfileFeatureEditor'}
-      <ProfileFeatureEditor bind:open mediaId={id} title={movie.title} note="A preview featured-title note." />
+      <ProfileEditor bind:open profile={{displayName:"Preview profile",bio:"A demo profile."}} username="preview">
+        {#snippet children(fields)}
+          <div class="stack">
+            {#if fields}
+              {@render fields.avatar()}
+              {@render fields.title()}
+              {@render fields.bio()}
+              <div class="row">{@render fields.actions()}</div>
+            {:else}
+              <h2>Preview profile</h2>
+              <p>A demo profile.</p>
+              <Button size="hero" onclick={() => open = true}>Edit</Button>
+            {/if}
+          </div>
+        {/snippet}
+      </ProfileEditor>
     {:else if name==='ProfileRecap'}
       <ProfileRecap movies={8} episodes={14} seasons={2} previousCount={17} period="month" />
     {:else if name==='ProviderAutomation'}
