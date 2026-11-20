@@ -32,6 +32,8 @@ const labels: Record<string, string> = {
   favourite: 'Favourites',
   watchlist: 'Watchlist',
   ratings: 'Rating',
+  ratingOrder: 'Rating order',
+  mechanics: 'Game modes',
   collection: 'Collection',
   list: 'List',
   'catalogue.user-scan': 'Discover user-linked titles',

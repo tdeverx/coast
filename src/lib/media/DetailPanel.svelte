@@ -78,7 +78,9 @@
    .catch(cause=>{
      if(controller.signal.aborted)return;
      error=message(cause);
-     if(isFeatureDisabled(cause)||cause instanceof ApiError&&[401,403].includes(cause.status)){resolved=null;open=false;}
+     // Unshared profile sections deliberately respond with 404. A refresh can revoke the visible one.
+     const withdrawnProfile=cause instanceof ApiError && cause.status===404 && resolved?.detail.kind==='profile' && resolved.href===href;
+     if(withdrawnProfile||isFeatureDisabled(cause)||cause instanceof ApiError&&[401,403].includes(cause.status)){resolved=null;open=false;}
      if(!resolved)void closeMediaDetails();
      else if(resolved.href!==href) {
        if(resolved.detail.kind==='profile'&&resolved.depth===depth)void navigateMedia(resolved.href,{replace:true});

@@ -554,9 +554,13 @@
   {#if data.lists}
     <ListOverview lists={data.lists} username={data.username} />
   {:else if data.personalTaste}
-    <PersonalTaste data={data.personalTaste} />
+    {#if data.isOwner && data.userId === page.data.user?.id && page.data.capabilities.personalisation}
+      {#key data.userId}<PersonalTaste data={data.personalTaste} />{/key}
+    {/if}
   {:else if data.taste}
-    <TasteComparison data={data.taste} href={tasteUrl} navigate={goToProfileView} />
+    {#if data.taste.viewerId === page.data.user?.id && page.data.capabilities.personalisation && page.data.capabilities.social}
+      <TasteComparison data={data.taste} href={tasteUrl} navigate={goToProfileView} />
+    {/if}
   {:else if expandedStatistics}
     {#if !showProfileHero && !modal}<Button href={profileUrl} emphasis="subtle" icon="left">Profile</Button>{/if}
     {@render statisticsRow()}

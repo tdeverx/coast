@@ -575,6 +575,13 @@
       "when": 1795118525165,
       "tag": "0081_catalogue_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1795202528927,
+      "tag": "0082_taste_scoring_reference",
+      "breakpoints": true
     }
   ]
 }

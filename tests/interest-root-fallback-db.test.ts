@@ -4,8 +4,8 @@ const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const source=await Bun.file(new URL('../src/lib/recommendations/interests.server.ts',import.meta.url)).text();
 const rootExpression=source.match(/select (coalesce\([^)]*\)) as id,p.updated/)?.[1];
 const lateral=source.match(/left join lateral\((select parent_id from media_relationships[\s\S]*?)\) r on true/)?.[1];
-const recent=source.match(/\), recent as \(([\s\S]*?)\n \) select w.id/)?.[1];
-if(!rootExpression||!lateral||!recent||recent.split('${userId}').length!==2)throw new Error('Interest root SQL changed; review its fallback/fold contract.');
+const grouped=source.match(/\), grouped as \(\n([^\n]+)/)?.[1];
+if(!rootExpression||!lateral||!grouped||grouped.split('${userId}').length!==2)throw new Error('Interest root SQL changed; review its fallback/fold contract.');
 afterAll(async()=>{if(process.env.COAST_AUDIT_REAL_DATA_CLONE==='1')await closeDb();});
 run('interest roots retain show precedence, album tie order, own roots and personal/global weight folds',async()=>{
  // Tableless authored semantic controls, not actual catalogue/performance evidence.
@@ -30,7 +30,7 @@ run('interest roots retain show precedence, album tie order, own roots and perso
    const rows=await tx.unsafe(`with roots(id,updated,weight,consumed,positive) as(values
     ('mixed','2026-01-01T00:00:00Z'::timestamptz,5::float8,false,true),('mixed','2026-01-02T00:00:00Z'::timestamptz,-6::float8,true,false),
     ('positive','2026-01-01T00:00:00Z'::timestamptz,1::float8,false,false),('positive','2026-01-01T00:00:00Z'::timestamptz,4::float8,true,false)
-   ), recent as(${recent.replace('${userId}','$1')}) select id,weight,consumed,positive from recent order by id`,[global?null:'00000000-0000-4000-8000-000000000001']);
+   ), grouped as(${grouped.replace('${userId}','$1')}) select id,weight,consumed,positive from grouped order by id`,[global?null:'00000000-0000-4000-8000-000000000001']);
    expect(Array.from(rows)).toEqual([{id:'mixed',weight:global?5:-6,consumed:true,positive:true},{id:'positive',weight:4,consumed:true,positive:false}]);
   }
  });

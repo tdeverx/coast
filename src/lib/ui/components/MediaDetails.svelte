@@ -1,7 +1,7 @@
 <script lang="ts">
  import {page} from '$app/state';
  import {workFriendFilters} from '#lib/social/model.js';
- import {detailActivity} from '../pages/detail';
+ import {canShowTaste,detailActivity,detailTaste} from '../pages/detail';
  import type {Snippet} from 'svelte';
  import MediaPage from './MediaPage.svelte';
  import Shelf from './Shelf.svelte';
@@ -14,11 +14,7 @@
  const activity=$derived(detailActivity(view.item));
  const destination=$derived(new URL(detailHref??(view.item&&'href' in view.item?view.item.href:`/media/${view.item?.id}`),page.url.href));
  const selectedSection=$derived(section??destination.searchParams.get('section'));
- const tasteId=$derived.by(()=>{
-  if(!view.item||!['movie','show','season','episode','album','track','artist','game','book','comic'].includes(view.item.kind))return;
-  const id='href' in view.item?view.item.workId:view.item.id;
-  if(id&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))return id;
- });
+ const tasteTarget=$derived(page.data.user && !selectedSection && canShowTaste(view.item,page.data.capabilities) ? detailTaste(view.item) : undefined);
  const activityHref=$derived.by(()=>{const url=new URL(destination);url.searchParams.set('section','activity');return url.pathname+url.search;});
  const colours=$derived([...new Set([...artwork,view.item?.backdrop,view.item?.artwork?.backdrop,view.item?.poster,view.item?.artwork?.primary,
   ...(view.parents??[]).flatMap(parent=>[parent.backdrop,parent.poster]),view.item?.artwork?.thumb,view.item?.artwork?.banner].filter((url):url is string=>!!url))]);
@@ -28,8 +24,8 @@
  {#snippet children()}
  {@render intro?.()}
  {@render hierarchy?.()}
- {#if tasteId&&!selectedSection&&page.data.user&&page.data.capabilities.personalisation}
-  {#key `${page.data.user.id}:${tasteId}`}<TasteMatch workId={tasteId}/>{/key}
+ {#if tasteTarget&&page.data.user}
+  {#key `${page.data.user.id}:${tasteTarget.group??'title'}:${tasteTarget.workId}`}<TasteMatch {...tasteTarget}/>{/key}
  {/if}
  {#each before as row(row.key)}<Shelf {...row.shelf} />{/each}
  {#if model&&selectedSection!=='activity'}<MediaDetailRows {model} section={selectedSection}/>{/if}

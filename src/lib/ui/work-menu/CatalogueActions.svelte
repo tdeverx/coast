@@ -34,10 +34,10 @@
   import { createOperation } from '../operation.svelte';
   import type { Relationship } from '../relationships';
 
-  let { item, showTrigger = false, hero = false, gameState, readingState, selectedPlaythrough, ongamecreated, onchanged, refreshGame, primary = false, entryActions }: {
+  let { item, showTrigger = false, hero = false, gameState, readingState, selectedPlaythrough, ongamecreated, onchanged, refreshGame, primary = false, entryActions, tasteAction }: {
     item: MediaCardPresentation; showTrigger?: boolean; hero?: boolean; primary?: boolean; gameState?: GameActionState;
     readingState?: ReadingActionState | null; selectedPlaythrough?: string; ongamecreated?: (id: string) => Promise<void>;
-    onchanged?: () => void; refreshGame?: () => Promise<void>; entryActions?: Snippet;
+    onchanged?: () => void; refreshGame?: () => Promise<void>; entryActions?: Snippet; tasteAction?: Snippet<[string?]>;
   } = $props();
   const { preview, api, change } = useClient();
   const fixture = preview ? useMenuPreview() : undefined;
@@ -316,6 +316,7 @@
         <Button menu label="Admin" icon="shield" panel disabled={busy}>
           {#if refreshGame}<Button item icon="refresh" onclick={() => mutation.run(refreshGame!, 'Metadata refreshed.')}>Refresh metadata</Button>{/if}
           <Button item icon="settings" onclick={() => { editOpen = true; }}>Edit metadata…</Button>
+          {@render tasteAction?.(workId)}
         </Button>
       {/if}
     {/if}

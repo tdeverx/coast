@@ -1582,7 +1582,8 @@ export const gameVariants=pgTable('game_variants',{
 },t=>[index('game_variants_parent_idx').on(t.parentId),check('game_variants_distinct_check',sql`${t.gameId}<>${t.parentId}`)]);
 export const userTasteProfiles=pgTable('user_taste_profiles',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),revision:text('revision').notNull(),
- profile:jsonb('profile').$type<import('#lib/social/taste-profile.js').TasteProfile>().notNull(),updatedAt:updatedAt(),
+ profile:jsonb('profile').$type<import('#lib/social/taste-profile.js').SavedTasteProfile>().notNull(),
+ scoring:jsonb('scoring').$type<import('#lib/social/taste-profile.js').TasteReference>(),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.userId,t.medium]})]);
 export const userTasteScores=pgTable('user_taste_scores',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),

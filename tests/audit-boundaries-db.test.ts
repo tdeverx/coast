@@ -7,7 +7,7 @@ import { mediaActionData } from '../src/lib/server/queries/media-actions';
 import { progressData } from '../src/lib/server/queries/progress';
 import { deleteUser, type SessionUser } from '../src/lib/server/auth';
 import { friendInsights } from '../src/lib/social/insights.server';
-import { personalTaste, personalTasteAffinities } from '../src/lib/social/taste-cache.server';
+import { personalTaste, personalTasteAffinities, tasteRevisionSql } from '../src/lib/social/taste-cache.server';
 import { recommend, respondRecommendation } from '../src/lib/social/service.server';
 import { createApiToken } from '../src/lib/server/public-api/tokens.server';
 import { createWebhook, deliverWebhook, emitWebhook } from '../src/lib/server/public-api/webhooks.server';
@@ -165,20 +165,17 @@ run('taste counts and overlap pages remain exact beyond the scoring sample and u
 
 run('personal Taste summarises and pages all saved affinities for the owner', async () => {
   const db = getSql();
-  const affinity = (name: string, value: number, samples = 3) => ({ id: name, name, value, samples });
-  const profile = { version: 1, works: 8, dimensions: {
-    genres: [affinity('Disliked', -0.9), ...Array.from({ length: 26 }, (_, index) => affinity(`Genre ${index + 1}`, 0.8 - index / 30))],
-    cast: [affinity('One appearance', 0.9, 1), affinity('Repeated cast', 0.8, 2)],
-  } };
-  await db`insert into user_taste_profiles(user_id,medium,revision,profile) values(${owner},'movie','fixture',${profile}::jsonb)`;
+  const affinity = (name: string, value: number, samples = 3) => [name,name,value,samples,Math.max(0,value),Math.max(0,-value),samples,0,0,value>0?samples:0,value];
+  const genres = [affinity('Disliked', -0.9), ...Array.from({ length: 26 }, (_, index) => affinity(`Genre ${index + 1}`, 0.8 - index / 30))];
+  const preview = [{name:'Disliked',value:-0.9,samples:3}];
+  const profile = { version:3, works:8, worksWithSignals:8, ratings:8, medianRating:3,
+    explicitWorks:8,inferredWorks:0,consumedWorks:0,repeatedWorks:0, dimensions:{genres}, signals:{genres:{count:27,preview}} };
+  const [current]=await getDb().execute<{revision:string}>(sql`select ${tasteRevisionSql} as revision from users u where u.id=${owner}::uuid`);
+  await db`insert into user_taste_profiles(user_id,medium,revision,profile) values(${owner},'movie',${current.revision},${profile}::jsonb)`;
   await db`insert into user_taste_profiles(user_id,medium,revision,profile)
-    values(${owner},'show','fixture','{"version":1,"works":0,"dimensions":{}}'::jsonb)`;
-  expect(await personalTaste(owner)).toEqual(expect.arrayContaining([
-    expect.objectContaining({medium:'movie',works:8,signals:{
-      genres:{count:27,names:['Disliked','Genre 1','Genre 2']},cast:{count:2,names:['One appearance','Repeated cast']},
-    }}),
-    expect.objectContaining({medium:'show',works:0,signals:{}}),
-  ]));
+    values(${owner},'show','older-scoring-model','{"version":1,"works":0,"dimensions":{}}'::jsonb)`;
+  const summaries = await personalTaste(owner);
+  expect(summaries).toEqual([expect.objectContaining({medium:'movie',works:8,signals:{genres:{count:27,preview}}})]);
   const first = await personalTasteAffinities(owner, 'movie', 'genres', 1);
   expect(first.pages).toBe(2);
   expect(first.items).toHaveLength(25);

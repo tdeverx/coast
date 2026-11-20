@@ -64,7 +64,7 @@
       })));
     if (tasteJob && service === 'all' && (type === 'all' || type === 'maintenance')) entries.push({
       provider: { id: 'taste', name: 'Coast', provider: 'coast', enabled: true, connectedAccounts: 0, accounts: [], schedule: { ...providerSchedule('coast'), ...tasteJob.schedule } },
-      task: { id: 'taste', title: 'Taste profiles', description: 'Refresh changed user interests and score up to 500 recommendation candidates per medium. Ten users per run.', kinds: ['taste.refresh'], scope: 'metadata', interval: 'intervalMinutes' },
+      task: { id: 'taste', title: 'Taste profiles', description: 'Build profiles from full history when it changes and rebuild weekly. Score up to 500 recommendation candidates per medium.', kinds: ['taste.refresh'], scope: 'metadata', interval: 'intervalMinutes' },
       local: true, timing: tasteJob.timing, jobs: actions.filter(job => job.kind === 'taste.refresh'),
     });
     // Local/event-driven work without a service schedule still gets one task

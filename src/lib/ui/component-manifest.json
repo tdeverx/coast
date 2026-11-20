@@ -1039,6 +1039,6 @@
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/MediaHero.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   }
 }

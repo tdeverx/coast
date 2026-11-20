@@ -26,3 +26,16 @@ test('missing and sparse signals are excluded, never disagreements',()=>{
   },'fixture','fixture');
   expect(await adapter.profile()).toMatchObject({id:'fixture-stable-uuid',avatar:'https://walter-r2.trakt.tv/images/users/fixture.webp'});
  });
+
+test('shared rating order accounts for personal scales and ties using the original rating budget',()=>{
+ const rated=(values:number[])=>values.map((rating,id)=>({id:String(id),rating,interest:false,consumed:false,genres:[]}));
+ const left=rated([1,1,2,3,3,4]),aligned=rated([2,2,3,4,4,5]),inverse=rated([5,5,4,3,3,2]);
+ const shared=tasteSignals(left,aligned),opposed=tasteSignals(left,inverse);
+ expect(shared.signals.ratingOrder.score).toBe(100);
+ expect(opposed.signals.ratingOrder.score).toBe(0);
+ expect(shared.signals.ratings.weight+shared.signals.ratingOrder.weight).toBe(40);
+ expect(tasteSignals([...aligned].reverse(),left)).toEqual(shared);
+ expect(shared.score!).toBeGreaterThan(opposed.score!);
+ expect(tasteSignals(left,rated([3,3,3,3,3,3])).signals.ratingOrder.score).toBeNull();
+ expect(tasteSignals(left.slice(0,4),aligned).signals.ratingOrder.score).toBeNull();
+});
