@@ -33,7 +33,7 @@
     },
     "src/lib/server/queries/continuations.ts": {
       "previous": "c9897198a5eaca64c726e664acef05be3a5c5c47b1045cf86a8d1da5e6d260c0",
-      "current": "3bd862da31822fbadb93f279e3e9da897e6c6ed482b09d8f7d982e3df9d3159b"
+      "current": "36437f55473c01655ee3198b0fb3b6b50bbca91ce77057b1fe2ee259c37d2f81"
     },
     "src/lib/server/queries/progress.ts": {
       "previous": "258c29fb1f2ce06273ba4f764efc45f88e7e405b15918e67f2eebc9b0bcac1a4",
@@ -97,5 +97,5 @@
     }
   },
   "report": "docs/audits/2026-11-20-live-error-followup.md",
-  "reportSha256": "91d970e1eb8770aeb6fb0a55065c9411f5979abef81d52d22155d438f3f408cf"
+  "reportSha256": "6280f6a3361faf763b48843eadcb0f1c4aef6612bc6b3a9fa647ed50d60b4a1d"
 }
