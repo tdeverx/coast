@@ -1,0 +1,37 @@
+{
+  "epoch": "clear-glass-local-2026-11-20",
+  "baseline": "709399681b271ca2a939c4c96b343c2230f9c209",
+  "blanketAcceptance": false,
+  "files": {
+    "src/app.css": {
+      "previous": "0ee67711b8af269bb3e7763d83b42a5477776878ecbff4aa4e2e462623f13db7",
+      "current": "33f5e93468c8967c5a65ce2826b1e1919a08fa4a2664bfec2f419ff8f0850c8c"
+    },
+    "src/lib/ui/materials/MaterialTweaker.svelte": {
+      "previous": "ec7ee3f5c7ae1548a91daedf057d27b4149e9a7d520cfdb7d8d8b1ade1d9046e",
+      "current": "7dc8e16bb685f68b4582035697636bb5b3d86c2ac40e73f8dcb61fcacd621d10"
+    },
+    "src/lib/ui/materials/glass.ts": {
+      "previous": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179",
+      "current": "cd3214897b64490886a4d262bd5ea447b40f20c399ec86dea3ce8903de5b586c"
+    },
+    "src/lib/ui/materials/presets.ts": {
+      "previous": "9520e2f59a21b66fbd0841f8bda5f169c5d45496e7edfbf7a83b0bd1ba5ee71b",
+      "current": "307caec3f1a42b22f5adbdd6585a6e0ada82f0f4f6e8712b8930178c462580a2"
+    },
+    "src/routes/ui-preview/reference.ts": {
+      "previous": "99a3b386534253274ecfc2071053a276c218af4e860ae4dae859a52d44016420",
+      "current": "91a5677dd7a4ff083c638b043dbba87321b76bd0c436938c904e8a0a269e8af2"
+    },
+    "tests/material-tuning.test.ts": {
+      "previous": "995ceaabd8a322165e43d0576eb00a75d34e5c3737a5f65cf11bd01c9ad7eabe",
+      "current": "ed10d3b679975dd2f94285c1946e4fac8c59e9871f6e67eaf8018bd4b4e4bc5e"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "bf5b779e5cd5b7df9a9d7015ecdad84482b6ba2cb0e9ddc6fe555630de02bc67",
+      "current": "d2f1fa52005c2afbd3ac5171db022779f31150ab706bce3cea35813f0269a394"
+    }
+  },
+  "report": "docs/audits/2026-11-20-clear-glass.md",
+  "reportSha256": "6902125a6b05824eb2ad6f656c9e1985a727e9bc745ef4a4a2096d51c7a4e9ee"
+}

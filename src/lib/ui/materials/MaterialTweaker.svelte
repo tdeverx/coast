@@ -8,10 +8,9 @@
   import SegmentedControl from '../components/SegmentedControl.svelte';
   import { liquidGlass } from './glass';
   import { experimentalMaterial, experimentalDefaults, effectGroups, readExperimentalEffects } from './experimental';
-  import { blendOptions } from './presets';
+  import { blendOptions, glassPresets, type GlassSurface, type GlassVariant } from './presets';
   import { exportMaterialPreset } from './export';
   import { defaultMaterialDrafts, readMaterialDrafts, materialNames, sliderGroups, colorControls } from './tuning';
-  import type { GlassVariant } from './presets';
   const previewModes = ['materials', 'fallbacks'] as const;
   const storageKey = 'coast.material-drafts.v1';
   let drafts = $state(defaultMaterialDrafts());
@@ -110,6 +109,7 @@
 <div class="preview-column">
     <div class="preview" style:--preview-radius={`${radius}px`}>
       {#each previewModes as mode}
+        {@const approved = !experimental && Object.entries(glassPresets[mode][baseVariant]).every(([key, value]) => selected[mode][key as keyof GlassSurface] === value)}
         <div class="sample glass" class:light={variant === 'glassLight'}
           data-material-sample={mode}
           role={experimental ? 'group' : undefined}
@@ -117,7 +117,7 @@
           use:experimentalMaterial={{ enabled: experimental, effects }}
           use:liquidGlass={{ variant: baseVariant, preview: true, surface: selected.materials, fallback: mode === 'materials' && selected.materials.refraction === 0 ? selected.materials : selected.fallbacks, renderer: mode === 'fallbacks' ? 'css' : 'auto' }}>
           <strong>{title}</strong><span>{mode === 'materials' ? 'Material · native where supported' : 'Fallback · CSS blur'}</span>
-          <span class="sample-detail">{experimental ? 'Non-approved · hover or focus to test interaction light' : 'Artwork, controls and content beneath the surface'}</span>
+          <span class="sample-detail" data-approval={approved ? 'approved' : 'unapproved'}>{experimental ? 'Unapproved · hover or focus to test interaction light' : approved ? 'Approved' : 'Local draft'}</span>
           {#if experimental}<Button >Focus highlight</Button>{/if}
         </div>
       {/each}
@@ -125,7 +125,7 @@
   </div>
 {/snippet}
 {#snippet inspector()}
-<Heading title="Material tweaker" description="Non-approved drafts · saved in this browser. Current app presets stay unchanged.">
+<Heading title="Material tweaker" description="Approved presets and fallbacks. Edits are saved as drafts in this browser.">
   {#snippet actions()}
     {#if experimental}<Button  onclick={tryTogether}>Try together</Button>{/if}
     <Button emphasis="subtle" onclick={() => reset()}>Reset selected</Button>
