@@ -17,6 +17,7 @@ export const diagnosticEvents = [
   'job.complete',
   'job.failed',
   'browser.error',
+  'browser.image-failed',
   'browser.rejection',
   'browser.request-failed',
   'playback.start',
@@ -37,6 +38,7 @@ export const diagnosticEvents = [
 export type DiagnosticEvent = (typeof diagnosticEvents)[number];
 export const browserDiagnosticLevels = {
   'browser.error': 'error',
+  'browser.image-failed': 'warn',
   'browser.rejection': 'error',
   'browser.request-failed': 'warn',
   'playback.failed': 'error',
@@ -48,7 +50,12 @@ export const browserDiagnosticLevels = {
   'playback.seek': 'debug',
   'playback.timing': 'trace',
 } as const satisfies Partial<Record<DiagnosticEvent, DiagnosticLevel>>;
+export const networkDiagnosticCodes = [
+  'ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH',
+  'ConnectionRefused', 'ConnectionReset', 'ConnectionClosed', 'FailedToOpenSocket', 'UnableToConnect',
+] as const;
 export const systemDiagnosticCodes = [
+  ...networkDiagnosticCodes,
   'ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
   'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK',
   '22P02', '23502', '23503', '23505', '25P02', '40001', '42703', '42P01',
@@ -63,7 +70,7 @@ const jobKinds = new Set([
 ]);
 const requestActions = [
   'prepare', 'restore', 'progress', 'player-error', 'stream', 'subtitles', 'trailer', 'share-stream',
-  'details', 'details-enhance', 'metadata-refresh', 'insights', 'feedback', 'asset', 'health',
+  'details', 'details-enhance', 'metadata-refresh', 'insights', 'feedback', 'asset', 'avatar', 'health',
   'reader-open', 'reader-manifest', 'reader-page', 'reader-file', 'heartbeat', 'claim',
 ] as const;
 export type DiagnosticRequestAction = typeof requestActions[number];
@@ -87,6 +94,7 @@ export const eventMessages: Record<DiagnosticEvent, string> = {
   'job.complete': 'Background job completed.',
   'job.failed': 'Background job failed.',
   'browser.error': 'Browser error detected.',
+  'browser.image-failed': 'An image could not be displayed.',
   'browser.rejection': 'Unhandled browser rejection detected.',
   'browser.request-failed': 'Browser request failed.',
   'playback.start': 'Playback preparation started.',
@@ -166,6 +174,8 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (input.mediaType === 'video' || input.mediaType === 'audio') result.mediaType = input.mediaType;
   if (['direct', 'hls'].includes(String(input.delivery))) result.delivery = String(input.delivery);
   if (['start', 'reconfigure', 'fallback', 'shared'].includes(String(input.playbackChange))) result.playbackChange = String(input.playbackChange);
+  if (['no-library-source', 'no-provider-source', 'selected-version', 'duration', 'device-policy', 'mixed'].includes(String(input.sourceFailure)))
+    result.sourceFailure = String(input.sourceFailure);
   if (
     ['network', 'timeout', 'http', 'validation', 'unexpected', 'aborted', 'media', 'local-busy', 'local-queue-timeout'].includes(
       String(input.failure)
@@ -191,6 +201,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'complete',
       'assessment',
       'card-hydration',
+      'progress-seeds', 'continuations', 'progress-membership',
       'streams-module',
       'streams-account',
       'streams-connection',

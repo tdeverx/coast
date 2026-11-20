@@ -1020,12 +1020,16 @@ export async function executeJellyfinUserState(
   if(category==='history'&&'playCount' in current)desired={...desired,playCount:data.playCount??(data.value?current.playCount:0)};
   if (!sameValue(current, desired)) return;
   if(!items.length)return; // Durable intent remains; a future successful user sync can deliver it.
+  const itemUserData = work.kind === 'book' || work.kind === 'comic' || work.kind === 'collection';
   for (const item of items) {
     const music = work?.category === 'music'
       ? await adapter.musicItem(connection.externalUserId!, item.id).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); })
       : null;
     const remote = music ? { played: !!music.playCount, favourite: music.favourite, positionSeconds: music.positionSeconds ?? 0 }
-      : (await adapter.item(connection.externalUserId!, item.id).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); })).userData;
+      : await (itemUserData
+        ? adapter.itemUserData(connection.externalUserId!, item.id)
+        : adapter.item(connection.externalUserId!, item.id).then(item => item.userData))
+        .catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); });
     if (remote) {
       const remoteEmpty=data.field==='watched'?!remote.played:data.field==='favourite'?!remote.favourite:!remote.positionSeconds;
       if(remoteEmpty){
@@ -1055,7 +1059,7 @@ export async function executeJellyfinUserState(
         await adapter.setListeningSummary(connection.externalUserId!, item.id, Number(desired.playCount));
       else if (music && data.field === 'favourite')
         await adapter.setMusicFavourite(connection.externalUserId!, item.id, Boolean(data.value));
-      else
+      else if ((data.field === 'watched' ? remote?.played : remote?.favourite) !== Boolean(data.value))
         await adapter.setUserState(connection.externalUserId!, item.id, data.field, Boolean(data.value));
     } catch (cause) { throw tagDiagnosticStage(cause, 'provider-write'); }
   }

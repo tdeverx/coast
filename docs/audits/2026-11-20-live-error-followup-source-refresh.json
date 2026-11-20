@@ -1,0 +1,97 @@
+{
+  "epoch": "live-error-followup-2026-11-20",
+  "baseline": "2935776e7bbd3c7974febce4d188da402fa7738c",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "d62b47f9b971bb5b4764ab5116e29306624416ee3db2198f0a6ed6a7b4ae1d16",
+      "current": "61de69ff4f37ef013cf0f56c2c4534981d1f9d06088a7b240109de3a8b695e29"
+    },
+    "src/lib/diagnostics.ts": {
+      "previous": "541bd6fe0b3c458299f57f9f0aae211513050ebdd3863a6ae39b9b79233208f1",
+      "current": "6c93f369272f486196959054284d7a8b6a07059df32f3a713beb8d11db29a3c1"
+    },
+    "src/lib/playback/service.server.ts": {
+      "previous": "e85857ccf9704052c9c116f2fb8994f5190dbd715fc24ce2308022fac445111c",
+      "current": "2499c0893bb62e6041621056e2fd783937558b383df3fe1b5feab519e9bb4d01"
+    },
+    "src/lib/providers/jellyfin/adapter.server.ts": {
+      "previous": "64be9dc33e7869d7764ada37ac88155f23c1d765f7d059995e760d77758afb5e",
+      "current": "eebbf80c3300b7702d16c52cb92602c510c2c2e45b2febd4ad968e466a6e319f"
+    },
+    "src/lib/server/api/index.server.ts": {
+      "previous": "7e684cd7d909fa375180d37bae0fce14f2a3d280cfa86a6176652e9918b17c27",
+      "current": "358a5f92ed900932b7c1b71d47a57d918f7e43662f474542b5696ec366082697"
+    },
+    "src/lib/server/diagnostics/index.ts": {
+      "previous": "b559b4715cf9d801cef8584e16eb2a664bb9c5cd91b92bfb75c6fc4c984d117d",
+      "current": "66e9b9de62c14f2f1d1acf1dc1340718f3151ccc6b5fb7f2eae8942bd246d022"
+    },
+    "src/lib/server/diagnostics/request.ts": {
+      "previous": "bafc77121c5d8c89da6f51fe9c2c404e3c81a17210536ba4e05ab4293813cc27",
+      "current": "f00e04560d6b241c906ae058d5721874c205636503cf5586c7eeb8e58454c016"
+    },
+    "src/lib/server/queries/continuations.ts": {
+      "previous": "c9897198a5eaca64c726e664acef05be3a5c5c47b1045cf86a8d1da5e6d260c0",
+      "current": "3bd862da31822fbadb93f279e3e9da897e6c6ed482b09d8f7d982e3df9d3159b"
+    },
+    "src/lib/server/queries/progress.ts": {
+      "previous": "258c29fb1f2ce06273ba4f764efc45f88e7e405b15918e67f2eebc9b0bcac1a4",
+      "current": "a874dfb2ba7b60f376fda928676fa23aa8be976905d9b16940bbd3681060128b"
+    },
+    "src/lib/server/queries/requests.ts": {
+      "previous": "41d905176be8e6df49b002748644cc7b0b8f9a2eeb8119f4e6494e62ef9cff3c",
+      "current": "5aac68d9b802bd4d92e0031d3252843437ddc5b68cef9538c36a938e9c17cc35"
+    },
+    "src/lib/server/security/provider-fetch.ts": {
+      "previous": "3a06689411c733fda267f575b8f926aecc9dd63eef9ffaa0f887e2dd8290e1fd",
+      "current": "3d245d671d8b0009fc41d3ea1ccec324c1515772b2f3a0c1ce3b938283557927"
+    },
+    "src/lib/sync/jellyfin.server.ts": {
+      "previous": "16c61716dcca96534dac1aa50172580e869d167a51f8e360cfd2b6ac3df36d4a",
+      "current": "85405a13c6d003c21a421b06cddb19c5ff85d20c83fe5e492b424fce51e3beed"
+    },
+    "src/lib/ui/components/MediaHero.svelte": {
+      "previous": "ea556027817a7201bdbae5edb25cccc4f18a34c43a03f98f401618543248b750",
+      "current": "e3f2eab5efab467bba22506c56e59dd237bbf21f12c73c3ca133928e045b3bbf"
+    },
+    "src/lib/ui/diagnostics.ts": {
+      "previous": "ee66fd1ea3b54548fb5c14fef9b24f0be882e470ca19c01e5cb4c5fb8c2d3b33",
+      "current": "42eb6e09d23be7c03c4925f8d51b886554e9ba8879d2489e568f5a77cff877a0"
+    },
+    "src/routes/api/v1/media/[id]/insights/+server.ts": {
+      "previous": "4149083839f3f788b75277e7e39d55ced6ce1f2b15050655ff5c85b19e976dc0",
+      "current": "45c88a40793a318732c54261f2cd06243fbff92298b888b193416be0fb063f2f"
+    },
+    "src/routes/progress/+page.server.ts": {
+      "previous": "4c1326e068169619913684037ba8f77c10f1ee75bf00aff1b57cd43b0e09f30b",
+      "current": "7f792597a9bca4e13e2637469ce93d053fb362723c45e409ec7d1011815a3af2"
+    },
+    "tests/browser-diagnostics-lifecycle.test.ts": {
+      "previous": "61483d89da2c65202e7357a89d60c9cb396e06f65a619baa6669ff115a42139f",
+      "current": "838235f3549fccc60dcf7950270fb7ac685a51ba483024fd7662e8585f02696a"
+    },
+    "tests/diagnostic-logging.test.ts": {
+      "previous": "034f3c90a5f9fe23df540e631db54bbd9910fbc35a9907da8480cd95d0d530c6",
+      "current": "ce72ff49533597234f78af9b5810be8de4172c4ffddddedcb7e78df4c47ac2ca"
+    },
+    "tests/domain-application-db.test.ts": {
+      "previous": "e183322f4842a82b61ebd50fed24b7c740a9c868489f0fc6aedd2c092316d5b7",
+      "current": "8154ca29c8e23517d1a83c6c422dde3ab1873f98d03a127fae02042fa6bc7d8b"
+    },
+    "tests/jellyfin-reconciliation-db.test.ts": {
+      "previous": "580cbbfa0666d68cf48ebd659f88e49b8e55a767e5d1e7f9d9ccd0abbcd16e15",
+      "current": "60ce9a0dbad93913f7d760e590b9d54764f2b93dfcedbeb4b32cbeeb40f64076"
+    },
+    "tests/media-details-db.test.ts": {
+      "previous": "a54e1cd05efa4d0c05cbb464e79b137d91f59860f1593a56e1ccbc5894983b9d",
+      "current": "873914173350ab296e68387dbfc12dd77bf766b1ce70b3a885055f0e066b56d7"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "607f92d8c11a76f9a92955a9fc27292c2c8927c1e1cb11edfadce2202c8e73c1",
+      "current": "bf5b779e5cd5b7df9a9d7015ecdad84482b6ba2cb0e9ddc6fe555630de02bc67"
+    }
+  },
+  "report": "docs/audits/2026-11-20-live-error-followup.md",
+  "reportSha256": "40624aae95809858e6da96ae99aac4421a7698f84c5539e6111f46e8e179cf47"
+}

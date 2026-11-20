@@ -53,10 +53,20 @@ export function browserDiagnostic(event: DiagnosticEvent, fields: Record<string,
 }
 export function installBrowserDiagnostics() {
   let stopped = false, pending = false;
+  let imageWindowStarted = -Infinity;
   const controller = new AbortController();
   const onError = (event: Event) => {
     const tag = event.target instanceof Element ? event.target.tagName : '';
-    const browserSource = tag === 'SCRIPT' ? 'script' : tag === 'LINK' ? 'style' : tag === 'IMG' ? 'image'
+    if (tag === 'IMG') {
+      // Cards can repeat the same artwork many times. Reserve the error budget
+      // for application failures and emit at most one image warning per minute.
+      const now = performance.now();
+      if (now - imageWindowStarted < 60_000) return;
+      imageWindowStarted = now;
+      browserDiagnostic('browser.image-failed', { browserSource: 'image' });
+      return;
+    }
+    const browserSource = tag === 'SCRIPT' ? 'script' : tag === 'LINK' ? 'style'
       : tag === 'VIDEO' || tag === 'AUDIO' ? 'media' : tag ? 'resource' : 'runtime';
     const cause = event instanceof ErrorEvent ? event.error : undefined;
     browserDiagnostic('browser.error', { failure: 'unexpected', browserSource, browserError: cause instanceof Error ? cause.name : undefined });

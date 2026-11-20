@@ -1,5 +1,5 @@
 import { assertJobFeaturePolicy, JobYield } from '#lib/server/queue/execution.js';
-import { logDiagnostic, classifyFailure, context, diagnosticRequest } from '../diagnostics';
+import { logDiagnostic, classifyFailure, context, diagnosticRequest, diagnosticErrorCode } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { AppError } from './errors';
@@ -367,7 +367,7 @@ export async function secureProviderFetch(
     const status = error instanceof AppError ? error.status : undefined;
     void logDiagnostic(failure === 'aborted' ? 'debug' : 'warn', 'provider.failed', {
       provider: config.provider,
-      failure, status, stage,
+      failure, status, stage, errorCode: diagnosticErrorCode(error),
       providerWaitMs: providerWaitMs ?? (failure === 'local-queue-timeout' ? durationMs : undefined),
       method: init.method || 'GET',
       stream: !!options.stream,

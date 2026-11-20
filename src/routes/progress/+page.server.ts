@@ -4,6 +4,7 @@ import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { progressOptionsSchema, progressParameters, progressSurface } from '#lib/progress.js';
 import { progressData, tabbedProgressData } from '#lib/server/queries/progress.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals, url, depends, request }) => {
   depends('coast:tracking', 'coast:social');
@@ -22,7 +23,7 @@ export const load: PageServerLoad = async ({ locals, url, depends, request }) =>
       surface,
       progress: await (surface==='profile'&&!actionScoped
         ? tabbedProgressData(subject.id,options.output,locals.user.id,'profile',request.signal)
-        : progressData(subject.id,options.output,locals.user.id)),
+        : withReadCancellation(request.signal, () => progressData(subject.id,options.output,locals.user!.id))),
       username: subject.username,
       isOwner: subject.id === locals.user.id,
     };

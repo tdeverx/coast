@@ -1,8 +1,11 @@
-import { beforeAll, afterAll, test, expect } from 'bun:test';
+import { beforeAll, afterAll, test, expect, spyOn } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ingestMetadata } from '../src/lib/catalogue/service.server';
+import { ensureDetails, ingestMetadata } from '../src/lib/catalogue/service.server';
+import * as tmdb from '../src/lib/providers/tmdb/connection.server';
+import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
+import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { detailsData } from '../src/lib/server/queries/media';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const uid = crypto.randomUUID(),
@@ -95,6 +98,22 @@ run('collection page preserves the explicit mixed sequence', async () => {
   const data = await detailsData(uid, collection);
   expect(data.members.map((m) => m.id)).toEqual([episode, movie]);
   expect(data.members.every((m) => m.sequence)).toBe(true);
+});
+
+run('optional TMDB reads share missing results but retry outages and recheck changed credentials', async () => {
+  let calls=0,status=404,scope='configured-tmdb';
+  const connection=spyOn(tmdb,'getTmdb').mockImplementation(async () =>
+    new TmdbAdapter(async () => { calls++; throw new ProviderHttpError(status); }, 'en-US', 'GB', scope));
+  try {
+    expect(await Promise.all([ensureDetails(uid,movie),ensureDetails(uid,movie)])).toEqual([false,false]);
+    expect(await ensureDetails(uid,movie)).toBe(false);
+    expect(calls).toBe(1);
+    scope='rotated-tmdb';
+    status=503;
+    for(let attempt=0;attempt<2;attempt++)
+      await expect(ensureDetails(uid,movie)).rejects.toMatchObject({status:503});
+    expect(calls).toBe(3);
+  }finally{connection.mockRestore();}
 });
 
 run(

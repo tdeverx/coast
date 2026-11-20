@@ -41,7 +41,8 @@ export async function requestList(userId: string, requestedPage = 1, requestId?:
   const total = count.total;
   const { page, pages } = pagination(total, requestedPage,pageSize);
   const rows = await db
-    .select({ request: s.mediaRequests, destination: s.providerInstances.name,requester:{username:s.users.username,avatar:sql<string|null>`${s.users.settings}->'profile'->>'avatar'`} })
+    .select({ request: s.mediaRequests, destination: s.providerInstances.name,requester:{username:s.users.username,avatar:sql<string|null>`
+      case when social_visible(${s.users.id},${userId}::uuid,'details') then ${s.users.settings}->'profile'->>'avatar' end`} })
     .from(s.mediaRequests)
     .innerJoin(s.media,eq(s.media.id,s.mediaRequests.mediaId))
     .innerJoin(s.users,eq(s.users.id,s.mediaRequests.userId))

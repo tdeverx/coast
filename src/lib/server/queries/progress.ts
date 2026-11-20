@@ -23,6 +23,12 @@ import { heroTitleIds } from '#lib/media/hero.js';
 import { readingCards, readingCardColumns } from '#lib/reading/query.server.js';
 import { pausedProgressPage, pausedProgressPresent } from './paused-progress';
 import { withReadCancellation } from '../db/read-cancellation';
+import { logDiagnostic } from '../diagnostics';
+
+function reportSlowProgress(stage: 'progress-seeds' | 'continuations' | 'progress-membership' | 'card-hydration', started: number, count: number) {
+  const durationMs = performance.now() - started;
+  if (durationMs >= 500) void logDiagnostic('info', 'query.timing', { operation: 'progress', stage, durationMs, count });
+}
 
 function readingBookmarks(userId: string, workId: SQL, cycle: SQL) {
   return sql`from reading_sessions b where b.user_id=${userId} and b.work_id=${workId}
@@ -162,9 +168,11 @@ async function readProgressData(
   }
   const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId,{planning});
   const presentation = options.view === 'watching' ? 'continue' : 'next';
+  const started = performance.now();
   const views = new Map(
     (await mediaViewsForIds(userId, visibleIds, viewerId, true, presentation)).map((item) => [item.id, item])
   );
+  reportSlowProgress('card-hydration', started, visibleIds.length);
   const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
   decorateProgressCards(items, sequenceById, options.view);
   return { ...options, page, pages, total, items };
@@ -267,6 +275,7 @@ export async function continueHeroId(userId: string) {
 async function screenProgressInputs(userId: string, viewerId: string, firstEpisode: boolean) {
   const db = getDb();
   const {metadataSource} = await getConfig();
+  const started = performance.now();
   const states = await db
     .select({
       id: s.trackingState.mediaId,
@@ -280,6 +289,8 @@ async function screenProgressInputs(userId: string, viewerId: string, firstEpiso
     .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
     .where(and(eq(s.trackingState.userId, userId), eq(s.trackingState.dropped, false), eq(s.trackingState.paused, false), sql`(${s.trackingState.watched} or ${s.trackingState.positionSeconds}>0 or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null)`))
     .orderBy(desc(s.trackingState.updatedAt), s.media.id);
+  reportSlowProgress('progress-seeds', started, states.length);
+  const continuationStarted = performance.now();
   const planned = await continuationIds(
     userId,
     states.filter((row) => !row.dropped && (row.watched || row.progress > 0)).map((row) => row.id),
@@ -288,6 +299,7 @@ async function screenProgressInputs(userId: string, viewerId: string, firstEpiso
     firstEpisode,
     metadataSource
   );
+  reportSlowProgress('continuations', continuationStarted, states.length);
   const sequenceById = new Map(planned.sequenceNext.map((next) => [next.entry.mediaId, next]));
   const activeIds = states
     .filter(
@@ -385,6 +397,7 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
   const db = getDb();
   const { candidateIds, sequenceById, where } = await screenProgressMembership(userId, options, viewerId, planning);
   if (!candidateIds.length) return { ids: [], allIds: [], total: 0, page: 1, pages: 1, sequenceById };
+  const started = performance.now();
   const candidates = await db
     .select({ id: s.media.id })
     .from(s.media)
@@ -408,6 +421,7 @@ export async function screenProgressPlan(userId: string, options: import('#lib/p
   }
   const { page, pages } = pagination(ids.length, options.page);
   const visibleIds = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  reportSlowProgress('progress-membership', started, candidateIds.length);
   return { ids: visibleIds, allIds: ids, page, pages, total: ids.length, sequenceById };
 }
 

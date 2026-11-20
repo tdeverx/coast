@@ -65,19 +65,18 @@ const remoteSubtitleSchema = v.object({
   Forced: v.nullish(v.boolean()), AiTranslated: v.nullish(v.boolean()), MachineTranslated: v.nullish(v.boolean()),
   DownloadCount: v.nullish(v.number()),
 });
+const userDataSchema = v.object({
+  Played: bool,
+  IsFavorite: v.optional(v.boolean()),
+  PlaybackPositionTicks: num,
+  PlayCount: num,
+  LastPlayedDate: str,
+});
 const itemSchema = v.object({
   Id: v.string(),
   Name: str,
   Type: v.picklist(['Movie', 'Series', 'Season', 'Episode']),
-  UserData: v.nullish(
-    v.object({
-      Played: bool,
-      IsFavorite: v.optional(v.boolean()),
-      PlaybackPositionTicks: num,
-      PlayCount: num,
-      LastPlayedDate: str,
-    })
-  ),
+  UserData: v.nullish(userDataSchema),
   OriginalTitle: str,
   SortName: str,
   Status: str,
@@ -163,6 +162,15 @@ function source(data: v.InferOutput<typeof sourceSchema>): PlaybackSource {
       : data,
   };
 }
+function mapUserData(data: v.InferOutput<typeof userDataSchema>): NonNullable<AvailableItem['userData']> {
+  return {
+    played: data.Played,
+    favourite: data.IsFavorite,
+    positionSeconds: Math.max(0, (data.PlaybackPositionTicks ?? 0) / 10000000),
+    playCount: Math.max(0, Math.floor(data.PlayCount ?? 0)),
+    lastPlayedAt: data.LastPlayedDate || undefined,
+  };
+}
 function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   const kind = ({ Movie: 'movie', Series: 'show', Season: 'season', Episode: 'episode' } as const)[
     i.Type
@@ -182,15 +190,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
     showId: i.SeriesId || undefined,
     seasonNumber: (kind === 'season' ? i.IndexNumber : i.ParentIndexNumber) ?? undefined,
     episodeNumber: kind === 'episode' ? (i.IndexNumber ?? undefined) : undefined,
-    userData: i.UserData
-      ? {
-          played: i.UserData.Played,
-          favourite: i.UserData.IsFavorite,
-          positionSeconds: Math.max(0, (i.UserData.PlaybackPositionTicks ?? 0) / 10000000),
-          playCount: Math.max(0, Math.floor(i.UserData.PlayCount ?? 0)),
-          lastPlayedAt: i.UserData.LastPlayedDate || undefined,
-        }
-      : undefined,
+    userData: i.UserData ? mapUserData(i.UserData) : undefined,
     metadata: {
       provider: 'jellyfin',
       externalId: i.Id,
@@ -408,6 +408,12 @@ export class JellyfinAdapter {
       throw error;
     }
   }
+  async itemUserData(userId: string, itemId: string) {
+    const value = v.parse(v.nullish(userDataSchema), await this.call(
+      `/UserItems/${encodeURIComponent(itemId)}/UserData?${new URLSearchParams({userId})}`
+    ));
+    return value ? mapUserData(value) : undefined;
+  }
   async canManageSubtitles(userId: string, signal?: AbortSignal) {
     const user = v.parse(v.object({ Id: v.string(), Policy: v.object({
       IsDisabled: bool, EnableSubtitleManagement: bool,
@@ -606,8 +612,6 @@ export class JellyfinAdapter {
     field: 'watched' | 'favourite',
     value: boolean
   ) {
-    const current = (await this.item(userId, itemId)).userData;
-    if (current && (field === 'watched' ? current.played : current.favourite) === value) return;
     await this.call(
       `/${field === 'watched' ? 'UserPlayedItems' : 'UserFavoriteItems'}/${encodeURIComponent(itemId)}?userId=${encodeURIComponent(userId)}`,
       {

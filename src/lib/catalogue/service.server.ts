@@ -2,6 +2,8 @@ import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
 import { mapConcurrent } from '#lib/server/utils/async.js';
 import { searchFallback, searchScore } from '#lib/search.js';
 import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
+import { providerCache } from '#lib/server/utils/provider-cache.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
@@ -251,6 +253,13 @@ export async function importTmdb(
 ) {
   const adapter = await getTmdb(options.language, options.region);
   if (!adapter) throw new Error('Configure TMDB in Settings to add global catalogue titles.');
+  return importTmdbTitle(adapter, kind, id, options);
+}
+type Tmdb = NonNullable<Awaited<ReturnType<typeof getTmdb>>>;
+
+async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
+  options: { includeEpisodes?: boolean; includeRecommendations?: boolean }
+) {
   const snapshot = await adapter.details(kind, id, options.includeRecommendations !== false);
   const saved = await ingestMetadata(snapshot);
   const recommendations: (typeof mediaRelationships.$inferInsert)[] = [];
@@ -309,9 +318,7 @@ export async function importTmdb(
   });
   return saved;
 }
-async function importTmdbCollection(id: string, region = 'GB') {
-  const adapter = await getTmdb('en-US', region);
-  if (!adapter) throw new Error('Configure TMDB to refresh collection details.');
+async function importTmdbCollection(id: string, adapter: Tmdb) {
   const snapshot = await adapter.collection(id),
     saved = await ingestMetadata(snapshot);
   for (const [position, part] of (snapshot.children ?? []).entries()) {
@@ -328,19 +335,30 @@ async function importTmdbCollection(id: string, region = 'GB') {
   return saved;
 }
 
-async function refreshChildDetails(id: string, region: string) {
-  const db = getDb(),
-    adapter = await getTmdb('en-US', region);
-  if (!adapter) throw new Error('Configure TMDB to refresh these details.');
+async function tmdbChild(id: string) {
+  const db = getDb();
   const [season] = await db.select().from(seasons).where(eq(seasons.mediaId, id));
   const [episode] = season ? [] : await db.select().from(episodes).where(eq(episodes.mediaId, id));
   const child = season ?? episode;
-  if (!child) throw new Error('This title has no episode or season details.');
+  if (!child) return;
   const [show] = await db
     .select()
     .from(externalIds)
     .where(and(eq(externalIds.mediaId, child.showId), eq(externalIds.provider, 'tmdb')));
-  if (!show) throw new Error('The show needs a TMDB match before these details can be refreshed.');
+  if (show) return { child, season, episode, show };
+}
+
+async function refreshChildDetails(id: string, region: string) {
+  const adapter = await getTmdb('en-US', region);
+  if (!adapter) throw new Error('Configure TMDB to refresh these details.');
+  const target = await tmdbChild(id);
+  if (!target) throw new Error('The show needs a TMDB match before these details can be refreshed.');
+  return importTmdbChild(id, adapter, target);
+}
+
+async function importTmdbChild(id: string, adapter: Tmdb, {
+  child, season, episode, show,
+}: NonNullable<Awaited<ReturnType<typeof tmdbChild>>>) {
   const snapshot = season
     ? await adapter.season(show.externalId, child.seasonNumber)
     : await adapter.episode(show.externalId, child.seasonNumber, episode!.episodeNumber);
@@ -358,6 +376,8 @@ async function refreshChildDetails(id: string, region: string) {
 }
 
 const sharedRefresh = providerSingleFlight<Awaited<ReturnType<typeof importTmdb>>>('tmdb-refresh');
+const optionalRefresh = providerSingleFlight<boolean>('tmdb-detail-enrichment');
+const missingDetails = providerCache<null>(100, 5 * 60_000);
 export function refreshMedia(id: string, region = 'GB', includeRecommendations = true) {
   return sharedRefresh(`${id}:${region}:${includeRecommendations}`, () => refreshMediaNow(id, region, includeRecommendations));
 }
@@ -371,8 +391,11 @@ async function refreshMediaNow(id: string, region = 'GB', includeRecommendations
     const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, id));
     if (item && ['season', 'episode'].includes(item.kind)) return refreshChildDetails(id, region);
   }
-  if (identity?.mediaKind === 'collection')
-    return importTmdbCollection(identity.externalId, region);
+  if (identity?.mediaKind === 'collection') {
+    const adapter = await getTmdb('en-US', region);
+    if (!adapter) throw new Error('Configure TMDB to refresh collection details.');
+    return importTmdbCollection(identity.externalId, adapter);
+  }
   if (identity?.mediaKind === 'season' || identity?.mediaKind === 'episode')
     return refreshChildDetails(id, region);
   if (!identity || (identity.mediaKind !== 'show' && identity.mediaKind !== 'movie'))
@@ -392,13 +415,6 @@ export async function ensureDetails(userId: string, id: string) {
     .from(externalIds)
     .where(and(eq(externalIds.mediaId, id), eq(externalIds.provider, 'tmdb')))
     .limit(1);
-  if (!identity) {
-    const [child] = await getDb().select().from(media).where(eq(media.id, id));
-    if (!child || !['season', 'episode'].includes(child.kind) || !(await getTmdb('en-US', region)))
-      return false;
-    await sharedRefresh(`details:${id}:${region}`, () => refreshChildDetails(id, region));
-    return true;
-  }
   const [snapshot] = await getDb()
     .select({ raw: metadataSnapshots.raw })
     .from(metadataSnapshots)
@@ -412,21 +428,33 @@ export async function ensureDetails(userId: string, id: string) {
     .limit(1);
   if (
     snapshot?.raw.detailLoaded === true &&
-    (identity.mediaKind === 'collection' || snapshot.raw.detailVersion === 3) &&
+    (identity?.mediaKind === 'collection' || snapshot.raw.detailVersion === 3) &&
     Date.now() - Date.parse(String(snapshot.raw.detailsUpdatedAt)) < 7 * 86400000
   )
     return false;
-  if (!(await getTmdb('en-US', region))) return false;
-  await sharedRefresh(`details:${id}:${region}`, async () => {
-    if (identity.mediaKind === 'movie' || identity.mediaKind === 'show')
-      return importTmdb(identity.mediaKind, identity.externalId, {
-        region,
-        includeEpisodes: false,
-      });
-    if (identity.mediaKind === 'collection') return refreshMedia(id, region);
-    return refreshChildDetails(id, region);
+  const adapter = await getTmdb('en-US', region);
+  if (!adapter) return false;
+  const kind = identity?.mediaKind;
+  const child = !kind || kind === 'episode' || kind === 'season' ? await tmdbChild(id) : undefined;
+  if (!child && (!identity || kind === 'episode' || kind === 'season')) return false;
+  const key = JSON.stringify([adapter.cacheScope, region, id, identity?.externalId,
+    child?.show.externalId, child?.child.seasonNumber, child?.episode?.episodeNumber]);
+  if (missingDetails.peek(key) === null) return false;
+  return optionalRefresh(key, async () => {
+    try {
+      if (child) await importTmdbChild(id, adapter, child);
+      else if (identity?.mediaKind === 'movie' || identity?.mediaKind === 'show')
+        await importTmdbTitle(adapter, identity.mediaKind, identity.externalId, { includeEpisodes: false });
+      else if (identity?.mediaKind === 'collection')
+        await sharedRefresh(`${id}:${region}:true`, () => importTmdbCollection(identity.externalId, adapter));
+      else return false;
+      return true;
+    } catch (cause) {
+      if (!(cause instanceof ProviderHttpError) || ![404, 410].includes(cause.status)) throw cause;
+      missingDetails.store(key, null);
+      return false;
+    }
   });
-  return true;
 }
 async function seerrDiscovery(userId: string, signal?: AbortSignal) {
   const instances = await getDb()

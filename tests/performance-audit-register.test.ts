@@ -30,9 +30,10 @@ import unifiedProgressSourceRefresh from '../docs/audits/2026-11-19-unified-prog
 import metadataPrioritySourceRefresh from '../docs/audits/2026-11-19-metadata-priority-source-refresh.json';
 
 import tasteProfileEntrySourceRefresh from '../docs/audits/2026-11-19-taste-profile-entry-source-refresh.json';
+import liveErrorSourceRefresh from '../docs/audits/2026-11-20-live-error-followup-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -61,6 +62,12 @@ test('menu status and feedback changes retain their own bounded acceptance epoch
   const report=await Bun.file(menuStatusFeedbackSourceRefresh.report).text();
   for(const scope of ['b76964d','20 notices','200 records','15-second','Firefox','invalid-response','material changes'])
     expect(report).toContain(scope);
+});
+
+test('live error follow-up binds changed owners without promoting production acceptance', async () => {
+  expect(liveErrorSourceRefresh.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(liveErrorSourceRefresh.files))
+    await expectCurrentSource(path, pin.current, 'Review live error fixes and remaining verification.');
 });
 
 test('resolved artist eligibility advances its own immutable review receipt', async () => {

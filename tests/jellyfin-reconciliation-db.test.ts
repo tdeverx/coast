@@ -61,6 +61,30 @@ run('late mappings deliver retained music intent independently of import opt-out
  expect(await db.select().from(s.reconciliationIntents).where(eq(s.reconciliationIntents.connectionId,connection.id))).toHaveLength(0);
  expect((await db.select().from(s.musicListens).where(eq(s.musicListens.userId,userId)))).toHaveLength(2);
 });
+
+run('reading favourites reconcile through user data without parsing a screen item', async () => {
+ const db=getDb(),externalId=crypto.randomUUID().replaceAll('-','');
+ const [comic]=await db.insert(s.works).values({category:'comic',kind:'comic'}).returning();
+ try{
+  const [item]=await db.insert(s.providerItems).values({instanceId:instance.id,mediaId:comic.id,externalId,kind:'comic'}).returning();
+  await db.insert(s.availability).values({userId,connectionId:connection.id,providerItemId:item.id,mediaId:comic.id,sourceId:'default',state:'available'});
+  await db.insert(s.trackingState).values({userId,mediaId:comic.id,favourite:true});
+  let favourite=false,reads=0,writes=0;
+  const reader=new JellyfinAdapter(async (path,init)=>{
+   const url=new URL(path,'https://fixture.invalid');
+   if(url.pathname==='/System/Info/Public')return {Id:tag,ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'10.11.0'};
+   expect(url.searchParams.get('userId')).toBe(tag);
+   if(url.pathname===`/UserItems/${externalId}/UserData`){reads++;return {IsFavorite:favourite};}
+   expect(url.pathname).toBe(`/UserFavoriteItems/${externalId}`);
+   expect(init?.method).toBe('POST');
+   writes++;favourite=true;return {IsFavorite:true};
+  },tag,'synthetic');
+  const payload={mediaId:comic.id,field:'favourite',value:true};
+  await executeJellyfinUserState(userId,connection.id,payload,{adapter:reader,connection,instance});
+  await executeJellyfinUserState(userId,connection.id,payload,{adapter:reader,connection,instance});
+  expect({reads,writes,favourite}).toEqual({reads:2,writes:1,favourite:true});
+ }finally{await db.delete(s.works).where(eq(s.works.id,comic.id));}
+});
 run('resuming a traversal preserves its original observation watermark',async()=>{
  const scanId=crypto.randomUUID(),startedAt=new Date(Date.now()-120000).toISOString(),db=getDb();
  await db.update(s.syncCheckpoints).set({cursor:'0',scanId}).where(and(eq(s.syncCheckpoints.connectionId,connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));

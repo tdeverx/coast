@@ -287,7 +287,7 @@ export const handler: RequestHandler = async (event) => {
       const options=progressParameters(url);
       return Response.json(await (segments==='profile'||segments==='continue'
         ? tabbedProgressData(subjectId,options,uid,segments,request.signal)
-        : progressData(subjectId,options,uid)));
+        : withReadCancellation(request.signal, () => progressData(subjectId,options,uid))));
     }
     if (path[0] === 'lists' && path[1] === 'content' && path.length === 2 && method === 'GET')
       return Response.json(

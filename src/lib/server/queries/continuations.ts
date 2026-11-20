@@ -1,6 +1,6 @@
 import { nextSequenceEntries } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
-import { and, or, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, or, asc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { permittedMediaSources } from './media';
@@ -66,6 +66,13 @@ export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly
 export async function continuationIds(userId: string, startedIds: string[], availableOnly = true, includePrivatePlaylists = true, firstEpisode = false, policy?: CoastConfig['metadataSource']) {
   const db = getDb();
   const metadataSource = policy ?? (await getConfig()).metadataSource;
+  // Expand the viewer's tracked show and rewatch keys through the episode indexes
+  // before evaluating airtime or rewatch state on the resulting episode IDs.
+  const eligibleEpisodes = sql`select e.media_id from episodes e where e.show_id in (
+      select seed.show_id from episodes seed where seed.media_id=any(${`{${startedIds.join(',')}}`}::uuid[])
+      union select r.media_id from rewatches r where r.user_id=${userId})
+    union select e.media_id from rewatches r join episodes e on e.season_id=r.media_id where r.user_id=${userId}
+    union select r.media_id from rewatches r where r.user_id=${userId}`;
   const fields = {
     id: s.episodes.mediaId,
     ...rewatchFields(userId, sql`${s.episodes.mediaId}`),
@@ -101,16 +108,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
       .where(
         and(
           episodeHasAiredForProgress(sql`${s.episodes.mediaId}`, metadataSource),
-          or(
-            sql`exists(select 1 from rewatches r where r.user_id=${userId} and r.media_id in (${s.episodes.showId},${s.episodes.seasonId},${s.episodes.mediaId}))`,
-            inArray(
-              s.episodes.showId,
-              db
-                .select({ id: s.episodes.showId })
-                .from(s.episodes)
-                .where(inArray(s.episodes.mediaId, startedIds))
-            )
-          ),
+          sql`${s.episodes.mediaId} in (${eligibleEpisodes})`,
           allowedParent(s.episodes.showId),
           allowedParent(s.episodes.seasonId)
         )
