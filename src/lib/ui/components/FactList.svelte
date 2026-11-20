@@ -1,11 +1,14 @@
 <script lang="ts">
-  let { items }: { items: { label: string; value: string }[] } = $props();
+  let { items }: { items: { label: string; value: string | null; detail?: string }[] } = $props();
 </script>
 
 <dl>
   {#each items as item}<div>
       <dt>{item.label}</dt>
-      <dd>{item.value}</dd>
+      <dd class:missing={item.value === null}>
+        {item.value ?? 'No data'}
+        {#if item.detail}<small>{item.detail}</small>{/if}
+      </dd>
     </div>{/each}
 </dl>
 
@@ -39,5 +42,12 @@
     font-weight: var(--weight-semibold);
     text-align: right;
     overflow-wrap: anywhere;
+  }
+  .missing, small { color: var(--muted); }
+  .missing { font-weight: var(--weight-regular); }
+  small {
+    display: block;
+    font-size: inherit;
+    font-weight: var(--weight-regular);
   }
 </style>

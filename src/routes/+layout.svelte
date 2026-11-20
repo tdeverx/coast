@@ -12,6 +12,8 @@
   reportImportFailure(()=>readerAllowed&&reader.visible&&readerImport.error?'The reader could not load. Reload the page to try again.':'', 'current-viewer');
   import {closeNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import {closeFriends} from '#lib/ui/panels/friends.svelte.js';
+  import {friendViews, linkedPanelView, selectPanelView, streamViews} from '#lib/ui/panels/location.js';
+  import {notificationSegments} from '#lib/notifications/model.js';
   import {closeStreams} from '#lib/ui/panels/streams.svelte.js';
   import {startPresence,userStatus} from '#lib/social/status.svelte.js';
   import {playbackVisible} from '#lib/playback/visibility.js';
@@ -23,6 +25,7 @@
   import { page } from '$app/state';
   import { onNavigate, goto } from '$app/navigation';
   import { mediaDetailLinks } from '#lib/ui/media-navigation.js';
+  import { detailPanelHref, detailPanelUrl, panelAddress } from '#lib/media/detail-target.js';
   import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
   import Header from '#lib/ui/components/Header.svelte';
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
@@ -30,8 +33,13 @@
   const { api } = useClient();
   let expiredViewer = $state<string>();
   let content: HTMLElement;
-  const notificationOpen = $derived(!!data.user && (page.state.notificationPopover ?? page.url.searchParams.get('notifications') === 'true'));
-  const friendsOpen = $derived(!!data.user && data.capabilities.social && (page.state.friendsPopover ?? page.url.searchParams.get('friends') === 'true'));
+  const activePanelUrl = $derived(panelAddress(page));
+  const notificationOpen = $derived(!!data.user && (page.state.notificationPopover ?? activePanelUrl.searchParams.get('notifications') === 'true'));
+  const friendsOpen = $derived(!!data.user && data.capabilities.social && (page.state.friendsPopover ?? activePanelUrl.searchParams.get('friends') === 'true'));
+  const notificationView = $derived(notificationSegments.find(option=>option.value===activePanelUrl.searchParams.get('panelView'))?.value);
+  const friendsView = $derived(linkedPanelView(activePanelUrl, data.experimentalParties ? friendViews : ['accepted','pending','invites'] as const));
+  const streamsView = $derived(linkedPanelView(activePanelUrl, streamViews));
+  const detailsHref = $derived(detailPanelHref(activePanelUrl, page.state));
 
   const notificationImport = createResource<
     typeof import('#lib/ui/components/NotificationInbox.svelte').default |
@@ -46,7 +54,7 @@
 
   let activeShareUntil = $state(untrack(() => data.activeShareUntil));
   const showStreams = $derived(data.user?.role === 'admin' || !!data.user && !!activeShareUntil);
-  const streamsOpen = $derived(showStreams && (page.state.streamsPopover ?? page.url.searchParams.get('streams') === 'true'));
+  const streamsOpen = $derived(showStreams && (page.state.streamsPopover ?? activePanelUrl.searchParams.get('streams') === 'true'));
 
   $effect(() => {
     activeShareUntil = data.activeShareUntil;
@@ -117,17 +125,19 @@
   const MediaDetailPanel = $derived(detailImport.data);
 
   function loadDetails() {
-    if (data.user && page.state.mediaDetailHref && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
+    if (data.user && detailsHref && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
   }
 
   $effect(() => {
-    if (!data.user && page.state.mediaDetailHref) goto(page.url.href, {
+    if (!data.user && detailsHref) goto(detailPanelUrl(activePanelUrl), {
       shallow: true, reset: false,
       replace: true,
       state: {
         ...page.state,
         mediaDetailHref: undefined,
-        mediaDetailDepth: undefined
+        mediaDetailDepth: undefined,
+        mediaDetailFromLink: undefined,
+        mediaDetailShelf: undefined
       }
     });
   });
@@ -135,7 +145,7 @@
   $effect(() => {
     const viewer = data.user?.id;
 
-    if (!viewer || !page.state.mediaDetailHref) return;
+    if (!viewer || !detailsHref) return;
 
     untrack(() => {
       if (!detailImport.data) void loadDetails();
@@ -144,7 +154,7 @@
     return () => detailImport.cancel();
   });
 
-  reportImportFailure(() => data.user && page.state.mediaDetailHref && detailImport.error
+  reportImportFailure(() => data.user && detailsHref && detailImport.error
     ? 'Title details could not load. Reload the page to try again.'
     : '', 'current-viewer');
 
@@ -324,11 +334,12 @@
     <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
   </div>
   {#key `${data.user?.id}:${data.user?.access?.libraryOnly===true}`}
-    {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
-    {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
+    {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??activePanelUrl.searchParams.get('notificationKind')??'all'}
+      initialSegment={notificationView} onselectView={value=>selectPanelView('notifications',value)} onclose={closeNotifications}/>{/if}
+    {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} initialView={friendsView} onselectView={value=>selectPanelView('friends',value)} onclose={closeFriends}/>{/if}
   {/key}
   {#if streamsOpen&&StreamsPanel}
-    {#key data.user?.id}<StreamsPanel open={true} isAdmin={data.user?.role==='admin'} onclose={closeStreams}/>{/key}
+    {#key data.user?.id}<StreamsPanel open={true} isAdmin={data.user?.role==='admin'} initialView={streamsView} onselectView={value=>selectPanelView('streams',value)} onclose={closeStreams}/>{/key}
   {/if}
   {#key data.user?.id}<NotificationToasts notifications={data.user ? data.notifications : []} rich={data.experimentalRichToasts} initialFailure={typeof page.form?.error==='string'?page.form.error:undefined} />{/key}
 </div>

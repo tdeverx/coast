@@ -1,7 +1,7 @@
 import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
-import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql} from '../src/lib/social/taste-cache.server';
+import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql,titleTaste} from '../src/lib/social/taste-cache.server';
 import {recommendationRows} from '../src/lib/recommendations/query.server';
 import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service.server';
 import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
@@ -23,6 +23,8 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  await refreshTasteCaches();const sql=getSql();
  const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles.map((profile:any)=>profile.medium).sort()).toEqual(['game','movie','music','show']);
  const [score]=await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;expect(score.score).toBeGreaterThan(50);expect(score.breakdown.reasons.some((r:any)=>r.dimension==='cast')).toBe(true);
+ expect(await titleTaste(user,ids[2])).toMatchObject({score:score.score,confidence:score.confidence});
+ expect(await titleTaste(other,ids[2])).toBeNull();
  const [none]=await sql`select count(*)::int as count from user_taste_scores where user_id=${other}`;expect(none.count).toBe(0);
  const result=await recommendationRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
  // Shared enrichment queues a later refresh without invalidating private scores mid-backfill.
@@ -32,6 +34,19 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  const [current]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user}::uuid`);expect(score.revision).not.toBe(current.revision);
  await refreshTasteCaches();const [updated]=await sql`select revision from user_taste_profiles where user_id=${user} and medium='movie'`;expect(updated.revision).toBe(current.revision);
  expect(await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`).toHaveLength(0);
+});
+run('taste metadata retains complementary sources and resolves genres with the configured priority',async()=>{
+ const sql=getSql(),id=ids[3];
+ await sql`insert into work_features(work_id,provider,features) values(${id},'trakt','{"tags":[{"id":"trakt:quest","name":"Quest"}]}')`;
+ await sql`insert into metadata_snapshots(media_id,provider,genres,raw) values
+  (${id},'jellyfin',array['Mystery'],'{}'),
+  (${id},'tmdb',array['Science Fiction'],'{"facts":{"originalLanguage":"en","studios":[{"name":"Coast Studio"}]}}')`;
+ const local=(await workTasteFeatures([id],'local-preferred')).get(id);
+ expect(local?.genres?.map(value=>value.name)).toEqual(['Mystery']);
+ expect(local?.tags?.map(value=>value.name)).toEqual(expect.arrayContaining(['Space exploration','Quest']));
+ expect(local?.languages?.map(value=>value.name)).toEqual(['English']);
+ expect(local?.studios?.map(value=>value.name)).toEqual(['Coast Studio']);
+ expect((await workTasteFeatures([id],'tmdb-only')).get(id)?.genres?.map(value=>value.name)).toEqual(['Science Fiction']);
 });
 run('pause, manual run and single-job admission use the existing outbox',async()=>{
  const sql=getSql();await sql`delete from outbox_actions where kind='taste.refresh'`;

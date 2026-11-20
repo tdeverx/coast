@@ -1,15 +1,15 @@
-import { getFeatureConfig } from '#lib/server/features.js';
+import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
 import { categoryEnabled } from '#lib/experimental.js';
 import {sql as query} from 'drizzle-orm';
 import {getDb,getSql,type Database} from '#lib/server/db/index.js';
 import {getConfig} from '#lib/server/config.js';
 import {interestWorks} from '#lib/recommendations/interests.server.js';
-import {buildTasteProfile,compileTasteScorer,namedFeatures,type TasteProfile} from './taste-profile';
+import {buildTasteProfile,compileTasteScorer,namedFeatures,tasteMedia,type TasteAffinity,type TasteDimension,type TasteMedium,type TasteProfile} from './taste-profile';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
 import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
-export const tasteRevisionSql=query`'taste-v1:'||md5(concat_ws(':',
+export const tasteRevisionSql=query`'taste-v2:'||md5(concat_ws(':',
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='tracking'),'0'),
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='social'),'0'),
  coalesce((select extract(epoch from max(s.updated_at))::text from recommendation_sets s left join provider_connections c on c.id=s.connection_id where s.connection_id is null or c.user_id=u.id),'0'),
@@ -17,6 +17,73 @@ export const tasteRevisionSql=query`'taste-v1:'||md5(concat_ws(':',
  coalesce((select value::text from system_settings where key='coast'),'{}'),coalesce(u.settings->'features','{}'::jsonb)::text))`;
 // Catalogue enrichment is eventual cache freshness, not personal/privacy validity.
 const catalogueRevisionSql=query`coalesce((select revision::text from content_revisions where scope='global' and domain='tracking'),'0')`;
+
+type TasteSignalSummary = { count: number; names: string[] };
+type PersonalTasteEntry = {
+ medium: TasteMedium; works: number; updatedAt: Date;
+ signals: Partial<Record<TasteDimension, TasteSignalSummary>>;
+};
+export const tasteAffinityPageSize = 25;
+
+/** The personal view shows the latest saved snapshot without rebuilding profiles or scores. */
+export async function personalTaste(userId: string): Promise<PersonalTasteEntry[]> {
+ const config = await requireFeature(userId, 'personalisation');
+ const media = tasteMedia.filter(({category}) => categoryEnabled(config,category)).map(({value})=>value);
+ if (!media.length) return [];
+ const rows = await getDb().execute<PersonalTasteEntry>(query`
+  select p.medium, (p.profile->>'works')::int as works, p.updated_at as "updatedAt",
+    coalesce(tastes.signals,'{}'::jsonb) as signals
+  from user_taste_profiles p
+  cross join lateral (
+    select jsonb_object_agg(d.dimension, jsonb_build_object('count',jsonb_array_length(d.entries),'names',ranked.names)) as signals
+    from jsonb_each(p.profile->'dimensions') d(dimension, entries)
+    cross join lateral (
+      select jsonb_agg(name order by position) as names
+      from (
+        select affinity->>'name' as name, position
+        from jsonb_array_elements(d.entries) with ordinality a(affinity, position)
+        order by position limit 3
+      ) strongest
+    ) ranked
+    where ranked.names is not null
+  ) tastes
+  where p.user_id=${userId}::uuid
+    and p.medium in (${query.join(media.map(medium => query`${medium}`), query`, `)})
+    and p.profile->>'version'='1'`) as PersonalTasteEntry[];
+ return rows;
+}
+
+/** Read only the selected signal from the caller's saved profile. */
+export async function personalTasteAffinities(userId: string, medium: TasteMedium, dimension: TasteDimension, page: number): Promise<{items:TasteAffinity[];pages:number}> {
+ const config=await requireFeature(userId,'personalisation');
+ const category=tasteMedia.find(option=>option.value===medium)?.category;
+ if(!category||!categoryEnabled(config,category))return {items:[],pages:1};
+ const [row]=await getDb().execute<{items:TasteAffinity[];total:number}>(query`
+   select jsonb_array_length(entries) as total, coalesce((
+     select jsonb_agg(affinity order by position)
+     from (select affinity,position from jsonb_array_elements(entries) with ordinality a(affinity,position)
+       order by position limit ${tasteAffinityPageSize} offset ${(page-1)*tasteAffinityPageSize}) selected
+   ),'[]'::jsonb) as items
+   from (select coalesce(profile->'dimensions'->${dimension}::text,'[]'::jsonb) as entries
+     from user_taste_profiles where user_id=${userId}::uuid and medium=${medium} and profile->>'version'='1') saved`);
+ return {items:row?.items??[],pages:Math.max(1,Math.ceil((row?.total??0)/tasteAffinityPageSize))};
+}
+
+/** Compare one saved title with the owner’s latest cached profile for that medium. */
+export async function titleTaste(userId: string, workId: string) {
+ const config = await requireFeature(userId, 'personalisation');
+ const [row] = await getDb().execute<{category:string;id:string;profile:TasteProfile|null}>(query`
+  select w.category, coalesce(e.show_id,s.show_id,w.id) as id, p.profile
+  from works w
+  left join episodes e on e.media_id=w.id
+  left join seasons s on s.media_id=w.id
+  left join user_taste_profiles p on p.user_id=${userId}::uuid and p.medium=case
+    when w.category='music' then 'music' when w.kind in ('season','episode') then 'show' else w.kind end
+  where w.id=${workId}::uuid`);
+ if (!row?.profile?.works || !categoryEnabled(config,row.category)) return null;
+ const features=await workTasteFeatures([row.id],config.metadataSource);
+ return compileTasteScorer(row.profile)(features.get(row.id)??{});
+}
 /** Piggyback on existing maintenance/outbox. Ten stale users per run; no cartesian user/catalogue scan. */
 const scheduleSchema=v.object({enabled:v.optional(v.boolean(),true),intervalMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),60)});
 export async function tasteJob(){
@@ -80,10 +147,10 @@ export async function refreshTasteCaches(){
    if(checkpoint.next<checkpoint.users.length)await jobCheckpoint();
    continue;
   }
-  const evidence=await interestWorks(user.id),featureMap=await workTasteFeatures(evidence.map(work=>work.id));
+  const evidence=await interestWorks(user.id),featureMap=await workTasteFeatures(evidence.map(work=>work.id),config.metadataSource);
   const artistPreferences=config.features.music?await sql<{name:string}[]>`select a.title as name from tracking_state p join music_works a on a.id=p.media_id and a.kind='artist' where p.user_id=${user.id} and p.favourite`:[];
   const profiles=new Map<string,TasteProfile>();
-  for(const medium of ['movie','show','game','music','book','comic'].filter(medium=>categoryEnabled(config,['movie','show'].includes(medium)?'screen':medium)))profiles.set(medium,buildTasteProfile(evidence.filter(work=>(work.category==='music'?'music':work.kind)===medium).map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}))));
+  for(const {value:medium,category} of tasteMedia)if(categoryEnabled(config,category))profiles.set(medium,buildTasteProfile(evidence.filter(work=>(work.category==='music'?'music':work.kind)===medium).map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}))));
   if(config.experimentalMusic&&artistPreferences.length){const musicEvidence=evidence.filter(work=>work.category==='music').map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}));profiles.set('music',buildTasteProfile([...musicEvidence,...artistPreferences.map(artist=>({id:`artist:${artist.name}`,weight:5,features:{artists:namedFeatures([artist.name])}}))]));}
   const probes=[...profiles].flatMap(([medium,profile])=>Object.entries(profile.dimensions).flatMap(([dimension,features])=>(features??[]).filter(feature=>feature.value>0&&(dimension!=='cast'||feature.samples>=2)).slice(0,8).map(feature=>({medium,features:{[dimension]:[{id:feature.id}]}}))));
   const positive=evidence.filter(work=>work.weight>0),seedIds=positive.map(work=>work.id),genres=[...new Set(positive.flatMap(work=>work.genres))];
@@ -103,7 +170,7 @@ export async function refreshTasteCaches(){
    and not w.id=any(${sql.array(evidence.map(work=>work.id),'UUID')}::uuid[])
    and not exists(select 1 from tracking_state t where t.user_id=${user.id} and t.media_id=w.id and (t.watched or t.dropped or t.collected or t.watchlist or t.favourite))
   ) select id,medium from ranked where rank<=500`;
-  const candidateFeatures=await workTasteFeatures(candidates.map(work=>work.id));
+  const candidateFeatures=await workTasteFeatures(candidates.map(work=>work.id),config.metadataSource);
   const scorers=new Map([...profiles].map(([medium,profile])=>[medium,compileTasteScorer(profile)]));
   const scores=candidates.map(work=>({workId:work.id,...scorers.get(work.medium)!(candidateFeatures.get(work.id)??{})}));
   // Recheck revisions after calculation; concurrent imports invalidate the result, not history.

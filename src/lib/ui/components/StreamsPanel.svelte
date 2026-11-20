@@ -18,8 +18,9 @@
  type Link = Awaited<ReturnType<typeof listActiveShares>>[number];
  type Stream = StreamsSnapshot['streams'][number];
  type StreamAction = {kind:'revoke'|'stop';id:string;title:string};
- let {open=$bindable(false),onclose,isAdmin=true,initialView='now'}:{
-  open:boolean;onclose?:()=>void;isAdmin?:boolean;initialView?:'now'|'history'|'links';
+ type StreamsView = typeof import('#lib/ui/panels/location.js').streamViews[number];
+ let {open=$bindable(false),onclose,isAdmin=true,initialView='now',onselectView}:{
+  open:boolean;onclose?:()=>void;isAdmin?:boolean;initialView?:StreamsView;onselectView?:(value:StreamsView)=>void;
  }=$props();
  const {api,change,preview,feedback:delivery}=useClient();
  setContext('profile-read-only',()=>true);
@@ -27,6 +28,7 @@
  let pendingAction=$state<StreamAction|null>(null),acting=$state(false);
  let copying=$state(false),copyUrl=$state('');
  let copyRequest:AbortController|undefined;
+ $effect(()=>{ view=isAdmin?initialView:'links'; });
  const selectedView=$derived(isAdmin && (view==='now'||view==='history')?view:'links');
  const clock=useClock('minute',()=>open&&selectedView==='history');
  const empty=(view:'now'|'history'):StreamsSnapshot=>({streams:[],issues:[],scanning:false,checkedAt:null,nextCursor:null,view});
@@ -147,7 +149,7 @@
  {#snippet heading()}
   <Heading title={isAdmin?'Active streams':'Links'}>
    {#snippet heading()}
-    {#if isAdmin}<SegmentedControl label="Stream activity" bind:value={view} options={[{value:'now',label:'Now'},{value:'history',label:'History'},{value:'links',label:'Links'}]}/>
+    {#if isAdmin}<SegmentedControl label="Stream activity" value={view} onchange={value=>{view=value;onselectView?.(value as StreamsView);}} options={[{value:'now',label:'Now'},{value:'history',label:'History'},{value:'links',label:'Links'}]}/>
     {:else}<h2>Links</h2>{/if}
    {/snippet}
    {#snippet actions()}

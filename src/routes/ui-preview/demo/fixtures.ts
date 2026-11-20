@@ -83,7 +83,7 @@ const notificationExamples:NotificationEntry[]=[
  {id:'00000000-0000-4000-8000-000000000001',kind:'recommendation',title:'Recommended something to you',body:null,actor:{username:'Alice',avatar:null,status:'online'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:null,requestState:null,sessionState:null,actions:['save','dismiss'],subjectId:id},
  {id:'00000000-0000-4000-8000-000000000006',kind:'synced-invite',title:'Join a synced session',body:null,actor:{username:'Alice',avatar:null,status:'online'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:`/synced/${id}`,requestState:null,sessionState:'Playing',actions:['decline'],subjectId:id},
  {id:'00000000-0000-4000-8000-000000000002',kind:'friend-request',title:'Wants to be friends',body:null,actor:{username:'Sam',avatar:null,status:'away'},media:null,createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/for-you?friends=true',requestState:null,sessionState:null,actions:['accept','decline'],subjectId:id},
- {id:'00000000-0000-4000-8000-000000000003',kind:'request',title:'Your requested title is available',body:'Ready to watch from your connected library.',actor:null,media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/requests',requestState:'available',sessionState:null,actions:[],subjectId:id},
+ {id:'00000000-0000-4000-8000-000000000003',kind:'request',title:'Your requested title is available',body:'Ready to watch from your connected library.',actor:null,media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:`/media/${id}`,requestState:'available',sessionState:null,actions:[],subjectId:id},
  {id:'00000000-0000-4000-8000-000000000004',kind:'external-action',title:'A connected service needs attention',body:'Reconnect this account to resume synchronization.',actor:null,media:null,createdAt:today,readAt:null,locked:false,sourceLabel:'Jellyfin · User synchronization',destination:'/settings/jobs',requestState:null,sessionState:null,actions:[],subjectId:null},
  {id:'00000000-0000-4000-8000-000000000005',kind:'reaction',title:'Reacted ❤️ to your activity',body:null,actor:{username:'Taylor',avatar:null,status:'busy'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/for-you?section=activity',requestState:null,sessionState:null,actions:[],subjectId:id}
 ];
@@ -319,6 +319,7 @@ export function createPreviewTransport(name: string, scenario: string, condition
       }
     }
     if (method !== 'GET') {
+      if (name === 'ProfileEditor' && path === 'profile' && method === 'POST') return Response.json({ ok: true });
       if (name === 'StreamsPanel' && path.startsWith('sharing/')) {
         const [, linkId, action] = path.split('/');
         if (method === 'DELETE' && !action) {
@@ -346,6 +347,7 @@ export function createPreviewTransport(name: string, scenario: string, condition
     }
     if (/^providers\/[^/]+\/scan$/.test(path)) return Response.json(scenario === 'disconnected' ? null : {state: 'completed', processed: 40, total: 40, phase: 'Ready', error: null, attempts: 0});
     if (path === 'sharing/sources') return Response.json(scenario === 'empty' ? [] : [{id, name: 'Preview Jellyfin'}]);
+    if (name === 'ProfileEditor' && path === 'profile/avatars') return Response.json([]);
     if (/^reading\/[^/]+\/connections$/.test(path)) return Response.json(scenario === 'local' ? [] : [{id, name: 'Preview reading library'}]);
     if (/^reading\/[^/]+\/sources$/.test(path)) return Response.json({items: scenario === 'empty' ? [] : [{id, title: 'Preview edition', format: 'epub'}, {id: episode.id, title: 'A PDF edition', format: 'pdf'}, {id: show.id, title: 'Unsupported archive', format: null}], nextOffset: null});
     if (path.startsWith('profile/avatars/')) {

@@ -1,6 +1,6 @@
 import { getFeatureConfig } from '#lib/server/features.js';
 import { getConfig } from '../config';
-import {profileVisibility,requireVisible} from '#lib/social/privacy.server.js';
+import {canView,profileVisibility,requireVisible} from '#lib/social/privacy.server.js';
 import {workCards} from '#lib/collection/query.server.js';
 import { recordedWatches as watches } from '#lib/core/tracking/recorded-watches.server.js';
 import { libraryTrackingCondition } from './library';
@@ -62,19 +62,27 @@ async function profileSummary(
   input: unknown = {},
   now = new Date(),
   viewerId: string | null = userId,
-  includeHistoryPage = false
+  includeHistoryPage = false,
+  presentationOnly = false
 ) {
   const options = v.parse(profileOptionsSchema, input);
   const db = getDb();
   const [screenVisibility,config]=await Promise.all([profileVisibility(userId,viewerId),getFeatureConfig(viewerId)]);
-  const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean;progress:boolean;collection:boolean}>(sql`select
+  const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean;progress:boolean;collection:boolean;activityCategories:string[];progressCategories:string[]}>(sql`select
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',category)),false) as favourites,
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',category)),false) as ratings,
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'progress',category)) filter(where category<>'music'),false) as progress,
-    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'collection',category)) filter(where category<>'music'),false) as collection
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'collection',category)) filter(where category<>'music'),false) as collection,
+    coalesce(array_agg(category) filter(where social_visible(${userId}::uuid,${viewerId}::uuid,'activity',category)),'{}') as "activityCategories",
+    coalesce(array_agg(category) filter(where category<>'music' and
+      (social_visible(${userId}::uuid,${viewerId}::uuid,'progress',category) or social_visible(${userId}::uuid,${viewerId}::uuid,'collection',category))),'{}') as "progressCategories"
     from (values ('screen'),('music'),('game'),('book'),('comic')) categories(category)
     where ${enabledCategories(sql`category`,config)}`);
-  const visibility={...screenVisibility,...sharedVisibility};
+  const {activityCategories,progressCategories,...relationships}=sharedVisibility as {
+    activityCategories:string[];progressCategories:string[];
+    favourites:boolean;ratings:boolean;progress:boolean;collection:boolean;
+  };
+  const visibility={...screenVisibility,...relationships};
   if(!Object.values(visibility).some(Boolean))throw new AppError(404,'Profile not found.');
   if(options.view==='history')await requireVisible(userId,viewerId,'activity','screen');
   if(options.view==='favourites'&&!visibility.favourites||options.view==='ratings'&&!visibility.ratings)
@@ -122,6 +130,14 @@ async function profileSummary(
     kindFilter
   );
   const shareFavouriteCount=options.kind==='all'&&options.scope==='all';
+  if(presentationOnly) return {
+    options, db, config, visibility, activityCategories, progressCategories, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork,
+    counts:{favourites:0,categories:[] as string[],total:0},
+    rated:{count:0,insightCount:0,categories:[] as string[]},
+    historyCounts:[{total:0,unique:0,movies:0,episodes:0,filtered:0}],
+    historyEvents:[] as ProfileHistoryEvent[],
+    favouriteCount:{count:0},
+  };
   const [[counts], [rated], {historyCounts,historyEvents}, favouriteRows] = await Promise.all([
     db
       .select({
@@ -146,7 +162,7 @@ async function profileSummary(
       .where(favouriteFilter),
   ]);
   const favouriteCount=shareFavouriteCount?{count:counts.total!}:favouriteRows[0];
-  return { options, db, config, visibility, counts, rated, historyCounts, historyEvents, favouriteCount, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork };
+  return { options, db, config, visibility, activityCategories, progressCategories, counts, rated, historyCounts, historyEvents, favouriteCount, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork };
 }
 type ProfileHistoryCounts = {
   total: number;
@@ -217,10 +233,11 @@ async function readProfile(
   input: unknown = {},
   now = new Date(),
   viewerId: string | null = userId,
-  presentation = true
+  presentation = true,
+  presentationOnly = false
 ) {
-  const summary=await profileSummary(userId,input,now,viewerId,true);
-  const {options,db,config,visibility,counts,rated,historyCounts,historyEvents:events,favouriteCount,favouriteMembership,favouriteFilter,ratingFilter,visibleWork}=summary;
+  const summary=await profileSummary(userId,input,now,viewerId,true,presentationOnly);
+  const {options,db,config,visibility,activityCategories,progressCategories,counts,rated,historyCounts,historyEvents:events,favouriteCount,favouriteMembership,favouriteFilter,ratingFilter,visibleWork}=summary;
   const [user] = presentation || options.view === 'favourites' && visibility.details ? await db
     .select({ settings: presentation ? s.users.settings : sql<(typeof s.users.$inferSelect)['settings']>`jsonb_build_object('profile', jsonb_build_object(
       'favouriteOrder', ${s.users.settings}->'profile'->'favouriteOrder',
@@ -228,7 +245,9 @@ async function readProfile(
     .from(s.users)
     .where(eq(s.users.id, userId)) : [];
   const profile = visibility.details ? { ...user?.settings.profile } : {};
-  if(visibility.details)profile.backgroundMode??=profile.backgroundMediaId?'fixed':'activity';
+  delete profile.featuredMediaId;
+  delete profile.featuredNote;
+  if(visibility.details)profile.backgroundMode=profile.backgroundMediaId&&profile.backgroundMode!=='activity'?'fixed':'activity';
   if (!visibility.favourites) {
     delete profile.favouriteOrder;
     delete profile.pinnedFavourites;
@@ -248,7 +267,7 @@ async function readProfile(
           sql`, `
         )}]`
       : sql`array[]::uuid[]`;
-  const favourites = ['history', 'ratings'].includes(options.view)
+  const favourites = presentationOnly || ['history', 'ratings'].includes(options.view)
       ? []
       : await db
           .select({ id: s.trackingState.mediaId })
@@ -275,20 +294,7 @@ async function readProfile(
           .limit(PAGE_SIZE)
           .offset(offset)
       : [];
-  const [featuredState] = presentation && profile.featuredMediaId
-    ? await db
-        .select({ id: s.trackingState.mediaId })
-        .from(s.trackingState)
-        .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
-        .where(
-          and(
-            favouriteMembership,
-            eq(s.trackingState.mediaId, profile.featuredMediaId),
-          )
-        )
-    : [];
-  if(!featuredState){delete profile.featuredMediaId;delete profile.featuredNote;}
-  const preferenceIds=[...new Set([...(profile.pinnedFavourites??[]),...(profile.favouriteOrder??[])])].slice(0,2050);
+  const preferenceIds=presentationOnly?[]:[...new Set([...(profile.pinnedFavourites??[]),...(profile.favouriteOrder??[])])].slice(0,2050);
   if(preferenceIds.length){
     const visible=await db.select({id:s.trackingState.mediaId}).from(s.trackingState)
       .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
@@ -305,7 +311,6 @@ async function readProfile(
       [...favourites, ...ratedItems]
         .map((row) => row.id)
         .concat(backgroundState ? [backgroundState.id] : [])
-        .concat(featuredState ? [featuredState.id] : [])
     ),
   ];
   const cards:(MediaView|MediaCardPresentation)[]=[];
@@ -325,16 +330,14 @@ async function readProfile(
   const historyById=new Map(historyViews.map(item=>[item.id,episodeCaption(item)]));
   let activityBackground = null;
   if(presentation&&profile.backgroundMode==='activity'){
-    const latest=await db.execute<{workId:string}>(sql`select a.work_id as "workId" from social_activity a join works w on w.id=a.work_id
-      where a.user_id=${userId}::uuid and a.date_known and a.event_kind in ('watch','listen','play','played','session','reading-reading','reading-completed') and a.occurred_at<=${now.toISOString()}::timestamptz
-      and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
-      and ${enabledCategories(sql`w.category`,config)}
-      order by a.occurred_at desc,a.id desc limit 1`);
-    activityBackground=latest[0] ? cards.find(item => (('workId' in item ? item.workId : undefined)??item.id)===latest[0].workId)
-      ?? historyViews.find(item => item.id===latest[0].workId) ?? (await workCards(userId,viewerId,[latest[0].workId]))[0] ?? null : null;
+    const workId=await latestBackgroundWork(userId,viewerId,config,now);
+    activityBackground=workId ? byId.get(workId) ?? historyById.get(workId)
+      ?? (await workCards(userId,viewerId,[workId]))[0] ?? null : null;
   }
   return {
     visibility,
+    activityCategories,
+    progressCategories,
     view: options.view,
     page,
     pages,
@@ -352,7 +355,6 @@ async function readProfile(
     },
     profile,
     categories:[...new Set([...counts.categories,...rated.categories,...(historyCounts[0].total?['screen']:[])])],
-    featured: featuredState ? (byId.get(featuredState.id) ?? null) : null,
     ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [{...byId.get(row.id)!,id:row.id,rating:row.value}] : [])),
     background: profile.backgroundMode==='activity'?activityBackground:profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
     totals: profileTotals(summary),
@@ -387,9 +389,34 @@ async function readProfile(
     today: new Date().toISOString().slice(0, 10),
   };
 }
+
+async function latestBackgroundWork(userId:string,viewerId:string|null,config:Awaited<ReturnType<typeof getFeatureConfig>>,now:Date) {
+  const [latest]=await getDb().execute<{workId:string}>(sql`select a.work_id as "workId" from social_activity a join works w on w.id=a.work_id
+    where a.user_id=${userId}::uuid and a.date_known and a.event_kind in ('watch','listen','play','played','session','reading-reading','reading-completed') and a.occurred_at<=${now.toISOString()}::timestamptz
+    and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
+    and ${enabledCategories(sql`w.category`,config)}
+    order by a.occurred_at desc,a.id desc limit 1`);
+  return latest?.workId;
+}
+
+/** Focused rows only need the one visible work used by the profile background. */
+export async function profileBackground(
+  userId:string, viewerId:string|null, profile:typeof s.users.$inferSelect.settings.profile, now=new Date()
+) {
+  const [visible,config]=await Promise.all([canView(userId,viewerId,'details'),getFeatureConfig(viewerId)]);
+  if(!visible)return null;
+  let workId:string|undefined;
+  if(profile?.backgroundMediaId&&profile.backgroundMode!=='activity'){
+    const [work]=await getDb().select({id:s.works.id}).from(s.works)
+      .where(and(eq(s.works.id,profile.backgroundMediaId),sql`${enabledCategories(sql`${s.works.category}`,config)}
+        and social_visible(${userId}::uuid,${viewerId}::uuid,'details',${s.works.category})`));
+    workId=work?.id;
+  }else workId=await latestBackgroundWork(userId,viewerId,config,now);
+  return workId ? (await workCards(userId,viewerId,[workId]))[0] ?? null : null;
+}
 /** Full page presentation retains its existing settings, featured and background reads. */
-export function profileData(userId: string, input: unknown = {}, now = new Date(), viewerId: string | null = userId) {
-  return readProfile(userId,input,now,viewerId);
+export function profileData(userId: string, input: unknown = {}, now = new Date(), viewerId: string | null = userId, presentationOnly = false) {
+  return readProfile(userId,input,now,viewerId,true,presentationOnly);
 }
 
 /** Section refreshes share visibility/order/counts without preparing page-only presentation. */

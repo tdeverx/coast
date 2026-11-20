@@ -4,7 +4,7 @@ import { compileModule } from 'svelte/compiler';
 // Use the real client contract with local navigation/diagnostic boundaries.
 const moduleUrl = (source: string) => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const navigationUrl = moduleUrl('export const invalidations=[]; export let refreshes=0,fullInvalidations=0; export async function invalidate(key){invalidations.push(key);} export async function invalidateAll(){fullInvalidations++;} export async function refreshAll(){refreshes++;}');
-const stateUrl=moduleUrl('export const page={state:{}};');
+const stateUrl=moduleUrl('export const page={state:{},url:new URL("https://example.invalid/")};');
 const diagnosticsUrl = moduleUrl('export const received={count:0}; export const reports=[]; export const diagnosticHeaders=()=>({}); export const receiveDiagnosticLevel=()=>{received.count++;}; export const browserDiagnostic=(kind,fields)=>reports.push({kind,fields});');
 const revisionSource = await Bun.file(new URL('../src/lib/ui/content-revision.svelte.ts', import.meta.url)).text();
 const revisionCode = compileModule(new Bun.Transpiler({ loader: 'ts' }).transformSync(revisionSource), { filename: 'content-revision.svelte.js', generate: 'client' }).js.code
@@ -13,7 +13,7 @@ const revisionUrl = moduleUrl(revisionCode);
 const { readContentRevision }: typeof import('../src/lib/ui/content-revision.svelte') = await import(revisionUrl);
 const source = await Bun.file(new URL('../src/lib/ui/client.ts', import.meta.url)).text();
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(source)
-  .replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);
+  .replaceAll('#lib/media/detail-target.js',new URL('../src/lib/media/detail-target.ts',import.meta.url).href).replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);
 const { createApiClient, refreshAfterChange, refreshRouteDependencies, capturePlaybackApi, setPlaybackApi }: typeof import('../src/lib/ui/client') = await import(moduleUrl(code));
 const { invalidations } = await import(navigationUrl);
 const { setRelationship } = await import('../src/lib/ui/relationships');

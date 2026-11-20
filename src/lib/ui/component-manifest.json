@@ -33,8 +33,7 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/SocialControls.svelte",
-      "src/lib/ui/components/Toast.svelte",
-      "src/routes/profile/[username]/+page.svelte"
+      "src/lib/ui/components/Toast.svelte"
     ],
     "dynamicComposition": false
   },
@@ -50,7 +49,7 @@
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/routes/onboarding/+page.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "Brand": {
     "path": "src/lib/ui/components/Brand.svelte",
@@ -83,6 +82,9 @@
       "src/lib/games/RemoteDetails.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/media/PersonDetails.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
@@ -101,6 +103,7 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/ListOverview.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaHero.svelte",
@@ -113,7 +116,6 @@
       "src/lib/ui/components/PlaybackQualityMenu.svelte",
       "src/lib/ui/components/ProfileBackgroundMenu.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
-      "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/QueueList.svelte",
       "src/lib/ui/components/ReactionActions.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
@@ -150,16 +152,13 @@
       "src/routes/music/+page.svelte",
       "src/routes/onboarding/+page.svelte",
       "src/routes/planning/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte",
       "src/routes/register/+page.svelte",
-      "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/setup/+page.svelte",
       "src/routes/share/+page.svelte",
-      "src/routes/synced/[id]/+page.svelte",
-      "src/routes/taste/[friendId]/+page.svelte"
+      "src/routes/synced/[id]/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -218,12 +217,13 @@
     ],
     "usedBy": [
       "src/lib/games/Details.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteComparison.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
-      "src/lib/ui/components/Shelf.svelte",
-      "src/lib/ui/pages/SectionDetails.svelte",
-      "src/routes/profile/[username]/+page.svelte"
+      "src/lib/ui/components/Shelf.svelte"
     ],
     "dynamicComposition": true
   },
@@ -250,6 +250,8 @@
       "src/lib/auth/ui/AdminInviteSettings.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
@@ -260,12 +262,11 @@
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/ListOverview.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PartyMenu.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
-      "src/lib/ui/components/ProfileEditor.svelte",
-      "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/Shelf.svelte",
@@ -279,7 +280,6 @@
       "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
-      "src/routes/requests/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": true
@@ -294,6 +294,7 @@
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/profile/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
@@ -306,8 +307,6 @@
       "src/routes/games/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/music/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
-      "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -317,6 +316,8 @@
     "path": "src/lib/ui/components/FactList.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteComparison.svelte",
       "src/lib/ui/components/DetailCard.svelte"
     ],
     "dynamicComposition": false
@@ -331,8 +332,6 @@
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
-      "src/lib/ui/components/ProfileEditor.svelte",
-      "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/SubtitleSearchDialog.svelte",
       "src/lib/ui/work-menu/GameCommands.svelte",
@@ -349,8 +348,6 @@
     ],
     "usedBy": [
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/ProfileEditor.svelte",
-      "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
@@ -414,6 +411,9 @@
       "src/lib/auth/ui/MemberInvites.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/media/PersonDetails.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteComparison.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
@@ -425,17 +425,13 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
-      "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/share/+page.svelte",
-      "src/routes/synced/[id]/+page.svelte",
-      "src/routes/taste/[friendId]/+page.svelte"
+      "src/routes/synced/[id]/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -538,13 +534,13 @@
       "WorkMenu"
     ],
     "usedBy": [
+      "src/lib/profile/Details.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PartyCard.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
-      "src/routes/library/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte"
+      "src/routes/library/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -575,6 +571,7 @@
       "src/lib/games/RemoteDetails.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/music/Details.svelte",
+      "src/lib/profile/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/reading/GroupDetails.svelte"
     ],
@@ -587,6 +584,7 @@
       "WorkMenu"
     ],
     "usedBy": [
+      "src/lib/profile/Details.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte"
@@ -605,7 +603,6 @@
       "src/lib/ui/components/MediaDetails.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte"
     ],
     "dynamicComposition": true
@@ -628,11 +625,12 @@
     "elements": [],
     "usedBy": [
       "src/lib/games/Details.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteComparison.svelte",
+      "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Details.svelte",
-      "src/lib/ui/components/DetailCard.svelte",
-      "src/lib/ui/pages/SectionDetails.svelte",
-      "src/routes/profile/[username]/+page.svelte",
-      "src/routes/taste/[friendId]/+page.svelte"
+      "src/lib/ui/components/DetailCard.svelte"
     ],
     "dynamicComposition": false
   },
@@ -680,11 +678,11 @@
     ],
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/PersonalTaste.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/library/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
-      "src/routes/requests/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": false
@@ -741,35 +739,18 @@
     "path": "src/lib/ui/components/ProfileEditor.svelte",
     "elements": [
       "AvatarPicker",
-      "Button",
-      "Dialog",
-      "Field",
-      "FormActions"
+      "Button"
     ],
     "usedBy": [
-      "src/routes/profile/[username]/+page.svelte"
+      "src/lib/profile/Details.svelte"
     ],
-    "dynamicComposition": false
-  },
-  "ProfileFeatureEditor": {
-    "path": "src/lib/ui/components/ProfileFeatureEditor.svelte",
-    "elements": [
-      "Button",
-      "Dialog",
-      "Field",
-      "FormActions"
-    ],
-    "usedBy": [
-      "src/routes/profile/[username]/+page.svelte"
-    ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "ProfileRecap": {
     "path": "src/lib/ui/components/ProfileRecap.svelte",
     "elements": [],
     "usedBy": [
-      "src/lib/ui/pages/SectionDetails.svelte",
-      "src/routes/profile/[username]/+page.svelte"
+      "src/lib/profile/Details.svelte"
     ],
     "dynamicComposition": false
   },
@@ -860,6 +841,8 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/TasteComparison.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
@@ -868,9 +851,7 @@
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/music/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
-      "src/routes/taste/[friendId]/+page.svelte"
+      "src/routes/music/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -891,6 +872,7 @@
     "usedBy": [
       "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/profile/Details.svelte",
       "src/lib/ui/components/DetailOverlay.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/Heading.svelte",
@@ -899,11 +881,9 @@
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
-      "src/lib/ui/pages/SectionDetails.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": false
@@ -934,9 +914,12 @@
     "usedBy": [
       "src/lib/media/Details.svelte",
       "src/lib/media/PersonDetails.svelte",
+      "src/lib/profile/Details.svelte",
+      "src/lib/profile/TasteComparison.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/reading/GroupDetails.svelte",
       "src/lib/recommendations/DynamicFeed.svelte",
+      "src/lib/ui/components/ListOverview.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaDetails.svelte",
       "src/lib/ui/components/MediaPage.svelte",
@@ -949,12 +932,9 @@
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
-      "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress-experiment/+page.svelte",
       "src/routes/progress/+page.svelte",
-      "src/routes/requests/+page.svelte",
-      "src/routes/search/+page.svelte",
-      "src/routes/taste/[friendId]/+page.svelte"
+      "src/routes/search/+page.svelte"
     ],
     "dynamicComposition": true
   },

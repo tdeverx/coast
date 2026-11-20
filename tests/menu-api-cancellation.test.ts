@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import type {SQL} from 'bun';
-import {cancellableReads,withReadCancellation} from '../src/lib/server/db/read-cancellation';
+import {cancellableReads,trackReadQuery,withReadCancellation} from '../src/lib/server/db/read-cancellation';
 
 const index=await Bun.file('src/lib/server/api/index.server.ts').text();
 const transpile=(source:string)=>new Bun.Transpiler({loader:'ts'}).transformSync(source.replace(/^import[\s\S]*?from ['"][^'"]+['"];?\s*$/gm,'').replaceAll('export ',''));
@@ -54,4 +54,26 @@ test('optional read cancellation does not withdraw an explicit game-session writ
  const request=new Request('https://coast-fixture.invalid/api/game-playthroughs/'+work+'/sessions',{signal:controller.signal});
  const response=await handler({uid,path:['game-playthroughs',work,'sessions'],method:'POST',url:new URL(request.url),request,body:{}}) as Response;
  expect(await response.json()).toEqual({saved:true});expect(writes).toBe(1);
+});
+
+test('a cancelled read cancels native metadata queries and prevents later admission', async () => {
+  const controller = new AbortController();
+  let fail!: (reason: unknown) => void;
+  let cancelled = 0;
+  let startedLate = 0;
+  const query = Object.assign(new Promise<never>((_, reject) => { fail = reject; }), {
+    cancel() { cancelled++; fail(controller.signal.reason); },
+  });
+  const later = () => { startedLate++; return query; };
+  const pending = withReadCancellation(controller.signal, async () => {
+    try {
+      await trackReadQuery(() => query);
+    } finally {
+      trackReadQuery(later);
+    }
+  });
+  controller.abort();
+  await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  expect(cancelled).toBe(1);
+  expect(startedLate).toBe(0);
 });

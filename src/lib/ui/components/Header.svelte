@@ -3,7 +3,7 @@
   import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '#lib/social/status.js';
   import {menuCondition,useMenuPreview} from '#lib/ui/controls/menu-preview.js';
   import {useClient, reportFailure } from '#lib/ui/client-context.js';
-  const {preview,api}=useClient();
+  const {preview,api,feedback}=useClient();
   const fixture=preview?useMenuPreview():undefined;
   const allowed=(key:Parameters<typeof menuCondition>[0],actual:boolean)=>menuCondition(key,actual,preview,fixture);
   const previewId=$props.id();
@@ -25,6 +25,8 @@
   import Avatar from './Avatar.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import { profilePath } from '#lib/profile/url.js';
+  import { copyProfileLink } from '#lib/profile/copy-link.js';
+  import { navigateMedia } from '#lib/ui/media-navigation.js';
   import { page, navigating } from '$app/state';
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
@@ -34,6 +36,11 @@
   import { reader, hideReading } from '#lib/reading/client.svelte.js';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   const { player } = usePlayback();
+  const presenceLabel = $derived(status.preference === 'automatic' ? statusLabels[status.status] : preferenceLabels[status.preference]);
+  const accountStatus = $derived(status.preference !== 'automatic' ? presenceLabel
+    : !preview && player.session && !player.paused ? (player.session.mediaType === 'audio' ? 'Listening' : 'Watching')
+    : !preview && reader.session && reader.visible ? 'Reading'
+    : presenceLabel);
   const videoOpen = $derived(!!player.session && player.session.mediaType !== 'audio' && !player.session.shareId);
   const resumeMedia = $derived(videoOpen ? player.browsing : !reader.visible);
   const mediaHomeLabel = $derived(videoOpen ? player.browsing ? 'Resume video' : 'Show app'
@@ -173,23 +180,54 @@
       ><Button menu label="Account menu"
         >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={page.data.capabilities?.presence===false?'offline':status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
-          {#if !restricted&&allowed('presence',page.data.capabilities?.presence!==false)}<Button menu label="Activity status">
-            {#snippet trigger()}{#if status.status!=='offline'}<span class="status-dot" data-status={status.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{status.preference==='automatic'?statusLabels[status.status]:preferenceLabels[status.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
-            {#snippet children()}
-              {#each statusPreferences as preference}<Button item selection="radio" checked={status.preference===preference} disabled={status.busy} onclick={()=>void selectStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
-              <div class="menu-divider" role="separator"></div>
-              <Button item checked={status.sharePresence} disabled={status.busy} onclick={()=>void togglePresence()}>Share activity</Button>
-
-            {/snippet}
-          </Button>
-          {/if}<div class="menu-divider" role="separator"></div>
           {#if !restricted}
-            <Button item icon="user" href={profilePath(user.username)}>Profile</Button>
-            <Button item icon="list" href="/lists">Your lists</Button>
+            {@const ownProfile = profilePath(user.username)}
+            {@const displayName = user.settings?.profile?.displayName?.trim() || user.username}
+            {@const showStatus = allowed('presence', page.data.capabilities?.presence !== false)}
+            <Button menu label={showStatus ? `Profile · ${displayName} · ${accountStatus}` : `Profile · ${displayName}`}
+              primaryAction={() => { if (!preview) void navigateMedia(ownProfile); }}>
+              {#snippet trigger()}
+                <Avatar name={displayName} src={user.settings?.profile?.avatar} size={28} status={showStatus ? status.status : undefined} />
+                <span class="menu-action-label account-profile-label">
+                  <span>{displayName}</span>
+                  {#if showStatus}<small>{accountStatus}</small>{/if}
+                </span>
+                <span class="menu-chevron" data-menu-disclosure><Icon name="right" /></span>
+              {/snippet}
+              <Button item icon="user" href={ownProfile}>View profile</Button>
+              <Button item icon="link" onclick={() => preview
+                ? feedback.notify('Profile link copied.')
+                : void copyProfileLink(user.username, feedback)}>Copy profile link</Button>
+              <Button item icon="shield" href="/settings/privacy">Profile privacy</Button>
+              {#if showStatus}
+                <div class="menu-divider" role="separator"></div>
+                <Button menu label={`Status · ${presenceLabel}`}>
+                  {#snippet trigger()}
+                    <span class="status-choice status-menu-icon" aria-hidden="true">
+                      <span class="status-dot" data-status={status.status}></span>
+                    </span>
+                    <span class="menu-action-label">{presenceLabel}</span>
+                    <span class="menu-chevron"><Icon name="right" /></span>
+                  {/snippet}
+                  {#each statusPreferences as preference}
+                    <Button item selection="radio" checked={status.preference === preference} disabled={status.busy} keepOpen
+                      onclick={() => void selectStatus(preference)}>
+                      <span class="status-choice status-option">
+                        <span class="status-choice status-menu-icon" aria-hidden="true">
+                          <span class="status-dot" data-status={preference === 'automatic' ? 'online' : preference === 'invisible' ? 'offline' : preference}></span>
+                        </span>
+                        {preferenceLabels[preference]}
+                      </span>
+                    </Button>
+                  {/each}
+                  <div class="menu-divider" role="separator"></div>
+                  <Button item icon="broadcast" checked={status.sharePresence} disabled={status.busy} keepOpen onclick={() => void togglePresence()}>Share activity</Button>
+                </Button>
+              {/if}
+            </Button>
           {/if}
-          {#if allowed('requests',page.data.capabilities?.requests!==false)}<Button item icon="request" href="/requests">Requests</Button>{/if}
           {#if allowed('planning',!!page.data.experiments.planning)}<Button item icon="list" href="/planning">Planning · experimental</Button>{/if}
-          <div class="menu-divider" role="separator"></div>
+          {#if !restricted}<div class="menu-divider" role="separator"></div>{/if}
           <Button item icon="settings" href="/settings">Settings</Button>
           {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"
               >Admin</Button>{/if}
@@ -205,6 +243,10 @@
 
 <style>
   .status-choice {display:inline-flex;align-items:center;gap:8px;}
+  .status-menu-icon {width:var(--menu-icon-size);flex:none;justify-content:center;}
+  .status-option {gap:var(--menu-item-inset);}
+  .account-profile-label {display:grid;min-width:0;line-height:var(--leading-tight);}
+  .account-profile-label small {font-weight:var(--weight-regular);}
   header {
     position: fixed;
     inset: 0 0 auto;

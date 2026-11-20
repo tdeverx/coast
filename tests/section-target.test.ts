@@ -12,9 +12,8 @@ test('linked row targets preserve source identity and selections across media',(
  expect(source('/for-you?section=browse&view=watch&variant=provider-genre&genre=scifi&kind=movie')).toMatchObject({type:'recommendation',mode:'personal',feature:'browse',category:'screen',genre:'scifi'});
  expect(source('/music?kind=album')).toMatchObject({type:'library',surface:'listen',initialSelection:'album'});
  expect(source('/games?state=in-progress&personal=true')).toMatchObject({type:'library',surface:'play',initialSelection:'in-progress',collection:true});
- expect(source('/profile/alice?view=history&type=episode&period=month')).toMatchObject({type:'journal',filters:{username:'alice',activityKind:'episode',period:'month'}});
- expect(sectionTarget('/profile/alice?view=favourites&kind=all',base)).toMatchObject({profile:{username:'alice',section:'favourites',kind:'all'}});
- expect(sectionTarget('/profile/alice?section=insights&period=year',base)).toMatchObject({profile:{username:'alice',section:'insights',period:'year'}});
+ expect(source('/profile/alice?section=progress&category=reading&view=paused&kind=comic&page=2')).toMatchObject({type:'progress-experiment',username:'alice',title:'Reading',profile:true,filters:{category:'reading',view:'paused',kind:'comic',page:2}});
+ expect(source('/profile/alice?section=list&list=watchlist&scope=available&page=3')).toMatchObject({type:'list',view:'watchlist',profile:'alice',page:3,filters:{scope:'available'}});
  expect(source('/lists?view=watchlist')).toMatchObject({type:'list',view:'watchlist'});
  expect(source('/progress?view=watchlist&category=music&scoped=true')).toMatchObject({type:'progress',actionScoped:true,category:'music',mediums:false});
  expect(source('/for-you?section=requests&view=watch')).toMatchObject({type:'library-feed',feature:'requests'});
@@ -26,4 +25,8 @@ test('linked row targets preserve source identity and selections across media',(
 test('unrelated, action and unsafe destinations cannot become row views',()=>{
  for(const href of ['/settings','/for-you','/profile/alice','/lists','/discover','/progress?view=invalid','/library?view=invalid','/for-you?section=activity&category=invalid','/progress?action=delete','/progress?view=watching&view=next','/progress#activity','https://elsewhere.invalid/progress','https://user:secret@coast.invalid/progress'])expect(sectionTarget(href,base)).toBeNull();
  expect(sectionTarget('/discover?section=browse&variant=unknown&kind=movie',base)).toBeNull();
+});
+test('profile row links reject invalid media and page selectors',()=>{
+ expect(sectionTarget('/profile/alice?section=progress&category=invalid',base)).toBeNull();
+ expect(sectionTarget('/profile/alice?section=list&list=watchlist&page=0',base)).toBeNull();
 });

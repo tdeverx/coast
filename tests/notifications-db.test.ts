@@ -148,6 +148,7 @@ run('request updates are separate and ordered by notification date',async()=>{
  const request=crypto.randomUUID();for(const state of ['pending','approved','available'])await notify({userId:user.id,kind:'request',title:`Request ${state}`,sourceKey:`request-fixture:${state}`,data:{actorId:user.id,subjectId:request,workId:work,destination:'/requests'}});
  const feed=await notificationInbox(user,{segment:'requests'});expect(feed.items).toHaveLength(3);expect(feed.items[0].title).toBe('Request available');
  expect(feed.items.map(n=>n.title)).toEqual(['Request available','Request approved','Request pending']);
+ expect(feed.items.map(n=>n.destination)).toEqual(Array(3).fill('/for-you?view=watch'));
 });
 run('personal service failures stay individual and link to the user’s connection',async()=>{
  const db=getSql(),instance=crypto.randomUUID(),connection=crypto.randomUUID();

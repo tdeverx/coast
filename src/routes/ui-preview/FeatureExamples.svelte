@@ -2,7 +2,9 @@
   import {useClient} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import { providePreviewPlayback } from '#lib/playback/context.svelte.js';
-  import Avatar from '#lib/ui/components/Avatar.svelte';
+  import MediaCard from '#lib/ui/components/MediaCard.svelte';
+  import MediaHero from '#lib/ui/components/MediaHero.svelte';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import ProfileBackgroundMenu from '#lib/ui/components/ProfileBackgroundMenu.svelte';
   import Header from '#lib/ui/components/Header.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
@@ -15,7 +17,8 @@
   import DetailOverlay from '#lib/ui/components/DetailOverlay.svelte';
   import EmptyState from '#lib/ui/components/EmptyState.svelte';
   import Toast from '#lib/ui/components/Toast.svelte';
-  import MetricGrid from '#lib/ui/components/MetricGrid.svelte';
+  import TasteComparison from '#lib/profile/TasteComparison.svelte';
+  import { comparisonMedia } from '#lib/social/taste.js';
   import DetailCard from '#lib/ui/components/DetailCard.svelte';
   import PlanAction from '#lib/experiments/PlanAction.svelte';
   import ShareAction from '#lib/sharing/ShareAction.svelte';
@@ -28,9 +31,40 @@
   import { movie, show, items, music, track, days, today, id } from './demo/fixtures';
 
   let { name, scenario }: { name: string; scenario: string } = $props();
+  const tasteExample = $derived.by(() => {
+    const unknown = scenario === 'unknown';
+    const stats = (completed: number, active: number) => ({
+      total: completed + active, completed, active, planned: 0, dropped: 0, rated: 0, reacted: 0,
+    });
+    return {
+      comparison: {
+        score: unknown ? null : 78,
+        sampleLimit: 300,
+        total: unknown ? 0 : items.length,
+        page: 1,
+        pages: 1,
+        media: comparisonMedia.map(({ value: medium }) => ({
+          medium,
+          score: unknown ? null : 78,
+          signals: { genres: { score: unknown ? null : 82, shared: unknown ? 0 : 4, left: unknown ? 0 : 8, right: unknown ? 0 : 6, weight: 30 } },
+          stats: { you: stats(unknown ? 0 : 24, unknown ? 0 : 3), friend: stats(unknown ? 0 : 18, unknown ? 0 : 2) },
+          overlapCounts: { shared: unknown ? 0 : 12, onlyYou: unknown ? 0 : 4, onlyFriend: unknown ? 0 : 2 },
+          progressComparisons: [],
+        })),
+      },
+      items: unknown ? [] : items,
+      medium: 'all' as const,
+      overlap: 'shared' as const,
+    };
+  });
   providePreviewPlayback();
-  let opened = $state(false), backgroundMode = $state('activity'), positioning = $state(false), position = $state(50), range = $state(50), enabled = $state(true), title = $state(''), selected = $state('one');
+  let opened = $state(false), range = $state(50), enabled = $state(true), title = $state(''), selected = $state('one');
   let detailStep=$state(0);
+  let profileSection = $state('overview');
+  const profileSections = [
+    { value: 'overview', label: 'Overview' },
+    { value: 'insights', label: 'Statistics' },
+  ];
   let DynamicFeed = $state<typeof import('#lib/recommendations/DynamicFeed.svelte').default>();
   let dynamicFailure = $state('');
   $effect(() => {
@@ -51,23 +85,38 @@
   {#if name === 'profile.identity'}
     {#if scenario === 'private'}<p class="small quiet">The profile visibility decision omits identity details in this scenario. No private profile data is supplied.</p>
     {:else}
-      <header class="profile-header" class:with-background={!!background}>
-        {#if background}<div class="backdrop" aria-hidden="true"><img src={background} alt="" style:object-position={`50% ${position}%`} /><div></div></div>{/if}
-        <div class="profile-heading">
-          <div class="avatar"><Avatar name={displayName} src={scenario === 'no-art' ? null : '/coast-mark.png'} label={`${displayName}'s avatar`} class="profile-icon" size={104} /></div>
-          <div class="identity"><p class="eyebrow">{scenario === 'self' ? 'Your profile' : 'Profile'}</p><h1>{displayName}</h1><p class="handle">@preview</p><p class="bio">{scenario === 'long' ? 'A fictional biography with room for favourite stories, music and games. '.repeat(8) : scenario === 'self' ? 'Your life in stories.' : 'A life in stories.'}</p>
-            {#if scenario === 'self'}<div class="row actions"><Button size="hero" onclick={() => delivery.notify('Preview edit requested. No profile is changed.')}>Edit profile</Button><ProfileBackgroundMenu mode={backgroundMode==='activity'?'activity':'fixed'} change={mode=>backgroundMode=mode} /><Button emphasis="subtle" onclick={() => delivery.notify('Preview clear requested.')}>Clear background</Button>{#if background}<Button emphasis="subtle" onclick={() => positioning = !positioning}>Position background</Button>{/if}</div>{/if}
-            {#if positioning}<div class="position-controls"><label>Vertical position<input type="range" min="0" max="100" bind:value={position} /></label><Button emphasis="subtle" onclick={() => { positioning = false; delivery.notify('Preview position selected.'); }}>Save position</Button><Button emphasis="subtle" onclick={() => positioning = false}>Cancel</Button></div>{/if}
+      {@const own = scenario === 'self'}
+      <MediaHero size="compact" identity={{
+        id: 'preview-profile', title: displayName, subtitle: '@preview', backdrop: background,
+        description: scenario === 'long'
+          ? 'A fictional biography with room for favourite stories, music and games. '.repeat(8)
+          : 'Stories, music and everything in between.',
+      }}>
+        {#snippet logoCard()}
+          <div class="profile-avatar-card"><MediaCard
+            item={{ id, kind: 'person', title: displayName, poster: background, href: null }}
+            showCaption={false} showPrimaryAction={false} /></div>
+        {/snippet}
+        {#snippet segments()}
+          <SegmentedControl material="clear" presentation="navigation" label="Profile sections"
+            options={own ? [...profileSections, { value: 'lists', label: 'Lists' }] : profileSections}
+            value={profileSection} onchange={value => profileSection = value} />
+        {/snippet}
+        {#snippet actions()}
+          <div>
+            {#if own}<Button size="hero" onclick={() => delivery.notify('Preview edit requested.')}>Edit</Button>{/if}
+            <ProfileBackgroundMenu copyLink={() => delivery.notify('Profile link copied.')} owner={own} />
           </div>
-        </div>
-      </header>
+        {/snippet}
+      </MediaHero>
+      {#if profileSection === 'lists' && own}<Shelf title="Watchlist" {items} />
+      {:else if profileSection === 'insights'}<Shelf title="Statistics" size="panel" panels={progressPanels} />
+      {:else}<Shelf title="Watching" {items} /><Shelf title="Activity" {items} />{/if}
     {/if}
 
   {:else if name === 'profile.insights'}
     {#if scenario === 'activity'}<Shelf title="Insights" size="panel" artworkOptions={false} panels={progressPanels} />
-    {:else}<Heading variant="page" title="Taste & overlap" description="Alex Example" /><MetricGrid items={[{ label: 'Overall taste', value: scenario === 'unknown' ? 'Not enough data' : '78%', detail: 'Median across qualifying media' }]} />
-      {#each ['Movies', 'TV', 'Music', 'Games', 'Books', 'Comics'] as medium}<section class="section"><Heading title={medium} /><MetricGrid items={[{ label: 'Taste score', value: scenario === 'unknown' ? 'Not enough data' : '78%' }, { label: 'Genres', value: scenario === 'unknown' ? 'Not enough data' : '82%', detail: scenario === 'unknown' ? '0 yours · 0 theirs' : '4 shared · 8 yours · 6 theirs' }, { label: 'Completed · you / friend', value: scenario === 'unknown' ? '0 / 0' : '24 / 18' }, { label: 'In progress · you / friend', value: scenario === 'unknown' ? '0 / 0' : '3 / 2' }, { label: 'Shared items', value: scenario === 'unknown' ? 0 : 12 }]} /></section>{/each}
-      <Shelf title="Overlap & progress" items={scenario === 'unknown' ? [] : items} hideEmpty={false} />
+    {:else}<TasteComparison data={tasteExample} href="/profile/alex-example?section=taste" navigate={() => {}} />
     {/if}
   {:else if name === 'pages.browse'}
     {#if scenario === 'empty'}<Heading variant="page" title="For You" description="Your stories, all together." /><EmptyState title="Your next story starts here." description="Build a watchlist, remember what you’ve seen, and pick up wherever you left off. Coast keeps it all together." icon="home"><Button href="/discover">Find something to watch</Button></EmptyState>
@@ -113,22 +162,7 @@
 <style>
 
   .feature-examples { min-width: 0; }
-  .profile-header { position: relative; isolation: isolate; padding-block: 24px 0; }
-  .profile-header.with-background { min-height: clamp(340px, 48vh, 580px); display: flex; align-items: flex-end; padding-bottom: 20px; }
-  .backdrop { position: absolute; z-index: -1; inset: -130px calc(-1 * var(--gutter)) 0; overflow: hidden; pointer-events: none; }
-  .backdrop img { width: 100%; height: 100%; object-fit: cover; opacity: .85; }
-  .backdrop > div { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--canvas) calc(51 / 255 * 100%), transparent), transparent 25%, color-mix(in srgb, var(--canvas) calc(119 / 255 * 100%), transparent) 60%, var(--canvas) 100%); }
-  .profile-heading { display: flex; align-items: center; gap: 24px; padding-block: 12px 36px; }
-  .avatar { width: 104px; height: 104px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--white) calc(40 / 255 * 100%), transparent); background: color-mix(in srgb, var(--white) calc(16 / 255 * 100%), transparent); color: var(--muted); font-size: var(--text-2xl); overflow: hidden; }
-  .avatar :global(.profile-icon) { width: 100%; height: 100%; background: transparent; color: inherit; font: inherit; }
-  .identity { min-width: 0; }
-  .eyebrow, .handle { font-size: var(--text-sm); color: var(--muted); }
-  .eyebrow { margin-bottom: 6px; }
-  h1 { overflow-wrap: anywhere; }
-  .bio { color: var(--muted); margin: 8px 0 16px; max-width: 580px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .actions { flex-wrap: wrap; }
-  .position-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-top: 16px; }
-  .position-controls label { display: grid; gap: 6px; }
+  .profile-avatar-card { height: 100%; aspect-ratio: 1; }
   .shell-example { position: relative; contain: layout paint; min-height: 180px; }
-  @media (max-width: 600px) { .profile-header.with-background { min-height: 280px; padding-bottom: 0; } .profile-heading { padding-bottom: 18px; gap: 18px; padding-top: 0; } .avatar { width: 76px; height: 76px; font-size: var(--text-2xl); } }
+
 </style>

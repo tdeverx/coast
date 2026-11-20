@@ -27,16 +27,23 @@
  const {api,change,preview}=useClient();
  const clock=useClock('second',()=>!preview&&open&&activeSegment==='party');
  import type {FriendEntry} from '#lib/social/model.js';
- let {open=$bindable(false),onclose,initialView='accepted'}:{open:boolean;onclose?:()=>void;initialView?:'accepted'|'pending'|'party'}=$props();
+ type FriendView = typeof import('#lib/ui/panels/location.js').friendViews[number];
+ let {open=$bindable(false),onclose,initialView='accepted',onselectView}:{open:boolean;onclose?:()=>void;initialView?:FriendView;onselectView?:(value:FriendView)=>void}=$props();
  const restricted=$derived(page.data.user?.access?.libraryOnly===true);
  const canManageInvites=$derived(page.data.user?.role==='admin');
  let segment=$state<string>(untrack(()=>initialView)),number=$state(1),username=$state(''),busy=$state(false),failure=$state('');
  const activeSegment=$derived(restricted?'invites':segment);
+ $effect(()=>{ segment=initialView; });
+ function selectView(value: FriendView) {
+  segment=value;
+  number=1;
+  onselectView?.(value);
+ }
  // Preview panels never observe the signed-in user's party or call its controller.
  const activeRoom=$derived(preview?null:syncedPlayer.room);
  const partyBusy=$derived(!preview&&syncedPlayer.busy);
  const partyId=$derived(activeRoom?.id);
- async function inviteFriend(friendId:string){if(preview){failure='Party invitations are disabled in this panel example. Use the Party card examples to inspect their states.';return;}if(busy||syncedPlayer.busy)return;busy=true;failure='';try{if(!syncedPlayer.room)await startSynced();if(!syncedPlayer.room)throw new Error(syncedPlayer.notice||'Could not create a party.');await change(`synced/${syncedPlayer.room.id}/invite`,{friendId});if(segment==='party')await loadParties();else segment='party';}catch(error){failure=message(error);}finally{busy=false;}}
+ async function inviteFriend(friendId:string){if(preview){failure='Party invitations are disabled in this panel example. Use the Party card examples to inspect their states.';return;}if(busy||syncedPlayer.busy)return;busy=true;failure='';try{if(!syncedPlayer.room)await startSynced();if(!syncedPlayer.room)throw new Error(syncedPlayer.notice||'Could not create a party.');await change(`synced/${syncedPlayer.room.id}/invite`,{friendId});if(segment==='party')await loadParties();else selectView('party');}catch(error){failure=message(error);}finally{busy=false;}}
  const parties=createResource<{id:string;createdAt:string;host:string;hostId:string;joined:boolean;mediaType:'audio'|'video'|'reading';reading?:RoomState['reading'];progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;playingItem:MediaCardPresentation|null;backgroundArtwork?:string|null;nowPlaying:string|null;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[];friend:FriendEntry|null}[]>([]);
  async function loadParties(){
   if(!open||activeSegment!=='party'||parties.busy)return;
@@ -100,8 +107,7 @@
    if(path==='social/friends'){
     username='';
     if(segment!=='pending'||number!==1){
-     segment='pending';
-     number=1;
+     selectView('pending');
      return;
     }
    }
@@ -113,7 +119,7 @@
 {#snippet activeParty()}<SyncedControls embedded/>{/snippet}
 <Dialog bind:open title={restricted?"Invite people":"Friends"} popover={true} anchor={preview?undefined:"#friends-trigger"} {onclose} footer={activeRoom?activeParty:undefined}>
  {#snippet heading()}<Heading title={restricted?"Invite people":"Friends"}>
-  {#snippet heading()}{#if !restricted}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[]),...(!preview?[{value:'invites',label:'Invite people'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/if}{/snippet}
+  {#snippet heading()}{#if !restricted}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[]),...(!preview?[{value:'invites',label:'Invite people'}]:[])]} onchange={value=>selectView(value as FriendView)}/>{/if}{/snippet}
   {#snippet actions()}<div class="header-actions">
    {#if !restricted}<Button menu label="Friend options"><Button item icon="refresh" text="Refresh" disabled={busy||refreshing||segment==='invites'} keepOpen={false} onclick={()=>void refresh()}/><Button item icon="settings" href="/settings/privacy">Privacy & social</Button></Button>{/if}
    <Button size="icon" icon="close" label={restricted?"Close invite panel":"Close friends"} onclick={()=>{open=false;onclose?.();}}/>

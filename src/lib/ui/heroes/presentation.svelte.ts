@@ -4,6 +4,7 @@ import {reader} from '#lib/reading/client.svelte.js';
 import { onMount, untrack } from 'svelte';
 import { useClient } from '#lib/ui/client-context.js';
 import { heroTitleIds, isHeroTitle } from '#lib/media/hero.js';
+import { detailPanelHref, panelAddress } from '#lib/media/detail-target.js';
 import type { MediaView, MediaHeroPresentation } from '#lib/ui/types.js';
 import { playbackVisible } from '#lib/playback/visibility.js';
 import { presentTrailer } from '#lib/playback/client.svelte.js';
@@ -25,8 +26,6 @@ export function createHeroPresentation(get: () => HeroOptions) {
   let { item, items = [], parents = [], collection } = $derived(get());
   let current = $state(0),
     host = $state<HTMLElement | null>(null),
-    backdropFailed = $state(false),
-    posterFailed = $state(false),
     logoFailed = $state(false),
     fading = $state(false),
     gestureLocked = false,
@@ -76,14 +75,13 @@ export function createHeroPresentation(get: () => HeroOptions) {
   });
   const active = $derived(collection ? chosen : (items.length ? items[current % items.length] : item));
   const activeId=$derived(active?.id);
+  const hasActiveItem = $derived(!!activeId);
   $effect(()=>{
     activeId;
     return()=>{switchController?.abort();switchController=null;clearTimeout(fadeTimer);deferredStep=undefined;fading=false;};
   });
   const presentation = $derived(parents.find((parent) => parent.kind === 'show') ?? active);
   const titleLogo = $derived(active?.logo ?? presentation?.logo);
-  $effect(()=>{active?.backdrop;backdropFailed=false;});
-  $effect(()=>{active?.poster;posterFailed=false;});
   $effect(()=>{titleLogo;logoFailed=false;});
   const hasTrailer = $derived(heroPlayer.id === active?.id && !!heroPlayer.url);
   const showingTrailer = $derived(
@@ -152,7 +150,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
   let intersecting=$state(false),foreground=$state(true),reducedMotion=$state(false);
   const motionSuspended=$derived(reducedMotion&&!motionRequested);
   const controlPaused=$derived(paused||motionSuspended||phase==='complete');
-  const obscured=$derived(playbackVisible(player)||reader.visible||!!page.state.mediaDetailHref||page.data.capabilities?.playback===false||page.data.capabilities?.screen===false);
+  const obscured=$derived(playbackVisible(player)||reader.visible||!!detailPanelHref(panelAddress(page),page.state)||page.data.capabilities?.playback===false||page.data.capabilities?.screen===false);
   $effect(()=>{
     const id=activeId,element=host;
     if(preview||!id||!element)return;
@@ -234,9 +232,11 @@ export function createHeroPresentation(get: () => HeroOptions) {
   $effect(() => {
     if (!host) return;
     const element = host;
-    element.addEventListener('wheel', wheel, { passive: false });
-    document.addEventListener('pointermove', noteActivity);
-    noteActivity();
+    if (hasActiveItem) {
+      element.addEventListener('wheel', wheel, { passive: false });
+      document.addEventListener('pointermove', noteActivity);
+      noteActivity();
+    }
     const shell = element.closest<HTMLElement>('.page-shell');
     const resize = new ResizeObserver(entries => {
       const box=entries[0]?.borderBoxSize?.[0];
@@ -267,8 +267,6 @@ export function createHeroPresentation(get: () => HeroOptions) {
     get fading() { return fading; },
     get transitionDuration() {return reducedMotion?0:450;},
     get host() { return host; }, set host(value) { host = value; },
-    get backdropFailed() { return backdropFailed; }, set backdropFailed(value) { backdropFailed = value; },
-    get posterFailed() { return posterFailed; }, set posterFailed(value) { posterFailed = value; },
     get logoFailed() { return logoFailed; }, set logoFailed(value) { logoFailed = value; },
     get controlFocused() { return controlFocused; }, set controlFocused(value) { controlFocused = value;resumeFocused=false; },
     noteActivity, step, retain, togglePlayback,

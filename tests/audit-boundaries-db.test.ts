@@ -7,6 +7,7 @@ import { mediaActionData } from '../src/lib/server/queries/media-actions';
 import { progressData } from '../src/lib/server/queries/progress';
 import { deleteUser, type SessionUser } from '../src/lib/server/auth';
 import { friendInsights } from '../src/lib/social/insights.server';
+import { personalTaste, personalTasteAffinities } from '../src/lib/social/taste-cache.server';
 import { recommend, respondRecommendation } from '../src/lib/social/service.server';
 import { createApiToken } from '../src/lib/server/public-api/tokens.server';
 import { createWebhook, deliverWebhook, emitWebhook } from '../src/lib/server/public-api/webhooks.server';
@@ -147,11 +148,45 @@ run('taste counts and overlap pages remain exact beyond the scoring sample and u
   }
   const result = await friendInsights(users[0], users[1], { medium: 'music' });
   expect(result.media.find(row => row.medium === 'music')?.progressComparisons).toEqual([{ workId: music, you: 25, friend: 25 }]);
-  const reading = crypto.randomUUID();
   await db`update system_settings set value=value||'{"experimentalBooks":true}'::jsonb where key='coast'`;
-  await db`insert into works(id,category,kind) values(${reading},'book','book')`;
-  for (const user of users) await db`insert into tracking_state(user_id,media_id,collected) values(${user},${reading},true)`;
-  expect((await friendInsights(users[0], users[1])).total).toBe(322);
+  const book = await importReading({ provider:'openlibrary',externalId:'OL819341209W',kind:'book',
+    title:'Shared read',authors:[],subjects:['Mystery'],sourceUrl:'https://openlibrary.org/works/OL819341209W' });
+  await updateReading(users[0],book.id,{page:15,totalPages:60});
+  await updateReading(users[1],book.id,{page:30,totalPages:60});
+  const reads = await friendInsights(users[0],users[1],{medium:'book'});
+  expect(reads.ids).toEqual([book.id]);
+  expect(reads.media.find(row=>row.medium==='book')?.progressComparisons).toEqual([{workId:book.id,you:25,friend:50}]);
+  expect((await friendInsights(users[0], users[1])).total).toBe(323);
+  await db`update users set settings=settings||'{"social":{"sections":{"progress":"private"}}}'::jsonb where id=${users[1]}`;
+  expect((await friendInsights(users[0],users[1],{medium:'book'})).ids).toEqual([]);
+  const yours=await friendInsights(users[0],users[1],{medium:'book',overlap:'onlyYou'});
+  expect(yours.media.find(row=>row.medium==='book')?.progressComparisons).toEqual([{workId:book.id,you:25,friend:null}]);
+});
+
+run('personal Taste summarises and pages all saved affinities for the owner', async () => {
+  const db = getSql();
+  const affinity = (name: string, value: number, samples = 3) => ({ id: name, name, value, samples });
+  const profile = { version: 1, works: 8, dimensions: {
+    genres: [affinity('Disliked', -0.9), ...Array.from({ length: 26 }, (_, index) => affinity(`Genre ${index + 1}`, 0.8 - index / 30))],
+    cast: [affinity('One appearance', 0.9, 1), affinity('Repeated cast', 0.8, 2)],
+  } };
+  await db`insert into user_taste_profiles(user_id,medium,revision,profile) values(${owner},'movie','fixture',${profile}::jsonb)`;
+  await db`insert into user_taste_profiles(user_id,medium,revision,profile)
+    values(${owner},'show','fixture','{"version":1,"works":0,"dimensions":{}}'::jsonb)`;
+  expect(await personalTaste(owner)).toEqual(expect.arrayContaining([
+    expect.objectContaining({medium:'movie',works:8,signals:{
+      genres:{count:27,names:['Disliked','Genre 1','Genre 2']},cast:{count:2,names:['One appearance','Repeated cast']},
+    }}),
+    expect.objectContaining({medium:'show',works:0,signals:{}}),
+  ]));
+  const first = await personalTasteAffinities(owner, 'movie', 'genres', 1);
+  expect(first.pages).toBe(2);
+  expect(first.items).toHaveLength(25);
+  expect(first.items[0]).toMatchObject({name:'Disliked',value:-0.9,samples:3});
+  expect((await personalTasteAffinities(owner, 'movie', 'genres', 2)).items.map(item=>item.name))
+    .toEqual(['Genre 25','Genre 26']);
+  expect(await personalTaste(friend)).toEqual([]);
+  expect(await personalTasteAffinities(friend, 'movie', 'genres', 1)).toEqual({items:[],pages:1});
 });
 
 run('concurrent recommendation send and response share one lock order', async () => {

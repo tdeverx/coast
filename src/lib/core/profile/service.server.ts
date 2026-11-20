@@ -6,12 +6,14 @@ import { users, works, trackingState, type ProfileSettings } from '#lib/server/d
 import { AppError } from '#lib/server/security/errors.js';
 import { avatarRequestLimit, avatarImage, storeAvatar, pruneAvatars } from './avatar-storage.server';
 const uuid = v.pipe(v.string(), v.uuid());
+const position = v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(100));
 const profileInput = v.variant('action', [
   v.object({
     action: v.literal('edit'),
     displayName: v.pipe(v.string(), v.trim(), v.maxLength(60)),
     bio: v.pipe(v.string(), v.trim(), v.maxLength(240)),
     avatar: v.nullable(v.pipe(v.string(), v.maxLength(avatarRequestLimit))),
+    background: v.optional(v.object({ mediaId: uuid, position: v.nullable(v.object({ x: position, y: position })) })),
   }),
   v.object({
     action: v.literal('preferences'),
@@ -19,19 +21,20 @@ const profileInput = v.variant('action', [
     favouriteKind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game', 'book', 'comic'])),
   }),
   v.object({
-    action: v.literal('feature'),
-    mediaId: v.nullable(uuid),
-    note: v.pipe(v.string(), v.trim(), v.maxLength(300)),
-  }),
-  v.object({
     action: v.literal('position'),
-    value: v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(100)),
+    value: position,
   }),
   v.object({ action: v.literal('background'), mediaId: v.nullable(uuid) }),
   v.object({ action: v.literal('background-mode'), mode: v.picklist(['fixed','activity']) }),
   v.object({ action: v.literal('pin'), mediaId: uuid, value: v.boolean() }),
   v.object({ action: v.literal('move'), mediaId: uuid, beforeId: v.nullable(uuid) }),
 ]);
+function setBackground(profile: ProfileSettings, mediaId: string | null) {
+  profile.backgroundMediaId = mediaId;
+  profile.backgroundMode = mediaId ? 'fixed' : 'activity';
+  profile.backgroundPosition = 50;
+  delete profile.backgroundPositionX;
+}
 export async function updateProfile(userId: string, input: unknown) {
   const data = v.parse(profileInput, input);
   const image=data.action==='edit'&&data.avatar&&!data.avatar.startsWith(`/api/v1/profile/avatar/${userId}/`)
@@ -42,6 +45,15 @@ export async function updateProfile(userId: string, input: unknown) {
     if (!user) throw new AppError(404, 'Account not found.');
     const profile: ProfileSettings = { ...user.settings.profile };
     if (data.action === 'edit') {
+      if (data.background) {
+        if (profile.backgroundMode === 'activity' || profile.backgroundMediaId !== data.background.mediaId)
+          throw new AppError(409, 'The profile background changed. Reopen editing to adjust it.');
+        const crop = data.background.position;
+        if (crop) {
+          profile.backgroundPositionX = crop.x;
+          profile.backgroundPosition = crop.y;
+        } else setBackground(profile, null);
+      }
       previousAvatar=profile.avatar;
       if (data.avatar?.startsWith('/api/') && data.avatar !== profile.avatar)
         throw new AppError(400, 'Choose your own profile icon.');
@@ -52,23 +64,7 @@ export async function updateProfile(userId: string, input: unknown) {
       if (data.period !== undefined) profile.period = data.period;
       if (data.favouriteKind !== undefined) profile.favouriteKind = data.favouriteKind;
     } else if (data.action === 'position') profile.backgroundPosition = data.value;
-    else if (data.action === 'feature') {
-      if (data.mediaId) {
-        const [fav] = await tx
-          .select()
-          .from(trackingState)
-          .where(
-            and(
-              eq(trackingState.userId, userId),
-              eq(trackingState.mediaId, data.mediaId),
-              eq(trackingState.favourite, true)
-            )
-          );
-        if (!fav) throw new AppError(400, 'Choose one of your favourites to feature.');
-      }
-      profile.featuredMediaId = data.mediaId;
-      profile.featuredNote = data.note;
-    } else if (data.action === 'background-mode') {
+    else if (data.action === 'background-mode') {
       profile.backgroundMode = data.mode;
     } else if (data.action === 'background') {
       if (data.mediaId) {
@@ -78,9 +74,7 @@ export async function updateProfile(userId: string, input: unknown) {
           .where(and(eq(works.id, data.mediaId), sql`coast_category_enabled(${userId}::uuid,${works.category})`));
         if (!item) throw new AppError(404, 'Title not found.');
       }
-      profile.backgroundMediaId = data.mediaId;
-      profile.backgroundMode = 'fixed';
-      profile.backgroundPosition = 50;
+      setBackground(profile, data.mediaId);
     } else {
       const favourites = await tx
         .select({ id: trackingState.mediaId })

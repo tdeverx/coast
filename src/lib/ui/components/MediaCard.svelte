@@ -48,6 +48,8 @@
     showCaption = true,
     showPrimaryAction = true,
     primaryMenu,
+    primaryMenuLabel,
+    primaryMenuIcon,
     activityTrailing,
     activityProgress,
     captionAction,
@@ -68,6 +70,8 @@
     showCaption?:boolean;
     showPrimaryAction?:boolean;
     primaryMenu?:import('svelte').Snippet;
+    primaryMenuLabel?: string;
+    primaryMenuIcon?: import('./Icon.svelte').IconName;
     activityTrailing?:import('svelte').Snippet;
     activityProgress?:number|null;
     captionAction?: Snippet;
@@ -88,7 +92,7 @@
   onDestroy(()=>releaseFocus?.());
   const clock=useClock('minute',()=>showActivityContext&&!!(item.captionActivity?.dateKnown||item.captionDate));
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
-  const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&(item.href===null||item.kind==='collection'&&!item.workId));
+  const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&(item.href===null&&!primaryMenu||item.kind==='collection'&&!item.workId));
   const trackedItem = $derived('href' in item ? undefined : item);
   const href = $derived('href' in item ? item.href??undefined : `/media/${item.id}`);
   const activityHref=$derived(href ? detailHref(href,{section:'activity',relationship:'all'}) : undefined);
@@ -257,7 +261,7 @@
       {#if artwork}{@render artworkImage()}
       {:else if artworkStyle !== 'none'}<div class="fallback">
           <Icon
-            name={item.kind === 'artist'
+            name={item.kind === 'artist' || item.kind === 'person'
               ? 'user'
               : item.kind === 'album' || item.kind === 'track' || item.kind === 'game'
                 ? 'library'
@@ -281,14 +285,15 @@
       />
     {/if}
     {#if !readOnly()}{#if showPrimaryAction}<button
+        type="button"
         class="play glass icon-button"
         use:liquidGlass={{ enabled: active }}
-        aria-label={primaryMenu?`Actions for ${item.title}`:`${primaryLabel} ${item.title}`}
+        aria-label={primaryMenu?(primaryMenuLabel ?? `Actions for ${item.title}`):`${primaryLabel} ${item.title}`}
         title={trackedItem?.playbackPending && !primaryMenu ? 'Stream pending · Open details' : undefined}
         aria-haspopup={primaryMenu?'menu':undefined}
         onclick={activate}
         ><Icon
-          name={primaryMenu?'more':primaryAction === 'play'
+          name={primaryMenu?(primaryMenuIcon ?? 'more'):primaryAction === 'play'
             ? 'play'
             : primaryAction === 'read' ? 'library' : primaryAction === 'request'
               ? 'request'
@@ -296,9 +301,10 @@
           size={28}
         /></button
       >{/if}
-      {#if primaryMenu}<Button menu hideTrigger bind:this={primaryMenuButton} label={`Actions for ${item.title}`}>{@render primaryMenu()}</Button>{/if}
+      {#if primaryMenu}<Button menu hideTrigger bind:this={primaryMenuButton} label={primaryMenuLabel ?? `Actions for ${item.title}`}>{@render primaryMenu()}</Button>{/if}
       {#if !cornerMenu && item.kind !== 'person'}<div class="card-menu">
         <button
+          type="button"
           class="icon-button"
           aria-label={`Actions for ${item.title}`}
           aria-haspopup="menu"
@@ -348,7 +354,9 @@
   {/if}
   {/if}
   {#if captionAction || item.captionStatus || (showCaption && showActivityContext && item.captionActor && item.captionActivity)}<div class="caption-action">
-    {#if captionAction}{@render captionAction()}{:else if item.captionStatus}<span class="caption-status" data-tone={item.captionStatus.tone}><Button size="icon" href={item.captionStatus.href} icon={item.captionStatus.icon} label={`${item.captionStatus.label} · ${item.title}`} title={item.captionStatus.label}/></span>{:else if item.captionActivity}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
+    {#if captionAction}{@render captionAction()}{:else if item.captionStatus}<span class="caption-status"
+      data-tone={item.captionStatus.tone} role="img" aria-label={`${item.captionStatus.label} · ${item.title}`}
+      title={item.captionStatus.label}><Icon name={item.captionStatus.icon} /></span>{:else if item.captionActivity}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
   </div>{/if}
   </div>{/if}
   {#if body}<div class="card-body">{@render body()}</div>{/if}
@@ -366,7 +374,7 @@
   .caption-status[data-tone='positive'] {color:var(--success);}
   .caption-status[data-tone='pending'] {color:var(--rating);}
   .caption-status[data-tone='negative'] {color:var(--danger);}
-  .caption-status :global(.icon-button) {color:inherit;}
+  .caption-status {display:grid;place-items:center;width:var(--control-compact-height);height:var(--control-compact-height);}
   .caption-row { display:flex; align-items:center; gap:8px; }
   .caption { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; -webkit-touch-callout:none; user-select:none; }
   .caption-action { flex-shrink:0; }

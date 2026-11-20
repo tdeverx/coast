@@ -6,7 +6,7 @@ import { mediaViewsForIds } from './media';
 import { pageNumberSchema, PAGE_SIZE, pagination } from './pagination';
 import {AppError} from '../security/errors';
 
-export async function requestList(userId: string, requestedPage = 1, requestId?: string,filters:{state?:'all'|typeof s.mediaRequests.$inferSelect.state;kind?:'all'|'movie'|'show';pageSize?:number;allUsers?:boolean}={},signal?:AbortSignal) {
+export async function requestList(userId: string, requestedPage = 1, requestId?: string,filters:{state?:'all'|typeof s.mediaRequests.$inferSelect.state;kind?:'all'|'movie'|'show';pageSize?:number;allUsers?:boolean;summarizeStates?:boolean}={},signal?:AbortSignal) {
   signal?.throwIfAborted();
   v.parse(v.pipe(v.string(), v.uuid()), userId);
   v.parse(pageNumberSchema, requestedPage);
@@ -17,17 +17,25 @@ export async function requestList(userId: string, requestedPage = 1, requestId?:
   }
   signal?.throwIfAborted();
   if (requestId) v.parse(v.pipe(v.string(), v.uuid()), requestId);
-  const where = and(
+  const selectedState = filters.state && filters.state !== 'all' ? eq(s.mediaRequests.state, filters.state) : undefined;
+  const scope = and(
     filters.allUsers?undefined:eq(s.mediaRequests.userId, userId),
     requestId ? eq(s.mediaRequests.id, requestId) : undefined,
-    filters.state&&filters.state!=='all'?eq(s.mediaRequests.state,filters.state):undefined,
     filters.kind&&filters.kind!=='all'?eq(s.media.kind,filters.kind):undefined
   );
+  const where = and(scope, selectedState);
   const [count] = await db
-    .select({ total: sql<number>`count(*)::int` })
+    .select({
+      total: filters.summarizeStates && selectedState
+        ? sql<number>`(count(*) filter (where ${selectedState}))::int`
+        : sql<number>`count(*)::int`,
+      states: filters.summarizeStates
+        ? sql<string[] | null>`array_agg(distinct ${s.mediaRequests.state})`
+        : sql<string[] | null>`null`,
+    })
     .from(s.mediaRequests)
     .innerJoin(s.media,eq(s.media.id,s.mediaRequests.mediaId))
-    .where(where);
+    .where(filters.summarizeStates ? scope : where);
   signal?.throwIfAborted();
   const pageSize = v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(PAGE_SIZE)),filters.pageSize??PAGE_SIZE);
   const total = count.total;
@@ -63,5 +71,6 @@ export async function requestList(userId: string, requestedPage = 1, requestId?:
     page,
     pages,
     pageSize,
+    availableStates: filters.summarizeStates ? count.states ?? [] : undefined,
   };
 }

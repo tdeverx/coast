@@ -20,7 +20,7 @@ for(const canonical of [true,false])test(`music section links keep ${canonical?'
   for(const href of [view.rows[0].shelf.source.href,view.model.insights.href]){
    const target=mediaDetailTarget(href,new URL('https://coast.invalid/for-you'));
    expect(target?.kind).toBe(canonical?'work':'music-source');
-   expect(target?.id).toBe(canonical?work:item.id);
+   expect(target && 'id' in target ? target.id : undefined).toBe(canonical?work:item.id);
   }
  }finally{dispose();}
 });

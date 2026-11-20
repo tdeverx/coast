@@ -3,6 +3,7 @@ import { mediumOptions, categoryEnabled } from '#lib/experimental.js';
 import {activityAudienceOptions,activityTypeOptions,workFriendOptions,type WorkFriendFilter,type ActivityFilters} from '#lib/social/model.js';
 import {page} from '$app/state';
 import {goto} from '$app/navigation';
+import {navigateMedia} from '#lib/ui/media-navigation.js';
 import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
 import {mediaTypeOptions} from '#lib/ui/filter-options.js';
 import { onDestroy, untrack } from 'svelte';
@@ -12,16 +13,17 @@ import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
 import { createShelfRefresh } from './refresh.svelte.js';
 type Feed = { scope?:string; emptyAllMedia?:boolean; items: ShelfItem[]; hasMore: boolean; next: { before: string; beforeId: string; beforeKnown?:string;beforeRelationship?:string } | null };
-export type SocialShelfOptions = Partial<ActivityFilters> & { type: 'social'; layout?: 'row' | 'grid'; initial?: Feed; category?: string; title?:string; mediums?:boolean; surface?:'activity'|'popular';workId?:string;artistId?:string;readingGroupId?:string;href?:string;relationship?:WorkFriendFilter;relationshipKind?:string };
+export type SocialShelfOptions = Partial<ActivityFilters> & { type: 'social'; layout?: 'row' | 'grid'; initial?: Feed; category?: string; title?:string; mediums?:boolean; surface?:'activity'|'popular';workId?:string;artistId?:string;readingGroupId?:string;profileId?:string;profileHref?:string;profileMedia?:string[];href?:string;relationship?:WorkFriendFilter;relationshipKind?:string };
 export function createSocialSource(get: () => SocialShelfOptions, refreshVisible?: () => boolean): ShelfSource {
   const { api, preview } = useClient(),location=useShelfLocation();
 
  let category=$state(untrack(()=>get().category??(get().mediums?'screen':'all')));
  let relationship=$state(untrack(()=>get().relationship??'all'));
  let audience=$state(untrack(()=>get().audience??'all')),mediaKind=$state(untrack(()=>get().mediaKind??'all')),period=$state(untrack(()=>get().period??'all')),activityType=$state(untrack(()=>get().activityType??'all'));
+ let emptyMedia=$state<string[]>([]);
  const filtersEnabled=$derived(get().audience!==undefined&&get().surface!=='popular');
  function resetFilters(){return selectFilters({audience:'all',mediaKind:'all',period:'all',activityType:'all'});}
- const targetKey=()=>JSON.stringify([page.data.user?.id,page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,category,get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship!==undefined?relationship:undefined,audience,mediaKind,period,activityType]);
+ const targetKey=()=>JSON.stringify([page.data.user?.id,page.data.capabilities,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,category,get().surface,get().workId,get().artistId,get().readingGroupId,get().profileId,get().relationship!==undefined?relationship:undefined,audience,mediaKind,period,activityType]);
  const initial = untrack(() => get().initial);
  const resource = createResource<Feed>(initial ? {...initial,scope:untrack(targetKey)} : { items: [], hasMore: false, next: null }, !!initial);
  const refresh = createShelfRefresh(() => load(), refreshVisible);
@@ -37,14 +39,18 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
     if(filtersEnabled)({mediaKind,activityType}=compatibleFilters(next));
   }
   if(resource.data.scope!==targetKey())append=false;
-  const requestedWork=targetKey(),scoped=!!(get().workId||get().artistId||get().readingGroupId);
-  const query = new URLSearchParams({ category,...(filtersEnabled?{audience,mediaKind,period,activityType}:{}), ...(get().relationship!==undefined?{relationship}:{}),...(get().workId?{workId:get().workId!}:{}),...(get().artistId?{artistId:get().artistId!}:{}),...(get().readingGroupId?{readingGroupId:get().readingGroupId!}:{}), ...(append && resource.data.next ? resource.data.next : {}) });
-  await resource.load(async signal => {const result=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?${query}`, undefined, 'GET', { signal });signal.throwIfAborted();if(!append&&!result.items.length&&!scoped&&!filtersEnabled&&get().mediums&&category!=='all'&&get().layout!=='grid'){const any=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?category=all`,undefined,'GET',{signal});return {...result,scope:requestedWork,emptyAllMedia:!any.items.length};}return {...result,scope:requestedWork};}, {
+  const requestedWork=targetKey(),scoped=!!(get().workId||get().artistId||get().readingGroupId||get().profileId);
+  const query = new URLSearchParams({ category,...(filtersEnabled?{audience,mediaKind,period,activityType}:{}), ...(get().relationship!==undefined?{relationship}:{}),...(get().workId?{workId:get().workId!}:{}),...(get().artistId?{artistId:get().artistId!}:{}),...(get().readingGroupId?{readingGroupId:get().readingGroupId!}:{}),...(get().profileId?{profileId:get().profileId!}:{}), ...(append && resource.data.next ? resource.data.next : {}) });
+  const result=await resource.load(async signal => {const result=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?${query}`, undefined, 'GET', { signal });signal.throwIfAborted();if(!append&&!result.items.length&&!scoped&&!filtersEnabled&&get().mediums&&category!=='all'&&get().layout!=='grid'){const any=await api<Feed>(`social/${get().surface==='popular'?'popular':'feed'}?category=all`,undefined,'GET',{signal});return {...result,scope:requestedWork,emptyAllMedia:!any.items.length};}return {...result,scope:requestedWork};}, {
    merge: (previous, result) => ({ ...result, items: uniqueItems(append ? [...previous.items, ...result.items] : result.items, item => item.entryId ?? item.id) }),
   });
+  if(result&&!append&&get().mediums&&requestedWork===targetKey()&&audience==='all'&&mediaKind==='all'&&period==='all'&&activityType==='all'){
+   const rest=emptyMedia.filter(value=>value!==category);
+   emptyMedia=result.items.length||result.hasMore?rest:[...rest,category];
+  }
  }
  const suppliedCategory=$derived(get().category??(get().mediums?'screen':'all'));
- const scopeKey=$derived(JSON.stringify([page.data.user?.id,get().surface,get().workId,get().artistId,get().readingGroupId,get().relationship,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities]));
+ const scopeKey=$derived(JSON.stringify([page.data.user?.id,get().surface,get().workId,get().artistId,get().readingGroupId,get().profileId,get().relationship,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities]));
  const refreshKey=$derived(contentRevisionKey(page.data,['social']));
  let previousRelationship=untrack(()=>get().relationship);
  let previousCategory=untrack(()=>suppliedCategory);
@@ -62,6 +68,7 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
    if(nextCategory!==previousCategory)category=nextCategory;
    previousCategory=nextCategory;
    if((scopeChanged||key!==previousRefresh)&&(resource.activated||resource.ready)){
+    emptyMedia=[];
     if(scopeChanged&&refreshVisible)resource.replace({items:[],hasMore:false,next:null});
     refresh.invalidate();
    }
@@ -73,6 +80,13 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
   if(!mediumChanged&&Object.entries(patch).every(([key,value])=>({audience,mediaKind,period,activityType})[key as keyof ActivityFilters]===value))return;
   category=nextCategory;
   audience=patch.audience??audience;mediaKind=patch.mediaKind??mediaKind;period=patch.period??period;activityType=patch.activityType??activityType;
+  const profileHref=get().profileHref;
+  if(profileHref&&get().layout==='grid'&&!preview){
+   const url=new URL(profileHref,page.url.href);
+   for(const [key,value] of Object.entries({category,mediaKind,period,activityType}))url.searchParams.set(key,value);
+   resource.cancel();
+   return location.embedded ? navigateMedia(url.pathname+url.search,{replace:true}) : goto(url,{replace:true,reset:false,state:page.state});
+  }
   if(get().layout==='grid'&&!location.embedded&&!preview){
    const url=new URL(location.url.href);for(const [key,value] of Object.entries({audience,mediaKind,period,activityType}))url.searchParams.set(key,value);
    if(mediumChanged){url.searchParams.set('view',actionFromCategory(category));url.searchParams.delete('category');}
@@ -82,7 +96,8 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
   return load();
  }
  const mediaConfig=$derived({...page.data,features:page.data.capabilities});
- const mediumOptionsForViewer=$derived(mediumOptions(mediaConfig));
+ const mediumOptionsForViewer=$derived(mediumOptions(mediaConfig).filter(option=>
+  !get().profileMedia || get().profileMedia!.includes(option.value)));
  function mediaOptions(medium:string){
   return mediaTypeOptions(mediaConfig).filter(option=>option.value==='all'||medium==='all'||(medium==='screen'?['movie','show'].includes(option.value):medium==='reading'?['book','comic'].includes(option.value):medium==='music'?['album','track'].includes(option.value):option.value==='game'));
  }
@@ -100,13 +115,14 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
  }
  onDestroy(resource.dispose);
  return {
-    get pagination() { return { kind: 'cursor' as const, hasMore: resource.data.hasMore }; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&view=${actionFromCategory(category)}`);if(get().relationship===undefined&&!filtersEnabled)return href;const url=new URL(href,page.url.href);if(get().relationship!==undefined)url.searchParams.set('relationship',relationship);if(filtersEnabled)for(const [key,value] of Object.entries({audience,mediaKind,period,activityType}))url.searchParams.set(key,value);return url.pathname+url.search;}, get shape(){return category==='music'?'square' as const:category==='reading'||category==='game'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'||category==='music'||category==='game'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;},
+    get pagination() { return { kind: 'cursor' as const, hasMore: resource.data.hasMore }; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){if(get().layout==='grid')return undefined;const href=get().href??(get().workId?`/media/${get().workId}?section=activity`:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&view=${actionFromCategory(category)}`);if(get().relationship===undefined&&!filtersEnabled)return href;const url=new URL(href,page.url.href);if(get().profileId)url.searchParams.set('category',category);if(get().relationship!==undefined)url.searchParams.set('relationship',relationship);if(filtersEnabled)for(const [key,value] of Object.entries({...(get().profileId?{}:{audience}),mediaKind,period,activityType}))url.searchParams.set(key,value);return url.pathname+url.search;}, get shape(){return category==='music'?'square' as const:category==='reading'||category==='game'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'||category==='music'||category==='game'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return `${category}:${targetKey()}`;},
   get filters():ShelfControl[]{
    if(!filtersEnabled&&get().relationship!==undefined)return [{type:'segments',label:'Activity selection',value:relationship,options:workFriendOptions(get().relationshipKind),change:value=>{relationship=value as WorkFriendFilter;void load();}}];
    if(!get().mediums||!mediumOptionsForViewer.length)return [];
-   return [{type:'segments',label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptionsForViewer,change:selectMedium}];
+   return [{type:'segments',label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,
+    options:mediumOptionsForViewer.map(option=>({...option,disabled:emptyMedia.includes(option.value)})),change:selectMedium}];
   },
-  get controls():ShelfControl[]{return !filtersEnabled?[]:[{type:'select',section:'activity',label:'Audience',value:audience,options:activityAudienceOptions,change:value=>selectFilters({audience:value as ActivityFilters['audience']})},...(typeOptions.length>2?[{type:'select' as const,label:category==='reading'?'Reading type':'Media type',value:mediaKind,options:typeOptions,change:(value:string)=>selectFilters({mediaKind:value as ActivityFilters['mediaKind']})}]:[]),{type:'select',section:'activity',label:'Activity type',value:activityType,options:activityTypeOptions(category),change:value=>selectFilters({activityType:value as ActivityFilters['activityType']})},{type:'select',section:'activity',label:'Time period',value:period,options:[{value:'all',label:'All time'},{value:'month',label:'Past month'},{value:'year',label:'Past year'}],change:value=>selectFilters({period:value as ActivityFilters['period']})}];},
+  get controls():ShelfControl[]{return !filtersEnabled?[]:[...(!get().profileId?[{type:'select' as const,section:'activity' as const,label:'Audience',value:audience,options:activityAudienceOptions,change:(value:string)=>selectFilters({audience:value as ActivityFilters['audience']})}]:[]),...(typeOptions.length>2?[{type:'select' as const,label:category==='reading'?'Reading type':'Media type',value:mediaKind,options:typeOptions,change:(value:string)=>selectFilters({mediaKind:value as ActivityFilters['mediaKind']})}]:[]),{type:'select',section:'activity',label:'Activity type',value:activityType,options:activityTypeOptions(category),change:value=>selectFilters({activityType:value as ActivityFilters['activityType']})},{type:'select',section:'activity',label:'Time period',value:period,options:[{value:'all',label:'All time'},{value:'month',label:'Past month'},{value:'year',label:'Past year'}],change:value=>selectFilters({period:value as ActivityFilters['period']})}];},
   get filterReset(){return filtersEnabled?{disabled:audience==='all'&&mediaKind==='all'&&period==='all'&&activityType==='all',run:resetFilters}:undefined;},
   get emptyConfirmed(){return !filtersEnabled&&(!get().mediums || resource.data.emptyAllMedia===true);},
   get items() { if(resource.data.scope!==targetKey())return []; return resource.data.items; }, get ready() { return resource.ready; }, get busy() { return resource.busy; },
@@ -114,6 +130,7 @@ export function createSocialSource(get: () => SocialShelfOptions, refreshVisible
   get empty(){
    if(!resource.ready||resource.busy)return 'Loading activity…';
    if(get().surface==='popular')return 'Visible activity from friends in the last 30 days appears here.';
+   if(get().profileId)return 'No shared activity in this view.';
    if(filtersEnabled&&audience==='you')return 'Your recent activity appears here.';
    if(filtersEnabled&&audience==='friends')return 'Activity shared by friends appears here.';
    return 'Your activity and shared activity from friends appear here.';

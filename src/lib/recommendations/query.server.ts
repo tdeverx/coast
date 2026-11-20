@@ -25,7 +25,7 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
  const available=url.searchParams.get('available')==='true';
  const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000)),Number(url.searchParams.get('page')??1));
  if(!categoryEnabled(config,category))return {items:[],total:0,page:1,pages:1,title:undefined as string|undefined};
- const interests=(await interestWorks(userId)).filter(work=>work.category===category&&(work.kind!=='book'||config.experimentalBooks)&&(work.kind!=='comic'||config.experimentalComics));
+ const interests=await interestWorks(userId,category);
  const positive=interests.filter(work=>work.weight>0&&(!workId||work.id===workId)).slice(0,100);
  const ids=positive.map(work=>work.id),weights=positive.map(work=>work.weight);
  const negative=interests.filter(work=>work.weight<0).flatMap(work=>work.genres);

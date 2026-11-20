@@ -65,7 +65,10 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
   'src/lib/ui/work-menu/ReadingCommands.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Reading command dialogs owned by the catalogue action composition.' },
   'src/lib/ui/work-menu/WorkHistory.svelte': { owner: 'src/lib/ui/work-menu/CatalogueActions.svelte', reason: 'Reading, selected-playthrough and listening history dialogs are owned by the catalogue command compositions.' },
   'src/lib/ui/components/CheckInActions.svelte': { owner: 'src/lib/ui/components/WorkMenu.svelte', reason: 'Shared check-in actions are demonstrated through their owning media menus.' },
-  'src/lib/ui/components/ProfileBackgroundMenu.svelte': { owner: 'src/routes/profile/[username]/+page.svelte', reason: 'Profile background choices are demonstrated through the shared profile identity preview.' },
+  'src/lib/ui/components/ProfileBackgroundMenu.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'Profile background choices are demonstrated through the shared profile identity preview.' },
+  'src/lib/ui/components/ListOverview.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'The Lists segment owns the personal lists overview and creation dialog.' },
+  'src/lib/profile/TasteMatch.svelte': { owner: 'src/lib/ui/components/MediaDetails.svelte', reason: 'Shared details own the title-specific taste match and its on-demand read.' },
+  'src/lib/profile/PersonalTaste.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'The Taste segment owns the saved personal taste summary and affinity browser.' },
   'src/lib/ui/components/SubtitleMenu.svelte': { owner: 'src/lib/ui/work-menu/ScreenActions.svelte', reason: 'The media menu preview demonstrates installed tracks and subtitle language flyouts.' },
   'src/lib/ui/components/PlaybackQualityMenu.svelte': { owner: 'src/lib/ui/components/PersistentPlayer.svelte', reason: 'Playback controls read the active player session and its source capabilities.' },
   'src/lib/ui/components/SubtitleSearchDialog.svelte': { owner: 'src/lib/ui/work-menu/ScreenActions.svelte', reason: 'The advanced search is reached from the media menu preview.' },
@@ -73,6 +76,7 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
 
 /** These thin routes delegate presentation to registered detail compositions. */
 export const delegatedReferenceRoutes: Record<string, readonly string[]> = {
+  'src/routes/profile/[username]/+page.svelte':['src/lib/profile/Details.svelte'],
   'src/routes/people/[id]/+page.svelte':['src/lib/media/PersonDetails.svelte'],
   'src/routes/media/reading-collection/[id]/+page.svelte':['src/lib/reading/GroupDetails.svelte'],
   'src/routes/games/[id]/+page.svelte':['src/lib/games/Details.svelte'],

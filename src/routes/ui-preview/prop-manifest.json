@@ -204,6 +204,14 @@
         "bindable": false,
         "kind": "data",
         "nullable": false
+      },
+      {
+        "name": "preview",
+        "type": "Snippet<[string|null, Snippet]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
       }
     ]
   },
@@ -984,6 +992,16 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      },
+      {
+        "name": "preserveHero",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -1265,7 +1283,7 @@
     "props": [
       {
         "name": "items",
-        "type": "{ label: string; value: string }[]",
+        "type": "{ label: string; value: string | null; detail?: string }[]",
         "optional": false,
         "bindable": false,
         "kind": "data",
@@ -1413,18 +1431,21 @@
       },
       {
         "name": "initialView",
-        "type": "'accepted'|'pending'|'party'",
+        "type": "FriendView",
         "optional": true,
         "bindable": false,
-        "kind": "select",
+        "kind": "data",
         "nullable": false,
-        "choices": [
-          "accepted",
-          "pending",
-          "party"
-        ],
         "defaultSource": "'accepted'",
         "defaultValue": "accepted"
+      },
+      {
+        "name": "onselectView",
+        "type": "(value:FriendView)=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },
@@ -2073,6 +2094,22 @@
         "nullable": false
       },
       {
+        "name": "primaryMenuLabel",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "primaryMenuIcon",
+        "type": "import('./Icon.svelte').IconName",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
         "name": "activityTrailing",
         "type": "import('svelte').Snippet",
         "optional": true,
@@ -2185,6 +2222,15 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "artwork",
+        "type": "(string|null|undefined)[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
       },
       {
         "name": "before",
@@ -2340,6 +2386,68 @@
         ],
         "defaultSource": "'left'",
         "defaultValue": "left"
+      },
+      {
+        "name": "identity",
+        "type": "{ id: string; title: string; subtitle?: string; description?: string; backdrop?: string | null; poster?: string | null; position?: number; positionX?: number }",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "logoCard",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "titleField",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "overviewField",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "moveBackground",
+        "type": "(position: { x: number; y: number }) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "segments",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "size",
+        "type": "'standard' | 'compact'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "standard",
+          "compact"
+        ],
+        "defaultSource": "'standard'",
+        "defaultValue": "standard"
       }
     ]
   },
@@ -2435,6 +2543,14 @@
       },
       {
         "name": "heroActions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "heroContent",
         "type": "Snippet",
         "optional": true,
         "bindable": false,
@@ -2577,7 +2693,7 @@
     "props": [
       {
         "name": "items",
-        "type": "{ label: string; value: string | number; detail?: string; text?: boolean }[]",
+        "type": "{ label: string; value: string | number | null; detail?: string; text?: boolean }[]",
         "optional": false,
         "bindable": false,
         "kind": "data",
@@ -2617,8 +2733,24 @@
         "nullable": false
       },
       {
+        "name": "initialSegment",
+        "type": "NotificationFilters['segment']",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
         "name": "onclose",
         "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onselectView",
+        "type": "(value:NotificationFilters['segment'])=>void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
@@ -3005,6 +3137,16 @@
         "defaultValue": false
       },
       {
+        "name": "backgroundCleared",
+        "type": "boolean",
+        "optional": true,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
         "name": "profile",
         "type": "ProfileSettings",
         "optional": false,
@@ -3019,44 +3161,21 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
-      }
-    ]
-  },
-  "ProfileFeatureEditor": {
-    "path": "src/lib/ui/components/ProfileFeatureEditor.svelte",
-    "props": [
-      {
-        "name": "open",
-        "type": "boolean",
-        "optional": false,
-        "bindable": true,
-        "kind": "boolean",
-        "nullable": false,
-        "defaultSource": "$bindable(false)",
-        "defaultValue": false
       },
       {
-        "name": "mediaId",
-        "type": "string",
-        "optional": false,
+        "name": "avatarPreview",
+        "type": "Snippet<[string | null, Snippet]>",
+        "optional": true,
         "bindable": false,
-        "kind": "text",
+        "kind": "snippet",
         "nullable": false
       },
       {
-        "name": "title",
-        "type": "string",
+        "name": "children",
+        "type": "Snippet<[ProfileEditFields | undefined]>",
         "optional": false,
         "bindable": false,
-        "kind": "text",
-        "nullable": false
-      },
-      {
-        "name": "note",
-        "type": "string",
-        "optional": false,
-        "bindable": false,
-        "kind": "text",
+        "kind": "snippet",
         "nullable": false
       }
     ]
@@ -4299,18 +4418,21 @@
       },
       {
         "name": "initialView",
-        "type": "'now'|'history'|'links'",
+        "type": "StreamsView",
         "optional": true,
         "bindable": false,
-        "kind": "select",
+        "kind": "data",
         "nullable": false,
-        "choices": [
-          "now",
-          "history",
-          "links"
-        ],
         "defaultSource": "'now'",
         "defaultValue": "now"
+      },
+      {
+        "name": "onselectView",
+        "type": "(value:StreamsView)=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },

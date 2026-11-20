@@ -483,12 +483,17 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     },
 
     get filters(): ShelfControl[] {
+      const value = getOptions().entitySegments ? entity : getOptions().segments ? segment : selection;
+      const options = getOptions().entitySegments ? entities : getOptions().segments
+        ? librarySegments.filter(option => surface !== 'listen' || ['all','later','favourites'].includes(option.value))
+        : selections;
+      const empty = ready && !busy && !failure && content.total === 0;
       return [
         {
           type: 'segments' as const,
           label: `${title} selection`,
-          value: getOptions().entitySegments?entity:getOptions().segments?segment:selection,
-          options: getOptions().entitySegments?entities:getOptions().segments?librarySegments.filter(option=>surface!=='listen'||['all','later','favourites'].includes(option.value)):selections,
+          value,
+          options: options.map(option => empty && option.value === value ? { ...option, disabled: true } : option),
           change: (value: string) => {
             if(getOptions().entitySegments){if(surface==='listen'){selection=value;if(value==='artist'||value==='playlist')collection=false;if(value==='artist')scope='all';}else kind=value as typeof kind;segment='all';genreOverride='';relationship='all';source='all';}
             else if(getOptions().segments){segment=value as LibrarySegment;selection=surface==='listen'?selection:'all';if(surface==='listen'&&selection==='artist'&&segment!=='all')selection='all';}

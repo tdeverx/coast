@@ -2,6 +2,7 @@ import { browserDiagnostic, diagnosticHeaders, receiveDiagnosticLevel } from './
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
+import { detailPanelHref, panelAddress } from '#lib/media/detail-target.js';
 
 let playbackApi = '/api/v1/';
 let playbackApiRevision = 0;
@@ -175,7 +176,12 @@ export const message = (error: unknown) =>
  * an overlay is open, so a write/session refresh cannot close the user's panel. */
 export async function refreshRouteDependencies(dependencies: readonly string[] | 'all') {
   if (dependencies !== 'all' && !dependencies.length) return;
-  if (page.state.mediaDetailHref || page.state.friendsPopover || page.state.notificationPopover || page.state.streamsPopover)
+  const { state } = page;
+  const url = panelAddress(page);
+  if (detailPanelHref(url, state)
+    || (state.friendsPopover ?? url.searchParams.get('friends') === 'true')
+    || (state.notificationPopover ?? url.searchParams.get('notifications') === 'true')
+    || (state.streamsPopover ?? url.searchParams.get('streams') === 'true'))
     await refreshAll();
   else if (dependencies === 'all') await refreshAll();
   else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));

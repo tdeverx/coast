@@ -36,6 +36,14 @@ export async function withReadCancellation<T>(signal: AbortSignal | undefined, r
         read.queries.clear();
     }
 }
+/** Associate a lazy native query with its current read owner before awaiting it. */
+export function trackReadQuery<T extends Query>(start: () => T): T {
+    const read = reads.getStore();
+    read?.signal.throwIfAborted();
+    const query = start();
+    read?.queries.add(query);
+    return query;
+}
 /** Keep native lazy queries and values()/JSON handling intact. Cancellation is
  * tied to each query handle, never a pooled backend PID. Transaction callbacks
  * receive the same wrapper so Collection's reserved connection is covered. */
@@ -44,11 +52,7 @@ export function cancellableReads<T extends SQL>(client: T): T {
         get(target, property) {
             if (property === 'unsafe')
                 return (...args: Parameters<SQL['unsafe']>) => {
-                    const read = reads.getStore();
-                    read?.signal.throwIfAborted();
-                    const query = target.unsafe(...args);
-                    read?.queries.add(query);
-                    return query;
+                    return trackReadQuery(() => target.unsafe(...args));
                 };
             const value = Reflect.get(target, property, target);
             if (property === 'begin' && typeof value === 'function')

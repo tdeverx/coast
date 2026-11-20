@@ -14,6 +14,8 @@
   --control-height: 36px;
   --control-compact-height: 32px;
   --control-hero-height: 44px;
+  --segment-inset: 4px;
+  --segment-height: calc(var(--control-compact-height) + 2 * var(--segment-inset));
   --media-surface-hover-scale: 1.02;
   --media-card-radius: 12px;
   --media-surface-edge-width: 1.5px;
@@ -396,7 +398,7 @@ form.stack,
   margin-inline: calc(-1 * var(--menu-inset));
   border-block-start: var(--menu-divider-stroke);
 }
-.segmented-control { position: relative; isolation: isolate; display: inline-flex; border: 0; border-radius: 999px; padding: 4px; background: color-mix(in srgb, var(--white) 5%, transparent); }
+.segmented-control { position: relative; isolation: isolate; display: inline-flex; border: 0; border-radius: 999px; padding: var(--segment-inset); background: color-mix(in srgb, var(--white) 5%, transparent); }
 .media-surface-edge::after {content:'';position:absolute;inset:0;border:var(--media-surface-edge-width) solid var(--white);border-radius:inherit;pointer-events:none;mix-blend-mode:overlay;z-index:0;box-sizing:border-box;opacity:var(--media-surface-edge-opacity);}
 .segmented-control.glass { background: var(--coast-glass-fill); }
 .segmented-control > a, .segmented-control > button {
@@ -525,8 +527,8 @@ form.stack,
 .section {
   margin-top: 42px;
 }
-[data-hero-id] + .content > .section:first-child,
-[data-hero-id] + .content > [data-shelf]:first-child > .section {
+:is([data-hero-id], .hero-editor:has(> [data-hero-id])) + .content > .section:first-child,
+:is([data-hero-id], .hero-editor:has(> [data-hero-id])) + .content > [data-shelf]:first-child > .section {
   margin-top: 0;
 }
 .panel {
@@ -727,6 +729,12 @@ form.stack,
     opacity: 1;
   }
 }
+.detail-presentation {
+  --detail-background: color-mix(in srgb, var(--canvas) 82%, var(--artwork-colour, var(--canvas)));
+  background: var(--detail-background);
+  min-height: var(--detail-viewport-height, 100%);
+}
+
 .route-content {
   animation: appear var(--motion) var(--ease);
 }

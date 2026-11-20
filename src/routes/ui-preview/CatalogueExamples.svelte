@@ -1,5 +1,6 @@
 <script lang="ts">
   import {useClient} from '#lib/ui/client-context.js';
+  import { requestFeedCard } from '#lib/library-feed.js';
   const delivery=useClient().feedback;
   import { providePreviewPlayback } from '#lib/playback/context.svelte.js';
   import MediaDetails from '#lib/ui/components/MediaDetails.svelte';
@@ -106,7 +107,9 @@
   {:else if name === 'catalogue.status'}
     {#if scenario === 'edition'}<section class="row edition-details" aria-label="Selected edition"><div><h2>Original edition</h2><p class="small">Preview Jellyfin</p></div><Button icon="play" onclick={() => delivery.notify('Preview playback requested.')}>Play this edition</Button><Button emphasis="subtle" href="/media/preview">All details</Button></section>
     {:else if scenario === 'missing-demand'}<section class="section"><Button emphasis="subtle" onclick={() => selected = !selected}>{selected ? 'Hide' : 'Show'} missing and uncertain items</Button>{#if selected}<ul><li><a href="/media/preview">Preview series · Season two</a> · No accessible source · Availability uncertain · Release date unknown</li></ul><Pagination page={1} pages={1} onchange={() => {}} label="Missing demand pages" />{/if}</section>
-    {:else}<Shelf title="Your requests" items={[movie]} layout="grid" availability={false}>{#snippet details()}<div class="request-details stack"><span class="badge" class:available={scenario === 'available'}>{scenario === 'available' ? 'Available' : 'Pending approval'}</span><p class="small">Preview Seerr · 4K · Seasons 1, 2</p><p class="small">Requested 1 October 2026</p>{#if scenario !== 'available'}<Button danger onclick={() => delivery.notify('Preview cancellation acknowledged.')}>Cancel request</Button>{/if}</div>{/snippet}</Shelf>{/if}
+    {:else}<Shelf title="Requests" shape="fanart" availability={false} items={[requestFeedCard(movie, {
+      id, state: 'pending', destination: 'Preview Seerr', createdAt: '2026-10-01T12:00:00Z',
+    })]} />{/if}
 
   {:else if name === 'catalogue.history'}
     {#if scenario === 'game-table'}<GameDetails data={gameData} />
@@ -130,7 +133,5 @@
   .catalogue-examples { min-width: 0; }
   .progress-preview {width:100%;}
   .edition-details { padding: 24px 0; }
-  .request-details { gap: 10px; margin-top: 14px; align-items: start; }
-  .request-details p { overflow-wrap: anywhere; }
 
 </style>

@@ -6,6 +6,7 @@ import {activityFeed,workSocial,reactionSummary} from '../src/lib/social/queries
 import {canView} from '../src/lib/social/privacy.server';
 import {startCheckin,cancelCheckin,finishCheckin,completeCheckin} from '../src/lib/social/presence.server';
 import {friendInsights} from '../src/lib/social/insights.server';
+import {profileUser} from '../src/lib/server/queries/profile-user';
 import {reconcileProviderValue} from '../src/lib/sync/values.server';
 import {track} from '../src/lib/core/tracking/service.server';
 import {addListItem} from '../src/lib/core/lists/service.server';
@@ -18,11 +19,14 @@ run('case-insensitive requests are deduplicated and default sharing is friends o
  const requests=await Promise.all([requestFriend(ids[0],{username:(prefix+'-1').toUpperCase()}),requestFriend(ids[0],{username:prefix+'-1'})]);
  expect(requests[0].id).toBe(requests[1].id);friendId=requests[0].id;
  expect((await friends(ids[0],1,'pending')).map(friend=>friend.id)).toEqual([friendId]);
+ expect((await profileUser(prefix+'-1',ids[0])).canCompareTaste).toBe(false);
  expect(await friends(ids[0],1,'accepted')).toHaveLength(0);
  await expect(changeFriend(ids[0],friendId,{action:'accept'})).rejects.toThrow();
  await changeFriend(ids[1],friendId,{action:'accept'});expect(await canView(ids[0],ids[1],'activity')).toBe(true);
  expect(await friends(ids[0],1,'pending')).toHaveLength(0);
  expect((await friends(ids[0],1,'accepted')).map(friend=>friend.id)).toEqual([friendId]);
+ expect((await profileUser(prefix+'-1',ids[0])).canCompareTaste).toBe(true);
+ expect((await profileUser(prefix+'-1',ids[2])).canCompareTaste).toBe(false);
  expect(await canView(ids[0],null,'activity')).toBe(false);
 });
 run('canonical activity appears once and private categories cannot leak through indicators',async()=>{
@@ -152,7 +156,10 @@ run('taste and overlap respect privacy and reaction reads retain only one select
  const summary=await reactionSummary(ids[0],'work',[work]);
  expect(summary[work].filter(r=>r.mine).map(r=>r.emoji)).toEqual(['🔥']);
  await getSql()`update users set settings=${{social:{sections:{insights:'private'}}}}::jsonb where id=${ids[0]}`;
- try{await expect(friendInsights(ids[1],ids[0])).rejects.toThrow();}
+ try{
+  expect((await profileUser(prefix+'-0',ids[1])).canCompareTaste).toBe(false);
+  await expect(friendInsights(ids[1],ids[0])).rejects.toThrow();
+ }
  finally{await getSql()`update users set settings='{}'::jsonb where id=${ids[0]}`;}
 });
 run('a live response from a replaced account cannot write tracking or baselines',async()=>{
@@ -212,6 +219,9 @@ run('Activity audience and type filters apply before paging without widening fri
   await db`insert into social_activity(user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${viewer},${work},'rating','ratings','coast','audience-rating',${new Date(now-200_000)})`;
   const all=await activityFeed(viewer,{category:'screen'});expect(all.events).toHaveLength(60);expect(all.hasMore).toBe(true);expect(all.events.every(event=>event.userId===viewer)).toBe(true);
   const friendsOnly=await activityFeed(viewer,{category:'screen',audience:'friends'});expect(friendsOnly.events.map(event=>event.userId)).toEqual([friend]);
+  const publicProfile=await activityFeed(viewer,{category:'screen',profileId:stranger});
+  expect(publicProfile.events.map(event=>event.userId)).toEqual([stranger]);
+  expect((await activityFeed(viewer,{category:'screen',profileId:privateFriend})).events).toHaveLength(0);
   const mine=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'consumed',mediaKind:'movie'});expect(mine.events).toHaveLength(60);expect(mine.hasMore).toBe(true);expect(mine.events.every(event=>event.userId===viewer)).toBe(true);
   const next=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'consumed',mediaKind:'movie',...mine.next!});expect(next.events).toHaveLength(5);expect(next.hasMore).toBe(false);
   const rated=await activityFeed(viewer,{category:'screen',audience:'you',activityType:'ratings'});expect(rated.events).toHaveLength(1);expect(rated.events[0].eventKind).toBe('rating');

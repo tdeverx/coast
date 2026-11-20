@@ -36,7 +36,7 @@ test('a calculation compiles each affinity once and reuses it without retaining 
  let reads=0;
  const profile={version:1 as const,works:300,dimensions:Object.fromEntries(tasteDimensions.map(dimension=>[dimension,Array.from({length:500},(_,index)=>({get id(){reads++;return String(index);},name:String(index),value:index%2?.5:-.5,samples:3}))]))};
  const score=compileTasteScorer(profile);
- expect(reads).toBe(6000);
+ expect(reads).toBe(tasteDimensions.length * 500);
  const features=Object.fromEntries(tasteDimensions.map(dimension=>[dimension,[{id:'1',name:'One'}]]));
  const expected=scoreTaste(profile,features);
  const indexed=reads;

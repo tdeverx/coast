@@ -39,12 +39,17 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
   let currentPage = $state(initial.page ?? 1);
   const resource = createResource<DiscoveryContent>(initial.initial ?? { items: [], failure: '' }, !!initial.initial);
   const cached = new Map<string, DiscoveryContent>();
+  let emptySurfaces = $state<DiscoverySurface[]>([]);
   const title = $derived(discoveryTitles[get().section]);
   function cacheKey() { return surface === 'read' ? `${surface}:${kind}:${currentPage}` : surface; }
   function remember(result: DiscoveryContent) {
     if (result.failure)
       return;
     cached.set(cacheKey(), result);
+    if (surface !== 'read' || kind === 'all' && currentPage === 1) {
+      const previouslyEmpty = emptySurfaces.filter(value => value !== surface);
+      emptySurfaces = result.items.length ? previouslyEmpty : [...previouslyEmpty, surface];
+    }
     while (cached.size > 20)
       cached.delete(cached.keys().next().value!);
   }
@@ -169,6 +174,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
       if (!canFilterAvailability()) available = false;
       if(withdrawn&&option.scoped){
         cached.clear();
+        emptySurfaces = [];
         refresh.clear();
         resource.replace({items:[],failure:''});
         return;
@@ -192,6 +198,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
 
       const activated = resource.activated || resource.ready;
       cached.clear();
+      emptySurfaces = [];
       if (
         initialChanged && current && surface === (option.surface ?? 'watch')
         && (surface !== 'read' || kind === (option.kind ?? 'all') && currentPage === (option.page ?? 1))
@@ -246,7 +253,8 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
           type: 'segments' as const,
           label: `${title} medium`,
           value: surface,
-          options: discoverySegments.filter((option) => surfaceAvailable(option.value)),
+          options: discoverySegments.filter(option => surfaceAvailable(option.value))
+            .map(option => ({ ...option, disabled: emptySurfaces.some(value => value === option.value) })),
           change: select
         }],
 

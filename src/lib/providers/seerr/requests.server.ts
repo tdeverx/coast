@@ -513,7 +513,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
           .where(inArray(media.id,[...new Set(notices.map(notice=>notice.mediaId))]))).map(row=>[row.id,row.title]):[]);
         await notifyMany(notices.map(notice=>({userId,kind:'request',title:requestNoticeTitles[notice.state],
           body:[titles.get(notice.mediaId),notice.state==='processing'?'Coast will notify you when it is ready to watch.':undefined].filter(Boolean).join(' · ')||undefined,
-          sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state==='available'?'playable':notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:'/requests' as const}})),tx);
+          sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state==='available'?'playable':notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:`/media/${notice.mediaId}`}})),tx);
         await retain(tx,complete?{...point,phase:page.results.length<100?'missing':'scanning',offset:point.offset+100,next:0,after:null}:{...point,next});
         if(complete&&execution)await tx.delete(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id));
       });

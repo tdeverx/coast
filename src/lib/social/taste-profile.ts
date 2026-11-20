@@ -1,11 +1,20 @@
-export const tasteDimensions = ['genres','tags','themes','cast','directors','writers','franchises','developers','publishers','mechanics','perspectives','artists'] as const;
+export const tasteMedia = [
+ {value:'movie',comparison:'movies',label:'Movies',category:'screen'},
+ {value:'show',comparison:'tv',label:'Shows',category:'screen'},
+ {value:'music',comparison:'music',label:'Music',category:'music'},
+ {value:'game',comparison:'game',label:'Games',category:'game'},
+ {value:'book',comparison:'book',label:'Books',category:'book'},
+ {value:'comic',comparison:'comic',label:'Comics',category:'comic'},
+] as const;
+export type TasteMedium = typeof tasteMedia[number]['value'];
+export const tasteDimensions = ['genres','tags','themes','cast','directors','writers','illustrators','franchises','developers','publishers','mechanics','perspectives','artists','studios','networks','languages','countries'] as const;
 export type TasteDimension = typeof tasteDimensions[number];
 export type TasteFeature = {id:string;name:string};
 export type TasteFeatures = Partial<Record<TasteDimension,TasteFeature[]>>;
 export type TasteEvidence = {id:string;weight:number;features:TasteFeatures};
 export type TasteAffinity = TasteFeature & {value:number;samples:number};
 export type TasteProfile = {version:1;works:number;dimensions:Partial<Record<TasteDimension,TasteAffinity[]>>};
-const weights:Record<TasteDimension,number> = {genres:25,tags:20,themes:15,cast:8,directors:15,writers:10,franchises:10,developers:12,publishers:3,mechanics:15,perspectives:8,artists:25};
+const weights:Record<TasteDimension,number> = {genres:25,tags:20,themes:15,cast:8,directors:15,writers:10,illustrators:10,franchises:10,developers:12,publishers:3,mechanics:15,perspectives:8,artists:25,studios:5,networks:5,languages:3,countries:3};
 export function namedFeatures(names:string[]):TasteFeature[]{
  return [...new Set(names.map(name=>name.trim()).filter(Boolean))].slice(0,100).map(name=>({id:name.toLocaleLowerCase('en-US'),name}));
 }

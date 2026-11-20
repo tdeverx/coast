@@ -5,12 +5,20 @@ export type InterestWork={id:string;category:DynamicMedium;kind:DynamicKind|'tra
 export async function interestWorks(userId:string|null,category?:DynamicMedium){
  return getSql()<InterestWork[]>`with signals as (
   select t.user_id,t.media_id as id,t.updated_at as updated,
-   case when t.dropped then -6 when t.favourite then 5 when t.watched then 3 else 1 end::float as weight,
+   case when t.dropped then -6 when t.favourite then 5 when t.play_count>1 then 4
+    when t.watched or t.play_count>0 then 3 when t.position_seconds>0 then 2 else 1 end::float as weight,
    t.watched as consumed,t.favourite as positive
-  from tracking_state t join users u on coast_feature_enabled(u.id,'personalisation') and u.id=t.user_id and not u.disabled where (${userId}::uuid is null or t.user_id=${userId}) and (t.dropped or t.watched or t.favourite or t.watchlist)
-  union all select p.user_id,p.work_id,p.updated_at,case when p.state='dropped' then -6 when p.state='completed' then 3 when p.state='reading' then 2 else 1 end,p.state='completed',false from reading_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
+  from tracking_state t join users u on coast_feature_enabled(u.id,'personalisation') and u.id=t.user_id and not u.disabled where (${userId}::uuid is null or t.user_id=${userId}) and (t.dropped or t.watched or t.favourite or t.watchlist or t.position_seconds>0 or t.play_count>0)
+  union all select p.user_id,p.work_id,p.updated_at,case when p.state='dropped' then -6 when p.state='completed' then 3 when p.state in ('reading','paused') then 2 else 1 end,p.state='completed',false from reading_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
   union all select r.user_id,r.media_id,r.updated_at,case when r.value<2.5 then -5 when r.value>=3.5 then 5 else 0 end,false,r.value>=3.5 from ratings r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where (${userId}::uuid is null or r.user_id=${userId})
-  union all select p.user_id,p.game_id,p.updated_at,case when p.status='dropped' then -6 when p.status='completed' then 3 when p.status='in-progress' then 2 else 1 end,p.status='completed',false from (select distinct on(user_id,game_id) * from game_playthroughs where (${userId}::uuid is null or user_id=${userId}) order by user_id,game_id,created_at desc,id desc) p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
+  union all select p.user_id,p.game_id,p.updated_at,case when p.status='dropped' then -6 when p.status='completed' then 3 when p.status in ('in-progress','paused') then 2 else 1 end,p.status='completed',false from (select distinct on(user_id,game_id) * from game_playthroughs where (${userId}::uuid is null or user_id=${userId}) order by user_id,game_id,created_at desc,id desc) p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
+  union all select c.user_id,g.game_id,max(coalesce(g.last_played_at,g.observed_at)),
+    case when max(g.minutes_played)>=60 then 3 else 2 end,false,false
+  from game_account_state g join provider_connections c on c.sync_account_id=g.account_id and c.status='connected'
+  join provider_instances i on i.id=c.instance_id and i.provider='steam' and i.enabled
+  join users u on u.id=c.user_id and not u.disabled and coast_feature_enabled(u.id,'personalisation')
+  where ${category??'all'} in ('all','game') and (${userId}::uuid is null or c.user_id=${userId}) and g.minutes_played>0
+  group by c.user_id,g.game_id
   union all select p.user_id,p.track_id,p.updated_at,case when p.play_count>=3 then 4 when p.play_count>0 then 3 else 1 end,p.play_count>0,false from music_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId}) and (p.play_count>0 or p.position_seconds>0)
   union all select l.user_id,l.track_id,max(l.occurred_at),case when count(*)>=3 then 4 else 3 end,true,false from music_listens l join users u on coast_feature_enabled(u.id,'personalisation') and u.id=l.user_id and not u.disabled where (${userId}::uuid is null or l.user_id=${userId}) group by l.user_id,l.track_id
   union all select r.user_id,r.target_id,r.updated_at,case when r.emoji in ('❤️','🔥') then 4 else 0 end,false,r.emoji in ('❤️','🔥') from social_reactions r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where coast_feature_enabled(r.user_id,'social') and r.target_kind='work' and (${userId}::uuid is null or r.user_id=${userId})
