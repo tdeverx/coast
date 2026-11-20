@@ -13,7 +13,7 @@
     },
     "src/lib/playback/service.server.ts": {
       "previous": "e85857ccf9704052c9c116f2fb8994f5190dbd715fc24ce2308022fac445111c",
-      "current": "2499c0893bb62e6041621056e2fd783937558b383df3fe1b5feab519e9bb4d01"
+      "current": "953a795d8902847985b61b027b824379f9bec99073a84c754e1003e5e5e9d559"
     },
     "src/lib/providers/jellyfin/adapter.server.ts": {
       "previous": "64be9dc33e7869d7764ada37ac88155f23c1d765f7d059995e760d77758afb5e",
@@ -90,8 +90,12 @@
     "tests/performance-audit-register.test.ts": {
       "previous": "607f92d8c11a76f9a92955a9fc27292c2c8927c1e1cb11edfadce2202c8e73c1",
       "current": "bf5b779e5cd5b7df9a9d7015ecdad84482b6ba2cb0e9ddc6fe555630de02bc67"
+    },
+    "tests/playback-generation-db.test.ts": {
+      "previous": "b1fd3f894ef95d4b78ac2184dc920d173a283685d5df4d040c6917143ed634c0",
+      "current": "13b9ba459eb232382f0a683ff48316a78494b0f07f6cbe3faadbcaf1812c3d10"
     }
   },
   "report": "docs/audits/2026-11-20-live-error-followup.md",
-  "reportSha256": "40624aae95809858e6da96ae99aac4421a7698f84c5539e6111f46e8e179cf47"
+  "reportSha256": "91d970e1eb8770aeb6fb0a55065c9411f5979abef81d52d22155d438f3f408cf"
 }

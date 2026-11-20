@@ -34,7 +34,7 @@ import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { instanceFetchConfig, instanceServerUrl } from '#lib/providers/instances.server.js';
 import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
-import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { ProviderHttpError, secureProviderFetch } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { logDiagnostic, classifyFailure, context, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
@@ -365,6 +365,7 @@ async function preparePlayback(
   const playbackChange = share ? 'shared' : previous ? 'reconfigure' : fallback ? 'fallback' : 'start';
   let providerBusy: ProviderQueueBusyError | undefined;
   let providerFailed = false;
+  let providerInterrupted = false;
   const sourceFailures = new Set<'no-provider-source' | 'selected-version' | 'duration' | 'device-policy'>();
   for (const row of rows) {
     signal?.throwIfAborted();
@@ -433,9 +434,12 @@ async function preparePlayback(
         continue;
       }
       providerFailed = true;
+      const failure = classifyFailure(error);
+      providerInterrupted ||= failure === 'network' || failure === 'timeout' ||
+        error instanceof ProviderHttpError && error.status >= 500;
       void logDiagnostic('warn', 'playback.failed', {
         stage: 'source-negotiation', provider: 'jellyfin', mediaType, playbackChange,
-        failure: classifyFailure(error), errorCode: diagnosticErrorCode(error),
+        failure, errorCode: diagnosticErrorCode(error),
       });
     }
   }
@@ -445,17 +449,21 @@ async function preparePlayback(
   const best = candidates[0];
   if (!best && providerBusy) throw providerBusy;
   if (!best) {
-    if (providerFailed) throw new AppError(503, 'Coast could not check the connected playback sources. Try again shortly.');
+    if (providerInterrupted) throw new AppError(503, 'Coast could not check the connected playback sources. Try again shortly.');
+    const fallbackMessage = fallback ? 'No other playable copy matches this version.' : data.expectedDuration !== undefined
+      ? 'No accessible source matches the synced session edition and duration.'
+      : undefined;
+    const policyMessage = 'No available version can play on this device under the current playback policy.';
+    if (providerFailed) throw new Error(fallbackMessage ?? policyMessage);
     const sourceFailure = sourceFailures.size === 1 ? sourceFailures.values().next().value : 'mixed';
     void logDiagnostic('info', 'playback.failed', {
       stage: 'source-negotiation', provider: 'jellyfin', mediaType, playbackChange,
       sourceFailure, status: 404, negotiationMs,
     });
-    const message = fallback ? 'No other playable copy matches this version.' : data.expectedDuration !== undefined
-      ? 'No accessible source matches the synced session edition and duration.'
-      : sourceFailure === 'no-provider-source' ? 'Jellyfin has no playable stream for this title.'
+    const message = fallbackMessage ?? (
+      sourceFailure === 'no-provider-source' ? 'Jellyfin has no playable stream for this title.'
       : sourceFailure === 'selected-version' ? 'The selected playback version is no longer available.'
-      : 'No available version can play on this device under the current playback policy.';
+      : policyMessage);
     throw new AppError(404, message, 'playback_source_unavailable');
   }
   const { source } = best.plan;
