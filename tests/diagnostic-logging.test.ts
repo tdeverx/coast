@@ -51,6 +51,12 @@ test('local provider admission pressure is logged distinctly from provider failu
   expect(safeFields({failure:'local-busy',errorCode:'local.provider-busy',message:'private request'}))
     .toEqual({failure:'local-busy',errorCode:'local.provider-busy'});
 });
+test('DNS and socket errors retain a safe network classification through wrappers', () => {
+  const cause = Object.assign(new Error('private provider host'), { code: 'ENOTFOUND' });
+  const wrapped = new Error('private provider request', { cause });
+  expect(classifyFailure(wrapped)).toBe('network');
+  expect(safeFields({ errorCode: diagnosticErrorCode(wrapped), message: cause.message })).toEqual({ errorCode: 'ENOTFOUND' });
+});
 test('normal playback traffic stays quiet at Info while slow requests and failures retain safe context', () => {
   const route = (path: string) => requestDiagnostics(new URL(path, 'https://fixture.invalid'));
   expect(route('/api/v1/playback/PRIVATE/stream?token=SECRET')).toEqual({ operation: 'playback', requestAction: 'stream' });
@@ -61,6 +67,7 @@ test('normal playback traffic stays quiet at Info while slow requests and failur
   expect(route('/api/v1/playback/PRIVATE')).toEqual({ operation: 'playback', requestAction: 'restore' });
   expect(route('/api/v1/media/details?href=PRIVATE&enhance=true')).toEqual({ operation: 'media', requestAction: 'details-enhance' });
   expect(route('/_app/immutable/PRIVATE.js')).toEqual({ operation: 'other', requestAction: 'asset' });
+  expect(route('/api/v1/profile/avatar/PRIVATE/PRIVATE')).toEqual({ operation: 'profile', requestAction: 'avatar' });
   expect(requestDiagnosticLevel(206, 35, 'stream')).toBe('debug');
   expect(requestDiagnosticLevel(200, 1100, 'stream')).toBe('info');
   expect(requestDiagnosticLevel(499, 1100, 'stream')).toBe('debug');

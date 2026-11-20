@@ -930,15 +930,26 @@ suite('application PostgreSQL read models', () => {
     expect((await requestList(c,1,undefined,{state:'approved',kind:'show'})).total).toBe(0);
     expect(first.requests.every(row=>row.requester.username)).toBe(true);
     await expect(requestList(c,1,undefined,{allUsers:true})).rejects.toMatchObject({status:403});
+    const [requester] = await getDb().select({settings:s.users.settings}).from(s.users).where(eq(s.users.id,b));
+    const avatar = '/fixture-private-avatar.gif';
+    await getDb().update(s.users).set({settings:{...requester.settings,
+      profile:{...requester.settings.profile,avatar},
+      social:{...requester.settings.social,sections:{...requester.settings.social?.sections,details:'private'}},
+    }}).where(eq(s.users.id,b));
     await getDb().update(s.users).set({role:'admin'}).where(eq(s.users.id,a));
     try{
       const admin=await requestList(a,1,undefined,{allUsers:true});
       expect(admin.total).toBe(62);
       expect(admin.requests.some(row=>row.userId===b)).toBe(true);
       expect(admin.requests.some(row=>row.userId===c)).toBe(true);
+      expect(admin.requests.find(row=>row.userId===b)?.requester.avatar).toBeUndefined();
+      expect((await requestList(b)).requests[0].requester.avatar).toBe(avatar);
       expect((await requestList(a,1,requests[0].id)).total).toBe(0);
       expect((await requestList(a,1,requests[0].id,{allUsers:true})).requests[0].requester.username).toBeTruthy();
-    }finally{await getDb().update(s.users).set({role:'user'}).where(eq(s.users.id,a));}
+    }finally{
+      await getDb().update(s.users).set({role:'user'}).where(eq(s.users.id,a));
+      await getDb().update(s.users).set({settings:requester.settings}).where(eq(s.users.id,b));
+    }
 
   });
   test('recent library selects accessible identities before paging and ignores metadata refresh recency',async()=>{

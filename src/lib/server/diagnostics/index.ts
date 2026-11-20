@@ -10,6 +10,7 @@ import {
   safeFields,
   correlationId,
   knownDiagnosticId,
+  networkDiagnosticCodes,
   systemDiagnosticCodes,
   type DiagnosticLevel,
   type DiagnosticEvent,
@@ -229,5 +230,7 @@ export function classifyFailure(error: unknown) {
   if (error instanceof Error && error.name === 'TimeoutError') return 'timeout';
   if (error instanceof Error && error.name === 'AbortError') return 'aborted';
   if (error instanceof TypeError) return 'network';
+  const code = diagnosticErrorCode(error);
+  if (networkDiagnosticCodes.some(networkCode => networkCode === code)) return 'network';
   return 'unexpected';
 }

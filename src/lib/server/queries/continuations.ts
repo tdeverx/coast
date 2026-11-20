@@ -1,6 +1,6 @@
 import { nextSequenceEntries } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
-import { and, or, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, or, eq, sql, type SQL } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { permittedMediaSources } from './media';
@@ -66,63 +66,37 @@ export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly
 export async function continuationIds(userId: string, startedIds: string[], availableOnly = true, includePrivatePlaylists = true, firstEpisode = false, policy?: CoastConfig['metadataSource']) {
   const db = getDb();
   const metadataSource = policy ?? (await getConfig()).metadataSource;
-  const fields = {
-    id: s.episodes.mediaId,
-    ...rewatchFields(userId, sql`${s.episodes.mediaId}`),
-    rewatching: sql<boolean>`${rewatchBoundary(userId, sql`${s.episodes.mediaId}`)} is not null`,
-    duration: sql<number>`coalesce(${s.trackingState.durationSeconds}, 0)`,
-    dropped: sql<boolean>`coalesce(${s.trackingState.dropped}, false)`,
-    available: availableOnly
-      ? sql<boolean>`${s.episodes.mediaId} in (select permitted.media_id from (${permittedMediaSources(userId)}) permitted)`
-      : sql<boolean>`true`,
-  };
-  const allowedParent = (
-    id:
-      | typeof s.media.id
-      | typeof s.episodes.showId
-      | typeof s.episodes.seasonId
-      | typeof s.mediaRelationships.parentId
-  ) =>
+  // Expand the viewer's tracked show and rewatch keys through the episode indexes
+  // before evaluating airtime or rewatch state on the resulting episode IDs.
+  const eligibleEpisodes = sql`select e.media_id from episodes e where e.show_id in (
+      select seed.show_id from episodes seed where seed.media_id=any(${`{${startedIds.join(',')}}`}::uuid[])
+      union select r.media_id from rewatches r where r.user_id=${userId})
+    union select e.media_id from rewatches r join episodes e on e.season_id=r.media_id where r.user_id=${userId}
+    union select r.media_id from rewatches r where r.user_id=${userId}`;
+  // Keep the membership join below the airtime and playback-state projections.
+  const scopedEpisodes = sql`(select media_id,show_id,season_id,season_number,episode_number from episodes
+    where media_id in (${eligibleEpisodes}) offset 0)`;
+  const episodeId = sql`e.media_id`;
+  const { watched, progress } = rewatchFields(userId, episodeId);
+  const available = availableOnly
+    ? sql`${episodeId} in (select permitted.media_id from (${permittedMediaSources(userId)}) permitted)`
+    : sql`true`;
+  const allowedParent = (id: SQL) =>
     sql`not exists (select 1 from tracking_state parent_state where parent_state.media_id = ${id} and parent_state.user_id = ${userId} and (parent_state.dropped or parent_state.paused))`;
   const [episodes, collections] = await Promise.all([
-    db
-      .select({
-        ...fields,
-        groupId: s.episodes.showId,
-        seasonId: s.episodes.seasonId,
-        seasonNumber: s.episodes.seasonNumber,
-        position: s.episodes.episodeNumber,
-      })
-      .from(s.episodes)
-      .leftJoin(
-        s.trackingState,
-        and(eq(s.trackingState.mediaId, s.episodes.mediaId), eq(s.trackingState.userId, userId))
-      )
-      .where(
-        and(
-          episodeHasAiredForProgress(sql`${s.episodes.mediaId}`, metadataSource),
-          or(
-            sql`exists(select 1 from rewatches r where r.user_id=${userId} and r.media_id in (${s.episodes.showId},${s.episodes.seasonId},${s.episodes.mediaId}))`,
-            inArray(
-              s.episodes.showId,
-              db
-                .select({ id: s.episodes.showId })
-                .from(s.episodes)
-                .where(inArray(s.episodes.mediaId, startedIds))
-            )
-          ),
-          allowedParent(s.episodes.showId),
-          allowedParent(s.episodes.seasonId)
-        )
-      )
-      .orderBy(asc(s.episodes.seasonNumber), asc(s.episodes.episodeNumber)),
+    db.execute<EpisodeEntry>(sql`select e.media_id as id,e.show_id as "groupId",e.season_id as "seasonId",e.season_number as "seasonNumber",
+      ${watched} as watched,${progress} as progress,${rewatchBoundary(userId,episodeId)} is not null as rewatching,
+      coalesce(tracking_state.duration_seconds,0) as duration,coalesce(tracking_state.dropped,false) as dropped,${available} as available
+      from ${scopedEpisodes} e left join tracking_state on tracking_state.media_id=e.media_id and tracking_state.user_id=${userId}
+      where ${episodeHasAiredForProgress(episodeId,metadataSource)} and ${allowedParent(sql`e.show_id`)} and ${allowedParent(sql`e.season_id`)}
+      order by e.season_number,e.episode_number`),
     db
       .select({ id: s.media.id, title: s.media.title })
       .from(s.media)
       .where(
         and(
           eq(s.media.kind, 'collection'),
-          allowedParent(s.media.id),
+          allowedParent(sql`${s.media.id}`),
           or(
             sql`exists(select 1 from rewatches r where r.user_id=${userId} and r.media_id=${s.media.id})`,
             sql`exists (with recursive descendants(id,path) as (
@@ -156,5 +130,5 @@ export async function continuationIds(userId: string, startedIds: string[], avai
     const entry=next.get(`${source.kind}:${source.id}`);
     return entry ? [{entry,source:{id:source.id,kind:source.kind},title:source.title}] : [];
   });
-  return { ...planEpisodeContinuations(episodes, availableOnly, firstEpisode), sequenceNext };
+  return { ...planEpisodeContinuations(episodes as EpisodeEntry[], availableOnly, firstEpisode), sequenceNext };
 }

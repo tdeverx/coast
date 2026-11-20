@@ -138,7 +138,7 @@
     onpointerdown={startDrag} onpointermove={dragBackground} onlostpointercapture={() => drag = undefined}></div>{/if}
   <div class="content hero-inner" class:dimmed={hero.chromeDimmed}>
     <div class="hero-copy" class:editable-copy={!!overviewField}>
-      {#if logoCard || titleLogo}<div class="title-artwork">
+      {#if logoCard || titleLogo}<div class="title-artwork" class:logo-card={!!logoCard}>
         {#if logoCard}{@render logoCard()}
         {:else}<img class="title-logo" src={titleLogo} alt="" onerror={() => (hero.logoFailed = true)} />{/if}
       </div>{/if}
@@ -229,9 +229,10 @@
     align-items: flex-end;
   }
   .title-logo {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: scale-down;
     object-position: left bottom;
   }
   .hero {
@@ -244,10 +245,9 @@
   .hero[data-alignment='center'],.hero[data-alignment='adaptive'] {--hero-center:1;--hero-copy-align:center;}
   .hero[data-alignment='adaptive'] {--hero-center:calc(1 - var(--detail-expansion,1));--hero-copy-align:var(--detail-hero-text-align,left);}
   .hero:not([data-alignment='left']) .hero-copy {width:100%;margin-inline-start:calc((100% - min(100%,768px)) * 0.5 * var(--hero-center));text-align:var(--hero-copy-align);}
-  .hero:not([data-alignment='left']) :is(h1:not(.sr-only),.title-artwork,.genres,.metadata,.overview,.hero-action-row) {position:relative;max-width:100%;left:calc(50% * var(--hero-center));transform:translateX(calc(-50% * var(--hero-center)));}
+  .hero:not([data-alignment='left']) :is(h1:not(.sr-only),.logo-card,.genres,.metadata,.overview,.hero-action-row) {position:relative;max-width:100%;left:calc(50% * var(--hero-center));transform:translateX(calc(-50% * var(--hero-center)));}
   .hero:not([data-alignment='left']) :is(h1:not(.sr-only),.genres,.metadata,.hero-action-row) {width:fit-content;}
-  .hero:not([data-alignment='left']) .title-artwork {width:min(544px,100%);justify-content:var(--hero-copy-align);}
-  .hero:not([data-alignment='left']) .title-logo {object-position:calc(50% * var(--hero-center)) bottom;}
+  .hero:not([data-alignment='left']) .logo-card {width:min(544px,100%);justify-content:var(--hero-copy-align);}
   .hero:not([data-alignment='left']) .overview {width:min(672px,100%);}
   .hero:not([data-alignment='left']) :is(.genres,.metadata,.hero-action-row) {justify-content:var(--hero-copy-align);}
   .art {

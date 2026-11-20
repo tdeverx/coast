@@ -19,6 +19,7 @@ export function requestDiagnostics(url: URL): { operation: string; requestAction
     const operation = diagnosticOperations.has(domain) ? domain : 'other';
     if (domain === 'health') return { operation, requestAction: 'health' };
     if (domain === 'artwork') return { operation, requestAction: 'asset' };
+    if (domain === 'profile' && id === 'avatar') return { operation, requestAction: 'avatar' };
     if (domain === 'playback') return { operation, requestAction: playbackAction(id, action) };
     if (domain === 'reading' && id === 'sessions') return { operation, requestAction: readerResource(resource) };
     if (domain === 'reading' && action === 'session') return { operation, requestAction: 'reader-open' };
@@ -63,7 +64,7 @@ export function requestDiagnosticLevel(status: number, durationMs: number, actio
   if ([400, 401, 403, 409, 422].includes(status) || status === 404 && action !== 'asset') return 'info';
   if (status >= 400) return 'warn';
   if (durationMs < 1000 && (action === 'stream' || action === 'share-stream' || action === 'progress' ||
-    action === 'health' || action === 'asset' || action === 'reader-page' || action === 'reader-file' || action === 'heartbeat'))
+    action === 'health' || action === 'asset' || action === 'avatar' || action === 'reader-page' || action === 'reader-file' || action === 'heartbeat'))
     return 'debug';
   return 'info';
 }

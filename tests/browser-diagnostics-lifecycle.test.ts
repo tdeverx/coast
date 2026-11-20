@@ -28,3 +28,31 @@ test('diagnostic polling has one visible request, resumes once, aborts teardown 
   doc.dispatchEvent(new Event('visibilitychange'));win.dispatchEvent(new Event('error'));tick();expect(requests).toHaveLength(2);
  }finally{stop();Object.assign(globalThis,previous);}
 });
+
+test('repeated image failures share one warning and leave runtime and stylesheet errors visible', async () => {
+ const previous={window:globalThis.window,document:globalThis.document,fetch:globalThis.fetch,Element:globalThis.Element};
+ const win=new EventTarget(),doc=Object.assign(new EventTarget(),{hidden:false});
+ class ElementFixture { constructor(readonly tagName: string) {} }
+ const reports: unknown[]=[];
+ Object.assign(globalThis,{window:win,document:doc,Element:ElementFixture,fetch:async (_url: string,init?: RequestInit)=>{
+  if(init?.body)reports.push(JSON.parse(String(init.body)));
+  return new Response(null,{headers:{'x-coast-diagnostic-level':'info'}});
+ }});
+ const stop=installBrowserDiagnostics();
+ try {
+  await settle();
+  const resourceError=(tag: string) => {
+   const event=new Event('error');
+   Object.defineProperty(event,'target',{value:new ElementFixture(tag)});
+   win.dispatchEvent(event);
+  };
+  for(let index=0;index<80;index++)resourceError('IMG');
+  resourceError('LINK');
+  win.dispatchEvent(new Event('error'));
+  expect(reports).toEqual([
+   {event:'browser.image-failed',fields:{browserSource:'image'}},
+   {event:'browser.error',fields:{failure:'unexpected',browserSource:'style'}},
+   {event:'browser.error',fields:{failure:'unexpected',browserSource:'runtime'}},
+  ]);
+ }finally{stop();Object.assign(globalThis,previous);}
+});

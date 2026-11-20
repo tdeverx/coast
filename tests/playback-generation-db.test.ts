@@ -124,6 +124,11 @@ run('ordinary provider failure retains the existing no-playable-version result',
  await expect(startPlayback(user,{mediaId:movie,browser})).rejects.toThrow('No available version can play');
  expect(await sessionRows()).toEqual([]);
 });
+run('a network interruption returns a retryable response and creates no session',async()=>{
+ onInfo=async()=>{throw Object.assign(new Error('Synthetic network interruption'),{code:'ECONNRESET'});};
+ await expect(startPlayback(user,{mediaId:movie,browser})).rejects.toMatchObject({status:503});
+ expect(await sessionRows()).toEqual([]);
+});
 
 run('already-aborted preparation does no provider work or session publication',async()=>{
  const abort=new AbortController(),reason=new DOMException('Closed','AbortError');abort.abort(reason);

@@ -34,7 +34,7 @@ import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { instanceFetchConfig, instanceServerUrl } from '#lib/providers/instances.server.js';
 import { jellyfinAuthorization } from '#lib/providers/jellyfin/adapter.server.js';
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
-import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
+import { ProviderHttpError, secureProviderFetch } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { logDiagnostic, classifyFailure, context, diagnosticErrorCode } from '#lib/server/diagnostics/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
@@ -334,8 +334,13 @@ async function preparePlayback(
       (data.edition === undefined || (row.availability.edition ?? '') === data.edition) &&
       (data.editionName===undefined||namedEdition(row.availability.edition,item.title)?.value===data.editionName)
   );
-  if (!rows.length)
+  if (!rows.length) {
+    void logDiagnostic('info', 'playback.failed', {
+      stage: 'source-negotiation', provider: 'jellyfin', mediaType,
+      sourceFailure: available.length ? 'selected-version' : 'no-library-source', status: 404,
+    });
     throw new AppError(404, 'This title is no longer available from your connected sources.', 'playback_source_unavailable');
+  }
   const candidates: {
     row: (typeof rows)[number];
     plan: PlaybackPlan;
@@ -360,6 +365,8 @@ async function preparePlayback(
   const playbackChange = share ? 'shared' : previous ? 'reconfigure' : fallback ? 'fallback' : 'start';
   let providerBusy: ProviderQueueBusyError | undefined;
   let providerFailed = false;
+  let providerInterrupted = false;
+  const sourceFailures = new Set<'no-provider-source' | 'selected-version' | 'duration' | 'device-policy'>();
   for (const row of rows) {
     signal?.throwIfAborted();
     const key = `${row.availability.connectionId}:${row.providerItem.id}`;
@@ -370,7 +377,10 @@ async function preparePlayback(
         userId,
         row.availability.connectionId
       );
-      if (previous && data.edition === undefined && connection.accountGeneration !== previous.accountGeneration) continue;
+      if (previous && data.edition === undefined && connection.accountGeneration !== previous.accountGeneration) {
+        sourceFailures.add('selected-version');
+        continue;
+      }
       await adapter.identity(instance.serverIdentity || undefined,signal);
       signal?.throwIfAborted();
       const info = await adapter.playbackInfo(
@@ -381,22 +391,30 @@ async function preparePlayback(
         {shared:!!share?.vrchatCodec,vrchatCodec:share?.vrchatCodec,deviceId:providerDeviceId,signal,quality}
       );
       signal?.throwIfAborted();
+      if (!info.sources.length) sourceFailures.add('no-provider-source');
       for (const source of info.sources) {
-        if (previous && data.edition === undefined && source.id !== previous.sourceId) continue;
-        if (data.subtitleSourceId && source.id !== data.subtitleSourceId) continue;
-        if(share?.sourceId && source.id!==share.sourceId)continue;
+        if (previous && data.edition === undefined && source.id !== previous.sourceId ||
+            data.subtitleSourceId && source.id !== data.subtitleSourceId || share?.sourceId && source.id !== share.sourceId) {
+          sourceFailures.add('selected-version');
+          continue;
+        }
         const matchesItem = (candidate: typeof row) =>
           candidate.availability.connectionId === row.availability.connectionId &&
           candidate.providerItem.id === row.providerItem.id;
         const sourceRow = rows.find(candidate => matchesItem(candidate) && candidate.availability.sourceId === source.id) ??
           rows.find(candidate => matchesItem(candidate) && candidate.availability.sourceId === 'default');
-        if (!sourceRow) continue;
-        if (fallbackEdition && namedEdition(sourceRow.availability.edition, item.title).value !== fallbackEdition) continue;
-        if (fallback?.connectionId === sourceRow.availability.connectionId &&
-          fallback.providerItemId === sourceRow.providerItem.id && fallback.sourceId === source.id) continue;
+        if (!sourceRow || fallbackEdition && namedEdition(sourceRow.availability.edition, item.title).value !== fallbackEdition ||
+            fallback?.connectionId === sourceRow.availability.connectionId &&
+            fallback.providerItemId === sourceRow.providerItem.id && fallback.sourceId === source.id) {
+          sourceFailures.add('selected-version');
+          continue;
+        }
         const duration = source.durationSeconds || sourceRow.availability.durationSeconds || 0;
         const comparableDuration = duration || (fallback ? 0 : (item.runtimeMinutes || 0) * 60);
-        if (expectedDuration !== undefined && (!comparableDuration || Math.abs(comparableDuration - expectedDuration) > 2)) continue;
+        if (expectedDuration !== undefined && (!comparableDuration || Math.abs(comparableDuration - expectedDuration) > 2)) {
+          sourceFailures.add('duration');
+          continue;
+        }
         try {
           const plan = planPlayback([share?.vrchatCodec?{...source,directPlay:false,directStream:false}:source], data.browser, {
             delivery: share || config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
@@ -405,17 +423,23 @@ async function preparePlayback(
           },undefined,mediaType,quality);
           candidates.push({ row: sourceRow, adapter, plan, duration, playSessionId: info.playSessionId, instance, accountGeneration: connection.accountGeneration });
         } catch {
-          /* Try all sources before reporting incompatibility. */
+          sourceFailures.add('device-policy');
         }
       }
     } catch (error) {
       signal?.throwIfAborted();
       if (error instanceof ProviderQueueBusyError) providerBusy ??= error;
-      if (error instanceof AppError && error.code === 'playback_source_unavailable') continue;
+      if (error instanceof AppError && error.code === 'playback_source_unavailable') {
+        sourceFailures.add('no-provider-source');
+        continue;
+      }
       providerFailed = true;
+      const failure = classifyFailure(error);
+      providerInterrupted ||= failure === 'network' || failure === 'timeout' ||
+        error instanceof ProviderHttpError && error.status >= 500;
       void logDiagnostic('warn', 'playback.failed', {
         stage: 'source-negotiation', provider: 'jellyfin', mediaType, playbackChange,
-        failure: classifyFailure(error), errorCode: diagnosticErrorCode(error),
+        failure, errorCode: diagnosticErrorCode(error),
       });
     }
   }
@@ -425,10 +449,21 @@ async function preparePlayback(
   const best = candidates[0];
   if (!best && providerBusy) throw providerBusy;
   if (!best) {
-    const message = fallback ? 'No other playable copy matches this version.' : data.expectedDuration !== undefined
+    if (providerInterrupted) throw new AppError(503, 'Coast could not check the connected playback sources. Try again shortly.');
+    const fallbackMessage = fallback ? 'No other playable copy matches this version.' : data.expectedDuration !== undefined
       ? 'No accessible source matches the synced session edition and duration.'
-      : 'No available version can play on this device under the current playback policy.';
-    if (providerFailed) throw new Error(message);
+      : undefined;
+    const policyMessage = 'No available version can play on this device under the current playback policy.';
+    if (providerFailed) throw new Error(fallbackMessage ?? policyMessage);
+    const sourceFailure = sourceFailures.size === 1 ? sourceFailures.values().next().value : 'mixed';
+    void logDiagnostic('info', 'playback.failed', {
+      stage: 'source-negotiation', provider: 'jellyfin', mediaType, playbackChange,
+      sourceFailure, status: 404, negotiationMs,
+    });
+    const message = fallbackMessage ?? (
+      sourceFailure === 'no-provider-source' ? 'Jellyfin has no playable stream for this title.'
+      : sourceFailure === 'selected-version' ? 'The selected playback version is no longer available.'
+      : policyMessage);
     throw new AppError(404, message, 'playback_source_unavailable');
   }
   const { source } = best.plan;
