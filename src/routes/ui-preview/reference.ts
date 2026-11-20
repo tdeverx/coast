@@ -1,3 +1,5 @@
+import { glassPresets } from '#lib/ui/materials/presets.js';
+
 /** Explicit reference ownership, not a second production component registry. */
 export type ReferenceFamily = 'catalogue' | 'social' | 'admin' | 'feature';
 export type ReferenceRecipe = {
@@ -73,7 +75,10 @@ export function selectedScenario(id: string, value?: string | null) {
 export function scenarioLabel(value: string) { return value.replace(/-/g, ' ').replace(/^./, letter => letter.toUpperCase()); }
 const nonApproved = new Set(['catalogue.progress', 'Button', 'SocialControls', 'NotificationInbox', 'StreamsPanel']);
 export type ApprovalStatus='unknown'|'unapproved'|'approved';
-export function approvalStatus(id:string):ApprovalStatus { return nonApproved.has(id)||id==='experiment'?'unapproved':'unknown'; }
+export function approvalStatus(id:string):ApprovalStatus {
+  if (Object.hasOwn(glassPresets.materials, id)) return 'approved';
+  return nonApproved.has(id)||id==='experiment'||id==='temporary'?'unapproved':'unknown';
+}
 
 /** Dynamic owners are declarations only: reference browsing must not eagerly import them. */
 export const dynamicOwners = {

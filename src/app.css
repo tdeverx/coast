@@ -67,29 +67,30 @@
   --hero-gutter: 48px;
   --hero-height: 672px;
   --elevation-raised: 0 0.75rem 2rem color-mix(in srgb, var(--canvas) 32%, transparent);
-  --coast-glass-fill: color-mix(in srgb, var(--canvas) 5%, transparent);
+  --coast-glass-fill: transparent;
   --coast-glass-stroke: var(--canvas);
-  --coast-glass-stroke-opacity: 20%;
+  --coast-glass-stroke-opacity: 15%;
   --coast-glass-stroke-outer-width: 0.25px;
+  --coast-glass-stroke-outer-weight: 0.25;
   --coast-glass-stroke-inner-width: 0px;
-  --coast-glass-filter: blur(2px) saturate(120%) brightness(100%);
+  --coast-glass-filter: blur(2px) saturate(120%) brightness(90%);
   --coast-glass-top-inner-color: var(--white);
-  --coast-glass-top-inner-depth: 6px;
-  --coast-glass-top-inner-opacity: 20%;
-  --coast-glass-top-inner-softness: 4px;
+  --coast-glass-top-inner-depth: 8px;
+  --coast-glass-top-inner-opacity: 15%;
+  --coast-glass-top-inner-softness: 3px;
   --coast-glass-top-inner-x: 0px;
-  --coast-glass-top-inner-spread: -4px;
+  --coast-glass-top-inner-spread: -6px;
   --coast-glass-bottom-inner-color: var(--white);
-  --coast-glass-bottom-inner-depth: 7px;
-  --coast-glass-bottom-inner-opacity: 10%;
-  --coast-glass-bottom-inner-softness: 5px;
+  --coast-glass-bottom-inner-depth: 8px;
+  --coast-glass-bottom-inner-opacity: 15%;
+  --coast-glass-bottom-inner-softness: 3px;
   --coast-glass-bottom-inner-x: 0px;
-  --coast-glass-bottom-inner-spread: -5px;
-  --coast-glass-stroke-blend: soft-light;
+  --coast-glass-bottom-inner-spread: -6px;
+  --coast-glass-stroke-blend: normal;
   --coast-glass-shadow-x: 0px;
   --coast-glass-shadow-y: 0px;
-  --coast-glass-shadow-opacity: 10%;
-  --coast-glass-shadow: 0 0 0 var(--coast-glass-stroke-outer-width) color-mix(in srgb, var(--coast-glass-stroke) var(--coast-glass-stroke-opacity), transparent), var(--coast-glass-shadow-x) var(--coast-glass-shadow-y) 0.9375rem color-mix(in srgb, var(--canvas) var(--coast-glass-shadow-opacity), transparent);
+  --coast-glass-shadow-opacity: 20%;
+  --coast-glass-shadow: var(--coast-glass-shadow-x) var(--coast-glass-shadow-y) 25px -15px color-mix(in srgb, var(--canvas) var(--coast-glass-shadow-opacity), transparent);
 }
 * {
   box-sizing: border-box;
@@ -258,9 +259,15 @@ form.stack,
   isolation: isolate;
   background: var(--coast-glass-fill);
   border: 0;
-  box-shadow: var(--coast-glass-shadow);
+  /* A full-pixel spread with weighted alpha keeps thin fallback strokes visible
+     on fractional edges without involving the clipped content or focus outline. */
+  box-shadow: 0 0 0 max(1px, var(--coast-glass-stroke-outer-width))
+    color-mix(in srgb, var(--coast-glass-stroke) calc(var(--coast-glass-stroke-opacity) * var(--coast-glass-stroke-outer-weight)), transparent), var(--coast-glass-shadow);
   -webkit-backdrop-filter: var(--coast-glass-filter);
   backdrop-filter: var(--coast-glass-filter);
+}
+.glass.liquid-glass-active {
+  box-shadow: 0 0 0 var(--coast-glass-stroke-outer-width) color-mix(in srgb, var(--coast-glass-stroke) var(--coast-glass-stroke-opacity), transparent), var(--coast-glass-shadow);
 }
 /* Below surface content, above its backdrop; never changes layout or hit targets. */
 .coast-glass-grain {
@@ -303,10 +310,10 @@ form.stack,
   --menu-icon-size: round(nearest, var(--icon-inline), var(--menu-device-pixel, 1px));
   --menu-control-icon-size: round(nearest, var(--icon-control), var(--menu-device-pixel, 1px));
   --menu-max-height: min(640px, calc(100dvh - 32px));
-  --menu-stroke-width: round(nearest, var(--coast-glass-stroke-inner-width), var(--menu-device-pixel, 1px));
-  --menu-frame-inset: calc(var(--menu-stroke-width) + var(--menu-inset));
+  --menu-rule-width: round(nearest, 1px, var(--menu-device-pixel, 1px));
+  --menu-frame-inset: calc(var(--menu-rule-width) + var(--menu-inset));
   --menu-row-radius: max(0px, calc(var(--menu-radius) - var(--menu-frame-inset)));
-  --menu-divider-stroke: var(--menu-stroke-width) solid color-mix(in srgb, var(--white) 9%, transparent);
+  --menu-divider-stroke: var(--menu-rule-width) solid color-mix(in srgb, var(--white) 9%, transparent);
   position: fixed;
   inset: auto;
   z-index: 100;
@@ -320,9 +327,6 @@ form.stack,
   padding: var(--menu-frame-inset) 0;
   border-radius: var(--menu-radius);
   color: var(--ink);
-}
-.menu-surface.glass::after {
-  --coast-glass-stroke-inner-width: var(--menu-stroke-width);
 }
 /* Keep glass edges and grain on the stationary frame while only choices scroll. */
 .menu-content {
@@ -760,7 +764,7 @@ form.stack,
     background: Canvas !important;
     color: CanvasText !important;
     border: 1px solid CanvasText;
-    box-shadow: none;
+    box-shadow: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }

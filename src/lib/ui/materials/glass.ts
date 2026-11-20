@@ -130,27 +130,10 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   const filterId = `coast-liquid-glass-${Date.now()}-${++filterSequence}`;
   let definition: SVGSVGElement | null = null;
   let definitionKey: string | undefined;
-  const settings = () => {
-    const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
-    const preset = { ...glassPresets.materials[options.variant ?? 'clear'], ...options.surface };
-    return {
-      ...preset,
-      refraction: preset.refraction,
-      depth: preset.depth,
-      dispersion: preset.dispersion,
-      radius: preset.blur,
-      saturation: preset.saturation / 100,
-      brightness: preset.brightness / 100,
-      ...options,
-    };
-  };
   let grain: HTMLSpanElement | undefined;
   let mapCache: { key: string; url: string | null } | undefined;
   const materialProperties = new Set<string>();
-  function applySurface(enhanced: boolean) {
-    const variant = settings().variant ?? 'clear';
-    const options = settings();
-    const surface = { ...glassPresets[enhanced ? 'materials' : 'fallbacks'][variant], ...(enhanced ? options.surface : options.fallback) };
+  function applySurface(variant: GlassVariant, surface: Readonly<GlassSurface>) {
     node.dataset.coastGlassVariant = variant;
     if (surface.noiseOpacity > 0) {
       if (!grain) {
@@ -174,6 +157,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       grain?.remove();
       grain = undefined;
     }
+    const outerStroke = surface.strokeAlignment === 'external' ? surface.strokeWidth : 0;
     const values = {
       fill: `color-mix(in srgb, ${surface.tint} ${surface.fillOpacity}%, transparent)`,
       'solid-fill': variant === 'glassLight' ? 'var(--white)' : variant === 'glassProminent' ? 'var(--accent)' : 'var(--surface-hover)',
@@ -182,7 +166,8 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       'stroke-opacity': `${surface.strokeOpacity}%`,
       'stroke-blend': surface.strokeBlend,
       'stroke-inner-width': `${surface.strokeAlignment === 'internal' ? surface.strokeWidth : 0}px`,
-      'stroke-outer-width': `${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px`,
+      'stroke-outer-width': `${outerStroke}px`,
+      'stroke-outer-weight': `${Math.min(outerStroke, 1)}`,
       'top-inner-color': surface.topInnerColor,
       'top-inner-depth': `${surface.topInnerWidth}px`,
       'top-inner-opacity': `${surface.topInnerOpacity}%`,
@@ -195,7 +180,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       'bottom-inner-softness': `${surface.bottomInnerSoftness}px`,
       'bottom-inner-x': `${surface.bottomInnerOffsetX}px`,
       'bottom-inner-spread': `${surface.bottomInnerSpread}px`,
-      shadow: `0 0 0 ${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px color-mix(in srgb, ${surface.strokeColor} ${surface.strokeOpacity}%, transparent), ${surface.shadowPosition === 'inner' ? 'inset ' : ''}${surface.shadowOffsetX}px ${surface.shadowOffsetY}px ${surface.shadowBlur}px ${surface.shadowSpread}px color-mix(in srgb, ${surface.shadowColor} ${surface.shadowOpacity}%, transparent)`,
+      shadow: `${surface.shadowPosition === 'inner' ? 'inset ' : ''}${surface.shadowOffsetX}px ${surface.shadowOffsetY}px ${surface.shadowBlur}px ${surface.shadowSpread}px color-mix(in srgb, ${surface.shadowColor} ${surface.shadowOpacity}%, transparent)`,
     };
     for (const [key, value] of Object.entries(values)) {
       const property = `--coast-glass-${key}`;
@@ -203,10 +188,11 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       materialProperties.add(property);
     }
   }
-  function clearNative(state: string) {
+  function clearNative(state: string, variant: GlassVariant, override?: Partial<GlassSurface>) {
     node.classList.remove('liquid-glass-active');
     node.dataset.coastGlassRenderer = state;
-    applySurface(false);
+    const preset = glassPresets.fallbacks[variant];
+    applySurface(variant, override ? { ...preset, ...override } : preset);
     // Literal values also avoid Safari 18/Sonoma's backdrop CSS-variable bug (297620).
     const filter = node.style.getPropertyValue('--coast-glass-filter');
     node.style.setProperty('-webkit-backdrop-filter', filter);
@@ -215,25 +201,28 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     definition = null;
     definitionKey = undefined;
   }
-  function applyNativeSurface(options: ReturnType<typeof settings>) {
-    const value = `url("#${filterId}") saturate(${options.saturation}) brightness(${options.brightness})`;
+  function applyNativeSurface(variant: GlassVariant, material: Readonly<GlassSurface>) {
+    const value = `url("#${filterId}") saturate(${material.saturation / 100}) brightness(${material.brightness / 100})`;
     node.style.setProperty('-webkit-backdrop-filter', value);
     node.style.setProperty('backdrop-filter', value);
-    applySurface(true);
+    applySurface(variant, material);
     node.classList.add('liquid-glass-active');
     node.dataset.coastGlassRenderer = 'original-svg-backdrop';
   }
   function render() {
-    const options = settings();
+    const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
+    const variant = options.variant ?? 'clear';
+    const preset = glassPresets.materials[variant];
+    const material = options.surface ? { ...preset, ...options.surface } : preset;
     const enabled =
       nativeSupported &&
       !appearancePreferences?.matches &&
       options.renderer !== 'css' &&
-      options.refraction > 0 &&
+      material.refraction > 0 &&
       options.enabled !== false &&
       (options.preview || document.querySelector('[data-coast-glass="on"]'));
     if (!enabled) {
-      clearNative(options.renderer === 'css' || !nativeSupported || options.refraction === 0 ? 'css' : 'disabled');
+      clearNative(options.renderer === 'css' || !nativeSupported || material.refraction === 0 ? 'css' : 'disabled', variant, options.fallback);
       return;
     }
     const width = Math.round(node.offsetWidth),
@@ -242,11 +231,11 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       // Retained panels can stay mounted while hidden. Their resize owner will
       // rebuild on return; no native filter or encoded map is needed meanwhile.
       mapCache = undefined;
-      clearNative('hidden');
+      clearNative('hidden', variant, options.fallback);
       return;
     }
-    const scale = -(options.depth * 2 * options.refraction);
-    const dispersion = options.depth * options.dispersion;
+    const scale = -(material.depth * 2 * material.refraction);
+    const dispersion = material.depth * material.dispersion;
     const padding = Math.ceil((Math.abs(scale) + dispersion) / 2) + 8;
     const computedRadius = Number.parseFloat(getComputedStyle(node).borderTopLeftRadius);
     const radius = Math.min(
@@ -254,17 +243,17 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       width / 2,
       height / 2
     );
-    const mapKey = `${width}:${height}:${padding}:${radius}:${options.depth}`;
+    const mapKey = `${width}:${height}:${padding}:${radius}:${material.depth}`;
     if (mapCache?.key !== mapKey)
-      mapCache = { key: mapKey, url: displacementMap(width, height, padding, radius, options.depth) };
+      mapCache = { key: mapKey, url: displacementMap(width, height, padding, radius, material.depth) };
     const mapUrl = mapCache.url;
     if (!mapUrl) {
-      clearNative('css');
+      clearNative('css', variant, options.fallback);
       return;
     }
-    const nextDefinitionKey = `${mapKey}:${scale}:${dispersion}:${options.radius}`;
+    const nextDefinitionKey = `${mapKey}:${scale}:${dispersion}:${material.blur}`;
     if (definition?.isConnected && definitionKey === nextDefinitionKey) {
-      applyNativeSurface(options);
+      applyNativeSurface(variant, material);
       return;
     }
     definition?.remove();
@@ -325,19 +314,18 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     filter.append(composite);
     const blur = svgElement('feGaussianBlur');
     blur.setAttribute('in', 'composite');
-    blur.setAttribute('stdDeviation', `${options.radius}`);
+    blur.setAttribute('stdDeviation', `${material.blur}`);
     filter.append(blur);
     svg.append(filter);
     document.body.append(svg);
     definition = svg;
     definitionKey = nextDefinitionKey;
-    applyNativeSurface(options);
+    applyNativeSurface(variant, material);
   }
   const schedule = () => scheduleSurface(render);
   const resize = new ResizeObserver(schedule);
   resize.observe(node);
   const stopSetting = watchSetting(schedule);
-  applySurface(false);
   render();
   return {
     update(next: boolean | LiquidGlassOptions = true) {

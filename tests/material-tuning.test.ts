@@ -1,15 +1,21 @@
 import { describe, expect, test } from 'bun:test';
 import { blendModes, glassPresets } from '../src/lib/ui/materials/presets';
 import { materialNames, defaultMaterialDrafts, readMaterialDrafts, sliderGroups, colorControls } from '../src/lib/ui/materials/tuning';
+import { approvalStatus } from '../src/routes/ui-preview/reference';
 
 describe('material drafts', () => {
-  test('four materials are exposed, each with its own blur fallback', () => {
+  test('all four materials share their fallback settings except refraction', () => {
     expect(materialNames.map(entry => entry.value)).toEqual(['clear', 'glassLight', 'glassDark', 'glassProminent']);
     expect(Object.keys(glassPresets.materials)).toEqual(Object.keys(glassPresets.fallbacks));
     for (const entry of materialNames) {
-      expect(glassPresets.fallbacks[entry.value].refraction).toBe(0);
-      expect(glassPresets.fallbacks[entry.value].blur).toBeGreaterThan(glassPresets.materials[entry.value].blur);
+      expect(glassPresets.fallbacks[entry.value]).toEqual({ ...glassPresets.materials[entry.value], refraction: 0 });
+      expect(approvalStatus(entry.value)).toBe('approved');
     }
+    expect(approvalStatus('temporary')).toBe('unapproved');
+    const { clear, glassLight, glassDark, glassProminent } = glassPresets.materials;
+    expect(glassLight).toEqual({ ...clear, tint: 'var(--white)', fillOpacity: 20, blur: 3, brightness: 110 });
+    expect(glassDark).toEqual({ ...clear, tint: 'var(--canvas)', fillOpacity: 40, blur: 3, brightness: 80 });
+    expect(glassProminent).toEqual({ ...glassLight, tint: 'var(--accent)', fillOpacity: 50 });
   });
   test('prominent glass uses the theme accent and remains independently editable', () => {
     const drafts = defaultMaterialDrafts();
@@ -23,8 +29,8 @@ describe('material drafts', () => {
     expect(keys.sort()).toEqual(Object.keys(glassPresets.materials.clear).sort());
     const draft = defaultMaterialDrafts();
     draft.materials.clear.fillOpacity = 80;
-    expect(glassPresets.materials.clear.fillOpacity).toBe(5);
-    expect(draft.fallbacks.clear.fillOpacity).toBe(5);
+    expect(glassPresets.materials.clear.fillOpacity).toBe(0);
+    expect(draft.fallbacks.clear.fillOpacity).toBe(0);
   });
   test('persisted drafts discard unknown fields and bound invalid numeric values', () => {
     const draft = readMaterialDrafts({ materials: { clear: { fillOpacity: 999, blur: NaN, depth: -1, strokeAlignment: 'wrong', shadowBlur: -10, shadowSpread: -999, shadowColor: '#123456', shadowPosition: 'inner', noiseOpacity: -5, noiseScale: Infinity, noiseBlend: 'overlay', noiseTintBlend: 'invalid', noiseCoverage: 'edges', unknown: true } }, fallbacks: { glassDark: { fillOpacity: 40 } } });
