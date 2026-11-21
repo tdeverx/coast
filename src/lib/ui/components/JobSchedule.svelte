@@ -296,6 +296,12 @@
         {#if lastJobOutcome(task.kinds[0], lastRun)}
           <p class="small">{lastJobOutcome(task.kinds[0], lastRun)}</p>
         {/if}
+        {#if lastRun.outcome?.reviewExamples?.length}
+          <details><summary>Conflicting matches</summary>
+            <ul>{#each lastRun.outcome.reviewExamples as entry}<li>{entry}</li>{/each}</ul>
+            {#if (lastRun.outcome.review ?? 0) > lastRun.outcome.reviewExamples.length}<p class="small">Showing the first {lastRun.outcome.reviewExamples.length} conflicts.</p>{/if}
+          </details>
+        {/if}
       {/if}
 
       {#if timing?.lastAt && timing.lastAt !== lastRun?.at}

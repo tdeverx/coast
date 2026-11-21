@@ -77,21 +77,18 @@ export async function stagedTraktCategory(options: {
     }
     if(stage.phase==='fetching'){
       if(Math.abs(stage.nextPage)>10000)throw new Error('Trakt import exceeded the supported page bound.');
-      // Collection movies and show episodes form one census. Negative page
+      // Collection movies and episodes form one census. Negative page
       // numbers retain which endpoint comes next without a second cursor table.
-      const shows=category==='collection'&&stage.nextPage<0;
-      const remote=options.readPage?await options.readPage(stage.nextPage):shows?await adapter.collectionShowsPage(-stage.nextPage):await adapter.read(category as Exclude<Category,'lists'>,stage.nextPage);
-      const limit=shows?10:100;
-      if(remote.length>limit)throw new Error('Trakt returned an oversized import page; incomplete coverage has not been published.');
-      const page:TraktRecord[]=shows?remote.flatMap(record=>(record.seasons??[]).flatMap(season=>season.episodes.map(episode=>({show:record.show,type:'coast-collection-episode',seasons:[{number:season.number,episodes:[episode]}]})))):remote;
-      if(page.length>10000)throw new Error('Trakt returned too many collection episodes in one page; incomplete coverage has not been published.');
-      const complete=remote.length<limit&&(category!=='collection'||shows);
-      const nextPage=shows?stage.nextPage-1:category==='collection'&&remote.length<limit?-1:stage.nextPage+1;
+      const episodes=category==='collection'&&stage.nextPage<0;
+      const page:TraktRecord[]=options.readPage?await options.readPage(stage.nextPage):episodes?await adapter.collectionEpisodesPage(-stage.nextPage):await adapter.read(category as Exclude<Category,'lists'>,stage.nextPage);
+      if(page.length>100)throw new Error('Trakt returned an oversized import page; incomplete coverage has not been published.');
+      const complete=page.length<100&&(category!=='collection'||episodes);
+      const nextPage=episodes?stage.nextPage-1:category==='collection'&&page.length<100?-1:stage.nextPage+1;
       const titles=new Map();
       await db.transaction(async tx=>{
         await assertLease(tx,userId,connectionId);
         const [tail]=await tx.execute<{next:number}>(sql`select coalesce(max(ordinal)+1,0)::int as next from trakt_import_records where stage_id=${stage.id}`);
-        for(let start=0;start<page.length;start+=1000)await tx.insert(records).values(page.slice(start,start+1000).map((record,index)=>({stageId:stage.id,ordinal:tail.next+start+index,sortKey:category==='history'?record.watched_at||'':'',record:category==='history'?compactTraktHistory(record,titles):record})));
+        if(page.length)await tx.insert(records).values(page.map((record,index)=>({stageId:stage.id,ordinal:tail.next+index,sortKey:category==='history'?record.watched_at||'':'',record:category==='history'?compactTraktHistory(record,titles):record})));
         await tx.update(stages).set({nextPage,updatedAt:new Date()}).where(eq(stages.id,stage.id));
       });
       await reload();

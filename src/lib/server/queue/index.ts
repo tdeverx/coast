@@ -1,7 +1,8 @@
+import { traktAccess, traktJobDirection } from '#lib/providers/trakt/access.js';
 import { taskInstanceSql, currentTaskGenerationSql } from './task-controls.server';
 export {cancelAction,retryAction,promoteAction} from './task-controls.server';
 export {updateTaskActions} from './task-commands.server';
-import type { ProviderActionError } from '#lib/providers/contracts.js';
+import { isConfirmedRequestDenial, requestDeliveryMessages, type ProviderActionError } from '#lib/providers/contracts.js';
 import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
 import { maintenanceKinds, serviceTasks, serviceTraversalKinds } from '#lib/providers/tasks.js';
 import { taskRetryAttentionAttempts, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '#lib/providers/job-policy.js';
@@ -35,7 +36,7 @@ export interface OutboxAction {
   priority?: RequestPriority;
   purpose?: JobPurpose;
 }
-export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number; applied?:number;review?:number;skipped?:number };
+export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number; applied?:number;review?:number;skipped?:number;reviewExamples?:string[] };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
 const independentQueueKinds=['feature.reconcile','webhook.deliver','planning.reminder','benchmark.run','taste.refresh','jellyfin.streams','jellyfin.updates'];
@@ -145,12 +146,17 @@ export async function enqueueAction(input: {
     const [admission]=await sql`select coast_job_allowed(${input.userId}::uuid,${input.kind},${input.payload}::jsonb) as allowed`;
     if(!admission.allowed)throw new AppError(403,'This task is disabled by feature settings.','feature_disabled');
     if (maintenanceKinds.includes(input.kind)) await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
-    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.userId}:${input.connectionId || 'local'}`}, 0))`;
     if (input.connectionId) {
-      const [connection] =
-        await sql`SELECT id FROM provider_connections WHERE id = ${input.connectionId} AND user_id = ${input.userId}`;
+      const direction = traktJobDirection(input.kind);
+      const [connection] = direction
+        ? await sql`select c.id,c.settings->'traktAccess' as access,c.settings ? 'traktAccess' as configured_access,i.provider from provider_connections c join provider_instances i on i.id=c.instance_id
+            where c.id=${input.connectionId} and c.user_id=${input.userId} for share of c`
+        : await sql`select id from provider_connections where id=${input.connectionId} and user_id=${input.userId}`;
       if (!connection) throw new AppError(403, 'This connection does not belong to this account.');
+      if (direction && connection.provider === 'trakt' && !traktAccess(connection.configured_access ? {traktAccess:connection.access} : {})[direction])
+        throw new AppError(403, `Trakt ${direction} is disabled for this connection.`, 'feature_disabled');
     }
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.userId}:${input.connectionId || 'local'}`}, 0))`;
     if (maintenanceKinds.includes(input.kind)) {
       const [existing] =
         await sql`SELECT a.id,a.payload,a.state FROM outbox_actions a LEFT JOIN provider_connections c ON c.id=a.connection_id
@@ -187,6 +193,8 @@ export async function enqueueAction(input: {
 
 /** Safe, actionable descriptions without leaking provider response bodies. */
 export function jobFailureMessage(error: unknown, permanent: boolean) {
+  if (error instanceof PermanentActionError && (error.reason === 'request-quota' || error.reason === 'request-covered'))
+    return requestDeliveryMessages[error.reason];
   if (safeDiagnosticErrorCode(error) === 'local.database-deadlock') return 'Concurrent database work conflicted. Coast will retry automatically; committed work is retained.';
   if (error instanceof ProviderQueueBusyError) return 'Coast is busy contacting connected services. This job will retry automatically.';
   if (classifyFailure(error) === 'timeout') return 'The service did not respond in time. Coast will retry automatically; completed import pages are retained.';
@@ -207,6 +215,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
 export type JobFailure = { stage?:string; validation?:{path:string;expected:string;receivedType:string}[]; code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
 export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
   if(error instanceof PermanentActionError && error.reason){
+    if(error.reason==='request-quota'||error.reason==='request-covered')return {code:`seerr.${error.reason}`,remedy:'retry',retryable:false};
     if(error.reason==='permission')return {code:'provider.permission',remedy:'permissions',retryable:false};
     if(error.reason==='identity')return {code:'provider.identity',remedy:'connection',retryable:false};
     return {code:'action.rejected',remedy:'metadata',retryable:false};
@@ -251,7 +260,7 @@ async function notifyJobAttention(db:ReturnType<typeof getSql>,action:OutboxActi
   if(ownerAction||requestAction){
     await notify({
       userId:action.userId,kind:'external-action',title:ownerAction?`Check your ${label} connection`:'Your media request could not be sent',
-      body:ownerAction?message:'Seerr could not accept the request. Try again or contact a Coast admin if it keeps failing.',
+      body:ownerAction||isConfirmedRequestDenial(failure.code)?message:'Seerr could not accept the request. Try again or contact a Coast admin if it keeps failing.',
       level:'persistent',sourceKey:`outbox:${action.id}`,
       data:{actorId:action.userId,subjectId:action.id,destination:ownerAction?'/settings/connections':'/for-you?view=watch'},
     },db);
@@ -260,9 +269,10 @@ async function notifyJobAttention(db:ReturnType<typeof getSql>,action:OutboxActi
   await notifyAdmins(db,`${label} · ${task?.title??displayLabel(action.kind)} needs review`,message,`job-attention:${action.id}`,action);
 }
 
-function notifySteamReview(db:ReturnType<typeof getSql>,action:OutboxAction,count:number){
+function notifySteamReview(db:ReturnType<typeof getSql>,action:OutboxAction,count:number,examples:readonly string[]=[]){
+  const sample=examples.slice(0,3);
   return notifyAdmins(db,'Steam metadata matches need review',
-    `Coast skipped ${count} conflicting IGDB ${count===1?'match':'matches'} and continued importing the rest. Review the IGDB metadata job in Settings.`,
+    `Coast skipped ${count} conflicting IGDB ${count===1?'match':'matches'}. Your Steam library is intact.${sample.length?' '+sample.join(' · ')+'.':''} Review the IGDB metadata job in Settings.`,
     `admin-attention:steam-metadata:${action.instanceId??'igdb'}`,action);
 }
 
@@ -277,7 +287,7 @@ const diagnosticFieldNames=new Set(['Items','TotalRecordCount','StartIndex','Id'
   'SeriesId','SeasonId','ParentId','CollectionType','Artists','Album','AlbumId','ArtistItems','ImageTags','MediaSources','MediaStreams',
   'Container','Size','Height','Width','UserId','results','page','totalResults','totalPages','id','type','status','media','mediaType',
   'tmdbId','tvdbId','seasons','seasonNumber','episodes','episodeNumber','user','permissions','name','ids','title','year',
-  'rating','progress','watched_at','collected_at','listed_at','rated_at','plays','appid','playtime_forever','achievements']);
+  'rating','progress','watched_at','collected_at','listed_at','rated_at','metadata','plays','appid','playtime_forever','achievements']);
 /** Include only schema paths and value types; never persist rejected provider values. */
 export function validationDiagnostic(error: unknown) {
   if (!(error instanceof v.ValiError)) return undefined;
@@ -400,14 +410,20 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
       try {
         if (action.connectionId) {
           const [connection] =
-            await getSql()`SELECT c.id, c.account_generation, c.credentials, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
+            await getSql()`SELECT c.id, c.account_generation, c.credentials is not null as has_credentials, c.settings->'traktAccess' as access, c.settings ? 'traktAccess' as configured_access, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
           WHERE c.id = ${action.connectionId} AND c.user_id = ${action.userId} AND c.status = 'connected' AND i.enabled AND NOT u.disabled`;
           if (
             !connection ||
             (action.accountGeneration && action.accountGeneration !== connection.account_generation) ||
-            (['jellyfin', 'trakt'].includes(connection.provider) && !connection.credentials)
+            (['jellyfin', 'trakt'].includes(connection.provider) && !connection.has_credentials)
           )
             throw new PermanentActionError('The connected account is unavailable.');
+          const direction = connection.provider === 'trakt' ? traktJobDirection(action.kind) : undefined;
+          if (direction && !traktAccess(connection.configured_access ? {traktAccess:connection.access} : {})[direction]) {
+            await getSql()`update outbox_actions set state='cancelled',locked_at=null,last_error='Disabled in Trakt connection settings.',updated_at=now()
+              where id=${action.id} and state='running' and attempts=${action.attempts}`;
+            return true;
+          }
         }
         const [admission]=await getSql()`select coast_job_allowed(${action.userId}::uuid,${action.kind},${action.payload}::jsonb) as allowed`;
         if(!admission.allowed)throw new AppError(403,'This task is disabled by Coast feature settings.','feature_disabled');
@@ -439,7 +455,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             if(action.attempts>1)await sql`delete from notifications n using users admin
               where admin.role='admin' and n.user_id=admin.id and n.source_key=${`job-attention:${action.id}`}`;
             if(action.kind==='igdb.steam-metadata'&&outcome?.review)
-              await notifySteamReview(sql,action,outcome.review);
+              await notifySteamReview(sql,action,outcome.review,outcome.reviewExamples);
           }
         });
         const durationMs = performance.now() - started;
@@ -497,6 +513,11 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             await sql`UPDATE outbox_actions SET state = ${permanent || developerMode ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure,...capacityCredit }}::jsonb, updated_at = NOW()
         WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (!failed.length) return; // A recovered lease owns the outcome now.
+          if(action.kind==='seerr.request' && isConfirmedRequestDenial(failure.code))
+            await sql`update media_requests r set state='failed',updated_at=now() from provider_connections c
+              where r.id=${action.payload.requestId}::uuid and r.user_id=${action.userId} and r.external_id is null and r.state='pending'
+                and c.id=${action.connectionId}::uuid and c.user_id=r.user_id and c.instance_id=r.instance_id
+                and c.account_generation=${action.accountGeneration}::uuid`;
           if(!(error instanceof ProviderQueueBusyError)&&action.kind.endsWith('.live')&&action.connectionId)await sql`UPDATE social_live_state SET work_id=NULL,remote_id=NULL,expires_at=NULL WHERE connection_id=${action.connectionId} AND account_generation=${action.accountGeneration}::uuid AND checked_at<=${startedAt}`;
           if (
             action.instanceId &&

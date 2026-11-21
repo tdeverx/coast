@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { getDb } from '../src/lib/server/db';
+import { getDb, getSql } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
@@ -37,8 +37,8 @@ afterAll(async()=>{
   for(const {id} of roots){await getDb().delete(s.media).where(eq(s.media.id,id));await getDb().delete(s.works).where(eq(s.works.id,id));}
 });
 
-run('movie and show pages resume; episode application yields; generated entries and incomplete absence are preserved',async()=>{
-  const id=await action(),preferences={...sync,collection:true};let fail=false;
+run('movie and episode pages resume; incomplete episode pages cannot publish absence',async()=>{
+  const id=await action(),preferences={...sync,collection:true};let fail=false,incomplete=false;
   const reads:string[]=[];
   const adapter=new TraktAdapter(async(path)=>{
     const url=new URL(path,'https://fixture.invalid'),page=Number(url.searchParams.get('page')??1);
@@ -48,9 +48,13 @@ run('movie and show pages resume; episode application yields; generated entries 
       if(page===2&&fail)throw new Error('Interrupted collection page');
       return page===1?Array.from({length:100},()=>({movie})):[];
     }
-    if(url.pathname==='/sync/collection/shows'){
-      expect(url.searchParams.get('limit')).toBe('10');
-      return[{show,seasons:[{number:1,episodes:Array.from({length:250},(_,index)=>({number:index+1}))}]}];
+    if(url.pathname==='/sync/collection/episodes'){
+      expect(url.searchParams.get('limit')).toBe('100');
+      if(incomplete&&page===2)return [{show,episode:null}];
+      return Array.from({length:Math.max(0,Math.min(100,250-(page-1)*100))},(_,i)=>{
+        const number=(page-1)*100+i+1;
+        return {show,episode:{season:1,number,ids:{trakt:base+1000+number}},collected_at:'2026-01-01T00:00:00.000Z'};
+      });
     }
     throw new Error(`Unexpected endpoint ${path}`);
   },'client','secret');
@@ -62,17 +66,42 @@ run('movie and show pages resume; episode application yields; generated entries 
   await expect(execute(id,adapter,preferences,4)).rejects.toBeInstanceOf(JobYield);
   const [mid]=await getDb().select().from(s.traktImportStages).where(eq(s.traktImportStages.actionId,id));expect(mid.nextPage).toBe(-1);
   await expect(execute(id,adapter,preferences,4)).rejects.toBeInstanceOf(JobYield);
+  incomplete=true;await expect(execute(id,adapter,preferences)).rejects.toThrow();incomplete=false;
+  const [unchanged]=await getDb().select().from(s.traktImportStages).where(eq(s.traktImportStages.actionId,id));
+  expect(unchanged).toMatchObject({phase:'fetching',nextPage:-2});
+  expect((await getDb().select().from(s.trackingState).where(eq(s.trackingState.mediaId,absentId)))[0].collected).toBe(true);
   await finish(id,adapter,preferences);
   const states=await getDb().select().from(s.trackingState).where(eq(s.trackingState.userId,userId));
   expect(states.filter(state=>state.collected)).toHaveLength(250);
   expect(states.some(state=>state.mediaId===movieId)).toBe(false);
   expect(states.find(state=>state.mediaId===absentId)?.collected).toBe(false);
   expect(reads.filter(read=>read==='/sync/collection/movies:1')).toHaveLength(1);
-  expect(reads.filter(read=>read==='/sync/collection/shows:1')).toHaveLength(1);
+  expect(reads.filter(read=>read==='/sync/collection/episodes:1')).toHaveLength(1);
+  expect(reads.filter(read=>read==='/sync/collection/episodes:2')).toHaveLength(2);
+  expect(reads.filter(read=>read==='/sync/collection/episodes:3')).toHaveLength(1);
   const events=await getDb().select().from(s.trackingEvents).where(eq(s.trackingEvents.userId,userId));
   await execute(id,adapter,preferences);expect(await getDb().select().from(s.trackingEvents).where(eq(s.trackingEvents.userId,userId))).toHaveLength(events.length);
   await getDb().update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,id));
 },30_000);
+
+run('grouped-to-flat migration retains committed movie evidence and resets only the episode catalogue stage',async()=>{
+  const db=getSql(), importId=await action(), first=await action('catalogue.user-scan'), later=await action('catalogue.user-scan');
+  const [stage]=await db`insert into trakt_import_stages(action_id,connection_id,account_generation,category,phase,next_page,cleaned_through,imported,activity)
+    values(${importId},${connection.id},${connection.accountGeneration},'collection','cleaning',-6,${movieId},8,'previous fence') returning id`;
+  await db`insert into trakt_import_records(stage_id,ordinal,sort_key,record,applied,observed_media_id) values
+    (${stage.id},0,'',${{movie}},true,${movieId}),(${stage.id},1,'','{"type":"coast-collection-episode","seasons":[]}',false,null)`;
+  for(const [id,phase] of [[first,5],[later,6]] as const){
+    await db`update outbox_actions set payload=${{_checkpoint:{task:'user-catalogue',provider:'trakt',added:17,cursor:{stage:phase,page:4}}}} where id=${id}`;
+  }
+  const migration=await Bun.file(new URL('../drizzle/0083_trakt_sync_controls.sql',import.meta.url)).text();
+  await db.begin(async tx=>{for(const statement of migration.split('--> statement-breakpoint'))await tx.unsafe(statement);});
+  expect(await db`select phase,next_page,cleaned_through,imported,activity from trakt_import_stages where id=${stage.id}`).toEqual([
+    {phase:'fetching',next_page:-1,cleaned_through:null,imported:8,activity:'previous fence'}
+  ]);
+  expect(await db`select ordinal,observed_media_id,applied from trakt_import_records where stage_id=${stage.id}`).toEqual([{ordinal:0,observed_media_id:movieId,applied:true}]);
+  expect((await db`select payload from outbox_actions where id=${first}`)[0].payload._checkpoint).toMatchObject({added:17,cursor:{stage:5,page:1}});
+  expect((await db`select payload from outbox_actions where id=${later}`)[0].payload._checkpoint).toMatchObject({added:17,cursor:{stage:6,page:4}});
+});
 
 run('list header and member pages survive interruption without partial replacement or false list deletion',async()=>{
   const db=getDb(),id=await action('trakt.lists-import'),preferences={...sync,lists:true};let fail=false;

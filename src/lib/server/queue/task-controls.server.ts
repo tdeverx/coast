@@ -1,9 +1,11 @@
+import { traktAccess, traktJobDirection } from '#lib/providers/trakt/access.js';
 import type { SQL } from 'bun';
 import { getSql } from '../db';
 import { requireAdmin, type SessionUser } from '../auth';
 import { AppError } from '../security/errors';
 import { resolveNotification } from '../notifications';
 import { maintenanceKinds } from '#lib/providers/tasks.js';
+import { isConfirmedRequestDenial, requestDestinationLock } from '#lib/providers/contracts.js';
 import { taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose } from '#lib/providers/job-policy.js';
 import { updateJobRequestPriority } from '../security/request-priority';
 import type { TaskControlAction } from '#lib/providers/task-control.js';
@@ -51,12 +53,15 @@ export async function cancelAction(actor: SessionUser | null, id: string, tx?: S
   const user = requireAdmin(actor);
   await transact(tx, async (sql) => {
     const [row] =
-      await sql`UPDATE outbox_actions SET state = 'cancelled', updated_at = NOW() WHERE id = ${id} AND (user_id = ${user.id} OR ${user.role === 'admin'}) AND state IN ('pending', 'failed') RETURNING user_id`;
+      await sql`UPDATE outbox_actions SET state = 'cancelled', updated_at = NOW() WHERE id = ${id} AND (user_id = ${user.id} OR ${user.role === 'admin'}) AND state IN ('pending', 'failed') RETURNING user_id,kind,payload`;
     if (!row)
       throw new AppError(
         409,
         'This action is no longer pending or does not belong to your account.'
       );
+    if(row.kind==='seerr.request' && isConfirmedRequestDenial(row.payload._jobFailure?.code))
+      await sql`update media_requests set state='cancelled',updated_at=now() where id=${row.payload.requestId}::uuid
+        and user_id=${row.user_id} and external_id is null and state in ('pending','failed')`;
     await resolveNotification(row.user_id, `outbox:${id}`, sql);
   });
 }
@@ -77,8 +82,11 @@ export async function retryAction(actor: SessionUser | null, id: string, tx?: SQ
   const user = requireAdmin(actor);
   await transact(tx, async sql=>{
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
-    const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id}`;
+    const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance, i.provider,c.settings->'traktAccess' as access,c.settings ? 'traktAccess' as configured_access from outbox_actions a left join provider_connections c on c.id=a.connection_id left join provider_instances i on i.id=c.instance_id where a.id=${id} for update of a`;
     if(!action)throw new AppError(409,'This action cannot be retried.');
+    const direction=action.provider==='trakt'?traktJobDirection(action.kind):undefined;
+    if(direction&&!traktAccess(action.configured_access?{traktAccess:action.access}:{})[direction])
+      throw new AppError(403,`Trakt ${direction} is disabled for this connection.`,'feature_disabled');
     if(action.kind==='benchmark.run')throw new AppError(409,'Run a new benchmark in Benchmarking settings to preserve the recorded result.');
     if(maintenanceKinds.includes(action.kind)&&action.instance){
       const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id} and ${getSql().unsafe(retryConflictSql('a','c'))}`;
@@ -87,5 +95,23 @@ export async function retryAction(actor: SessionUser | null, id: string, tx?: SQ
     const budget=action.kind==='webhook.deliver'&&action.state==='failed'?{_webhookAttemptBase:action.attempts}:{};
     const [row]=await sql`UPDATE outbox_actions SET state='pending',payload=payload||${budget}::jsonb||'{"_manual":true,"_jobPurpose":"manual"}'::jsonb,next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
     if(!row)throw new AppError(409,'This action cannot be retried.');
+    if(action.kind==='seerr.request' && action.state==='failed' && isConfirmedRequestDenial(action.payload._jobFailure?.code)){
+      const [request]=await sql`select media_id,instance_id,server_id,is_4k from media_requests where id=${action.payload.requestId}::uuid and user_id=${action.user_id}`;
+      if(!request)throw new AppError(409,'The original request no longer exists.');
+      // Serialise with fresh requests so a retry cannot silently restore a replaced season selection.
+      await sql`select pg_advisory_xact_lock(hashtextextended(${requestDestinationLock(request.media_id,request.instance_id,request.server_id,request.is_4k)},0))`;
+      const [restored]=await sql`update media_requests r set state='pending',updated_at=now()
+        where r.id=${action.payload.requestId}::uuid and r.user_id=${action.user_id} and r.state='failed' and r.external_id is null
+        and coast_job_allowed(${action.user_id}::uuid,'seerr.request',${action.payload}::jsonb)
+        and exists(select 1 from provider_connections c join provider_instances i on i.id=c.instance_id and i.enabled
+          where c.id=${action.connection_id}::uuid and c.user_id=r.user_id and c.instance_id=r.instance_id
+            and c.status='connected' and c.account_generation=${action.account_generation}::uuid)
+        and not exists(select 1 from media_requests other where other.id<>r.id and other.media_id=r.media_id
+          and other.instance_id=r.instance_id and other.server_id is not distinct from r.server_id and other.is_4k=r.is_4k
+          and (cardinality(r.seasons)=0 or other.seasons&&r.seasons)
+          and (other.state in ('pending','approved','processing','available') or other.user_id=r.user_id and other.created_at>r.created_at))
+        returning id`;
+      if(!restored)throw new AppError(409,'The request or its account has changed. Review the current request before retrying.');
+    }
   });
 }

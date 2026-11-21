@@ -63,7 +63,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.list-delete', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { adapter, sync } = await getTrakt(action.userId, action.connectionId);
+    const { adapter, sync } = await getTrakt(action.userId, action.connectionId, 'export');
     if (sync.lists) {
       let externalId =
         typeof action.payload.externalId === 'string' ? action.payload.externalId : undefined;
@@ -80,7 +80,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { executeProgressExport } = await import('#lib/sync/trakt-export.server.js');
-    await executeProgressExport(action.userId, action.connectionId, action.payload);
+    return executeProgressExport(action.userId, action.connectionId, action.payload);
   });
   register('seerr.sync', async (action) => {
     if (!action.connectionId)
@@ -123,7 +123,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { executeLiveScrobble } = await import('#lib/sync/trakt-export.server.js');
-    await executeLiveScrobble(action.userId, action.connectionId, action.payload);
+    return executeLiveScrobble(action.userId, action.connectionId, action.payload);
   });
   register('jellyfin.library', async (action) => {
     if (!action.connectionId)
@@ -171,26 +171,26 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('#lib/sync/trakt-import.server.js');
-    const result=await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
+    const result=await importTrakt(action.userId, action.connectionId, 'tracking');
     return {applied:result.imported,review:result.review};
   });
   register('trakt.lists-import', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('#lib/sync/trakt-import.server.js');
-    const result=await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
+    const result=await importTrakt(action.userId, action.connectionId, 'lists');
     return {applied:result.imported,review:result.review};
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { executeTraktListExport } = await import('#lib/sync/trakt-lists.server.js');
-    await executeTraktListExport(action.userId, action.connectionId, action.payload);
+    return executeTraktListExport(action.userId, action.connectionId, action.payload);
   });
   register('trakt.export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { executeTraktExport } = await import('#lib/sync/trakt-export.server.js');
-    await executeTraktExport(action.userId, action.connectionId, action.payload);
+    return executeTraktExport(action.userId, action.connectionId, action.payload);
   });
   register('seerr.request', executeSeerrRequest);
 }

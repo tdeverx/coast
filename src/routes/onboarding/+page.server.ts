@@ -24,7 +24,14 @@ function failure(cause:unknown){return fail(cause instanceof AppError?cause.stat
 export const actions:Actions={
  provision:async({locals,request})=>{try{await provisionOnboarding(requireUser(locals.user).id,(await request.formData()).get('password'));return {success:true};}catch(cause){return failure(cause);}},
  connect:async({locals,request})=>{try{await linkOnboarding(requireUser(locals.user).id,Object.fromEntries(await request.formData()));return {success:true};}catch(cause){return failure(cause);}},
- trakt:async({locals,request})=>{try{return {device:await startOnboardingTrakt(requireUser(locals.user).id,Object.fromEntries(await request.formData()))};}catch(cause){return failure(cause);}},
+ trakt:async({locals,request})=>{
+   try {
+     const fields=Object.fromEntries(await request.formData());
+     return {device:await startOnboardingTrakt(requireUser(locals.user).id,{
+       instanceId:fields.instanceId,traktAccess:{import:fields.import==='true',export:fields.export==='true'}
+     })};
+   }catch(cause){return failure(cause);}
+ },
  poll:async({locals,request})=>{try{return await pollOnboardingTrakt(requireUser(locals.user).id,Object.fromEntries(await request.formData()));}catch(cause){return failure(cause);}},
  picture:async({locals,request})=>{try{const user=requireUser(locals.user);if(!await onboardingPending(user.id))throw new AppError(409,'Onboarding is already complete.');const input=await request.formData();await updateProfile(user.id,{action:'edit',displayName:user.settings.profile?.displayName??user.username,bio:user.settings.profile?.bio??'',avatar:input.get('avatar')||null});await beginOnboardingImports(user.id);redirect(303,'/onboarding');}catch(cause){if(isRedirect(cause))throw cause;return failure(cause);}},
  begin:async({locals})=>{try{await beginOnboardingImports(requireUser(locals.user).id);return {success:true};}catch(cause){return failure(cause);}},

@@ -58,7 +58,10 @@ beforeAll(async () => {
       instanceId,
       externalUserId: 'fixture',
       status: 'connected',
-      settings: { sync: { history: true, ratings: true, collection: false, watchlist: false } },
+      settings: {
+        traktAccess: { import: true, export: true },
+        sync: { history: true, ratings: true, collection: false, watchlist: false },
+      },
     });
   const [movie] = await getDb()
     .insert(media)

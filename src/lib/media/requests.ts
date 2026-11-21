@@ -10,8 +10,23 @@ export type RequestVariant = {
   requestable: boolean;
   available: boolean;
   requested: boolean;
-  seasons: { number: number; requested: boolean; mine: boolean; available: boolean }[];
+  seasons: RequestSeason[];
 };
+
+const seasonBlockReasons = ['Partially available', 'Processing', 'Pending', 'Blocked', 'Unavailable'] as const;
+export type RequestSeasonBlockReason = typeof seasonBlockReasons[number];
+type RequestSeason = { number: number; requested: boolean; mine: boolean; available: boolean; blockedReason?: RequestSeasonBlockReason };
+type SeasonStatus = Pick<RequestSeason, 'available' | 'requested' | 'blockedReason'>;
+
+export function requestSeasonStatus(season: SeasonStatus) {
+  if (season.available) return 'Available';
+  if (season.requested) return 'Requested';
+  return season.blockedReason;
+}
+
+export function canRequestSeason(variant: RequestVariant | null | undefined, season: SeasonStatus) {
+  return !!variant?.requestable && !requestSeasonStatus(season);
+}
 
 /** Availability captions share the season checklist's precedence across destinations. */
 export function requestQualityStatus(destinations: readonly RequestDestination[], quality: 'standard' | 'fourK') {
@@ -37,7 +52,7 @@ export function requestScopeFormatter(requests: MediaActionData['requests']) {
 
 /** A season can be selected when at least one eligible destination can request it. */
 export function requestSeasonChoices(destinations: readonly RequestDestination[], quality: 'standard' | 'fourK', only?: number) {
-  const choices = new Map<number, { number: number; selectable: boolean; requested: boolean; available: boolean }>();
+  const choices = new Map<number, SeasonStatus & { number: number; selectable: boolean }>();
   for (const destination of destinations) {
     const variant = destination.variants[quality];
     for (const season of variant?.seasons ?? []) {
@@ -45,9 +60,11 @@ export function requestSeasonChoices(destinations: readonly RequestDestination[]
       const choice = choices.get(season.number) ?? {
         number: season.number, selectable: false, requested: false, available: false,
       };
-      choice.selectable ||= !!variant?.requestable && !season.requested && !season.available;
+      choice.selectable ||= canRequestSeason(variant, season);
       choice.requested ||= season.requested;
       choice.available ||= season.available;
+      if (season.blockedReason && (!choice.blockedReason || seasonBlockReasons.indexOf(season.blockedReason) < seasonBlockReasons.indexOf(choice.blockedReason)))
+        choice.blockedReason = season.blockedReason;
       choices.set(season.number, choice);
     }
   }

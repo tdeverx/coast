@@ -44,10 +44,12 @@ const connectionScript=(await componentScript('src/lib/ui/components/ConnectionC
   .replace(/let \{[\s\S]+?\} = \$props\(\);/, 'let provider=$state(initial);');
 const connectionCode=compileRunes(`import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
+ import {traktAccess,defaultTraktAccess} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};
  export function create(initial,transport){
-  const reportFailure=()=>{},useClient=()=>({api:transport,feedback:{notify:()=>{}}});
+  const reportFailure=()=>{},useClient=()=>({api:transport,change:transport,feedback:{notify:()=>{}}});
   ${connectionScript}
-  return {setProvider(next){provider=next;},get scan(){return scan;},get error(){return scanStatus.error;}};
+  return {setProvider(next){provider=next;},get scan(){return scan;},get error(){return scanStatus.error;},
+    start,finish,saveTraktSync,categoryAllowed,link(next){linkAccess=next;},setAccess(next){access=next;},get access(){return access;}};
  }`);
 const {create:createConnection}=await import(moduleUrl(connectionCode));
 const settle = async () => { for (let i=0;i<6;i++) { runtime.flush(); await Promise.resolve(); } };
@@ -164,4 +166,41 @@ test('friendship notifications retain the description from their originating act
   expect(controller.detail({kind:'friend-accepted',title:'Your invitee joined Coast'})).toBe('Your invitee joined Coast');
   expect(controller.detail({kind:'friend-accepted',title:'Friend request accepted'})).toBe('Friend request accepted');
  }finally{controller.cleanup();dispose();}
+});
+
+test('Trakt captures directions before authorisation and keeps saved category choices when directions change',async()=>{
+ const calls:{path:string;body:Record<string,unknown>}[]=[];
+ const instance={id:'service',provider:'trakt'};
+ let card:any;
+ const dispose=runtime.effect_root(()=>card=createConnection({...instance,connection:null},async(path:string,body:Record<string,unknown>)=>{
+   calls.push({path,body:JSON.parse(JSON.stringify(body))});
+   return path.endsWith('/start')?{challengeId:'chosen-code'}:{};
+ }));
+ try{
+   await settle();
+   await card.start();
+   expect(calls[0]).toEqual({path:'providers/trakt/start',body:{instanceId:'service',traktAccess:{import:true,export:false}}});
+   const exportOnly={import:false,export:true};
+   card.link(exportOnly);
+   await card.start();
+   expect(calls[1].body.traktAccess).toEqual(exportOnly);
+   await card.finish();
+   expect(calls[2]).toEqual({path:'providers/trakt/finish',body:{instanceId:'service',challengeId:'chosen-code'}});
+   const connection={id:'account',status:'connected',accountGeneration:'generation',settings:{traktAccess:exportOnly,sync:{history:true,scrobble:true,collection:true},liveRead:false}};
+   card.setProvider({...instance,connection});
+   await settle();
+   expect(card.access).toEqual(exportOnly);
+   expect(card.categoryAllowed('collection')).toBe(false);
+   expect(card.categoryAllowed('scrobble')).toBe(true);
+   const neither={import:false,export:false};
+   card.setAccess(neither);
+   expect(card.categoryAllowed('history')).toBe(false);
+   await card.saveTraktSync();
+   expect(calls[3]).toMatchObject({path:'providers/account/sync',body:{accountGeneration:'generation',traktAccess:neither,liveRead:false,history:true,scrobble:true,collection:true}});
+   card.setProvider({...instance,connection:{...connection,settings:{...connection.settings,traktAccess:{import:true,export:false}}}});
+   await settle();
+   expect(card.access).toEqual({import:true,export:false});
+   expect(card.categoryAllowed('scrobble')).toBe(false);
+   expect(card.categoryAllowed('collection')).toBe(true);
+ }finally{dispose();}
 });

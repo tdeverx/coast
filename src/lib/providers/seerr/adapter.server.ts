@@ -1,5 +1,7 @@
 import * as v from 'valibot';
-import { ProviderActionError } from '../contracts';
+import { ProviderActionError, requestDeliveryMessages } from '../contracts';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import type { RequestSeasonBlockReason } from '#lib/media/requests.js';
 import type {
   DiscoverKind,
   Metadata,
@@ -65,6 +67,24 @@ export const requestSchema = v.object({
   ),
 });
 export type SeerrRequest = v.InferOutput<typeof requestSchema>;
+
+/** Seerr admits seasons whose selected-quality status is unknown or deleted. */
+export function seerrSeasonCoverage(status?: number): 'Available' | RequestSeasonBlockReason | undefined {
+  switch (status) {
+    case undefined: case 1: case 7: return undefined;
+    case 2: return 'Pending';
+    case 3: return 'Processing';
+    case 4: return 'Partially available';
+    case 5: return 'Available';
+    case 6: return 'Blocked';
+    default: return 'Unavailable';
+  }
+}
+
+/** Seerr deduplicates by quality across its backends, excluding completed and declined requests. */
+export function requestClaimsQuality(request: SeerrRequest, is4k: boolean) {
+  return request.is4k === is4k && request.status !== 3 && request.status !== 5;
+}
 const searchSchema = v.object({
   results: v.array(
     v.object({
@@ -112,21 +132,10 @@ export function groupDestination(
 export function remainingSeasons(
   requested: number[],
   existing: SeerrRequest[],
-  is4k: boolean,
-  serverId?: number
+  is4k: boolean
 ) {
   const claimed = new Set(
-    existing
-      .filter(
-        (r) =>
-          r.status !== 3 &&
-          r.is4k === is4k &&
-          (serverId === undefined ||
-            r.serverId === undefined ||
-            r.serverId === null ||
-            r.serverId === serverId)
-      )
-      .flatMap((r) => r.seasons.filter((s) => s.status !== 3).map((s) => s.seasonNumber))
+    existing.filter(r => requestClaimsQuality(r, is4k)).flatMap(r => r.seasons.map(s => s.seasonNumber))
   );
   return [...new Set(requested)].filter((n) => !claimed.has(n));
 }
@@ -136,8 +145,8 @@ export class SeerrAdapter {
     private apiKey: string,
     private userId?: number
   ) {}
-  private call(path: string, init: RequestInit = {}) {
-    return this.request(`/api/v1${path}`, {
+  private async call(path: string, init: RequestInit = {}) {
+    const pending = this.request(`/api/v1${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
@@ -146,6 +155,16 @@ export class SeerrAdapter {
         ...init.headers,
       },
     });
+    if (path !== '/request' || init.method !== 'POST') return pending;
+    try {
+      return await pending;
+    } catch (error) {
+      if (error instanceof ProviderHttpError && error.status === 403) {
+        const denial = v.safeParse(v.object({message:v.picklist(['Movie Quota exceeded.', 'Series Quota exceeded.'])}),error.responseBody);
+        if (denial.success) throw new ProviderActionError(requestDeliveryMessages['request-quota'],'request-quota');
+      }
+      throw error;
+    }
   }
   private catalogue(data: unknown): Metadata[] {
     return v
@@ -248,21 +267,20 @@ export class SeerrAdapter {
   }
   async create(scope: RequestScope) {
     const me = await this.user();
+    if (this.userId !== undefined && me.id !== this.userId)
+      throw new ProviderActionError('The linked request account changed.', 'identity');
     if (!canRequest(me.permissions, scope.kind, scope.is4k))
       throw new ProviderActionError(
         'You do not have permission to request this version.',
         'permission'
       );
     const details = await this.details(scope.kind, scope.tmdbId);
+    if (details.id !== scope.tmdbId)
+      throw new ProviderActionError('Seerr returned a different title.', 'identity');
     const requests = details.mediaInfo?.requests || [];
-    const existing = requests.find(
-      (r) =>
-        r.status !== 3 &&
-        r.is4k === scope.is4k &&
-        (scope.serverId === undefined || r.serverId == null || r.serverId === scope.serverId)
-    );
-    if (scope.kind === 'movie' && existing) return existing;
-    const scopeSeasons = scope.seasons || [];
+    const scopeSeasons = [...new Set(scope.seasons)];
+    const active = requests.filter(r => requestClaimsQuality(r, scope.is4k));
+    // A prior successful delivery can be recovered only from this user's matching receipt.
     if (
       scope.kind === 'show' &&
       (!scopeSeasons.length ||
@@ -277,37 +295,55 @@ export class SeerrAdapter {
         'Choose at least one valid season to request.',
         'invalid-request'
       );
-    const seasons = remainingSeasons(scopeSeasons, requests, scope.is4k, scope.serverId).filter(
+    const own = active.filter(r => r.requestedBy?.id === me.id &&
+      (scope.kind === 'movie' || r.seasons.length === scopeSeasons.length &&
+        scopeSeasons.every(n => r.seasons.some(s => s.seasonNumber === n))));
+    let existing = own.find(r => (r.serverId ?? undefined) === scope.serverId);
+    if (!existing && own.some(r => r.serverId == null || scope.serverId === undefined)) {
+      // Seerr uses null for implicit routing. Match it to an explicit backend only
+      // after checking the current default for this quality, including server ID zero.
+      const servers = await this.servers(scope.kind);
+      const defaultId = servers.find(s => s.is4k === scope.is4k && s.isDefault)?.id;
+      existing = own.find(r => defaultId !== undefined &&
+        (r.serverId ?? defaultId) === (scope.serverId ?? defaultId));
+    }
+    if (existing) return {request:existing, seasons:scopeSeasons};
+    const covered = () => new ProviderActionError(requestDeliveryMessages['request-covered'], 'request-covered');
+    if (scope.kind === 'movie' && active.length) throw covered();
+    const seasons = remainingSeasons(scopeSeasons, requests, scope.is4k).filter(
       (n) =>
         !details.mediaInfo?.seasons.some(
-          (s) => s.seasonNumber === n && (scope.is4k ? s.status4k : s.status) === 5
+          (s) => s.seasonNumber === n && seerrSeasonCoverage(scope.is4k ? s.status4k : s.status)
         )
     );
-    if (scope.kind === 'show' && !seasons.length) {
-      if (existing) return existing;
-      throw new ProviderActionError(
-        'All selected seasons are already available or requested.',
-        'invalid-request'
-      );
-    }
+    if (scope.kind === 'show' && !seasons.length) throw covered();
     if (
       scope.kind === 'movie' &&
       (scope.is4k ? details.mediaInfo?.status4k : details.mediaInfo?.status) === 5
     )
-      throw new ProviderActionError('This version is already available.', 'invalid-request');
-    return v.parse(
-      requestSchema,
-      await this.call('/request', {
-        method: 'POST',
-        body: JSON.stringify({
-          mediaType: scope.kind === 'show' ? 'tv' : 'movie',
-          mediaId: scope.tmdbId,
-          is4k: scope.is4k,
-          serverId: scope.serverId,
-          ...(scope.kind === 'show' ? { seasons } : {}),
-        }),
-      })
-    );
+      throw covered();
+    const response = await this.call('/request', {
+      method: 'POST',
+      body: JSON.stringify({
+        mediaType: scope.kind === 'show' ? 'tv' : 'movie',
+        mediaId: scope.tmdbId,
+        is4k: scope.is4k,
+        serverId: scope.serverId,
+        ...(scope.kind === 'show' ? { seasons } : {}),
+      }),
+    });
+    // Seerr returns this message with HTTP 202 when the seasons became covered after preflight.
+    if (scope.kind === 'show' && response && typeof response === 'object' &&
+        'message' in response && response.message === 'No seasons available to request' &&
+        !('id' in response) && !('status' in response))
+      throw covered();
+    const receipt = v.parse(v.pipe(requestSchema,v.check(r => Number.isSafeInteger(r.id) && r.id>0 &&
+      (!r.requestedBy || r.requestedBy.id===me.id) && (!r.media || r.media.tmdbId===scope.tmdbId) &&
+      (!r.type || r.type===(scope.kind==='show'?'tv':'movie')) &&
+      (r.serverId==null || scope.serverId===undefined || r.serverId===scope.serverId) &&
+      (!response || typeof response!=='object' || !('is4k' in response) || r.is4k===scope.is4k) &&
+      r.seasons.every(s=>seasons.includes(s.seasonNumber)), 'Expected a receipt for the submitted request.')),response);
+    return {request:receipt, seasons:receipt.seasons.length ? receipt.seasons.map(s=>s.seasonNumber) : seasons};
   }
   async requestDetails(requestId: number) {
     return v.parse(requestSchema, await this.call(`/request/${requestId}`));

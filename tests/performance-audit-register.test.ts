@@ -33,9 +33,10 @@ import tasteProfileEntrySourceRefresh from '../docs/audits/2026-11-19-taste-prof
 import liveErrorSourceRefresh from '../docs/audits/2026-11-20-live-error-followup-source-refresh.json';
 import clearGlassSourceRefresh from '../docs/audits/2026-11-20-clear-glass-source-refresh.json';
 import fullHistoryTasteSourceRefresh from '../docs/audits/2026-11-20-full-history-taste-source-refresh.json';
+import providerDeliverySourceRefresh from '../docs/audits/2026-11-21-provider-delivery-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -49,6 +50,16 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('provider delivery and directional consent retain their scoped verification', async () => {
+  const review = providerDeliverySourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review the provider delivery or consent change.');
+  for (const [path, pin] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, pin, 'Review the supporting permission and provider regression coverage.');
+  await expectCurrentSource(review.report, review.reportSha256, 'Review the provider verification boundaries.');
+});
 
 test('full-history taste and admin diagnostics retain their scoped review', async () => {
   const review = fullHistoryTasteSourceRefresh;

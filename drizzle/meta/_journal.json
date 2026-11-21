@@ -582,6 +582,13 @@
       "when": 1795202528927,
       "tag": "0082_taste_scoring_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795222244000,
+      "tag": "0083_trakt_sync_controls",
+      "breakpoints": true
     }
   ]
 }

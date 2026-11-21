@@ -1,3 +1,4 @@
+import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
 import { context } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { reconcileProviderList, acknowledgeProviderList } from '#lib/sync/list-values.server.js';
@@ -9,6 +10,7 @@ import {
   lists,
   listItems,
   providerConnections,
+  providerInstances,
   outboxActions,
   syncListValues,
 } from '#lib/server/db/schema.js';
@@ -32,7 +34,7 @@ export async function executeTraktListExport(
   input: Record<string, unknown>
 ) {
   const { listId } = v.parse(v.object({ listId: v.pipe(v.string(), v.uuid()) }), input);
-  const context = await getTrakt(userId, connectionId);
+  const context = await getTrakt(userId, connectionId, 'export');
   if (!context.sync.lists) return;
   const [list] = await getDb()
     .select()
@@ -49,7 +51,7 @@ export async function executeTraktListExport(
         eq(syncListValues.conflict, true)
       )
     );
-  if (pending) return;
+  if (pending) return {applied:0,review:1};
   const remoteId =
     (list.sourceConnectionId === connectionId ? list.externalId : null) ||
     (context.connection.settings.exportedLists as Record<string, string>)?.[listId];
@@ -72,8 +74,9 @@ export async function executeTraktListExport(
         .trim(),
       items: members,
       ...(!remote ? { deleted: true } : {}),
-    });
-    if (decision === 'conflict' || decision === 'remote') return;
+    }, false, {direction:'export',accountGeneration:context.connection.accountGeneration});
+    if (decision === 'conflict') return {applied:0,review:1};
+    if (decision === 'remote') return;
   }
   const sent = await exportTraktListToAdapter(userId, connectionId, input, context);
   if (sent) await acknowledgeProviderList(connectionId, listId, sent, context.connection.accountGeneration);
@@ -133,12 +136,14 @@ export async function exportTraktListToAdapter(
           ).ids.trakt
         );
     if (existing) await adapter.updateList(remoteId,list.name,[list.description,marker].filter(Boolean).join('\n\n'));
-    await getDb()
+    const [saved] = await getDb()
       .update(providerConnections)
       .set({
         settings: sql`jsonb_set(${providerConnections.settings},'{exportedLists}',coalesce(${providerConnections.settings}->'exportedLists','{}'::jsonb)||jsonb_build_object(${list.id}::text,${remoteId}::text),true)`,
       })
-      .where(eq(providerConnections.id, connectionId));
+      .where(and(eq(providerConnections.id,connectionId),eq(providerConnections.accountGeneration,connection.accountGeneration)))
+      .returning({id:providerConnections.id});
+    if(!saved)throw new PermanentActionError('The Trakt account changed before the list was linked.');
   }
   else await adapter.updateList(remoteId,list.name,[list.description,marker].filter(Boolean).join('\n\n'));
   const payload: Record<(typeof traktPlurals)[TraktKind], { ids: TraktIds }[]> = {
@@ -205,13 +210,13 @@ export async function deleteListWithExports(userId: string, listId: string) {
       return { deleted: true };
     }
     const connections = await tx
-      .select()
+      .select({connection:providerConnections})
       .from(providerConnections)
-      .where(
-        and(eq(providerConnections.userId, userId), eq(providerConnections.status, 'connected'))
-      )
-      .orderBy(asc(providerConnections.id));
-    for (const connection of connections) {
+      .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
+      .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),
+        eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true),traktExportAllowed))
+      .orderBy(asc(providerConnections.id)).for('share',{of:providerConnections});
+    for (const {connection} of connections) {
       if (!(connection.settings.sync as Record<string, boolean> | undefined)?.lists) continue;
       const externalId =
         list.source === 'trakt' && list.sourceConnectionId === connection.id

@@ -244,7 +244,7 @@ run('quality handoffs preserve one viewing and one Trakt history export', async 
  try {
   await db`INSERT INTO external_ids(media_id,provider,external_id,media_kind) VALUES(${movie},'tmdb','123','movie')`;
   await db`INSERT INTO provider_connections(user_id,instance_id,status,external_user_id,settings)
-   VALUES(${user},${trakt},'connected','trakt-account',${{ sync: { history: true } }}::jsonb)`;
+   VALUES(${user},${trakt},'connected','trakt-account',${{ sync: { history: true },traktAccess:{import:true,export:true} }}::jsonb)`;
   const options = { mediaId: movie, browser };
   const first = await startPlayback(user, { ...options, fromStart: true });
   await progressPlayback(user, first.id, { event: 'start', positionSeconds: 0 });

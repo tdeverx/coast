@@ -57,6 +57,11 @@ export function jobPurposeLabel(action: QueueAction) {
 }
 
 export function jobOutcome(action: QueueAction) {
+  if(action.state==='succeeded' && action.kind==='igdb.steam-metadata' && action.outcome?.checked!=null){
+    const {checked,refreshed,deferred,review}=action.outcome;
+    return [`${checked} Steam IDs checked`,`${refreshed??0} matches refreshed`,deferred?`${deferred} deferred`:null,
+      review?`${review} conflicting ${review===1?'match':'matches'} skipped`:null].filter(Boolean).join(' · ');
+  }
   if(action.state==='succeeded' && action.outcome && (action.outcome.applied!==undefined || action.outcome.review!==undefined))return `${action.outcome.applied??0} changes applied${action.outcome.review?` · ${action.outcome.review} need review`:''}`;
   if(action.kind==='jellyfin.streams'&&action.outcome?.checked!=null)return `${action.outcome.checked} active streams`;
   if(action.kind==='taste.refresh'&&action.state==='succeeded'&&action.outcome)return `${action.outcome.refreshed??0} user taste profiles refreshed${action.outcome.deferred?` · ${action.outcome.deferred} changed during calculation; retry next run`:''}`;

@@ -10,7 +10,6 @@ import * as v from 'valibot';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import {
-  externalIds,
   media,
   episodes,
   trackingEvents,
@@ -42,28 +41,26 @@ export async function readTraktValue(adapter: TraktAdapter, mediaId: string, cat
     );
   };
   if (category === 'collection' && item.kind === 'episode') {
+    if(identity.trakt){
+      for await(const page of adapter.collectionEpisodePages())
+        if(page.some(record=>record.episode.ids.trakt===identity.trakt))return {value:true};
+      return {value:false};
+    }
     const [episode] = await getDb()
       .select()
       .from(episodes)
       .where(eq(episodes.mediaId, mediaId));
     if (!episode) throw new PermanentActionError('Episode identity is missing.');
     const showIds = await exportIdentity(episode.showId, 'show');
-    const shows = await adapter.collectionShows();
-    return {
-      value: shows.some(
-        (record) =>
-          record.show &&
-          Object.entries(showIds).some(
-            ([provider, id]) =>
-              String(record.show!.ids[provider as keyof typeof record.show.ids]) === String(id)
-          ) &&
-          record.seasons?.some(
-            (season) =>
-              season.number === episode.seasonNumber &&
-              season.episodes.some((entry) => entry.number === episode.episodeNumber)
-          )
-      ),
-    };
+    for await (const page of adapter.collectionEpisodePages()) {
+      if (page.some(record => {
+        const comparable=Object.keys(identity).filter(provider=>record.episode.ids[provider as keyof typeof record.episode.ids]!=null);
+        if(comparable.length)return matches(record);
+        return record.episode.season === episode.seasonNumber && record.episode.number === episode.episodeNumber &&
+          Object.entries(showIds).some(([provider,id]) => String(record.show.ids[provider as keyof typeof record.show.ids]) === String(id));
+      })) return { value:true };
+    }
+    return { value:false };
   }
   for (let page = 1; page <= 10000; page++) {
     const records = await adapter.read(category, page);
@@ -93,7 +90,7 @@ export async function executeTraktExport(
   connectionId: string,
   input: Record<string, unknown>
 ) {
-  const context = await getTrakt(userId, connectionId);
+  const context = await getTrakt(userId, connectionId, 'export');
   const category = input.category as ValueCategory;
   if (!['history', 'collection', 'ratings', 'watchlist'].includes(category))
     throw new PermanentActionError('Unsupported Trakt export.');
@@ -114,14 +111,15 @@ export async function executeTraktExport(
     category,
     remote,
     {
-      source: 'trakt',
+      source: 'trakt', traktDirection: 'export', accountGeneration: context.connection.accountGeneration,
     }
   );
-  if (decision === 'conflict' || decision === 'remote') return;
+  if (decision === 'conflict') return {applied:0,review:1};
+  if (decision === 'remote') return;
   await exportTraktToAdapter(userId, input, context);
   await acknowledgeProviderValue(userId, connectionId, String(input.mediaId), category, {
     value: category === 'ratings' ? (input.remove ? null : input.value) : !input.remove,
-  });
+  },context.connection.accountGeneration);
 }
 
 /** Shared dispatch engine; only server-resolved adapters can reach it. */
@@ -225,7 +223,7 @@ export async function executeLiveScrobble(
   connectionId: string,
   input: Record<string, unknown>
 ) {
-  return executeLiveScrobbleToAdapter(userId,connectionId,input,await getTrakt(userId,connectionId));
+  return executeLiveScrobbleToAdapter(userId,connectionId,input,await getTrakt(userId,connectionId, 'export'));
 }
 export async function executeLiveScrobbleToAdapter(userId:string,connectionId:string,input:Record<string,unknown>,{adapter,sync,connection}:Awaited<ReturnType<typeof getTrakt>>) {
   if(connection.userId!==userId||connection.id!==connectionId)throw new PermanentActionError('The connected account is unavailable.');
@@ -242,17 +240,9 @@ export async function executeLiveScrobbleToAdapter(userId:string,connectionId:st
   await requireFeature(userId,'presence');
   await requireFeature(userId,'screen');
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
-  if (!item || !['movie', 'episode'].includes(item.kind)) return;
-  const mappings = await getDb()
-    .select()
-    .from(externalIds)
-    .where(eq(externalIds.mediaId, data.mediaId));
-  const ids = Object.fromEntries(
-    mappings
-      .filter((m) => ['trakt', 'tmdb', 'imdb', 'tvdb'].includes(m.provider))
-      .map((m) => [m.provider, m.provider === 'imdb' ? m.externalId : Number(m.externalId)])
-  );
-  if (!Object.keys(ids).length) return;
+  if (!item || (item.kind !== 'movie' && item.kind !== 'episode')) return;
+  const ids = await exportIdentity(item.id, item.kind);
+  if (!Object.keys(ids).length) return {skipped:1};
   // Only completion can create history. Reserve its evidence before sending so a lost
   // response cannot silently become a second play on retry.
   const completion=data.event==='stop' && data.progress>=80 && data.sessionId;
@@ -264,13 +254,13 @@ export async function executeLiveScrobbleToAdapter(userId:string,connectionId:st
     }
     await getDb().insert(socialScrobbleDeliveries).values({connectionId,sessionId:completion,workId:data.mediaId,accountGeneration:connection.accountGeneration,state:'uncertain'}).onConflictDoUpdate({target:[socialScrobbleDeliveries.connectionId,socialScrobbleDeliveries.sessionId],set:{accountGeneration:connection.accountGeneration,state:'uncertain',remoteId:null,updatedAt:new Date()}});
   }
-  const result=await adapter.scrobble(data.event, item.kind as 'movie' | 'episode', ids, data.progress);
+  const receipt=await adapter.scrobble(data.event, item.kind as 'movie' | 'episode', ids, data.progress);
   if(completion){
-    const response=v.parse(v.object({id:v.optional(v.number()),action:v.string()}),result);
+    if(receipt.action!=='scrobble')throw new PermanentActionError('Trakt did not confirm a completed play. Review Trakt history before retrying.');
     await getDb().transaction(async tx=>{
       const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
       if(current?.accountGeneration!==connection.accountGeneration)return;
-      await tx.update(socialScrobbleDeliveries).set({remoteId:response.id?String(response.id):null,state:'confirmed',updatedAt:new Date()}).where(and(eq(socialScrobbleDeliveries.connectionId,connectionId),eq(socialScrobbleDeliveries.sessionId,completion),eq(socialScrobbleDeliveries.accountGeneration,connection.accountGeneration)));
+      await tx.update(socialScrobbleDeliveries).set({remoteId:String(receipt.id),state:'confirmed',updatedAt:new Date()}).where(and(eq(socialScrobbleDeliveries.connectionId,connectionId),eq(socialScrobbleDeliveries.sessionId,completion),eq(socialScrobbleDeliveries.accountGeneration,connection.accountGeneration)));
     });
   }
 }
@@ -289,20 +279,12 @@ export async function executeProgressExport(
     }),
     input
   );
-  const { adapter, sync } = await getTrakt(userId, connectionId);
+  const { adapter, sync, connection } = await getTrakt(userId, connectionId, 'export');
   if (!sync.progress || (sync.scrobble && !data.resolved)) return;
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
-  if (!item || !['movie', 'episode'].includes(item.kind)) return;
-  const mappings = await getDb()
-    .select()
-    .from(externalIds)
-    .where(eq(externalIds.mediaId, item.id));
-  const ids = Object.fromEntries(
-    mappings
-      .filter((m) => ['trakt', 'tmdb', 'tvdb', 'imdb'].includes(m.provider))
-      .map((m) => [m.provider, m.provider === 'imdb' ? m.externalId : Number(m.externalId)])
-  );
-  if (!Object.keys(ids).length) return;
+  if (!item || (item.kind !== 'movie' && item.kind !== 'episode')) return;
+  const ids = await exportIdentity(item.id, item.kind);
+  if (!Object.keys(ids).length) return {skipped:1};
   const duration = data.durationSeconds ?? (item.runtimeMinutes ?? 0) * 60;
   const desired = {
     positionSeconds: Math.round(duration * data.progress * 10) / 1000,
@@ -320,9 +302,10 @@ export async function executeProgressExport(
       item.id,
       'progress',
       remote,
-      { source: 'trakt' }
+      { source: 'trakt', traktDirection: 'export', accountGeneration: connection.accountGeneration }
     );
-    if (decision === 'conflict' || decision === 'remote') return;
+    if (decision === 'conflict') return {applied:0,review:1};
+    if (decision === 'remote') return;
   } else {
     const [pending] = await getDb()
       .select({ id: syncValues.id })
@@ -335,9 +318,9 @@ export async function executeProgressExport(
           eq(syncValues.conflict, true)
         )
       );
-    if (pending) return;
+    if (pending) return {applied:0,review:1};
   }
   if (data.progress === 0) await adapter.clearProgress(item.kind as 'movie' | 'episode', ids);
   else await adapter.scrobble('pause', item.kind as 'movie' | 'episode', ids, data.progress);
-  await acknowledgeProviderValue(userId, connectionId, item.id, 'progress', desired);
+  await acknowledgeProviderValue(userId, connectionId, item.id, 'progress', desired, connection.accountGeneration);
 }

@@ -83,8 +83,8 @@ export async function scanTraktCatalogue(
     stage: 0, page: 1, listIds: [], listIndex: 0, itemsPage: 1,
   };
   const seen = new Set<string>();
-  const consume = async (records: TraktRecord[], limit = 100) => {
-    if (records.length > limit) throw new Error('Trakt returned an oversized catalogue page.');
+  const consume = async (records: TraktRecord[]) => {
+    if (records.length > 100) throw new Error('Trakt returned an oversized catalogue page.');
     for (const record of records) {
       const item = record.movie ?? record.show;
       if (!item?.ids.tmdb) continue;
@@ -115,9 +115,9 @@ export async function scanTraktCatalogue(
   while (cursor.stage < 6) {
     const records = cursor.stage < 5
       ? await adapter.read(categories[cursor.stage], cursor.page)
-      : await adapter.collectionShowsPage(cursor.page);
-    await consume(records, cursor.stage === 5 ? 10 : 100);
-    const complete = records.length < (cursor.stage === 5 ? 10 : 100);
+      : await adapter.collectionEpisodesPage(cursor.page);
+    await consume(records);
+    const complete = records.length < 100;
     await advance({ ...cursor, stage: cursor.stage + Number(complete), page: complete ? 1 : nextPage(cursor.page) });
   }
   while (cursor.stage === 6) {

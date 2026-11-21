@@ -111,7 +111,9 @@ export async function syncSteamMetadata(action:OutboxAction){
   if(typeof action.payload.instanceId!=='string')throw new PermanentActionError('Choose an IGDB service.');
   const [instance]=await getDb().select().from(s.providerInstances).where(and(eq(s.providerInstances.id,action.payload.instanceId),eq(s.providerInstances.provider,'igdb'),eq(s.providerInstances.enabled,true),sql`${s.providerInstances.credentials} is not null`));
   if(!instance)throw new PermanentActionError('The IGDB service is unavailable.');
-  const schema=v.object({task:v.literal('steam-metadata'),ids:v.array(v.pipe(v.string(),v.regex(/^\d+$/))),next:v.pipe(v.number(),v.integer(),v.minValue(0)),refreshed:v.number(),deferred:v.number(),review:v.optional(v.number(),0)});
+  const maxReviewExamples = 8;
+  const schema=v.object({task:v.literal('steam-metadata'),ids:v.array(v.pipe(v.string(),v.regex(/^\d+$/))),next:v.pipe(v.number(),v.integer(),v.minValue(0)),refreshed:v.number(),deferred:v.number(),review:v.optional(v.number(),0),
+    reviewExamples:v.optional(v.pipe(v.array(v.string()),v.maxLength(maxReviewExamples)),[])});
   const saved=await readJobCheckpoint();
   const resume=saved?v.parse(schema,saved):null;
   const rows=resume?[]:await getDb().select({id:s.gameExternalIds.externalId}).from(s.gameExternalIds)
@@ -119,31 +121,41 @@ export async function syncSteamMetadata(action:OutboxAction){
     .orderBy(s.gameExternalIds.externalId).limit(500);
   const ids=resume?.ids??rows.map(row=>row.id);
   let refreshed=resume?.refreshed??0,deferred=resume?.deferred??0,review=resume?.review??0;
+  const reviewExamples=resume?.reviewExamples??[];
   for(let index=resume?.next??0;index<ids.length;index+=50){
     const batch=ids.slice(index,index+50);
     const matches=await igdbSteamMatches(instance.id,batch).catch(cause => { throw tagDiagnosticStage(cause, 'provider-read'); });
-    const accepted=matches.filter(match=>match.identities.some(identity=>identity.provider==='steam'&&batch.includes(identity.externalId)));
-    for(const match of accepted){
+    const requested = new Set(batch);
+    const matched = new Set<string>();
+    for(const match of matches){
+      let steamId: string | undefined;
+      for (const identity of match.identities) {
+        if (identity.provider !== 'steam' || !requested.has(identity.externalId)) continue;
+        steamId ??= identity.externalId;
+        matched.add(identity.externalId);
+      }
+      if (steamId === undefined) continue;
       try{
         await importIgdbMetadata(match);
         refreshed++;
       }catch(cause){
         if(!(cause instanceof DomainError)||cause.code!=='identity_conflict')throw tagDiagnosticStage(cause,'item-import');
         review++;
-        void logDiagnostic('warn','job.failed',{actionId:action.id,jobKind:action.kind,
+        if (reviewExamples.length < maxReviewExamples)
+          reviewExamples.push(`${match.title.slice(0,80)} (Steam ${steamId}, IGDB ${match.externalId})`);
+        void logDiagnostic('warn','job.item-skipped',{actionId:action.id,jobKind:action.kind,
           errorCode:'catalogue.identity-conflict',stage:'item-import',retryable:false});
       }
     }
-    const matched=new Set(accepted.flatMap(match=>match.identities.filter(identity=>identity.provider==='steam').map(identity=>identity.externalId)));
-    deferred+=batch.filter(id=>!matched.has(id)).length;
+    deferred += batch.filter(id => !matched.has(id)).length;
     // A successful empty match should not monopolize every bounded future pass.
     // Keep this shared metadata retry marker separate from personal ownership.
     await getDb().execute(sql`update provider_items pi set snapshot=pi.snapshot || jsonb_build_object('steamMetadataAttemptedAt',${new Date().toISOString()}::text)
       from provider_instances i where i.id=pi.instance_id and i.provider='steam' and pi.external_id in (${sql.join(batch.map(id=>sql`${id}`),sql`,`)})`);
-    await saveJobCheckpoint({task:'steam-metadata',ids,next:Math.min(ids.length,index+50),refreshed,deferred,review});
+    await saveJobCheckpoint({task:'steam-metadata',ids,next:Math.min(ids.length,index+50),refreshed,deferred,review,reviewExamples});
     await jobCheckpoint();
   }
-  return {checked:ids.length,refreshed,deferred,review};
+  return {checked:ids.length,refreshed,deferred,review,...(reviewExamples.length?{reviewExamples}:{})};
 }
 
 export async function syncSteamAchievements(action:OutboxAction) {

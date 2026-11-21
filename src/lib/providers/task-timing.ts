@@ -1,9 +1,11 @@
+import { traktAccess, traktJobDirection } from './trakt/access';
 import {companionHealthy,type CompanionState} from './jellyfin/companion';
 import type { ProviderSchedule } from './schedule';
 import type { ServiceTask } from './tasks';
 
 export type TaskSettings = {
   schedule?: unknown;
+  traktAccess?: unknown;
   companion?: CompanionState;
   libraryScan?: { connectionId?: string; externalUserId?: string | null; fullCompletedAt?: string; recentCompletedAt?: string };
   sync?: Record<string, boolean>;
@@ -24,8 +26,10 @@ export function taskSchedulingEnabled(provider: string, enabled: boolean, task: 
 }
 
 /** Account opt-ins and selected shared sources apply to automatic and manual runs. */
-export function eligibleTaskAccounts<T extends TaskAccount>(kind: string, accounts: T[], schedule: ProviderSchedule, settings: TaskSettings, hasTmdb: boolean): T[] {
+export function eligibleTaskAccounts<T extends TaskAccount>(kind: string, accounts: T[], schedule: ProviderSchedule, settings: TaskSettings, hasTmdb: boolean, provider?: string): T[] {
+  const direction = provider === 'trakt' || kind.startsWith('trakt.') ? traktJobDirection(kind) : undefined;
   let eligible = accounts.filter(account => {
+    if (direction && !traktAccess(account.settings)[direction]) return false;
     if (kind === 'trakt.recommendations') return account.configured !== false;
     if (kind === 'jellyfin.streams' || kind === 'jellyfin.updates') return account.role === 'admin';
     if (kind === 'catalogue.user-scan') return hasTmdb;

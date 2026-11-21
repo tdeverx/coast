@@ -8,7 +8,7 @@
   import { useClient } from '#lib/ui/client-context.js';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import { requestQualityStatus, type RequestDestination } from '#lib/media/requests.js';
+  import { canRequestSeason, requestQualityStatus, requestSeasonStatus, type RequestDestination } from '#lib/media/requests.js';
   import { createRequestOptions } from '#lib/ui/controls/request-options.svelte.js';
 
   const { api, change } = useClient();
@@ -46,10 +46,11 @@
   const failure = $derived(error || read.error);
   const active = $derived(destinations.find((d) => d.id === destination));
   const variant = $derived(is4k ? active?.variants.fourK : active?.variants.standard);
+  const selectable = $derived(new Set((variant?.seasons ?? []).filter(season => canRequestSeason(variant, season)).map(season => season.number)));
+  const canSubmit = $derived(!!variant?.requestable && (item.kind !== 'show' || (selected.length > 0 && selected.every(number => selectable.has(number)))));
   function chooseSeasons() {
     const initial = initialSeasons && is4k === initial4k ? initialSeasons : seasonNumber === undefined ? [] : [seasonNumber];
-    const available = new Set((variant?.seasons ?? []).filter(season => !season.requested && !season.available).map(season => season.number));
-    selected = initial.filter(number => available.has(number));
+    selected = initial.filter(number => selectable.has(number));
   }
   function chooseDestination() {
     const selectedDestination = destinations.find((d) => d.id === destination);
@@ -84,7 +85,7 @@
       const match = (key: 'standard' | 'fourK') => {
         const candidates = destinations.filter(entry => entry.variants[key]?.requestable);
         const canSelect = (entry: RequestDestination, number: number) => entry.variants[key]?.seasons.some(
-          season => season.number === number && !season.requested && !season.available);
+          season => season.number === number && canRequestSeason(entry.variants[key], season));
         return candidates.find(entry => intent.every(number => canSelect(entry, number)))
           ?? candidates.find(entry => intent.some(number => canSelect(entry, number)));
       };
@@ -99,7 +100,7 @@
     });
   });
   async function submit() {
-    if (busy) return;
+    if (busy || !canSubmit) return;
 
     error = '';
     const completed = await operation.run(async () => {
@@ -143,17 +144,18 @@
         >{/if}
       {#if item.kind === 'show'}<div class="stack">
           <h3>Seasons</h3>
-          {#each variant?.seasons ?? [] as season}<label class="check"
+          {#each variant?.seasons ?? [] as season}
+            {@const status = requestSeasonStatus(season)}
+            <label class="check"
               ><input
                 type="checkbox"
                 bind:group={selected}
                 value={season.number}
-                disabled={season.requested || season.available}
-              />Season {season.number}{#if season.available}<small>Available</small
-                >{:else if season.requested}<small
-                  >{season.mine ? 'Requested by you' : 'Requested by someone else'}</small
-                >{/if}</label
-            >{/each}
+                disabled={!selectable.has(season.number)}
+              />Season {season.number}{#if status === 'Requested'}<small>{season.mine ? 'Requested by you' : 'Requested by someone else'}</small>
+                {:else if !selectable.has(season.number)}<small>{status ?? 'Unavailable'}</small>{/if}
+            </label>
+          {/each}
         </div>{/if}
       {#if !variant?.requestable}<p class="small">
           {requestQualityStatus(active ? [active] : [], is4k ? 'fourK' : 'standard')}.
@@ -164,7 +166,7 @@
       >
       <Button
         type="submit"
-        disabled={busy || !variant?.requestable || (item.kind === 'show' && !selected.length)}
+        disabled={busy || !canSubmit}
         >{busy ? 'Sending request…' : 'Request'}</Button
       >
     {:else if loaded && !failure}<p>No request destinations are available for your account.</p>{/if}

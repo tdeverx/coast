@@ -1,3 +1,5 @@
+import { traktImportAllowed } from '#lib/providers/trakt/access.server.js';
+import { traktAccess } from '#lib/providers/trakt/access.js';
 import {eq,sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import {providerConnections,providerInstances,recommendationSets,users} from '#lib/server/db/schema.js';
@@ -55,6 +57,7 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
   const candidates:RecommendationAccount[]=instance.provider==='trakt'?accounts:[{id:instance.id,user_id:admin?.id,account_generation:null,external_user_id:null,settings:{},completed:last?.updated??null}];
   const due:RecommendationAccount[]=[];
   for(const account of candidates){
+   if(instance.provider==='trakt'&&!traktAccess(account.settings).import)continue;
    const job=busy.find(entry=>entry.connection_id===account.id);
    if(job){await promote(job);active++;continue;}
    const timing=taskDue(task,schedule,instance.settings,{...account,externalUserId:account.external_user_id,role:'user'}, {completed:account.completed},now,options.force);
@@ -63,8 +66,12 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
   due.sort((a,b)=>new Date(a.completed??0).getTime()-new Date(b.completed??0).getTime());
   for(const account of options.force?due:due.slice(0,1)){
    const personal=instance.provider==='trakt';
-   await tx.execute(sql`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload,compaction_key)
-    values(${account.user_id!},${personal?account.id:null},${account.account_generation},${kind},${{instanceId:instance.id,force:!!options.force,_manual:!!options.force,_jobPurpose:options.force?'manual':'scheduled'}}::jsonb,${kind})`);queued++;
+   const allowed=personal?sql`exists(select 1 from ${providerConnections} where ${providerConnections.id}=${account.id}::uuid
+     and ${providerConnections.accountGeneration}=${account.account_generation}::uuid and ${traktImportAllowed} for share)`:sql`true`;
+   const inserted=await tx.execute(sql`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload,compaction_key)
+    select ${account.user_id!}::uuid,${personal?account.id:null}::uuid,${account.account_generation}::uuid,${kind},${{instanceId:instance.id,force:!!options.force,_manual:!!options.force,_jobPurpose:options.force?'manual':'scheduled'}}::jsonb,${kind}
+    where ${allowed} returning id`);
+   queued+=inserted.length;
   }
  }
  return {queued,active};
@@ -84,6 +91,7 @@ async function saveSet(instanceId:string,key:string,ids:string[],seedId:string|n
    const [account]=await tx.select().from(providerConnections).where(eq(providerConnections.id,action.connectionId)).for('update');
    if(!account||account.userId!==action.userId||account.instanceId!==instanceId||account.status!=='connected'||account.accountGeneration!==action.accountGeneration)
     throw new PermanentActionError('The recommendation account changed.');
+   if(instance?.provider==='trakt'&&!traktAccess(account.settings).import)throw new PermanentActionError('Trakt import is disabled.');
   }
   if(!instance?.enabled||!instance.credentials||!user||user.disabled)throw new PermanentActionError('The recommendation service is unavailable.');
   await assertJobLease(tx,true);

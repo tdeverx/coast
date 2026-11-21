@@ -256,6 +256,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
               settings: {
                 liveRead: connection.settings.liveRead,
                 sync: connection.settings.sync,
+                ...(instance.provider === 'trakt' ? { traktAccess: connection.settings.traktAccess } : {}),
                 importOwned: connection.settings.importOwned,
                 importPlaytime: connection.settings.importPlaytime,
                 importAchievements: connection.settings.importAchievements,
@@ -326,6 +327,10 @@ export function instanceTransport(instance: typeof providerInstances.$inferSelec
   return async (path: string, init?: RequestInit) => {
     signal?.throwIfAborted();
     const config = await instanceFetchConfig(instance);
+    if (instance.provider === 'trakt' && ['/oauth/device/code', '/oauth/device/token', '/oauth/token'].includes(path)) {
+      config.baseUrl = 'https://auth.trakt.tv';
+      config.allowPrivateNetwork = false;
+    }
     signal?.throwIfAborted();
     return createProviderTransport(config)(path, signal
       ? {...init,signal:init?.signal?AbortSignal.any([signal,init.signal]):signal}

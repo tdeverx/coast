@@ -1,3 +1,5 @@
+import { traktJobDirection, type TraktDirection } from './trakt/access';
+import { traktImportAllowed, traktExportAllowed } from './trakt/access.server';
 import { pruneUnusedAvatars, stopAvatarSweep } from '#lib/core/profile/avatar-storage.server.js';
 import { expireMemberships } from '#lib/server/auth/account-management.server.js';
 import { pruneTransientRecords } from '#lib/server/storage/retention.server.js';
@@ -224,7 +226,7 @@ export async function scheduleProviderMaintenance(
       from provider_connections c where c.id in (${sql.join(ids.map(id=>sql`${id}`),sql`,`)})
     `);
     const presenceById = new Map(presence.map(account=>[account.id,account.live]));
-    const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; payload: Record<string, unknown>; last: number }[]>();
+    const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; direction?: TraktDirection; payload: Record<string, unknown>; last: number }[]>();
     for (const instance of new Map(eligible.map(row => [row.instance.id, row.instance])).values()) {
       const schedule = providerSchedule(instance.provider, instance.settings.schedule);
       const linked = eligible.filter(row => row.instance.id === instance.id).map(row => ({
@@ -241,7 +243,7 @@ export async function scheduleProviderMaintenance(
           || !taskSchedulingEnabled(instance.provider, instance.enabled, task, schedule, config, options.force)) continue;
         // Metadata/recommendation schedulers above own their record/seed-specific evidence.
         if (kind.endsWith('.recommendations')||kind==='trakt.air-schedule') continue;
-        const accounts = eligibleTaskAccounts(kind, linked, schedule, instance.settings, !!tmdb);
+        const accounts = eligibleTaskAccounts(kind, linked, schedule, instance.settings, !!tmdb, instance.provider);
         const shared = jobIdentityScope(kind) === 'instance';
         const sharedJobs = jobs.filter(job => job.kind === kind && linked.some(account => account.id === job.connectionId));
         for (const account of accounts) {
@@ -256,7 +258,7 @@ export async function scheduleProviderMaintenance(
           if (due.at == null || due.at > now) continue;
           const key = `${instance.id}:${kind}`;
           const candidates = requests.get(key) ?? [];
-          candidates.push({ connection: account, kind, payload: due.full === undefined ? {} : { full: due.full }, last: due.completed });
+          candidates.push({ connection: account, kind, direction: instance.provider==='trakt'?traktJobDirection(kind):undefined, payload: due.full === undefined ? {} : { full: due.full }, last: due.completed });
           requests.set(key, candidates);
         }
       }
@@ -265,7 +267,7 @@ export async function scheduleProviderMaintenance(
       candidates.sort((a, b) => a.last - b.last || a.connection.createdAt.getTime() - b.connection.createdAt.getTime());
       // A timer rotates through due accounts; an explicit run requests every eligible account.
       const selected = options.force && jobIdentityScope(candidates[0].kind) === 'account' ? candidates : candidates.slice(0, 1);
-      for (const { connection, kind, payload } of selected) {
+      for (const { connection, kind, direction, payload } of selected) {
         const scope = jobIdentityScope(kind);
         const [existing] = await tx.select({ id: outboxActions.id }).from(outboxActions)
           .innerJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
@@ -274,6 +276,12 @@ export async function scheduleProviderMaintenance(
             sql`(${outboxActions.accountGeneration} is null or ${outboxActions.accountGeneration}=${providerConnections.accountGeneration})`,
             inArray(outboxActions.state, ['pending', 'running', 'failed']))).limit(1);
         if (existing) continue;
+        if (direction) {
+          const [allowed] = await tx.select({id:providerConnections.id}).from(providerConnections)
+            .where(and(eq(providerConnections.id,connection.id),eq(providerConnections.accountGeneration,connection.accountGeneration),
+              direction==='import'?traktImportAllowed:traktExportAllowed)).for('share');
+          if(!allowed)continue;
+        }
         await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
         const purpose = options.force ? 'manual' : kind.endsWith('.live') || ['jellyfin.streams','jellyfin.updates'].includes(kind) ? 'live' : 'scheduled';
         await tx.insert(outboxActions).values({ userId: connection.userId, connectionId: connection.id, accountGeneration: connection.accountGeneration,

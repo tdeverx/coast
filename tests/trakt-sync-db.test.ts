@@ -1,12 +1,18 @@
-import { afterAll, beforeAll, expect, test } from 'bun:test';
+import * as network from '../src/lib/server/security/provider-fetch';
+import { encryptCredential } from '../src/lib/server/security/credentials';
+import { startCheckin } from '../src/lib/social/checkins.server';
+import { deliverCheckin } from '../src/lib/social/trakt.server';
+import { trackWithExports } from '../src/lib/sync/changes.server';
+import { createList } from '../src/lib/core/lists/service.server';
+import { afterAll, beforeAll, expect, spyOn, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
-import { exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
+import { executeTraktListExport, exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
+import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
-import { externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
+import { externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, socialLiveDeliveries, socialScrobbleDeliveries, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 
@@ -86,7 +92,10 @@ run('season ratings, watchlist and mixed-list imports preserve season identity a
 
 run('season rating and watchlist exports use real season IDs and respect category opt-outs',async()=>{
   const calls:{path:string;body:Record<string,unknown>}[]=[];
-  const adapter=new TraktAdapter(async(path,init)=>{calls.push({path,body:JSON.parse(String(init?.body))});return{};},'fixture-client','fixture-secret');
+  const adapter=new TraktAdapter(async(path,init)=>{
+    calls.push({path,body:JSON.parse(String(init?.body))});
+    return {[path.endsWith('/remove')?'deleted':'added']:{seasons:1},not_found:{}};
+  },'fixture-client','fixture-secret');
   await exportTraktToAdapter(userId,{mediaId:seasonId,category:'ratings',value:4.5},{adapter,sync});
   await exportTraktToAdapter(userId,{mediaId:seasonId,category:'watchlist',remove:true},{adapter,sync});
   await exportTraktToAdapter(userId,{mediaId:seasonId,category:'watchlist'},{adapter,sync:{...sync,watchlist:false}});
@@ -141,7 +150,11 @@ run('mixed-list reconciliation scopes matching and rank to media kind, including
   const calls:{path:string;body:Record<string,unknown>}[]=[];
   const adapter=new TraktAdapter(async(path,init)=>{
     if(init?.method==='PUT')return{};
-    if(init?.method==='POST'){calls.push({path,body:JSON.parse(String(init.body))});return{};}
+    if(init?.method==='POST'){
+      calls.push({path,body:JSON.parse(String(init.body))});
+      if(path.endsWith('/reorder'))return {updated:4,skipped_ids:[]};
+      return path.endsWith('/remove')?{deleted:{shows:1},not_found:{}}:{added:{movies:2,shows:1,seasons:1},not_found:{}};
+    }
     if(path.split('?')[0]===`/users/me/lists/${remoteListId}/items/movie,show,season,episode`)return[
       remoteItems[2],remoteItems[1],remoteItems[0],
       {id:400,type:'show',show:{title:'Unwanted show sharing a wanted movie ID',ids:{trakt:numericId+9}}},
@@ -159,4 +172,52 @@ run('mixed-list reconciliation scopes matching and rank to media kind, including
   expect(members.map(item=>item.mediaId)).toEqual([seasonId,movieId,showId,extraMovieId]);
   await expect(exportTraktListToAdapter(otherId,connection.id,{listId:list.id},{adapter,sync,connection})).rejects.toThrow('does not belong');
   expect(calls).toHaveLength(3);
+});
+
+
+run('an export-only account delivers native history and a private list without importing the remote account',async()=>{
+  const db=getDb(),occurredAt='2025-03-08T12:00:00.000Z';
+  const [account]=await db.insert(providerConnections).values({userId:otherId,instanceId,externalUserId:crypto.randomUUID(),
+    settings:{traktAccess:{import:false,export:true},sync:{...sync,history:true}},
+    credentials:await encryptCredential(JSON.stringify({access_token:'synthetic',refresh_token:'synthetic',created_at:Math.floor(Date.now()/1000),expires_in:3600}))}).returning();
+  await db.update(providerInstances).set({baseUrl:'https://api.trakt.tv',credentials:await encryptCredential(JSON.stringify({clientId:'synthetic',clientSecret:'synthetic'}))}).where(eq(providerInstances.id,instanceId));
+  const writes:{path:string;body:Record<string,unknown>}[]=[];
+  const transport=spyOn(network,'createProviderTransport').mockImplementation(config=>async(path,init={})=>{
+    await config.beforeDispatch?.();
+    const route=path.split('?')[0];
+    if(!init.method||init.method==='GET'){
+      if(route==='/users/me/watching')return null;
+      if(route==='/sync/history'||route===`/sync/history/movies/${numericId}`||route==='/users/me/lists')return [];
+      if(route==='/users/me/lists/45/items/movie,show,season,episode')return [remoteItems[1]];
+    }else if(init.method==='POST'){
+      writes.push({path:route,body:JSON.parse(String(init.body))});
+      if(route==='/users/me/lists')return {ids:{trakt:45,slug:'fixture-list'}};
+      if(route==='/sync/history'||route==='/users/me/lists/45/items')return {added:{movies:1},not_found:{}};
+      if(route==='/users/me/lists/45/items/reorder')return {updated:1,skipped_ids:[]};
+    }
+    throw new Error(`Unexpected Trakt fixture request ${init.method??'GET'} ${route}`);
+  });
+  try{
+    await trackWithExports(otherId,{mediaId:movieId,action:'watch',occurredAt});
+    const list=await createList(otherId,{name:'Exported list',mediaId:movieId});
+    const queued=await db.select().from(outboxActions).where(eq(outboxActions.connectionId,account.id));
+    expect(queued.map(job=>job.kind).sort()).toEqual(['trakt.export','trakt.list-export']);
+    await executeTraktExport(otherId,account.id,queued.find(job=>job.kind==='trakt.export')!.payload);
+    await executeTraktListExport(otherId,account.id,{listId:list.id});
+    expect(writes.map(row=>row.path)).toEqual(['/sync/history','/users/me/lists','/users/me/lists/45/items','/users/me/lists/45/items/reorder']);
+    expect(writes[0].body.movies).toEqual([{ids:{trakt:numericId},watched_at:occurredAt}]);
+    expect(writes[1].body.privacy).toBe('private');
+    const episode=await ingestMetadata({provider:'trakt',externalId:`${numericId}:episode:1:7`,kind:'episode',title:'Unmapped episode',seasonNumber:1,episodeNumber:7,runtimeMinutes:24},{showId,seasonId});
+    mediaIds.push(episode.id);
+    await db.update(providerConnections).set({settings:{...account.settings,sync:{...sync,scrobble:true,progress:true}}}).where(eq(providerConnections.id,account.id));
+    const sessionId=crypto.randomUUID();
+    expect(await executeLiveScrobble(otherId,account.id,{mediaId:episode.id,sessionId,event:'stop',progress:100})).toEqual({skipped:1});
+    expect(await executeProgressExport(otherId,account.id,{mediaId:episode.id,progress:50,resolved:true})).toEqual({skipped:1});
+    const checkin=await startCheckin(otherId,{workId:episode.id});
+    await expect(deliverCheckin(otherId,account.id,checkin.id)).rejects.toThrow('verified Trakt mapping');
+    expect(await db.select().from(socialScrobbleDeliveries).where(eq(socialScrobbleDeliveries.sessionId,sessionId))).toHaveLength(0);
+    expect(await db.select().from(socialLiveDeliveries).where(eq(socialLiveDeliveries.checkinId,checkin.id))).toHaveLength(0);
+    expect(writes).toHaveLength(4);
+    expect((await db.select().from(trackingEvents).where(eq(trackingEvents.userId,otherId))).map(event=>event.source)).toEqual(['coast']);
+  }finally{transport.mockRestore();}
 });

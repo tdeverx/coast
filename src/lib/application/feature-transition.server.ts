@@ -35,14 +35,9 @@ export async function reconcileFeatures(action: OutboxAction) {
         let checkinChanges=0;
         if(!features.presence){
           await tx`delete from user_presence where user_id=${user.id}`;
-          await tx`delete from social_live_state where connection_id in(select id from provider_connections where user_id=${user.id}) and checked_at<=${cutoff}::timestamptz`;
           const checkins=await tx`update social_checkins set state='cancelled',updated_at=now() where id in(select id from social_checkins where user_id=${user.id} and state='active' and created_at<=${cutoff}::timestamptz order by id limit 100) returning id`;
           checkinChanges=checkins.length;
-          if(checkins.length)await tx`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload)
-            select ${user.id}::uuid,c.id,c.account_generation,'trakt.checkin',jsonb_build_object('checkinId',d.checkin_id,'_jobPurpose','playback')
-            from social_live_deliveries d join provider_connections c on c.id=d.connection_id
-            where d.checkin_id in ${tx(checkins.map((checkin:{id:string})=>checkin.id))} and c.user_id=${user.id} and c.status='connected' and c.account_generation=d.account_generation and d.state in ('started','uncertain')`;
-
+          await tx`delete from social_live_state where connection_id in(select id from provider_connections where user_id=${user.id}) and checked_at<=${cutoff}::timestamptz`;
         }
         let roomChanges=0, participantChanges=0;
         {

@@ -1,4 +1,6 @@
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
+import { SeerrAdapter, SeerrPermission } from '../src/lib/providers/seerr/adapter.server';
+import { ProviderActionError, requestDeliveryMessages } from '../src/lib/providers/contracts';
 import { describe, expect, test } from 'bun:test';
 import * as v from 'valibot';
 import { jobFailureMessage, safeDiagnosticErrorCode, validationDiagnostic } from '../src/lib/server/queue';
@@ -159,6 +161,39 @@ test('typed permanent denials retain their remedy without relying on exception t
   const failure=jobFailureDetail(new PermanentActionError('PRIVATE PROVIDER RESPONSE',reason),true);
   expect(failure).toEqual({code,remedy,retryable:false});
   expect(safeFields({errorCode:code})).toEqual({errorCode:code});
+ }
+});
+
+test('only the verified Seerr request quota denials become quota notices',async()=>{
+ const {PermanentActionError,jobFailureDetail}=await import('../src/lib/server/queue');
+ const {safeFields}=await import('../src/lib/diagnostics');
+ for(const [kind,message] of [['movie','Movie Quota exceeded.'],['show','Series Quota exceeded.']] as const){
+  const adapter=new SeerrAdapter(async(path,init)=>{
+   if(path.endsWith('/auth/me'))return{id:23,permissions:SeerrPermission.REQUEST};
+   if(init?.method==='POST')throw new ProviderHttpError(403,null,{message,errors:['private upstream text']});
+   return{id:1,seasons:[{seasonNumber:1,episodeCount:4}]};
+  },'fixture',23);
+  const failure=await adapter.create({kind,tmdbId:1,is4k:false,seasons:[1]}).catch(error=>error);
+  expect(failure).toBeInstanceOf(ProviderActionError);
+  expect(failure.code).toBe('request-quota');
+  const permanent=new PermanentActionError('private upstream text',failure.code);
+  expect(jobFailureMessage(permanent,true)).toBe(requestDeliveryMessages['request-quota']);
+  expect(jobFailureDetail(permanent,true)).toEqual({code:'seerr.request-quota',remedy:'retry',retryable:false});
+  expect(safeFields({errorCode:'seerr.request-quota'})).toEqual({errorCode:'seerr.request-quota'});
+  expect(JSON.stringify(failure)).not.toContain('private');
+ }
+ for(const [source,status,message] of [
+  ['POST',403,'You do not have permission to bypass user quota limits.'],
+  ['GET',403,'Series Quota exceeded.'],
+  ['POST',500,'Series Quota exceeded.'],
+ ] as const){
+  const refusal=new ProviderHttpError(status,null,{message});
+  const adapter=new SeerrAdapter(async(path,init)=>{
+   if(source==='GET'||init?.method==='POST')throw refusal;
+   if(path.endsWith('/auth/me'))return{id:23,permissions:SeerrPermission.REQUEST};
+   return{id:1,seasons:[]};
+  },'fixture',23);
+  expect(await adapter.create({kind:'movie',tmdbId:1,is4k:false}).catch(error=>error)).toBe(refusal);
  }
 });
 

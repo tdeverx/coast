@@ -1,12 +1,12 @@
+import { traktAccess } from '#lib/providers/trakt/access.js';
 import { getConfig } from '#lib/server/config.js';
 import { and,eq,sql,inArray } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '#lib/server/db/index.js';
-import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '#lib/server/db/schema.js';
+import { getDb, getSql } from '#lib/server/db/index.js';
+import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews } from '#lib/server/db/schema.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { exportIdentities } from '#lib/sync/trakt-identity.server.js';
-import { ingestMetadata } from '#lib/catalogue/service.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import { collectionCTE, collectionRead } from './query.server';
@@ -27,9 +27,10 @@ function canonical(value:unknown):unknown{
 const same=(a:unknown,b:unknown)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
 export type ProjectionContext={connection:typeof providerConnections.$inferSelect;adapter:TraktAdapter};
 async function verifiedContext(userId:string,connectionId:string,provided?:ProjectionContext){
-  const context=provided??await getTrakt(userId,connectionId);
+  const context=provided??await getTrakt(userId,connectionId, 'export');
   const [current]=await getDb().select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.status,'connected')));
   if(!current||current.accountGeneration!==context.connection.accountGeneration||current.syncAccountId!==context.connection.syncAccountId)throw new PermanentActionError('The connected account changed.');
+  if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
   const profile=await context.adapter.profile();
   if(profile.id!==context.connection.externalUserId||!context.connection.syncAccountId)throw new PermanentActionError('Reconnect Trakt to verify the current account.');
   return context;
@@ -39,15 +40,25 @@ export async function readProjectionRemote(adapter:TraktAdapter):Promise<Map<str
   const result=new Map<string,Entry>();
   for(let page=1;page<=10000;page++){
     const items=await adapter.read('collection',page);
-    for(const record of items){const work=await resolveTrakt(record);if(!work||!record.movie)continue;result.set(work.id,{workId:work.id,title:work.title,payload:{movies:[{ids:record.movie.ids}]},snapshot:{collectedAt:record.collected_at??null,metadata:record.metadata??null}});}
+    for(const record of items){const work=await resolveTrakt(record);if(!work||!record.movie)throw new Error('Trakt returned a collection movie that Coast could not match.');result.set(work.id,{workId:work.id,title:work.title,payload:{movies:[{ids:record.movie.ids}]},snapshot:{collectedAt:record.collected_at??null,metadata:record.metadata??null}});}
     if(items.length<100)break;if(page===10000)throw new Error('Trakt collection exceeds the page bound.');
   }
-  for(const record of await adapter.collectionShows()){
-    if(!record.show)continue;const show=await resolveTrakt(record);if(!show)continue;
-    for(const season of record.seasons??[])for(const episode of season.episodes){
-      const [known]=await getDb().select({id:episodes.mediaId,title:media.title}).from(episodes).innerJoin(media,eq(media.id,episodes.mediaId)).where(and(eq(episodes.showId,show.id),eq(episodes.seasonNumber,season.number),eq(episodes.episodeNumber,episode.number)));
-      const work=known??await ingestMetadata({provider:'trakt',externalId:`${record.show.ids.trakt}:episode:${season.number}:${episode.number}`,kind:'episode',title:`Episode ${episode.number}`,seasonNumber:season.number,episodeNumber:episode.number},{showId:show.id});
-      result.set(work.id,{workId:work.id,title:`${show.title} · ${season.number}×${episode.number}`,payload:{shows:[{ids:record.show.ids,seasons:[{number:season.number,episodes:[{number:episode.number}]}]}]},snapshot:{collectedAt:episode.collected_at??record.collected_at??null,metadata:episode.metadata??null}});
+  for await (const page of adapter.collectionEpisodePages()) {
+    if (!page.length) continue;
+    const db = getSql();
+    const episodeIds = page.map(record => String(record.episode.ids.trakt));
+    const mappings = await db<{ external_id: string; media_id: string }[]>`
+      select external_id, media_id from external_ids
+      where provider='trakt' and media_kind='episode' and external_id=any(${db.array(episodeIds, 'TEXT')})
+    `;
+    const known = new Map(mappings.map(row => [row.external_id, row.media_id]));
+    for (const record of page) {
+      const {show,episode}=record;
+      const workId=known.get(String(episode.ids.trakt))??(await resolveTrakt(record))?.id;
+      if(!workId)throw new Error('Trakt returned a collection episode that Coast could not match.');
+      result.set(workId,{workId,title:`${show.title} · ${episode.season}×${episode.number}`,
+        payload:{shows:[{ids:show.ids,seasons:[{number:episode.season,episodes:[{number:episode.number}]}]}]},
+        snapshot:{collectedAt:record.collected_at??null,metadata:record.metadata??null}});
     }
   }
   return result;
@@ -105,6 +116,7 @@ export async function approveProjection(userId:string,connectionId:string,input:
   if(!same([...remote.values()],preview.snapshot.remote))throw new Error('The remote Collection changed. Preview again.');
   await getDb().transaction(async tx=>{
     const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
+    if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
     if(current.accountGeneration!==context.connection.accountGeneration||String(current.settings.collectionProjectionVersion??current.accountGeneration)!==version)throw new Error('The account or configuration changed. Preview again.');
     await tx.update(providerConnections).set({settings:{...current.settings,collectionProjection:configuration,collectionProjectionVersion:nextVersion}}).where(eq(providerConnections.id,connectionId));
     await tx.update(previews).set({approved:true}).where(eq(previews.id,preview.id));
@@ -198,6 +210,7 @@ export async function reviewProjection(userId:string,connectionId:string,input:u
   const snapshot=(preview.snapshot.remote as Entry[]).find(e=>e.workId===data.workId)?.snapshot??null;
   await getDb().transaction(async tx=>{
     const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
+    if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
     if(current.accountGeneration!==context.connection.accountGeneration||String(current.settings.collectionProjectionVersion??current.accountGeneration)!==version)throw new Error('The account or configuration changed. Preview again.');
     await enqueueInTransaction(tx,{userId,connectionId,kind:'trakt.collection-review',payload:{workId:data.workId,choice:data.choice,snapshot,version},compactionKey:`collection-review:${data.workId}`});
   });

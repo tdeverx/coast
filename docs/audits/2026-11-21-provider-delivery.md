@@ -1,0 +1,11 @@
+# Trakt permissions and provider delivery
+
+Trakt sync directions belong to the linked account. Coast checks them when scheduling work and again after provider pacing, before dispatch. The dispatch check shares the existing account-generation query and checks the worker lease by primary key. Saving connection preferences cancels work for disabled directions using the existing connection and job indexes. Re-enabling a direction starts with new work. Public catalogue reads use the application identity.
+
+The Trakt device flow keeps one-time credentials encrypted. The challenge binds the selected directions to the device approval that initiated them. Same-account reconnect preserves sync categories. An approved export can read a remote value for conflict detection. Export-only reconciliation keeps a conflicting remote change for review.
+
+Read-only production diagnostics identified a movie collection record with absent optional metadata, a Seerr no-op season request, a quota refusal, and a completed Steam metadata pass with conflicting identifiers. The old Steam outcome retained counts only. New outcomes keep up to eight public game descriptions and IDs with the checkpoint. Seerr reuses its existing account and season reads and sends only eligible seasons. Checking the default destination is needed only when recovering an existing receipt with an unspecified server.
+
+Collection imports and catalogue scans now read episodes from Trakt's paginated episode collection in batches of 100. The collection projection looks up existing episode IDs in one indexed query per nonempty page, with a typed array that keeps the statement shape stable on partial pages. Interrupted imports retain their movie observations and restart the episode scan when upgrading from the grouped endpoint. Coast verifies the collection activity timestamp before treating an absent item as removed.
+
+Verification uses disposable PostgreSQL, controlled provider responses, browser form checks and the maintained project checks. It covers consent withdrawal, account switches, retry isolation, collection records with null metadata, season availability, quota denials and game identity conflicts. Historical production timing measurements were not repeated. The local checks do not exercise live OAuth consent or mutate a connected provider account.

@@ -50,6 +50,10 @@ test('manual due requests bypass automatic pauses but preserve feature and curre
 });
 
 const action = (patch: Partial<QueueAction>): QueueAction => ({ id: 'job', kind: 'jellyfin.sync', state: 'running', attempts: 1, lastError: null, ...patch });
+test('a completed IGDB run reports checked, refreshed, deferred and conflicting matches independently',()=>{
+  expect(jobOutcome(action({kind:'igdb.steam-metadata',state:'succeeded',outcome:{checked:69,refreshed:0,deferred:61,review:5}})))
+    .toBe('69 Steam IDs checked · 0 matches refreshed · 61 deferred · 5 conflicting matches skipped');
+});
 test('existing Jobs text follows music/reconciliation stage counts and preserves unknown totals', () => {
   expect(jobOutcome(action({ progress: { processed: 2000, total: 2000, phase: 'music-tracks', stageProcessed: 10, stageTotal: 30 } }))).toBe('Importing listening history · 10 of 30');
   expect(jobOutcome(action({ state: 'pending', progress: { processed: 2000, total: 2000, phase: 'reconciling', stageProcessed: 3, stageTotal: null } }))).toBe('Importing progress and favourites · 3');
@@ -109,4 +113,18 @@ test('task representatives use exact totals and terminal samples do not create a
  expect(taskJobCount(jobs,'pending')).toBe(150);expect(taskLastRun(jobs)?.outcome?.checked).toBe(84);
  expect(jobTaskSections([{jobs,timing:{nextAt:null}}]).waiting).toHaveLength(1);
  expect(jobTaskSections([{jobs:[action({state:'failed',taskCount:0})],timing:{nextAt:null}}]).attention).toHaveLength(0);
+});
+
+
+test('Trakt import and export independently gate jobs including provider-specific catalogue scans',()=>{
+  const schedule=providerSchedule('trakt');
+  const available=(kind:string,settings:TaskAccount['settings'],provider='trakt')=>
+    eligibleTaskAccounts(kind,[{...account,settings}],schedule,{},true,provider).length===1;
+  expect(available('trakt.collection-project',{collectionProjection:{enabled:true}})).toBe(false);
+  for(const enabledImport of [true,false])for(const enabledExport of [true,false]){
+    const settings={traktAccess:{import:enabledImport,export:enabledExport},collectionProjection:{enabled:true},sync:{lists:true}};
+    for(const kind of ['catalogue.user-scan','trakt.live','trakt.recommendations','trakt.lists-import'])expect(available(kind,settings)).toBe(enabledImport);
+    expect(available('trakt.collection-project',settings)).toBe(enabledExport);
+    expect(available('catalogue.user-scan',settings,'jellyfin')).toBe(true);
+  }
 });

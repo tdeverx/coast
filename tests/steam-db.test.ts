@@ -23,7 +23,7 @@ suite('Steam account imports and ownership availability',()=>{
   let instanceId:string,connectionId:string,gameId:string;
   let ownership:unknown={response:{game_count:1,games:[{appid:10,name:'Steam fixture',playtime_forever:125,playtime_2weeks:20,rtime_last_played:1700000000,has_community_visible_stats:true}]}};
   let privateStats=false,failOwned=false,remoteId=steamId;
-  let ownedReads=0,igdbReads=0,failIgdb=false;
+  let ownedReads=0,igdbReads=0,failIgdb=false,matchedSteamId='777';
   let deniedAppId:string|null=null,privacyDenial=true;
   let remoteMinutes=125;
   const achievementAppIds:string[]=[],schemaAppIds:string[]=[];
@@ -41,7 +41,7 @@ suite('Steam account imports and ownership availability',()=>{
       const url=new URL(input instanceof Request?input.url:String(input)),headers=new Headers(init?.headers);
       expect(init?.redirect).toBe('manual');expect(url.searchParams.has('key')).toBe(false);
       if(headers.get('host')==='id.twitch.tv')return Response.json({access_token:'fixture-token',expires_in:3600,token_type:'bearer'});
-      if(headers.get('host')==='api.igdb.com'){igdbReads++;if(failIgdb)return Response.json({error:'offline'},{status:503});if(url.pathname==='/v4/external_games')return Response.json([{id:1,game:556,uid:'777',external_game_source:1}]);return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:'777',url:'https://store.steampowered.com/app/777/'}]}]);}
+      if(headers.get('host')==='api.igdb.com'){igdbReads++;if(failIgdb)return Response.json({error:'offline'},{status:503});if(url.pathname==='/v4/external_games')return Response.json([{id:1,game:556,uid:matchedSteamId,external_game_source:1}]);return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:matchedSteamId,url:'https://store.steampowered.com/app/'+matchedSteamId+'/'}]}]);}
       if(headers.get('host')==='steamcommunity.com')return new Response('ns:http://specs.openid.net/auth/2.0\nis_valid:true\n');
       expect(headers.get('host')).toBe('api.steampowered.com');expect(headers.get('x-webapi-key')).toBe(key);
       if(url.pathname.includes('GetPlayerSummaries'))return Response.json({response:{players:[{steamid:remoteId,personaname:'Fixture Steam user'}]}});
@@ -244,6 +244,23 @@ suite('Steam account imports and ownership availability',()=>{
     await syncSteamMetadata({id:metadataJob.id,userId:owner,connectionId:null,kind:metadataJob.kind,payload:metadataJob.payload,attempts:0,correlationId:crypto.randomUUID()});
     expect((await gameDetails(owner,minimal.gameId)).title).toBe('Late enrichment fixture');
     expect((await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'556')))[0].gameId).toBe(minimal.gameId);
+  });
+
+  test('ambiguous IGDB matches identify the skipped game and preserve both catalogue entries',async()=>{
+    const prior=ownership;
+    try{
+      matchedSteamId='778';
+      ownership={response:{game_count:1,games:[{appid:778,name:'Another Steam edition',playtime_forever:10}]}};
+      await syncSteam(await job());
+      const [metadataJob]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.kind,'igdb.steam-metadata'));
+      const outcome=await syncSteamMetadata({id:metadataJob.id,userId:owner,connectionId:null,kind:metadataJob.kind,payload:metadataJob.payload,attempts:0,correlationId:crypto.randomUUID()});
+      expect(outcome.review).toBe(1);
+      expect(outcome.reviewExamples).toEqual(['Late enrichment fixture (Steam 778, IGDB 556)']);
+      const [conflicting]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'778'));
+      const [original]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'556'));
+      expect(conflicting.gameId).not.toBe(original.gameId);
+      expect((await gameDetails(owner,conflicting.gameId)).title).toBe('Another Steam edition');
+    }finally{matchedSteamId='777';ownership=prior;}
   });
 
   test('a cancelled worker cannot apply an empty census or publish ownership removals',async()=>{
