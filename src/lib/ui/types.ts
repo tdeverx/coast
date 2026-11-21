@@ -127,6 +127,7 @@ export interface PlaybackView {
   mediaType?: 'audio' | 'video';
   sequence?: import('#lib/media/sequence.js').SequenceContext;
   detail: string;
+  nowPlaying?: { seriesTitle?: string; episodeCode?: string; artist?: string; album?: string };
   id: string;
   mediaId: string;
   title: string;

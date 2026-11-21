@@ -10,6 +10,7 @@
   import { usePlayback } from '#lib/playback/context.svelte.js';
   import { createSubtitleControls } from '#lib/playback/subtitle-controls.svelte.js';
   import { savePlaybackSnapshot, takePlaybackSnapshot } from '#lib/playback/persistence.js';
+  import { overridePlaybackTabTitle, playbackMediaMetadata, playbackTabTitle, registerSystemMediaActions } from '#lib/playback/system-media.js';
   import SubtitleMenu from './SubtitleMenu.svelte';
   import SubtitleSearchDialog from './SubtitleSearchDialog.svelte';
   import PlaybackQualityMenu from './PlaybackQualityMenu.svelte';
@@ -41,6 +42,7 @@
   let current = $state(0),
     duration = $state(0),
     crop = $state(false),
+    animateCrop = $state(false),
     volume = $state(1),
     subtitle = $state(-1),
     error = $state(''),
@@ -106,11 +108,12 @@
   function pause(remote=false) { if(preview){player.paused=true;return;} if(partyRoom&&!remote&&!syncedPlayer.changing){void syncedCommand('pause');return;} accountPlayed(); media?.pause(); }
   function waiting() { accountPlayed(); wasPlaying = false; tracePlayback('playback.waiting'); if (!streamFailure) streamInterrupted({ code: 2 }); else checkStreamFailure(); }
   function seekingStarted() { seeking = true; accountPlayed(); tracePlayback('playback.seek'); }
-  function seekingEnded() { seeking = false; playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = !media.paused && media.readyState >= 3; }
+  function seekingEnded() { seeking = false; playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = !media.paused && media.readyState >= 3; publishSystemPosition(); }
   function paused() {
     if (switchingVideo) return;
     accountPlayed();
     player.paused = true;
+    publishSystemPosition();
     tracePlayback('playback.pause');
     if (active && !closed && player.role !== 'postplay') void report('pause');
   }
@@ -145,8 +148,63 @@
     ...new Set(player.session?.sources.map((source) => source.edition ?? '') ?? []),
   ] : []);
   const showQuality = $derived(!audioMode && (!!videoQuality || editions.length > 1));
+  const tabTitle = $derived(!preview && active && !audioMode && !player.browsing && player.session
+    ? playbackTabTitle(player.session) : undefined);
+  $effect(() => {
+    if (tabTitle) return overridePlaybackTabTitle(tabTitle);
+  });
+  const systemMedia = $derived(!preview && player.role === 'playback' && !player.subtitlePrompt && player.session
+    && typeof navigator !== 'undefined' ? navigator.mediaSession : undefined);
+  $effect(() => {
+    const target = systemMedia, session = player.session;
+    if (!target || !session || typeof MediaMetadata === 'undefined') return;
+    target.metadata = new MediaMetadata(playbackMediaMetadata(session));
+    target.setPositionState?.();
+    return () => { target.metadata = null; };
+  });
+  $effect(() => {
+    const target = systemMedia;
+    if (!target) return;
+    target.playbackState = player.paused ? 'paused' : 'playing';
+  });
+  $effect(() => {
+    const target = systemMedia;
+    if (!target) return;
+    return () => {
+      target.playbackState = 'none';
+      target.setPositionState?.();
+    };
+  });
+  $effect(() => {
+    const target = systemMedia;
+    if (!target) return;
+    const musicQueue = audioMode && !sharedMode;
+    const run = (action: () => Promise<unknown>) => {
+      const sessionId = player.session?.id;
+      if (!systemMedia || !sessionId) return;
+      void action().catch(cause => { if (player.session?.id === sessionId) error = message(cause); });
+    };
+    return registerSystemMediaActions(target, {
+      play: () => { if (player.paused) run(() => setPlaybackPaused(false)); },
+      pause: () => { if (!player.paused) run(() => setPlaybackPaused(true)); },
+      stop: () => run(close),
+      seekbackward: ({ seekOffset }) => { if (!followingHost && media) seek(media.currentTime - (seekOffset ?? 10)); },
+      seekforward: ({ seekOffset }) => { if (!followingHost && media) seek(media.currentTime + (seekOffset ?? 30)); },
+      seekto: ({ seekTime }) => { if (!followingHost && typeof seekTime === 'number') seek(seekTime); },
+      previoustrack: musicQueue && player.audioIndex > 0
+        ? () => { if (!followingHost) run(() => advanceMusic(-1)); } : undefined,
+      nexttrack: musicQueue && player.audioIndex < player.audioQueue.length - 1
+        ? () => { if (!followingHost) run(() => advanceMusic()); } : undefined,
+    });
+  });
+  function publishSystemPosition() {
+    if (!systemMedia?.setPositionState || !media || media.readyState < 1) return;
+    const { duration, playbackRate, currentTime } = media;
+    if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(currentTime) || !Number.isFinite(playbackRate) || playbackRate <= 0) return;
+    systemMedia.setPositionState({ duration, playbackRate, position: Math.max(0, Math.min(duration, currentTime)) });
+  }
   function seek(seconds: number,remote=false) {
-    if (switchingVideo) return;
+    if (switchingVideo || !Number.isFinite(seconds)) return;
     if(partyRoom&&!remote){void syncedCommand('seek',{positionSeconds:seconds});return;}
     if (!media || !Number.isFinite(duration) || duration <= 0) return;
     accountPlayed();
@@ -245,6 +303,7 @@
     current = media.currentTime;
     checkStreamFailure();
     duration = Number.isFinite(media.duration) ? media.duration : player.session?.durationSeconds ?? 0;
+    publishSystemPosition();
     if (audioMode) { playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = true; }
     lastReport = Date.now();
     void report('start');
@@ -254,6 +313,7 @@
   let lastTouchAt=-Infinity;
   function toggleCrop(){
     if (player.role !== 'playback' || audioMode || player.browsing || player.subtitlePrompt || switchingVideo) return;
+    animateCrop = true;
     crop = !crop;
     revealControls();
   }
@@ -301,17 +361,27 @@
     }
   }
   async function toggle() {
-    if(preview){player.paused=!player.paused;return;}
+    if (preview) { player.paused = !player.paused; return; }
+    await setPlaybackPaused(!(partyRoom ? player.paused : media?.paused));
+  }
+  async function setPlaybackPaused(paused: boolean) {
     if (!media || switchingVideo) return;
-    if(sharedMode&&media.ended&&player.session){await playMedia(player.session.mediaId,{fromStart:true});return;}
-    if(partyRoom){if(!canControlPlayback()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
-    if (media.paused) {
+    if (!paused && sharedMode && media.ended && player.session) { await playMedia(player.session.mediaId, { fromStart: true }); return; }
+    if (partyRoom) {
+      if (!followingHost) await syncedCommand(paused ? 'pause' : 'play');
+      else if (!paused && media.paused && !partyRoom.paused && !partyRoom.bufferingPaused) {
+        try { await media.play(); } catch (cause) { syncedPlayer.notice = message(cause); }
+      }
+      return;
+    }
+    if (paused) pause();
+    else {
       try {
         await media.play();
       } catch (e) {
         error = message(e);
       }
-    } else pause();
+    }
   }
   let streamFailure: { status?: number; code?: number } | null = null;
   let failedSessionId = '';
@@ -412,6 +482,7 @@
     if (active && player.session?.startSeconds && media.currentTime < 1)
       media.currentTime = player.session.startSeconds;
     if (!audioMode) applySubtitles();
+    publishSystemPosition();
   }
   function videoReady() {
     if (switchingVideo && player.session?.handoff && player.session.id !== switchingVideo.from &&
@@ -535,6 +606,7 @@
       playedSeconds = playedBeforeRefresh;
       playedPosition = session.startSeconds; playedAt = 0; wasPlaying = false; seeking = false;
       if (!session.handoff) crop = false;
+      animateCrop = false;
       subtitle = session.defaultSubtitleIndex ?? -1;
       captions = [];
       current = session.startSeconds;
@@ -704,6 +776,8 @@
     });
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0].contentRect;
+      if (rect.width === bounds.width && rect.height === bounds.height) return;
+      animateCrop = false;
       bounds = { width: rect.width, height: rect.height };
     });
     observer.observe(host);
@@ -768,6 +842,8 @@
   preload="metadata"
   ontimeupdate={() => { if (audioMode) update(); }}
   onloadedmetadata={() => { if (audioMode) { metadata(); tracePlayback('playback.ready'); } }}
+  ondurationchange={() => { if (audioMode) publishSystemPosition(); }}
+  onratechange={() => { if (audioMode) publishSystemPosition(); }}
   onplaying={() => { if (audioMode) playing(); }}
   onpause={() => { if (audioMode) paused(); }}
   onwaiting={() => { if (audioMode) waiting(); }}
@@ -784,15 +860,18 @@
     data-player="playback"
     aria-label={player.session?.title ?? 'Title playback'}
     class:positioned={!!videoStyle}
+    class:animate-crop={animateCrop}
     style={videoStyle}
     playsinline
     preload={switchingVideo ? 'auto' : 'metadata'}
     ontimeupdate={() => { if (audioMode) return; update(); if (video && performance.now() - lastTiming > 10_000) { lastTiming = performance.now(); tracePlayback('playback.timing'); } }}
     onwaiting={() => { if (!audioMode) waiting(); }}
     onseeking={() => { if (!audioMode) tracePlayback('playback.seek'); }}
-    onseeked={videoReady}
+    onseeked={() => { if (!audioMode) { videoReady(); publishSystemPosition(); } }}
     oncanplay={videoReady}
     onloadedmetadata={() => { if (audioMode) return; metadata(); tracePlayback('playback.ready'); }}
+    ondurationchange={() => { if (!audioMode) publishSystemPosition(); }}
+    onratechange={() => { if (!audioMode) publishSystemPosition(); }}
     onplay={() => {
       if (!audioMode) player.paused = false;
     }}
@@ -1053,13 +1132,16 @@
     pointer-events: auto;
   }
   .player video {
-    transition:width var(--motion) var(--ease),height var(--motion) var(--ease),left var(--motion) var(--ease),top var(--motion) var(--ease);
     position: absolute;
     width: 100%;
     height: 100%;
     object-fit: contain;
   }
-  @media(prefers-reduced-motion:reduce){.player video{transition:none;}}
+  @media (prefers-reduced-motion: no-preference) {
+    .player video.animate-crop {
+      transition: width var(--motion) var(--ease), height var(--motion) var(--ease), left var(--motion) var(--ease), top var(--motion) var(--ease);
+    }
+  }
   .player video.positioned {
     /* Tailwind's video max-width:100% would clamp the oversized crop placement. */
     max-width: none;
