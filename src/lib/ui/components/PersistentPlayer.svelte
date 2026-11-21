@@ -117,9 +117,8 @@
   const active = $derived(player.role === 'playback' || player.role === 'postplay');
   const src = $derived(player.subtitlePrompt ? undefined : player.session?.url);
   const bars = $derived(resolveFrameCrop(player.session?.initialCrop, frame.width, frame.height) ?? noCrop);
-  const canCrop = $derived(Object.values(bars).some(edge => edge > 0));
   const videoStyle = $derived(
-    videoFitStyle(frame.width, frame.height, bounds.width, bounds.height, bars, canCrop && crop)
+    videoFitStyle(frame.width, frame.height, bounds.width, bounds.height, bars, crop)
   );
   const tracks = $derived((player.session?.subtitles ?? []).filter((track) => track.url));
   const subtitleSearch = $derived(!!player.session && !audioMode && !sharedMode &&
@@ -254,7 +253,7 @@
   let lastTouchTap:{at:number;x:number;y:number}|null=null;
   let lastTouchAt=-Infinity;
   function toggleCrop(){
-    if (player.role !== 'playback' || player.browsing || player.subtitlePrompt || switchingVideo || !canCrop) return;
+    if (player.role !== 'playback' || audioMode || player.browsing || player.subtitlePrompt || switchingVideo) return;
     crop = !crop;
     revealControls();
   }

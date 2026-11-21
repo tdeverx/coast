@@ -1,0 +1,21 @@
+{
+  "epoch": "playback-viewport-crop-local-2026-11-21",
+  "baseline": "5a626e90c099805647d4d9e8debf28a0f1432c05",
+  "blanketAcceptance": false,
+  "files": {
+    "docs/performance.md": {
+      "previous": "56260b330e48a230ff307631a7e05ea13b94028955d47d7256bcef34fb62bed6",
+      "current": "6644e055ec98dc6fe2b1e176ad3e850ca44106276e80e824842483ff7dc20c9e"
+    },
+    "src/lib/ui/components/PersistentPlayer.svelte": {
+      "previous": "55636194d0f5c1ac2cf65661d37a53416d383d3d0b544a2047a089fdd0cce8e8",
+      "current": "e3ea2e5e5dad2d924ec12099612ccf628e20603c97e9cc73d1c21e873602f342"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "ef463a9fd37c17c23a65e8f1070acb16474ab03e875148a05a7f4b5215f3648f",
+      "current": "0037b0f53765e8c673e1f27128b1911dd52bd26434e3bcea8d1423a550f5b810"
+    }
+  },
+  "report": "docs/audits/2026-11-21-playback-viewport-crop.md",
+  "reportSha256": "e4543b85a91ae37c7715f442ac4813692bd11537cba6f9b4b7b21110deeaa74e"
+}

@@ -1,0 +1,5 @@
+# Playback viewport crop
+
+Double-click, double-tap and the existing keyboard shortcut toggle the player's fit and fill setting. The existing sizing helper uses the companion's crop rectangle when it has one and uses the full video frame otherwise. The toggle changes only the rendered video geometry. It removes the separate crop-availability check and adds no provider requests, stream reloads, browser listeners or background work. Playback still starts fitted on a new video.
+
+The built app was tested in Chromium with a disposable local database and a 320×180 playback fixture. At 1000×700, double-click increased the rendered video height from 562.5px to 700px when no rectangle was present. At 390×780, two touch taps increased it from 219.375px to 780px with a full-frame companion result. A synthetic rectangle with encoded bars produced a 933.333px render at 1000×700, leaving 700px of content visible. The same gesture restored the original fit in all three cases. These checks used Chromium touch emulation and controlled playback responses.
