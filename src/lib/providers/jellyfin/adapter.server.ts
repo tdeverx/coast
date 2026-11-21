@@ -395,7 +395,7 @@ export class JellyfinAdapter {
   async item(userId: string, id: string) {
     const item = v.parse(
         itemSchema,
-        await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}?fields=DateCreated`)
+        await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}?fields=DateCreated,ParentId`)
       );
     validateJellyfinItems([item], [id]);
     return mapLibraryItem({...item, Id:id});
@@ -458,7 +458,7 @@ export class JellyfinAdapter {
       const batch = requested.slice(offset, offset + 100);
       const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
         includeItemTypes: 'Movie,Series,Season,Episode',
-        fields: 'DateCreated,ProviderIds,MediaSources,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
+        fields: 'DateCreated,ProviderIds,MediaSources,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,ParentId',
         enableImages: 'true', enableUserData: 'true', enableTotalRecordCount: 'true',
         startIndex: '0', limit: String(batch.length)});
       const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: v.number(), StartIndex: v.optional(v.number())}), await this.call(`/Items?${query}`));

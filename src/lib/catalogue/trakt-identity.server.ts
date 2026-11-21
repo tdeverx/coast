@@ -1,10 +1,40 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
-import { media, externalIds, seasons } from '#lib/server/db/schema.js';
+import { media, externalIds, episodes, seasons } from '#lib/server/db/schema.js';
 import { traktEntry } from '#lib/sync/trakt-identity.server.js';
 import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
-import { ingestMetadata, importTmdb } from './service.server';
+import { CatalogueIdentityConflict, ingestMetadata, importTmdb } from './service.server';
 import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
+
+/** Some providers describe one segment and others group segments in a single
+ * episode. Bind only the Trakt ID when both TMDB IDs and the canonical position agree. */
+async function bindTraktEpisodeByTmdb(
+  showId: string,
+  show: NonNullable<TraktRecord['show']>,
+  episode: NonNullable<TraktRecord['episode']>
+) {
+  if (!show.ids.tmdb || !episode.ids.tmdb) return null;
+  const traktId = String(episode.ids.trakt);
+  return getDb().transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`tmdb:episode:${episode.ids.tmdb}`},0))`);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`trakt:episode:${traktId}`},0))`);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`show:${showId}`},0))`);
+    const [anchor] = await tx.select({ item: media })
+      .from(episodes).innerJoin(media, eq(media.id, episodes.mediaId))
+      .innerJoin(externalIds, and(eq(externalIds.mediaId, episodes.mediaId), eq(externalIds.provider, 'tmdb'),
+        eq(externalIds.mediaKind, 'episode'), eq(externalIds.externalId, String(episode.ids.tmdb))))
+      .where(and(eq(episodes.showId, showId), eq(episodes.seasonNumber, episode.season), eq(episodes.episodeNumber, episode.number),
+        sql`exists (select 1 from external_ids parent where parent.media_id=${showId} and parent.provider='tmdb' and parent.media_kind='show' and parent.external_id=${String(show.ids.tmdb)})`));
+    if (!anchor) return null;
+    const [bound] = await tx.insert(externalIds)
+      .values({ mediaId: anchor.item.id, provider: 'trakt', externalId: traktId, mediaKind: 'episode' })
+      .onConflictDoNothing().returning({ id: externalIds.id });
+    if (bound) return anchor.item;
+    const [existing] = await tx.select({ mediaId: externalIds.mediaId }).from(externalIds)
+      .where(and(eq(externalIds.provider, 'trakt'), eq(externalIds.externalId, traktId), eq(externalIds.mediaKind, 'episode')));
+    return existing?.mediaId === anchor.item.id ? anchor.item : null;
+  });
+}
 
 export async function resolveTrakt(
   record: TraktRecord
@@ -91,17 +121,24 @@ export async function resolveTrakt(
       )
     ).id,
   };
-  return ingestMetadata(
-    {
-      provider: 'trakt',
-      externalId: String(record.episode.ids.trakt),
-      kind: 'episode',
-      title: record.episode.title || `Episode ${record.episode.number}`,
-      seasonNumber: record.episode.season,
-      episodeNumber: record.episode.number,
-      runtimeMinutes: record.episode.runtime ?? undefined,
-      externalIds: ids,
-    },
-    { showId: show.id, seasonId: season.mediaId }
-  );
+  try {
+    return await ingestMetadata(
+      {
+        provider: 'trakt',
+        externalId: String(record.episode.ids.trakt),
+        kind: 'episode',
+        title: record.episode.title || `Episode ${record.episode.number}`,
+        seasonNumber: record.episode.season,
+        episodeNumber: record.episode.number,
+        runtimeMinutes: record.episode.runtime ?? undefined,
+        externalIds: ids,
+      },
+      { showId: show.id, seasonId: season.mediaId }
+    );
+  } catch (error) {
+    if (!(error instanceof CatalogueIdentityConflict)) throw error;
+    const episode = await bindTraktEpisodeByTmdb(show.id, record.show, record.episode);
+    if (episode) return episode;
+    throw error;
+  }
 }

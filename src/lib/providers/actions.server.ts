@@ -63,7 +63,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.list-delete', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { adapter, sync } = await getTrakt(action.userId, action.connectionId, 'export');
+    const { adapter, sync } = await getTrakt(action.userId, action.connectionId, 'export', 'lists');
     if (sync.lists) {
       let externalId =
         typeof action.payload.externalId === 'string' ? action.payload.externalId : undefined;

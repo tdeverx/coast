@@ -19,8 +19,7 @@ COPY patches/ ./patches/
 RUN bun install --frozen-lockfile --production
 
 FROM debian:bookworm-slim AS runtime
-ARG COAST_BUILD_ID=unknown
-ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 CONNECTION_IDLE_TIMEOUT=60 SHUTDOWN_TIMEOUT=2 COAST_READING_EXTRACTOR=/app/build/reading-extractor COAST_BUILD_ID=$COAST_BUILD_ID
+ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 CONNECTION_IDLE_TIMEOUT=60 SHUTDOWN_TIMEOUT=2 COAST_READING_EXTRACTOR=/app/build/reading-extractor
 RUN mkdir -p /etc/postgresql-common && printf 'create_main_cluster = false\n' > /etc/postgresql-common/createcluster.conf \
     && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
     && install -d /usr/share/postgresql-common/pgdg \
@@ -56,5 +55,7 @@ RUN command -v setsid && command -v timeout && command -v flock \
     && chmod 755 /usr/local/lib/coast-container-postgres-upgrade.sh /usr/local/bin/coast-entrypoint /usr/local/lib/coast-container-storage.sh /usr/local/lib/coast-container-wait.sh /usr/local/lib/coast-container-shutdown.sh
 VOLUME ["/data"]
 EXPOSE 3000
+ARG COAST_BUILD_ID=unknown
+RUN printf '%s\n' "$COAST_BUILD_ID" > /app/build/.coast-build-id
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 CMD bun -e 'const response = await fetch("http://127.0.0.1:3000/api/v1/health"); process.exit(response.ok ? 0 : 1)'
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/coast-entrypoint"]

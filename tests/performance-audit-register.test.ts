@@ -34,9 +34,10 @@ import liveErrorSourceRefresh from '../docs/audits/2026-11-20-live-error-followu
 import clearGlassSourceRefresh from '../docs/audits/2026-11-20-clear-glass-source-refresh.json';
 import fullHistoryTasteSourceRefresh from '../docs/audits/2026-11-20-full-history-taste-source-refresh.json';
 import providerDeliverySourceRefresh from '../docs/audits/2026-11-21-provider-delivery-source-refresh.json';
+import traktFeatureSourceRefresh from '../docs/audits/2026-11-21-trakt-feature-permissions-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -50,6 +51,16 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('per-feature Trakt permissions retain their scoped verification', async () => {
+  const review = traktFeatureSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review the Trakt feature permission change.');
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the Trakt permission migration.');
+  await expectCurrentSource(review.report, review.reportSha256, 'Review the permission verification scope.');
+});
 
 test('provider delivery and directional consent retain their scoped verification', async () => {
   const review = providerDeliverySourceRefresh;

@@ -8,6 +8,7 @@ import { afterAll, beforeAll, expect, spyOn, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import { ingestMetadata } from '../src/lib/catalogue/service.server';
+import { resolveTrakt } from '../src/lib/catalogue/trakt-identity.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { executeTraktListExport, exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
 import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
@@ -220,4 +221,41 @@ run('an export-only account delivers native history and a private list without i
     expect(writes).toHaveLength(4);
     expect((await db.select().from(trackingEvents).where(eq(trackingEvents.userId,otherId))).map(event=>event.source)).toEqual(['coast']);
   }finally{transport.mockRestore();}
+});
+
+run('staged history uses a verified TMDB episode when an IMDb alias points to bundled segments', async () => {
+  const db = getDb();
+  const tmdbShow = numericId + 60;
+  const tmdbEpisode = numericId + 61;
+  const traktEpisode = numericId + 62;
+  const imdb = `tt${numericId + 63}`;
+  await db.insert(externalIds).values({mediaId:showId,provider:'tmdb',externalId:String(tmdbShow),mediaKind:'show'});
+  const single = await ingestMetadata({provider:'tmdb',externalId:String(tmdbEpisode),kind:'episode',title:'Single segment',seasonNumber:1,episodeNumber:5},{showId,seasonId});
+  const bundled = await ingestMetadata({provider:'imdb',externalId:imdb,kind:'episode',title:'Two segments',seasonNumber:1,episodeNumber:8},{showId,seasonId});
+  mediaIds.push(single.id,bundled.id);
+  const episode = { title:'Single segment',season:1,number:5,ids:{trakt:traktEpisode,tmdb:tmdbEpisode,imdb} };
+  const series = {...show,ids:{...show.ids,tmdb:tmdbShow}};
+  await expect(resolveTrakt({show:series,episode:{...episode,number:6}})).rejects.toThrow('Conflicting provider identities');
+  await expect(resolveTrakt({show:{...series,ids:{...series.ids,tmdb:tmdbShow+100}},episode})).rejects.toThrow('Conflicting provider identities');
+  const [job] = await db.insert(outboxActions).values({userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind:'trakt.import',payload:{},state:'running',attempts:1}).returning();
+  const adapter = new TraktAdapter(async path => {
+    if(path === '/sync/last_activities')return {all:'2026-11-21T00:00:00Z'};
+    if(path.startsWith('/sync/history?'))return [{id:101,watched_at:'1991-08-25T18:22:00Z',show:series,episode}];
+    throw new Error(`Unexpected Trakt read: ${path}`);
+  },'fixture-client','fixture-secret');
+  let outcome: Awaited<ReturnType<typeof importTraktFromAdapter>> | undefined;
+  for (let pass = 0; pass < 8 && !outcome; pass++) {
+    try {
+      outcome = await jobExecution.run({id:job.id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:0},
+        () => importTraktFromAdapter(userId,connection.id,{adapter,sync:{history:true,progress:false,collection:false,ratings:false,watchlist:false,lists:false,scrobble:false}}));
+    } catch (error) {
+      if (!(error instanceof JobYield)) throw error;
+    }
+  }
+  expect(outcome?.imported).toBe(1);
+  const mapped = await db.select().from(externalIds).where(inArray(externalIds.externalId,[String(traktEpisode),imdb]));
+  expect(mapped.find(row=>row.provider==='trakt')?.mediaId).toBe(single.id);
+  expect(mapped.find(row=>row.provider==='imdb')?.mediaId).toBe(bundled.id);
+  expect(await db.select({mediaId:trackingEvents.mediaId}).from(trackingEvents)
+    .where(and(eq(trackingEvents.userId,userId),inArray(trackingEvents.mediaId,[single.id,bundled.id])))).toEqual([{mediaId:single.id}]);
 });

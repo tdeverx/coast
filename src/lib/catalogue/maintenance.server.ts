@@ -77,7 +77,8 @@ type ScanProgress<Cursor> = { cursor?: Cursor; committed?: (cursor: Cursor) => P
 export async function scanTraktCatalogue(
   adapter: TraktAdapter,
   save = persistMissingTmdb,
-  progress: ScanProgress<TraktCatalogueCursor> = {}
+  progress: ScanProgress<TraktCatalogueCursor> = {},
+  sync?: import('#lib/providers/contracts.js').SyncPreferences
 ) {
   let cursor = progress.cursor ? v.parse(traktCursorSchema, progress.cursor) : {
     stage: 0, page: 1, listIds: [], listIndex: 0, itemsPage: 1,
@@ -113,6 +114,11 @@ export async function scanTraktCatalogue(
   };
   const categories = ['history', 'progress', 'collection', 'ratings', 'watchlist'] as const;
   while (cursor.stage < 6) {
+    const category = categories[cursor.stage] ?? 'collection';
+    if (sync && !sync[category]) {
+      await advance({ ...cursor, stage: cursor.stage + 1, page: 1 });
+      continue;
+    }
     const records = cursor.stage < 5
       ? await adapter.read(categories[cursor.stage], cursor.page)
       : await adapter.collectionEpisodesPage(cursor.page);
@@ -120,7 +126,7 @@ export async function scanTraktCatalogue(
     const complete = records.length < 100;
     await advance({ ...cursor, stage: cursor.stage + Number(complete), page: complete ? 1 : nextPage(cursor.page) });
   }
-  while (cursor.stage === 6) {
+  while (cursor.stage === 6 && (!sync || sync.lists)) {
     if (!cursor.listIds.length) {
       const lists = await adapter.listsPage(cursor.page);
       if (!lists.length) { await advance({ ...cursor, stage: 7 }); break; }
@@ -235,10 +241,10 @@ export async function scanUserCatalogue(action: OutboxAction) {
   if (checkpoint && (checkpoint.task !== 'user-catalogue' || checkpoint.provider !== instance?.provider))
     throw new PermanentActionError('The catalogue scan account changed.');
   if (instance?.provider === 'trakt') {
-    const { adapter } = await getTrakt(action.userId, action.connectionId);
+    const { adapter, connection, sync } = await getTrakt(action.userId, action.connectionId);
     await scanTraktCatalogue(adapter, save, {
       cursor: checkpoint ? v.parse(traktCursorSchema, checkpoint.cursor) : undefined, committed,
-    });
+    }, connection.settings.traktSync === undefined ? undefined : sync);
   } else if (instance?.provider === 'jellyfin') {
     const { adapter, connection } = await getJellyfin(action.userId, action.connectionId);
     await scanJellyfinCatalogue(adapter, connection.externalUserId!, save,

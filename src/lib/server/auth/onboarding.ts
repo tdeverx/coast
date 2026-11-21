@@ -5,7 +5,7 @@ import { inviteDefaultsSchema } from '#lib/auth/invites.js';
 import { registrationSchema } from '#lib/auth/registration.js';
 import { getConfig } from '../config';
 import { startTraktDevice, finishTraktDevice } from '#lib/providers/trakt/connection.server.js';
-import { defaultTraktAccess, traktAccessSchema } from '#lib/providers/trakt/access.js';
+import { initialTraktSync, traktSyncSchema } from '#lib/providers/trakt/access.js';
 import { hashToken, newSession, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '#lib/providers/jellyfin/connection.server.js';
@@ -127,7 +127,7 @@ async function pendingOnboarding(userId:string) {
 }
 export async function startOnboardingTrakt(userId:string,input:unknown) {
  const onboarding=await pendingOnboarding(userId);
- const {instanceId,traktAccess}=v.parse(v.object({instanceId:v.pipe(v.string(),v.uuid()),traktAccess:v.optional(traktAccessSchema,defaultTraktAccess)}),input);
+ const {instanceId,traktSync}=v.parse(v.object({instanceId:v.pipe(v.string(),v.uuid()),traktSync:v.optional(traktSyncSchema,initialTraktSync)}),input);
  if(!(await onboardingTraktServices()).some((entry:{id:string})=>entry.id===instanceId))throw new AppError(403,'Trakt is unavailable.');
  checkLoginRate(`onboarding-trakt:${userId}`);
  if(onboarding.trakt_connection_id){
@@ -137,7 +137,7 @@ export async function startOnboardingTrakt(userId:string,input:unknown) {
       and a.user_id=${userId} and a.state='failed' and a.payload->'_jobFailure'->>'code'='provider.authentication')`;
   if(failed)await (await import('#lib/application/provider-sources.server.js')).disconnectProvider(userId,failed.id);
  }
- return {...await startTraktDevice(userId,instanceId,traktAccess),instanceId};
+ return {...await startTraktDevice(userId,instanceId,traktSync),instanceId};
 }
 export async function pollOnboardingTrakt(userId:string,input:unknown) {
  await pendingOnboarding(userId);
@@ -152,7 +152,8 @@ function requiredConnection(required:string,jellyfin:boolean,trakt:boolean) {
 async function onboardingRow(userId:string) {
  const [row]=await getSql()`select o.*,c.status as connection_status,c.account_generation as current_generation,
  t.status as trakt_status,t.account_generation as current_trakt_generation,
- (not (t.settings ? 'traktAccess') or (t.settings->'traktAccess' @> '{"import":true}'::jsonb and jsonb_typeof(t.settings->'traktAccess'->'export')='boolean')) as trakt_import,
+ coast_trakt_sync_allowed(t.settings,'import','tracking') as trakt_tracking,
+ coast_trakt_sync_allowed(t.settings,'import','lists') as trakt_lists,
  case when i.defaults is not null then claim.id end as claim_id from user_onboarding o
  left join invite_claims claim on claim.user_id=o.user_id left join registration_invites i on i.id=claim.invite_id
  left join provider_connections c on c.id=o.connection_id and c.user_id=o.user_id
@@ -169,9 +170,12 @@ export async function beginOnboardingImports(userId:string) {
  await getSql()`update user_onboarding set imports_started_at=coalesce(imports_started_at,now()) where user_id=${userId} and completed_at is null`;
  return onboardingStatus(userId);
 }
+function selectedTraktImports(row: {trakt_tracking?: boolean; trakt_lists?: boolean}) {
+ return [...(row.trakt_tracking ? ['trakt.import'] : []), ...(row.trakt_lists ? ['trakt.lists-import'] : [])];
+}
 async function ensureTraktImports(userId:string,row:any) {
  const db=getSql();
- for(const kind of ['trakt.import','trakt.lists-import']) {
+ for(const kind of selectedTraktImports(row)) {
   if(row.import_jobs?.[kind])continue;
   const id=await enqueueAction({userId,connectionId:row.trakt_connection_id,kind,payload:{initialImport:true},compactionKey:kind});
   // An integration-wide existing task may belong to another user. Never use its
@@ -207,12 +211,12 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    const jfReconnect=!jf||jfAuthFailed;
    imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.stageProcessed??0,total:progress?.stageTotal??null,stage:done?'Complete':jellyfinImportStage(progress?.phase??'scanning'),error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
   }
-  if(row.trakt_account_generation && row.trakt_import){
+  if(row.trakt_account_generation && selectedTraktImports(row).length){
    if(trakt)await ensureTraktImports(userId,row);
    const refreshed=await onboardingRow(userId);
-   if(refreshed.account_generation!==row.account_generation||refreshed.trakt_account_generation!==row.trakt_account_generation||refreshed.trakt_import!==row.trakt_import||new Date(refreshed.requested_at).getTime()!==new Date(row.requested_at).getTime())return onboardingStatus(userId);
+   if(refreshed.account_generation!==row.account_generation||refreshed.trakt_account_generation!==row.trakt_account_generation||refreshed.trakt_tracking!==row.trakt_tracking||refreshed.trakt_lists!==row.trakt_lists||new Date(refreshed.requested_at).getTime()!==new Date(row.requested_at).getTime())return onboardingStatus(userId);
    row.import_jobs=refreshed.import_jobs;
-   for(const kind of ['trakt.import','trakt.lists-import']){
+   for(const kind of selectedTraktImports(row)){
     const id=row.import_jobs?.[kind];
     const [job]=id?await getSql()`select state,last_error,payload from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
     traktAuthFailed||=job?.payload?._jobFailure?.code==='provider.authentication';reconnect||=traktAuthFailed;
@@ -251,7 +255,10 @@ async function jellyfinReady(row:Awaited<ReturnType<typeof onboardingRow>>) {
 export async function retryInitialImports(userId:string) {
  const row=await onboardingRow(userId);
  if(!row||row.completed_at)throw new AppError(409,'Onboarding is already complete.');
- if(row.trakt_import)for(const id of Object.values(row.import_jobs??{}) as string[])await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
+ for(const kind of selectedTraktImports(row)){
+ const id = row.import_jobs?.[kind];
+ if (id) await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
+ }
  if(row.connection_id&&!await jellyfinReady(row))await retryOnboarding(userId);
  return onboardingStatus(userId);
 }
@@ -277,8 +284,7 @@ async function backgroundImportRows(db:ReturnType<typeof getSql>,userId:string) 
       join provider_connections c on c.id=o.trakt_connection_id and c.user_id=o.user_id and c.account_generation=o.trakt_account_generation
       left join outbox_actions job on job.id=(o.import_jobs->>requested.kind)::uuid and job.account_generation=c.account_generation
         and job.user_id=o.user_id and job.connection_id=c.id and job.kind=requested.kind
-      where o.import_jobs ? requested.kind and (not (c.settings ? 'traktAccess') or
-        (c.settings->'traktAccess' @> '{"import":true}'::jsonb and jsonb_typeof(c.settings->'traktAccess'->'export')='boolean'))
+      where o.import_jobs ? requested.kind and coast_trakt_sync_allowed(c.settings,'import',case when requested.kind='trakt.import' then 'tracking' else 'lists' end)
     ) j where o.user_id=${userId} and o.completed_at is not null`;
 }
 

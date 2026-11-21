@@ -1,0 +1,15 @@
+# Trakt permissions by feature
+
+The connection form sends a single selection for the currently linked account. Import and export choices are independent for history, progress, Collection, ratings, watchlist, and lists. Live activity uses separate viewing and scrobble controls within its row. Trakt recommendations are import-only. Existing links derive their first selection from stored category choices and direction grants, including an enabled Collection projection.
+
+The server uses the existing maintenance scheduler, outbox lease, provider request lane, and account-generation guard. A settings change cancels affected jobs within the same transaction. Jobs for unchanged export categories retain their original order. Mixed-category imports restart on a selection change. Scheduled catalogue scans skip disabled categories before making requests. Onboarding creates tracking and list jobs only for selected groups. Live watching activity and its history cursor remain separate.
+
+Export may read the corresponding provider value to compare it with Coast. Remote changes are held for review when that category's Import is off. PostgreSQL and TypeScript admission checks use the same saved feature values. The live check-in cancellation trigger uses the scrobble choice.
+
+The episode identity fallback runs only after an actual conflict. It attaches a Trakt alias when the supplied TMDB show and episode IDs resolve to the same Coast hierarchy and its exact season and episode number. Bundled files and existing aliases stay intact. The live import diagnosis used read-only job staging and a bounded identity comparison. No watch history was copied into test fixtures.
+
+Jellyfin's changed-item reads request parent IDs. When a show ID is absent, the scan follows the authenticated parent and, for episodes, at most one grandparent. Recovered parent lookups are reused within the current page. A changed title with no verifiable parent stays out of that batch's positive observations and is counted for review. A full scan still requires a complete census before applying removals. Repeated reading-file conflicts keep their original hold and avoid rewriting access rows or logging a duplicate warning. The edition keeps the job ID when the hold starts. An exact corrected file identity clears the hold without changing saved progress.
+
+The container now reads its revision from the image at startup. This keeps migration diagnostics and benchmark metadata tied to the running image when a recreated container carries over an old environment value. The revision is written after runtime dependency installation so changing it does not invalidate that layer. The smoke test starts the container with a deliberately stale value and verifies the revision in its migration evidence.
+
+Verification covers legacy and malformed grants, partial withdrawal during provider pacing, list and rating conflicts, account reconnect, a scoped catalogue scan, recovered Jellyfin hierarchy, and repeat observations of a held file. Checks use disposable PostgreSQL and simulated providers. Live OAuth and production latency are outside this verification.

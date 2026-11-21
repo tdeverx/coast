@@ -170,8 +170,9 @@ export async function applyCompanionDelta(action:OutboxAction){
   const items=[...data.video.map(id=>({id,kind:'video' as const})),...data.music.map(id=>({id,kind:'music' as const})),...data.reading.map(id=>({id,kind:'reading' as const}))];
   if(items.length>200)throw new PermanentActionError('Too many Jellyfin changes in one page.');
   const saved=v.safeParse(v.object({offset:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(items.length)),
-    deferred:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0)),0),checked:v.pipe(v.number(),v.integer(),v.minValue(0)),count:v.pipe(v.number(),v.integer(),v.minValue(0))}),await readJobCheckpoint());
-  let {offset,checked,count,deferred}=saved.success?saved.output:{offset:0,checked:0,count:0,deferred:0};
+    deferred:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0)),0),review:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0)),0),
+    checked:v.pipe(v.number(),v.integer(),v.minValue(0)),count:v.pipe(v.number(),v.integer(),v.minValue(0))}),await readJobCheckpoint());
+  let {offset,checked,count,deferred,review}=saved.success?saved.output:{offset:0,checked:0,count:0,deferred:0,review:0};
   // Commit small targeted batches before yielding, keeping long bursts from
   // holding a worker and preserving completed work across retries/promotions.
   while(offset<items.length){
@@ -183,8 +184,9 @@ export async function applyCompanionDelta(action:OutboxAction){
     const result=await syncJellyfinChanges(action.userId,action.connectionId,data.scope,
       {video:batch.filter(item=>item.kind==='video').map(item=>item.id),music:batch.filter(item=>item.kind==='music').map(item=>item.id),reading:batch.filter(item=>item.kind==='reading').map(item=>item.id)},context);
     offset+=batch.length;checked+=result.checked;count+=result.count;deferred+=result.deferred;
-    await saveJobCheckpoint({offset,checked,count,deferred});
+    if ('review' in result) review += result.review;
+    await saveJobCheckpoint({offset,checked,count,deferred,review});
     await jobCheckpoint();
   }
-  return {checked,count,full:false,deferred};
+  return {checked,count,full:false,deferred,review};
 }

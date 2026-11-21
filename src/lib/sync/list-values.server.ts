@@ -1,5 +1,5 @@
 import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
-import { traktAccess } from '#lib/providers/trakt/access.js';
+import { traktAllows, traktPreferences } from '#lib/providers/trakt/access.js';
 import { conflictPreference } from './preference.server';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb, type Database } from '#lib/server/db/index.js';
@@ -109,7 +109,7 @@ async function exportLists(
     .orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   const [list] = await tx.select().from(lists).where(eq(lists.id, listId));
   for (const { connection } of connections) {
-    if (connection.id === except || !(connection.settings.sync as Record<string, boolean>)?.lists)
+    if (connection.id === except || !traktPreferences(connection.settings).export.lists)
       continue;
     const externalId =
       list.sourceConnectionId === connection.id
@@ -141,8 +141,8 @@ export async function reconcileProviderList(
     if (!connection) throw new Error('Connection does not belong to this account.');
     await assertJobLease(tx,true);
     if(options.accountGeneration&&(connection.accountGeneration!==options.accountGeneration||connection.status!=='connected'))throw new Error('The connected account changed before list reconciliation.');
-    const access = traktAccess(connection.settings);
-    if (!access[options.direction ?? 'import']) throw new Error('This Trakt sync direction is disabled.');
+    const importRemote = traktAllows(connection.settings, 'import', 'lists');
+    if (!traktAllows(connection.settings, options.direction ?? 'import', 'lists')) throw new Error('This Trakt sync category is disabled.');
     const fullLocal = await localListValue(tx, userId, listId);
     const [saved] = await tx
       .select()
@@ -160,9 +160,9 @@ export async function reconcileProviderList(
       : untouchedInitial && !previous
         ? 'remote'
         : decideSync(local, remote, previous);
-    if (!access.import && decision === 'remote') decision = 'conflict';
+    if (!importRemote && decision === 'remote') decision = 'conflict';
     const selected = await conflictPreference(tx, userId, connectionId);
-    const preference = !access.import && selected === 'remote' ? 'manual' : selected;
+    const preference = !importRemote && selected === 'remote' ? 'manual' : selected;
     const [pending] = await tx
       .select({ id: syncListValues.id })
       .from(syncListValues)

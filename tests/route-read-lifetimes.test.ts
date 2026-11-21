@@ -11,7 +11,7 @@ const onboardingScript=(await componentScript('src/routes/onboarding/+page.svelt
 const {createProfile,createOnboarding}=await import(moduleUrl(compileRunes(`
  import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource} from ${JSON.stringify(resourceUrl)};
- import {defaultTraktAccess} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};
+ import {initialTraktSync} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};
  export function createProfile(initial,api,change){
   let data=$state(initial);const cleanups=[],onDestroy=callback=>cleanups.push(callback);
   const setContext=()=>{},reportFailure=()=>{},useClient=()=>({feedback:{}}),page={url:new URL('https://example.invalid/profile/owner')};

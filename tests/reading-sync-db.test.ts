@@ -108,11 +108,13 @@ run('reading matching normalizes file IDs, holds corrected identities, and advan
   expect(await importJellyfinReading(context,[{...book,ProviderIds:{OpenLibrary:'OL999000002W'}}],{access:true})).toBe(0);
   const [held]=await db.select().from(s.workEditions).where(eq(s.workEditions.id,original.id));
   expect(held.workId).toBe(original.workId);expect(held.metadata.identityConflict).toBe(true);
-  expect((await db.select().from(s.availability).where(eq(s.availability.connectionId,connection.id)))[0].state).toBe('unknown');
+  const [heldSource]=await db.select().from(s.availability).where(eq(s.availability.connectionId,connection.id));
+  expect(heldSource.state).toBe('unknown');
   await expect(ownedReadingSession(user.id,session.id)).rejects.toMatchObject({status:410});
   expect((await db.select().from(s.readingProgress).where(eq(s.readingProgress.userId,user.id)))[0]).toMatchObject({workId:original.workId,page:15});
   expect(await importJellyfinReading(context,[{...book,ProviderIds:{}}],{access:true})).toBe(0);
-  expect((await db.select().from(s.availability).where(eq(s.availability.connectionId,connection.id)))[0].state).toBe('unknown');
+  const [unchangedHold]=await db.select().from(s.availability).where(eq(s.availability.connectionId,connection.id));
+  expect(unchangedHold).toEqual(heldSource);
   expect(await importJellyfinReading(context,[book],{access:true})).toBe(1);
   expect((await db.select().from(s.availability).where(eq(s.availability.connectionId,connection.id)))[0].state).toBe('available');
   const checkpoints:number[]=[];

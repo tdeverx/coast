@@ -1,4 +1,4 @@
-import { traktAccess, traktJobDirection } from '#lib/providers/trakt/access.js';
+import { traktJobAllowed, traktJobDirection } from '#lib/providers/trakt/access.js';
 import { taskInstanceSql, currentTaskGenerationSql } from './task-controls.server';
 export {cancelAction,retryAction,promoteAction} from './task-controls.server';
 export {updateTaskActions} from './task-commands.server';
@@ -149,11 +149,12 @@ export async function enqueueAction(input: {
     if (input.connectionId) {
       const direction = traktJobDirection(input.kind);
       const [connection] = direction
-        ? await sql`select c.id,c.settings->'traktAccess' as access,c.settings ? 'traktAccess' as configured_access,i.provider from provider_connections c join provider_instances i on i.id=c.instance_id
+        ? await sql`select c.id,case when c.settings ? 'traktSync' then jsonb_build_object('traktSync',c.settings->'traktSync')
+              when c.settings ? 'traktAccess' then jsonb_build_object('traktAccess',c.settings->'traktAccess') else '{}'::jsonb end as trakt_scope,i.provider from provider_connections c join provider_instances i on i.id=c.instance_id
             where c.id=${input.connectionId} and c.user_id=${input.userId} for share of c`
         : await sql`select id from provider_connections where id=${input.connectionId} and user_id=${input.userId}`;
       if (!connection) throw new AppError(403, 'This connection does not belong to this account.');
-      if (direction && connection.provider === 'trakt' && !traktAccess(connection.configured_access ? {traktAccess:connection.access} : {})[direction])
+      if (direction && connection.provider === 'trakt' && !traktJobAllowed(connection.trakt_scope, input.kind, input.payload))
         throw new AppError(403, `Trakt ${direction} is disabled for this connection.`, 'feature_disabled');
     }
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.userId}:${input.connectionId || 'local'}`}, 0))`;
@@ -410,7 +411,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
       try {
         if (action.connectionId) {
           const [connection] =
-            await getSql()`SELECT c.id, c.account_generation, c.credentials is not null as has_credentials, c.settings->'traktAccess' as access, c.settings ? 'traktAccess' as configured_access, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
+            await getSql()`SELECT c.id, c.account_generation, c.credentials is not null as has_credentials, case when c.settings ? 'traktSync' then jsonb_build_object('traktSync',c.settings->'traktSync')
+              when c.settings ? 'traktAccess' then jsonb_build_object('traktAccess',c.settings->'traktAccess') else '{}'::jsonb end as trakt_scope, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
           WHERE c.id = ${action.connectionId} AND c.user_id = ${action.userId} AND c.status = 'connected' AND i.enabled AND NOT u.disabled`;
           if (
             !connection ||
@@ -419,7 +421,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           )
             throw new PermanentActionError('The connected account is unavailable.');
           const direction = connection.provider === 'trakt' ? traktJobDirection(action.kind) : undefined;
-          if (direction && !traktAccess(connection.configured_access ? {traktAccess:connection.access} : {})[direction]) {
+          if (direction && !traktJobAllowed(connection.trakt_scope, action.kind, action.payload)) {
             await getSql()`update outbox_actions set state='cancelled',locked_at=null,last_error='Disabled in Trakt connection settings.',updated_at=now()
               where id=${action.id} and state='running' and attempts=${action.attempts}`;
             return true;

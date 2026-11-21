@@ -5,6 +5,7 @@ import {
 } from '../src/lib/catalogue/maintenance.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { JellyfinAdapter } from '../src/lib/providers/jellyfin/adapter.server';
+import { defaultSyncPreferences } from '../src/lib/providers/contracts';
 
 test('user catalogue scans all direct Trakt categories and pages, never recommendations or writes', async () => {
   const paths: string[] = [],
@@ -56,6 +57,14 @@ test('user catalogue scans all direct Trakt categories and pages, never recommen
   ])
     expect(paths.some((p) => p.includes(`/sync/${category}?`))).toBe(true);
   expect(paths.some((p) => /recommendations|trending/.test(p))).toBe(false);
+  paths.length = 0;
+  saved.length = 0;
+  await scanTraktCatalogue(adapter, async (kind, id) => {
+    saved.push(`${kind}:${id}`);
+    return true;
+  }, {}, { ...defaultSyncPreferences, collection: true });
+  expect(paths.map(path => path.split('?')[0])).toEqual(['/sync/collection/movies', '/sync/collection/episodes', '/sync/collection/episodes']);
+  expect(saved).toEqual(['movie:204', 'movie:205', 'show:202', 'show:203']);
 });
 
 test('Jellyfin catalogue unions activity filters and hydrates only unresolved roots in authenticated batches', async () => {

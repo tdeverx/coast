@@ -589,6 +589,13 @@
       "when": 1795222244000,
       "tag": "0083_trakt_sync_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1795224934442,
+      "tag": "0084_trakt_feature_permissions",
+      "breakpoints": true
     }
   ]
 }

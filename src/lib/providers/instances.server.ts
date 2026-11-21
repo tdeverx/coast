@@ -256,7 +256,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
               settings: {
                 liveRead: connection.settings.liveRead,
                 sync: connection.settings.sync,
-                ...(instance.provider === 'trakt' ? { traktAccess: connection.settings.traktAccess } : {}),
+                ...(instance.provider === 'trakt' ? { traktAccess: connection.settings.traktAccess, traktSync: connection.settings.traktSync } : {}),
                 importOwned: connection.settings.importOwned,
                 importPlaytime: connection.settings.importPlaytime,
                 importAchievements: connection.settings.importAchievements,

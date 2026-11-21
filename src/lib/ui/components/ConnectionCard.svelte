@@ -3,7 +3,7 @@
   import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import AccessFields from '#lib/providers/trakt/AccessFields.svelte';
-  import { defaultTraktAccess, traktAccess } from '#lib/providers/trakt/access.js';
+  import { initialTraktSync, traktPreferences } from '#lib/providers/trakt/access.js';
   import type {SourceImpact} from '#lib/collection/source-changes.server.js';
   import { untrack } from 'svelte';
   import { createResource } from '#lib/ui/resource.svelte.js';
@@ -96,37 +96,24 @@
     };
   });
   let initialized = '';
-  const defaultSync = {
-    history: false,
-    progress: false,
-    collection: false,
-    ratings: false,
-    watchlist: false,
-    lists: false,
-    scrobble: false,
-  };
   let liveRead=$state(untrack(()=>provider.connection?.settings.liveRead!==false));
   let reconcileTracking=$state(untrack(()=>provider.connection?.settings.reconcileTracking===true));
   let importPlayback = $state(
     untrack(() => provider.connection?.settings.importPlayback !== false)
   );
-  let linkAccess = $state({ ...defaultTraktAccess });
-  const savedAccess = $derived(traktAccess(provider.connection?.settings ?? {}));
-  let access = $state(untrack(() => ({ ...savedAccess })));
-  let sync = $state<Record<string, boolean>>({ ...defaultSync });
+  const savedSync = $derived(traktPreferences(provider.connection?.settings ?? {}));
+  let linkSync = $state(initialTraktSync());
+  let traktSync = $state(untrack(() => structuredClone(savedSync)));
   $effect(() => {
-    const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}:${savedAccess.import}:${savedAccess.export}`;
+    const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}:${JSON.stringify(savedSync)}`;
     if (key === initialized) return;
     initialized = key;
-    access = { ...savedAccess };
-    if (provider.connection?.status === 'connected') linkAccess = { ...defaultTraktAccess };
-    liveRead=provider.connection?.settings.liveRead!==false;
+    traktSync = structuredClone(savedSync);
+    if (provider.provider === 'trakt')
+      linkSync = provider.connection?.username ? structuredClone(savedSync) : initialTraktSync();
+    liveRead = provider.connection?.settings.liveRead !== false;
     importPlayback = provider.connection?.settings.importPlayback !== false;
     reconcileTracking = provider.connection?.settings.reconcileTracking === true;
-    sync = {
-      ...defaultSync,
-      ...(provider.connection?.settings.sync as Record<string, boolean>),
-    };
   });
   async function action<T = unknown>(path: string, body: unknown = {}, label?: string) {
     if (busy) return;
@@ -161,7 +148,7 @@
     busy = true;
     error = '';
     try {
-      device = await change('providers/trakt/start', { instanceId: provider.id, traktAccess: linkAccess });
+      device = await change('providers/trakt/start', { instanceId: provider.id, traktSync: linkSync });
     } catch (e) {
       error = message(e);
     } finally {
@@ -182,23 +169,8 @@
   }
   function saveTraktSync() {
     const account = provider.connection!;
-    return action(`providers/${account.id}/sync`, { ...sync, liveRead, traktAccess: access, accountGeneration: account.accountGeneration }, 'Sync preferences saved.');
+    return action(`providers/${account.id}/sync`, { traktSync, accountGeneration: account.accountGeneration }, 'Sync preferences saved.');
   }
-  const labels: Record<string, string> = {
-    history: 'Watch history',
-    progress: 'Viewing progress',
-    collection: 'Import Trakt Collection as Collected items',
-    ratings: 'Ratings',
-    watchlist: 'Watchlist',
-    lists: 'Custom lists',
-    scrobble: 'Live scrobbling',
-  };
-  function categoryAllowed(key: string) {
-    if (key === 'collection') return access.import;
-    if (key === 'scrobble') return access.export;
-    return access.import || access.export;
-  }
-
   reportFailure(()=>error);
   reportFailure(()=>scanStatus.error ? `Could not refresh scan progress: ${scanStatus.error}` : scan?.state === 'failed' ? scan.error : '');
 </script>
@@ -273,23 +245,17 @@
       <div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/steam-imports`,steamImports,'Steam import preferences saved.')}>Save import preferences</Button></div>
     </div>{/if}
     {#if provider.provider === 'trakt'}
-      <AccessFields bind:access disabled={busy} />
-      <div class="sync-options">
-        <label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy || !access.import} />Read live watching activity</label>
-        {#each Object.entries(labels) as [key, label]}<label class="check"
-            ><input type="checkbox" bind:checked={sync[key]} disabled={busy || !categoryAllowed(key)} />{label}</label
-          >{/each}
-      </div>
+      <AccessFields bind:sync={traktSync} disabled={busy} />
       <div class="row">
         <Button disabled={busy} onclick={saveTraktSync}>Save sync preferences</Button>
       </div>
       <p class="small">
         Imports retain their Trakt source. Coast remains your authoritative tracker.
       </p>
-      {#if savedAccess.export && access.export}
+      {#if savedSync.export.collection && traktSync.export.collection}
         {#key provider.connection.accountGeneration}<CollectionProjectionSettings connectionId={provider.connection.id} settings={provider.connection.settings} {sources} />{/key}
       {:else}
-        <p class="small">To manage Trakt Collection exports, enable Export to Trakt and save your sync preferences.</p>
+        <p class="small">To manage Trakt Collection exports, enable Export for Collection and save your sync preferences.</p>
       {/if}
     {/if}
     {#if provider.provider === 'jellyfin' && scan}
@@ -360,7 +326,7 @@
         </p>{/if}<Button  disabled={busy} onclick={finish}
         >I’ve authorised Coast</Button
       ><Button emphasis="subtle" disabled={busy} onclick={() => { device = null; pending = false; }}>Start again</Button>
-      {:else}<AccessFields bind:access={linkAccess} disabled={busy || !provider.configured} /><Button disabled={busy || !provider.configured} onclick={start}
+      {:else}<AccessFields bind:sync={linkSync} disabled={busy || !provider.configured} /><Button disabled={busy || !provider.configured} onclick={start}
         >Connect Trakt</Button
       >{/if}{:else}<p class="small">
       Your account is linked through the associated Jellyfin server. Connect Jellyfin to request
@@ -411,21 +377,11 @@
     place-items: center;
     background: var(--surface);
   }
-  .sync-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
   .device-code {
     display: block;
     font-size: var(--text-2xl);
     letter-spacing: var(--tracking-wide);
     color: var(--ink);
     margin-top: 15px;
-  }
-  @media (max-width: 500px) {
-    .sync-options {
-      grid-template-columns: 1fr;
-    }
   }
 </style>

@@ -1,13 +1,19 @@
-import {and,eq,sql} from 'drizzle-orm';
+import {and,eq,inArray,sql} from 'drizzle-orm';
 import {getDb} from '#lib/server/db/index.js';
 import {availability,providerItems,providerConnections,providerInstances,users,workEditions,readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
-import {assertJobLease,JobYield} from '#lib/server/queue/execution.js';
+import {assertJobLease,jobExecution,JobYield} from '#lib/server/queue/execution.js';
 import {AppError} from '#lib/server/security/errors.js';
 import {bookFormat,jellyfinComicVineId,jellyfinOpenLibraryId,type JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {jellyfinAddedDate} from '#lib/providers/jellyfin/added-date.server.js';
 import {readingWorkForEdition} from '#lib/providers/reading.server.js';
 import type {ReadingIdentity} from '#lib/reading/model.js';
+
+export class ReadingFileIdentityConflict extends AppError {
+ constructor(public readonly newlyHeld: boolean) {
+  super(409,'This file has conflicting title identifiers. Correct its Jellyfin metadata and rescan before reading.','reading_identity_conflict');
+ }
+}
 /** Resolve exact references before opening a transaction; edition lookups use the shared provider cache. */
 export async function readingFileReference(book:JellyfinBook,resolveEdition=true):Promise<ReadingIdentity|null>{
  const ids=Object.fromEntries(Object.entries(book.ProviderIds).map(([key,value])=>[key.toLowerCase(),value]));
@@ -50,9 +56,18 @@ export async function observeReadingFile(input:{userId:string;connectionId:strin
   if(conflict){
    // Commit the quarantine, then report the conflict. Throwing inside this
    // transaction would roll back the hold and leave the stale file playable.
-   for(const item of mappings)await tx.update(availability).set({state:'unknown',source:sql`${availability.source} || '{"reading":true,"identityConflict":true}'::jsonb`,verifiedAt:new Date()}).where(eq(availability.providerItemId,item.id));
-   for(const edition of editions)await tx.update(workEditions).set({metadata:sql`${workEditions.metadata} || '{"identityConflict":true}'::jsonb`}).where(eq(workEditions.id,edition.id));
-   return {conflict:true as const};
+   const availabilityHeld = mappings.length ? await tx.update(availability).set({state:'unknown',
+    source:sql`${availability.source} || '{"reading":true,"identityConflict":true}'::jsonb`,verifiedAt:new Date()})
+    .where(and(inArray(availability.providerItemId,mappings.map(item=>item.id)),
+     sql`(${availability.state}<>'unknown' or ${availability.source}->'identityConflict' is distinct from 'true'::jsonb)`))
+    .returning({id:availability.id}) : [];
+   const needsHold = editions.filter(row=>row.metadata.identityConflict!==true);
+   if(needsHold.length){
+    const jobId=jobExecution.getStore()?.id;
+    await tx.update(workEditions).set({metadata:sql`${workEditions.metadata} || ${{identityConflict:true,...(jobId?{identityConflictJobId:jobId}:{})}}::jsonb`})
+     .where(inArray(workEditions.id,needsHold.map(row=>row.id)));
+   }
+   return {conflict:true as const,newlyHeld:!!needsHold.length||!!availabilityHeld.length||(!editions.length&&!mappings.length)};
   }
   const existing=editions[0],previous=mappings[0];
   const editionMetadata={version:edition,identityConflict:false};
@@ -63,6 +78,6 @@ export async function observeReadingFile(input:{userId:string;connectionId:strin
   if(input.access!==false)await tx.insert(availability).values({userId,connectionId,mediaId:workId,providerItemId:item.id,sourceId:'default',container:format,edition,state:'available',scanId,source:{reading:true,identityConflict:false},verifiedAt:new Date()}).onConflictDoUpdate({target:[availability.userId,availability.connectionId,availability.providerItemId,availability.sourceId],set:{container:format,edition,state:'available',scanId,source:{reading:true,identityConflict:false},verifiedAt:new Date()}});
   return {item};
  });
- if('conflict' in result)throw new AppError(409,'This file has conflicting title identifiers. Correct its Jellyfin metadata and rescan before reading.','reading_identity_conflict');
+ if(result.conflict)throw new ReadingFileIdentityConflict(result.newlyHeld);
  return result.item;
 }

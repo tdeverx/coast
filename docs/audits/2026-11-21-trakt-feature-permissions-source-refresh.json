@@ -1,0 +1,229 @@
+{
+  "epoch": "trakt-feature-permissions-local-2026-11-21",
+  "baseline": "a48cee67358fef5ff37d646f92f9f8880adaee29",
+  "blanketAcceptance": false,
+  "files": {
+    ".github/workflows/verify-and-publish-preview.yml": {
+      "previous": "fed9954f245329cf5c850b71e6646020e13df829d6ad2fd93f41144f2786db9b",
+      "current": "a896d36dccdd50972bd5b1f522ab4636bdef6d3392ef87e1eca5cab58e26d90f"
+    },
+    "Dockerfile": {
+      "previous": "303cffb25274c4d3d388da33d0b8966eb404e2a6ef041f090659801bfeb60f8d",
+      "current": "25322f50e1dd0df6cc058e9e88bc40d7752931b1761f4784ed1201b8a4f196d2"
+    },
+    "README.md": {
+      "previous": "df688991580a90a77e58d70dc003d3e2e67aba03ed6c6625c1ab294eaba43f2f",
+      "current": "1a217dabbc11222951e9f2fcc612040c881f25fd3b6ed162e29a62dbb3e81600"
+    },
+    "docs/brief.md": {
+      "previous": "704a0e83480f3b7a6195aaf0a8cb5a19034f40278ffa7a52d19763c2bc32c1e6",
+      "current": "31c544a112e197c25c9b7bd6ab0e5dc0eb4994aa0e5580b99b9642eabb690814"
+    },
+    "docs/providers.md": {
+      "previous": "2f129e88edf183696b5f85239f64a71726ac27ed60bbbf9d52cf3bbd98e5beac",
+      "current": "ee365373e36cc2c0f6e87b2f62d2cf79d77190492c31ca2a8a85c735e355a3fa"
+    },
+    "drizzle/meta/_journal.json": {
+      "previous": "7175a4bad843b02ab362f6b0baf19cff3e6c099d95dff4df88a105c1a171e4e3",
+      "current": "dfba0c4396d98880e14514d99e100aa81b4da6af9a87dca0649d3f991cd366c9"
+    },
+    "scripts/container-entrypoint.sh": {
+      "previous": "104d07501e6c177476f00e72c5453f5f07c39d27f7ec821f09492152dddc15fa",
+      "current": "8e380df43d08fb87875f46d6915e8c71799fae1eb6e0b3c29163c1be221d06f3"
+    },
+    "src/lib/catalogue/maintenance.server.ts": {
+      "previous": "fb69b021525cdb08c53bd552eae35528b863d0d3728c2e24ef27566393b60592",
+      "current": "6bc80d9d677bf48edd89163658e444e13b0ccab13f1c56d8c815be2a7af25769"
+    },
+    "src/lib/catalogue/reading-files.server.ts": {
+      "previous": "bcf9258bf70e9aa6ec4a74265bc5291f3665b7ccdbbef8759ba6d0ffc9787d88",
+      "current": "17d9d9c28dd2dd04d317ff41c749bbd7a8d2703f72ed81034d7f8c8b7f62699e"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "61de69ff4f37ef013cf0f56c2c4534981d1f9d06088a7b240109de3a8b695e29",
+      "current": "800bd115b6a00288c925c904ccf69914c7f17bbe703b9ee38f0426e592eaf9ee"
+    },
+    "src/lib/catalogue/trakt-identity.server.ts": {
+      "previous": "f54ae38e69c64be6ece09cb6c531c7378ddc2a37b233d18d915cbb520400549b",
+      "current": "f6b27368b2a4b8aee3aa1337481583b66c07fe090b6f2035b27d0a0efa0b9b46"
+    },
+    "src/lib/collection/projection.server.ts": {
+      "previous": "5c4e1aec152905e45f88402eabeaea551a6121c04061dc5d8d6a61442f40a05d",
+      "current": "09f06f3d1ec4240f938cf4efb94e7b97bcedc75ed008f8e4239d24d0a5196be0"
+    },
+    "src/lib/providers/actions.server.ts": {
+      "previous": "0152e9b2a371235fe597eedd3b35cdea81838bce9b99c80b7cbae4bf0ba420b5",
+      "current": "9e695e82d6610b99b6c34844faa418c430c067a938d89b5ee0ab1750579c1ba0"
+    },
+    "src/lib/providers/connections.server.ts": {
+      "previous": "b85de41ce580f01fd5533699a843c33e4e576d436350392752a50d06564affab",
+      "current": "cac673744f60227cc9312ac69eeb2ef274d8c233f4f390ab4c615ca3a22cd6bd"
+    },
+    "src/lib/providers/instances.server.ts": {
+      "previous": "2b5b26af955979fc563f0a335b90a822216202f18dbd6bd5e11ee9b457e8a033",
+      "current": "a7d0ac71986e6152fcd98167e896bf9097bf52fc938520f519fe972d62938121"
+    },
+    "src/lib/providers/jellyfin/adapter.server.ts": {
+      "previous": "eebbf80c3300b7702d16c52cb92602c510c2c2e45b2febd4ad968e466a6e319f",
+      "current": "3fb94010a704950bf567a037a9c63f74be62c77b756cc9f8cd5d3fbea096ab97"
+    },
+    "src/lib/providers/jellyfin/updates.server.ts": {
+      "previous": "886e4f60cc4d227050877bf10fa18121c9562124e8532843cfa8a8baf9decb71",
+      "current": "e4aa30aa92ca9f1e9810a00adc2795494d7054960b4284de55be83feabc7082f"
+    },
+    "src/lib/providers/maintenance.server.ts": {
+      "previous": "4b9c4fd64506536c1f90c6e0eebe3222b8aacdc8eef9bbb78626e16518f47ed1",
+      "current": "26f97891bec4b374a1952e6a3f53c41525d05f05d968a8e0e4e6adb5f701caa1"
+    },
+    "src/lib/providers/task-timing.ts": {
+      "previous": "8cbcc33d2eeb913275504a1a59a71be95a3bed303280fef7bd60fb05816f3c98",
+      "current": "e92868d81949ef11044a37aa7243604e91167dc29f9e096675f3fe8e9b850365"
+    },
+    "src/lib/providers/trakt/AccessFields.svelte": {
+      "previous": "2440e4d3d91fe7e18b391202b46dd1532ace72fcf57f812fcd5416aae71059d6",
+      "current": "c7afc4546e33329d7c80e20cae9278aa4fe8470abea5c9d630b18801444cfeda"
+    },
+    "src/lib/providers/trakt/access.server.ts": {
+      "previous": "d59b7bdd658c923405e357195c3d8a4c3f6439d4330a819a2349ecca9a8f20e7",
+      "current": "34375fc9c9696ebfd99bc581a0e26518a0ecbad30493c759dd2a602efbd2ec6c"
+    },
+    "src/lib/providers/trakt/access.ts": {
+      "previous": "162fb839d3bf4b4db0b95d90d5b9fca0a21c308b68b4622d94f048fb6d17910b",
+      "current": "819ef8abdd02f65db9b094eed609312ecf84cb5abe1c54df8088e486eb9c2226"
+    },
+    "src/lib/providers/trakt/connection.server.ts": {
+      "previous": "44f5bb3d522db059e73d06ea7c833b0473f09a9fc1c9ac7b145106a6f6db934c",
+      "current": "bece877e361015989d0ea9ce85bed76596ab54457a1546f67f97c8fecbb1a51b"
+    },
+    "src/lib/recommendations/providers.server.ts": {
+      "previous": "f2a02e61507343becf6186f3abaff1fe1cf377f86b03308a9dffc1d1a7c120c7",
+      "current": "8f92a0f9ec99a71e2d25059ee2439d950cbfe9c8d8ebe1b759621dbae1bbec17"
+    },
+    "src/lib/server/api/providers.server.ts": {
+      "previous": "2fe054437bf3bcf2d5062e2ef96b514e028b10ed188f3285c0e0d95d27f51eea",
+      "current": "158f7d571823ce7ae8c2bf94a8cbbf88ab99a988024c9e417d2350b5048660db"
+    },
+    "src/lib/server/auth/onboarding.ts": {
+      "previous": "82ed0e99bdd3ec2eaebc0d413f2aabb16c0549aab18946eb0a902de987785217",
+      "current": "0ed4d2410efb481e277c2314a2fcb6f14c926f880b5117f774009c368f455495"
+    },
+    "src/lib/server/queue/index.ts": {
+      "previous": "ae6f9ef176d8a87ad221d6e54dce1b675c87963647a571e6fe4e90b1da0dbff9",
+      "current": "b1c282e9311ce7fa4b42db45615e684238d7f1093e9c09747e78ae6ecb1dbf4e"
+    },
+    "src/lib/server/queue/task-controls.server.ts": {
+      "previous": "a0983b6948d63a83f421fe978b7d391c274bbcd7fd1b0295871ba145dec3c694",
+      "current": "2b05a916a07718a66cd493142dde77d98a70f81128900dfb0113284032a8382d"
+    },
+    "src/lib/social/checkins.server.ts": {
+      "previous": "f7c082547cf07ff25cd06be12a5e5078a6f42e88169059277d5dbcd9ad76557b",
+      "current": "96af759bbd3681cb4dbb5b8b21cb6a08647d0d9aa090aeecaf8f93b4d57c765f"
+    },
+    "src/lib/social/trakt.server.ts": {
+      "previous": "3f295b25ca6096c48afe42e31780dbbf701f7c8972d03cb81ab9105b8733d6d2",
+      "current": "051c1d3c3999d5c17d4da6b0ab8706f54dbace9dd3596eb57b4d8b48f36786fe"
+    },
+    "src/lib/sync/changes.server.ts": {
+      "previous": "243873888d7195c83cd12bb827b111637b9f7fa98b53975a56da74720aff709f",
+      "current": "8a49e70e867d5a91fc45cab53138640e370f55c0f9a89831f0e2ed5bdc2f1206"
+    },
+    "src/lib/sync/history-removal.server.ts": {
+      "previous": "9865d5a489064e701551f12cc30f46ea5c6d88a44c92e5cdb4adad6a44f523b7",
+      "current": "44f8de148628245173f4a7172b284171389d30254bf1fb03063de20e4ed8d809"
+    },
+    "src/lib/sync/jellyfin-reading.server.ts": {
+      "previous": "9e4e13f22cda8bc14f95acdf957ac926fd2b5cb3ab9407ecf7c6a82aaab95644",
+      "current": "9a6c0e810ebfe48228ace7ec79e519f30ec73bd0e370600726d16f60f4efc3ab"
+    },
+    "src/lib/sync/jellyfin.server.ts": {
+      "previous": "85405a13c6d003c21a421b06cddb19c5ff85d20c83fe5e492b424fce51e3beed",
+      "current": "a0edeec37609719d90ec2638f2558587b92efd4ed740e2d412bcfb789424724e"
+    },
+    "src/lib/sync/list-values.server.ts": {
+      "previous": "f83542e34eda060e0cf787e5c891d9b6fafdc6e83b94290931a70400165257b9",
+      "current": "706e8542d4460f6eba03bc34cd488412250e3d1fc247b3580d724ac44934f7e4"
+    },
+    "src/lib/sync/trakt-export.server.ts": {
+      "previous": "72d0e68b412571e98a75800ce1bf182316ff2a3c74502285802b4edc2304ed5a",
+      "current": "e68a7819dc21e1abdb934c12e834bec89e2bb4736107cc3f0258c2551bded1cf"
+    },
+    "src/lib/sync/trakt-lists.server.ts": {
+      "previous": "e80c14d488f3c09b9ff036c0a47a6fd64ef9b2084154d06dc8cb21b7ad9b09df",
+      "current": "2beb4fdc69390b1f8afc869f2bdcb1efe17965f6a56aa960f4eed767b398715c"
+    },
+    "src/lib/sync/values.server.ts": {
+      "previous": "057b6ecad2e365515b37fa55b8c5395528a224baafc691c3b58a7a06f14bed52",
+      "current": "2cf81854660c3a31e23e530aeb247e367839411d5aeb6d8202318392de7db4fb"
+    },
+    "src/lib/ui/components/ConnectionCard.svelte": {
+      "previous": "541bc382ea7f92a3f754edac276f4101c02567cd8f1c4e021c7dd6f6f02ba347",
+      "current": "333c2248fc265d636866093fc72c6e529925efbd7334917db562d0ba52de2366"
+    },
+    "src/lib/ui/queue.ts": {
+      "previous": "6bf12a6366bdc1256dc2b4b2024d1e36bf37a4d2154b5003823dd8ff55989df3",
+      "current": "8b1397512c020fef0d654155773dabfd098f6480c6758f525c81686f02d40560"
+    },
+    "src/routes/onboarding/+page.server.ts": {
+      "previous": "d1720256f5e79c4c7a56415d376e405c781eb21fb87ce618ba7ee850ff7d5364",
+      "current": "e7a1d56e304d35ad5805f92f0a2bf85addafbc7dd94a92b45b109d7e68b00ff2"
+    },
+    "src/routes/onboarding/+page.svelte": {
+      "previous": "aec61e3b15b8c7facdaae3b6c260a97f5dc0094acac7537c332dff40dacc2648",
+      "current": "ce441b9ae4da0c36eaedf9a7cd13264731e00015b29fcc0ac3c628ebac334051"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "previous": "148cc2232d14648f1bbd2567909e35f577d4b691e4ef86ac3e4fdf818e4284b8",
+      "current": "a453cc3b1a1839eb20c75f66dcfca48a1c277f0923419ec974b218cc7fb78159"
+    },
+    "tests/catalogue-maintenance.test.ts": {
+      "previous": "ee3ea738d95665f7c611d5de998c3c2a570056efefd8e231e9ec4a2695aded4c",
+      "current": "2c2092086b5b3de506a220d212d5707fa41f4a582cb16bfe8412992c4de3a119"
+    },
+    "tests/jellyfin-companion-db.test.ts": {
+      "previous": "54c2cbdabf50a619fff023b0617ff2a4e82c06d62e6e2d531b050541d1dcbe0e",
+      "current": "3dd2a5cf2df26c136a10651f70dd4583fbeb68f282b971700352bd56f75a1884"
+    },
+    "tests/maintenance-runner-db.test.ts": {
+      "previous": "2b367067f27df283edde60cc377beda4c395e2c4440dd078e163f860883d98f5",
+      "current": "0b7bbb18ec3a1c22ac258c5aa3f25ce0b7053a0cfcccb3c6589450c3e52998e4"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "296fc1ac3ab6549984d7f6ef53cd54950af0f31805a1509d29088cbf4e7e835d",
+      "current": "0e1c403592ed0c1791ee0db0285bfef5ecf23ae53d8a9f3c0eca5796a23c1834"
+    },
+    "tests/reading-sync-db.test.ts": {
+      "previous": "c022a7eedc7c6c7b5dcaad36197fc0774e439ba4b5960b9cc2a460259a693cd2",
+      "current": "656742f9bfb07d1dfdff39a7bba60cf4d318da20632a512d122de55fa072161a"
+    },
+    "tests/route-read-lifetimes.test.ts": {
+      "previous": "fddc8b1d081134a7289280e47dc6119d12ae54779dfde564235d9f08f50e21e6",
+      "current": "5685a23000a8bdbd4deb18dcfdd598639665e85a84590897c4d5d2e0f41dd02e"
+    },
+    "tests/social-trakt-db.test.ts": {
+      "previous": "aad8d375a2f327d9b2729d0423623cc08015c43980c519d9d88502363ea3b47a",
+      "current": "a846882b424a255ed6529fd046ee3e82e21576f8ce90fde9e501523d9627fc50"
+    },
+    "tests/sync-preference-db.test.ts": {
+      "previous": "a7ff3b5292d7ab16ba11ed8ae3f39ce1797f6821ce973e2ae5c992983c1f68fa",
+      "current": "39f582b4c23f46fa3b9f644daaa260164073021a48d803af4f6c9e2408be2111"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "db039c315d0ddac82c4e8418dfd66e6f7dbf9651b7c0c3f09c3a2bfa9219373b",
+      "current": "ec14da2b3fddbbe5b8f811305a27ee963351fddcfb812fc0affbbe14bfca6ed1"
+    },
+    "tests/trakt-token-scope-db.test.ts": {
+      "previous": "3c8966167ea2655af2adfab369198bef942b814f999f310a7dbb65602d4f88ba",
+      "current": "7875cda52ad7af197328238e3bce41b24c53913f596de7e7cc8445eb4c2e993c"
+    },
+    "tests/ui-panel-lifecycle.test.ts": {
+      "previous": "6438f4bb4da812bb2d5d9331ca1569a505d59519eae4121e36bb61d1f3b87815",
+      "current": "2eb8b056af0a71daea71bb7b2d681d0109504ae2674b554121bc9c56e960ede9"
+    }
+  },
+  "supportingFiles": {
+    "drizzle/0084_trakt_feature_permissions.sql": "8afa7d4c9c0ea762ae71e2178355b82067c7b49d885791ca83fe6935ed2ddeb7",
+    "drizzle/meta/0084_snapshot.json": "1c733506d194a33571aab66083b04bafcfc52cb02350993cfcdcd4d3678ec56f"
+  },
+  "report": "docs/audits/2026-11-21-trakt-feature-permissions.md",
+  "reportSha256": "5c1235e955a1604c536ae49f494d9f2ad2e8a06895527f05278b10b9c77b2151"
+}

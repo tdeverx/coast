@@ -1,5 +1,4 @@
-import { traktJobDirection, type TraktDirection } from './trakt/access';
-import { traktImportAllowed, traktExportAllowed } from './trakt/access.server';
+import { traktJobAllowed, traktJobDirection, type TraktDirection } from './trakt/access';
 import { pruneUnusedAvatars, stopAvatarSweep } from '#lib/core/profile/avatar-storage.server.js';
 import { expireMemberships } from '#lib/server/auth/account-management.server.js';
 import { pruneTransientRecords } from '#lib/server/storage/retention.server.js';
@@ -277,10 +276,9 @@ export async function scheduleProviderMaintenance(
             inArray(outboxActions.state, ['pending', 'running', 'failed']))).limit(1);
         if (existing) continue;
         if (direction) {
-          const [allowed] = await tx.select({id:providerConnections.id}).from(providerConnections)
-            .where(and(eq(providerConnections.id,connection.id),eq(providerConnections.accountGeneration,connection.accountGeneration),
-              direction==='import'?traktImportAllowed:traktExportAllowed)).for('share');
-          if(!allowed)continue;
+          const [current] = await tx.select({settings:providerConnections.settings}).from(providerConnections)
+            .where(and(eq(providerConnections.id,connection.id),eq(providerConnections.accountGeneration,connection.accountGeneration))).for('share');
+          if (!current || !traktJobAllowed(current.settings, kind, payload)) continue;
         }
         await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
         const purpose = options.force ? 'manual' : kind.endsWith('.live') || ['jellyfin.streams','jellyfin.updates'].includes(kind) ? 'live' : 'scheduled';

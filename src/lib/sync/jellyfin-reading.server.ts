@@ -5,13 +5,14 @@ import {getFeatureConfig} from '#lib/server/features.js';
 import type {JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
 import {readingProviderDetails} from '#lib/providers/reading.server.js';
 import {importReading} from '#lib/catalogue/reading.server.js';
-import {observeReadingFile,readingFileReference} from '#lib/catalogue/reading-files.server.js';
+import {observeReadingFile,ReadingFileIdentityConflict,readingFileReference} from '#lib/catalogue/reading-files.server.js';
 import {sourceEdition} from '#lib/reading/sessions.server.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {AppError} from '#lib/server/security/errors.js';
 import {DomainError} from '#lib/core/errors.js';
 import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
 import {logDiagnostic} from '#lib/server/diagnostics/index.js';
+import {jobExecution} from '#lib/server/queue/execution.js';
 type Context=Awaited<ReturnType<typeof import('#lib/providers/jellyfin/connection.server.js').getJellyfin>>;
 /** Exact plugin identifiers or the user's explicit file link; never a title/filename guess. */
 export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){
@@ -40,7 +41,13 @@ export async function importJellyfinReading(context:Context,books:JellyfinBook[]
    const missing=cause instanceof ProviderHttpError&&cause.status===404||cause instanceof AppError&&cause.status===404&&cause.code==='not_found';
    const conflict=(cause instanceof AppError||cause instanceof DomainError)&&['reading_identity_conflict','identity_conflict'].includes(cause.code);
    if(!missing&&!conflict)throw cause;
-   await logDiagnostic('warn','application.failed',{operation:'library',stage:'item-import',provider:'jellyfin',errorCode:conflict?'catalogue.identity-conflict':'provider.item-unavailable',count:1});
+   if(!(cause instanceof ReadingFileIdentityConflict)||cause.newlyHeld){
+    const job=jobExecution.getStore();
+    await logDiagnostic(missing?'info':'warn',job?'job.item-skipped':'application.failed',{
+     operation:'library',stage:'item-import',provider:'jellyfin',actionId:job?.id,jobKind:job?.kind,
+     errorCode:conflict?'catalogue.identity-conflict':'provider.item-unavailable',count:1,
+    });
+   }
   }
   await options.checkpoint?.(index+1);
  }

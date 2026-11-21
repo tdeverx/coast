@@ -455,7 +455,7 @@ run('Trakt access gates manual runs, failed retries and legacy queued work befor
     await db`update provider_connections set settings=(settings-'traktAccess') where id=${connectionId}`;
     await expect(queue(3,'trakt.export')).rejects.toThrow('Trakt export is disabled');
     const [legacy]=await db`insert into outbox_actions(user_id,connection_id,kind,payload) values(${users[0]},${connectionId},'trakt.export','{}') returning id`;
-    await expect(retryAction(actor,legacy.id)).rejects.toThrow('Trakt export is disabled');
+    await expect(retryAction(actor,legacy.id)).rejects.toThrow('disabled in your Trakt connection settings');
     await runQueueOnce();
     expect((await db`select state from outbox_actions where id=${legacy.id}`)[0].state).toBe('cancelled');
     await db`update provider_connections set settings=settings||'{"traktAccess":{"import":false,"export":true}}'::jsonb where id=${connectionId}`;

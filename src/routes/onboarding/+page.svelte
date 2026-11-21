@@ -4,13 +4,13 @@
  import {enhance,deserialize} from '$app/forms';import {refreshRouteDependencies} from '#lib/ui/client.js';import {onMount,untrack} from 'svelte';
  import AvatarPicker from '#lib/ui/components/AvatarPicker.svelte';
  import AccessFields from '#lib/providers/trakt/AccessFields.svelte';
- import {defaultTraktAccess} from '#lib/providers/trakt/access.js';
+ import {initialTraktSync} from '#lib/providers/trakt/access.js';
  import {createResource} from '#lib/ui/resource.svelte.js';
  import Brand from '#lib/ui/components/Brand.svelte';import Button from '#lib/ui/components/Button.svelte';
  let {data,form}=$props();let busy=$state(false),deviceError=$state(''),avatar=$state<string|null>(untrack(()=>data.profile.avatar??null)),reading=$state(false);
  $effect(()=>{if(form&&'device' in form)deviceError='';});
  const device=$derived(form&&'device' in form?form.device:null);
- let access=$state({...defaultTraktAccess});
+ let sync=$state(initialTraktSync());
  const canContinue=$derived(data.requiredProvider==='none'||data.requiredProvider==='jellyfin'&&data.linked||data.requiredProvider==='trakt'&&data.traktLinked||data.requiredProvider==='either'&&(data.linked||data.traktLinked));
  onMount(()=>{let pending=false,nextPoll=0,stopped=false;const poll=createResource<ReturnType<typeof deserialize>|null>(null);
   const refresh=async()=>{
@@ -74,7 +74,7 @@
  {:else}
    <form method="POST" action="?/trakt" class="stack" use:enhance={() => { busy=true; return async ({update}) => { try { await update(); } finally { busy=false; } }; }}>
      <label class="field">Trakt service<select name="instanceId">{#each data.traktServices as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
-     <AccessFields bind:access disabled={busy} />
+     <AccessFields bind:sync form disabled={busy} />
      <Button type="submit" disabled={busy}>Connect Trakt</Button>
    </form>
  {/if}

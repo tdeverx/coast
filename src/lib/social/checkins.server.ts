@@ -1,4 +1,4 @@
-import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
+import { traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
@@ -25,8 +25,8 @@ async function queueTimedCheckin(tx: Transaction, userId: string, checkinId: str
   const connections = await tx.select({ id: providerConnections.id }).from(providerConnections)
     .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
     .where(and(eq(providerConnections.userId, userId), eq(providerConnections.status, 'connected'),
-      eq(providerInstances.provider, 'trakt'), traktExportAllowed, eq(providerInstances.enabled, true),
-      sql`${providerConnections.settings}->'sync'->>'scrobble'='true'`)).orderBy(providerConnections.id).for('share',{of:providerConnections});
+      eq(providerInstances.provider, 'trakt'), traktFeatureAllowed('export', 'scrobble'), eq(providerInstances.enabled, true),
+      sql`(${providerConnections.settings} ? 'traktSync' or ${providerConnections.settings}->'sync'->'scrobble'='true'::jsonb)`)).orderBy(providerConnections.id).for('share',{of:providerConnections});
   for (const { id } of connections)
     await enqueueInTransaction(tx, { userId, connectionId: id, kind: 'trakt.checkin', payload: {checkinId}, compactionKey: `checkin:${checkinId}` });
 }

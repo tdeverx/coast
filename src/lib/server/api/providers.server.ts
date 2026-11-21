@@ -48,7 +48,7 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
       else if (path[1] === 'steam' && path[2] === 'start' && method === 'POST')
         result = await (await import('#lib/providers/steam/connection.server.js')).startSteam(uid,uuid(body.instanceId),url.origin);
       else if (path[1] === 'trakt' && path[2] === 'start' && method === 'POST')
-        result = await startTraktDevice(uid, uuid(body.instanceId), body.traktAccess);
+        result = await startTraktDevice(uid, uuid(body.instanceId), body.traktSync);
       else if (path[1] === 'trakt' && path[2] === 'finish' && method === 'POST')
         result = await finishTraktDevice(uid, uuid(body.instanceId), uuid(body.challengeId));
       else if (path[2] === 'music' && path.length === 5 && path[4] === 'artwork' && method === 'GET')

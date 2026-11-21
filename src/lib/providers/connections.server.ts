@@ -15,13 +15,12 @@ import { encryptCredential } from '#lib/server/security/credentials.js';
 import { getInstance } from '#lib/providers/instances.server.js';
 import { jellyfinItemKey } from './jellyfin/paging';
 import { maintenanceKinds } from '#lib/providers/tasks.js';
-import { defaultSyncPreferences } from './contracts';
-import { traktAccess, type TraktAccess } from './trakt/access';
+import type { TraktSync } from './trakt/access';
 import { cancelDisabledTraktJobs } from './trakt/access.server';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Connection = typeof providerConnections.$inferSelect;
-type TraktDeviceProof = { expectedCredential: string; slug?: string; access: TraktAccess };
+type TraktDeviceProof = { expectedCredential: string; slug?: string; sync: TraktSync };
 
 /** A verified slug-to-UUID correction preserves the durable account and its generation. */
 export async function upgradeTraktIdentity(tx: Tx, current: Connection, externalUserId: string) {
@@ -68,17 +67,14 @@ export async function saveConnection(
     if(lane) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`queue-lane:${userId}:${lane.id}`},0))`);
     const key = and(eq(providerConnections.userId, userId), eq(providerConnections.instanceId, instanceId));
     let previous: Pick<Connection, 'id' | 'externalUserId'> | undefined;
-    let previousAccess: TraktAccess | undefined;
+    let previousSettings: Connection['settings'] | undefined;
     if (device) {
       let [current] = await tx.select().from(providerConnections).where(key).for('update');
       if (!current || current.status !== 'disconnected' || current.credentials !== device.expectedCredential)
         throw new AppError(409, 'This Trakt linking request was replaced or cancelled. Start again.');
       if (current.settings.traktIdentityPending && (current.externalUserId === externalUserId || current.externalUserId === device.slug))
         current = await upgradeTraktIdentity(tx, current, externalUserId);
-      if (current.externalUserId === externalUserId) {
-        previousAccess = traktAccess(current.settings);
-        settings = { ...settings, sync: current.settings.sync ?? defaultSyncPreferences };
-      }
+      if (current.externalUserId === externalUserId) previousSettings = current.settings;
       previous = current;
     } else {
       [previous] = await tx.select({ externalUserId: providerConnections.externalUserId, id: providerConnections.id })
@@ -138,14 +134,16 @@ export async function saveConnection(
       })
       .returning();
     if (device) {
-      // Switching back to a known account restores its saved settings in the database trigger.
-      // Keep the recovered categories, but this linking attempt owns the direction consent.
-      const stored = connection.settings.traktAccess as Partial<TraktAccess> | undefined;
-      if (stored?.import !== device.access.import || stored?.export !== device.access.export) {
-        [connection] = await tx.update(providerConnections).set({ settings: { ...connection.settings, traktAccess: device.access } })
-          .where(eq(providerConnections.id,connection.id)).returning();
-      }
-      await cancelDisabledTraktJobs(tx, connection, previousAccess);
+      // A restored account keeps its sync history. The completed device
+      // challenge supplies the permissions for this link.
+      const [restored] = await tx.update(providerConnections).set({
+        settings: sql`(${providerConnections.settings} - 'sync' - 'traktAccess' - 'liveRead') || ${{ traktSync: device.sync }}::jsonb`,
+      }).where(and(eq(providerConnections.id, connection.id), sql`(
+        ${providerConnections.settings}->'traktSync' is distinct from ${device.sync}::jsonb
+        or ${providerConnections.settings} ?| array['sync','traktAccess','liveRead']
+      )`)).returning();
+      if (restored) connection = restored;
+      await cancelDisabledTraktJobs(tx, connection, previousSettings);
     }
     // A verified reconnect supersedes failed reads, while outbound intent keeps its order.
     const superseded=await tx.update(outboxActions).set({state:'cancelled',lastError:'Superseded by a verified account reconnect.',updatedAt:new Date()})

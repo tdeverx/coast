@@ -16,7 +16,8 @@ import {
 } from '#lib/sync/values.server.js';
 import { importJellyfinPlayback, seedEmptyJellyfinPlayback, unchangedJellyfinPlayback, type JellyfinPlaybackObservation } from '#lib/sync/jellyfin-playback.server.js';
 import { jellyfinScanProgressSchema, type JellyfinScanProgress } from './jellyfin-progress';
-import { jobCheckpoint, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
+import { jobCheckpoint, jobExecution, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
+import { logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { artworkKeys } from '#lib/artwork.js';
 import * as v from 'valibot';
 import { and, eq, isNull, ne, or, sql, inArray, lte } from 'drizzle-orm';
@@ -43,6 +44,9 @@ import type { AvailableItem } from '#lib/providers/contracts.js';
 import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '#lib/providers/jellyfin/access-proof.server.js';
 
 export type JellyfinSyncContext=Awaited<ReturnType<typeof getJellyfin>>;
+class MissingJellyfinShowIdentity extends Error {
+  constructor() { super('Jellyfin returned an item without its show identity.'); }
+}
 async function jellyfinContext(userId:string,connectionId:string,provided?:JellyfinSyncContext){
   if(!provided)return getJellyfin(userId,connectionId);
   const [current]=await getDb().select({connection:providerConnections,instance:providerInstances}).from(providerConnections)
@@ -264,6 +268,7 @@ async function runJellyfinScan(
   });
   const visited = new Map<string, string>();
   const hydratedItems = new Map<string, AvailableItem>();
+  const hierarchyItems = new Map<string, AvailableItem | null>();
   const missingItems = new Set<string>();
   const listedItems = new Set<string>();
   const knownItems = new Map<
@@ -302,6 +307,13 @@ async function runJellyfinScan(
     return current;
   }
   let importPlayback = connection.settings.importPlayback !== false;
+  async function readHierarchyItem(id: string) {
+    const loaded = hydratedItems.get(id) ?? hierarchyItems.get(id);
+    if (loaded !== undefined) return loaded;
+    const item = await adapter.itemIfAvailable(connection.externalUserId!, id);
+    hierarchyItems.set(id, item);
+    return item;
+  }
   const importItem = async (item: AvailableItem, ancestry = new Set<string>()): Promise<string | null> => {
     if (missingItems.has(item.id)) return null;
     if (visited.has(item.id)) return visited.get(item.id)!;
@@ -328,16 +340,28 @@ async function runJellyfinScan(
     }
     let showId: string | undefined, seasonId: string | undefined;
     if (!known && (item.kind === 'episode' || item.kind === 'season')) {
-      if (!item.showId) throw new Error('Jellyfin returned an item without its show identity.');
+      let sourceShowId = item.showId;
+      if (!sourceShowId && item.parentId) {
+        const directParent = await readHierarchyItem(item.parentId);
+        if (directParent?.kind === 'show') sourceShowId = directParent.id;
+        if (item.kind === 'episode' && directParent?.kind === 'season') {
+          sourceShowId = directParent.showId;
+          if (!sourceShowId && directParent.parentId) {
+            const grandparent = await readHierarchyItem(directParent.parentId);
+            if (grandparent?.kind === 'show') sourceShowId = grandparent.id;
+          }
+        }
+      }
+      if (!sourceShowId) throw new MissingJellyfinShowIdentity();
       const [parent] = await db
         .select()
         .from(providerItems)
         .where(
-          and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, item.showId))
+          and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, sourceShowId), eq(providerItems.kind, 'show'))
         )
         .limit(1);
-      const parentItem = parent?.mediaId ? null : hydratedItems.get(item.showId) ?? await adapter.itemIfAvailable(connection.externalUserId!, item.showId);
-      const resolvedShow = parent?.mediaId || (parentItem ? await importItem(parentItem, ancestry) : null);
+      const parentItem = parent?.mediaId ? null : await readHierarchyItem(sourceShowId);
+      const resolvedShow = parent?.mediaId || (parentItem?.kind === 'show' ? await importItem(parentItem, ancestry) : null);
       if (!resolvedShow) return null;
       showId = resolvedShow;
       if (item.kind === 'episode') {
@@ -346,9 +370,9 @@ async function runJellyfinScan(
           .from(seasons)
           .where(and(eq(seasons.showId, showId), eq(seasons.seasonNumber, item.seasonNumber ?? 0)));
         if (existing) seasonId = existing.mediaId;
-        else if (item.parentId) {
-          const parentItem = hydratedItems.get(item.parentId) ?? await adapter.itemIfAvailable(connection.externalUserId!, item.parentId);
-          const resolvedSeason = parentItem ? await importItem(parentItem, ancestry) : null;
+        else if (item.parentId && jellyfinItemKey(item.parentId) !== jellyfinItemKey(sourceShowId)) {
+          const parentItem = await readHierarchyItem(item.parentId);
+          const resolvedSeason = parentItem?.kind === 'season' ? await importItem(parentItem, ancestry) : null;
           if (!resolvedSeason) return null;
           seasonId = resolvedSeason;
         }
@@ -554,7 +578,16 @@ async function runJellyfinScan(
   if(changes){
     const items=featureConfig.features.screen?await adapter.items(connection.externalUserId!,changes.video):[];
     for(const item of items)hydratedItems.set(item.id,item);
-    for(const item of items)await importItem(item);
+    let review = 0;
+    for (const item of items) {
+      try { await importItem(item); }
+      catch (error) {
+        if (!(error instanceof MissingJellyfinShowIdentity)) throw error;
+        review++;
+      }
+    }
+    if (review) void logDiagnostic('warn','job.item-skipped',{provider:'jellyfin',jobKind:'jellyfin.delta',
+      actionId:jobExecution.getStore()?.id,stage:'item-import',errorCode:'jellyfin.item-missing-show-identity',count:review});
     const touched=[...visited.values()];
     const changedWorks=new Set(touched);
     const currentSources=[...pendingAvailability.values()];
@@ -644,7 +677,7 @@ async function runJellyfinScan(
       }
       await importJellyfinReading({adapter,connection,instance},[book],{access:userScope,scanId});
     }
-    return {checked:items.length+changes.music.length+(changes.reading?.length??0),count:touched.length,full:false,deferred};
+    return {checked:items.length+changes.music.length+(changes.reading?.length??0),count:touched.length,full:false,deferred,review};
   }
   // Publish positive reading access before unrelated playback reconciliation.
   // Keep its finite cursor in this job; the original multi-medium census/negative
@@ -714,6 +747,7 @@ async function runJellyfinScan(
     visited.clear();
     knownItems.clear();
     hydratedItems.clear();
+    hierarchyItems.clear();
     missingItems.clear();
     if (userScope && featureConfig.features.screen && page.items.length) {
       const mapped = await db

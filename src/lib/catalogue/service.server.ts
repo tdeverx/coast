@@ -44,6 +44,12 @@ function snapshotValues(metadata: Metadata) {
   };
 }
 /** Retain a provider snapshot independently of presentation overrides and canonical history. */
+export class CatalogueIdentityConflict extends Error {
+  constructor() {
+    super('Conflicting provider identities require administrator review.');
+  }
+}
+
 export async function ingestMetadata(
   metadata: Metadata,
   options: {
@@ -96,7 +102,7 @@ export async function ingestMetadata(
               mediaId = scopedIdentity?.mediaId;
               break;
             }
-            throw new Error('Conflicting provider identities require administrator review.');
+            throw new CatalogueIdentityConflict();
           }
           mediaId = mapping.mediaId;
         }
