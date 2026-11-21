@@ -7,6 +7,7 @@ import * as tmdb from '../src/lib/providers/tmdb/connection.server';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { detailsData } from '../src/lib/server/queries/media';
+import { playbackDetails } from '../src/lib/playback/service.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const uid = crypto.randomUUID(),
   ids: string[] = [];
@@ -93,6 +94,9 @@ run('season and episode details retain hierarchy and specific credits', async ()
   const episodeData = await detailsData(uid, episode);
   expect(episodeData.parents.map((p) => p.id)).toEqual([show, season]);
   expect(episodeData.cast[0].name).toBe('Episode guest');
+  const labels = await playbackDetails([{ id: episode, kind: 'episode' }, { id: movie, kind: 'movie', year: 2026 }]);
+  expect(labels.get(episode)).toEqual({ detail: 'Show · S01 E01', episode: { seriesTitle: 'Show', episodeCode: 'S01E01' } });
+  expect(labels.get(movie)).toEqual({ detail: '2026 · Movie' });
 });
 run('collection page preserves the explicit mixed sequence', async () => {
   const data = await detailsData(uid, collection);

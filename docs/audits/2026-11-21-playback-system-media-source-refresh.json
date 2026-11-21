@@ -1,0 +1,36 @@
+{
+  "epoch": "playback-system-media-local-2026-11-21",
+  "baseline": "c10997f9830f68d2c3b86ab22db29e6b3d45d95b",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/playback/service.server.ts": {
+      "previous": "953a795d8902847985b61b027b824379f9bec99073a84c754e1003e5e5e9d559",
+      "current": "adbb017a61ff53a4f8c0bec0709c519c46ebe57d1a7ca9cfae27ea643b4f286b"
+    },
+    "src/lib/server/api/index.server.ts": {
+      "previous": "358a5f92ed900932b7c1b71d47a57d918f7e43662f474542b5696ec366082697",
+      "current": "5dfd6186c2814df30db1019b4384ced8c1f2d27b89bd1a75ce012cd3dbbba8b6"
+    },
+    "src/lib/ui/components/PersistentPlayer.svelte": {
+      "previous": "e3ea2e5e5dad2d924ec12099612ccf628e20603c97e9cc73d1c21e873602f342",
+      "current": "0937a72c139261c5740d65ef50335918cceba7c1ec0d4b218ce13a68e1d85a8d"
+    },
+    "src/lib/ui/types.ts": {
+      "previous": "6a770e4f3b7c44a6519f2b98f642301525ab6177a361334c2dc236edc1c63404",
+      "current": "ba4943df5490de246642166d99186964e17b560a707cb1ebb609c2ea90aaa06c"
+    },
+    "tests/media-details-db.test.ts": {
+      "previous": "bf2a764ab372f0e58280ac578ef2f529d19e8a715d13e28e303c8f2160ad758f",
+      "current": "af01b9638abe62ccb745b57283e8c4d8757bd49209ddfdddf6a974d9c9b73f4a"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "0037b0f53765e8c673e1f27128b1911dd52bd26434e3bcea8d1423a550f5b810",
+      "current": "b9f1beeab4807ff3c812fafc710b09a6d71cc9b84be9e6b9fe6c8c4760879eb8"
+    }
+  },
+  "supportingFiles": {
+    "src/lib/playback/system-media.ts": "e9b8310936c63063eea05ad636441d9c81ba6adee490cf2ef3f230db0920e2c5"
+  },
+  "report": "docs/audits/2026-11-21-playback-system-media.md",
+  "reportSha256": "4f9e7700a6987d1d91bbeb047b40ac278953f5a509285f92d806eabac50efb5e"
+}

@@ -559,9 +559,10 @@ async function preparePlayback(
   const always = preferences.subtitlesAlways ?? config.subtitleDefault === 'always';
   const enabled = always || config.subtitleDefault === 'preferred';
   signal?.throwIfAborted();
+  const artist = music?.artistNames.join(', ');
   const [[presentation], details, sources, initialCrop, [remembered]] = await Promise.all([
     mediaViews(userId, { ids: [item.id], limit: 1 }),
-    playbackDetails([{ id: item.id, kind: item.kind, year: item.year, captionSubtitle: music?.artistNames.join(', ') }]),
+    playbackDetails([{ id: item.id, kind: item.kind, year: item.year, captionSubtitle: artist }]),
     getPlaybackSourceOptions(userId, item.id),
     mediaType === 'video' && !share?.vrchatCodec && (!previous || data.edition !== undefined)
       ? providerVideoCrop(best.adapter, best.row.providerItem.externalId, source, signal)
@@ -647,13 +648,18 @@ async function preparePlayback(
     durationMs: performance.now() - started, negotiationMs,
   });
 
+  const labels = details.get(item.id);
   return {
     id: session.id,
     initialCrop,
     mediaType,
     sequence: data.sequence,
     mediaId: item.id,
-    detail: details.get(item.id) ?? '',
+    detail: labels?.detail ?? '',
+    nowPlaying: music ? {
+      artist,
+      album: typeof best.row.providerItem.snapshot.album === 'string' ? best.row.providerItem.snapshot.album : undefined,
+    } : labels?.episode,
     title: item.title,
     artwork: music?(best.row.providerItem.snapshot.primaryImageTag?`/api/v1/providers/${best.row.availability.connectionId}/music/${best.row.providerItem.externalId}/artwork`:undefined):(presentation?playbackArtwork(presentation):undefined),
     url: `/api/v1/playback/${session.id}/stream`,
@@ -1140,14 +1146,24 @@ export async function recordPlaybackError(userId: string, sessionId: string, cod
   });
 }
 
-/** Shared now-playing metadata for the controller and party cards; episodes are resolved in one query. */
+/** Shared playback labels for the controller, system controls and party cards. */
 export async function playbackDetails(items:{id:string;kind:string;year?:number|null;captionSubtitle?:string}[]) {
- const episodeIds=items.filter(item=>item.kind==='episode').map(item=>item.id);
- const episodeRows=episodeIds.length?await getDb().select({id:episodes.mediaId,show:media.title,season:episodes.seasonNumber,number:episodes.episodeNumber}).from(episodes).innerJoin(media,eq(media.id,episodes.showId)).where(inArray(episodes.mediaId,episodeIds)):[];
- const episodesById=new Map(episodeRows.map(episode=>[episode.id,episode]));
- return new Map(items.map(item=>{
-  const episode=episodesById.get(item.id);
-  const detail=episode?`${episode.show} · S${String(episode.season).padStart(2,'0')} E${String(episode.number).padStart(2,'0')}`:item.captionSubtitle??[item.year,item.kind==='movie'?'Movie':item.kind==='track'?'Track':item.kind==='album'?'Album':'Episode'].filter(Boolean).join(' · ');
-  return [item.id,detail];
- }));
+  const episodeIds = items.filter(item => item.kind === 'episode').map(item => item.id);
+  const episodeRows = episodeIds.length ? await getDb().select({
+    id: episodes.mediaId, show: media.title, season: episodes.seasonNumber, number: episodes.episodeNumber,
+  }).from(episodes).innerJoin(media, eq(media.id, episodes.showId)).where(inArray(episodes.mediaId, episodeIds)) : [];
+  const episodesById = new Map(episodeRows.map(episode => [episode.id, episode]));
+  return new Map<string, { detail: string; episode?: { seriesTitle: string; episodeCode: string } }>(items.map(item => {
+    const episode = episodesById.get(item.id);
+    if (episode) {
+      const season = `S${String(episode.season).padStart(2, '0')}`;
+      const number = `E${String(episode.number).padStart(2, '0')}`;
+      return [item.id, {
+        detail: `${episode.show} · ${season} ${number}`,
+        episode: { seriesTitle: episode.show, episodeCode: `${season}${number}` },
+      }];
+    }
+    const kind = item.kind === 'movie' ? 'Movie' : item.kind === 'track' ? 'Track' : item.kind === 'album' ? 'Album' : 'Episode';
+    return [item.id, { detail: item.captionSubtitle ?? [item.year, kind].filter(Boolean).join(' · ') }];
+  }));
 }

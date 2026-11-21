@@ -172,12 +172,12 @@ export const handler: RequestHandler = async (event) => {
         const rooms=await synced.listRooms(uid),hosts=await social.friends(uid,1,'accepted',[...new Set(rooms.filter(room=>room.hostId!==uid).map(room=>room.hostId))]);
         const cards=await workCards(uid,uid,[...new Set(rooms.flatMap(room=>room.mediaId?[room.mediaId]:[]))]);
         const details=await playbackDetails(cards);
-        return Response.json(rooms.map(room=>{const friend=hosts.find(host=>host.userId===room.hostId),card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===room.mediaId);return {...room,backgroundArtwork:room.mediaId&&card?playbackBackground(card):undefined,playingItem:card?{...card,captionSubtitle:details.get(card.id)}:null,nowPlaying:room.mediaId?card?.title??'Unknown title':null,friend:friend??null};}));
+        return Response.json(rooms.map(room=>{const friend=hosts.find(host=>host.userId===room.hostId),card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===room.mediaId);return {...room,backgroundArtwork:room.mediaId&&card?playbackBackground(card):undefined,playingItem:card?{...card,captionSubtitle:details.get(card.id)?.detail}:null,nowPlaying:room.mediaId?card?.title??'Unknown title':null,friend:friend??null};}));
       }
       if(path.length===1&&method==='POST')return Response.json(await synced.createRoom(uid,await readBody(request)));
       const id=uuid(path[1]);
       if(path.length===2&&method==='GET')return Response.json(await synced.roomState(uid,id));
-      if(path[2]==='media'&&method==='GET'){const room=await synced.roomState(uid,id);const cards=room.mediaId?await workCards(uid,uid,[room.mediaId]):[],card=cards[0];const details=await playbackDetails(cards);return Response.json(card?{...card,captionSubtitle:details.get(card.id)}:null);}
+      if(path[2]==='media'&&method==='GET'){const room=await synced.roomState(uid,id);const cards=room.mediaId?await workCards(uid,uid,[room.mediaId]):[],card=cards[0];const details=await playbackDetails(cards);return Response.json(card?{...card,captionSubtitle:details.get(card.id)?.detail}:null);}
       if(method==='POST') {
         const body=await readBody(request);
         if(path[2]==='heartbeat')return Response.json(await synced.roomState(uid,id,body));
