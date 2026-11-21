@@ -227,6 +227,10 @@
       "previous": "9117e73c9ead6339fab1407535215eebc295dc02faa36d641a96009e5435146a",
       "current": "c6fbe24606aed165b7c1522116012713e8dcf98ccd985f5d8ab70053c7dedd4a"
     },
+    "tests/provider-sync-db.test.ts": {
+      "previous": "e1fe59a6dc05fd4a2bf9a3fc615ceb35a1d48673c5e87566ed753a97352b66e0",
+      "current": "f29af9ad667a1d098a680540e85ad28cae93139b5ee7439741e0c5e959cc5cfe"
+    },
     "tests/queue-diagnostics.test.ts": {
       "previous": "5c96fa440223b88d6e1e2bf0d5843eabfa2d8c16d5f9f2ec28ecdbdfc4f76de5",
       "current": "d8d413a0677b4a776897862408e54848d8331caac76a76963ef88998eecb1b09"
