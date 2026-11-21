@@ -1,4 +1,5 @@
-import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
+import { traktPreferences } from '#lib/providers/trakt/access.js';
+import { traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
 import { context } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
 import { reconcileProviderList, acknowledgeProviderList } from '#lib/sync/list-values.server.js';
@@ -34,7 +35,7 @@ export async function executeTraktListExport(
   input: Record<string, unknown>
 ) {
   const { listId } = v.parse(v.object({ listId: v.pipe(v.string(), v.uuid()) }), input);
-  const context = await getTrakt(userId, connectionId, 'export');
+  const context = await getTrakt(userId, connectionId, 'export', 'lists');
   if (!context.sync.lists) return;
   const [list] = await getDb()
     .select()
@@ -214,10 +215,10 @@ export async function deleteListWithExports(userId: string, listId: string) {
       .from(providerConnections)
       .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
       .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),
-        eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true),traktExportAllowed))
+        eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true),traktFeatureAllowed('export', 'lists')))
       .orderBy(asc(providerConnections.id)).for('share',{of:providerConnections});
     for (const {connection} of connections) {
-      if (!(connection.settings.sync as Record<string, boolean> | undefined)?.lists) continue;
+      if (!traktPreferences(connection.settings).export.lists) continue;
       const externalId =
         list.source === 'trakt' && list.sourceConnectionId === connection.id
           ? list.externalId

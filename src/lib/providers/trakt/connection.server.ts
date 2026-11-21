@@ -6,11 +6,11 @@ import { providerInstances, providerConnections, users } from '#lib/server/db/sc
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
 import { getConfig } from '#lib/server/config.js';
 import { TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
-import { defaultSyncPreferences, type SyncPreferences } from '#lib/providers/contracts.js';
+import type { SyncPreferences } from '#lib/providers/contracts.js';
 import { getInstance, instanceTransport, instanceFetchConfig } from '#lib/providers/instances.server.js';
 import { createProviderTransport, ProviderHttpError } from '#lib/server/security/provider-fetch.js';
-import { defaultTraktAccess, initialTraktSyncPreferences, traktAccess, traktAccessSchema, type TraktDirection } from './access';
-import { cancelDisabledTraktJobs, traktImportAllowed, traktExportAllowed } from './access.server';
+import { initialTraktSync, traktAllows, traktPreferences, traktSyncSchema, type TraktDirection, type TraktFeature } from './access';
+import { cancelDisabledTraktJobs, traktFeatureAllowed } from './access.server';
 import { connectionFor, saveConnection, upgradeTraktIdentity } from '#lib/providers/connections.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { jobExecution, JobYield } from '#lib/server/queue/execution.js';
@@ -68,13 +68,13 @@ const challengeSchema = v.object({
   deviceExpires: v.number(),
   interval: v.number(),
   nextPoll: v.number(),
-  access: traktAccessSchema,
+  sync: traktSyncSchema,
   tokens: v.optional(savedTokenSchema),
 });
 const challengeChanged = () => new AppError(409, 'This Trakt linking request was replaced or cancelled. Start again.');
 
-export async function startTraktDevice(userId: string, instanceId: string, input: unknown = defaultTraktAccess) {
-  const access = v.parse(traktAccessSchema, input);
+export async function startTraktDevice(userId: string, instanceId: string, input: unknown = initialTraktSync()) {
+  const sync = v.parse(traktSyncSchema, input);
   const instance = await getInstance(instanceId, 'trakt'), app = await traktApp(instance);
   const db = getDb();
   const key = and(eq(providerConnections.userId, userId), eq(providerConnections.instanceId, instanceId));
@@ -85,7 +85,7 @@ export async function startTraktDevice(userId: string, instanceId: string, input
   const challengeId = crypto.randomUUID(), now = Date.now();
   const credentials = await encryptCredential(JSON.stringify({
     challengeId, deviceCode: device.device_code, deviceExpires: now + device.expires_in * 1000,
-    interval: device.interval, nextPoll: now + device.interval * 1000, access,
+    interval: device.interval, nextPoll: now + device.interval * 1000, sync,
   }));
   const written = previous
     ? await db.update(providerConnections).set({ credentials, status: 'disconnected', updatedAt: new Date() })
@@ -164,16 +164,16 @@ export async function finishTraktDevice(userId: string, instanceId: string, chal
     throw error;
   }
   const saved = await saveConnection(userId, instanceId, profile.id, profile.username, challenge.tokens,
-    { sync: initialTraktSyncPreferences, traktAccess: challenge.access },
-    { expectedCredential, slug: profile.slug, access: challenge.access });
+    { traktSync: challenge.sync },
+    { expectedCredential, slug: profile.slug, sync: challenge.sync });
   return { pending: false as const, connection: saved };
 }
 
-export async function getTrakt(userId: string, connectionId: string, direction: TraktDirection = 'import') {
+export async function getTrakt(userId: string, connectionId: string, direction: TraktDirection = 'import', feature?: TraktFeature) {
   const context = await connectionFor(userId, connectionId, 'trakt'),
     app = await traktApp(context.instance);
   const disabled = () => new PermanentActionError(`Trakt ${direction} is off for this connection.`);
-  if (!traktAccess(context.connection.settings)[direction]) throw disabled();
+  if (!traktAllows(context.connection.settings, direction, feature)) throw disabled();
   if (!context.connection.credentials) throw new Error('Reconnect Trakt to continue.');
   const initial=v.parse(savedTokenSchema,JSON.parse(await decryptCredential(context.connection.credentials)));
   // Valid tokens do not need a transaction or the rotating-refresh-token lock.
@@ -193,7 +193,7 @@ export async function getTrakt(userId: string, connectionId: string, direction: 
         )
       );
     if (!current?.credentials || current.accountGeneration !== context.connection.accountGeneration) throw new Error('Reconnect Trakt to continue.');
-    if (!traktAccess(current.settings)[direction]) throw disabled();
+    if (!traktAllows(current.settings, direction, feature)) throw disabled();
     let saved = v.parse(
       savedTokenSchema,
       JSON.parse(await decryptCredential(current.credentials))
@@ -223,7 +223,7 @@ export async function getTrakt(userId: string, connectionId: string, direction: 
   const beforeDispatch = async () => {
     const job=jobExecution.getStore();
     const [active]=await getDb().select({
-      allowed: direction === 'export' ? traktExportAllowed : traktImportAllowed,
+      allowed: traktFeatureAllowed(direction, feature),
       leased: job ? sql<boolean>`exists(select 1 from outbox_actions where id=${job.id}
         and state='running' and attempts=${job.attempts})` : sql<boolean>`true`,
     }).from(providerConnections)
@@ -244,15 +244,9 @@ export async function getTrakt(userId: string, connectionId: string, direction: 
   },app.clientId,app.clientSecret,token.access_token);
   const connection=context.connection.settings.traktIdentityPending
     ? await verifyTraktIdentity(context.connection,await adapter.profile()) : context.connection;
-  return {
-    ...context,
-    connection,
-    adapter,
-    sync: {
-      ...defaultSyncPreferences,
-      ...(connection.settings.sync as Partial<SyncPreferences>),
-    },
-  };
+  const preferences = traktPreferences(connection.settings);
+  const sync: SyncPreferences = direction === 'export' ? preferences.export : { ...preferences.import, scrobble: false };
+  return { ...context, connection, adapter, sync };
 }
 
 export async function updateSyncPreferences(
@@ -261,30 +255,19 @@ export async function updateSyncPreferences(
   input: unknown
 ) {
   const {connection:expected}=await connectionFor(userId, connectionId, 'trakt');
-  const sync = v.parse(
-    v.object({
-      history: v.boolean(),
-      progress: v.boolean(),
-      collection: v.boolean(),
-      ratings: v.boolean(),
-      watchlist: v.boolean(),
-      lists: v.boolean(),
-      scrobble: v.boolean(),
-      liveRead: v.optional(v.boolean()),
-      accountGeneration: v.pipe(v.string(), v.uuid()),
-      traktAccess: traktAccessSchema,
-    }),
-    input
-  );
-  const {liveRead,traktAccess:access,accountGeneration,...preferences}=sync;
+  const { traktSync, accountGeneration } = v.parse(v.object({
+    accountGeneration: v.pipe(v.string(), v.uuid()),
+    traktSync: traktSyncSchema,
+  }), input);
   await getDb().transaction(async tx=>{
     const [current]=await tx.select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId))).for('update');
     if(!current||current.accountGeneration!==accountGeneration||current.accountGeneration!==expected.accountGeneration||current.status!=='connected')
       throw new AppError(409,'The connected account changed. Reload before saving preferences.');
-    const [saved]=await tx.update(providerConnections).set({settings:sql`${providerConnections.settings} || ${{
-      sync: preferences, traktAccess: access, ...(liveRead === undefined ? {} : { liveRead }),
-    }}::jsonb`,updatedAt:new Date()}).where(eq(providerConnections.id,connectionId)).returning();
-    await cancelDisabledTraktJobs(tx, saved, traktAccess(current.settings));
+    const [saved] = await tx.update(providerConnections).set({
+      settings: sql`(${providerConnections.settings} - 'sync' - 'traktAccess' - 'liveRead') || ${{ traktSync }}::jsonb`,
+      updatedAt: new Date(),
+    }).where(eq(providerConnections.id,connectionId)).returning();
+    await cancelDisabledTraktJobs(tx, saved, current.settings);
   });
-  return sync;
+  return { accountGeneration, traktSync };
 }

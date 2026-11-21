@@ -96,7 +96,7 @@ export function jobOutcome(action: QueueAction) {
     return `Shared library import completed${count}`;
   }
   if(action.kind==='jellyfin.updates')return action.outcome?.deferred?'Plugin unavailable · Native polling retained':`${action.outcome?.checked??0} change hints queued · Current streams checked`;
-  if(action.kind==='jellyfin.delta')return `${action.outcome?.checked??0} changed items checked${action.outcome?.deferred?` · ${action.outcome.deferred} missing or inaccessible files`:''}`;
+  if(action.kind==='jellyfin.delta')return `${action.outcome?.checked??0} changed items checked${action.outcome?.deferred?` · ${action.outcome.deferred} missing or inaccessible files`:''}${action.outcome?.review?` · ${action.outcome.review} need a show match`:''}`;
   if (action.kind.startsWith('steam.') && action.outcome?.checked != null) return `${action.outcome.checked} games checked${action.outcome.added ? ` · Added ${action.outcome.added} to Collection` : ''}${action.outcome.deferred ? ` · ${action.outcome.deferred} ${action.kind === 'steam.achievements' ? 'achievement reads' : 'metadata matches'} deferred` : ''}`;
   if (action.outcome?.checked != null) return `${action.outcome.checked} items checked`;
   if (action.outcome?.added != null) return action.outcome.added ? `Added ${action.outcome.added} titles` : 'Nothing new to add';

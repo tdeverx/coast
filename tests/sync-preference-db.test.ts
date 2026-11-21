@@ -1,5 +1,5 @@
-import { traktAccess } from '../src/lib/providers/trakt/access';
-import { traktExportAllowed, traktImportAllowed } from '../src/lib/providers/trakt/access.server';
+import { initialTraktSync, traktAccess, traktAllows } from '../src/lib/providers/trakt/access';
+import { traktExportAllowed, traktFeatureAllowed, traktImportAllowed } from '../src/lib/providers/trakt/access.server';
 import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
@@ -240,12 +240,17 @@ run('export-only comparisons preserve Coast ratings and lists even when that Tra
   await preference(firstId);
   const db=getDb(),[account]=await db.select().from(providerConnections).where(eq(providerConnections.id,firstId));
   const [list]=await db.insert(lists).values({userId,name:'Keep this'}).returning();
-  await db.update(providerConnections).set({settings:{...account.settings,traktAccess:{import:false,export:true}}}).where(eq(providerConnections.id,firstId));
+  const traktSync = initialTraktSync();
+  traktSync.import.ratings = false;
+  traktSync.import.lists = false;
+  traktSync.export.ratings = true;
+  traktSync.export.lists = true;
+  await db.update(providerConnections).set({settings:{...account.settings,traktSync}}).where(eq(providerConnections.id,firstId));
   try{
     const remoteRating={value:3},remoteList={name:'Other name',description:'',items:[]};
-    await expect(reconcileProviderValue(userId,firstId,itemId,'ratings',remoteRating,{source:'trakt'})).rejects.toThrow('direction is disabled');
+    await expect(reconcileProviderValue(userId,firstId,itemId,'ratings',remoteRating,{source:'trakt'})).rejects.toThrow('category is disabled');
     expect(await reconcileProviderValue(userId,firstId,itemId,'ratings',remoteRating,{source:'trakt',traktDirection:'export'})).toBe('conflict');
-    await expect(reconcileProviderList(userId,firstId,list.id,remoteList,true)).rejects.toThrow('direction is disabled');
+    await expect(reconcileProviderList(userId,firstId,list.id,remoteList,true)).rejects.toThrow('category is disabled');
     expect(await reconcileProviderList(userId,firstId,list.id,remoteList,true,{direction:'export'})).toBe('conflict');
     expect((await db.select().from(ratings).where(eq(ratings.mediaId,itemId)))[0].value).toBe(4);
     expect((await db.select().from(lists).where(eq(lists.id,list.id)))[0].name).toBe('Keep this');
@@ -256,7 +261,7 @@ run('export-only comparisons preserve Coast ratings and lists even when that Tra
 });
 
 
-run('SQL admission and per-request Trakt settings agree for legacy, malformed and all valid grants',async()=>{
+run('SQL admission and per-request Trakt settings agree for legacy and granular grants',async()=>{
   const db=getDb(),[saved]=await db.select().from(providerConnections).where(eq(providerConnections.id,firstId));
   try{
     for(const value of [undefined,null,{},true,{import:true},{import:false,export:'true'},{export:true,import:null},
@@ -265,6 +270,20 @@ run('SQL admission and per-request Trakt settings agree for legacy, malformed an
       await db.update(providerConnections).set({settings}).where(eq(providerConnections.id,firstId));
       const [actual]=await db.select({import:traktImportAllowed,export:traktExportAllowed}).from(providerConnections).where(eq(providerConnections.id,firstId));
       expect(actual).toEqual(traktAccess(settings));
+    }
+    const traktSync = initialTraktSync();
+    traktSync.import.progress = false;
+    traktSync.export.progress = true;
+    for (const settings of [{traktSync}, {traktSync: null}, {traktSync: {export:{progress:'true'}}}]) {
+      await db.update(providerConnections).set({settings}).where(eq(providerConnections.id,firstId));
+      const [actual] = await db.select({
+        importHistory: traktFeatureAllowed('import', 'history'), exportHistory: traktFeatureAllowed('export', 'history'),
+        importProgress: traktFeatureAllowed('import', 'progress'), exportProgress: traktFeatureAllowed('export', 'progress'),
+      }).from(providerConnections).where(eq(providerConnections.id,firstId));
+      expect(actual).toEqual({
+        importHistory: traktAllows(settings, 'import', 'history'), exportHistory: traktAllows(settings, 'export', 'history'),
+        importProgress: traktAllows(settings, 'import', 'progress'), exportProgress: traktAllows(settings, 'export', 'progress'),
+      });
     }
   }finally{await db.update(providerConnections).set({settings:saved.settings}).where(eq(providerConnections.id,firstId));}
 });

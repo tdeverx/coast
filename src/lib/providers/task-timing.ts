@@ -1,4 +1,4 @@
-import { traktAccess, traktJobDirection } from './trakt/access';
+import { traktJobAllowed, traktPreferences, trackingFeatures } from './trakt/access';
 import {companionHealthy,type CompanionState} from './jellyfin/companion';
 import type { ProviderSchedule } from './schedule';
 import type { ServiceTask } from './tasks';
@@ -6,6 +6,7 @@ import type { ServiceTask } from './tasks';
 export type TaskSettings = {
   schedule?: unknown;
   traktAccess?: unknown;
+  traktSync?: unknown;
   companion?: CompanionState;
   libraryScan?: { connectionId?: string; externalUserId?: string | null; fullCompletedAt?: string; recentCompletedAt?: string };
   sync?: Record<string, boolean>;
@@ -27,17 +28,17 @@ export function taskSchedulingEnabled(provider: string, enabled: boolean, task: 
 
 /** Account opt-ins and selected shared sources apply to automatic and manual runs. */
 export function eligibleTaskAccounts<T extends TaskAccount>(kind: string, accounts: T[], schedule: ProviderSchedule, settings: TaskSettings, hasTmdb: boolean, provider?: string): T[] {
-  const direction = provider === 'trakt' || kind.startsWith('trakt.') ? traktJobDirection(kind) : undefined;
+  const trakt = provider === 'trakt' || kind.startsWith('trakt.');
   let eligible = accounts.filter(account => {
-    if (direction && !traktAccess(account.settings)[direction]) return false;
+    if (trakt && !traktJobAllowed(account.settings, kind)) return false;
     if (kind === 'trakt.recommendations') return account.configured !== false;
     if (kind === 'jellyfin.streams' || kind === 'jellyfin.updates') return account.role === 'admin';
     if (kind === 'catalogue.user-scan') return hasTmdb;
     if (kind === 'steam.achievements') return account.settings.importAchievements !== false;
     if (kind.endsWith('.live')) return account.settings.liveRead !== false;
     if (kind === 'trakt.collection-project') return account.settings.collectionProjection?.enabled === true;
-    if (kind === 'trakt.lists-import') return account.settings.sync?.lists === true;
-    if (kind === 'trakt.import') return ['history', 'progress', 'collection', 'ratings', 'watchlist'].some(category => account.settings.sync?.[category]);
+    if (kind === 'trakt.lists-import') return traktPreferences(account.settings).import.lists;
+    if (kind === 'trakt.import') return trackingFeatures.some(category => traktPreferences(account.settings).import[category]);
     return true;
   });
   if (kind === 'jellyfin.library') {

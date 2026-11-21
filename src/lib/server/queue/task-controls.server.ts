@@ -1,4 +1,4 @@
-import { traktAccess, traktJobDirection } from '#lib/providers/trakt/access.js';
+import { traktJobAllowed } from '#lib/providers/trakt/access.js';
 import type { SQL } from 'bun';
 import { getSql } from '../db';
 import { requireAdmin, type SessionUser } from '../auth';
@@ -82,11 +82,11 @@ export async function retryAction(actor: SessionUser | null, id: string, tx?: SQ
   const user = requireAdmin(actor);
   await transact(tx, async sql=>{
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
-    const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance, i.provider,c.settings->'traktAccess' as access,c.settings ? 'traktAccess' as configured_access from outbox_actions a left join provider_connections c on c.id=a.connection_id left join provider_instances i on i.id=c.instance_id where a.id=${id} for update of a`;
+    const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance, i.provider,case when c.settings ? 'traktSync' then jsonb_build_object('traktSync',c.settings->'traktSync')
+              when c.settings ? 'traktAccess' then jsonb_build_object('traktAccess',c.settings->'traktAccess') else '{}'::jsonb end as trakt_scope from outbox_actions a left join provider_connections c on c.id=a.connection_id left join provider_instances i on i.id=c.instance_id where a.id=${id} for update of a`;
     if(!action)throw new AppError(409,'This action cannot be retried.');
-    const direction=action.provider==='trakt'?traktJobDirection(action.kind):undefined;
-    if(direction&&!traktAccess(action.configured_access?{traktAccess:action.access}:{})[direction])
-      throw new AppError(403,`Trakt ${direction} is disabled for this connection.`,'feature_disabled');
+    if(action.provider==='trakt' && !traktJobAllowed(action.trakt_scope, action.kind, action.payload))
+      throw new AppError(403,'This sync operation is disabled in your Trakt connection settings.','feature_disabled');
     if(action.kind==='benchmark.run')throw new AppError(409,'Run a new benchmark in Benchmarking settings to preserve the recorded result.');
     if(maintenanceKinds.includes(action.kind)&&action.instance){
       const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id} and ${getSql().unsafe(retryConflictSql('a','c'))}`;

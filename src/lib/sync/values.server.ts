@@ -1,4 +1,4 @@
-import { traktAccess } from '#lib/providers/trakt/access.js';
+import { traktAllows } from '#lib/providers/trakt/access.js';
 import { conflictPreference } from './preference.server';
 import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { and, eq, sql, inArray } from 'drizzle-orm';
@@ -185,9 +185,11 @@ export async function reconcileProviderValue(
     await assertJobLease(tx,true);
     if(options.accountGeneration && (connection.accountGeneration!==options.accountGeneration || connection.status!=='connected'))
       throw new Error('The connected account changed before reconciliation.');
-    const access = options.source === 'trakt' ? traktAccess(connection.settings) : undefined;
-    if (access && !access[options.traktDirection ?? 'import']) throw new Error('This Trakt sync direction is disabled.');
-    const importRemote = options.importRemote !== false && access?.import !== false;
+    const feature = category === 'favourite' ? undefined : category;
+    const isTrakt = options.source === 'trakt';
+    if (isTrakt && !traktAllows(connection.settings, options.traktDirection ?? 'import', feature))
+      throw new Error('This Trakt sync category is disabled.');
+    const importRemote = options.importRemote !== false && (!isTrakt || traktAllows(connection.settings, 'import', feature));
     const [previous] = await tx
       .select()
       .from(syncValues)

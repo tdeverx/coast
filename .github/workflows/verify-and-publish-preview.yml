@@ -109,7 +109,7 @@ jobs:
           bun scripts/test-container-lifecycle.ts --docker coast-lifecycle-test
           bun scripts/test-container-runtime.ts --docker coast-lifecycle-test
           bun scripts/test-postgres-upgrade.ts --docker coast-lifecycle-test
-          docker run -d --name coast-pr-smoke -e ORIGIN=http://localhost:3000 coast-pr-smoke
+          docker run -d --name coast-pr-smoke -e ORIGIN=http://localhost:3000 -e COAST_BUILD_ID=stale-container-config coast-pr-smoke
           for attempt in $(seq 1 60); do
             health=$(docker inspect --format '{{.State.Health.Status}}' coast-pr-smoke)
             if [ "$health" = healthy ]; then break; fi
@@ -125,7 +125,8 @@ jobs:
             }
             const read = name => Bun.file("/data/runtime/" + name + ".jsonl").text().then(text => text.trim().split("\n").map(JSON.parse));
             const migrations = await read("migrations"), database = await read("database-events");
-            if (!migrations.some(row => row.kind === "migration.complete" && row.detail.appliedMigrationCount > 0 && row.detail.postgresVersion.startsWith("17."))) process.exit(1);
+            const revision = (await Bun.file("/app/build/.coast-build-id").text()).trim();
+            if (!/^[0-9a-f]{40}$/.test(revision) || !migrations.some(row => row.kind === "migration.complete" && row.detail.build === revision && row.detail.appliedMigrationCount > 0 && row.detail.postgresVersion.startsWith("17."))) process.exit(1);
             if (!database.some(row => row.kind === "database.ready")) process.exit(1);
           '
           docker stop --time 30 coast-pr-smoke

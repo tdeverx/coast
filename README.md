@@ -182,7 +182,7 @@ The defaults are invite-only registration with Jellyfin required. Configure an a
 
 New users create their Coast username, display name and password, connect their services, and optionally upload a profile picture or choose a connected-service image. Animated GIFs keep their animation. Selected initial imports finish on a loading screen before users enter the app; failed imports offer recovery actions.
 
-Sign-in uses Coast credentials. Jellyfin is a media connection, not a sign-in method. When linking Trakt, Import is on and Export is off by default. A new account can import history, progress, ratings, watchlist and lists. You can change directions and categories later in Settings → Connections. Existing Jellyfin-only accounts need an administrator to set a Coast password.
+Sign-in uses Coast credentials. Jellyfin is a media connection, not a sign-in method. Choose Import and Export separately for each Trakt feature when linking or in Settings → Connections. Common imports start on. Every export starts off. Existing Jellyfin-only accounts need an administrator to set a Coast password.
 
 ### Updates
 

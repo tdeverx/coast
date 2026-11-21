@@ -90,10 +90,10 @@ export async function executeTraktExport(
   connectionId: string,
   input: Record<string, unknown>
 ) {
-  const context = await getTrakt(userId, connectionId, 'export');
   const category = input.category as ValueCategory;
   if (!['history', 'collection', 'ratings', 'watchlist'].includes(category))
     throw new PermanentActionError('Unsupported Trakt export.');
+  const context = await getTrakt(userId, connectionId, 'export', category === 'favourite' ? undefined : category);
   if (!context.sync[category as keyof SyncPreferences]) return;
   const mediaId = String(input.mediaId);
   const desired = {
@@ -223,7 +223,7 @@ export async function executeLiveScrobble(
   connectionId: string,
   input: Record<string, unknown>
 ) {
-  return executeLiveScrobbleToAdapter(userId,connectionId,input,await getTrakt(userId,connectionId, 'export'));
+  return executeLiveScrobbleToAdapter(userId,connectionId,input,await getTrakt(userId,connectionId, 'export', 'scrobble'));
 }
 export async function executeLiveScrobbleToAdapter(userId:string,connectionId:string,input:Record<string,unknown>,{adapter,sync,connection}:Awaited<ReturnType<typeof getTrakt>>) {
   if(connection.userId!==userId||connection.id!==connectionId)throw new PermanentActionError('The connected account is unavailable.');
@@ -279,7 +279,7 @@ export async function executeProgressExport(
     }),
     input
   );
-  const { adapter, sync, connection } = await getTrakt(userId, connectionId, 'export');
+  const { adapter, sync, connection } = await getTrakt(userId, connectionId, 'export', 'progress');
   if (!sync.progress || (sync.scrobble && !data.resolved)) return;
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
   if (!item || (item.kind !== 'movie' && item.kind !== 'episode')) return;

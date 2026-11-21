@@ -134,3 +134,40 @@ run('expired workers cannot publish a snapshot or acknowledge a feed cursor',asy
  await expect(jobExecution.run({id:job.id,attempts:1,purpose:'live',started:performance.now(),checkpoints:0},()=>applyCompanionPage(job,ctx,page({reset:false,cursor:1})))).rejects.toThrow('yielded');
  expect((await context()).instance.settings.companion).toMatchObject({cursor:1});
 });
+
+run('changed episodes use authenticated parents and a malformed episode does not block the batch', async () => {
+ const show='4'.repeat(32), season='5'.repeat(32), first='6'.repeat(32), second='7'.repeat(32), orphan='8'.repeat(32);
+ const remaining=new Map([
+  [first,{Id:first,Type:'Episode',Name:'First',ParentId:season,ParentIndexNumber:1,IndexNumber:1}],
+  [orphan,{Id:orphan,Type:'Episode',Name:'Orphan',ParentIndexNumber:1,IndexNumber:3}],
+  [second,{Id:second,Type:'Episode',Name:'Second',ParentId:season,ParentIndexNumber:1,IndexNumber:2}],
+ ]);
+ const parents:string[]=[];
+ const provider=new JellyfinAdapter(async path=>{
+  const url=new URL(path,'https://fixture.invalid');
+  if(url.pathname==='/System/Info/Public')return {Id:server,ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'12.0.0'};
+  if(url.pathname==='/Items'){
+   expect(url.searchParams.get('fields')?.split(',')).toContain('ParentId');
+   return {Items:[...remaining.values()],TotalRecordCount:remaining.size,StartIndex:0};
+  }
+  const id=url.pathname.split('/').at(-1)!;
+  parents.push(id);
+  if(id===season)return {Id:season,Type:'Season',Name:'Season 1',IndexNumber:1,ParentId:show};
+  if(id===show)return {Id:show,Type:'Series',Name:'Show'};
+  throw new Error(`Unexpected hierarchy read: ${path}`);
+ },tag,'fixture');
+ const ctx={...await context(),adapter:provider};
+ expect(await syncJellyfinChanges(ctx.connection.userId,ctx.connection.id,'library',{
+  video:[first,orphan,second],music:[],
+ },ctx)).toMatchObject({checked:3,review:1});
+ expect(parents).toEqual([season,show]);
+ const db=getDb();
+ const mapped=await db.select().from(s.providerItems).where(and(eq(s.providerItems.instanceId,ctx.instance.id),inArray(s.providerItems.externalId,[show,season,first,second,orphan])));
+ works.push(...mapped.map(item=>item.mediaId));
+ expect(mapped.map(item=>item.externalId).sort()).toEqual([show,season,first,second]);
+ const canonical=(id:string)=>mapped.find(item=>item.externalId===id)!.mediaId;
+ const imported=await db.select().from(s.episodes).where(inArray(s.episodes.mediaId,[canonical(first),canonical(second)]));
+ expect(imported.map(item=>({showId:item.showId,seasonId:item.seasonId}))).toEqual([
+  {showId:canonical(show),seasonId:canonical(season)},{showId:canonical(show),seasonId:canonical(season)},
+ ]);
+});

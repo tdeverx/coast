@@ -1,5 +1,5 @@
 import { exportIdentity } from '#lib/sync/trakt-identity.server.js';
-import { traktAccess } from '#lib/providers/trakt/access.js';
+import { traktAllows } from '#lib/providers/trakt/access.js';
 import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import {and,eq} from 'drizzle-orm';
 import {getDb,getSql} from '#lib/server/db/index.js';
@@ -10,9 +10,10 @@ import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import {reconcileProviderValue} from '#lib/sync/values.server.js';
 import {trackInTransaction} from '#lib/core/tracking/service.server.js';
 import {PermanentActionError} from '#lib/server/queue/index.js';
+import { assertJobLease } from '#lib/server/queue/execution.js';
 type TraktContext=Awaited<ReturnType<typeof getTrakt>>;
 export async function pollLive(userId:string,connectionId:string) {
- return pollLiveFromAdapter(userId,connectionId,await getTrakt(userId,connectionId));
+ return pollLiveFromAdapter(userId,connectionId,await getTrakt(userId,connectionId, 'import', 'live'));
 }
 export async function pollLiveFromAdapter(userId:string,connectionId:string,{adapter,connection,instance,sync}:TraktContext) {
  await requireFeature(userId,'presence');
@@ -38,13 +39,16 @@ export async function pollLiveFromAdapter(userId:string,connectionId:string,{ada
   await requireFeatureInTransaction(tx,userId,'presence');
   const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
   if(!current||current.accountGeneration!==connection.accountGeneration||current.status!=='connected')throw new PermanentActionError('The connected account changed.');
-  if(!traktAccess(current.settings).import)throw new PermanentActionError('Trakt import is disabled.');
+  await assertJobLease(tx,true);
+  if(!traktAllows(current.settings, 'import', 'live'))throw new PermanentActionError('Trakt import is disabled.');
   if(current.settings.liveRead===false)return;
-  await tx.insert(socialLiveState).values({connectionId,accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}).onConflictDoUpdate({target:socialLiveState.connectionId,set:{accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}});
+  const observation = {accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now};
+  const advanceHistory = sync.history ? { historyCursor: now } : {};
+  await tx.insert(socialLiveState).values({connectionId,...observation,...advanceHistory}).onConflictDoUpdate({target:socialLiveState.connectionId,set:{...observation,...advanceHistory}});
  });
 }
 export async function deliverCheckin(userId:string,connectionId:string,checkinId:string) {
- return deliverCheckinToAdapter(userId,connectionId,checkinId,await getTrakt(userId,connectionId, 'export'));
+ return deliverCheckinToAdapter(userId,connectionId,checkinId,await getTrakt(userId,connectionId, 'export', 'scrobble'));
 }
 export async function deliverCheckinToAdapter(userId:string,connectionId:string,checkinId:string,context:TraktContext) {
  const {adapter,connection,sync}=context;if(!sync.scrobble)return;

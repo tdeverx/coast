@@ -1,3 +1,4 @@
+import { initialTraktSync } from '../src/lib/providers/trakt/access';
 import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {eq} from 'drizzle-orm';
 import {getDb,getSql} from '../src/lib/server/db';
@@ -111,12 +112,14 @@ run('a pause receipt cannot mark a completed play as confirmed or trigger a seco
 
 run('disabling Trakt import or live activity clears just the current observation and excludes an in-flight response', async () => {
  const db=getSql(),{updateSyncPreferences}=await import('../src/lib/providers/trakt/connection.server');
- const connection=context.connection, prefs={...context.sync,accountGeneration:connection.accountGeneration};
+ const connection=context.connection, accountGeneration=connection.accountGeneration;
+ const preferences = initialTraktSync();
+ preferences.export.scrobble = true;
  const observation={started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),action:'checkin',type:'movie',movie};
  await db`update provider_instances set enabled=true where id=${context.instance.id}`;
  try {
-  for (const [canImport,liveRead] of [[true,false],[false,true]]) {
-   await updateSyncPreferences(userId,connection.id,{...prefs,liveRead:true,traktAccess:{import:true,export:true}});
+  for (const importHistory of [true,false]) {
+   await updateSyncPreferences(userId,connection.id,{accountGeneration,traktSync:preferences});
    remote=observation;
    const scoped={...context,sync:{...context.sync,history:false}};
    await pollLiveFromAdapter(userId,connection.id,scoped);
@@ -128,10 +131,10 @@ run('disabling Trakt import or live activity clears just the current observation
    const poll=pollLiveFromAdapter(userId,connection.id,{...scoped,adapter:delayed}).catch((error:unknown)=>error);
    try {
     await started;
-    await updateSyncPreferences(userId,connection.id,{...prefs,liveRead,traktAccess:{import:canImport,export:true}});
+    await updateSyncPreferences(userId,connection.id,{accountGeneration,traktSync:{...preferences, import:{...preferences.import,live:false,history:importHistory}}});
     release();
     const result=await poll;
-    if(canImport)expect(result).toBeUndefined();else expect(result).toBeInstanceOf(Error);
+    expect(result).toBeInstanceOf(Error);
     expect(await db`select work_id,expires_at,history_cursor from social_live_state where connection_id=${connection.id}`)
      .toEqual([{work_id:null,expires_at:null,history_cursor:before.history_cursor}]);
    } finally {release();await poll;}

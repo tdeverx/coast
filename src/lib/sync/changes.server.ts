@@ -1,4 +1,5 @@
-import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
+import { traktPreferences } from '#lib/providers/trakt/access.js';
+import { traktExportAllowed, traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
 import type { MediaCategory } from '#lib/media/model.js';
 import { context } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
@@ -127,7 +128,7 @@ export async function enqueueTraktListChangeInTransaction(tx: Transaction, userI
       eq(providerInstances.provider,'trakt'),traktExportAllowed,eq(providerInstances.enabled,true)))
     .orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   for (const { connection } of connections) {
-    if (!(connection.settings.sync as Record<string,boolean> | undefined)?.lists) continue;
+    if (!traktPreferences(connection.settings).export.lists) continue;
     await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.list-export',
       payload:{listId},compactionKey:`trakt-list:${listId}`});
   }
@@ -136,7 +137,7 @@ export async function enqueueTraktListChangeInTransaction(tx: Transaction, userI
 export async function enqueueCollectionProjectionInTransaction(tx:Transaction,userId:string){
   const accounts=await tx.select({id:providerConnections.id}).from(providerConnections)
     .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
-    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'trakt'),traktExportAllowed,eq(providerInstances.enabled,true),sql`${providerConnections.settings}->'collectionProjection'->>'enabled'='true'`)).orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
+    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'trakt'),traktFeatureAllowed('export', 'collection'),eq(providerInstances.enabled,true),sql`${providerConnections.settings}->'collectionProjection'->>'enabled'='true'`)).orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   for(const account of accounts)await enqueueInTransaction(tx,{userId,connectionId:account.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
 }
 
@@ -158,12 +159,13 @@ export async function enqueueTraktChangeInTransaction(
   }
   const connections = await traktConnectionsForMedia(tx, userId, change.mediaId);
   for (const { connection } of connections) {
-    const sync = connection.settings.sync as Record<string, boolean> | undefined;
+    const sync = traktPreferences(connection.settings).export;
     if (connection.id === change.excludeConnectionId || change.excludeConnectionIds?.includes(connection.id)) continue;
     if(change.category==='collection'){
-      if((connection.settings.collectionProjection as {enabled?:boolean})?.enabled)await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
+      if(sync.collection && (connection.settings.collectionProjection as {enabled?:boolean})?.enabled)await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
       continue;
     }
+    if (!sync[change.category] || (change.fromPlayback && sync.scrobble)) continue;
     const [conflict] = await tx
       .select({ id: syncValues.id })
       .from(syncValues)
@@ -176,7 +178,6 @@ export async function enqueueTraktChangeInTransaction(
         )
       );
     if (conflict) continue;
-    if (!sync?.[change.category] || (change.fromPlayback && sync.scrobble)) continue;
     await enqueueInTransaction(tx, {
       userId,
       connectionId: connection.id,
@@ -288,7 +289,7 @@ export async function enqueueSyncValueInTransaction(
     for (const { connection } of await traktConnectionsForMedia(tx, userId, mediaId)) {
       if (
         connection.id === excludeConnectionId ||
-        !(connection.settings.sync as Record<string, boolean>)?.progress
+        !traktPreferences(connection.settings).export.progress
       )
         continue;
       await enqueueInTransaction(tx, {
@@ -435,7 +436,7 @@ export async function enqueuePlaybackActionsInTransaction(
     ? (input.positionSeconds / input.durationSeconds) * 100
     : 0;
   for (const { connection } of connections) {
-    const sync = connection.settings.sync as Record<string, boolean> | undefined;
+    const sync = traktPreferences(connection.settings).export;
     if (sync?.scrobble && input.traktEvent && presence.enabled)
       await enqueueInTransaction(tx, {
         userId,

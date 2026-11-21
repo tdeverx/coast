@@ -8,7 +8,7 @@ import {finishTraktDevice,getTrakt,startTraktDevice,updateSyncPreferences} from 
 import * as instances from '../src/lib/providers/instances.server';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
 import * as providerFetch from '../src/lib/server/security/provider-fetch';
-import {initialTraktSyncPreferences} from '../src/lib/providers/trakt/access';
+import {initialTraktSync, type TraktSync} from '../src/lib/providers/trakt/access';
 import {providerRequestMetrics,queueProviderRequest} from '../src/lib/server/security/request-priority';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 
@@ -42,21 +42,28 @@ run('an adapter resolved before an account switch rejects before invoking the up
   await expect(resolved.adapter.profile()).rejects.toThrow('account changed');
 });
 
+const selected = (imports: boolean, exports: boolean): TraktSync => {
+  const result = initialTraktSync();
+  if (!imports) for (const feature of Object.keys(result.import) as (keyof TraktSync['import'])[]) result.import[feature] = false;
+  result.export.watchlist = exports;
+  return result;
+};
+
 const fixtureTokens = {access_token:'fixture-device-access',refresh_token:'fixture-device-refresh',created_at:1,expires_in:3600,token_type:'bearer',scope:'public'};
 
 run('import-only credentials cannot write and revoking export stops a write waiting for a provider slot',async()=>{
   const read=await getTrakt(userId,connectionId);
   await expect(read.adapter.write('watchlist',{movies:[]})).rejects.toThrow('export');
   await expect(getTrakt(userId,connectionId,'export')).rejects.toThrow('export');
-  const preferences={...initialTraktSyncPreferences,accountGeneration:read.connection.accountGeneration};
-  await expect(updateSyncPreferences(userId,connectionId,{...preferences,accountGeneration:crypto.randomUUID(),traktAccess:{import:true,export:true}})).rejects.toThrow('account changed');
+  const preferences={accountGeneration:read.connection.accountGeneration};
+  await expect(updateSyncPreferences(userId,connectionId,{...preferences,accountGeneration:crypto.randomUUID(),traktSync:selected(true,true)})).rejects.toThrow('account changed');
   const [legacy]=await getDb().insert(s.outboxActions).values({userId,connectionId,accountGeneration:preferences.accountGeneration,
-    kind:'trakt.export',payload:{},state:'pending'}).returning({id:s.outboxActions.id});
-  await updateSyncPreferences(userId,connectionId,{...preferences,traktAccess:{import:false,export:true}});
+    kind:'trakt.export',payload:{category:'watchlist'},state:'pending'}).returning({id:s.outboxActions.id});
+  await updateSyncPreferences(userId,connectionId,{...preferences,traktSync:selected(false,true)});
   const [oldWork]=await getDb().select({state:s.outboxActions.state}).from(s.outboxActions).where(eq(s.outboxActions.id,legacy.id));
   expect(oldWork.state).toBe('cancelled');
   await expect(getTrakt(userId,connectionId)).rejects.toThrow('import');
-  const write=await getTrakt(userId,connectionId,'export');
+  const write=await getTrakt(userId,connectionId,'export','watchlist');
   let release!:()=>void;
   const hold=new Promise<void>(resolve=>{release=resolve;});
   const slot=queueProviderRequest('https://api.trakt.tv',0,()=>hold);
@@ -66,7 +73,7 @@ run('import-only credentials cannot write and revoking export stops a write wait
     const deadline=performance.now()+3000;
     while(!providerRequestMetrics().providerWaiting && performance.now()<deadline)await Bun.sleep(5);
     expect(providerRequestMetrics().providerWaiting).toBe(1);
-    await updateSyncPreferences(userId,connectionId,{...preferences,traktAccess:{import:true,export:false}});
+    await updateSyncPreferences(userId,connectionId,{...preferences,traktSync:selected(true,false)});
     release();await slot;
     await expect(waiting).rejects.toThrow('export');
     expect(fetch).not.toHaveBeenCalled();
@@ -78,12 +85,20 @@ run('import-only credentials cannot write and revoking export stops a write wait
 run('restoring export cannot resume an adapter owned by a cancelled worker',async()=>{
   const db=getDb();
   const [current]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connectionId));
-  const allow={...initialTraktSyncPreferences,accountGeneration:current.accountGeneration,traktAccess:{import:true,export:true}};
+  const allow={accountGeneration:current.accountGeneration,traktSync:selected(true,true)};
+  allow.traktSync.export.ratings = true;
   await updateSyncPreferences(userId,connectionId,allow);
   const [job]=await db.insert(s.outboxActions).values({userId,connectionId,accountGeneration:current.accountGeneration,
-    kind:'trakt.export',payload:{},state:'running',attempts:1}).returning({id:s.outboxActions.id});
-  const adapter=(await getTrakt(userId,connectionId,'export')).adapter;
-  await updateSyncPreferences(userId,connectionId,{...allow,traktAccess:{import:true,export:false}});
+    kind:'trakt.export',payload:{category:'watchlist'},state:'running',attempts:1}).returning({id:s.outboxActions.id});
+  const [ratings]=await db.insert(s.outboxActions).values({userId,connectionId,accountGeneration:current.accountGeneration,
+    kind:'trakt.export',payload:{category:'ratings'},state:'pending'}).returning({id:s.outboxActions.id});
+  const adapter=(await getTrakt(userId,connectionId,'export','watchlist')).adapter;
+  await updateSyncPreferences(userId,connectionId,{...allow,traktSync:{
+    ...allow.traktSync,export:{...allow.traktSync.export,watchlist:false},
+  }});
+  expect((await db.select().from(s.outboxActions).where(eq(s.outboxActions.id,ratings.id)))[0].state).toBe('pending');
+  expect((await getTrakt(userId,connectionId,'export','ratings')).sync.ratings).toBe(true);
+  await expect(getTrakt(userId,connectionId,'export','watchlist')).rejects.toThrow('export');
   await updateSyncPreferences(userId,connectionId,allow);
   const fetch=spyOn(globalThis,'fetch').mockRejectedValue(new Error('Unexpected upstream request'));
   try {
@@ -124,45 +139,47 @@ run('Trakt device and refresh credentials go to the auth host while account read
   } finally { transport.mockRestore(); }
 });
 
-run('device linking preserves per-account categories while the displayed code always owns direction consent', async () => {
+run('device linking preserves account identity while the displayed code owns per-feature consent', async () => {
   await withDevice(async(owner, upstream) => {
     const db = getDb(), accountA = upstream.profileId;
     const lookup = async () => (await db.select().from(s.providerConnections).where(eq(s.providerConnections.userId,owner)))[0];
-    const link = async (access?: {import:boolean;export:boolean}) => {
-      const request = await startTraktDevice(owner,instanceId,access);
+    const link = async (sync = initialTraktSync()) => {
+      const request = await startTraktDevice(owner,instanceId,sync);
       const pending = await lookup();
       expect(pending.credentials).not.toContain(request.challengeId);
       const stored = JSON.parse(await decryptCredential(pending.credentials!));
-      expect(stored).toMatchObject({challengeId:request.challengeId,access:access??{import:true,export:false}});
+      expect(stored).toMatchObject({challengeId:request.challengeId,sync});
       await finishTraktDevice(owner,instanceId,request.challengeId);
       return lookup();
     };
     const a = await link();
-    expect(a.settings).toMatchObject({sync:initialTraktSyncPreferences,traktAccess:{import:true,export:false}});
-    const chosen = {...initialTraktSyncPreferences,ratings:false,collection:true};
-    await db.update(s.providerConnections).set({status:'disconnected',credentials:null,settings:{...a.settings,sync:chosen}}).where(eq(s.providerConnections.id,a.id));
-    const [write] = await db.insert(s.outboxActions).values({userId:owner,connectionId:a.id,accountGeneration:a.accountGeneration,kind:'trakt.export',payload:{}}).returning();
-    const same = await link({import:false,export:false});
+    expect(a.settings).toMatchObject({traktSync:selected(true,false)});
+    const chosen = selected(true,true);
+    chosen.import.ratings = false;
+    chosen.import.collection = true;
+    await db.update(s.providerConnections).set({status:'disconnected',credentials:null,settings:{...a.settings,traktSync:chosen}}).where(eq(s.providerConnections.id,a.id));
+    const [write] = await db.insert(s.outboxActions).values({userId:owner,connectionId:a.id,accountGeneration:a.accountGeneration,kind:'trakt.export',payload:{category:'watchlist'}}).returning();
+    const same = await link(selected(false,false));
     expect(same.accountGeneration).toBe(a.accountGeneration);
-    expect(same.settings).toMatchObject({sync:chosen,traktAccess:{import:false,export:false}});
+    expect(same.settings).toMatchObject({traktSync:selected(false,false)});
     expect((await db.select().from(s.outboxActions).where(eq(s.outboxActions.id,write.id)))[0].state).toBe('cancelled');
     const disconnect = () => db.update(s.providerConnections).set({status:'disconnected',credentials:null}).where(eq(s.providerConnections.id,a.id));
     await disconnect();
     upstream.profileId=crypto.randomUUID();
-    const b = await link({import:false,export:true});
+    const b = await link(selected(false,true));
     expect(b.accountGeneration).not.toBe(a.accountGeneration);
-    expect(b.settings).toMatchObject({sync:initialTraktSyncPreferences,traktAccess:{import:false,export:true}});
+    expect(b.settings).toMatchObject({traktSync:selected(false,true)});
     await disconnect();
     upstream.profileId=accountA;
-    const restored=await link({import:true,export:true});
+    const restored=await link(chosen);
     expect(restored.syncAccountId).toBe(a.syncAccountId);
-    expect(restored.settings).toMatchObject({sync:chosen,traktAccess:{import:true,export:true}});
+    expect(restored.settings).toMatchObject({traktSync:chosen});
   });
 });
 
 run('overlapping and replaced polls cannot spend a second code or publish stale consent', async () => {
   await withDevice(async(owner,upstream) => {
-    const first = await startTraktDevice(owner,instanceId,{import:false,export:true});
+    const first = await startTraktDevice(owner,instanceId,selected(false,true));
     let entered!:()=>void, release!:()=>void, exchanges=0;
     const started = new Promise<void>(done=>{entered=done;}), held = new Promise<void>(done=>{release=done;});
     upstream.token = async () => { exchanges++; entered(); await held; return fixtureTokens; };
@@ -178,7 +195,7 @@ run('overlapping and replaced polls cannot spend a second code or publish stale 
       expect(exchanges).toBe(1);
       expect(await finishTraktDevice(owner,instanceId,next.challengeId)).toMatchObject({pending:false});
       const [saved]=await getDb().select().from(s.providerConnections).where(eq(s.providerConnections.userId,owner));
-      expect(saved.settings.traktAccess).toEqual({import:true,export:false});
+      expect(saved.settings.traktSync).toEqual(initialTraktSync());
     } finally { release(); await outstanding; }
   });
 });

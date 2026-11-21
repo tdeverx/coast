@@ -1,3 +1,4 @@
+import { initialTraktSync } from '#lib/providers/trakt/access.js';
 import { provisioningOffer,provisionOnboarding } from '#lib/providers/jellyfin/provisioning.server.js';
 import {profileAvatarChoices} from '#lib/core/profile/avatars.server.js';
 import {updateProfile} from '#lib/core/profile/service.server.js';
@@ -27,8 +28,12 @@ export const actions:Actions={
  trakt:async({locals,request})=>{
    try {
      const fields=Object.fromEntries(await request.formData());
+     const defaults = initialTraktSync();
+     const choices = (direction: keyof typeof defaults) => Object.fromEntries(
+       Object.keys(defaults[direction]).map(feature => [feature, fields[`${direction}.${feature}`] === 'on'])
+     );
      return {device:await startOnboardingTrakt(requireUser(locals.user).id,{
-       instanceId:fields.instanceId,traktAccess:{import:fields.import==='true',export:fields.export==='true'}
+       instanceId:fields.instanceId, traktSync:{ import:choices('import'), export:choices('export') },
      })};
    }catch(cause){return failure(cause);}
  },

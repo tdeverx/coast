@@ -3,6 +3,12 @@ set -Eeuo pipefail
 umask 077
 
 data_dir="${COAST_DATA_DIR:-/data}"
+# Container recreation can copy the previous image's environment. The revision
+# shipped beside the application is authoritative for this process and its children.
+if [[ -r /app/build/.coast-build-id ]]; then
+  IFS= read -r COAST_BUILD_ID < /app/build/.coast-build-id
+  export COAST_BUILD_ID
+fi
 source /usr/local/lib/coast-container-storage.sh
 source /usr/local/lib/coast-container-shutdown.sh
 

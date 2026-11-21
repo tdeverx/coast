@@ -1,4 +1,4 @@
-import { traktAccess } from '#lib/providers/trakt/access.js';
+import { traktAllows } from '#lib/providers/trakt/access.js';
 import { getConfig } from '#lib/server/config.js';
 import { and,eq,sql,inArray } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -27,10 +27,10 @@ function canonical(value:unknown):unknown{
 const same=(a:unknown,b:unknown)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
 export type ProjectionContext={connection:typeof providerConnections.$inferSelect;adapter:TraktAdapter};
 async function verifiedContext(userId:string,connectionId:string,provided?:ProjectionContext){
-  const context=provided??await getTrakt(userId,connectionId, 'export');
+  const context=provided??await getTrakt(userId,connectionId, 'export', 'collection');
   const [current]=await getDb().select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.status,'connected')));
   if(!current||current.accountGeneration!==context.connection.accountGeneration||current.syncAccountId!==context.connection.syncAccountId)throw new PermanentActionError('The connected account changed.');
-  if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
+  if(!traktAllows(current.settings, 'export', 'collection'))throw new PermanentActionError('Enable Export for Collection to manage your Trakt Collection.');
   const profile=await context.adapter.profile();
   if(profile.id!==context.connection.externalUserId||!context.connection.syncAccountId)throw new PermanentActionError('Reconnect Trakt to verify the current account.');
   return context;
@@ -116,7 +116,7 @@ export async function approveProjection(userId:string,connectionId:string,input:
   if(!same([...remote.values()],preview.snapshot.remote))throw new Error('The remote Collection changed. Preview again.');
   await getDb().transaction(async tx=>{
     const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
-    if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
+    if(!traktAllows(current.settings, 'export', 'collection'))throw new PermanentActionError('Enable Export for Collection to manage your Trakt Collection.');
     if(current.accountGeneration!==context.connection.accountGeneration||String(current.settings.collectionProjectionVersion??current.accountGeneration)!==version)throw new Error('The account or configuration changed. Preview again.');
     await tx.update(providerConnections).set({settings:{...current.settings,collectionProjection:configuration,collectionProjectionVersion:nextVersion}}).where(eq(providerConnections.id,connectionId));
     await tx.update(previews).set({approved:true}).where(eq(previews.id,preview.id));
@@ -210,7 +210,7 @@ export async function reviewProjection(userId:string,connectionId:string,input:u
   const snapshot=(preview.snapshot.remote as Entry[]).find(e=>e.workId===data.workId)?.snapshot??null;
   await getDb().transaction(async tx=>{
     const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
-    if(!traktAccess(current.settings).export)throw new PermanentActionError('Enable Trakt export to manage your Trakt Collection.');
+    if(!traktAllows(current.settings, 'export', 'collection'))throw new PermanentActionError('Enable Export for Collection to manage your Trakt Collection.');
     if(current.accountGeneration!==context.connection.accountGeneration||String(current.settings.collectionProjectionVersion??current.accountGeneration)!==version)throw new Error('The account or configuration changed. Preview again.');
     await enqueueInTransaction(tx,{userId,connectionId,kind:'trakt.collection-review',payload:{workId:data.workId,choice:data.choice,snapshot,version},compactionKey:`collection-review:${data.workId}`});
   });

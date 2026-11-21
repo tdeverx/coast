@@ -9,7 +9,7 @@
   import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
   import { collectionCategories, collectionRules } from '#lib/collection/preferences.js';
   import { categoryEnabled } from '#lib/experimental.js';
-  import { traktAccess } from '#lib/providers/trakt/access.js';
+  import { traktPreferences } from '#lib/providers/trakt/access.js';
   import {audiences,socialSections,socialCategories,type Audience} from '#lib/social/model.js';
   import {
     personalSettings as links,
@@ -809,7 +809,7 @@
           </form>
           {#each data.providers.filter((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider)) as p (p.id)}<ConnectionCard
               provider={p}
-              dynamicCollectionExports={data.providers.filter((source) => source.provider === 'trakt' && source.connection?.status === 'connected' && traktAccess(source.connection.settings).export && (source.connection.settings.collectionProjection as {
+              dynamicCollectionExports={data.providers.filter((source) => source.provider === 'trakt' && source.connection?.status === 'connected' && traktPreferences(source.connection.settings).export.collection && (source.connection.settings.collectionProjection as {
                 enabled?: boolean;
                 scope?: string;
                 source?: string;
