@@ -486,7 +486,7 @@ describe('Seerr permissions and season scope', () => {
     expect(destination.fourKServerId).toBe(2);
     expect(canRequest(SeerrPermission.REQUEST, 'movie', true)).toBe(false);
   });
-  test('duplicates exclude matching seasons but preserve other server/variant scopes', () => {
+  test('Seerr deduplicates claimed seasons across backends in one quality and permits previously completed requests', () => {
     const request = {
       id: 1,
       status: 2,
@@ -494,9 +494,9 @@ describe('Seerr permissions and season scope', () => {
       serverId: 1,
       seasons: [{ seasonNumber: 1, status: 2 }],
     };
-    expect(remainingSeasons([1, 2], [request], false, 1)).toEqual([2]);
-    expect(remainingSeasons([1, 2], [request], true, 1)).toEqual([1, 2]);
-    expect(remainingSeasons([1, 2], [request], false, 2)).toEqual([1, 2]);
+    expect(remainingSeasons([1, 2], [request], false)).toEqual([2]);
+    expect(remainingSeasons([1, 2], [request], true)).toEqual([1, 2]);
+    expect(remainingSeasons([1, 2], [{...request,status:5}], false)).toEqual([1, 2]);
   });
   test('a user cannot cancel someone else’s request', async () => {
     let mutation = false;
@@ -545,8 +545,54 @@ describe('Seerr permissions and season scope', () => {
       'key',
       5
     );
-    await adapter.create({ kind: 'show', tmdbId: 10, is4k: false, serverId: 1, seasons: [1, 2] });
+    const delivery = await adapter.create({ kind: 'show', tmdbId: 10, is4k: false, serverId: 1, seasons: [1, 2] });
     expect(posted).toMatchObject({ mediaType: 'tv', seasons: [2], serverId: 1 });
+    expect(delivery.seasons).toEqual([2]);
+  });
+  const seasonScope={kind:'show' as const,tmdbId:10,is4k:false,serverId:0,seasons:[6]};
+  const request=(owner:number,numbers:number[],serverId:number|null=0)=>({id:40,status:2,serverId,is4k:false,requestedBy:{id:owner},seasons:numbers.map(seasonNumber=>({seasonNumber,status:2}))});
+  function seasonService(requests:ReturnType<typeof request>[],post:unknown,seasonStatus=1) {
+    const sent:number[][]=[];
+    const adapter=new SeerrAdapter(async(path,init)=>{
+      if(path.endsWith('/auth/me'))return {id:5,permissions:SeerrPermission.ADMIN};
+      if(path.endsWith('/service/sonarr'))return [{id:0,name:'Default',isDefault:true}];
+      if(path.includes('/tv/'))return {id:10,seasons:[1,6,7].map(seasonNumber=>({seasonNumber,episodeCount:8})),mediaInfo:{status:4,requests,
+        seasons:[{seasonNumber:6,status:seasonStatus,status4k:1}]}};
+      if(path.endsWith('/request')&&init?.method==='POST'){sent.push(JSON.parse(String(init.body)).seasons);return post;}
+      throw Error('Unexpected fixture path');
+    },'fixture',5);
+    return {adapter,sent};
+  }
+  test('partially stocked seasons block only their own quality and a racing no-seasons envelope is a terminal denial',async()=>{
+    const mixed=seasonService([],{id:41,status:2},4);
+    await expect(mixed.adapter.create(seasonScope)).rejects.toMatchObject({code:'request-covered'});
+    expect(mixed.sent).toEqual([]);
+    const delivered=await mixed.adapter.create({...seasonScope,seasons:[6,7]});
+    expect(mixed.sent).toEqual([[7]]);expect(delivered.seasons).toEqual([7]);
+    await mixed.adapter.create({...seasonScope,is4k:true});expect(mixed.sent[1]).toEqual([6]);
+    const race=seasonService([],{message:'No seasons available to request'});
+    await expect(race.adapter.create(seasonScope)).rejects.toMatchObject({code:'request-covered'});
+    expect(race.sent).toEqual([[6]]);
+    for(const body of [{message:'An unexpected response'},null,{message:'No seasons available to request',id:null}]){
+      await expect(seasonService([],body).adapter.create(seasonScope)).rejects.toMatchObject({name:'ValiError'});
+    }
+  });
+  test('lost acknowledgments adopt only the same owner, quality, backend and season selection',async()=>{
+    for(const remote of [request(8,[6]),request(5,[1]),request(5,[1,6])]){
+      const fixture=seasonService([remote],null,4);
+      await expect(fixture.adapter.create(seasonScope)).rejects.toMatchObject({code:'request-covered'});
+      expect(fixture.sent).toEqual([]);
+    }
+    // The earlier partial POST accepted only season 7. Season 6 is covered independently.
+    const retry=seasonService([request(5,[7])],null,4);
+    await expect(retry.adapter.create({...seasonScope,seasons:[6,7]})).rejects.toMatchObject({code:'request-covered'});
+    expect(retry.sent).toEqual([]);
+    const inferred=seasonService([request(5,[6],null)],null);
+    expect((await inferred.adapter.create(seasonScope)).request.id).toBe(40);
+    await expect(inferred.adapter.create({...seasonScope,serverId:1})).rejects.toMatchObject({code:'request-covered'});
+    expect(inferred.sent).toEqual([]);
+    const unrelated=seasonService([],request(8,[7]));
+    await expect(unrelated.adapter.create(seasonScope)).rejects.toMatchObject({name:'ValiError'});
   });
 });
 test('Trakt uses server-held OAuth application credentials and validates tokens', async () => {
@@ -795,6 +841,47 @@ test('Jellyfin progress resolution writes only resume ticks, without creating a 
     },
   ]);
 });
+test('Trakt accepts existing list items and zero deletions but rejects partial or malformed item receipts', async () => {
+  const counts = {movies:0, shows:0, seasons:0, episodes:0};
+  const payload = {movies:[{ids:{trakt:11}}]};
+  const list = {updated_at:'2026-11-01T00:00:00Z',item_count:3};
+  let receipt: unknown = {added:counts,existing:{...counts,movies:1},not_found:{movies:[],episodes:null},list};
+  const adapter = new TraktAdapter(async () => receipt, 'client', 'secret');
+  await adapter.writeList('example', payload);
+  await adapter.write('watchlist', payload);
+  receipt = {deleted:counts,not_found:{},list};
+  await adapter.writeList('example', payload, true);
+  await adapter.write('history', {ids:[23]}, true);
+  receipt = {added:{movies:1},not_found:{seasons:[{ids:{trakt:42},seasons:[{number:1}]}]}};
+  for (const category of ['collection','history','ratings','watchlist'] as const)
+    await expect(adapter.write(category,payload)).rejects.toMatchObject({code:'identity'});
+  await expect(adapter.writeList('example',payload)).rejects.toMatchObject({code:'identity'});
+  receipt = {deleted:counts,not_found:{ids:[23]}};
+  await expect(adapter.write('history',{ids:[23]},true)).rejects.toMatchObject({code:'identity'});
+  for (const bad of [null,{}, {added:counts}, {added:{movies:-1},not_found:{}}, {added:{},not_found:{}}, {added:counts,not_found:{movies:1}}, {deleted:counts,not_found:{}}]) {
+    receipt = bad;
+    await expect(adapter.write('ratings',payload)).rejects.toThrow();
+  }
+  receipt = {updated:0,skipped_ids:[],list};
+  await adapter.reorderList('example',[4]);
+  receipt = {updated:1,skipped_ids:[4],list};
+  await expect(adapter.reorderList('example',[3,4])).rejects.toMatchObject({code:'identity'});
+});
+
+test('Trakt playback acknowledges the requested action only after a valid scrobble receipt', async () => {
+  let receipt: unknown = {id:12,action:'pause',progress:41.21};
+  const adapter = new TraktAdapter(async () => receipt, 'client', 'secret');
+  expect(await adapter.scrobble('pause','movie',{trakt:1},41.21)).toMatchObject({id:12,action:'pause'});
+  await expect(adapter.scrobble('start','movie',{trakt:1},41.21)).rejects.toMatchObject({code:'invalid-request'});
+  expect(await adapter.scrobble('stop','movie',{trakt:1},41.21)).toMatchObject({action:'pause'});
+  receipt = {id:13,action:'scrobble',progress:100};
+  expect(await adapter.scrobble('stop','movie',{trakt:1},100)).toMatchObject({id:13,action:'scrobble'});
+  for(const bad of [{}, {id:0,action:'pause',progress:1}, {id:12,action:'pause',progress:101}]){
+    receipt=bad;
+    await expect(adapter.scrobble('pause','movie',{trakt:1},1)).rejects.toThrow();
+  }
+});
+
 test('Trakt cleared progress deletes only the matching media kind and identity', async () => {
   const deleted: string[] = [];
   const adapter = new TraktAdapter(

@@ -434,7 +434,7 @@ When playback fails, show a concise user-facing error and automatically create a
 
 Trakt is optional and configured using administrator-supplied application credentials.
 
-Each user may connect their own Trakt account.
+Each user may connect their own Trakt account. Coast asks for import and export permission separately. Export requires explicit consent, including on existing connections. Turning a direction off cancels outstanding work for that direction and keeps previously imported data.
 
 Allow users, within administrator policy, to independently enable synchronisation for:
 

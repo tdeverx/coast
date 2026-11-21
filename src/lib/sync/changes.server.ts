@@ -1,3 +1,4 @@
+import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
 import type { MediaCategory } from '#lib/media/model.js';
 import { context } from '#lib/server/diagnostics/index.js';
 import { correlationId } from '#lib/diagnostics.js';
@@ -61,11 +62,11 @@ async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId
       and(
         eq(providerConnections.userId, userId),
         eq(providerConnections.status, 'connected'),
-        eq(providerInstances.provider, 'trakt'),
+        eq(providerInstances.provider, 'trakt'), traktExportAllowed,
         eq(providerInstances.enabled, true)
       )
     )
-    .orderBy(asc(providerConnections.id));
+    .orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
 }
 
 /** Shares the existing transaction so native state and outbound intent cannot diverge. */
@@ -123,8 +124,8 @@ export async function enqueueTraktListChangeInTransaction(tx: Transaction, userI
   const connections = await tx.select({ connection: providerConnections }).from(providerConnections)
     .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
     .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),
-      eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true)))
-    .orderBy(asc(providerConnections.id));
+      eq(providerInstances.provider,'trakt'),traktExportAllowed,eq(providerInstances.enabled,true)))
+    .orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   for (const { connection } of connections) {
     if (!(connection.settings.sync as Record<string,boolean> | undefined)?.lists) continue;
     await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.list-export',
@@ -135,7 +136,7 @@ export async function enqueueTraktListChangeInTransaction(tx: Transaction, userI
 export async function enqueueCollectionProjectionInTransaction(tx:Transaction,userId:string){
   const accounts=await tx.select({id:providerConnections.id}).from(providerConnections)
     .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
-    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true),sql`${providerConnections.settings}->'collectionProjection'->>'enabled'='true'`));
+    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'trakt'),traktExportAllowed,eq(providerInstances.enabled,true),sql`${providerConnections.settings}->'collectionProjection'->>'enabled'='true'`)).orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   for(const account of accounts)await enqueueInTransaction(tx,{userId,connectionId:account.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
 }
 

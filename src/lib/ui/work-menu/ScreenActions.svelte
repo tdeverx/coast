@@ -22,7 +22,7 @@
     targetLabel,
     type MediaActionData,
   } from '#lib/media/actions.js';
-  import { requestQualityStatus, requestSeasonChoices, type RequestDestination } from '#lib/media/requests.js';
+  import { requestQualityStatus, requestSeasonChoices, requestSeasonStatus, type RequestDestination } from '#lib/media/requests.js';
   import { requestStatusLabel } from '#lib/library-feed.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { message, ApiError } from '#lib/ui/client.js';
@@ -513,7 +513,7 @@
         seasonSelection[quality] = selected.includes(choice.number) ? selected.filter(number => number !== choice.number) : [...selected, choice.number];
       }}>
       <span class="menu-season"><span>Season {choice.number}</span>
-        {#if !choice.selectable}<small>{choice.available ? 'Available' : choice.requested ? 'Requested' : 'Unavailable'}</small>{/if}
+        {#if !choice.selectable}<small>{requestSeasonStatus(choice) ?? 'Unavailable'}</small>{/if}
       </span>
     </Button>
   {/each}

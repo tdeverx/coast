@@ -1,3 +1,4 @@
+import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
@@ -70,10 +71,10 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
           eq(s.providerConnections.userId, userId),
           eq(s.providerConnections.status, 'connected'),
           eq(s.providerInstances.enabled, true),
-          inArray(s.providerInstances.provider, ['jellyfin', 'trakt'])
+          sql`(${s.providerInstances.provider}='jellyfin' or (${s.providerInstances.provider}='trakt' and ${traktExportAllowed}))`
         )
       )
-      .orderBy(asc(s.providerConnections.id));
+      .orderBy(asc(s.providerConnections.id)).for('share',{of:s.providerConnections});
     const conflicts = await tx
       .select({ id: s.syncValues.id })
       .from(s.syncValues)
@@ -273,7 +274,7 @@ export async function executeHistoryRemoval(
   );
   const db = getDb();
   if (data.provider === 'trakt') {
-    const { adapter } = await getTrakt(userId, connectionId);
+    const { adapter } = await getTrakt(userId, connectionId, 'export');
     const [item] = await db.select().from(s.media).where(eq(s.media.id, data.mediaId));
     if (!item || !['movie', 'episode'].includes(item.kind)) return;
     const mappings = await db

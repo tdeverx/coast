@@ -27,7 +27,7 @@ beforeAll(async()=>{
   for(let n=0;n<2;n++){
     const [instance]=await db.insert(s.providerInstances).values({provider:'trakt',name:tag,baseUrl:'https://fixture.invalid'}).returning();
     instances.push(instance.id);
-    const [account]=await db.insert(s.providerConnections).values({userId,instanceId:instance.id,externalUserId:`account-${n}`,settings:{sync}}).returning();
+    const [account]=await db.insert(s.providerConnections).values({userId,instanceId:instance.id,externalUserId:`account-${n}`,settings:{sync,traktAccess:{import:true,export:true}}}).returning();
     if(!n)connection=account;
   }
   for(const id of external)works.push((await ingestMetadata({provider:'trakt',externalId:String(id),kind:'movie',title:`List delivery ${id}`})).id);
@@ -55,8 +55,8 @@ run('export acknowledges the sent snapshot when another local edit commits durin
   const adapter=new TraktAdapter(async(path,init)=>{
     if(init?.method==='PUT')return{};
     if(init?.method==='POST'){
-      if(path.endsWith('/items')){entered();await gate;}
-      return{};
+      if(path.endsWith('/items')){entered();await gate;return {added:{movies:1},not_found:{}};}
+      return {updated:1,skipped_ids:[]};
     }
     return[{id:1,movie:movie(external[0])}];
   },'fixture','fixture');

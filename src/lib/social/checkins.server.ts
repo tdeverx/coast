@@ -1,3 +1,4 @@
+import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { episodeHasAired } from '#lib/catalogue/metadata/release-date.server.js';
@@ -24,8 +25,8 @@ async function queueTimedCheckin(tx: Transaction, userId: string, checkinId: str
   const connections = await tx.select({ id: providerConnections.id }).from(providerConnections)
     .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
     .where(and(eq(providerConnections.userId, userId), eq(providerConnections.status, 'connected'),
-      eq(providerInstances.provider, 'trakt'), eq(providerInstances.enabled, true),
-      sql`${providerConnections.settings}->'sync'->>'scrobble'='true'`));
+      eq(providerInstances.provider, 'trakt'), traktExportAllowed, eq(providerInstances.enabled, true),
+      sql`${providerConnections.settings}->'sync'->>'scrobble'='true'`)).orderBy(providerConnections.id).for('share',{of:providerConnections});
   for (const { id } of connections)
     await enqueueInTransaction(tx, { userId, connectionId: id, kind: 'trakt.checkin', payload: {checkinId}, compactionKey: `checkin:${checkinId}` });
 }
@@ -147,18 +148,7 @@ export async function cancelCheckin(userId: string, id: string) {
     const row = await findOwned(tx, userId, id);
     if (!row) throw new AppError(404, 'Check-in not found.');
     if (row.state !== 'active') return { state: row.state };
-    const result = await setCheckinState(tx, id, 'cancelled');
-    if (row.mode === 'timed') {
-      const deliveries = await tx.select({ id: socialLiveDeliveries.connectionId }).from(socialLiveDeliveries)
-        .innerJoin(providerConnections, and(eq(providerConnections.id, socialLiveDeliveries.connectionId),
-          eq(providerConnections.accountGeneration, socialLiveDeliveries.accountGeneration)))
-        .where(and(eq(socialLiveDeliveries.checkinId, id), eq(providerConnections.userId, userId),
-          eq(providerConnections.status, 'connected'), sql`${socialLiveDeliveries.state} in ('started','uncertain')`));
-      for (const delivery of deliveries) await enqueueInTransaction(tx, {
-        userId, connectionId: delivery.id, kind: 'trakt.checkin', payload: {checkinId: id}, compactionKey: `checkin:${id}`,
-      });
-    }
-    return result;
+    return setCheckinState(tx, id, 'cancelled');
   });
 }
 

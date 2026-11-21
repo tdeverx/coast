@@ -111,14 +111,15 @@ run('failed onboarding Trakt reconnect cancels stale evidence and completes only
   });
   try {
     expect(await onboardingStatus(owner.id)).toMatchObject({ reconnect: true, traktLinked: false, complete: false });
-    expect(await startOnboardingTrakt(owner.id, { instanceId: instance.id })).toMatchObject({ userCode: 'FIXTURE' });
+    const challenge = await startOnboardingTrakt(owner.id, { instanceId: instance.id });
+    expect(challenge).toMatchObject({ userCode: 'FIXTURE' });
     const [pending] = await db.select().from(s.providerConnections).where(eq(s.providerConnections.id, connection.id));
     expect(pending.status).toBe('disconnected');
     expect(await db.select().from(s.availability).where(eq(s.availability.connectionId, connection.id)))
       .toMatchObject([{ state: 'unknown' }]);
     expect((await db.select().from(s.outboxActions).where(inArray(s.outboxActions.id, jobs.map(job => job.id)))).every(job => job.state === 'cancelled')).toBe(true);
     expect(await db.select().from(s.providerConnections).where(eq(s.providerConnections.id, healthy.id))).toEqual([healthy]);
-    expect(await pollOnboardingTrakt(owner.id, { instanceId: instance.id })).toEqual({ pending: false });
+    expect(await pollOnboardingTrakt(owner.id, { instanceId: instance.id, challengeId: challenge.challengeId })).toEqual({ pending: false });
     const [replaced] = await db.select().from(s.providerConnections).where(eq(s.providerConnections.id, connection.id));
     expect(replaced.externalUserId).toBe('verified-replacement-account');
     expect(replaced.accountGeneration).not.toBe(connection.accountGeneration);

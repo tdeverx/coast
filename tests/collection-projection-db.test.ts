@@ -7,6 +7,7 @@ import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
 import {previewProjection,approveProjection,executeProjection,reviewProjection,executeProjectionReview,readProjectionRemote,desiredProjection,isGeneratedProjection,type ProjectionContext} from '../src/lib/collection/projection.server';
 import {previewSourceChange,validateSourceChange,markSourceChange} from '../src/lib/collection/source-changes.server';
 import {importTraktFromAdapter} from '../src/lib/sync/trakt-import.server';
+import {readTraktValue} from '../src/lib/sync/trakt-export.server';
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const tag=crypto.randomUUID(),base=1_000_000_000+Math.floor(Math.random()*100_000_000);
 let userId:string,instanceId:string,connection:typeof s.providerConnections.$inferSelect,sourceId:string,sourceInstance:string;
@@ -20,20 +21,25 @@ const adapter=new TraktAdapter(async(path,init)=>{
  if(url.pathname==='/sync/collection/movies'){
   const page=Number(url.searchParams.get('page')??1);return [...remote.entries()].slice((page-1)*100,page*100).map(([,m])=>({movie:{title:m.title,ids:m.ids},collected_at:m.collected_at,metadata:m.metadata}));
  }
- if(url.pathname==='/sync/collection/shows'){
+ if(url.pathname==='/sync/collection/episodes'){
   if(!showPages)return[];const page=Number(url.searchParams.get('page')??1);
-  return showIds.slice((page-1)*100,page*100).map((_,i)=>({show:{title:`Show ${i}`,ids:{trakt:base+200+(page-1)*100+i}},seasons:[{number:1,episodes:[{number:1,collected_at:'2020-01-01T00:00:00.000Z'}]}]}));
+  return showIds.slice((page-1)*100,page*100).map((_,i)=>({
+    show:{title:`Show ${i}`,ids:{trakt:base+200+(page-1)*100+i}},
+    episode:{season:1,number:1,ids:{trakt:base+400+(page-1)*100+i}},
+    collected_at:'2020-01-01T00:00:00.000Z',metadata:{resolution:'1080p'}
+  }));
  }
  if(url.pathname==='/sync/collection'||url.pathname==='/sync/collection/remove'){
   const body=JSON.parse(String(init?.body)),remove=url.pathname.endsWith('/remove');
   for(const movie of body.movies??[]){const id=Number(movie.ids.trakt);writes.push({remove,id});if(remove)remote.delete(id);else remote.set(id,{title:`Movie ${id-base}`,ids:{trakt:id},collected_at:movie.collected_at??'2020-01-01T00:00:00.000Z'});}
-  if(lostResponse){lostResponse=false;throw new Error('Delivery response lost');}return {};
+  if(lostResponse){lostResponse=false;throw new Error('Delivery response lost');}
+  return {[remove?'deleted':'added']:{movies:body.movies?.length??0,episodes:0},not_found:{}};
  }
  throw new Error(`Unexpected fixture call ${path}`);
 },'fixture','fixture');
 const context=():ProjectionContext=>({connection,adapter});
 const config=(extra:Partial<Parameters<typeof desiredProjection>[1]>={}):Parameters<typeof desiredProjection>[1]=>({enabled:true,source:'collected',availableOnly:false,scope:'dynamic',sourceIds:[],...extra});
-async function refresh(settings:Record<string,unknown>){[connection]=await getDb().update(s.providerConnections).set({settings}).where(eq(s.providerConnections.id,connection.id)).returning();}
+async function refresh(settings:Record<string,unknown>){[connection]=await getDb().update(s.providerConnections).set({settings:{traktAccess:{import:true,export:true},...settings}}).where(eq(s.providerConnections.id,connection.id)).returning();}
 async function seedRemote(){for(let i=0;i<3;i++)remote.set(base+i,{title:`Movie ${i}`,ids:{trakt:base+i},collected_at:'2020-01-01T00:00:00.000Z'});
  await getDb().insert(s.collectionProjectionEntries).values([
   {accountId:connection.syncAccountId!,workId:movieIds[0],attribution:'coast-added',remote:{collectedAt:'2020-01-01T00:00:00.000Z',metadata:null}},
@@ -61,9 +67,17 @@ beforeEach(async()=>{if(!enabled)return;remote.clear();writes=[];paths.length=0;
  await refresh({collectionProjection:config()});await getDb().update(s.providerConnections).set({settings:{},status:'connected'}).where(eq(s.providerConnections.id,sourceId));await getDb().update(s.syncCheckpoints).set({completedAt:new Date(),scanId:null}).where(eq(s.syncCheckpoints.connectionId,sourceId));await getDb().update(s.availability).set({state:'available',verifiedAt:new Date()}).where(eq(s.availability.connectionId,sourceId));
 });
 afterAll(async()=>{if(!userId)return;await getDb().delete(s.users).where(eq(s.users.id,userId));await getDb().delete(s.providerInstances).where(inArray(s.providerInstances.id,[instanceId,sourceInstance]));await getDb().delete(s.media).where(inArray(s.media.id,allIds));});
-run('movie and show collections paginate completely; generated projection entries do not become personal collection',async()=>{
+run('movie and episode collections paginate completely and upgrade existing episode shells without changing their identity',async()=>{
  for(let i=0;i<101;i++)remote.set(base+i,{title:`Movie ${i}`,ids:{trakt:base+i},collected_at:'2020-01-01T00:00:00.000Z'});showPages=true;
- expect((await readProjectionRemote(adapter)).size).toBe(202);expect(paths.some(p=>p.includes('/movies?')&&p.includes('page=2'))).toBe(true);expect(paths.some(p=>p.includes('/shows?')&&p.includes('page=2'))).toBe(true);
+ expect(await readTraktValue(adapter,episodeIds[100],'collection')).toEqual({value:true});
+ expect(paths.filter(path=>path.includes('/episodes?')).map(path=>new URL(path,'https://fixture.invalid').searchParams.get('page'))).toEqual(['1','2']);
+ const membership=await readProjectionRemote(adapter);
+ expect(membership.size).toBe(202);expect(paths.some(p=>p.includes('/movies?')&&p.includes('page=2'))).toBe(true);expect(paths.some(p=>p.includes('/episodes?')&&p.includes('page=2'))).toBe(true);
+ expect(membership.get(episodeIds[100])).toMatchObject({snapshot:{collectedAt:'2020-01-01T00:00:00.000Z',metadata:{resolution:'1080p'}},payload:{shows:[{ids:{trakt:base+300},seasons:[{number:1,episodes:[{number:1}]}]}]}});
+ const [mapped]=await getDb().select().from(s.externalIds).where(and(eq(s.externalIds.provider,'trakt'),eq(s.externalIds.mediaKind,'episode'),eq(s.externalIds.externalId,String(base+500))));
+ expect(mapped.mediaId).toBe(episodeIds[100]);
+ const wrongEpisode=new TraktAdapter(async()=>[{show:{title:'Same show',ids:{trakt:base+300}},episode:{season:1,number:1,ids:{trakt:base+800}}}],'fixture','fixture');
+ expect(await readTraktValue(wrongEpisode,episodeIds[100],'collection')).toEqual({value:false});
  await getDb().insert(s.collectionProjectionEntries).values({accountId:connection.syncAccountId!,workId:movieIds[0],attribution:'uncertain',remote:{}});
  await importTraktFromAdapter(userId,connection.id,{adapter,sync:{history:false,progress:false,collection:true,ratings:false,watchlist:false,lists:false,scrobble:false}});
  const states=await getDb().select().from(s.trackingState).where(eq(s.trackingState.userId,userId));expect(states.some(s=>s.mediaId===movieIds[0])).toBe(false);expect(states.filter(s=>s.collected)).toHaveLength(201);expect(await isGeneratedProjection(connection.id,movieIds[0])).toBe(true);

@@ -1,3 +1,4 @@
+import { traktAccess } from '#lib/providers/trakt/access.js';
 import { conflictPreference } from './preference.server';
 import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { and, eq, sql, inArray } from 'drizzle-orm';
@@ -167,6 +168,7 @@ export async function reconcileProviderValue(
     source?: string;
     accountGeneration?: string;
     importRemote?: boolean;
+    traktDirection?: 'import'|'export';
     occurredAt?: string;
     apply?: (tx: Transaction) => Promise<unknown>;
     onReconciled?: (tx: Transaction, decision: 'agree' | 'local' | 'remote' | 'conflict') => Promise<void>;
@@ -183,6 +185,9 @@ export async function reconcileProviderValue(
     await assertJobLease(tx,true);
     if(options.accountGeneration && (connection.accountGeneration!==options.accountGeneration || connection.status!=='connected'))
       throw new Error('The connected account changed before reconciliation.');
+    const access = options.source === 'trakt' ? traktAccess(connection.settings) : undefined;
+    if (access && !access[options.traktDirection ?? 'import']) throw new Error('This Trakt sync direction is disabled.');
+    const importRemote = options.importRemote !== false && access?.import !== false;
     const [previous] = await tx
       .select()
       .from(syncValues)
@@ -216,7 +221,7 @@ export async function reconcileProviderValue(
       &&Number(remote.playCount??0)>importedPlayCount)decision='remote';
     // An outbound read can expose divergence, but an import opt-out must still
     // prevent it from silently applying that remote state to Coast.
-    if(options.importRemote===false && decision==='remote')decision='conflict';
+    if(!importRemote && decision==='remote')decision='conflict';
     if (!previous && decision === 'remote') {
       const actions =
         category === 'history'
@@ -255,7 +260,7 @@ export async function reconcileProviderValue(
       if (edited || queued) decision = 'conflict';
     }
     const selectedPreference = await conflictPreference(tx, userId, connectionId);
-    const preference=options.importRemote===false&&selectedPreference==='remote'?'manual':selectedPreference;
+    const preference=!importRemote&&selectedPreference==='remote'?'manual':selectedPreference;
     const ownedConnections = tx
       .select({ id: providerConnections.id })
       .from(providerConnections)
@@ -367,10 +372,16 @@ export async function acknowledgeProviderValue(
   connectionId: string,
   mediaId: string,
   category: ValueCategory,
-  remote: JsonObject
+  remote: JsonObject,
+  accountGeneration?: string
 ) {
   await getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
+    if(accountGeneration){
+      const [sameAccount]=await tx.select({id:providerConnections.id}).from(providerConnections)
+        .where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.accountGeneration,accountGeneration))).for('share');
+      if(!sameAccount)throw new Error('The connected account changed before delivery was acknowledged.');
+    }
     const agreed = remote;
     const local = await localSyncValue(tx, userId, mediaId, category);
     const removal=category==='history'&&'playCount' in local?await musicRemovalState(tx,userId,mediaId):undefined;

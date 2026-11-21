@@ -73,7 +73,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       if(!task.scope){result.push({instanceId:instance.id,kind,nextAt:null,lastAt:null,eligible:0,fresh:0,reviews:0,reason:'Requested by a user action'});continue;}
       const candidates = eligibleTaskAccounts(kind, linked.map(account => ({ ...account,
         externalUserId: account.external_user_id, userCompleted: account.user_completed,
-      })), schedule, instance.settings, tmdb);
+      })), schedule, instance.settings, tmdb, instance.provider);
       const eligible=candidates.filter(account=>evidence.find(entry=>entry.connection_id===account.id&&entry.kind===kind)?.allowed!==false);
       const shared = jobIdentityScope(kind) === 'instance';
       const rows = evidence.filter(entry => entry.kind === kind && (shared

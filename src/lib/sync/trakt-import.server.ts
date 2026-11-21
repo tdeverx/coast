@@ -11,10 +11,9 @@ import {
 } from '#lib/server/db/schema.js';
 import { notify } from '#lib/server/notifications/index.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
-import { ingestMetadata } from '#lib/catalogue/service.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
-import type { Metadata, SyncCategory, SyncPreferences } from '#lib/providers/contracts.js';
+import type { SyncCategory, SyncPreferences } from '#lib/providers/contracts.js';
 import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
 import { traktEntry } from '#lib/sync/trakt-identity.server.js';
 import { compactTraktHistory, type TraktHistoryTitles } from '#lib/sync/trakt-history.js';
@@ -24,11 +23,10 @@ import { stagedTraktCategory, stagedTraktLists, type StageCommit } from './trakt
 export async function importTrakt(
   userId: string,
   connectionId: string,
-  scope: 'tracking' | 'lists',
-  initialImport = false
+  scope: 'tracking' | 'lists'
 ) {
   const context = await getTrakt(userId, connectionId);
-  const preferences=initialImport?{...context.sync,history:true,progress:true,ratings:true,watchlist:true,lists:true}:context.sync;
+  const preferences=context.sync;
   const sync =
     scope === 'tracking'
       ? { ...preferences, lists: false }
@@ -65,14 +63,11 @@ export async function importTraktFromAdapter(
     record: TraktRecord,
     staged?: StageCommit
   ) => {
-    let item;
-    if(category==='collection'&&staged&&record.type==='coast-collection-episode'){
-      const show=await resolveTrakt({show:record.show});
-      const season=record.seasons?.[0],episode=season?.episodes[0];
-      if(!show||!season||!episode||!record.show)return;
-      item=await ingestMetadata({provider:'trakt',externalId:`${record.show.ids.trakt}:episode:${season.number}:${episode.number}`,kind:'episode',title:`Episode ${episode.number}`,seasonNumber:season.number,episodeNumber:episode.number},{showId:show.id});
-    }else item=await resolveTrakt(record);
-    if (!item) return;
+    const item = await resolveTrakt(record);
+    if (!item) {
+      if(category==='collection')throw new Error('Trakt returned a collection item that Coast could not match.');
+      return;
+    }
     if(category==='collection'){
       if(!staged)seen.add(item.id);
       const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');
@@ -196,34 +191,10 @@ export async function importTraktFromAdapter(
       history.sort((a, b) => (a.watched_at || '').localeCompare(b.watched_at || ''));
       for (const record of history) await apply(category, record);
     }
-    if (category === 'collection')
-      for (const record of await adapter.collectionShows()) {
-        const show = await resolveTrakt(record);
-        if (!show) continue;
-        for (const season of record.seasons || [])
-          for (const episode of season.episodes) {
-            const shell: Metadata = {
-              provider: 'trakt',
-              externalId: `${record.show!.ids.trakt}:episode:${season.number}:${episode.number}`,
-              kind: 'episode',
-              title: `Episode ${episode.number}`,
-              seasonNumber: season.number,
-              episodeNumber: episode.number,
-            };
-            const item = await ingestMetadata(shell, { showId: show.id });
-            seen.add(item.id);
-            const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');
-            if(await isGeneratedProjection(connectionId,item.id))continue;
-            await reconcileProviderValue(
-              userId,
-              connectionId,
-              item.id,
-              'collection',
-              { value: true },
-              { source: 'trakt' }
-            );
-          }
-      }
+    if (category === 'collection') {
+      for await (const page of adapter.collectionEpisodePages())
+        for (const record of page) await apply(category, record);
+    }
     const previous = await getDb()
       .select()
       .from(syncValues)

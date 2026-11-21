@@ -14,6 +14,8 @@ export interface ProviderFetchConfig {
   timeoutMs?: number;
   /** Queue admission has its own bound; provider pacing does not consume I/O time. */
   queueTimeoutMs?: number;
+  /** Recheck account access after waiting for a provider slot and before sending a request. */
+  beforeDispatch?: () => Promise<void>;
   maxResponseBytes?: number;
 }
 
@@ -333,6 +335,7 @@ export async function secureProviderFetch(
       providerWaitMs = performance.now() - started;
       stage = 'provider-read';
       await assertJobFeaturePolicy();
+      if (config.beforeDispatch) await config.beforeDispatch();
       const response = await providerFetch(config, path, init, options);
       if (options.stream) return response;
       // Buffer the bounded body before releasing the lane, not a multi-hour media stream.

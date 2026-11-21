@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { AppError } from '#lib/server/security/errors.js';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '#lib/server/db/index.js';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   providerConnections,
   providerInstances,
@@ -9,11 +9,31 @@ import {
   availability,
   outboxActions,
   syncCheckpoints,
+  syncAccounts,
 } from '#lib/server/db/schema.js';
 import { encryptCredential } from '#lib/server/security/credentials.js';
 import { getInstance } from '#lib/providers/instances.server.js';
 import { jellyfinItemKey } from './jellyfin/paging';
 import { maintenanceKinds } from '#lib/providers/tasks.js';
+import { defaultSyncPreferences } from './contracts';
+import { traktAccess, type TraktAccess } from './trakt/access';
+import { cancelDisabledTraktJobs } from './trakt/access.server';
+
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+type Connection = typeof providerConnections.$inferSelect;
+type TraktDeviceProof = { expectedCredential: string; slug?: string; access: TraktAccess };
+
+/** A verified slug-to-UUID correction preserves the durable account and its generation. */
+export async function upgradeTraktIdentity(tx: Tx, current: Connection, externalUserId: string) {
+  const settings = { ...current.settings };
+  delete settings.traktIdentityPending;
+  const [account] = await tx.update(syncAccounts).set({ externalUserId, settings, verifiedAt: new Date() })
+    .where(and(eq(syncAccounts.id, current.syncAccountId!), eq(syncAccounts.provider, 'trakt'))).returning({ id: syncAccounts.id });
+  if (!account) throw new Error('Reconnect Trakt to verify the current account.');
+  const [verified] = await tx.update(providerConnections).set({ externalUserId, settings, updatedAt: new Date() })
+    .where(eq(providerConnections.id, current.id)).returning();
+  return verified;
+}
 
 export async function connectionFor(userId: string, connectionId: string, provider?: string) {
   const [connection] = await getDb()
@@ -37,15 +57,33 @@ export async function saveConnection(
   username: string,
   credentials: Record<string, unknown>,
   settings: Record<string, unknown> = {},
-  jellyfinIdentity = false
+  identity: boolean | TraktDeviceProof = false
 ) {
+  const jellyfinIdentity = identity === true;
+  const device = typeof identity === 'object' ? identity : undefined;
   const secret = await encryptCredential(JSON.stringify(credentials));
-  const connection = await getDb().transaction(async (tx) => {
+  const connection = await getDb().transaction(async tx => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(73001602)`);
     const [lane]=await tx.select({id:providerConnections.id}).from(providerConnections).where(and(eq(providerConnections.userId,userId),eq(providerConnections.instanceId,instanceId)));
     if(lane) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`queue-lane:${userId}:${lane.id}`},0))`);
-    const [previous] = await tx.select({ externalUserId: providerConnections.externalUserId, id: providerConnections.id })
-      .from(providerConnections).where(and(eq(providerConnections.userId, userId), eq(providerConnections.instanceId, instanceId)));
+    const key = and(eq(providerConnections.userId, userId), eq(providerConnections.instanceId, instanceId));
+    let previous: Pick<Connection, 'id' | 'externalUserId'> | undefined;
+    let previousAccess: TraktAccess | undefined;
+    if (device) {
+      let [current] = await tx.select().from(providerConnections).where(key).for('update');
+      if (!current || current.status !== 'disconnected' || current.credentials !== device.expectedCredential)
+        throw new AppError(409, 'This Trakt linking request was replaced or cancelled. Start again.');
+      if (current.settings.traktIdentityPending && (current.externalUserId === externalUserId || current.externalUserId === device.slug))
+        current = await upgradeTraktIdentity(tx, current, externalUserId);
+      if (current.externalUserId === externalUserId) {
+        previousAccess = traktAccess(current.settings);
+        settings = { ...settings, sync: current.settings.sync ?? defaultSyncPreferences };
+      }
+      previous = current;
+    } else {
+      [previous] = await tx.select({ externalUserId: providerConnections.externalUserId, id: providerConnections.id })
+        .from(providerConnections).where(key);
+    }
     if (jellyfinIdentity) {
       const key=jellyfinItemKey(externalUserId);
       const [scope]=await tx.execute<{remote_id:string|null; instance_id:string|null; restricted:boolean}>(sql`
@@ -76,7 +114,7 @@ export async function saveConnection(
       await tx.update(outboxActions).set({ state: 'cancelled', updatedAt: new Date() })
         .where(and(eq(outboxActions.connectionId, previous.id), sql`${outboxActions.state} in ('pending','failed')`));
     }
-    const [connection] = await tx
+    let [connection] = await tx
       .insert(providerConnections)
       .values({
         userId,
@@ -99,6 +137,16 @@ export async function saveConnection(
         },
       })
       .returning();
+    if (device) {
+      // Switching back to a known account restores its saved settings in the database trigger.
+      // Keep the recovered categories, but this linking attempt owns the direction consent.
+      const stored = connection.settings.traktAccess as Partial<TraktAccess> | undefined;
+      if (stored?.import !== device.access.import || stored?.export !== device.access.export) {
+        [connection] = await tx.update(providerConnections).set({ settings: { ...connection.settings, traktAccess: device.access } })
+          .where(eq(providerConnections.id,connection.id)).returning();
+      }
+      await cancelDisabledTraktJobs(tx, connection, previousAccess);
+    }
     // A verified reconnect supersedes failed reads, while outbound intent keeps its order.
     const superseded=await tx.update(outboxActions).set({state:'cancelled',lastError:'Superseded by a verified account reconnect.',updatedAt:new Date()})
       .where(and(eq(outboxActions.connectionId,connection.id),eq(outboxActions.accountGeneration,connection.accountGeneration),eq(outboxActions.state,'failed'),sql`${outboxActions.kind} in (${sql.join(maintenanceKinds.map(kind=>sql`${kind}`),sql`,`)})`)).returning({id:outboxActions.id});

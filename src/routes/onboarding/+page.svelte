@@ -3,18 +3,21 @@
  import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
  import {enhance,deserialize} from '$app/forms';import {refreshRouteDependencies} from '#lib/ui/client.js';import {onMount,untrack} from 'svelte';
  import AvatarPicker from '#lib/ui/components/AvatarPicker.svelte';
+ import AccessFields from '#lib/providers/trakt/AccessFields.svelte';
+ import {defaultTraktAccess} from '#lib/providers/trakt/access.js';
  import {createResource} from '#lib/ui/resource.svelte.js';
  import Brand from '#lib/ui/components/Brand.svelte';import Button from '#lib/ui/components/Button.svelte';
  let {data,form}=$props();let busy=$state(false),deviceError=$state(''),avatar=$state<string|null>(untrack(()=>data.profile.avatar??null)),reading=$state(false);
  $effect(()=>{if(form&&'device' in form)deviceError='';});
  const device=$derived(form&&'device' in form?form.device:null);
+ let access=$state({...defaultTraktAccess});
  const canContinue=$derived(data.requiredProvider==='none'||data.requiredProvider==='jellyfin'&&data.linked||data.requiredProvider==='trakt'&&data.traktLinked||data.requiredProvider==='either'&&(data.linked||data.traktLinked));
  onMount(()=>{let pending=false,nextPoll=0,stopped=false;const poll=createResource<ReturnType<typeof deserialize>|null>(null);
   const refresh=async()=>{
    if(stopped||pending)return;pending=true;
    try{const currentDevice=device;
     if(currentDevice&&!deviceError&&!data.traktLinked&&Date.now()>=nextPoll){
-     nextPoll=Date.now()+currentDevice.interval*1000;const body=new FormData();body.set('instanceId',currentDevice.instanceId);
+     nextPoll=Date.now()+currentDevice.interval*1000;const body=new FormData();body.set('instanceId',currentDevice.instanceId);body.set('challengeId',currentDevice.challengeId);
      const result=await poll.load(async signal=>{
       const response=await fetch('?/poll',{method:'POST',body,headers:{'x-sveltekit-action':'true'},signal});signal.throwIfAborted();
       const text=await response.text();signal.throwIfAborted();return deserialize(text);
@@ -51,7 +54,7 @@
  <form method="POST" action="?/picture" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
  <AvatarPicker bind:avatar bind:reading name={data.profile.displayName??data.username} disabled={busy} choices={data.avatarChoices} />
  <input type="hidden" name="avatar" value={avatar??''} />
- <Button type="submit" disabled={reading||busy}>{reading?'Preparing image…':data.linked||data.traktLinked?'Import and continue':'Continue'}</Button>
+ <Button type="submit" disabled={reading||busy}>{reading?'Preparing image…':'Continue'}</Button>
  <a href="/onboarding">Back to connections</a>
  </form>
  {:else if data.phase==='connections'||data.reconnect||data.imports.some(item=>item.error==='Reconnect Trakt to continue.')}
@@ -67,7 +70,14 @@
  {:else if data.requiredProvider==='jellyfin'}<p class="small">An administrator needs to enable a Jellyfin server.</p>{/if}
  {#if data.traktLinked}<p role="status">Trakt connected.</p>{:else if data.traktServices.length}
  {#if device}<p>Enter <strong>{device.userCode}</strong> on <a href={device.verificationUrl} target="_blank" rel="noreferrer">Trakt</a>. Waiting for authorization…</p>
- {/if}<form method="POST" action="?/trakt" class="stack" use:enhance><label class="field">Trakt service<select name="instanceId">{#each data.traktServices as service}<option value={service.id}>{service.name}</option>{/each}</select></label><Button type="submit">{device?'New Trakt code':'Connect Trakt'}</Button></form>
+   <a href="/onboarding" data-sveltekit-reload>Start again</a>
+ {:else}
+   <form method="POST" action="?/trakt" class="stack" use:enhance={() => { busy=true; return async ({update}) => { try { await update(); } finally { busy=false; } }; }}>
+     <label class="field">Trakt service<select name="instanceId">{#each data.traktServices as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
+     <AccessFields bind:access disabled={busy} />
+     <Button type="submit" disabled={busy}>Connect Trakt</Button>
+   </form>
+ {/if}
  {:else if data.requiredProvider==='trakt'}<p class="small">An administrator needs to enable Trakt.</p>{/if}
  {#if data.phase==='connections'}<Button href="/onboarding?step=picture" disabled={!canContinue}>Continue</Button>{:else}<form method="POST" action="?/begin" use:enhance><Button type="submit" disabled={!canContinue}>Continue import</Button></form>{/if}
  {:else}<h1>Importing your data.</h1><p>You can leave this page and return later. Library opens when your account is ready. Some imports can continue in the background.</p>

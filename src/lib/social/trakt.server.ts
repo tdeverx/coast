@@ -1,7 +1,9 @@
+import { exportIdentity } from '#lib/sync/trakt-identity.server.js';
+import { traktAccess } from '#lib/providers/trakt/access.js';
 import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import {and,eq} from 'drizzle-orm';
 import {getDb,getSql} from '#lib/server/db/index.js';
-import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '#lib/server/db/schema.js';
+import {socialLiveState,socialLiveDeliveries,providerConnections} from '#lib/server/db/schema.js';
 import {getTrakt} from '#lib/providers/trakt/connection.server.js';
 import {liveObservationExpiry} from './live-freshness.server';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
@@ -36,11 +38,13 @@ export async function pollLiveFromAdapter(userId:string,connectionId:string,{ada
   await requireFeatureInTransaction(tx,userId,'presence');
   const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
   if(!current||current.accountGeneration!==connection.accountGeneration||current.status!=='connected')throw new PermanentActionError('The connected account changed.');
+  if(!traktAccess(current.settings).import)throw new PermanentActionError('Trakt import is disabled.');
+  if(current.settings.liveRead===false)return;
   await tx.insert(socialLiveState).values({connectionId,accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}).onConflictDoUpdate({target:socialLiveState.connectionId,set:{accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}});
  });
 }
 export async function deliverCheckin(userId:string,connectionId:string,checkinId:string) {
- return deliverCheckinToAdapter(userId,connectionId,checkinId,await getTrakt(userId,connectionId));
+ return deliverCheckinToAdapter(userId,connectionId,checkinId,await getTrakt(userId,connectionId, 'export'));
 }
 export async function deliverCheckinToAdapter(userId:string,connectionId:string,checkinId:string,context:TraktContext) {
  const {adapter,connection,sync}=context;if(!sync.scrobble)return;
@@ -64,8 +68,7 @@ export async function deliverCheckinToAdapter(userId:string,connectionId:string,
  if(evidence?.state==='started')return;
  if(evidence?.state==='uncertain')throw new PermanentActionError('Check-in delivery is uncertain. Review the active Trakt check-in before retrying.');
  if(remote)throw new PermanentActionError('Trakt already has active watching activity. Cancel it before retrying this check-in.');
- const mappings=await getDb().select().from(externalIds).where(eq(externalIds.mediaId,checkin.work_id));
- const ids=Object.fromEntries(mappings.filter(m=>['trakt','tmdb','tvdb','imdb'].includes(m.provider)).map(m=>[m.provider,m.provider==='imdb'?m.externalId:Number(m.externalId)]));
+ const ids=await exportIdentity(checkin.work_id,checkin.kind);
  if(!Object.keys(ids).length)throw new PermanentActionError('This title needs a verified Trakt mapping.');
  await getDb().insert(socialLiveDeliveries).values({connectionId,checkinId,accountGeneration:connection.accountGeneration,state:'uncertain'}).onConflictDoUpdate({target:[socialLiveDeliveries.connectionId,socialLiveDeliveries.checkinId],set:{state:'uncertain',updatedAt:new Date()}});
  const result=await adapter.checkin(checkin.kind,ids);

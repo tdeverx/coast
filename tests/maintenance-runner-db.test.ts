@@ -9,6 +9,8 @@ import {
   PermanentActionError,
   listActions,
   promoteAction,
+  retryAction,
+  cancelAction,
 } from '../src/lib/server/queue';
 import {jobCheckpoint, saveJobCheckpoint} from '../src/lib/server/queue/execution';
 import { ProviderQueueBusyError } from '../src/lib/server/security/request-priority';
@@ -132,7 +134,8 @@ run('shared rate-limit cooldown protects all queued accounts on the affected ser
 });
 run('Collection cleanup and reviews preserve account ordering without globally blocking other accounts',async()=>{
  const db=getSql(),other=crypto.randomUUID();
- await db`insert into provider_connections(id,user_id,instance_id,external_user_id,credentials) values(${other},${users[1]},${instances[2]},'review-fixture','fixture')`;
+ await db`update provider_connections set settings=settings||'{"traktAccess":{"import":true,"export":true}}'::jsonb where id=${connections[3]}`;
+ await db`insert into provider_connections(id,user_id,instance_id,external_user_id,credentials,settings) values(${other},${users[1]},${instances[2]},'review-fixture','fixture','{"traktAccess":{"import":true,"export":true}}'::jsonb)`;
  try{
   const cleanup=await queue(3,'trakt.collection-cleanup');
   const first=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
@@ -274,6 +277,44 @@ run('stored failure codes drive remedies and disappear after successful retry',a
  expect(completed.state).toBe('succeeded');expect(completed.payload._jobFailure).toBeUndefined();
 });
 
+run('confirmed Seerr refusals free the selection and only an unreplaced request can be retried',async()=>{
+ const sql=getSql(),mediaId=crypto.randomUUID(),owner=users[0],instance=instances[1];
+ const admin={id:owner,username:'runner',role:'admin' as const,email:null,settings:{}};
+ await sql`insert into media(id,kind,title) values(${mediaId},'show','Request quota fixture')`;
+ async function refuse(season:number,failure:Error){
+  const [request]=await sql`insert into media_requests(user_id,media_id,instance_id,server_id,seasons,state)
+    values(${owner},${mediaId},${instance},1,array[${season}::int],'pending') returning id`;
+  const id=await enqueueAction({userId:owner,connectionId:connections[2],kind:'seerr.request',payload:{requestId:request.id}});
+  registerActionHandler('seerr.request',async()=>{throw failure;});
+  expect(await runQueueOnce()).toBe(true);
+  return {id,requestId:request.id};
+ }
+ const states=async(target:{id:string;requestId:string})=>(await sql`select r.state as request,a.state as job,a.last_error as message,a.payload->'_jobFailure'->>'code' as code
+   from media_requests r join outbox_actions a on a.id=${target.id} where r.id=${target.requestId}`)[0];
+ try{
+  const quota=await refuse(1,new PermanentActionError('private body','request-quota'));
+  expect(await states(quota)).toMatchObject({request:'failed',job:'failed',code:'seerr.request-quota'});
+  const notices=await sql`select user_id,body from notifications where source_key=${'outbox:'+quota.id}`;
+  expect(notices).toHaveLength(1);expect(notices[0].user_id).toBe(owner);
+  expect(notices[0].body).toContain('Seerr quota');expect(notices[0].body).not.toContain('private');
+  await expect(retryAction({...admin,role:'user'},quota.id)).rejects.toMatchObject({status:403});
+  await retryAction(admin,quota.id);
+  expect(await states(quota)).toMatchObject({request:'pending',job:'pending'});
+  await cancelAction(admin,quota.id);
+  expect(await states(quota)).toMatchObject({request:'cancelled',job:'cancelled'});
+  await expect(retryAction(admin,quota.id)).rejects.toMatchObject({status:409});
+  const covered=await refuse(2,new PermanentActionError('private body','request-covered'));
+  expect(await states(covered)).toMatchObject({request:'failed',job:'failed',code:'seerr.request-covered'});
+  // A subsequent change of mind must not resurrect the original intent, even if its replacement was cancelled.
+  await sql`insert into media_requests(user_id,media_id,instance_id,server_id,seasons,state)
+    values(${owner},${mediaId},${instance},1,array[2,3],'cancelled')`;
+  await expect(retryAction(admin,covered.id)).rejects.toMatchObject({status:409});
+  expect(await states(covered)).toMatchObject({request:'failed',job:'failed'});
+  const unknown=await refuse(4,new ProviderHttpError(403,null,{message:'private body'}));
+  expect(await states(unknown)).toMatchObject({request:'pending',job:'failed',code:'provider.permission'});
+ }finally{await sql`delete from media where id=${mediaId}`;}
+});
+
 run('a cancelled or replaced worker cannot publish a service cooldown',async()=>{
   registerActionHandler('jellyfin.library',async(action)=>{
     await getSql()`update outbox_actions set state='cancelled' where id=${action.id}`;
@@ -404,4 +445,23 @@ run('local admission deferrals preserve webhook HTTP retry budget and monotonic 
     else expect(row.state).toBe('succeeded');
   }
   expect(deliveries).toBe(1);
+});
+
+
+run('Trakt access gates manual runs, failed retries and legacy queued work before dispatch',async()=>{
+  const db=getSql(),connectionId=connections[3],actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  const [current]=await db`select settings from provider_connections where id=${connectionId}`;
+  try {
+    await db`update provider_connections set settings=(settings-'traktAccess') where id=${connectionId}`;
+    await expect(queue(3,'trakt.export')).rejects.toThrow('Trakt export is disabled');
+    const [legacy]=await db`insert into outbox_actions(user_id,connection_id,kind,payload) values(${users[0]},${connectionId},'trakt.export','{}') returning id`;
+    await expect(retryAction(actor,legacy.id)).rejects.toThrow('Trakt export is disabled');
+    await runQueueOnce();
+    expect((await db`select state from outbox_actions where id=${legacy.id}`)[0].state).toBe('cancelled');
+    await db`update provider_connections set settings=settings||'{"traktAccess":{"import":false,"export":true}}'::jsonb where id=${connectionId}`;
+    await expect(queue(3,'trakt.import')).rejects.toThrow('Trakt import is disabled');
+    await scheduleProviderMaintenance({instanceId:instances[2],force:true,kind:'trakt.import'});
+    expect(await db`select id from outbox_actions where connection_id=${connectionId} and kind='trakt.import'`).toHaveLength(0);
+    expect(await queue(3,'trakt.export')).toBeString();
+  } finally { await db`update provider_connections set settings=${current.settings}::jsonb where id=${connectionId}`; }
 });

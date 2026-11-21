@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { ProviderActionError } from '../contracts';
 import type { DiscoverKind, Metadata, ProviderTransport, SyncCategory } from '../contracts';
 const ids = v.object({
   trakt: v.number(),
@@ -68,7 +69,7 @@ export const traktRecordSchema = v.object({
   watched_at: v.optional(v.string()),
   rated_at: v.optional(v.string()),
   collected_at: v.optional(v.string()),
-  metadata: v.optional(v.record(v.string(),v.unknown())),
+  metadata: v.nullish(v.record(v.string(),v.unknown())),
   listed_at: v.optional(v.string()),
   paused_at: v.optional(v.string()),
   rating: v.optional(v.number()),
@@ -77,16 +78,33 @@ export const traktRecordSchema = v.object({
   show: v.nullish(title),
   season: v.nullish(season),
   episode: v.nullish(episode),
-  seasons: v.optional(
-    v.array(
-      v.object({
-        number: v.number(),
-        episodes: v.array(v.object({ number: v.number(), collected_at: v.optional(v.string()), metadata: v.optional(v.record(v.string(),v.unknown())) })),
-      })
-    )
-  ),
 });
 export type TraktRecord = v.InferOutput<typeof traktRecordSchema>;
+const collectionFields = { collected_at: traktRecordSchema.entries.collected_at, metadata: traktRecordSchema.entries.metadata };
+const collectedMovies = v.pipe(v.array(v.object({ ...collectionFields, movie: title })), v.maxLength(100));
+const collectedEpisodes = v.pipe(v.array(v.object({ ...collectionFields, show: title, episode })), v.maxLength(100));
+
+const count = v.pipe(v.number(), v.integer(), v.minValue(0));
+const mutationCounts = v.pipe(
+  v.record(v.string(), count),
+  v.check(counts => ['movies','shows','seasons','episodes','people','users'].some(kind => Object.hasOwn(counts, kind)))
+);
+const missingItems = v.record(v.string(), v.nullish(v.array(v.unknown())));
+const addReceipt = v.object({ added: mutationCounts, existing: v.optional(mutationCounts), updated: v.optional(mutationCounts), not_found: missingItems });
+const removeReceipt = v.object({ deleted: mutationCounts, not_found: missingItems });
+
+function confirmItemWrite(response: unknown, remove: boolean) {
+  const {not_found} = v.parse(remove ? removeReceipt : addReceipt, response);
+  if (Object.values(not_found).some(items => items?.length))
+    throw new ProviderActionError('Trakt could not match every item. Review the title identities before retrying.', 'identity');
+}
+
+const scrobbleReceipt = v.object({
+  id: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  action: v.picklist(['start','pause','stop','scrobble']),
+  progress: v.pipe(v.number(), v.minValue(0), v.maxValue(100)),
+});
+
 export class TraktAdapter {
   constructor(
     private request: ProviderTransport,
@@ -209,22 +227,23 @@ export class TraktAdapter {
         : category === 'collection'
           ? '/sync/collection/movies'
           : `/sync/${category}`;
-    return v.parse(
-      v.array(traktRecordSchema),
-      await this.call(`${path}?page=${page}&limit=100&extended=full`)
-    );
+    const result = await this.call(`${path}?page=${page}&limit=100&extended=full`);
+    return v.parse(category === 'collection' ? collectedMovies : v.array(traktRecordSchema), result);
   }
   /** Activity fence for a staged census; this is a change signal, not a snapshot. */
   async lastActivity(): Promise<string> {
     return v.parse(v.object({ all: v.string() }), await this.call('/sync/last_activities')).all;
   }
-  async collectionShows(): Promise<TraktRecord[]> {
-    return this.readPages('/sync/collection/shows?extended=full', value => v.parse(v.array(traktRecordSchema),value));
+  async collectionEpisodesPage(page=1) {
+    return v.parse(collectedEpisodes,await this.call(`/sync/collection/episodes?extended=full&page=${page}&limit=100`));
   }
-  async collectionShowsPage(page=1):Promise<TraktRecord[]> {
-    const records=v.parse(v.array(traktRecordSchema),await this.call(`/sync/collection/shows?extended=full&page=${page}&limit=10`));
-    if(records.some(record=>!record.show||!record.seasons))throw new Error('Trakt returned an incomplete show collection page.');
-    return records;
+  async *collectionEpisodePages() {
+    for (let page=1;page<=10000;page++) {
+      const episodes=await this.collectionEpisodesPage(page);
+      yield episodes;
+      if (episodes.length<100) return;
+    }
+    throw new Error('Trakt episode collection exceeded the supported page bound.');
   }
   async listsPage(page=1) {
     return v.parse(v.array(v.object({name:v.string(),description:v.nullish(v.string()),ids:v.object({trakt:v.number(),slug:v.string()})})),await this.call(`/users/me/lists?page=${page}&limit=100`));
@@ -382,10 +401,11 @@ export class TraktAdapter {
     payload: Record<string, unknown>,
     remove = false
   ) {
-    await this.call(`/sync/${category}${remove ? '/remove' : ''}`, {
+    const response = await this.call(`/sync/${category}${remove ? '/remove' : ''}`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    confirmItemWrite(response, remove);
   }
   async deleteList(listId: string) {
     try {
@@ -395,16 +415,20 @@ export class TraktAdapter {
     }
   }
   async reorderList(listId: string, rank: number[]) {
-    await this.call(`/users/me/lists/${encodeURIComponent(listId)}/items/reorder`, {
+    const response = await this.call(`/users/me/lists/${encodeURIComponent(listId)}/items/reorder`, {
       method: 'POST',
       body: JSON.stringify({ rank }),
     });
+    const receipt = v.parse(v.object({ updated: count, skipped_ids: v.array(v.number()) }), response);
+    if (receipt.skipped_ids.length)
+      throw new ProviderActionError('Trakt skipped items in the requested order. Review the list before retrying.', 'identity');
   }
   async writeList(listId: string, payload: Record<string, unknown>, remove = false) {
-    await this.call(
+    const response = await this.call(
       `/users/me/lists/${encodeURIComponent(listId)}/items${remove ? '/remove' : ''}`,
       { method: 'POST', body: JSON.stringify(payload) }
     );
+    confirmItemWrite(response, remove);
   }
   async clearProgress(
     kind: 'movie' | 'episode',
@@ -454,9 +478,12 @@ export class TraktAdapter {
   ) {
     if (!Number.isFinite(progress) || progress < 0 || progress > 100)
       throw new Error('Invalid playback progress.');
-    return this.call(`/scrobble/${event}`, {
+    const receipt = v.parse(scrobbleReceipt, await this.call(`/scrobble/${event}`, {
       method: 'POST',
       body: JSON.stringify({ [kind]: { ids: traktIds }, progress, app_version: '0.1.0' }),
-    });
+    }));
+    if ((event === 'stop' && receipt.action === 'start') || (event !== 'stop' && receipt.action !== event))
+      throw new ProviderActionError('Trakt acknowledged a different playback action. Review the synced activity.', 'invalid-request');
+    return receipt;
   }
 }

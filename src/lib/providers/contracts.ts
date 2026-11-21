@@ -180,10 +180,20 @@ export const defaultSyncPreferences: SyncPreferences = {
   scrobble: false,
 };
 /** An adapter rejected a stable permission, identity or request-scope condition. */
+export const requestDeliveryMessages = {
+  'request-quota': 'This request exceeds your Seerr quota. For a show, you can request fewer seasons. A Coast admin can retry the original request when enough quota is available.',
+  'request-covered': 'Seerr has no new requestable items in this selection. Check the existing requests and season availability.',
+} as const;
+export function isConfirmedRequestDenial(code: unknown) {
+  return code === 'seerr.request-quota' || code === 'seerr.request-covered';
+}
+export function requestDestinationLock(mediaId: string, instanceId: string, serverId: number | null, is4k: boolean) {
+  return `request:${mediaId}:${instanceId}:${serverId}:${is4k}`;
+}
 export class ProviderActionError extends Error {
   constructor(
     message: string,
-    public code: 'permission' | 'identity' | 'invalid-request'
+    public code: 'permission' | 'identity' | 'invalid-request' | keyof typeof requestDeliveryMessages
   ) {
     super(message);
     this.name = 'ProviderActionError';

@@ -1,9 +1,10 @@
-import {and,eq,inArray} from 'drizzle-orm';
+import {and,eq,inArray,ne,or} from 'drizzle-orm';
 import {getDb} from '#lib/server/db/index.js';
 import {providerConnections,providerInstances} from '#lib/server/db/schema.js';
 import {getConfig} from '#lib/server/config.js';
 import {getJellyfin} from '#lib/providers/jellyfin/connection.server.js';
 import {getTrakt} from '#lib/providers/trakt/connection.server.js';
+import {traktImportAllowed} from '#lib/providers/trakt/access.server.js';
 import {jellyfinAuthorization} from '#lib/providers/jellyfin/adapter.server.js';
 import {instanceFetchConfig} from '#lib/providers/instances.server.js';
 import {decryptCredential} from '#lib/server/security/credentials.js';
@@ -14,7 +15,9 @@ export async function profileAvatarChoices(userId:string){
  const config=await getConfig();
  return getDb().select({id:providerConnections.id,provider:providerInstances.provider,name:providerInstances.name})
   .from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
-  .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true),inArray(providerInstances.provider,config.enableTrakt?['jellyfin','trakt']:['jellyfin']))).orderBy(providerInstances.name).limit(60);
+  .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true),
+    inArray(providerInstances.provider,config.enableTrakt?['jellyfin','trakt']:['jellyfin']),
+    or(ne(providerInstances.provider,'trakt'),traktImportAllowed))).orderBy(providerInstances.name).limit(60);
 }
 /** Import only the owner's linked account image. The saved avatar is the existing local image. */
 export async function providerProfileAvatar(userId:string,connectionId:string,request:Request){

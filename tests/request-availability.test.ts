@@ -1,8 +1,8 @@
 import {expect,test} from 'bun:test';
 import * as v from 'valibot';
-import {SeerrAdapter,SeerrPermission,groupDestination} from '../src/lib/providers/seerr/adapter.server';
-import {ProviderActionError} from '../src/lib/providers/contracts';
-import {requestQualityStatus,requestSeasonChoices,type RequestDestination} from '../src/lib/media/requests';
+import {SeerrAdapter,SeerrPermission,groupDestination,seerrSeasonCoverage,requestClaimsQuality} from '../src/lib/providers/seerr/adapter.server';
+import {ProviderActionError,requestDestinationLock} from '../src/lib/providers/contracts';
+import {requestQualityStatus,requestSeasonChoices,requestSeasonStatus,type RequestDestination,type RequestSeasonBlockReason} from '../src/lib/media/requests';
 
 const source=await Bun.file(new URL('../src/lib/providers/seerr/requests.server.ts',import.meta.url)).text();
 function body(start:string,end:string){return new Bun.Transpiler({loader:'ts'}).transformSync(source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start))).replaceAll('export ',''));}
@@ -26,7 +26,7 @@ function fixture(kind:'movie'|'show',details:unknown,permissions=SeerrPermission
  const db:any={select:()=>({from:(target:unknown)=>({where:async()=>target===tables.media?[{kind}]:target===tables.externalIds?[{externalId:'1'}]:target===tables.providerInstances?[instance]:target===tables.providerConnections?[connection]:[]})}),
   update:()=>({set:()=>({where:async()=>[]})}),execute:async()=>[],
   insert:()=>{counters.inserts++;throw Error('An already covered request must not enqueue work');},transaction:async(fn:(tx:unknown)=>unknown)=>fn(db)};
- const deps={...tables,v,getDb:()=>db,eq:()=>{},and:()=>{},sql:()=>{},groupDestination,
+ const deps={...tables,v,getDb:()=>db,eq:()=>{},and:()=>{},sql:()=>{},groupDestination,seerrSeasonCoverage,requestClaimsQuality,requestDestinationLock,
   getFeatureConfig:async()=>({features:{screen:true,requests:true}}),getSeerr:async()=>({adapter,account:{id:7,permissions},connection,linkedJellyfinUserId:'linked-user'}),
   ProviderActionError,instanceFetchConfig:async()=>{throw Error('Unexpected cache fallback');},getInstance:async()=>instance,
   uuid:v.pipe(v.string(),v.uuid()),requireFeature:async()=>{},requireFeatureInTransaction:async()=>{},connectionFor:async()=>({connection}),trackInTransaction:async()=>{},context:{getStore:()=>undefined},correlationId:()=>uuid};
@@ -55,14 +55,31 @@ test('fully covered shows retain standard/4K season rows, including season/episo
  expect(destinations).toHaveLength(1);
  expect(requestSeasonChoices(destinations,'standard')).toEqual([
   {number:1,selectable:false,available:true,requested:false},
-  {number:2,selectable:false,available:false,requested:true},
+  {number:2,selectable:false,available:false,requested:true,blockedReason:'Processing'},
  ]);
  expect(requestSeasonChoices(destinations,'fourK')).toEqual([
-  {number:1,selectable:false,available:false,requested:true},
-  {number:2,selectable:false,available:false,requested:true},
+  {number:1,selectable:false,available:false,requested:true,blockedReason:'Processing'},
+  {number:2,selectable:false,available:false,requested:true,blockedReason:'Processing'},
  ]);
- expect(requestSeasonChoices(destinations,'standard',2)).toEqual([{number:2,selectable:false,available:false,requested:true}]);
+ expect(requestSeasonChoices(destinations,'standard',2)).toEqual([{number:2,selectable:false,available:false,requested:true,blockedReason:'Processing'}]);
  await expect(f.requestMedia(false,[1,2])).rejects.toThrow('already available or requested');
+ expect(f.counters.inserts).toBe(0);
+});
+
+test('stored Seerr season statuses disable only the matching quality without claiming someone requested them',async()=>{
+ const f=fixture('show',{id:1,seasons:[{seasonNumber:1,episodeCount:8},{seasonNumber:2,episodeCount:10}],
+  mediaInfo:{status:4,status4k:4,requests:[],seasons:[{seasonNumber:1,status:3,status4k:7},{seasonNumber:2,status:1,status4k:4}]}});
+ const destinations=await f.requestOptions();
+ expect(requestSeasonChoices(destinations,'standard')).toEqual([
+  {number:1,selectable:false,available:false,requested:false,blockedReason:'Processing'},
+  {number:2,selectable:true,available:false,requested:false},
+ ]);
+ expect(requestSeasonChoices(destinations,'fourK')).toEqual([
+  {number:1,selectable:true,available:false,requested:false},
+  {number:2,selectable:false,available:false,requested:false,blockedReason:'Partially available'},
+ ]);
+ await expect(f.requestMedia(false,[1])).rejects.toThrow();
+ await expect(f.requestMedia(true,[2])).rejects.toThrow();
  expect(f.counters.inserts).toBe(0);
 });
 
@@ -79,4 +96,23 @@ test('a free alternative destination stays actionable while covered destinations
  expect(requestQualityStatus(covered,'standard')).toBe('Available');
  expect(requestQualityStatus(covered,'fourK')).toBe('Requested');
  expect(requestQualityStatus([free],'fourK')).toBe('Unavailable');
+});
+
+test('season menus preserve provider statuses for both qualities and are selectable only with a free destination',()=>{
+ const reasons:RequestSeasonBlockReason[]=['Pending','Processing','Partially available','Blocked','Unavailable'];
+ const seasons=reasons.map((blockedReason,index)=>({number:index+1,blockedReason,requested:false,available:false,mine:false}));
+ const variant={serverId:1,requestable:true,requested:false,available:false,seasons};
+ const source:RequestDestination={id:'primary',name:'Primary',variants:{standard:variant,fourK:{...variant,seasons:[...seasons].reverse()}}};
+ for(const quality of ['standard','fourK'] as const){
+  const blocked=requestSeasonChoices([source],quality);
+  expect(blocked.map(requestSeasonStatus)).toEqual(reasons);
+  expect(blocked.every(season=>!season.selectable)).toBe(true);
+ }
+ const alternate:RequestDestination={id:'alternate',name:'Alternate',variants:{
+  standard:{...variant,seasons:[{number:1,mine:false,requested:false,available:false}]},fourK:null}};
+ for(const order of [[source,alternate],[alternate,source]]){
+  expect(requestSeasonChoices(order,'standard',1)[0].selectable).toBe(true);
+  expect(requestSeasonChoices(order,'fourK',1)[0].selectable).toBe(false);
+  expect(requestSeasonChoices(order,'standard',2)[0].selectable).toBe(false);
+ }
 });

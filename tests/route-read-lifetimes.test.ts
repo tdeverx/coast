@@ -11,6 +11,7 @@ const onboardingScript=(await componentScript('src/routes/onboarding/+page.svelt
 const {createProfile,createOnboarding}=await import(moduleUrl(compileRunes(`
  import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource} from ${JSON.stringify(resourceUrl)};
+ import {defaultTraktAccess} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};
  export function createProfile(initial,api,change){
   let data=$state(initial);const cleanups=[],onDestroy=callback=>cleanups.push(callback);
   const setContext=()=>{},reportFailure=()=>{},useClient=()=>({feedback:{}}),page={url:new URL('https://example.invalid/profile/owner')};
@@ -117,7 +118,7 @@ function browser(){
   restore(){globalThis.document=original.document;globalThis.setInterval=original.setInterval;globalThis.clearInterval=original.clearInterval;Date.now=original.now;}};
 }
 const onboardingData=(phase='connections')=>({profile:{avatar:null},requiredProvider:'none',traktLinked:false,linked:false,phase});
-const deviceForm=(instanceId='one')=>({device:{instanceId,interval:5}});
+const deviceForm=(challengeId='one')=>({device:{instanceId:'service',challengeId,interval:5}});
 const action=(result:unknown)=>({text:async()=>JSON.stringify(result)});
 
 test('onboarding aborts the owned device wait on teardown and ignores a late successful body',async()=>{
@@ -167,7 +168,7 @@ test('onboarding device authorization keeps polling while hidden at the provider
 
 test('onboarding ignores a superseded code response and preserves current transport error feedback',async()=>{
  const env=browser(),response=deferred<any>();let controller:any,calls=0,cleanup=()=>{};
- const dispose=runtime.effect_root(()=>controller=createOnboarding(onboardingData(),deviceForm(),()=>{calls++;return calls===1?response.promise:Promise.reject(Error('network failed'));},async()=>{}));
+ const dispose=runtime.effect_root(()=>controller=createOnboarding(onboardingData(),deviceForm(),(_path:string,{body}:{body:FormData})=>{calls++;expect(Object.fromEntries(body)).toEqual({instanceId:'service',challengeId:calls===1?'one':'two'});return calls===1?response.promise:Promise.reject(Error('network failed'));},async()=>{}));
  try{runtime.flush();cleanup=controller.mount();env.tick();controller.setForm(deviceForm('two'));runtime.flush();
   response.resolve(action({type:'failure',data:{error:'Old code expired'}}));await settle();expect(controller.error).toBe('');
   env.advance(5000);env.tick();await settle();expect(controller.error).toBe('Connection interrupted. Try connecting again.');

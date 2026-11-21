@@ -81,6 +81,19 @@ run('Trakt onboarding requires both pinned import outcomes and leaves export pre
   expect((await onboardingStatus(session.user.id)).complete).toBe(true);
  }finally{await getSql()`delete from provider_instances where id=${service}`;await updateConfig(admin,{registrationMode:'invite',registrationProvider:'jellyfin'});}
 });
+run('a required Trakt connection with import turned off completes onboarding without any sync jobs',async()=>{
+ const db=getSql(),service=crypto.randomUUID(),user=crypto.randomUUID();
+ try{
+  await db`insert into users(id,username) values(${user},'trakt-export-only')`;
+  await db`insert into provider_instances(id,provider,name,base_url) values(${service},'trakt','Fixture Trakt','https://api.trakt.tv')`;
+  const [c]=await db`insert into provider_connections(user_id,instance_id,external_user_id,settings)
+    values(${user},${service},'fixture-account','{"traktAccess":{"import":false,"export":true}}'::jsonb) returning id,account_generation`;
+  await db`insert into user_onboarding(user_id,required_provider,trakt_connection_id,trakt_account_generation)
+    values(${user},'trakt',${c.id},${c.account_generation})`;
+  expect((await beginOnboardingImports(user)).complete).toBe(true);
+  expect(await db`select id from outbox_actions where connection_id=${c.id}`).toHaveLength(0);
+ }finally{await db`delete from users where id=${user}`;await db`delete from provider_instances where id=${service}`;}
+});
 run('shared and full availability scans cannot complete onboarding; fresh personal bootstrap can',async()=>{
  await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,imports_started_at,requested_at) SELECT ${ids[1]},id,account_generation,NOW(),NOW()-INTERVAL '1 minute' FROM provider_connections WHERE id=${conn[1]}`;
  await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-full',NOW())`;

@@ -20,13 +20,14 @@ test('user catalogue scans all direct Trakt categories and pages, never recommen
         return path.includes('page=1&')
           ? Array.from({ length: 100 }, (_, i) => movie(i + 1))
           : [movie(101)];
-      if (path.includes('/sync/collection/shows'))
-        return [
-          {
-            show: { title: 'Direct show', ids: { trakt: 202, tmdb: 202 } },
-            seasons: [],
-          },
-        ];
+      if (path.includes('/sync/collection/episodes')) {
+        const first=path.includes('page=1&');
+        return Array.from({length:first?100:1},(_,i)=>({
+          show:{title:'Direct show',ids:{trakt:first?202:203,tmdb:first?202:203}},
+          episode:{season:1,number:i+1,ids:{trakt:400+i}},metadata:null,
+        }));
+      }
+      if (path.includes('/sync/collection/movies')) return [{...movie(204), metadata: null}, movie(205)];
       if (path.includes('/users/me/lists/9/items')) return [movie(303)];
       if (path.includes('/users/me/lists'))
         return [{ name: 'Direct list', ids: { trakt: 9, slug: 'direct' } }];
@@ -42,6 +43,9 @@ test('user catalogue scans all direct Trakt categories and pages, never recommen
   });
   expect(saved).toContain('movie:101');
   expect(saved).toContain('show:202');
+  expect(saved).toContain('show:203');
+  expect(saved).toContain('movie:204');
+  expect(saved).toContain('movie:205');
   expect(saved).toContain('movie:303');
   for (const category of [
     'history',

@@ -1,3 +1,5 @@
+import { traktExportAllowed } from '#lib/providers/trakt/access.server.js';
+import { traktAccess } from '#lib/providers/trakt/access.js';
 import { conflictPreference } from './preference.server';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb, type Database } from '#lib/server/db/index.js';
@@ -100,11 +102,11 @@ async function exportLists(
       and(
         eq(providerConnections.userId, userId),
         eq(providerConnections.status, 'connected'),
-        eq(providerInstances.provider, 'trakt'),
+        eq(providerInstances.provider, 'trakt'), traktExportAllowed,
         eq(providerInstances.enabled, true)
       )
     )
-    .orderBy(asc(providerConnections.id));
+    .orderBy(asc(providerConnections.id)).for('share', { of: providerConnections });
   const [list] = await tx.select().from(lists).where(eq(lists.id, listId));
   for (const { connection } of connections) {
     if (connection.id === except || !(connection.settings.sync as Record<string, boolean>)?.lists)
@@ -128,17 +130,19 @@ export async function reconcileProviderList(
   listId: string,
   remote: ListValue,
   initial = false,
-  options: { accountGeneration?:string; initialSnapshot?:Pick<ListValue,'name'|'description'>; onReconciled?:(tx:Transaction,decision:'agree'|'local'|'remote'|'conflict')=>Promise<void> } = {}
+  options: { direction?:'import'|'export'; accountGeneration?:string; initialSnapshot?:Pick<ListValue,'name'|'description'>; onReconciled?:(tx:Transaction,decision:'agree'|'local'|'remote'|'conflict')=>Promise<void> } = {}
 ) {
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     const [connection] = await tx
-      .select({ id: providerConnections.id, accountGeneration:providerConnections.accountGeneration,status:providerConnections.status })
+      .select({ id: providerConnections.id, accountGeneration:providerConnections.accountGeneration,status:providerConnections.status,settings:providerConnections.settings })
       .from(providerConnections)
       .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))).for('update');
     if (!connection) throw new Error('Connection does not belong to this account.');
     await assertJobLease(tx,true);
     if(options.accountGeneration&&(connection.accountGeneration!==options.accountGeneration||connection.status!=='connected'))throw new Error('The connected account changed before list reconciliation.');
+    const access = traktAccess(connection.settings);
+    if (!access[options.direction ?? 'import']) throw new Error('This Trakt sync direction is disabled.');
     const fullLocal = await localListValue(tx, userId, listId);
     const [saved] = await tx
       .select()
@@ -156,7 +160,9 @@ export async function reconcileProviderList(
       : untouchedInitial && !previous
         ? 'remote'
         : decideSync(local, remote, previous);
-    const preference = await conflictPreference(tx, userId, connectionId);
+    if (!access.import && decision === 'remote') decision = 'conflict';
+    const selected = await conflictPreference(tx, userId, connectionId);
+    const preference = !access.import && selected === 'remote' ? 'manual' : selected;
     const [pending] = await tx
       .select({ id: syncListValues.id })
       .from(syncListValues)

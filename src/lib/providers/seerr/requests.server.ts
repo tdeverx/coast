@@ -21,12 +21,14 @@ import { enqueueAction, PermanentActionError, type OutboxAction } from '#lib/ser
 import {
   SeerrAdapter,
   groupDestination,
+  requestClaimsQuality,
+  seerrSeasonCoverage,
   seerrAllows,
   SeerrPermission,
   requestSchema,
   type SeerrRequest,
 } from '#lib/providers/seerr/adapter.server.js';
-import { ProviderActionError, type DiscoverKind } from '#lib/providers/contracts.js';
+import { ProviderActionError, requestDestinationLock, type DiscoverKind } from '#lib/providers/contracts.js';
 import { notifyMany } from '#lib/server/notifications/index.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import { getInstance, instanceFetchConfig } from '#lib/providers/instances.server.js';
@@ -64,15 +66,10 @@ type RequestOption = ReturnType<typeof groupDestination>[number] & {
   variants: { standard: RequestVariant | null; fourK: RequestVariant | null };
 };
 
-type RequestVariant = {
-  serverId: number;
-  requestable: boolean;
-  available: boolean;
-  requested: boolean;
-  seasons: { number: number; requested: boolean; mine: boolean; available: boolean }[];
-};
+type RequestVariant = import('#lib/media/requests.js').RequestVariant;
 
 type RequestCache = {
+  version: 2;
   at: number;
   linkedInstanceId: string;
   linkedUserId: string;
@@ -131,37 +128,32 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
       for (const destination of destinations) {
         const variant = (is4k: boolean, serverId: number | undefined) => {
           if (serverId === undefined || (is4k && !destination.can4k)) return null;
-          const requested = (details.mediaInfo?.requests || []).filter(
-            (r) =>
-              r.status !== 3 &&
-              r.is4k === is4k &&
-              (r.serverId == null || r.serverId === serverId)
-          );
+          const requested = (details.mediaInfo?.requests || []).filter(r => requestClaimsQuality(r,is4k));
           const pending = local.filter((r) => r.is4k === is4k && r.serverId === serverId);
           const seasons = details.seasons
             .filter((s) => s.episodeCount > 0)
             .map((s) => {
               const remote = requested.filter((r) =>
                 r.seasons.some(
-                  (season) => season.seasonNumber === s.seasonNumber && season.status !== 3
+                  (season) => season.seasonNumber === s.seasonNumber
                 )
               );
               const localScope = pending.filter((r) => r.seasons.includes(s.seasonNumber));
+              const stored = details.mediaInfo?.seasons.find(n => n.seasonNumber === s.seasonNumber);
+              const coverage = seerrSeasonCoverage(is4k ? stored?.status4k : stored?.status);
               return {
                 number: s.seasonNumber,
                 requested: remote.length > 0 || localScope.length > 0,
                 mine:
                   remote.some((r) => r.requestedBy?.id === account.id) ||
                   localScope.some((r) => r.userId === userId),
-                available: !!details.mediaInfo?.seasons.some(
-                  (n) =>
-                    n.seasonNumber === s.seasonNumber && (is4k ? n.status4k : n.status) === 5
-                ),
+                available: coverage === 'Available',
+                ...(coverage && coverage !== 'Available' ? {blockedReason:coverage}:{}),
               };
             });
           const requestable =
             kind === 'show'
-              ? seasons.some((s) => !s.requested && !s.available)
+              ? seasons.some((s) => !s.requested && !s.available && !s.blockedReason)
               : !requested.length &&
                 !pending.length &&
                 (is4k ? details.mediaInfo?.status4k : details.mediaInfo?.status) !== 5;
@@ -198,6 +190,7 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
           .slice(-19)
       );
       cache[mediaId] = {
+        version: 2,
         at: Date.now(),
         linkedInstanceId: instance.linkedMediaInstanceId!,
         linkedUserId: linkedJellyfinUserId,
@@ -242,7 +235,7 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
           connection?.settings.requestOptionsCache as Record<string, RequestCache> | undefined
         )?.[mediaId];
         if (
-          !cached ||
+          cached?.version !== 2 ||
           Date.now() - cached.at > 30 * 60000 ||
           cached.linkedInstanceId !== instance.linkedMediaInstanceId
         )
@@ -283,6 +276,9 @@ export async function requestMedia(userId: string, input: unknown) {
     }),
     input
   );
+  const requested = [...new Set(data.seasons)].sort((a, b) => a - b);
+  const matchesSelection = (row: {seasons:number[]}) => row.seasons.length === requested.length &&
+    requested.every(season => row.seasons.includes(season));
   const duplicate = async () => {
     const existing = await getDb()
       .select()
@@ -296,11 +292,7 @@ export async function requestMedia(userId: string, input: unknown) {
           sql`${mediaRequests.state} in ('pending','approved','processing','available')`
         )
       );
-    return existing.find((r) =>
-      data.seasons.length
-        ? data.seasons.every((n) => r.seasons.includes(n))
-        : r.seasons.length === 0
-    );
+    return existing.find(matchesSelection);
   };
   const prior = await duplicate();
   if (prior) return prior;
@@ -315,7 +307,6 @@ export async function requestMedia(userId: string, input: unknown) {
     serverId = data.is4k ? destination.fourKServerId : destination.standardServerId;
   if (serverId === undefined) throw new Error('This quality variant is not configured.');
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
-  const requested = [...new Set(data.seasons)].sort((a, b) => a - b);
   if (
     item.kind === 'show' &&
     (!requested.length ||
@@ -329,7 +320,7 @@ export async function requestMedia(userId: string, input: unknown) {
     await requireFeatureInTransaction(tx,userId,'screen');
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${`request:${data.mediaId}:${data.instanceId}:${serverId}:${data.is4k}`},0))`
+      sql`select pg_advisory_xact_lock(hashtextextended(${requestDestinationLock(data.mediaId,data.instanceId,serverId,data.is4k)},0))`
     );
     const existing = await tx
       .select()
@@ -343,19 +334,14 @@ export async function requestMedia(userId: string, input: unknown) {
           sql`${mediaRequests.state} in ('pending','approved','processing','available')`
         )
       );
-    const remote = (destination.existing?.requests || []).filter(
-      (r) =>
-        r.status !== 3 &&
-        r.is4k === data.is4k &&
-        (r.serverId == null || r.serverId === serverId)
-    );
+    const remote = (destination.existing?.requests || []).filter(r => requestClaimsQuality(r,data.is4k));
     const taken = new Set([
       ...existing.flatMap((r) => r.seasons),
       ...remote.flatMap((r) =>
-        r.seasons.filter((s) => s.status !== 3).map((s) => s.seasonNumber)
+        r.seasons.map((s) => s.seasonNumber)
       ),
       ...(destination.existing?.seasons || [])
-        .filter((s) => (data.is4k ? s.status4k : s.status) === 5)
+        .filter((s) => seerrSeasonCoverage(data.is4k ? s.status4k : s.status))
         .map((s) => s.seasonNumber),
     ]);
     const remaining = requested.filter((n) => !taken.has(n));
@@ -368,7 +354,7 @@ export async function requestMedia(userId: string, input: unknown) {
     )
       throw new Error('This version or season selection is already available or requested.');
     if (existing.length && (item.kind === 'movie' || !remaining.length)) {
-      const mine = existing.find((r) => r.userId === userId);
+      const mine = existing.find((r) => r.userId === userId && matchesSelection(r));
       if (mine) return mine;
       throw new Error('This version or season selection has already been requested.');
     }
@@ -673,18 +659,19 @@ export async function executeSeerrRequest(action: OutboxAction, resolveAccount: 
   const requestId = v.parse(uuid, action.payload.requestId);
   const [request] = await getDb().select().from(mediaRequests)
     .where(and(eq(mediaRequests.id,requestId),eq(mediaRequests.userId,action.userId)));
-  if (!request || request.state === 'cancelled') return;
+  if (!request || request.externalId || request.state === 'cancelled') return;
   const [mapping] = await getDb().select().from(externalIds)
     .where(and(eq(externalIds.mediaId,request.mediaId),eq(externalIds.provider,'tmdb')));
   if (!mapping || !['movie','show'].includes(mapping.mediaKind))
     throw new PermanentActionError('A TMDB movie or show identity is required to request media.');
   const { adapter, scope } = await resolveAccount(action.userId,request.instanceId,queuedSeerrAccount(action));
-  const external = await adapter.create({kind:mapping.mediaKind as DiscoverKind,tmdbId:Number(mapping.externalId),
+  const delivery = await adapter.create({kind:mapping.mediaKind as DiscoverKind,tmdbId:Number(mapping.externalId),
     is4k:request.is4k,seasons:request.seasons,serverId:request.serverId ?? undefined});
   await getDb().transaction(async tx => {
     await assertSeerrAccount(tx,scope);
-    await tx.update(mediaRequests).set({externalId:String(external.id),
-      state:external.status===2?'approved':external.status===3?'declined':'pending',updatedAt:new Date()})
+    const state=seerrRequestState(delivery.request);
+    await tx.update(mediaRequests).set({externalId:String(delivery.request.id),seasons:delivery.seasons,
+      state:state==='available'?'processing':state,updatedAt:new Date()})
       .where(eq(mediaRequests.id,request.id));
   });
 }

@@ -2,6 +2,8 @@
   import OperationProgress from './OperationProgress.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
+  import AccessFields from '#lib/providers/trakt/AccessFields.svelte';
+  import { defaultTraktAccess, traktAccess } from '#lib/providers/trakt/access.js';
   import type {SourceImpact} from '#lib/collection/source-changes.server.js';
   import { untrack } from 'svelte';
   import { createResource } from '#lib/ui/resource.svelte.js';
@@ -41,6 +43,7 @@
     password = $state(''),
     disconnect = $state(false),
     device = $state<{
+      challengeId: string;
       userCode: string;
       verificationUrl: string;
       interval: number;
@@ -107,11 +110,16 @@
   let importPlayback = $state(
     untrack(() => provider.connection?.settings.importPlayback !== false)
   );
+  let linkAccess = $state({ ...defaultTraktAccess });
+  const savedAccess = $derived(traktAccess(provider.connection?.settings ?? {}));
+  let access = $state(untrack(() => ({ ...savedAccess })));
   let sync = $state<Record<string, boolean>>({ ...defaultSync });
   $effect(() => {
-    const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}`;
+    const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}:${savedAccess.import}:${savedAccess.export}`;
     if (key === initialized) return;
     initialized = key;
+    access = { ...savedAccess };
+    if (provider.connection?.status === 'connected') linkAccess = { ...defaultTraktAccess };
     liveRead=provider.connection?.settings.liveRead!==false;
     importPlayback = provider.connection?.settings.importPlayback !== false;
     reconcileTracking = provider.connection?.settings.reconcileTracking === true;
@@ -149,10 +157,11 @@
   let steamImports=$state({importOwned:true,importPlaytime:true,importAchievements:true});
   $effect(()=>{const settings=provider.connection?.settings;steamImports={importOwned:settings?.importOwned!==false,importPlaytime:settings?.importPlaytime!==false,importAchievements:settings?.importAchievements!==false};});
   async function start() {
+    if (busy) return;
     busy = true;
     error = '';
     try {
-      device = await change('providers/trakt/start', { instanceId: provider.id });
+      device = await change('providers/trakt/start', { instanceId: provider.id, traktAccess: linkAccess });
     } catch (e) {
       error = message(e);
     } finally {
@@ -160,14 +169,20 @@
     }
   }
   async function finish() {
+    if (!device) return;
     const result = await action<{ pending?: boolean }>('providers/trakt/finish', {
       instanceId: provider.id,
+      challengeId: device.challengeId,
     });
     pending = result?.result?.pending ?? false;
     if (result && !result.result?.pending) {
       device = null;
       if (!preview) notifyAction('Trakt connected.');
     }
+  }
+  function saveTraktSync() {
+    const account = provider.connection!;
+    return action(`providers/${account.id}/sync`, { ...sync, liveRead, traktAccess: access, accountGeneration: account.accountGeneration }, 'Sync preferences saved.');
   }
   const labels: Record<string, string> = {
     history: 'Watch history',
@@ -178,6 +193,11 @@
     lists: 'Custom lists',
     scrobble: 'Live scrobbling',
   };
+  function categoryAllowed(key: string) {
+    if (key === 'collection') return access.import;
+    if (key === 'scrobble') return access.export;
+    return access.import || access.export;
+  }
 
   reportFailure(()=>error);
   reportFailure(()=>scanStatus.error ? `Could not refresh scan progress: ${scanStatus.error}` : scan?.state === 'failed' ? scan.error : '');
@@ -252,25 +272,26 @@
       <p class="small">Ownership availability is read from Steam. It does not establish installation. Turning imports off retains previous data; Coast never writes achievements or creates sessions from playtime totals.</p>
       <div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/steam-imports`,steamImports,'Steam import preferences saved.')}>Save import preferences</Button></div>
     </div>{/if}
-    {#if provider.provider === 'trakt'}<div class="sync-options">
-        <label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy} />Read live watching activity</label>
+    {#if provider.provider === 'trakt'}
+      <AccessFields bind:access disabled={busy} />
+      <div class="sync-options">
+        <label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy || !access.import} />Read live watching activity</label>
         {#each Object.entries(labels) as [key, label]}<label class="check"
-            ><input type="checkbox" bind:checked={sync[key]} disabled={busy} />{label}</label
+            ><input type="checkbox" bind:checked={sync[key]} disabled={busy || !categoryAllowed(key)} />{label}</label
           >{/each}
       </div>
       <div class="row">
-        <Button
-
-          disabled={busy}
-          onclick={() =>
-            action(`providers/${provider.connection!.id}/sync`, {...sync,liveRead}, 'Sync preferences saved.')}
-          >Save sync preferences</Button
-        >
+        <Button disabled={busy} onclick={saveTraktSync}>Save sync preferences</Button>
       </div>
       <p class="small">
         Imports retain their Trakt source. Coast remains your authoritative tracker.
       </p>
-      {#key provider.connection.accountGeneration}<CollectionProjectionSettings connectionId={provider.connection.id} settings={provider.connection.settings} {sources} />{/key}{/if}
+      {#if savedAccess.export && access.export}
+        {#key provider.connection.accountGeneration}<CollectionProjectionSettings connectionId={provider.connection.id} settings={provider.connection.settings} {sources} />{/key}
+      {:else}
+        <p class="small">To manage Trakt Collection exports, enable Export to Trakt and save your sync preferences.</p>
+      {/if}
+    {/if}
     {#if provider.provider === 'jellyfin' && scan}
       <div class="scan-status" role="status" aria-live="polite">
         <div class="spread small">
@@ -338,7 +359,8 @@
           Waiting for authorisation. Finish on Trakt, then check again.
         </p>{/if}<Button  disabled={busy} onclick={finish}
         >I’ve authorised Coast</Button
-      >{:else}<Button  disabled={busy || !provider.configured} onclick={start}
+      ><Button emphasis="subtle" disabled={busy} onclick={() => { device = null; pending = false; }}>Start again</Button>
+      {:else}<AccessFields bind:access={linkAccess} disabled={busy || !provider.configured} /><Button disabled={busy || !provider.configured} onclick={start}
         >Connect Trakt</Button
       >{/if}{:else}<p class="small">
       Your account is linked through the associated Jellyfin server. Connect Jellyfin to request

@@ -19,13 +19,13 @@ beforeAll(async()=>{
  const [user]=await getDb().insert(users).values({username:'live-social-'+crypto.randomUUID()}).returning();userId=user.id;
  const [instance]=await getDb().insert(providerInstances).values({provider:'trakt',name:'Social live fixture',baseUrl:'https://fixture.invalid',enabled:false}).returning();
  const sync={...defaultSyncPreferences,history:true,scrobble:true};
- const [connection]=await getDb().insert(providerConnections).values({userId,instanceId:instance.id,status:'connected',externalUserId:'fixture',settings:{sync}}).returning();
+ const [connection]=await getDb().insert(providerConnections).values({userId,instanceId:instance.id,status:'connected',externalUserId:'fixture',settings:{sync,traktAccess:{import:true,export:true}}}).returning();
  workId=(await ingestMetadata({provider:'trakt',externalId:String(numeric),kind:'movie',title:movie.title,runtimeMinutes:1})).id;
  const adapter=new TraktAdapter(async(path,init)=>{
   const route=path.split('?')[0];calls.push(`${init?.method??'GET'} ${route}`);
   if(route==='/users/me/watching')return remote;
   if(route==='/sync/history')return history;
-  if(route==='/scrobble/stop'){if(loseScrobble)throw Error('Lost delivery response');return {id:800,action:'scrobble'};}
+  if(route==='/scrobble/stop'){if(loseScrobble)throw Error('Lost delivery response');return {id:800,progress:JSON.parse(String(init?.body)).progress,action:'scrobble'};}
   if(route==='/checkin'&&init?.method==='POST'){remote={id:700,started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),action:'checkin',type:'movie',movie};return {id:700,watched_at:(remote as {started_at:string}).started_at,movie};}
   if(route==='/checkin'&&init?.method==='DELETE'){remote=null;return null;}
   throw Error('Unexpected fixture request: '+path);
@@ -96,4 +96,71 @@ run('playback scrobble evidence prevents feedback and unknown delivery cannot cr
  loseScrobble=false;
  await expect(executeLiveScrobbleToAdapter(userId,context.connection.id,lost,context)).rejects.toThrow('uncertain');
  expect(calls.filter(c=>c==='POST /scrobble/stop')).toHaveLength(1);
+});
+
+run('a pause receipt cannot mark a completed play as confirmed or trigger a second scrobble',async()=>{
+ const input={mediaId:workId,sessionId:crypto.randomUUID(),event:'stop',progress:100};
+ let attempts=0;
+ const adapter=new TraktAdapter(async()=>{attempts++;return {id:801,action:'pause',progress:99};},'fixture','fixture');
+ const deliver=()=>executeLiveScrobbleToAdapter(userId,context.connection.id,input,{...context,adapter});
+ await expect(deliver()).rejects.toThrow('did not confirm a completed play');
+ expect(await getSql()`select state,remote_id from social_scrobble_deliveries where session_id=${input.sessionId}`).toEqual([{state:'uncertain',remote_id:null}]);
+ await expect(deliver()).rejects.toThrow('uncertain');
+ expect(attempts).toBe(1);
+});
+
+run('disabling Trakt import or live activity clears just the current observation and excludes an in-flight response', async () => {
+ const db=getSql(),{updateSyncPreferences}=await import('../src/lib/providers/trakt/connection.server');
+ const connection=context.connection, prefs={...context.sync,accountGeneration:connection.accountGeneration};
+ const observation={started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),action:'checkin',type:'movie',movie};
+ await db`update provider_instances set enabled=true where id=${context.instance.id}`;
+ try {
+  for (const [canImport,liveRead] of [[true,false],[false,true]]) {
+   await updateSyncPreferences(userId,connection.id,{...prefs,liveRead:true,traktAccess:{import:true,export:true}});
+   remote=observation;
+   const scoped={...context,sync:{...context.sync,history:false}};
+   await pollLiveFromAdapter(userId,connection.id,scoped);
+   const [before]=await db`select work_id,history_cursor from social_live_state where connection_id=${connection.id}`;
+   expect(before.work_id).toBe(workId);
+   let release!:()=>void,entered!:()=>void;
+   const started=new Promise<void>(done=>{entered=done;}),held=new Promise<void>(done=>{release=done;});
+   const delayed=new TraktAdapter(async()=>{entered();await held;return observation;},'fixture','fixture');
+   const poll=pollLiveFromAdapter(userId,connection.id,{...scoped,adapter:delayed}).catch((error:unknown)=>error);
+   try {
+    await started;
+    await updateSyncPreferences(userId,connection.id,{...prefs,liveRead,traktAccess:{import:canImport,export:true}});
+    release();
+    const result=await poll;
+    if(canImport)expect(result).toBeUndefined();else expect(result).toBeInstanceOf(Error);
+    expect(await db`select work_id,expires_at,history_cursor from social_live_state where connection_id=${connection.id}`)
+     .toEqual([{work_id:null,expires_at:null,history_cursor:before.history_cursor}]);
+   } finally {release();await poll;}
+  }
+ } finally {
+  await db`update provider_connections set settings=${connection.settings}::jsonb where id=${connection.id}`;
+  await db`update provider_instances set enabled=false where id=${context.instance.id}`;
+  remote=null;
+ }
+});
+
+run('disabling presence queues cleanup only for a Trakt account still allowed to export',async()=>{
+ const db=getSql(),connection=context.connection;
+ const {reconcileFeatures}=await import('../src/lib/application/feature-transition.server');
+ const {defaultConfig}=await import('../src/lib/server/config');
+ await db`update provider_instances set enabled=true where id=${context.instance.id}`;
+ try {
+  for(const writable of [false,true]){
+   await db`update provider_connections set settings=${{...connection.settings,traktAccess:{import:true,export:writable}}}::jsonb where id=${connection.id}`;
+   const [checkin]=await db`insert into social_checkins(user_id,work_id,expires_at) values(${userId},${workId},now()+interval '1 hour') returning id`;
+   await db`insert into social_live_deliveries(connection_id,checkin_id,account_generation,state) values(${connection.id},${checkin.id},${connection.accountGeneration},'started')`;
+   const [{at}]=await db`select to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as at`;
+   await reconcileFeatures({id:crypto.randomUUID(),userId,connectionId:null,kind:'feature.reconcile',attempts:1,correlationId:'fixture',payload:{config:defaultConfig,subjectId:userId,choices:{presence:false},cutoff:at}});
+   expect(await db`select state from social_checkins where id=${checkin.id}`).toEqual([{state:'cancelled'}]);
+   expect(await db`select state from outbox_actions where connection_id=${connection.id} and kind='trakt.checkin' and payload->>'checkinId'=${checkin.id}`)
+    .toEqual(writable?[{state:'pending'}]:[]);
+  }
+ } finally {
+  await db`update provider_connections set settings=${connection.settings}::jsonb where id=${connection.id}`;
+  await db`update provider_instances set enabled=false where id=${context.instance.id}`;
+ }
 });

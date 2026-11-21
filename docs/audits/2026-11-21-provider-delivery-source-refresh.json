@@ -1,0 +1,296 @@
+{
+  "epoch": "provider-delivery-local-2026-11-21",
+  "baseline": "31178ea356f14c88bd6b84122f513e329612d2a4",
+  "blanketAcceptance": false,
+  "files": {
+    "README.md": {
+      "previous": "3eb3f500747a9adbee6b1ac33ad735384889140bed77cf87bca3e5dd1506ebed",
+      "current": "df688991580a90a77e58d70dc003d3e2e67aba03ed6c6625c1ab294eaba43f2f"
+    },
+    "docs/brief.md": {
+      "previous": "faf7d64acbd261eb251a868afb912fefd8523b9b9f4548f80f8aaf66e0630612",
+      "current": "704a0e83480f3b7a6195aaf0a8cb5a19034f40278ffa7a52d19763c2bc32c1e6"
+    },
+    "docs/deployment.md": {
+      "previous": "a580e59244161d121f3c751705ec9c3b695cb053e2ce548dd8495df5899e5a31",
+      "current": "510520d533b9cb6e3b2432d7ca126465a72ff9d6f0d2b2aab2740cb8285eb54a"
+    },
+    "docs/providers.md": {
+      "previous": "cc7ebb7bbf98fceb67caf5ac8389d30ece674c0d867f77c9fb4d62581a9f4b7a",
+      "current": "2f129e88edf183696b5f85239f64a71726ac27ed60bbbf9d52cf3bbd98e5beac"
+    },
+    "drizzle/meta/_journal.json": {
+      "previous": "9f91ffb7e8c250eceeb0b359e89af4f79c79e04013361ce717f7418d2a09d0a9",
+      "current": "7175a4bad843b02ab362f6b0baf19cff3e6c099d95dff4df88a105c1a171e4e3"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "8f5c2e03644ad2504096e2eb8c88ec923d9bdf0f5ec8cb726e363f7524c615aa",
+      "current": "361da738f0205270292552e7b64af737e11f81625fccb4b618c198547f5fb10d"
+    },
+    "src/lib/application/feature-transition.server.ts": {
+      "previous": "695d5638ccd883b7becafcabc567b75a9574ebbc6e81e23c56ff319be3b9944e",
+      "current": "f0e7e4164f06d51d1cb901a14b46541f6cd94d65205bce7b13772e69b159a05e"
+    },
+    "src/lib/catalogue/maintenance.server.ts": {
+      "previous": "58a26886452dee94b89744f81dfbf1aedf03bc8199baf71c74d1a01b2cfce5ff",
+      "current": "fb69b021525cdb08c53bd552eae35528b863d0d3728c2e24ef27566393b60592"
+    },
+    "src/lib/collection/projection.server.ts": {
+      "previous": "cfdda0c0bdd129b361e54783ca071036819f6ea10f6c8fc93b025b2b6fe5614e",
+      "current": "5c4e1aec152905e45f88402eabeaea551a6121c04061dc5d8d6a61442f40a05d"
+    },
+    "src/lib/core/profile/avatars.server.ts": {
+      "previous": "960aeb27e15e635141521b319b41d74fe37dbec607046fa931435578a996329f",
+      "current": "f173fc4f3542b16f3a4290e2a276288bebe631316341e07ca11a72c3194acd22"
+    },
+    "src/lib/diagnostics.ts": {
+      "previous": "6c93f369272f486196959054284d7a8b6a07059df32f3a713beb8d11db29a3c1",
+      "current": "929862efa6994cc5f4bde5eaafc47810e5373519b756be332f2977c9c2802c1c"
+    },
+    "src/lib/media/requests.ts": {
+      "previous": "36ed8ace54a4406b4e2a6ebc8509c9f478f5928c27f3db86b1d28d2e7066f152",
+      "current": "adc95a83f535a8c0155f1c7e846d5c74b2c78f41ff5d18af7d7719b7d5b3670c"
+    },
+    "src/lib/providers/actions.server.ts": {
+      "previous": "797778274f2687e542660fe815f1ca79d6909db31a68baa226940638fe7fab62",
+      "current": "0152e9b2a371235fe597eedd3b35cdea81838bce9b99c80b7cbae4bf0ba420b5"
+    },
+    "src/lib/providers/connections.server.ts": {
+      "previous": "3739707232c57caae5656bad64ed6feff136e879233b868ee65ce3eda65c7909",
+      "current": "b85de41ce580f01fd5533699a843c33e4e576d436350392752a50d06564affab"
+    },
+    "src/lib/providers/contracts.ts": {
+      "previous": "85c03b6bcbb813b17fba1cc60a92a437b910d81dd5aae19aa797ce667395f0e8",
+      "current": "e8709cac930a547e62fa43442091264f91c3bc083adf68c5f04ae8ddac0ef2e5"
+    },
+    "src/lib/providers/instances.server.ts": {
+      "previous": "9d0e2b37d1ff2c68f76a948b71a640f99b4c9c52b4844cd426d741a5513d71b1",
+      "current": "2b5b26af955979fc563f0a335b90a822216202f18dbd6bd5e11ee9b457e8a033"
+    },
+    "src/lib/providers/job-timing.server.ts": {
+      "previous": "4177043eeebef5638b71af39260620079ac53183845609383697c666830284f9",
+      "current": "1172285cebc58057575a06c206bab7a5775d60c7054314a01825645647658d31"
+    },
+    "src/lib/providers/maintenance.server.ts": {
+      "previous": "7b7cb0a50e4eda8d86c44ffa4cf0bea8bb99154c896383b2bd96d5d20be7d590",
+      "current": "4b9c4fd64506536c1f90c6e0eebe3222b8aacdc8eef9bbb78626e16518f47ed1"
+    },
+    "src/lib/providers/seerr/adapter.server.ts": {
+      "previous": "b6ecf59409c69ed473c50a255c3ca89cc92a9ec13a6dd04cd4414e2964836adf",
+      "current": "4a0e748b2725ef83ed08d76c92a664cce3c669f6c2cd27f13544d41d0bf64e74"
+    },
+    "src/lib/providers/seerr/requests.server.ts": {
+      "previous": "58745e0fc8d2aace55e83dd17308739d49db907ea2d029fdcb72d3f87faf2f82",
+      "current": "948d00ddcc6f572743747d9d702a509d2e7da3daa4450aec5d30f57950e5354c"
+    },
+    "src/lib/providers/steam/sync.server.ts": {
+      "previous": "ccccc446a87f6ab187fdfa9b6d829ee6e2583259d0bca3942098b4bf0bf2f93c",
+      "current": "11b467d57dc7c4cc23d111b5cdf4d9d7643c63cdc5b83ca09411059749375cce"
+    },
+    "src/lib/providers/task-timing.ts": {
+      "previous": "41ffc963a7a1bda8642e3fe56c6b0bb28f0b6eb16dd9dc0f7cf12386aada36b9",
+      "current": "8cbcc33d2eeb913275504a1a59a71be95a3bed303280fef7bd60fb05816f3c98"
+    },
+    "src/lib/providers/trakt/adapter.server.ts": {
+      "previous": "e01af691beeb4be4c08c6a05dd05c7bc663a5cec2dfa737af055efb8d9ab8d63",
+      "current": "6910aac8f1b4a66411673309d96f393fb3162321ba58deaeae786a294e212a4d"
+    },
+    "src/lib/providers/trakt/connection.server.ts": {
+      "previous": "042edbb953ec091810058a66e4762ecd1f91e256c88024f77e8dae33fa88f4dd",
+      "current": "44f5bb3d522db059e73d06ea7c833b0473f09a9fc1c9ac7b145106a6f6db934c"
+    },
+    "src/lib/recommendations/providers.server.ts": {
+      "previous": "3694da834ed11e253d0700c8785ec7eed1643a81a34901ef414a13a79770d2fd",
+      "current": "f2a02e61507343becf6186f3abaff1fe1cf377f86b03308a9dffc1d1a7c120c7"
+    },
+    "src/lib/server/api/providers.server.ts": {
+      "previous": "f61cb0dd3b0bac04c9fbc373ee8358fc51f5a713fe19287f52c0ad8176521277",
+      "current": "2fe054437bf3bcf2d5062e2ef96b514e028b10ed188f3285c0e0d95d27f51eea"
+    },
+    "src/lib/server/auth/onboarding.ts": {
+      "previous": "d58cdab2acedf41a4fd19a7d367daa819aee0d09dcd92fc2da0538277ff552cd",
+      "current": "82ed0e99bdd3ec2eaebc0d413f2aabb16c0549aab18946eb0a902de987785217"
+    },
+    "src/lib/server/queue/index.ts": {
+      "previous": "487dc141efdd2fda4f98c44b77a01df4604298b6467731f79a04a4c397bcfae8",
+      "current": "ae6f9ef176d8a87ad221d6e54dce1b675c87963647a571e6fe4e90b1da0dbff9"
+    },
+    "src/lib/server/queue/task-controls.server.ts": {
+      "previous": "434de73b94683ce0ab12b16c4775145cf2b03fe6871ed39e2dc4541a31418cd7",
+      "current": "a0983b6948d63a83f421fe978b7d391c274bbcd7fd1b0295871ba145dec3c694"
+    },
+    "src/lib/server/security/provider-fetch.ts": {
+      "previous": "3d245d671d8b0009fc41d3ea1ccec324c1515772b2f3a0c1ce3b938283557927",
+      "current": "874efc60385646fb9a59b4412c539183737254e6d64ac59710eca86fa7229d53"
+    },
+    "src/lib/social/checkins.server.ts": {
+      "previous": "25786f9f280e2701c1685f9c2e7962892f3cc86cb8d36763bee796586b4352b8",
+      "current": "f7c082547cf07ff25cd06be12a5e5078a6f42e88169059277d5dbcd9ad76557b"
+    },
+    "src/lib/social/trakt.server.ts": {
+      "previous": "a04dcdedaafc452fce5a143b92152c6e01faa689c766d223a3af4d66e491f7b9",
+      "current": "3f295b25ca6096c48afe42e31780dbbf701f7c8972d03cb81ab9105b8733d6d2"
+    },
+    "src/lib/sync/changes.server.ts": {
+      "previous": "598a28b1a2bc8e52e37e45d6ef02e55b11194db3538408704d99a043261a9a34",
+      "current": "243873888d7195c83cd12bb827b111637b9f7fa98b53975a56da74720aff709f"
+    },
+    "src/lib/sync/history-removal.server.ts": {
+      "previous": "d0063c99781181d5613f5fcf26196c7ee034b55e5515b8b9295cdbf45ba7a32f",
+      "current": "9865d5a489064e701551f12cc30f46ea5c6d88a44c92e5cdb4adad6a44f523b7"
+    },
+    "src/lib/sync/list-values.server.ts": {
+      "previous": "fb81bc96503e23006eda14a2bae9f6217f75688d0878fff7860c9825b351412f",
+      "current": "f83542e34eda060e0cf787e5c891d9b6fafdc6e83b94290931a70400165257b9"
+    },
+    "src/lib/sync/trakt-export.server.ts": {
+      "previous": "11f01a09696511919adbd4fe1fdccaea0b763932c47e4864bb524aad577728c4",
+      "current": "72d0e68b412571e98a75800ce1bf182316ff2a3c74502285802b4edc2304ed5a"
+    },
+    "src/lib/sync/trakt-import.server.ts": {
+      "previous": "2a62bfc31a53114fe9c46ca8f7be60ad35118e547eff2fbe0115d22476e0682c",
+      "current": "9e67ca1059984699d34786c62201c3ac018fbc197f0b11c36806077764406ccf"
+    },
+    "src/lib/sync/trakt-lists.server.ts": {
+      "previous": "72d142ca44e9748f53ed8980f2819831d98e4bdf35423e9f6d98ffb54608a59b",
+      "current": "e80c14d488f3c09b9ff036c0a47a6fd64ef9b2084154d06dc8cb21b7ad9b09df"
+    },
+    "src/lib/sync/trakt-staging.server.ts": {
+      "previous": "426e2d3d693f793ba5e5ada1257387186d37f221af30b41c91c78923e54eee2f",
+      "current": "f239f7c2d7d3313466c83d0e8b00155938e7d469cb487a0a2312dbb1970118a0"
+    },
+    "src/lib/sync/values.server.ts": {
+      "previous": "835777d8a8371c74b3860dfa7c62336f15ca6bee6eaed4b4c89b20a0ea361d23",
+      "current": "057b6ecad2e365515b37fa55b8c5395528a224baafc691c3b58a7a06f14bed52"
+    },
+    "src/lib/ui/components/ConnectionCard.svelte": {
+      "previous": "9712711793c182a7d55e2605ec5d1a6b521e5e26c07570c2a1bfba3a6368fda3",
+      "current": "541bc382ea7f92a3f754edac276f4101c02567cd8f1c4e021c7dd6f6f02ba347"
+    },
+    "src/lib/ui/components/JobSchedule.svelte": {
+      "previous": "051b46cb82c2f451643160bc4cf5bbf7a76459634ea8b140f8b4832660394085",
+      "current": "fd7a957fbbe2adeab7bfea600f8e2b34d29b2c81733376efba8c687534ff71b3"
+    },
+    "src/lib/ui/components/RequestDialog.svelte": {
+      "previous": "748f78956817f19105da490f4726339a26c2695df21e56457156fb2b43a3255e",
+      "current": "5c5d816393a13ecac9b3bb7629744ff45f000f6e0667f6223532155ef71970ee"
+    },
+    "src/lib/ui/queue.ts": {
+      "previous": "0dda4e934b2bdea3c30ecde15b5b07206bbe242ff91d77c2cd884501ef39a0e2",
+      "current": "6bf12a6366bdc1256dc2b4b2024d1e36bf37a4d2154b5003823dd8ff55989df3"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "previous": "6d9d0e93373b6b05c8ba06034e823a2c6ae36b8ea05659a8bed85aa0630df4bd",
+      "current": "cc2b1c96c5c0661bdf3a64f7a706cf28b5edce9ec9b4dd663bf9c32c31908a87"
+    },
+    "src/routes/onboarding/+page.server.ts": {
+      "previous": "423accb663cabc1d4eb6f10ac3e7019c2dbd04c545bb9e9a39ebbd5fd0670a3c",
+      "current": "d1720256f5e79c4c7a56415d376e405c781eb21fb87ce618ba7ee850ff7d5364"
+    },
+    "src/routes/onboarding/+page.svelte": {
+      "previous": "4ce75d8c269493a36721dd4634631730f2c7c0fd66a716575e51692fdbdc0db5",
+      "current": "aec61e3b15b8c7facdaae3b6c260a97f5dc0094acac7537c332dff40dacc2648"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "previous": "883d90ef02adb85a1ad894b151835222ced7238d3a787e82e7032801c87dcfef",
+      "current": "148cc2232d14648f1bbd2567909e35f577d4b691e4ef86ac3e4fdf818e4284b8"
+    },
+    "tests/audit-auth-discovery-db.test.ts": {
+      "previous": "8b52f58169a1c6d52676f57e86b0f38c17d8faf365071969db849f37c075ea02",
+      "current": "540fb07d824f1ebe50b37267373eb1d09dc342a6ba509f32f1f82e51a58417b0"
+    },
+    "tests/catalogue-maintenance.test.ts": {
+      "previous": "399c985d029abda3faacf217526201c97090babacfee23ae5282a3042e801f77",
+      "current": "ee3ea738d95665f7c611d5de998c3c2a570056efefd8e231e9ec4a2695aded4c"
+    },
+    "tests/collection-projection-db.test.ts": {
+      "previous": "8acc35ade76215553bdaf1d8ea7a7d5606abd7e26a3b3875d29503d979fc5c14",
+      "current": "1712905d496bdf12bf2a8d57c6c35455fb113d3ed6062106360dd060db3b281e"
+    },
+    "tests/jobs-list-delivery-db.test.ts": {
+      "previous": "964cfccac8b26a8ae6ac8c827c7d6b385186228490e2c411621bcc4aa44693f4",
+      "current": "7c594a3c5db54dcfdf60a6aa4f00213b82a1acebffc4008ea1b453c2d06378f6"
+    },
+    "tests/maintenance-runner-db.test.ts": {
+      "previous": "4390b52526d7f6b7f6c02ece87db719acfa451762343345d51175f0a18df0209",
+      "current": "2b367067f27df283edde60cc377beda4c395e2c4440dd078e163f860883d98f5"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "f5c13f211fc40d9e0fd0441563b3a0e149624c4a3ef21b80854bcac5eff7fdf2",
+      "current": "296fc1ac3ab6549984d7f6ef53cd54950af0f31805a1509d29088cbf4e7e835d"
+    },
+    "tests/playback-generation-db.test.ts": {
+      "previous": "13b9ba459eb232382f0a683ff48316a78494b0f07f6cbe3faadbcaf1812c3d10",
+      "current": "6b702c569c2118596cd556f1e882002f6396273f479b9bb5fede0f3627a05ff7"
+    },
+    "tests/provider-contracts.test.ts": {
+      "previous": "9117e73c9ead6339fab1407535215eebc295dc02faa36d641a96009e5435146a",
+      "current": "c6fbe24606aed165b7c1522116012713e8dcf98ccd985f5d8ab70053c7dedd4a"
+    },
+    "tests/queue-diagnostics.test.ts": {
+      "previous": "5c96fa440223b88d6e1e2bf0d5843eabfa2d8c16d5f9f2ec28ecdbdfc4f76de5",
+      "current": "d8d413a0677b4a776897862408e54848d8331caac76a76963ef88998eecb1b09"
+    },
+    "tests/request-availability.test.ts": {
+      "previous": "8240fd6b285c1696d22bab633257045f2adfd899689dbf7bb18fb884e14aa3c8",
+      "current": "82019f2d2d3d4b923a27cd008d9f345a4586830b79cf66496c5d8aefaa078352"
+    },
+    "tests/request-dialog-lifetime.test.ts": {
+      "previous": "7d257a3d825a5d675994bcff5b1a06cbab0fc4e815ab9150155b076466db4839",
+      "current": "b539a574e7c1d6f4cb57c5311f1680e41279463fd5602c90cdbe598516eb80e4"
+    },
+    "tests/route-read-lifetimes.test.ts": {
+      "previous": "4a3e69b89804b2c83859b017cf17ac4497d408b76a704c60c14902b163c4811e",
+      "current": "fddc8b1d081134a7289280e47dc6119d12ae54779dfde564235d9f08f50e21e6"
+    },
+    "tests/social-trakt-db.test.ts": {
+      "previous": "f5c83e82b2813be18660d940d88d2a5f29bfa0f3a936925b54553bea32e4dcb6",
+      "current": "aad8d375a2f327d9b2729d0423623cc08015c43980c519d9d88502363ea3b47a"
+    },
+    "tests/steam-db.test.ts": {
+      "previous": "46c9575498b6120840434475838bfad2201cbf91172322e97d0b736222ddd2f3",
+      "current": "1f7ad40e604d1b5efb9f484df0920b2cb517e33803c73b8977594f2150361b9a"
+    },
+    "tests/sync-preference-db.test.ts": {
+      "previous": "cca53df4f29289c438df076779dc16a05d9c97f99ea3f4947a4bcf16849bde04",
+      "current": "a7ff3b5292d7ab16ba11ed8ae3f39ce1797f6821ce973e2ae5c992983c1f68fa"
+    },
+    "tests/synced-onboarding-db.test.ts": {
+      "previous": "76625f58af6a943d553973f639d1fabaa0a79e1bd70541d8ac8df20678a3ccc2",
+      "current": "90a68d35a8bed6da92e18e34afd07d85481bb4dda2c6f24f1104bc00ade15b8e"
+    },
+    "tests/task-timing.test.ts": {
+      "previous": "d070eb60a36fffa61dff4979bfcc83fa5ed55dd2dd8e7ac833d19ee693e7cfc7",
+      "current": "09a2e51effa39b599ed0a656967270182dcc707fb750725e61ad0180f1da64ab"
+    },
+    "tests/trakt-collection-lists-staging-db.test.ts": {
+      "previous": "d6a73125c733ee2bb5134672ffcb842f1e4bdc9c98d4d12e17c907fcf9a170bf",
+      "current": "83672740c5c2ef8c30165f8a20c9f22dcbbd23dfd4673ffed572bf1e8553a398"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "e76a61e7fa94a653c97d6512fdd0fe32ae376ce86e51dac7f03df73c43995e18",
+      "current": "db039c315d0ddac82c4e8418dfd66e6f7dbf9651b7c0c3f09c3a2bfa9219373b"
+    },
+    "tests/trakt-token-scope-db.test.ts": {
+      "previous": "69a65a35fa21ad7a491360b593cc7d508614cd9d108abdea3d784a21cbd4a2b5",
+      "current": "3c8966167ea2655af2adfab369198bef942b814f999f310a7dbb65602d4f88ba"
+    },
+    "tests/ui-panel-lifecycle.test.ts": {
+      "previous": "216e3f04509d24dfa501796d0c8ac61403c702af798ab6fb81557002ad833512",
+      "current": "6438f4bb4da812bb2d5d9331ca1569a505d59519eae4121e36bb61d1f3b87815"
+    },
+    "tests/ui-reference.test.ts": {
+      "previous": "690bad37e87b0572c4d5357c185dbc116ca2856379cdd841389f83ca3ef81bd7",
+      "current": "7f7ab2b1bc6b550bb4a55a3840d4d5a1d0efe5f1381e92e37c4af3fe9bbe39df"
+    }
+  },
+  "supportingFiles": {
+    "drizzle/0083_trakt_sync_controls.sql": "27711f84f29e08978acaa7b43ef7376faa1afb46335c1b4de956682aeeef61f7",
+    "drizzle/meta/0083_snapshot.json": "615d51f25dc7c4475ba4e8731b2315f499492157b8171c8b7daedadc9a61c8a5",
+    "src/lib/providers/trakt/AccessFields.svelte": "2440e4d3d91fe7e18b391202b46dd1532ace72fcf57f812fcd5416aae71059d6",
+    "src/lib/providers/trakt/access.server.ts": "d59b7bdd658c923405e357195c3d8a4c3f6439d4330a819a2349ecca9a8f20e7",
+    "src/lib/providers/trakt/access.ts": "162fb839d3bf4b4db0b95d90d5b9fca0a21c308b68b4622d94f048fb6d17910b"
+  },
+  "report": "docs/audits/2026-11-21-provider-delivery.md",
+  "reportSha256": "1ec8506b30d3133cd776bc4f29a09347f930233385ee8e8019c04cefc07698a0"
+}
