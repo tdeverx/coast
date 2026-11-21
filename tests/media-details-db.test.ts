@@ -2,7 +2,7 @@ import { beforeAll, afterAll, test, expect, spyOn } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ensureDetails, ingestMetadata } from '../src/lib/catalogue/service.server';
+import { ensureDetails, ingestMetadata, refreshMedia } from '../src/lib/catalogue/service.server';
 import * as tmdb from '../src/lib/providers/tmdb/connection.server';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
@@ -174,3 +174,47 @@ run(
     await expect(mediaStatistics(crypto.randomUUID(), collection, 'all', now)).rejects.toMatchObject({code:'feature_disabled'});
   }
 );
+
+run('refreshing a moved episode follows its TMDB ID and reorders the season without moving history', async () => {
+  const db = getDb(), showTmdb = '810001', firstTmdb = '810002', secondTmdb = '810003';
+  const parent = await ingestMetadata({provider:'tmdb',externalId:showTmdb,kind:'show',title:'Episode ordering fixture'});
+  const season = await ingestMetadata({provider:'tmdb',externalId:`${showTmdb}:season:1`,kind:'season',title:'Season 1',seasonNumber:1},{showId:parent.id});
+  const one = await ingestMetadata({provider:'tmdb',externalId:firstTmdb,kind:'episode',title:'First',seasonNumber:1,episodeNumber:2},{showId:parent.id,seasonId:season.id});
+  const two = await ingestMetadata({provider:'tmdb',externalId:secondTmdb,kind:'episode',title:'Second',seasonNumber:1,episodeNumber:1},{showId:parent.id,seasonId:season.id});
+  ids.push(parent.id,season.id,one.id,two.id);
+  await db.insert(s.trackingEvents).values({userId:uid,mediaId:one.id,action:'watch',occurredAt:new Date('2026-01-29')});
+  const previous = {id:Number(secondTmdb), name:'Second', episode_number:2, season_number:1};
+  const current = {id:Number(firstTmdb), name:'First, refreshed', episode_number:1, season_number:1};
+  let removedOldSlot = false;
+  const calls:string[]=[];
+  const connection = spyOn(tmdb,'getTmdb').mockImplementation(async () => new TmdbAdapter(async path => {
+    const endpoint = path.split('?')[0];
+    calls.push(endpoint);
+    if (endpoint.endsWith('/episode/2')) return previous;
+    if (endpoint.endsWith('/episode/1')) {
+      if (removedOldSlot) throw new ProviderHttpError(404);
+      return current;
+    }
+    if (endpoint.endsWith('/episode/3')) return {...current,episode_number:3};
+    if (endpoint.endsWith('/season/1')) return {id:132,episodes:[current,previous]};
+    throw Error('Unexpected TMDB request');
+  },'en-US','GB','tmdb-order-fixture'));
+  try {
+    await refreshMedia(one.id);
+    expect(calls).toEqual([`/3/tv/${showTmdb}/season/1/episode/2`,`/3/tv/${showTmdb}/season/1`,`/3/tv/${showTmdb}/season/1/episode/1`]);
+    const rows=await db.select().from(s.episodes).where(eq(s.episodes.showId,parent.id)).orderBy(s.episodes.episodeNumber);
+    expect(rows.map(row=>[row.mediaId,row.episodeNumber])).toEqual([[one.id,1],[two.id,2]]);
+    const [history]=await db.select().from(s.trackingEvents).where(eq(s.trackingEvents.mediaId,one.id));
+    expect(history.action).toBe('watch');
+    const [metadata]=await db.select({title:s.metadataSnapshots.title}).from(s.metadataSnapshots).where(eq(s.metadataSnapshots.mediaId,one.id));
+    expect(metadata.title).toBe('First, refreshed');
+    calls.length=0;
+    await refreshMedia(one.id);
+    expect(calls).toEqual([`/3/tv/${showTmdb}/season/1/episode/1`]);
+    removedOldSlot = true;
+    current.episode_number = 3;
+    await refreshMedia(one.id);
+    const [moved] = await db.select().from(s.episodes).where(eq(s.episodes.mediaId,one.id));
+    expect(moved.episodeNumber).toBe(3);
+  } finally { connection.mockRestore(); }
+});

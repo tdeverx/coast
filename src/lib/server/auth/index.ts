@@ -98,9 +98,11 @@ export function requireAdmin(actor: SessionUser | null | undefined): SessionUser
   return user;
 }
 
-export async function setupRequired(): Promise<boolean> {
-  const [row] = await getSql()`SELECT EXISTS (SELECT 1 FROM users) AS exists`;
-  return !row.exists;
+export async function setupState() {
+  const [row] = await getSql()<{ needs_account: boolean; needs_tmdb: boolean }[]>`
+    select not exists (select 1 from users) as needs_account,
+      not exists (select 1 from provider_instances where provider='tmdb' and enabled and credentials is not null) as needs_tmdb`;
+  return { needsAccount: row.needs_account, needsTmdb: row.needs_tmdb };
 }
 
 export async function newSession(user: SessionUser): Promise<SessionResult> {

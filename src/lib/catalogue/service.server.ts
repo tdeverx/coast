@@ -74,6 +74,12 @@ export async function ingestMetadata(
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`show:${options.showId}`},0))`
       );
+    if (options.mediaId && metadata.provider === 'tmdb' && metadata.kind === 'episode') {
+      const [owner] = await tx.select({ mediaId: externalIds.mediaId }).from(externalIds).where(and(
+        eq(externalIds.provider, 'tmdb'), eq(externalIds.mediaKind, 'episode'), eq(externalIds.externalId, metadata.externalId)
+      ));
+      if (owner && owner.mediaId !== options.mediaId) throw new CatalogueIdentityConflict();
+    }
     const [scopedIdentity] = metadata.provider === 'jellyfin' && options.isolateConflictingProviderIds
       ? await tx.select({mediaId: externalIds.mediaId}).from(externalIds).where(and(
           eq(externalIds.provider, identityProvider), eq(externalIds.externalId, metadata.externalId),
@@ -263,6 +269,47 @@ export async function importTmdb(
 }
 type Tmdb = NonNullable<Awaited<ReturnType<typeof getTmdb>>>;
 
+/** Reorder a complete TMDB season by episode ID while preserving the Coast
+ * media IDs and every history, file, or list reference attached to them. */
+async function updateTmdbEpisodeOrder(showId: string, seasonNumber: number, items: readonly Metadata[]) {
+  if (!items.length) return;
+  const desired = new Map<string, number>();
+  const numbers = new Set<number>();
+  for (const item of items) {
+    const number = item.episodeNumber;
+    if (item.kind !== 'episode' || item.provider !== 'tmdb' || item.seasonNumber !== seasonNumber ||
+        !item.externalId || number === undefined || !Number.isSafeInteger(number) || number < 0 ||
+        desired.has(item.externalId) || numbers.has(number)) return;
+    desired.set(item.externalId, number);
+    numbers.add(number);
+  }
+  await getDb().transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`show:${showId}`},0))`);
+    const rows = await tx.execute<{ id: string; number: number; aliases: string[] }>(sql`
+      select e.media_id as id, e.episode_number as number, coalesce(array_agg(x.external_id)
+        filter (where x.external_id is not null),'{}'::text[]) as aliases
+      from episodes e left join external_ids x on x.media_id=e.media_id and x.provider='tmdb' and x.media_kind='episode'
+      where e.show_id=${showId} and e.season_number=${seasonNumber}
+      group by e.media_id,e.episode_number`);
+    if (rows.some(row => row.number < 0)) return;
+    const occupants = new Map(rows.map(row => [row.number, row.id]));
+    const moves = rows.flatMap(row => {
+      const number = row.aliases.length === 1 ? desired.get(row.aliases[0]) : undefined;
+      return number === undefined || number === row.number ? [] : [{ id: row.id, number }];
+    });
+    if (!moves.length) return;
+    const moving = new Set(moves.map(row => row.id));
+    if (moves.some(row => occupants.has(row.number) && !moving.has(occupants.get(row.number)!))) return;
+    // The ordinary uniqueness index checks each row. Reserve distinct negative
+    // positions inside this transaction so swaps and longer cycles cannot collide.
+    const input = JSON.stringify(moves);
+    await tx.execute(sql`update episodes e set episode_number=-e.episode_number-1
+      from jsonb_to_recordset(${input}::text::jsonb) as moving(id uuid, number integer) where e.media_id=moving.id`);
+    await tx.execute(sql`update episodes e set episode_number=moving.number
+      from jsonb_to_recordset(${input}::text::jsonb) as moving(id uuid, number integer) where e.media_id=moving.id`);
+  });
+}
+
 async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
   options: { includeEpisodes?: boolean; includeRecommendations?: boolean }
 ) {
@@ -315,6 +362,8 @@ async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
         showId: saved.id,
         complete: options.includeEpisodes !== false,
       });
+      if (seasonSnapshot.seasonNumber !== undefined)
+        await updateTmdbEpisodeOrder(saved.id, seasonSnapshot.seasonNumber, seasonSnapshot.children ?? []);
       for (const episode of seasonSnapshot.children || [])
         await ingestMetadata(episode, { showId: saved.id, seasonId: season.id });
     });
@@ -354,30 +403,46 @@ async function tmdbChild(id: string) {
   if (show) return { child, season, episode, show };
 }
 
-async function refreshChildDetails(id: string, region: string) {
+async function refreshChildDetails(id: string, region: string, episodeExternalId?: string) {
   const adapter = await getTmdb('en-US', region);
   if (!adapter) throw new Error('Configure TMDB to refresh these details.');
   const target = await tmdbChild(id);
   if (!target) throw new Error('The show needs a TMDB match before these details can be refreshed.');
-  return importTmdbChild(id, adapter, target);
+  return importTmdbChild(id, adapter, target, episodeExternalId);
 }
 
 async function importTmdbChild(id: string, adapter: Tmdb, {
   child, season, episode, show,
-}: NonNullable<Awaited<ReturnType<typeof tmdbChild>>>) {
-  const snapshot = season
+}: NonNullable<Awaited<ReturnType<typeof tmdbChild>>>, episodeExternalId?: string) {
+  let missingPosition: ProviderHttpError | undefined;
+  let snapshot = season
     ? await adapter.season(show.externalId, child.seasonNumber)
-    : await adapter.episode(show.externalId, child.seasonNumber, episode!.episodeNumber);
+    : await adapter.episode(show.externalId, child.seasonNumber, episode!.episodeNumber).catch(cause => {
+      if (!episodeExternalId || !(cause instanceof ProviderHttpError) || ![404, 410].includes(cause.status)) throw cause;
+      missingPosition = cause;
+      return null;
+    });
+  if (episode && episodeExternalId && snapshot?.externalId !== episodeExternalId) {
+    const currentSeason = await adapter.season(show.externalId, child.seasonNumber);
+    const confirmed = currentSeason.children?.find(item => item.externalId === episodeExternalId);
+    if (confirmed?.episodeNumber === undefined) throw missingPosition ?? new CatalogueIdentityConflict();
+    snapshot = await adapter.episode(show.externalId, child.seasonNumber, confirmed.episodeNumber);
+    if (snapshot.externalId !== episodeExternalId) throw new CatalogueIdentityConflict();
+    await updateTmdbEpisodeOrder(child.showId, child.seasonNumber, currentSeason.children ?? []);
+  }
+  if (!snapshot) throw new CatalogueIdentityConflict();
   const saved = await ingestMetadata(snapshot, {
     mediaId: id,
     showId: child.showId,
     seasonId: episode?.seasonId ?? undefined,
     complete: true,
   });
-  if (season)
+  if (season) {
+    await updateTmdbEpisodeOrder(season.showId, season.seasonNumber, snapshot.children ?? []);
     await mapConcurrent(snapshot.children ?? [], 4, (item) =>
       ingestMetadata(item, { showId: season.showId, seasonId: id })
     );
+  }
   return saved;
 }
 
@@ -403,7 +468,7 @@ async function refreshMediaNow(id: string, region = 'GB', includeRecommendations
     return importTmdbCollection(identity.externalId, adapter);
   }
   if (identity?.mediaKind === 'season' || identity?.mediaKind === 'episode')
-    return refreshChildDetails(id, region);
+    return refreshChildDetails(id, region, identity.mediaKind === 'episode' ? identity.externalId : undefined);
   if (!identity || (identity.mediaKind !== 'show' && identity.mediaKind !== 'movie'))
     throw new Error('This title has no refreshable TMDB identity.');
   return importTmdb(identity.mediaKind, identity.externalId, { region, includeRecommendations });
@@ -441,14 +506,16 @@ export async function ensureDetails(userId: string, id: string) {
   const adapter = await getTmdb('en-US', region);
   if (!adapter) return false;
   const kind = identity?.mediaKind;
-  const child = !kind || kind === 'episode' || kind === 'season' ? await tmdbChild(id) : undefined;
+  const child = !kind || kind === 'episode' || kind === 'season'
+    ? await tmdbChild(id)
+    : undefined;
   if (!child && (!identity || kind === 'episode' || kind === 'season')) return false;
   const key = JSON.stringify([adapter.cacheScope, region, id, identity?.externalId,
     child?.show.externalId, child?.child.seasonNumber, child?.episode?.episodeNumber]);
   if (missingDetails.peek(key) === null) return false;
   return optionalRefresh(key, async () => {
     try {
-      if (child) await importTmdbChild(id, adapter, child);
+      if (child) await importTmdbChild(id, adapter, child, kind === 'episode' ? identity?.externalId : undefined);
       else if (identity?.mediaKind === 'movie' || identity?.mediaKind === 'show')
         await importTmdbTitle(adapter, identity.mediaKind, identity.externalId, { includeEpisodes: false });
       else if (identity?.mediaKind === 'collection')

@@ -12,7 +12,7 @@ function event(setup: boolean, address: string) {
     url: new URL('https://coast.test/setup'), locals: { setup },
     cookies: { set() { throw new Error('Unexpected cookie before session creation.'); } },
     getClientAddress: () => address,
-  } as unknown as Parameters<typeof actions.default>[0];
+  } as unknown as Parameters<typeof actions.account>[0];
 }
 
 test('completed setup rejects repeated valid POSTs before parsing or hashing', async () => {
@@ -21,7 +21,7 @@ test('completed setup rejects repeated valid POSTs before parsing or hashing', a
   const hashing = spyOn(Bun.password, 'hash').mockImplementation(() => { throw new Error('Unexpected hash.'); });
   try {
     for (let index = 0; index < 12; index++) {
-      expect(await actions.default(input)).toMatchObject({ status: 409 });
+      expect(await actions.account(input)).toMatchObject({ status: 409 });
     }
     expect(parsing).not.toHaveBeenCalled();
     expect(hashing).not.toHaveBeenCalled();
@@ -38,7 +38,7 @@ test('open setup applies the existing client quota before form parsing or hashin
   const parsing = spyOn(input.request, 'formData');
   const hashing = spyOn(Bun.password, 'hash').mockImplementation(() => { throw new Error('Unexpected hash.'); });
   try {
-    expect(await actions.default(input)).toMatchObject({ status: 429 });
+    expect(await actions.account(input)).toMatchObject({ status: 429 });
     expect(parsing).not.toHaveBeenCalled();
     expect(hashing).not.toHaveBeenCalled();
   } finally {
@@ -50,7 +50,7 @@ test('open setup applies the existing client quota before form parsing or hashin
 test('the fresh setup fixture passes registration parsing before password work', async () => {
   const hashing = spyOn(Bun.password, 'hash').mockImplementation(() => { throw new Error('Fixture hash boundary.'); });
   try {
-    expect(await actions.default(event(true, crypto.randomUUID())))
+    expect(await actions.account(event(true, crypto.randomUUID())))
       .toMatchObject({ status: 400, data: { error: 'Fixture hash boundary.' } });
     expect(hashing).toHaveBeenCalledTimes(1);
   } finally { hashing.mockRestore(); }
