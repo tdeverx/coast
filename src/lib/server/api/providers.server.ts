@@ -29,7 +29,7 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
       else if (path.length === 1 && method === 'GET') result = await listProviders(uid);
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);
-        result = await configureInstance(uid, body);
+        result = await configureInstance(uid, body, request.signal);
       } else if (path.length === 2 && method === 'DELETE') {
         requireAdmin(user);
         result = await deleteInstance(uid, uuid(path[1]), typeof body.previewId === 'string' ? uuid(body.previewId) : undefined);

@@ -18,7 +18,7 @@ import {
 } from '#lib/server/config.js';
 
 import { building } from '$app/env';
-import { authenticateSession, setupRequired } from '#lib/server/auth/index.js';
+import { authenticateSession, setupState } from '#lib/server/auth/index.js';
 import { SESSION_COOKIE, setSessionCookie } from '#lib/server/auth/cookies.js';
 import { assertSameOrigin } from '#lib/server/security/csrf.js';
 import { initializePlatform, platformStopping } from '#lib/server/startup.js';
@@ -47,6 +47,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   event.locals.user = null;
   event.locals.expiresAt = null;
   event.locals.setup = false;
+  event.locals.needsTmdb = false;
   if (event.url.pathname === '/api/v1/health') return resolve(event);
   const session = await authenticateSession(event.cookies.get(SESSION_COOKIE));
   if (session) {
@@ -54,7 +55,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     event.locals.expiresAt = session.expiresAt;
     if (session.token) setSessionCookie(event.cookies, session.token, session.expiresAt, event.url);
   }
-  if (event.locals.user?.access?.libraryOnly && !managedRoute(event.url.pathname,event.request.method)) {
+  if (event.locals.user?.access?.libraryOnly && event.url.pathname !== '/setup' && !managedRoute(event.url.pathname,event.request.method)) {
     if (event.url.pathname.startsWith('/api/')) return Response.json({error:'This route is unavailable to Library-only accounts.'},{status:403});
     redirect(303,'/library');
   }
@@ -67,7 +68,9 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     response.headers.delete('link');
     return response;
   }
-  event.locals.setup = await setupRequired();
+  const setup = await setupState();
+  event.locals.setup = setup.needsAccount;
+  event.locals.needsTmdb = setup.needsTmdb;
   const config = await getFeatureConfig(event.locals.user?.id ?? null);
   const isPublic = ['/login', '/setup', '/register', '/invite'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
   if (!event.locals.user && !isPublic) {
@@ -78,9 +81,17 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
 
   if (event.locals.setup && !['/setup'].includes(event.url.pathname)) redirect(303, '/setup');
 
+  if (event.locals.needsTmdb && !['/setup','/login','/logout'].includes(event.url.pathname)) {
+    if (event.url.pathname.startsWith('/api/')) return Response.json(
+      {error:'A Coast administrator needs to connect TMDB to finish setup.',code:'tmdb_required'},
+      {status:503,headers:{'Cache-Control':'private, no-store'}},
+    );
+    redirect(303,'/setup');
+  }
+
   const onboardingImageRead = event.request.method === 'GET' && !!event.locals.user && ((/^\/api\/v1\/profile\/avatars(?:\/[0-9a-f-]{36})?$/).test(event.url.pathname) || event.url.pathname.startsWith(`/api/v1/profile/avatar/${event.locals.user.id}/`));
 
-  if (event.locals.user && !['/onboarding', '/logout'].includes(event.url.pathname) && !onboardingImageRead && await onboardingPending(event.locals.user.id)) {
+  if (event.locals.user && !['/onboarding', '/logout', '/setup'].includes(event.url.pathname) && !onboardingImageRead && await onboardingPending(event.locals.user.id)) {
     if (event.url.pathname.startsWith('/api/')) return Response.json(
       {
         error: 'Finish account setup and your initial imports before continuing.',

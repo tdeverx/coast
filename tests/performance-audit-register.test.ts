@@ -35,9 +35,10 @@ import clearGlassSourceRefresh from '../docs/audits/2026-11-20-clear-glass-sourc
 import fullHistoryTasteSourceRefresh from '../docs/audits/2026-11-20-full-history-taste-source-refresh.json';
 import providerDeliverySourceRefresh from '../docs/audits/2026-11-21-provider-delivery-source-refresh.json';
 import traktFeatureSourceRefresh from '../docs/audits/2026-11-21-trakt-feature-permissions-source-refresh.json';
+import tmdbOrderSetupSourceRefresh from '../docs/audits/2026-11-21-tmdb-episode-order-and-setup-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -60,6 +61,15 @@ test('per-feature Trakt permissions retain their scoped verification', async () 
   for (const [path, hash] of Object.entries(review.supportingFiles))
     await expectCurrentSource(path, hash, 'Review the Trakt permission migration.');
   await expectCurrentSource(review.report, review.reportSha256, 'Review the permission verification scope.');
+});
+
+test('TMDB episode ordering and setup retain their scoped verification', async () => {
+  const review = tmdbOrderSetupSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review the episode reorder and TMDB setup requirements.');
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review how setup interprets TMDB credentials.');
 });
 
 test('provider delivery and directional consent retain their scoped verification', async () => {

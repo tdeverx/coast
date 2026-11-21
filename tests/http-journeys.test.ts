@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 
 // Run against a disposable Coast server/database only. Never points at a user's installation by default.
 const base = process.env.COAST_HTTP_TEST_URL;
+const credential = process.env.COAST_HTTP_TEST_TMDB_CREDENTIAL;
 const suite = base ? describe : describe.skip;
 suite('Coast HTTP journeys', () => {
   let cookie = '';
@@ -20,7 +21,7 @@ suite('Coast HTTP journeys', () => {
     expect(denied.status).toBe(401);
     const payload = new URLSearchParams({ username, password });
     const setupPayload = new URLSearchParams({username,password,displayName:'HTTP fixture',passwordConfirmation:password});
-    const setup = await fetch(`${base}/setup`, {
+    const setup = await fetch(`${base}/setup?/account`, {
       method: 'POST',
       headers: {
         origin: base!,
@@ -45,6 +46,24 @@ suite('Coast HTTP journeys', () => {
     expect(response.status).toBe(303);
     cookie = response.headers.get('set-cookie')!.split(';')[0];
     expect(cookie).toContain('coast_session=');
+    const landing = await fetch(`${base}/for-you`, {headers:{cookie},redirect:'manual'});
+    if (setup.status === 303) {
+      expect(landing.status).toBe(303);
+      expect(landing.headers.get('location')).toBe('/setup');
+    }
+    if (landing.status === 303 && landing.headers.get('location') === '/setup') {
+      const guarded = await request('media',{title:'Must not exist',kind:'movie'});
+      expect(guarded.status).toBe(503);
+      expect(await guarded.json()).toMatchObject({code:'tmdb_required'});
+      if (credential) {
+        const configured = await fetch(`${base}/setup?/tmdb`,{
+          method:'POST',headers:{cookie,origin:base!,accept:'text/html','content-type':'application/x-www-form-urlencoded'},
+          body:new URLSearchParams({tmdbCredential:credential}),redirect:'manual',
+        });
+        expect(configured.status).toBe(303);
+        expect(configured.headers.get('location')).toBe('/for-you');
+      }
+    }
     const csrf = await fetch(`${base}/api/v1/media`, {
       method: 'POST',
       headers: { cookie, 'content-type': 'application/json', origin: 'https://untrusted.invalid' },

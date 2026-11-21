@@ -154,6 +154,7 @@ Use Docker Desktop or another Docker installation with `docker compose` availabl
    ```
 
 4. Open <http://localhost:3000> and create your administrator account. Enter a username, display name and matching passwords of 8–128 characters, including an uppercase letter, a lowercase letter and a special character. Email is optional for the first administrator.
+5. Enter your TMDB API key or read access token to finish setup. You can get either credential from your [TMDB API settings](https://www.themoviedb.org/settings/api).
 
 The published image is `ghcr.io/tdeverx/coast:preview`, built for `linux/amd64` and `linux/arm64`. Compose exposes port `3000` and uses the persistent `coast-data` volume for the database, encrypted service credentials, artwork and runtime state. Keep that volume when updating.
 
@@ -210,13 +211,13 @@ This uses the same Compose configuration and persistent volume. Set `DATABASE_UR
 | Service | What it adds |
 | --- | --- |
 | **Jellyfin** | Accessible server media, playback, activity import and supported tracking reconciliation. |
-| **TMDB** | Film and TV metadata, discovery and background catalogue maintenance. |
+| **TMDB** · required | Film and TV metadata, episode order, discovery and background catalogue maintenance. |
 | **Trakt** | Account linking, tracking and list imports, live activity and independently configured exports. |
 | **Seerr** | Media requests and request status. |
 | **IGDB** · experimental | Game search, metadata and catalogue imports. |
 | **Steam** · experimental | Owned games, playtime and achievement progress, with ownership-based availability. |
 
-Personal tracking, profiles and lists can work without connected services when the registration policy allows it. Server availability is separate from personal membership: owning or tracking something does not make it playable. Steam ownership does not prove a game is installed locally.
+Once the administrator connects TMDB, users can track media, build lists and use profiles without linking a personal provider account if the registration policy allows it. Playback depends on the user's access to the connected media server. Steam ownership does not prove a game is installed locally.
 
 Provider settings determine what is imported and exported. Trakt Collection export is opt-in and uses previews for projection changes and cleanup. Live Trakt and Seerr acceptance still needs deliberate real-account testing.
 

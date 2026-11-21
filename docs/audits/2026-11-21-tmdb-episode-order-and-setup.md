@@ -1,0 +1,9 @@
+# TMDB episode order and setup
+
+TMDB season refreshes follow stable TMDB episode IDs when numbers move within a season. The existing Coast episode IDs retain their tracking history, list membership and file links. Reordering takes the existing show lock and uses one season read plus two set-based updates when there is a change. It leaves an occupied destination alone when a stable match for the occupant is missing. Provider requests finish before the reorder transaction begins. An unchanged episode refresh still needs one provider request.
+
+Trakt's fallback for a conflicting episode alias can use a verified TMDB episode within the same TMDB show. The import binds the Trakt alias without replacing an IMDb alias or changing a Jellyfin file association. The affected Coast records update on targeted or scheduled TMDB refresh. Ambiguous mappings and cross-season changes remain outside the automatic repair. There is no bulk migration.
+
+The setup gate adds a provider existence check to the existing account setup statement. It uses the locally stored enabled connection and makes no provider request on ordinary navigation. New credentials are validated at save time through the bounded TMDB transport using the same fixed HTTPS port as catalogue reads, with the caller's cancellation signal. The initial administrator, sign-in, sign-out and health check work during setup. Existing disposable links and the scoped machine API retain their established request handling.
+
+The disposable database tests cover credential rejection and acceptance, administrator access, a Trakt history import with conflicting numbering and an IMDb alias, and season reorders following both a swap and a removed slot while preserving watch history. These fixture checks do not establish production performance or provider availability. The Jellyfin metadata investigation was read-only. Neither the Jellyfin metadata nor any live Coast records were modified.

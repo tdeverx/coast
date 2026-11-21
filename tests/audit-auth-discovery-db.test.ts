@@ -4,11 +4,12 @@ import { isRedirect } from '@sveltejs/kit';
 import { closeDb, getDb, getSql } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { getConfig } from '../src/lib/server/config';
-import { setupRequired } from '../src/lib/server/auth';
+import { setupState } from '../src/lib/server/auth';
 import { actions as setupActions } from '../src/routes/setup/+page.server';
 import { beginOnboardingImports, onboardingStatus, pollOnboardingTrakt, startOnboardingTrakt } from '../src/lib/server/auth/onboarding';
 import { encryptCredential } from '../src/lib/server/security/credentials';
 import * as instances from '../src/lib/providers/instances.server';
+import * as providerFetch from '../src/lib/server/security/provider-fetch';
 import * as reading from '../src/lib/providers/reading.server';
 import * as igdb from '../src/lib/providers/igdb/service.server';
 import { OpenLibraryAdapter } from '../src/lib/providers/openlibrary/adapter.server';
@@ -42,7 +43,7 @@ async function user(label: string) {
 
 // This file receives its own fresh migrated database from scripts/test-database.ts.
 run('the real fresh setup action creates exactly one administrator and a secure session', async () => {
-  expect(await setupRequired()).toBe(true);
+  expect(await setupState()).toEqual({needsAccount:true,needsTmdb:true});
   const cookies: { name: string; value: string; options: Record<string, unknown> }[] = [];
   const request = (index: number) => ({
     request: new Request('https://coast.test/setup', {
@@ -54,21 +55,56 @@ run('the real fresh setup action creates exactly one administrator and a secure 
     url: new URL('https://coast.test/setup'), locals: { setup: true },
     getClientAddress: () => `fixture-${index}`,
     cookies: { set(name: string, value: string, options: Record<string, unknown>) { cookies.push({ name, value, options }); } },
-  } as unknown as Parameters<typeof setupActions.default>[0]);
-  const results = await Promise.allSettled([0, 1].map(index => setupActions.default(request(index))));
+  } as unknown as Parameters<typeof setupActions.account>[0]);
+  const results = await Promise.allSettled([0, 1].map(index => setupActions.account(request(index))));
   const redirects = results.filter(result => result.status === 'rejected' && isRedirect(result.reason));
   const failures = results.filter(result => result.status === 'fulfilled');
   expect(redirects).toHaveLength(1);
-  expect((redirects[0] as PromiseRejectedResult).reason).toMatchObject({ status: 303, location: '/for-you' });
+  expect((redirects[0] as PromiseRejectedResult).reason).toMatchObject({ status: 303, location: '/setup' });
   expect(failures).toHaveLength(1);
   expect((failures[0] as PromiseFulfilledResult<unknown>).value).toMatchObject({ status: 409 });
-  expect(await setupRequired()).toBe(false);
+  expect(await setupState()).toEqual({needsAccount:false,needsTmdb:true});
   const admins = await getDb().select().from(s.users);
   expect(admins).toHaveLength(1);
   expect(admins[0].role).toBe('admin');
   expect(admins[0].settings.profile?.displayName).toBe('First Administrator');
   expect(cookies).toMatchObject([{ name: 'coast_session', options: { secure: true, httpOnly: true, sameSite: 'lax', path: '/' } }]);
   expect(await getDb().select().from(s.sessions)).toHaveLength(1);
+});
+
+run('setup remains incomplete until an administrator saves verified TMDB credentials', async () => {
+  const db = getDb();
+  const [admin] = await db.select().from(s.users).where(eq(s.users.role,'admin'));
+  let accepted = false;
+  let calls = 0;
+  const key = 'a'.repeat(32);
+  const transport = spyOn(providerFetch, 'createProviderTransport').mockReturnValue(async (path, init) => {
+    calls++;
+    expect(path).toBe(accepted ? '/3/configuration' : `/3/configuration?api_key=${key}`);
+    if (!accepted) throw new providerFetch.ProviderHttpError(401);
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer fixture-read-token');
+    return {images:{secure_base_url:'https://image.tmdb.org/t/p/'}};
+  });
+  const save = (credential: string, role: 'admin' | 'user' = 'admin') => setupActions.tmdb({
+    locals:{user:{...admin,role},needsTmdb:true},
+    request:new Request('https://coast.test/setup?/tmdb',{method:'POST',body:new URLSearchParams({tmdbCredential:credential})}),
+  } as unknown as Parameters<typeof setupActions.tmdb>[0]);
+  try {
+    expect(await save(key,'user')).toMatchObject({status:403});
+    expect(calls).toBe(0);
+    expect(await save(key)).toMatchObject({status:403});
+    expect(await setupState()).toEqual({needsAccount:false,needsTmdb:true});
+    accepted = true;
+    await expect(save('fixture-read-token')).rejects.toMatchObject({status:303,location:'/for-you'});
+    expect(await setupState()).toEqual({needsAccount:false,needsTmdb:false});
+    const [instance] = await db.select().from(s.providerInstances).where(eq(s.providerInstances.provider,'tmdb'));
+    expect(instance.credentials).not.toContain('fixture-read-token');
+    expect(await setupState()).toEqual({needsAccount:false,needsTmdb:false});
+    expect(calls).toBe(2);
+  } finally {
+    transport.mockRestore();
+    await db.delete(s.providerInstances).where(eq(s.providerInstances.provider,'tmdb'));
+  }
 });
 
 run('failed onboarding Trakt reconnect cancels stale evidence and completes only with replacement imports', async () => {

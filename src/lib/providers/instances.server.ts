@@ -21,6 +21,7 @@ import { requireExperimentalFeature } from '#lib/server/experimental.js';
 import { getConfig } from '#lib/server/config.js';
 import { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
 import { COMIC_VINE_BASE_URL, ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
+import { authenticatedTmdbTransport } from './tmdb/connection.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
@@ -47,7 +48,7 @@ export async function requireProviderAdmin(userId: string) {
   if (user?.role !== 'admin' || user.disabled) throw new Error('Administrator access is required.');
 }
 
-export async function configureInstance(adminId: string, input: unknown) {
+export async function configureInstance(adminId: string, input: unknown, signal?: AbortSignal) {
   await requireProviderAdmin(adminId);
   const data = v.parse(configureSchema, input);
   const config = await getConfig();
@@ -95,7 +96,7 @@ export async function configureInstance(adminId: string, input: unknown) {
     provider: data.provider,
     approved: true,
     allowPrivateNetwork: data.allowPrivateNetwork,
-    allowedPorts: config.allowedProviderPorts,
+    allowedPorts: data.provider === 'tmdb' ? [443] : config.allowedProviderPorts,
   });
   let serverIdentity: string | undefined = data.provider === 'steam' ? 'steam' : undefined;
   if (data.provider === 'jellyfin')
@@ -134,6 +135,25 @@ export async function configureInstance(adminId: string, input: unknown) {
       }).filter(([, value]) => !!value)
     ),
   };
+  if (data.provider === 'tmdb') {
+    if (data.apiKey) delete secret.accessToken;
+    else if (data.accessToken) delete secret.apiKey;
+    if (!(typeof secret.apiKey === 'string' && secret.apiKey.trim()) &&
+        !(typeof secret.accessToken === 'string' && secret.accessToken.trim()))
+      throw new AppError(400,'Enter your TMDB API key or read access token.');
+    if (data.apiKey || data.accessToken) {
+      const request = authenticatedTmdbTransport(transport, secret);
+      try {
+        v.parse(v.object({images:v.object({secure_base_url:v.string()})}), await request('/3/configuration', { signal }));
+      } catch (cause) {
+        signal?.throwIfAborted();
+        if (cause instanceof ProviderHttpError && [401,403].includes(cause.status))
+          throw new AppError(403,'TMDB rejected these API credentials. Check the key or read access token.');
+        throw new AppError(503,'Coast could not verify the TMDB connection. Try again in a moment.');
+      }
+      signal?.throwIfAborted();
+    }
+  }
   let managementKeyGeneration = previous?.settings.managementKeyGeneration;
   const subtitleAuthority = data.subtitleAuthority ?? previous?.settings.subtitleAuthority ?? 'viewer';
   if (data.provider === 'jellyfin') {

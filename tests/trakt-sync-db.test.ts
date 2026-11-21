@@ -223,7 +223,7 @@ run('an export-only account delivers native history and a private list without i
   }finally{transport.mockRestore();}
 });
 
-run('staged history uses a verified TMDB episode when an IMDb alias points to bundled segments', async () => {
+run('staged history follows a verified TMDB episode across numbering differences and a conflicting IMDb alias', async () => {
   const db = getDb();
   const tmdbShow = numericId + 60;
   const tmdbEpisode = numericId + 61;
@@ -233,9 +233,8 @@ run('staged history uses a verified TMDB episode when an IMDb alias points to bu
   const single = await ingestMetadata({provider:'tmdb',externalId:String(tmdbEpisode),kind:'episode',title:'Single segment',seasonNumber:1,episodeNumber:5},{showId,seasonId});
   const bundled = await ingestMetadata({provider:'imdb',externalId:imdb,kind:'episode',title:'Two segments',seasonNumber:1,episodeNumber:8},{showId,seasonId});
   mediaIds.push(single.id,bundled.id);
-  const episode = { title:'Single segment',season:1,number:5,ids:{trakt:traktEpisode,tmdb:tmdbEpisode,imdb} };
+  const episode = { title:'Single segment',season:1,number:8,ids:{trakt:traktEpisode,tmdb:tmdbEpisode,imdb} };
   const series = {...show,ids:{...show.ids,tmdb:tmdbShow}};
-  await expect(resolveTrakt({show:series,episode:{...episode,number:6}})).rejects.toThrow('Conflicting provider identities');
   await expect(resolveTrakt({show:{...series,ids:{...series.ids,tmdb:tmdbShow+100}},episode})).rejects.toThrow('Conflicting provider identities');
   const [job] = await db.insert(outboxActions).values({userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind:'trakt.import',payload:{},state:'running',attempts:1}).returning();
   const adapter = new TraktAdapter(async path => {

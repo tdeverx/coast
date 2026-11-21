@@ -13,6 +13,7 @@
 
   import ProviderAutomation from './ProviderAutomation.svelte';
   import type { ProviderSchedule } from '#lib/providers/schedule.js';
+  import { tmdbCredential } from '#lib/providers/tmdb/credentials.js';
 
   const { api, change, feedback } = useClient();
 
@@ -92,8 +93,10 @@
       const secrets = Object.fromEntries(
         Object.entries(fields).filter(([, value]) => value !== '')
       );
+      delete secrets.tmdbCredential;
       await change('providers', {
         ...secrets,
+        ...(provider === 'tmdb' ? tmdbCredential(fields.tmdbCredential) : {}),
         id: editing?.id,
         provider,
         name,
@@ -310,10 +313,11 @@
       {#if editing && provider !== 'jellyfin'}<p class="small">
           Leave credential fields empty to keep the current credentials.
         </p>{/if}
-      {#if provider === 'tmdb'}<Field label="TMDB API read access token"><input
-            name="accessToken"
+      {#if provider === 'tmdb'}<Field label="TMDB API key or read access token"><input
+            name="tmdbCredential"
             type="password"
             autocomplete="off"
+            maxlength="4096"
             required={!editing}
           /><small>From your TMDB account’s API settings.</small></Field>
       {:else if provider === 'steam'}<Field label="Steam Web API key"><input name="apiKey" type="password" autocomplete="off" required={!editing} /><small>From Steam’s Web API key settings. Account linking uses Steam’s sign-in page; private game data remains unavailable.</small></Field>

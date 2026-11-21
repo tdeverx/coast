@@ -1,0 +1,92 @@
+{
+  "epoch": "tmdb-episode-order-and-setup-local-2026-11-21",
+  "baseline": "724434694ce7f854fcd2d7bd6fa5f4ed40ea9d7a",
+  "blanketAcceptance": false,
+  "files": {
+    "README.md": {
+      "previous": "1a217dabbc11222951e9f2fcc612040c881f25fd3b6ed162e29a62dbb3e81600",
+      "current": "7ad768021ffdd44795b3abc18c5a00505ac4e5f1e53575de3d7929ee367c607d"
+    },
+    "docs/deployment.md": {
+      "previous": "510520d533b9cb6e3b2432d7ca126465a72ff9d6f0d2b2aab2740cb8285eb54a",
+      "current": "730708c6e2935a4c255c348470b1d76586e45e34fe40f9465847d367222c0240"
+    },
+    "docs/providers.md": {
+      "previous": "ee365373e36cc2c0f6e87b2f62d2cf79d77190492c31ca2a8a85c735e355a3fa",
+      "current": "c729fb9cf127bfc9d81fee23c81dceda1d64ba9e74e3070e09810c591e417f36"
+    },
+    "src/app.d.ts": {
+      "previous": "72a747240dae6e06f83bce3ea11541060e0231dbeb96714975ae68f91a6c5190",
+      "current": "a211989a71d974d47aa7dda7b4430382f5412e6383a7ea7b1ed78915f034ed1f"
+    },
+    "src/hooks.server.ts": {
+      "previous": "294f08cdf2786b14e0fefd70cddce4a383dcb9f85030dac03b0af841c7185d62",
+      "current": "1fb803232398dd51e5d1697e9f39397a277db71b2221f4d27e87f9b924871181"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "800bd115b6a00288c925c904ccf69914c7f17bbe703b9ee38f0426e592eaf9ee",
+      "current": "67dd234515d8b4cfe38e54dab6181030fc868e9bf0c157a05a1436624f0cf8f1"
+    },
+    "src/lib/catalogue/trakt-identity.server.ts": {
+      "previous": "f6b27368b2a4b8aee3aa1337481583b66c07fe090b6f2035b27d0a0efa0b9b46",
+      "current": "aa0fc3357be4683c25a33825b5cd01c26fb20e40e09ffea3300bedf51a99bd78"
+    },
+    "src/lib/providers/instances.server.ts": {
+      "previous": "a7d0ac71986e6152fcd98167e896bf9097bf52fc938520f519fe972d62938121",
+      "current": "f3f73787cd4ff6f58d0fc4ae88f15abc392e6953e8be589e7bb21766c9c68dfc"
+    },
+    "src/lib/providers/tmdb/connection.server.ts": {
+      "previous": "c3d0c77dda391c87d285a079824dda0f837403d728366a5143f5e4632eef9463",
+      "current": "b0002a8c7f89ae4ec6dcef53cf9a50192713cd18ba09d2554271edf89b3fcc14"
+    },
+    "src/lib/server/api/providers.server.ts": {
+      "previous": "158f7d571823ce7ae8c2bf94a8cbbf88ab99a988024c9e417d2350b5048660db",
+      "current": "cbc87507802a475c3bd49db663c66ebad5705661b07c9a9a2124650d0a23bf71"
+    },
+    "src/lib/server/auth/index.ts": {
+      "previous": "c82b3ef733ec35c3f5524a4c650740b79441ef126591e568aae06f7b0afdaa7e",
+      "current": "7f30758b3a3e9699ba7a0ea0d235d19dfd1db3a56ecf98da5251b7d6bcbf063c"
+    },
+    "src/lib/ui/components/IntegrationSettings.svelte": {
+      "previous": "f3efd31d0643c69d0804a5bb6aee933264adf3a08b5ae5bbcedf517d22b3317a",
+      "current": "1d369207a0631725399cbd60801cb32a9deaa667e3d1374f8b5d9d80d518b8c3"
+    },
+    "src/routes/setup/+page.server.ts": {
+      "previous": "d5338929ab5438bf220a18e4f83fdcbe86e8679ec41e102ddfd82b5a854a8727",
+      "current": "0386cc7de56fe99d4fc19fab860780e4f88ce9198499d2672afed4d2bb0cc7d4"
+    },
+    "src/routes/setup/+page.svelte": {
+      "previous": "35cf06f4808d7cd33a811c089ff1db04eb5b7e86bcedc6974316930d09706145",
+      "current": "b9f22055050d4d323ead47ed5c1c34e57a379c45f1633a425a0c22feceadfbd5"
+    },
+    "tests/audit-auth-discovery-db.test.ts": {
+      "previous": "540fb07d824f1ebe50b37267373eb1d09dc342a6ba509f32f1f82e51a58417b0",
+      "current": "beb29b8a35e9b78ba15a033a9b54d6384f96debe608008acfd43bbee8459e3a8"
+    },
+    "tests/http-journeys.test.ts": {
+      "previous": "36be09c2e0062eea2898dbaaadfc7c9898c2ab59a881e43d97ea509092df61e5",
+      "current": "c8796440d8148653b85ecf59aab0ec28e7ec2b5b0132e994ef30f9294dceb52d"
+    },
+    "tests/media-details-db.test.ts": {
+      "previous": "873914173350ab296e68387dbfc12dd77bf766b1ce70b3a885055f0e066b56d7",
+      "current": "bf2a764ab372f0e58280ac578ef2f529d19e8a715d13e28e303c8f2160ad758f"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "0e1c403592ed0c1791ee0db0285bfef5ecf23ae53d8a9f3c0eca5796a23c1834",
+      "current": "ef463a9fd37c17c23a65e8f1070acb16474ab03e875148a05a7f4b5215f3648f"
+    },
+    "tests/setup-action.test.ts": {
+      "previous": "111705229751488cf2cda1f2bb570a291cdd2f408aacc6c2dbe641b22b7eeae9",
+      "current": "c81824b01c6545021540c5d69f0d4fe0df7094c03708f961a97a110fe6d8d536"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "ec14da2b3fddbbe5b8f811305a27ee963351fddcfb812fc0affbbe14bfca6ed1",
+      "current": "333fac52bfdcbd0dfeed0029ff3a2a977d98fe74d6f7fe45c532aa35cb033852"
+    }
+  },
+  "supportingFiles": {
+    "src/lib/providers/tmdb/credentials.ts": "50240979ef0581da0c61fbdfc7559c35b10d8faeceb534ea79f1c39b8ffbc241"
+  },
+  "report": "docs/audits/2026-11-21-tmdb-episode-order-and-setup.md",
+  "reportSha256": "09d885cf6fe20bdf234227596e18a9f96332f29a4848e4f15f74dcc6bb58c55b"
+}

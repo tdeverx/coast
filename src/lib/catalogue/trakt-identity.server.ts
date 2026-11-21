@@ -6,8 +6,8 @@ import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 import { CatalogueIdentityConflict, ingestMetadata, importTmdb } from './service.server';
 import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
 
-/** Some providers describe one segment and others group segments in a single
- * episode. Bind only the Trakt ID when both TMDB IDs and the canonical position agree. */
+/** Bind only the Trakt alias. A verified TMDB episode in the same TMDB show
+ * can take precedence over a numbering scheme from another provider. */
 async function bindTraktEpisodeByTmdb(
   showId: string,
   show: NonNullable<TraktRecord['show']>,
@@ -23,7 +23,10 @@ async function bindTraktEpisodeByTmdb(
       .from(episodes).innerJoin(media, eq(media.id, episodes.mediaId))
       .innerJoin(externalIds, and(eq(externalIds.mediaId, episodes.mediaId), eq(externalIds.provider, 'tmdb'),
         eq(externalIds.mediaKind, 'episode'), eq(externalIds.externalId, String(episode.ids.tmdb))))
-      .where(and(eq(episodes.showId, showId), eq(episodes.seasonNumber, episode.season), eq(episodes.episodeNumber, episode.number),
+      .where(and(eq(episodes.showId, showId),
+        sql`((${episodes.seasonNumber}=${episode.season} and ${episodes.episodeNumber}=${episode.number}) or exists (
+          select 1 from metadata_snapshots snapshot where snapshot.media_id=${episodes.mediaId} and snapshot.provider='tmdb'
+            and snapshot.raw->>'externalId'=${String(episode.ids.tmdb)}))`,
         sql`exists (select 1 from external_ids parent where parent.media_id=${showId} and parent.provider='tmdb' and parent.media_kind='show' and parent.external_id=${String(show.ids.tmdb)})`));
     if (!anchor) return null;
     const [bound] = await tx.insert(externalIds)
