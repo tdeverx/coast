@@ -106,6 +106,14 @@
     "src/lib/server/queries/media.ts": {
       "previous": "08639ac2019314c0279c428618d6870135c4094a652108e350120de1b2ab507a",
       "current": "8725549ff020dd4666d6462ebaa3b7746ded57d89f5980d255669c7074c186db"
+    },
+    "tests/media-detail-hydration.test.ts": {
+      "previous": "e21b3454120a683b8052d6e1f9a4bc7fb24aab66fd1624f65d34868fc9eb5289",
+      "current": "a16106981a6addafbff08a02e33734f23510a71b5cbff82e0a346275a7181ade"
+    },
+    "tests/media-detail-section-projection.test.ts": {
+      "previous": "43f5191fdd95e7630a4b4207f8c8539f8f96a34dcc959f77b8d2042bb9b97fd4",
+      "current": "8ac2ba4e9d97adbd8bc9ceb0127787fe86e5ec5f65ed616600a177e4f7099eba"
     }
   },
   "report": "docs/audits/2026-11-22-fixed-taste-scale.md",
