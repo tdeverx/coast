@@ -10,12 +10,51 @@ type TasteHistoryWork=TasteWorkEvidence & {
 /** Keep explicit opinions separate from behavior until each canonical work has one vote. */
 function interestQuery(userId:string|null,category:DynamicMedium|undefined,tasteCategories?:string[]){
  const sql=getSql();
- return sql<InterestWork[]>`with signals(user_id,id,updated,implicit,consumed,explicit,rating,experienced,repeated,minutes) as (
+ const screenHistory=tasteCategories?.includes('screen');
+ const playCount=screenHistory
+  ?sql`case when h.plays is null then t.play_count else greatest(h.plays,least(t.play_count,coalesce(j.plays,0))) end`
+  :sql`t.play_count`;
+ return sql<InterestWork[]>`with ${screenHistory?sql`
+ screen_watches as materialized (
+  select media_id,max(latest) as updated,
+   greatest(coalesce(sum(plays) filter(where instant is not null),0),coalesce(max(plays) filter(where instant is null),0)) as plays
+  from (
+   -- Pair Trakt and Jellyfin observations, retaining separate plays in one source.
+   select media_id,instant,max(latest) as latest,
+    case when instant is null then max(plays)
+     else coalesce(max(plays) filter(where source in ('jellyfin','trakt')),0)
+      + coalesce(sum(plays) filter(where source not in ('jellyfin','trakt')),0)
+    end as plays
+   from (
+    select media_id,case when occurred_at_known then occurred_at end as instant,source,max(occurred_at) as latest,count(*) as plays
+    from (
+     select media_id,source,occurred_at,occurred_at_known,action,rewatch,
+      lag(action) over(partition by media_id order by occurred_at,created_at,id) as previous_action
+     from tracking_events where user_id=${userId} and applied and action in ('watch','unwatch') and (action='unwatch' or value is distinct from false)
+    ) e where e.action='watch' and (e.rewatch or e.previous_action is distinct from 'watch')
+    group by media_id,instant,source
+   ) by_source group by media_id,instant
+  ) by_instant group by media_id
+ ), jellyfin_plays as (
+  -- An accepted Jellyfin count may include earlier watches without dates.
+  select a.media_id,max((a.source->'coastUserData'->>'playCount')::int) as plays
+  from availability a
+  join provider_connections c on c.id=a.connection_id
+  join provider_instances i on i.id=c.instance_id and i.provider='jellyfin'
+  where a.user_id=${userId} and c.status='connected' and i.enabled and a.state='available'
+    and jsonb_typeof(a.source->'coastUserData'->'playCount')='number'
+  group by a.media_id
+ ),`:sql``}
+ signals(user_id,id,updated,implicit,consumed,explicit,rating,experienced,repeated,minutes) as (
   select t.user_id,t.media_id,t.updated_at,
-   case when t.dropped then -2 when t.play_count>1 then 4 when t.watched or t.play_count>0 then 3
+   case when t.dropped then -2 when ${playCount}>1 then 4 when t.watched or ${playCount}>0 then 3
     when t.position_seconds>0 then 2 when t.watchlist then 1 else 0 end,
-   t.watched,case when t.favourite then 5 else 0 end,null::float8,t.watched or t.play_count>0,t.play_count>1,null::float8
+   t.watched,case when t.favourite then 5 else 0 end,null::float8,t.watched or ${playCount}>0,${playCount}>1,null::float8
   from tracking_state t join users u on coast_feature_enabled(u.id,'personalisation') and u.id=t.user_id and not u.disabled
+  ${screenHistory?sql`
+   left join screen_watches h on h.media_id=t.media_id
+   left join jellyfin_plays j on j.media_id=t.media_id
+  `:sql``}
   where (${userId}::uuid is null or t.user_id=${userId}) and (t.dropped or t.watched or t.favourite or t.watchlist or t.position_seconds>0 or t.play_count>0)
   union all select p.user_id,p.work_id,p.updated_at,
    case when p.state='dropped' then -2 when p.state='completed' then 3 when p.state in ('reading','paused') then 2 else 1 end,
@@ -39,15 +78,11 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
    from music_listens l join users u on coast_feature_enabled(u.id,'personalisation') and u.id=l.user_id and not u.disabled where (${userId}::uuid is null or l.user_id=${userId}) group by l.user_id,l.track_id
   union all select r.user_id,r.target_id,r.updated_at,0,false,case when r.emoji in ('❤️','🔥') then 4 else 0 end,null,false,false,null
    from social_reactions r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where coast_feature_enabled(r.user_id,'social') and r.target_kind='work' and (${userId}::uuid is null or r.user_id=${userId})
+  ${screenHistory?sql`
+   union all select ${userId}::uuid,h.media_id,h.updated,case when h.plays>1 then 4 else 3 end,true,0,null,true,h.plays>1,null
+   from screen_watches h
+  `:sql``}
   ${tasteCategories?sql`
-   -- Match recorded watch history: consecutive provider observations are one watch.
-   union all select e.user_id,e.media_id,max(e.occurred_at),case when count(*)>1 then 4 else 3 end,true,0,null,true,count(*)>1,null
-   from (
-    select user_id,media_id,occurred_at,action,rewatch,
-     lag(action) over(partition by media_id order by occurred_at,created_at,id) as previous_action
-    from tracking_events where user_id=${userId} and applied and action in ('watch','unwatch') and (action='unwatch' or value is distinct from false)
-   ) e where e.action='watch' and (e.rewatch or e.previous_action is distinct from 'watch')
-   group by e.user_id,e.media_id
    union all select h.user_id,h.work_id,max(h.occurred_at),max(case when h.state='completed' then 3 else 2 end),bool_or(h.state='completed'),0,null,
     true,count(*) filter(where h.state='completed')>1,null
    from reading_history h where h.user_id=${userId} and (h.state='completed' or h.page>0) group by h.user_id,h.work_id

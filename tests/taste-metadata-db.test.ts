@@ -1,6 +1,7 @@
 import {expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
+import type {TasteAudienceRating} from '../src/lib/social/taste-rating-model';
 import {importReading} from '../src/lib/catalogue/reading.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
@@ -10,17 +11,19 @@ run('taste maps typed screen credits by provider identity and selects the releas
  try{
   await db`insert into media(id,kind,title,release_date) values(${movie},'movie','Credit fixture','1985-01-01')`;
   await db`insert into metadata_snapshots(media_id,provider,release_date,genres,raw) values
-   (${movie},'jellyfin','2004-01-01',array['Comedy'],'{"facts":{"credits":[{"id":"1","name":"Character called Director","role":"Director"}]}}'),
+   (${movie},'jellyfin','2004-01-01',array['Comedy'],'{"facts":{"audience":{"score":7,"scale":10},"credits":[{"id":"1","name":"Character called Director","role":"Director"}]}}'),
    (${movie},'tmdb','1999-01-01',array['Drama'],${{
     cast:[{id:10,name:'With a namesake'},{id:11,name:'With a namesake'},{id:10,name:'With a namesake'}],
-    facts:{credits:[
+    facts:{audience:{score:5,votes:190,scale:10},credits:[
      {id:'20',name:'Screenwriter',role:'Screenplay'},{id:'21',name:'Cinematographer',role:'Director of Photography'},
      {id:'22',name:'Composer',role:'Original Music Composer'},{id:'23',name:'Director',role:'Director'},
      {id:'24',name:'A different job',role:'Assistant Director'},
     ]},
    }}::jsonb)`;
   const policy={details:'local-preferred',release:'tmdb-only',artwork:'local-preferred'} as const;
-  const result=(await workTasteFeatures([movie],policy)).get(movie)!;
+  const audience=new Map<string,TasteAudienceRating>();
+  const result=(await workTasteFeatures([movie],policy,audience)).get(movie)!;
+  expect(audience.get(movie)).toEqual({score:5,votes:190,scale:10});
   expect(result.genres).toEqual([{id:'comedy',name:'Comedy'}]);
   expect(result.decades).toEqual([{id:'1990s',name:'1990s'}]);
   expect(result.cast).toEqual([{id:'tmdb:10',name:'With a namesake'},{id:'tmdb:11',name:'With a namesake'}]);

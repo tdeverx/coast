@@ -25,13 +25,13 @@
         <div><dt>Weighted signal fit</dt><dd>{points(calculation.rawScore - 50)}</dd></div>
         <div><dt>Evidence adjustment <small>{percent(calculation.retained)} of the signal retained</small></dt>
           <dd>{points(calculation.baseScore - calculation.rawScore)}</dd></div>
-        <div><dt>Ratings comparison</dt><dd>{points(calculation.ratingAdjustment)}</dd></div>
+        <div><dt>Learned adjustment</dt><dd>{points(calculation.ratingAdjustment)}</dd></div>
         <div class="total"><dt>Final match</dt><dd>{score}%</dd></div>
       </dl>
       {#if calculation.ratingTerms.length}
         <details>
-          <summary>Ratings comparison inputs</summary>
-          <p class="note">Strongest inputs before rounding and the eight-point limit.</p>
+          <summary>Learned adjustment inputs</summary>
+          <p class="note">Strongest inputs before rounding and score limits.</p>
           <ul>
             {#each calculation.ratingTerms as term}<li><span>{term.name}</span><span>{points(term.points)}</span></li>{/each}
           </ul>

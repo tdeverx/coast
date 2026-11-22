@@ -5,7 +5,7 @@ import { supportsCheckin } from '#lib/social/checkins.js';
 import { historyScope } from '../../core/tracking/history-scope.server';
 import { wholeWorkId } from '../../core/tracking/continue.server';
 import { rewatchFields } from '../../core/tracking/rewatch.server';
-import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import { featureDenialMessage,getFeatureConfig } from '../features';
@@ -218,6 +218,7 @@ export async function mediaHistory(
   // Scope/count/page share one statement; keep counting before the media join.
   const scopedWhere = and(
     eq(s.trackingEvents.userId, userId),
+    isNull(s.trackingEvents.mergedInto),
     sql`${s.trackingEvents.mediaId} in (select id from audit_scope)`,
     inArray(s.trackingEvents.action, ['watch', 'unwatch', 'progress'])
   );

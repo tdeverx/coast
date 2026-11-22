@@ -9,3 +9,9 @@ Existing records have a separate repair operation. It clears only converged/init
 The read-only dev preview identified 88 repairable provider flags (74 progress, 12 history, 2 favourite), 21 held imported watches, and 1 remaining provider conflict. After explicit user approval, the repair cleared the 67 flags still present and accepted all 21 held watches. Verification found zero remaining provider flags, all 21 original evidence rows retained, and 21 applied review events with matching original dates, date certainty and rewatch state. Counts changed between the read-only preview and repair as normal sync continued.
 
 Validation covers completed/reset resume equivalence, zero-to-positive progress, metadata and provider precision, convergence, genuine remote removals, manual episode-order warnings, imported history retries, original dates/evidence, multi-page Trakt collection reads, account switching, projection uncertainty and import opt-outs. Live provider acceptance is separate from the local HTTP and database fixtures.
+
+## Matching imported watches
+
+If Jellyfin already recorded a watch, Trakt history import pairs a record for the same account, movie or episode and exact known timestamp with that watch. Coast retains the Trakt history ID for retries and removals. The linked observation adds no play or outbound sync job. Separate Trakt history IDs can still represent multiple plays from that provider. When Trakt arrives first, Jellyfin's matching watched status already agrees with Coast.
+
+The migration pairs existing copies, preserves watches separated by a recorded unwatch and corrects the projected play count while respecting Jellyfin's stored cumulative count. It leaves the original source records available for attribution. A removal of a merged watch records both available source identities and uses the existing connection permissions.

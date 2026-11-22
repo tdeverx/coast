@@ -57,6 +57,28 @@ run('taste metadata retains complementary sources and resolves genres with the c
  expect(local?.studios?.map(value=>value.name)).toEqual(['Coast Studio']);
  expect((await workTasteFeatures([id],'tmdb-only')).get(id)?.genres?.map(value=>value.name)).toEqual(['Science Fiction']);
 });
+run('recommendations use fresh return patterns only to break equal ranks',async()=>{
+ const sql=getSql(),owner=crypto.randomUUID();
+ const [lower,preferred,higher]=Array.from({length:3},()=>crypto.randomUUID()).sort();
+ const works:string[]=[lower,preferred,higher];
+ await sql`insert into users(id,username) values(${owner},${'taste-tie-'+owner})`;
+ try{
+  const [{revision}]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${owner}::uuid`);
+  for(const [work,score,tieBreak] of [[lower,80,-0.2],[preferred,80,0.5],[higher,81,-0.5]] as const){
+   await sql`insert into media(id,kind,title) values(${work},'movie','Taste return fixture')`;
+   await sql`insert into user_taste_scores(user_id,work_id,score,confidence,revision,breakdown)
+    values(${owner},${work},${score},80,${revision},${{returnTieBreak:tieBreak}}::jsonb)`;
+  }
+  const ordered=async()=>(await recommendationRows(owner,'recommendations',new URL('http://test/?category=screen')))
+   .items.map(item=>item.id).filter(id=>works.includes(id));
+  expect(await ordered()).toEqual([higher,preferred,lower]);
+  await sql`update user_taste_scores set revision='stale' where user_id=${owner} and work_id=${preferred}`;
+  expect(await ordered()).toEqual([higher,lower]);
+ }finally{
+  await sql`delete from users where id=${owner}`;
+  await sql`delete from media where id=any(${sql.array(works,'UUID')}::uuid[])`;
+ }
+});
 run('pause, manual run and single-job admission use the existing outbox',async()=>{
  const sql=getSql();await sql`delete from outbox_actions where kind='taste.refresh'`;
  await updateTasteSchedule({enabled:false,intervalMinutes:60});expect((await tasteJob()).timing.nextAt).toBeNull();

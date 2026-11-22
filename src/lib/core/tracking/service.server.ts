@@ -173,7 +173,13 @@ async function applyChange(
         reviewRequired: false,
       };
     const [existing] = await tx
-      .select()
+      .select({
+        id: trackingEvents.id,
+        mergedInto: trackingEvents.mergedInto,
+        applied: trackingEvents.applied,
+        reviewedAt: trackingEvents.reviewedAt,
+        reviewReason: trackingEvents.reviewReason,
+      })
       .from(trackingEvents)
       .where(
         and(
@@ -185,11 +191,11 @@ async function applyChange(
     if (existing)
       return {
         state,
-        eventId: existing.id,
+        eventId: existing.mergedInto ?? existing.id,
         changed: false,
         progressChanged: false,
         duplicate: true,
-        reviewRequired: !existing.applied && existing.reviewedAt === null,
+        reviewRequired: !existing.mergedInto && !existing.applied && existing.reviewedAt === null,
         warning: existing.reviewedAt ? undefined : (existing.reviewReason ?? undefined),
       };
   }
@@ -209,6 +215,35 @@ async function applyChange(
   }
   const imported = input.source !== 'coast' && input.source !== 'playback';
   const occurredAtKnown = input.occurredAtKnown ?? (!imported || !!input.occurredAt);
+  if (state.watched && input.action === 'watch' && input.source === 'trakt' &&
+    input.sourceEventId && occurredAtKnown && input.occurredAt
+  ) {
+    const occurredAt = new Date(input.occurredAt);
+    // Pair one observation per provider. Identical timestamps within one provider
+    // can still represent distinct records, so consume each match only once.
+    const [watch] = await tx.execute<{ id: string }>(sql`
+      select e.id from tracking_events e
+      where e.user_id = ${userId} and e.media_id = ${input.mediaId} and e.occurred_at = ${occurredAt.toISOString()}::timestamptz
+        and e.action = 'watch' and e.applied and e.occurred_at_known and e.source = 'jellyfin'
+        and not exists (select 1 from tracking_events merged where merged.merged_into = e.id)
+      order by e.created_at, e.id limit 1
+    `);
+    if (watch) {
+      await tx.insert(trackingEvents).values({
+        userId,
+        mediaId: input.mediaId,
+        action: 'watch',
+        source: input.source,
+        sourceEventId: input.sourceEventId,
+        value: input.value,
+        rewatch: input.rewatch,
+        occurredAt,
+        applied: false,
+        mergedInto: watch.id,
+      });
+      return { state, eventId: watch.id, changed: false, progressChanged: false, duplicate: true, reviewRequired: false };
+    }
+  }
   const projected = projectTracking(state, {
     ...input,
     occurredAt: occurredAtKnown
@@ -728,6 +763,7 @@ export async function getHistory(
     .where(
       and(
         eq(trackingEvents.userId, userId),
+        isNull(trackingEvents.mergedInto),
         options.mediaId ? eq(trackingEvents.mediaId, options.mediaId) : undefined,
         options.before
           ? sql`${trackingEvents.occurredAt} < ${new Date(options.before)}`

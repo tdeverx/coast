@@ -43,7 +43,7 @@
           ...(result?.score != null ? [{ label: 'Fit with your history', value: `${result.score}%`, detail: '50% is neutral' }] : []),
           ...(result?.score != null && 'confidence' in result ? [{ label: 'Evidence strength', value: `${result.confidence}%` }] : []),
           ...(adminTitle !== undefined && result && !result.breakdown && 'ratingAdjustment' in result && result.ratingAdjustment
-            ? [{ label: 'Adjustment from ratings', value: `${result.ratingAdjustment > 0 ? '+' : '−'}${Math.abs(result.ratingAdjustment)} points` }]
+            ? [{ label: 'Learned adjustment', value: `${result.ratingAdjustment > 0 ? '+' : '−'}${Math.abs(result.ratingAdjustment)} points` }]
             : []),
         ]} />
       {/if}

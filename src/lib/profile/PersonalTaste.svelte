@@ -27,6 +27,9 @@
   }
   const rating = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
   const count = new Intl.NumberFormat();
+  const percent = new Intl.NumberFormat(undefined, {style:'percent'});
+  const affinityPercent = (value: number) => percent.format((1 + value) / 2);
+  const columnSize = Math.ceil(tasteDimensions.length / 2);
   function worksLabel(works: number) {
     return works === 1 ? '1 work' : `${count.format(works)} works`;
   }
@@ -39,11 +42,11 @@
     label: dimension === 'writers' && (active?.category === 'book' || active?.category === 'comic')
       ? 'Authors' : displayLabel(dimension),
     value: profile?.signals[dimension]?.preview.map(signal =>
-      `${signal.name} (${affinityLabel(signal.value).toLowerCase()})`).join(', ') || null,
+      `${signal.name} ${affinityPercent(signal.value)}`).join(' · ') || null,
     count: profile?.signals[dimension]?.count ?? 0,
   })));
   const signalFacts = $derived(signalRows.map(row=>({
-    ...row, detail:row.count > 3 ? `Showing 3 of ${row.count}` : undefined,
+    ...row, detail:row.count > 3 ? `Showing 3 of ${count.format(row.count)}` : undefined,
   })));
   function affinityDetail(affinity:TasteAffinity) {
     const parts = [worksLabel(affinity.samples)];
@@ -121,10 +124,11 @@
         detail:profile?.ratings ? (profile.ratings === 1 ? '1 rated work' : `${count.format(profile.ratings)} rated works`) : undefined},
       {label:'Last refreshed',value:profile ? date.format(new Date(profile.updatedAt)) : null,text:true},
     ]} />
-    <DetailCard title={`${active.label} signals`}>
+    <DetailCard title={`${active.label} signals`} description={profile?.worksWithSignals
+      ? '50% is neutral. Signals with stronger evidence appear first.' : undefined}>
       <div class="taste-facts">
-        <FactList items={signalFacts.slice(0,8)} />
-        <FactList items={signalFacts.slice(8)} />
+        <FactList items={signalFacts.slice(0,columnSize)} />
+        <FactList items={signalFacts.slice(columnSize)} />
       </div>
     </DetailCard>
   {:else}
@@ -142,7 +146,7 @@
     {:else if browser.data.items.length}
       <FactList items={browser.data.items.map(affinity => ({
         label:affinity.name,
-        value:affinityLabel(affinity.value),
+        value:`${affinityPercent(affinity.value)} · ${affinityLabel(affinity.value)}`,
         detail:affinityDetail(affinity),
       }))} />
       <Pagination page={currentPage} pages={browser.data.pages} label="Saved signal pages" onchange={number => void load(number)} />
@@ -156,4 +160,7 @@
   .section, .taste-facts { display: grid; gap: var(--gutter); }
   .section > :global(.row-header) { margin-bottom: 0; }
   .taste-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+  @media (min-width: 900px) {
+    .section > :global(.metrics) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
 </style>

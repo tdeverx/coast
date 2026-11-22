@@ -1,5 +1,5 @@
 import { traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
-import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '#lib/server/db/index.js';
 import * as s from '#lib/server/db/schema.js';
@@ -40,6 +40,7 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
       .where(
         and(
           eq(s.trackingEvents.userId, userId),
+          isNull(s.trackingEvents.mergedInto),
           sql`${s.trackingEvents.mediaId} in (${historyScope(mediaId)})`,
           inArray(s.trackingEvents.action, ['watch', 'unwatch', 'progress']),
           sql`${s.trackingEvents.createdAt} <= ${new Date(input.before)}`,
@@ -59,6 +60,21 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
         409
       );
     const mediaIds = [...new Set(entries.map((entry) => entry.mediaId))];
+    // A merged observation may arrive after the panel opened. Remove it with its
+    // watch and tombstone both identities, while counting one user selection.
+    const aliases = await tx
+      .select({
+        id: s.trackingEvents.id,
+        source: s.trackingEvents.source,
+        sourceEventId: s.trackingEvents.sourceEventId,
+        mergedInto: s.trackingEvents.mergedInto,
+      })
+      .from(s.trackingEvents)
+      .where(and(
+        eq(s.trackingEvents.userId, userId),
+        inArray(s.trackingEvents.mergedInto, entries.map((entry) => entry.id))
+      ));
+    const removed = [...entries, ...aliases];
     const previous = await tx
       .select()
       .from(s.trackingState)
@@ -95,7 +111,7 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
     await tx
       .insert(s.removedTrackingSources)
       .values(
-        entries.flatMap((entry) => [
+        removed.flatMap((entry) => [
           { userId, source: 'removed-coast-event', sourceEventId: entry.id },
           ...(entry.sourceEventId
             ? [{ userId, source: entry.source, sourceEventId: entry.sourceEventId }]
@@ -123,6 +139,7 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
       )
     );
     await rebuildHistoryInTransaction(tx, userId, mediaIds, entries);
+    const aliasByWatch = new Map(aliases.map((alias) => [alias.mergedInto, alias]));
     let queued = 0;
     for (const id of mediaIds) {
       const [state] = await tx
@@ -175,12 +192,17 @@ export async function removeHistory(userId: string, mediaId: string, raw: unknow
             category: 'history',
             before: summary(old),
             after: summary(state),
-            events: events.map((event) => ({
-              action: event.action,
-              source: event.source,
-              sourceEventId: event.sourceEventId,
-              occurredAt: event.occurredAtKnown ? event.occurredAt.toISOString() : null,
-            })),
+            events: events.map((event) => {
+              const alias = aliasByWatch.get(event.id);
+              const observation = provider === 'trakt' && alias?.source === 'trakt' &&
+                alias.sourceEventId?.startsWith(`${connection.id}:history:`) ? alias : event;
+              return {
+                action: event.action,
+                source: observation.source,
+                sourceEventId: observation.sourceEventId,
+                occurredAt: event.occurredAtKnown ? event.occurredAt.toISOString() : null,
+              };
+            }),
           },
         });
         queued++;

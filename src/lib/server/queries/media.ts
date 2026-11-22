@@ -6,7 +6,7 @@ import { lifecycle } from '#lib/media/model.js';
 import { tmdbArtworkUrl } from '#lib/providers/tmdb/artwork.server.js';
 import type { CastMember } from '#lib/providers/contracts.js';
 import { artworkKeys, type ArtworkImages } from '#lib/artwork.js';
-import { and, asc, desc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, inArray, isNull, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
@@ -800,7 +800,7 @@ export async function detailsData(userId: string, id: string, includeChildren = 
     db
       .select()
       .from(s.trackingEvents)
-      .where(and(eq(s.trackingEvents.userId, userId), eq(s.trackingEvents.mediaId, id)))
+      .where(and(eq(s.trackingEvents.userId, userId), eq(s.trackingEvents.mediaId, id), isNull(s.trackingEvents.mergedInto)))
       .orderBy(desc(s.trackingEvents.occurredAt))
       .limit(20),
     db.select().from(s.externalIds).where(eq(s.externalIds.mediaId, id)),
