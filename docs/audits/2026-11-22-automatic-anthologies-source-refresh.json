@@ -57,7 +57,7 @@
     },
     "src/lib/sync/jellyfin.server.ts": {
       "previous": "a0edeec37609719d90ec2638f2558587b92efd4ed740e2d412bcfb789424724e",
-      "current": "a879bbb3ec5cbf7d47798e19723ea614bc420a229ef2792f989a37e398f65ab8"
+      "current": "32ddfc43edb2fa8492379c0e92c5049b501bfe8ec883183b73981900754a5f43"
     },
     "src/lib/sync/trakt-export.server.ts": {
       "previous": "e68a7819dc21e1abdb934c12e834bec89e2bb4736107cc3f0258c2551bded1cf",

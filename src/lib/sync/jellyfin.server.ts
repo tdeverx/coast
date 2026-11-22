@@ -361,7 +361,7 @@ async function runJellyfinScan(
           storyNumber: item.seasonNumber === 1 ? sql<number | null>`(
             select season.season_number from external_ids source join seasons season on season.media_id=source.media_id
             where (source.provider,source.external_id,source.media_kind)=
-              (${anthologyTmdb},${providerItems.snapshot}->'externalIds'->>'tmdb','season') and season.show_id=${providerItems.mediaId}
+              (${anthologyTmdb},provider_items.snapshot->'externalIds'->>'tmdb','season') and season.show_id=provider_items.media_id
           )` : sql<null>`null`,
         })
         .from(providerItems)
