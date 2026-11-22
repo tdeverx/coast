@@ -223,7 +223,10 @@ run('private profile and match reads withdraw old source permissions immediately
    await db`update user_taste_scores set breakdown=jsonb_set(breakdown,'{score}','7') where user_id=${owner} and work_id=${ids[2]}`;
    const adminResponse=await handleAdmin(adminContext);
    expect(adminResponse!.headers.get('cache-control')).toContain('no-store');
-   expect(await adminResponse!.json()).toEqual({match:saved});
+   const {match:{breakdown,...result}}=await adminResponse!.json();
+   expect(result).toEqual(saved);
+   expect(breakdown.signals.some((signal:{dimension:string;matched:number})=>signal.dimension==='cast'&&signal.matched>0)).toBe(true);
+   expect(breakdown.calculation.baseScore+breakdown.calculation.ratingAdjustment).toBe(saved!.score!);
    expect(spy).toHaveBeenCalledTimes(1);
    expect((await titleTaste(owner,ids[2]))?.score).toBe(7);
    const unavailable=new URL(adminRequest.url);
@@ -296,6 +299,39 @@ run('one observed work is retained in the summary without preparing or hydrating
    expect(read).not.toHaveBeenCalled();
   }finally{read.mockRestore();}
  }finally{await db`delete from users where id=${owner}`;}
+});
+
+run('a supported rating comparison survives publication and agrees with on-demand scoring',async()=>{
+ const db=getSql(),owner=crypto.randomUUID(),works=Array.from({length:62},()=>crypto.randomUUID());
+ const workIds=db.array(works,'UUID');
+ await db`insert into users(id,username) values(${owner},${'taste-trained-'+owner})`;
+ try{
+  await db`insert into media(id,kind,title,genres)
+   select id,'movie','Rating fixture '||ord,array[case when ord%4 in (0,1) then 'Space' else 'Magic' end]
+   from unnest(${workIds}::uuid[]) with ordinality as f(id,ord)`;
+  await db`insert into work_features(work_id,provider,features)
+   select id,'tmdb',jsonb_build_object('tags',jsonb_build_array(jsonb_build_object('id',subject,'name',subject)))
+   from unnest(${workIds}::uuid[]) with ordinality as f(id,ord)
+   cross join lateral (select case when ord%4 in (1,2) then 'Exploration' else 'Combat' end as subject) s`;
+  await db`insert into ratings(user_id,media_id,value)
+   select ${owner},id,case when ord%4 in (1,3) then 5 else 2 end
+   from unnest(${workIds}::uuid[]) with ordinality as f(id,ord) where ord<=60`;
+  await refreshTasteCaches();
+  const [profile]=await db`select profile,scoring from user_taste_profiles where user_id=${owner} and medium='movie'`;
+  expect(profile.profile.ratingWeights).toBeUndefined();
+  expect(Object.keys(profile.scoring.ratingWeights).length).toBeGreaterThan(0);
+  const [cached]=await db`select breakdown from user_taste_scores where user_id=${owner} and work_id=${works[60]}`;
+  const warm=await titleTaste(owner,works[60]);
+  expect(warm?.ratingAdjustment).toBeGreaterThan(0);
+  expect(warm).toEqual(cached.breakdown);
+  const inspected=await titleTaste(owner,works[60],'recalculate');
+  expect(inspected).toMatchObject(warm!);
+  expect(inspected?.breakdown?.calculation?.ratingTerms.length).toBeGreaterThan(0);
+  expect((await titleTaste(owner,works[61]))?.ratingAdjustment).toBeLessThan(0);
+ }finally{
+  await db`delete from users where id=${owner}`;
+  await db`delete from media where id=any(${workIds}::uuid[])`;
+ }
 });
 
 run('linked tracks use the album reference on warm and on-demand item reads',async()=>{

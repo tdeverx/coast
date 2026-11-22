@@ -1,3 +1,5 @@
+import { tasteRatingAdjustment, type TasteRatingTerm } from './taste-rating-model';
+
 export const tasteMedia = [
  {value:'movie',comparison:'movies',label:'Movies',category:'screen'},
  {value:'show',comparison:'tv',label:'Shows',category:'screen'},
@@ -14,11 +16,12 @@ export type TasteFeatures = Partial<Record<TasteDimension,TasteFeature[]>>;
 export type TasteEvidence = {id:string;weight:number;features:TasteFeatures};
 export type TasteAffinity = TasteFeature & {
  value:number;samples:number;explicitSamples?:number;consumedSamples?:number;repeatedSamples?:number;positiveFeedbackSamples?:number;
+ medianRating?:number;
 };
 export type TasteProfile = {version:1;works:number;dimensions:Partial<Record<TasteDimension,TasteAffinity[]>>};
 export type TasteWorkEvidence = {rating:number|null;explicit:number;implicit:number;consumed:boolean;repeated:boolean;playtimeRank?:number|null};
 export type SavedAffinity = [id:string,name:string,value:number,samples:number,positive:number,negative:number,explicitSamples:number,
- consumedSamples:number,repeatedSamples:number,positiveFeedbackSamples:number,inferredConsumedSamples:number];
+ consumedSamples:number,repeatedSamples:number,positiveFeedbackSamples:number,inferredConsumedSamples:number,medianRating?:number];
 type SignalPreview = Pick<TasteAffinity,'name'|'value'|'samples'>;
 export type LifetimeTasteProfile = {
  version:3;works:number;worksWithSignals:number;explicitWorks:number;inferredWorks:number;consumedWorks:number;repeatedWorks:number;ratings:number;medianRating:number|null;
@@ -41,10 +44,11 @@ export function namedFeatures(names:string[]):TasteFeature[] {
 type AffinityTotals = TasteFeature & {
  positive:number;negative:number;samples:number;explicitSamples:number;consumedSamples:number;repeatedSamples:number;
  positiveFeedbackSamples:number;explicitTotal:number;inferredConsumedSamples:number;inferredRepeatedSamples:number;
+ ratings?:{buckets:Uint32Array;count:number;total:number};
 };
 type DimensionCounts = {consumed:number;repeated:number;explicit:number;positive:number};
 type DimensionTotals = DimensionCounts & {inferredConsumed:number;inferredRepeated:number};
-type Observations = {explicit:boolean;consumed:boolean;repeated:boolean;positiveFeedback:boolean};
+type Observations = {explicit:boolean;consumed:boolean;repeated:boolean;positiveFeedback:boolean;rating:number|null};
 function featureTotals<T>(){
  return new Map(tasteDimensions.map(dimension=>[dimension,new Map<string,T>()]));
 }
@@ -82,6 +86,13 @@ function recordVote(totals:Map<TasteDimension,Map<string,AffinityTotals>>,known:
   else if(observations.consumed){
    entry.inferredConsumedSamples++;
    if(observations.repeated)entry.inferredRepeatedSamples++;
+  }
+  if(observations.rating!==null){
+   const ratings=entry.ratings??={buckets:new Uint32Array(21),count:0,total:0};
+   // Quarter-stars also preserve the usual median of two half-star episode ratings.
+   ratings.buckets[Math.min(20,Math.max(0,Math.round(observations.rating*4)))]++;
+   ratings.count++;
+   ratings.total+=vote;
   }
   if(observations.consumed)entry.consumedSamples++;
   if(observations.repeated)entry.repeatedSamples++;
@@ -128,23 +139,28 @@ export function buildTasteProfile(evidence:TasteEvidence[]):TasteProfile {
 }
 
 type RatingBaseline = {count:number;median:number|null};
-// A handful of ratings gives little evidence of a personal scale. Even a well-established
-// scale shifts the midpoint by at most three quarters of a star. Endpoints stay anchored.
+// A handful of ratings gives little evidence of a personal scale. Keep room on both sides
+// for an established rater whose personal median sits near an endpoint.
 function ratingMidpoint({count,median}:RatingBaseline){
  const midpoint=2.75;
  if(median===null||count<5)return midpoint;
  const calibration=Math.min(1,(count-4)/12);
- return midpoint+calibration*Math.max(-0.75,Math.min(0.75,median-midpoint));
+ return midpoint+calibration*Math.max(-1.5,Math.min(1.5,median-midpoint));
 }
 
 const inferredMass=0.5;
 // Repeat evidence has its own count. A completion contributes the same base vote on later plays.
 const inferredPreference=[0,0.10,0.18,0.34,0.34] as const;
+function ratingVote(rating:number,midpoint:number){
+ const distance=rating-midpoint;
+ const scale=distance>=0?5-midpoint:Math.min(midpoint-0.5,Math.max(1.6,5-midpoint));
+ const vote=distance/scale;
+ // Give clear below-usual opinions more weight without shifting the neutral rating.
+ return vote<0?Math.max(-1,vote*(1-0.33*vote)):Math.min(1,vote);
+}
+
 function workVote({rating,explicit,implicit,consumed,playtimeRank}:TasteWorkEvidence,midpoint:number){
- if(rating!==null){
-  const distance=rating-midpoint;
-  return {value:Math.max(-1,Math.min(1,distance/(distance>=0?5-midpoint:midpoint-0.5))),explicit:true};
- }
+ if(rating!==null)return {value:ratingVote(rating,midpoint),explicit:true};
  if(explicit)return {value:Math.max(-1,Math.min(1,explicit/5)),explicit:true};
  // A drop can mean abandoning a tracker entry; consumption alone gives limited evidence of liking.
  const preference=implicit<0?-0.30:inferredPreference[Math.min(4,Math.max(0,implicit))];
@@ -156,6 +172,7 @@ function workVote({rating,explicit,implicit,consumed,playtimeRank}:TasteWorkEvid
 
 const compact=(value:number)=>Math.round(value*10000)/10000;
 const contextDimensions=new Set<TasteDimension>(['genres','publishers','mechanics','perspectives','studios','networks','languages','countries','decades']);
+const personDimensions:ReadonlySet<TasteDimension>=new Set(['cast','directors','writers','illustrators','composers','cinematographers','artists']);
 
 // Wilson bounds keep a perfect record on a handful of titles from outweighing a larger sample.
 // Compare distinct titles with/without the feature, among titles with metadata in that dimension.
@@ -174,7 +191,20 @@ function relativeRate(positive:number,total:number,allPositive:number,all:number
 }
 
 /** Combine observed reach, deliberate returns and the user's stated opinions once per feature. */
-function lifetimeAffinity(entry:AffinityTotals,dimension:TasteDimension,consumedWorks:number,known:DimensionTotals){
+function featureMedian(ratings:AffinityTotals['ratings']){
+ if(!ratings)return undefined;
+ const lower=Math.floor((ratings.count-1)/2),upper=Math.floor(ratings.count/2);
+ let seen=0,sum=0;
+ for(const [bucket,count] of ratings.buckets.entries()){
+  const end=seen+count;
+  if(seen<=lower&&lower<end)sum+=bucket;
+  if(seen<=upper&&upper<end)return (sum+bucket)/8;
+  seen=end;
+ }
+}
+
+/** Blend rated opinions with a small contribution from the feature's rating median. */
+function lifetimeAffinity(entry:AffinityTotals,dimension:TasteDimension,consumedWorks:number,known:DimensionTotals,midpoint:number,medianRating:number|undefined){
  const inferred=entry.samples-entry.explicitSamples;
  const base=inferred?(entry.positive-entry.negative-entry.explicitTotal)/(inferred*inferredMass+2):0;
  // An explicitly assessed work has already spent its vote. Its watch or replay remains visible
@@ -191,10 +221,17 @@ function lifetimeAffinity(entry:AffinityTotals,dimension:TasteDimension,consumed
  else if(contextDimensions.has(dimension))frequencyWeight=0.25;
  else if(dimension==='tags'||dimension==='themes')frequencyWeight=0.50;
  const exposure=frequencyWeight*consumed/(consumed+4)*(0.65*reach+0.20*replay);
- const behaviour=Math.min(1,base+(base<0?0:exposure));
+ const familiarity=0.13*selectiveReturns+0.12*consumed/(consumed+8);
+ const behaviour=Math.min(1,base+(base<0?0:exposure+frequencyWeight*familiarity));
  // Repeated stated opinions outweigh incidental exposure however often a feature appears.
  // The prior contains two works' worth of behavioural evidence, or neutral with no observations.
- return compact((entry.explicitTotal+2*behaviour)/(entry.explicitSamples+2));
+ const medianAdjustment=entry.ratings&&medianRating!==undefined
+  ?0.15*(entry.ratings.count*ratingVote(medianRating,midpoint)-entry.ratings.total):0;
+ return compact((entry.explicitTotal+medianAdjustment+2*behaviour)/(entry.explicitSamples+2));
+}
+
+function creditSupport(entry:AffinityTotals&{value:number}){
+ return Math.abs(entry.value)*entry.samples/(entry.samples+3)+0.12*Math.log1p(entry.consumedSamples+entry.explicitSamples);
 }
 
 /** The job streams distinct roots. Only feature totals and constant-size counters survive each page. */
@@ -209,7 +246,7 @@ export function createTasteAccumulator(baseline:RatingBaseline={count:0,median:n
    if(evidence.repeated)repeatedWorks++;
    if(evidence.rating===null&&!evidence.explicit&&!evidence.implicit&&!evidence.consumed)return;
    const vote=workVote(evidence,midpoint);
-   const observations={explicit:vote.explicit,consumed:evidence.consumed,repeated:evidence.repeated,
+   const observations={explicit:vote.explicit,rating:evidence.rating,consumed:evidence.consumed,repeated:evidence.repeated,
     positiveFeedback:evidence.rating===null?evidence.explicit>0:evidence.rating>=3.5};
    if(!recordVote(totals,known,features,vote.value,observations))return;
    if(vote.explicit)explicitWorks++;
@@ -219,9 +256,21 @@ export function createTasteAccumulator(baseline:RatingBaseline={count:0,median:n
    const dimensions:LifetimeTasteProfile['dimensions']={},signals:LifetimeTasteProfile['signals']={};
    for(const [dimension,values] of totals){
     if(!values.size)continue;
-    const entries=Array.from(values.values(),entry=>({...entry,value:lifetimeAffinity(entry,dimension,consumedWorks,known.get(dimension)!)})).sort(byAffinity);
-    dimensions[dimension]=entries.map(entry=>[entry.id,entry.name,entry.value,entry.samples,compact(entry.positive),compact(entry.negative),
-     entry.explicitSamples,entry.consumedSamples,entry.repeatedSamples,entry.positiveFeedbackSamples,entry.inferredConsumedSamples]);
+    const summaries=Array.from(values.values(),entry=>{
+     const medianRating=featureMedian(entry.ratings);
+     return {...entry,medianRating,value:lifetimeAffinity(entry,dimension,consumedWorks,known.get(dimension)!,midpoint,medianRating)};
+    });
+    const entries=(personDimensions.has(dimension)?summaries.filter(entry=>entry.samples>=2)
+     .map(entry=>({entry,support:creditSupport(entry)}))
+     .sort((a,b)=>b.support-a.support||byAffinity(a.entry,b.entry))
+     .slice(0,dimension==='cast'?512:256).map(({entry})=>entry):summaries).sort(byAffinity);
+    if(!entries.length)continue;
+    dimensions[dimension]=entries.map(entry=>{
+     const saved:SavedAffinity=[entry.id,entry.name,entry.value,entry.samples,compact(entry.positive),compact(entry.negative),
+      entry.explicitSamples,entry.consumedSamples,entry.repeatedSamples,entry.positiveFeedbackSamples,entry.inferredConsumedSamples];
+     if(entry.medianRating!==undefined)saved.push(entry.medianRating);
+     return saved;
+    });
     const preview=entries.slice(0,3).map(({name,value,samples})=>({name,value,samples}));
     signals[dimension]={count:entries.length,preview};
    }
@@ -235,16 +284,15 @@ export function createTasteAccumulator(baseline:RatingBaseline={count:0,median:n
 export function decodeTasteAffinities(entries:TasteAffinity[]|SavedAffinity[]):TasteAffinity[]{
  return entries.map(entry=>{
   if(!Array.isArray(entry))return entry;
-  const [id,name,value,samples,,,explicitSamples,consumedSamples,repeatedSamples,positiveFeedbackSamples]=entry;
-  return {id,name,value,samples,explicitSamples,consumedSamples,repeatedSamples,positiveFeedbackSamples};
+  const [id,name,value,samples,,,explicitSamples,consumedSamples,repeatedSamples,positiveFeedbackSamples,,medianRating]=entry;
+  return {id,name,value,samples,explicitSamples,consumedSamples,repeatedSamples,positiveFeedbackSamples,medianRating};
  });
 }
 
 const influence:Record<TasteDimension,number> = {
- genres:0.65,tags:0.9,themes:0.95,cast:0.9,directors:1.1,writers:1.1,illustrators:1,composers:0.9,cinematographers:0.85,franchises:1,
- developers:1,publishers:0.25,mechanics:0.3,perspectives:0.35,artists:1.15,studios:0.35,networks:0.25,languages:0.2,countries:0.2,decades:0.25,
+ genres:0.7,tags:1.05,themes:1,cast:1.1,directors:1.15,writers:1.15,illustrators:1,composers:0.6,cinematographers:0.65,franchises:1.35,
+ developers:1,publishers:0.25,mechanics:0.3,perspectives:0.35,artists:1.15,studios:0.16,networks:0.15,languages:0.1,countries:0.1,decades:0.12,
 };
-const personDimensions:ReadonlySet<TasteDimension>=new Set(['cast','directors','writers','illustrators','composers','cinematographers','artists']);
 type Direction='positive'|'negative'|'mixed';
 // Fixed positions keep the persisted lookup small. Only comparable features get an entry.
 type ScoringAffinity=[name:string,value:number,samples:number,explicit:number,mass:number,support:number,direction:Direction,distinctiveGenre?:true];
@@ -252,12 +300,22 @@ export type TasteReference={
  works:number;
  dimensions:Partial<Record<TasteDimension,Record<string,ScoringAffinity>>>;
  genres:Record<string,true>;
+ ratingWeights?:Record<string,number>;
 };
 type TasteReason={dimension:TasteDimension;name:string;direction:Direction;samples:number};
-type TasteFit={score:number|null;confidence:number;dimensions:Partial<Record<TasteDimension,number>>;reasons:TasteReason[];matches:number};
+type SignalEvidence=Omit<TasteReason,'dimension'>&{explicit:number;affinity:number;support:number};
+export type TasteSignalBreakdown={dimension:TasteDimension;context:boolean;fit:number;matched:number;compared:number;weightShare:number;evidence:SignalEvidence[]};
+export type TasteScoreBreakdown={
+ signals:TasteSignalBreakdown[];
+ coverage:number;
+ support:number;
+ calculation?:{rawScore:number;baseScore:number;ratingAdjustment:number;ratingTerms:TasteRatingTerm[];retained:number;explicit:number};
+ withheld?:'context'|'support';
+};
+type TasteFit={score:number|null;confidence:number;dimensions:Partial<Record<TasteDimension,number>>;reasons:TasteReason[];matches:number;ratingAdjustment?:number;breakdown?:TasteScoreBreakdown};
 
 /** The worker prepares all title-independent weights before publishing the owner's reference. */
-export function prepareTasteReference(profile:SavedTasteProfile):TasteReference{
+export function prepareTasteReference(profile:SavedTasteProfile,ratingWeights?:TasteReference['ratingWeights']):TasteReference{
  const dimensions:TasteReference['dimensions']={};
  const genres:Record<string,true>=Object.create(null);
  for(const dimension of tasteDimensions){
@@ -296,13 +354,14 @@ export function prepareTasteReference(profile:SavedTasteProfile):TasteReference{
    dimensions[dimension]=lookup;
   }
  }
- return {works:profile.works,dimensions,genres};
+ return {works:profile.works,dimensions,genres,...(ratingWeights?{ratingWeights}:{})};
 }
 
 /** JSONB key order is immaterial. Evaluate genres before their descriptive aliases on every read. */
-export function scorerFromReference(reference:TasteReference){
+export function scorerFromReference(reference:TasteReference,inspect=false){
  return (features:TasteFeatures):TasteFit=>{
   const dimensions:TasteFit['dimensions']={},reasons:(TasteReason&{strength:number})[]=[];
+  const signals: (Omit<TasteSignalBreakdown,'weightShare'>&{weight:number})[]|undefined=inspect?[]:undefined;
   let contextWeight=0,contextTotal=0,signalWeight=0,signalTotal=0,matches=0,informativeGenres=0,distinctiveGenre=false;
   let signalMass=0,genreMass=0,explicitSamples=0,genreExplicit=0,availableDimensions=0,matchedDimensions=0;
   // One person credited in multiple roles can have a distinct affinity in each. Split their
@@ -324,6 +383,7 @@ export function scorerFromReference(reference:TasteReference){
     feature.id.startsWith('artist-name:')||!Object.hasOwn(lookup,feature.id)));
    if(!contextual)availableDimensions++;
    const seen=new Set<string>();
+   const evidence: (SignalEvidence&{strength:number})[]|undefined=inspect?[]:undefined;
    let support=0,numerator=0,strongestSupport=0,known=0;
    let best:TasteReason|undefined,bestStrength=-1;
    for(const feature of candidates){
@@ -354,6 +414,7 @@ export function scorerFromReference(reference:TasteReference){
     numerator+=value*reliability;
     strongestSupport=Math.max(strongestSupport,reliability);
     const strength=Math.abs(value)*reliability;
+    evidence?.push({name,direction,samples,explicit,affinity:Math.round(50+50*value),support:reliability,strength});
     if(strength>bestStrength||strength===bestStrength&&best&&name<best.name){
      best={dimension,name,direction,samples};bestStrength=strength;
     }
@@ -371,6 +432,8 @@ export function scorerFromReference(reference:TasteReference){
    }
    matches+=known;
    dimensions[dimension]=Math.round(50+50*fit);
+   if(evidence)signals?.push({dimension,context:contextual,fit:dimensions[dimension]!,matched:known,compared:seen.size,weight,
+    evidence:evidence.sort((a,b)=>b.strength-a.strength||a.name.localeCompare(b.name)).slice(0,5).map(({strength,...entry})=>entry)});
    if(best)reasons.push({...best,strength:bestStrength*influence[dimension]});
   }
   // Many weak contextual attributes must not outweigh a creator, subject or franchise.
@@ -381,23 +444,49 @@ export function scorerFromReference(reference:TasteReference){
   const contextUsed=Math.min(contextLimit,contextWeight);
   const weight=signalWeight+contextUsed;
   const coverage=availableDimensions?0.65+0.35*Math.sqrt(matchedDimensions/availableDimensions):1;
-  if(weight*coverage<0.35||(!signalWeight&&!hasGenreSignal))return {score:null,confidence:0,dimensions:{},reasons:[],matches};
+  const breakdown:TasteScoreBreakdown|undefined=signals&&{coverage,support:weight*coverage,
+   signals:signals.map(({weight:rawWeight,...signal})=>({...signal,
+    weightShare:weight?(signal.context?rawWeight*contextUsed/contextWeight:rawWeight)/weight:0,
+   })).sort((a,b)=>b.weightShare-a.weightShare)};
+  if(weight*coverage<0.35||(!signalWeight&&!hasGenreSignal)){
+   if(breakdown)breakdown.withheld=!signalWeight&&!hasGenreSignal?'context':'support';
+   return {score:null,confidence:0,dimensions:{},reasons:[],matches,...(breakdown?{breakdown}:{})};
+  }
   const total=signalTotal+(contextWeight?contextTotal*contextUsed/contextWeight:0);
   // Evidence strength, not a calibrated probability of liking. Shrink thin matches toward neutral.
   // Ten fields on the same two films are still evidence from two films.
   const strongestMass=signalWeight?signalMass:genreMass;
   const shrink=Math.min(weight/(weight+0.4),strongestMass/(strongestMass+1.5));
-  const score=Math.round(50+50*total/weight*shrink);
   const direct=signalWeight?explicitSamples:genreExplicit;
+  // A signed curve widens the range in both directions when ratings support the fit.
+  const gain=1.1+1.6*direct/(direct+5);
+  const baseScore=Math.round(50+50*Math.tanh(gain*total/weight*shrink));
+  const ratingTerms:TasteRatingTerm[]|undefined=breakdown?[]:undefined;
+  const score=Math.max(0,Math.min(100,baseScore+tasteRatingAdjustment(reference.ratingWeights,features,ratingTerms)));
   const sourceLimit=0.65+0.35*direct/(direct+4);
   const confidence=Math.round(100*coverage*Math.min(weight/(weight+0.8),strongestMass/(strongestMass+4),sourceLimit));
-  const names=new Set<string>(),explanations:TasteReason[]=[];
-  for(const {dimension,name,direction,samples} of reasons.sort((a,b)=>b.strength-a.strength||a.name.localeCompare(b.name))){
-   if(names.has(name))continue;
-   names.add(name);explanations.push({dimension,name,direction,samples});
-   if(explanations.length===3)break;
+  const names=new Set<string>();
+  const distinct=reasons.sort((a,b)=>b.strength-a.strength||a.name.localeCompare(b.name)).filter(({name})=>{
+   if(names.has(name))return false;
+   names.add(name);
+   return true;
+  });
+  const selected=distinct.slice(0,3);
+  const strongest=selected[0];
+  if(strongest&&strongest.direction!=='mixed'){
+   const opposing=strongest.direction==='positive'?'negative':'positive';
+   if(!selected.some(reason=>reason.direction===opposing)){
+    const counterpoint=distinct.find(reason=>reason.direction===opposing&&reason.samples>=3&&
+     reason.strength>=Math.max(0.08,strongest.strength/3));
+    if(counterpoint)selected[selected.length-1]=counterpoint;
+   }
   }
-  return {score,confidence,dimensions,matches,reasons:explanations};
+  const explanations=selected.map(({dimension,name,direction,samples})=>({dimension,name,direction,samples}));
+  const adjustment=score-baseScore;
+  if(breakdown)breakdown.calculation={rawScore:Math.round(50+50*Math.tanh(gain*total/weight)),baseScore,
+   ratingAdjustment:adjustment,retained:shrink,explicit:direct,
+   ratingTerms:ratingTerms!.sort((a,b)=>Math.abs(b.points)-Math.abs(a.points)||a.name.localeCompare(b.name)).slice(0,5)};
+  return {score,confidence,dimensions,matches,reasons:explanations,...(adjustment?{ratingAdjustment:adjustment}:{}),...(breakdown?{breakdown}:{})};
  };
 }
 

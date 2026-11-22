@@ -267,10 +267,12 @@ export async function ingestMetadata(metadata: Metadata, options: IngestOptions 
   };
   return transaction ? apply(transaction) : getDb().transaction(apply);
 }
+type TmdbImportOptions = { includeEpisodes?: boolean; includeRecommendations?: boolean; traktTvdbId?: number };
+
 export async function importTmdb(
   kind: DiscoverKind,
   id: string,
-  options: { includeEpisodes?: boolean; includeRecommendations?: boolean; language?: string; region?: string } = {}
+  options: TmdbImportOptions & { language?: string; region?: string } = {}
 ) {
   const adapter = await getTmdb(options.language, options.region);
   if (!adapter) throw new Error('Configure TMDB in Settings to add global catalogue titles.');
@@ -320,11 +322,18 @@ async function updateTmdbEpisodeOrder(showId: string, seasonNumber: number, item
 }
 
 async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
-  options: { includeEpisodes?: boolean; includeRecommendations?: boolean }
+  options: TmdbImportOptions
 ) {
   const snapshot = await adapter.details(kind, id, options.includeRecommendations !== false);
-  const saved = await ingestMetadata(snapshot, { identityOnly: kind === 'show' });
-  const anthology = kind === 'show' ? await reconcileAnthology(adapter, saved.id, snapshot) : null;
+  const hint = options.traktTvdbId;
+  const traktTvdbId = kind === 'show' && snapshot.externalId === id &&
+    hint !== undefined && Number.isSafeInteger(hint) && hint > 0 ? String(hint) : undefined;
+  // Use the Trakt ID for identity matching while keeping TMDB's snapshot faithful to its response.
+  const identity = traktTvdbId && !snapshot.externalIds?.tvdb
+    ? { ...snapshot, externalIds: { ...snapshot.externalIds, tvdb: traktTvdbId } }
+    : snapshot;
+  const saved = await ingestMetadata(identity, { identityOnly: kind === 'show' });
+  const anthology = kind === 'show' ? await reconcileAnthology(adapter, saved.id, snapshot, traktTvdbId) : null;
   const recommendations: (typeof mediaRelationships.$inferInsert)[] = [];
   const relatedItems = await mapConcurrent(options.includeRecommendations === false ? [] : snapshot.recommendations ?? [], 4, (item) =>
     ingestMetadata(item)

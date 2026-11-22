@@ -54,6 +54,8 @@
     }
     if (affinity.explicitSamples && affinity.positiveFeedbackSamples != null)
       parts.push(`${count.format(affinity.positiveFeedbackSamples)} of ${count.format(affinity.explicitSamples)} with positive feedback`);
+    if (affinity.medianRating != null)
+      parts.push(`Median rating ${rating.format(affinity.medianRating)} / 5`);
     return parts.join(' · ');
   }
   let dimension = $state<TasteDimension>('genres');

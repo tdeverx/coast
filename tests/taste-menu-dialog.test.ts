@@ -11,7 +11,7 @@ const {dialog}=await import(moduleUrl(compileRunes(`
   let mount,dispose;
   const onMount=callback=>mount=callback,onDestroy=callback=>dispose=callback;
   ${script}
-  return {mount,dispose,show,close};
+  return {mount,dispose,show,close,get rating(){return personalRating;}};
  }
 `)));
 
@@ -38,6 +38,15 @@ test('the personal detail button waits for selection; the admin result issues on
    expect(reads[0].signal.aborted).toBe(true);
   }finally{result.dispose();}
  }
+});
+
+test('the dialog uses the existing title rating separately from a collection comparison',()=>{
+ const workId='00000000-0000-4000-8000-000000000001',transport=()=>Promise.resolve({match:null});
+ const title=dialog({workId,rating:2.5},transport),group=dialog({workId,rating:2.5,group:'collection'},transport);
+ try{
+  expect(title.rating).toBe(2.5);
+  expect(group.rating).toBeNull();
+ }finally{title.dispose();group.dispose();}
 });
 
 const personalScript=(await componentScript('src/lib/profile/PersonalTaste.svelte')).replace('$props()','properties');

@@ -1,0 +1,7 @@
+# Anthology replay and missing provider IDs
+
+TMDB remains the primary metadata source. When it omits a series ID, a Trakt record can supply one for the same TMDB title. Other anthology entries must independently confirm the shared ID. Only plausible groups request the fallback, using the existing single-flight cache and the same limit of three concurrent lookups. The catalogue consults existing seasons only for a single-season adoption candidate and reads the saved series alias when the provider supplies no series ID. Competing titles without a verified series stay in place until their identity can be established.
+
+When a history refresh resets staging markers, use the original event's timestamp to locate the staged row. Require the exact source event ID, owner, connection, account generation and a known episode alias before attributing a saved watch. The replay uses the existing stage-and-timestamp index for unprocessed rows. It creates no new playback history or staging writes.
+
+Disposable PostgreSQL tests cover original and reset observations, missing series IDs in both TMDB title snapshots, and ambiguous histories. They verify that the saved watch and stage observation are identical before and after placement. A separate fixture verifies that an unresolved second source leaves the assigned episode intact and skips its season request. Production replay and runtime latency remain unmeasured for this revision.

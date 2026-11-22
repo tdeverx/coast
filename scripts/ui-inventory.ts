@@ -69,6 +69,7 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
   'src/lib/ui/components/ProfileBackgroundMenu.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'Profile background choices are demonstrated through the shared profile identity preview.' },
   'src/lib/ui/components/ListOverview.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'The Lists segment owns the personal lists overview and creation dialog.' },
   'src/lib/profile/TasteMatch.svelte': { owner: 'src/lib/ui/components/MediaDetails.svelte', reason: 'Shared details own the title-specific taste match and its on-demand read.' },
+  'src/lib/profile/TasteBreakdown.svelte': { owner: 'src/lib/profile/TasteMatch.svelte', reason: 'The admin Taste dialog owns the score calculation and supporting evidence.' },
   'src/lib/profile/PersonalTaste.svelte': { owner: 'src/lib/profile/Details.svelte', reason: 'The Taste segment owns the saved personal taste summary and affinity browser.' },
   'src/lib/ui/components/SubtitleMenu.svelte': { owner: 'src/lib/ui/work-menu/ScreenActions.svelte', reason: 'The media menu preview demonstrates installed tracks and subtitle language flyouts.' },
   'src/lib/ui/components/PlaybackQualityMenu.svelte': { owner: 'src/lib/ui/components/PersistentPlayer.svelte', reason: 'Playback controls read the active player session and its source capabilities.' },

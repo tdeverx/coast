@@ -1,0 +1,29 @@
+{
+  "epoch": "anthology-replay-local-2026-11-22",
+  "baseline": "bb992c6c87c574a096e633bc14cc32ae7e1a46e2",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/catalogue/anthology.server.ts": {
+      "previous": "399cb02543b2ad382c091d984e112cd57aa3237dc27412193f05b703b1108b5f",
+      "current": "1fe59455dfefda192cc5cdc828eb7898ee0da57cc5035559b724c74619840825"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "40739130a6fd38e2419bf059603fe4fdaa03785036c7912b244bb2c4728a403c",
+      "current": "a38a105841cc1f9922c8de0a7ff0f3b6992277efc7002daa4359f08442937f04"
+    },
+    "src/lib/catalogue/trakt-identity.server.ts": {
+      "previous": "d5e1be0452e92ae774466de3628b5a1946dbc208a3cb967dbd2390401fa066ec",
+      "current": "9d9be5c48d42e1beeb958f5a0570d059dc40b5a577d842269bdafdeb5e5a3abf"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "75843e34cfacd6d6d28a211efbe4b76d5b810320bd6ae90bd4f136e9dca1b314",
+      "current": "1d7084d964c944720669281d54854e3fecb774f2e2f1e8c215ee6c04bb037a82"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "322196aeec411ee45032c21e76653096813b7bb6c02b137349f4dfe2ac71b31f",
+      "current": "f15f4896204ea8246d0d9b89e8661339f7ad8e3f5b6a67efcd76a93cd5406568"
+    }
+  },
+  "report": "docs/audits/2026-11-22-anthology-replay.md",
+  "reportSha256": "a333ba32ddcfdd9a518052a585caa07266df6eb076ca6513757d3056ce0d1b55"
+}
