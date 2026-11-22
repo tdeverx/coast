@@ -48,20 +48,21 @@ const clear = {
 const glassLight = {
   ...clear,
   tint: 'var(--white)',
-  fillOpacity: 20,
-  blur: 3,
+  fillOpacity: 40,
+  blur: 5,
   brightness: 110,
 } as const;
 const glassDark = {
   ...clear,
   fillOpacity: 40,
-  blur: 3,
+  blur: 5,
   brightness: 80,
 } as const;
 const glassProminent = {
   ...glassLight,
   tint: 'var(--accent)',
   fillOpacity: 50,
+  blur: 3,
 } as const;
 
 export const glassPresets = {

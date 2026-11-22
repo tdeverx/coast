@@ -110,6 +110,37 @@ run('a genuine backdated watch after Unwatch still counts as return evidence',as
  }
 });
 
+run('show completion evidence requires an ended show and a complete episode census',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID();
+ const scenarios=[
+  {status:'Ended',total:10,completed:10,days:120,outcome:true},
+  {status:'Canceled',total:10,completed:2,days:120,outcome:false},
+  {status:'Ended',total:10,completed:2,days:5,outcome:null},
+  {status:'Returning Series',total:10,completed:10,days:120,outcome:null},
+  {status:'Ended',total:5,completed:5,days:120,outcome:null},
+  {status:'Ended',total:10,completed:0,days:120,outcome:null},
+ ].map(scenario=>({...scenario,id:crypto.randomUUID()}));
+ await db`insert into users(id,username) values(${viewer},${'completion-'+viewer})`;
+ try{
+  for(const {id,status,total,completed,days} of scenarios){
+   await db`insert into media(id,kind,title) values(${id},'show','Completion fixture')`;
+   await db`insert into metadata_snapshots(media_id,provider,raw)
+    values(${id},'tmdb',${{facts:{status,episodeCount:10}}}::jsonb)`;
+   await db`insert into tracking_state(user_id,media_id,watched,favourite,position_seconds,completed_episodes,total_episodes,last_watched_at)
+    values(${viewer},${id},${completed===total},true,${completed>0?1:0},${completed},${total},now()-make_interval(days=>${days}::int))`;
+  }
+  const outcomes=new Map<string,boolean|null|undefined>();
+  await visitTasteHistory(viewer,['screen'],async page=>{
+   for(const row of page)outcomes.set(row.id,row.completion);
+  });
+  expect(outcomes.size).toBe(scenarios.length);
+  for(const {id,outcome} of scenarios)expect(outcomes.get(id)).toBe(outcome);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from media where id=any(${db.array(scenarios.map(({id})=>id),'UUID')}::uuid[])`;
+ }
+});
+
 run('repeat exposure counts once across sources, tracks, reading cycles and game sessions',async()=>{
  const db=getSql(),viewer=crypto.randomUUID();
  const [album,track1,track2,book,game,playthrough]=Array.from({length:6},()=>crypto.randomUUID());
@@ -138,6 +169,9 @@ run('repeat exposure counts once across sources, tracks, reading cycles and game
   let items=await history();
   expect(items.size).toBe(3);
   for(const id of [album,book,game])expect(items.get(id)).toMatchObject({consumed:true,repeated:false});
+  expect(items.get(album)?.completion).toBeNull();
+  expect(items.get(book)?.completion).toBe(true);
+  expect(items.get(game)?.completion).toBe(true);
   await db`insert into music_listens(user_id,track_id,batch_id) values(${viewer},${track1},${crypto.randomUUID()})`;
   await db`update reading_progress set state='reading',completed_at=null where user_id=${viewer} and work_id=${book}`;
   await db`update reading_progress set state='completed',completed_at=now() where user_id=${viewer} and work_id=${book}`;

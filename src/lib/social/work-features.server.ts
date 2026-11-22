@@ -4,7 +4,7 @@ import {sourceOrder,type MetadataPolicy} from '#lib/catalogue/metadata/resolve.j
 import type {CatalogueFacts,CastMember} from '#lib/providers/contracts.js';
 import {tmdbCastFeatures,tmdbCrewFeatures} from '#lib/providers/tmdb/taste-credits.js';
 import type {ReadingCatalogueFacts} from '#lib/reading/model.js';
-import {namedFeatures,tasteDimensions,type TasteFeature,type TasteFeatures} from './taste-profile';
+import {mediumForTasteKind,namedFeatures,tasteDimensionsByMedium,type TasteFeature,type TasteFeatures} from './taste-profile';
 import {hasAudienceEvidence,type TasteAudienceRating} from './taste-rating-model';
 
 type ScreenTasteSnapshot = {provider:string;genres:string[]|null;facts:CatalogueFacts|null;cast:Pick<CastMember,'id'|'name'>[]|null};
@@ -72,7 +72,9 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy,audi
    const audience=screenFacts.find(facts=>hasAudienceEvidence(facts.audience))?.audience??row.gameAudience;
    if(hasAudienceEvidence(audience))audienceRatings.set(row.id,audience);
   }
-  const languageCodes=[...screenFacts.map(facts=>facts.originalLanguage??''),...(row.readingFacts?.openLibrary?.languages??[])];
+  const reading=row.readingFacts;
+  const languageCodes=[...screenFacts.map(facts=>facts.originalLanguage??''),...reading?.openLibrary?.languages??[],
+   ...(reading?.openLibrary?.editionSample??[]).flatMap(edition=>edition.languages??[])];
   const genres=row.overrideGenres??row.screen.find(snapshot=>snapshot.genres?.length)?.genres??row.genres;
   const artists=[...row.artists];
   if(row.kind!=='artist'&&row.artistNames.length){
@@ -83,12 +85,15 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy,audi
   }
   const people=screenPeople(row.screen);
   const catalogue:TasteFeatures = {
-   ...people,genres:namedFeatures(genres),tags:namedFeatures(row.subjects),writers:[...(people.writers??[]),...namedFeatures(row.authors)],
+   ...people,genres:namedFeatures(genres),tags:namedFeatures([...row.subjects,...reading?.comicVine?.subjects??[]]),
+   themes:namedFeatures(reading?.comicVine?.concepts??[]),writers:[...(people.writers??[]),...namedFeatures(row.authors)],
    franchises:namedFeatures(row.series?[row.series]:[]),artists,
    decades:row.releaseYear&&row.releaseYear>0?namedFeatures([Math.floor(row.releaseYear/10)*10+'s']):[],
    developers:namedFeatures(row.developers),
-   publishers:namedFeatures([...row.publishers,...(row.readingFacts?.openLibrary?.editionSample??[]).flatMap(edition=>edition.publishers??[])]),
-   illustrators:namedFeatures((row.readingFacts?.comicVine?.credits??[])
+   publishers:namedFeatures([...row.publishers,...reading?.openLibrary?.publishers??[],
+    ...(reading?.openLibrary?.editionSample??[]).flatMap(edition=>edition.publishers??[]),
+    ...reading?.comicVine?.publisher?[reading.comicVine.publisher]:[]]),
+   illustrators:namedFeatures((reading?.comicVine?.credits??[])
     .filter(person=>/artist|illustrat|pencil|inker|colour|color/i.test(person.role)).map(person=>person.name)),
    studios:namedFeatures(screenFacts.flatMap(facts=>facts.studios??[]).map(studio=>studio.name)),
    networks:namedFeatures(screenFacts.flatMap(facts=>facts.networks??[]).map(network=>network.name)),
@@ -96,15 +101,16 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy,audi
    countries:namedFeatures(screenFacts.flatMap(facts=>facts.countries??[]).filter(code=>/^[a-z]{2}$/i.test(code)).map(code=>countryNames.of(code.toUpperCase())??code)),
   };
   const features:TasteFeatures={};
-  for(const dimension of tasteDimensions){
+  const medium=mediumForTasteKind(row.kind);
+  for(const dimension of medium?tasteDimensionsByMedium[medium]:[]){
    const byId=new Map<string,TasteFeature>();
    // Core genre policy decides screen genres. Other dimensions combine distinct provider evidence.
    const lists=dimension==='genres'&&(row.overrideGenres!==null||catalogue.genres?.length)?[catalogue.genres??[]]:[catalogue[dimension]??[],...row.features.map(feature=>feature[dimension]??[])];
    for(const list of lists)for(const feature of list)if(!byId.has(feature.id)&&byId.size<100)byId.set(feature.id,feature);
    if(byId.size)features[dimension]=[...byId.values()];
   }
-  // Older reading imports saved every library subject under both genres and tags.
-  if((row.kind==='book'||row.kind==='comic')&&features.tags?.length&&features.genres?.length){
+  if((medium==='book'||medium==='comic')&&features.tags?.length&&features.genres?.length){
+   // Older imports saved every subject as both a tag and a genre.
    const subjects=new Set(features.tags.map(tag=>tag.name.trim().toLocaleLowerCase('en-US')));
    features.genres=features.genres.filter(genre=>!subjects.has(genre.name.trim().toLocaleLowerCase('en-US')));
    if(!features.genres.length)delete features.genres;

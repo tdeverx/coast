@@ -1,6 +1,7 @@
 import {librarySortValues} from '#lib/library.js';
 import * as v from 'valibot';
 import type { MusicItem, MusicPage } from '#lib/music/model.js';
+import {namedFeatures} from '#lib/social/taste-profile.js';
 import type { ProviderTransport } from '../contracts';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
 import { jellyfinAddedDate } from './added-date.server';
@@ -38,6 +39,8 @@ export type MusicBrowseOptions = v.InferInput<typeof musicBrowseSchema>;
 /** Internal scan intent; interactive browse projection remains unchanged. */
 export type MusicScanOptions = { scope: 'library' | 'user'; since?: string };
 const artists = v.nullish(v.array(v.object({ Id: v.string(), Name: v.string() })), []);
+const musicMetadataFields='DateCreated,Genres,Overview,ProviderIds,ChildCount';
+const musicTasteFields=`${musicMetadataFields},Tags,Studios,People`;
 const itemSchema = v.object({
   Id: v.string(),
   Type: v.picklist(['MusicArtist', 'MusicAlbum', 'Audio']),
@@ -55,6 +58,9 @@ const itemSchema = v.object({
   DateCreated: text,
   ProductionYear: number,
   Genres: v.nullish(v.array(v.string()), []),
+  Tags: v.fallback(v.nullish(v.array(v.string())),undefined),
+  Studios: v.fallback(v.nullish(v.array(v.object({Name:v.string()}))),undefined),
+  People: v.fallback(v.nullish(v.array(v.object({Id:text,Name:v.string(),Type:text,Role:text}))),undefined),
   Overview: text,
   ImageTags: v.nullish(v.record(v.string(), v.string()), {}),
   ProviderIds: v.nullish(v.record(v.string(), v.string()), {}),
@@ -66,6 +72,16 @@ const kinds = {
   Audio: 'track',
 } as const;
 function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
+  const people=(role:RegExp)=>[...new Map((item.People??[]).flatMap(person=>{
+    if(!role.test(`${person.Type??''} ${person.Role??''}`)||!person.Id||!v.safeParse(jellyfinMusicIdSchema,person.Id).success||!person.Name.trim())return [];
+    const id=`jellyfin:${jellyfinItemKey(person.Id)}`;
+    return [[id,{id,name:person.Name.trim()}] as const];
+  })).values()].slice(0,100);
+  const tasteFeatures={
+    ...(item.Tags!=null?{tags:namedFeatures(item.Tags)}:{}),
+    ...(item.Studios!=null?{studios:namedFeatures(item.Studios.map(studio=>studio.Name))}:{}),
+    ...(item.People!=null?{composers:people(/\bcomposer\b/i),writers:people(/\b(writer|songwriter|lyricist)\b/i)}:{}),
+  };
   return {
     id: jellyfinItemKey(item.Id),
     kind: kinds[item.Type],
@@ -90,6 +106,7 @@ function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
     releaseDate: item.Type === 'MusicArtist' ? undefined : item.PremiereDate?.slice(0, 10),
     year: item.Type === 'MusicArtist' ? undefined : item.ProductionYear ?? undefined,
     genres: item.Genres,
+    ...(Object.keys(tasteFeatures).length?{tasteFeatures}:{}),
     overview: item.Overview || undefined,
     favourite: item.UserData?.IsFavorite,
     playCount: item.UserData?.PlayCount ?? (item.UserData?.Played ? 1 : 0),
@@ -116,7 +133,7 @@ export async function browseMusic(
   const query = new URLSearchParams({
     userId,
     recursive: 'true',
-    fields: scan?.scope === 'user' ? 'DateCreated,ChildCount' : 'DateCreated,Genres,Overview,ProviderIds,ChildCount',
+    fields: scan?.scope === 'user' ? 'DateCreated,ChildCount' : scan?.scope==='library' ? musicTasteFields : musicMetadataFields,
     enableUserData: String(scan?.scope !== 'library'),
     enableImages: String(scan?.scope !== 'user'),
     enableImageTypes: 'Primary',
@@ -187,7 +204,7 @@ export async function musicItems(call: ProviderTransport, userId: string, ids: s
   for (let offset = 0; offset < requested.length; offset += 100) {
     const batch = requested.slice(offset, offset + 100);
     const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
-      includeItemTypes: 'MusicAlbum,Audio', fields: 'DateCreated,Genres,Overview,ProviderIds,ChildCount',
+      includeItemTypes: 'MusicAlbum,Audio', fields: musicTasteFields,
       enableUserData: 'true', enableImages: 'true', enableImageTypes: 'Primary',
       enableTotalRecordCount: 'true', startIndex: '0', limit: String(batch.length)});
     const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: count, StartIndex: v.optional(count)}), await call(`/Items?${query}`));

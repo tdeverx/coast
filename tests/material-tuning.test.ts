@@ -13,9 +13,10 @@ describe('material drafts', () => {
     }
     expect(approvalStatus('temporary')).toBe('unapproved');
     const { clear, glassLight, glassDark, glassProminent } = glassPresets.materials;
-    expect(glassLight).toEqual({ ...clear, tint: 'var(--white)', fillOpacity: 20, blur: 3, brightness: 110 });
-    expect(glassDark).toEqual({ ...clear, tint: 'var(--canvas)', fillOpacity: 40, blur: 3, brightness: 80 });
-    expect(glassProminent).toEqual({ ...glassLight, tint: 'var(--accent)', fillOpacity: 50 });
+    expect(clear).toMatchObject({ fillOpacity: 0, blur: 2 });
+    expect(glassLight).toEqual({ ...clear, tint: 'var(--white)', fillOpacity: 40, blur: 5, brightness: 110 });
+    expect(glassDark).toEqual({ ...clear, tint: 'var(--canvas)', fillOpacity: 40, blur: 5, brightness: 80 });
+    expect(glassProminent).toEqual({ ...glassLight, tint: 'var(--accent)', fillOpacity: 50, blur: 3 });
   });
   test('prominent glass uses the theme accent and remains independently editable', () => {
     const drafts = defaultMaterialDrafts();

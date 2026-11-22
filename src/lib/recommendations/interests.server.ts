@@ -47,11 +47,11 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
     and jsonb_typeof(a.source->'coastUserData'->'playCount')='number'
   group by a.media_id
  ),`:sql``}
- signals(user_id,id,updated,implicit,consumed,explicit,rating,experienced,repeated,minutes) as (
+ signals(user_id,id,updated,implicit,consumed,explicit,rating,experienced,repeated,minutes,completed) as (
   select t.user_id,t.media_id,t.updated_at,
    case when t.dropped then -2 when ${playCount}>1 then 4 when t.watched or ${playCount}>0 then 3
     when t.position_seconds>0 then 2 when t.watchlist then 1 else 0 end,
-   t.watched,case when t.favourite then 5 else 0 end,null::float8,t.watched or ${playCount}>0,${playCount}>1,null::float8
+   t.watched,case when t.favourite then 5 else 0 end,null::float8,t.watched or ${playCount}>0,${playCount}>1,null::float8,null::boolean
   from tracking_state t join users u on coast_feature_enabled(u.id,'personalisation') and u.id=t.user_id and not u.disabled
   ${screenHistory?sql`
    left join screen_watches h on h.media_id=t.media_id
@@ -60,41 +60,46 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
   where (${userId}::uuid is null or t.user_id=${userId}) and (t.dropped or t.watched or t.favourite or t.watchlist or t.position_seconds>0 or t.play_count>0)
   union all select p.user_id,p.work_id,p.updated_at,
    case when p.state='dropped' then -2 when p.state='completed' then 3 when p.state in ('reading','paused') then 2 else 1 end,
-   p.state='completed',0,null,p.state='completed' or p.page>0,false,null from reading_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
-  union all select r.user_id,r.media_id,r.updated_at,0,false,0,r.value,false,false,null from ratings r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where (${userId}::uuid is null or r.user_id=${userId})
+   p.state='completed',0,null,p.state='completed' or p.page>0,false,null,
+   case when p.state='completed' then true when p.state='dropped' and p.page>0 then false end
+   from reading_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId})
+  union all select r.user_id,r.media_id,r.updated_at,0,false,0,r.value,false,false,null,null from ratings r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where (${userId}::uuid is null or r.user_id=${userId})
   union all select p.user_id,p.game_id,p.updated_at,
    case when p.status='dropped' then -2 when p.status='completed' then 3 when p.status in ('in-progress','paused') then 2 else 1 end,
-   p.status='completed',0,null,p.status='completed' or p.progress_percent>0,p.status='completed' and p.repeat,null
+   p.status='completed',0,null,p.status='completed' or p.progress_percent>0,p.status='completed' and p.repeat,null,
+   case when p.status='completed' then true when p.status='dropped' and p.progress_percent>0 then false end
    from (select distinct on(user_id,game_id) * from game_playthroughs where (${userId}::uuid is null or user_id=${userId}) order by user_id,game_id,created_at desc,id desc) p
    join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled
   union all select c.user_id,g.game_id,max(coalesce(g.last_played_at,g.observed_at)),
-   case when max(g.minutes_played)>=60 then 3 else 2 end,false,0,null,true,false,max(g.minutes_played)
+   case when max(g.minutes_played)>=60 then 3 else 2 end,false,0,null,true,false,max(g.minutes_played),null
   from game_account_state g join provider_connections c on c.sync_account_id=g.account_id and c.status='connected'
   join provider_instances i on i.id=c.instance_id and i.provider='steam' and i.enabled
   join users u on u.id=c.user_id and not u.disabled and coast_feature_enabled(u.id,'personalisation')
   where ${category??'all'} in ('all','game') and (${userId}::uuid is null or c.user_id=${userId}) and g.minutes_played>0
   group by c.user_id,g.game_id
-  union all select p.user_id,p.track_id,p.updated_at,case when p.play_count>=3 then 4 when p.play_count>0 then 3 else 1 end,p.play_count>0,0,null,p.play_count>0,p.play_count>1,null
+  union all select p.user_id,p.track_id,p.updated_at,case when p.play_count>=3 then 4 when p.play_count>0 then 3 else 1 end,p.play_count>0,0,null,p.play_count>0,p.play_count>1,null,null
    from music_progress p join users u on coast_feature_enabled(u.id,'personalisation') and u.id=p.user_id and not u.disabled where (${userId}::uuid is null or p.user_id=${userId}) and (p.play_count>0 or p.position_seconds>0)
-  union all select l.user_id,l.track_id,max(l.occurred_at),case when count(*)>=3 then 4 else 3 end,true,0,null,true,count(*)>1,null
+  union all select l.user_id,l.track_id,max(l.occurred_at),case when count(*)>=3 then 4 else 3 end,true,0,null,true,count(*)>1,null,null
    from music_listens l join users u on coast_feature_enabled(u.id,'personalisation') and u.id=l.user_id and not u.disabled where (${userId}::uuid is null or l.user_id=${userId}) group by l.user_id,l.track_id
-  union all select r.user_id,r.target_id,r.updated_at,0,false,case when r.emoji in ('❤️','🔥') then 4 else 0 end,null,false,false,null
+  union all select r.user_id,r.target_id,r.updated_at,0,false,case when r.emoji in ('❤️','🔥') then 4 else 0 end,null,false,false,null,null
    from social_reactions r join users u on coast_feature_enabled(u.id,'personalisation') and u.id=r.user_id and not u.disabled where coast_feature_enabled(r.user_id,'social') and r.target_kind='work' and (${userId}::uuid is null or r.user_id=${userId})
   ${screenHistory?sql`
-   union all select ${userId}::uuid,h.media_id,h.updated,case when h.plays>1 then 4 else 3 end,true,0,null,true,h.plays>1,null
+   union all select ${userId}::uuid,h.media_id,h.updated,case when h.plays>1 then 4 else 3 end,true,0,null,true,h.plays>1,null,null
    from screen_watches h
   `:sql``}
   ${tasteCategories?sql`
    union all select h.user_id,h.work_id,max(h.occurred_at),max(case when h.state='completed' then 3 else 2 end),bool_or(h.state='completed'),0,null,
-    true,count(*) filter(where h.state='completed')>1,null
+    true,count(*) filter(where h.state='completed')>1,null,
+    case when bool_or(h.state='completed') then true when bool_or(h.state='dropped' and h.page>0) then false end
    from reading_history h where h.user_id=${userId} and (h.state='completed' or h.page>0) group by h.user_id,h.work_id
-   union all select p.user_id,p.game_id,max(p.completed_at),3,true,0,null,true,bool_or(p.repeat) or count(*)>1,null
+   union all select p.user_id,p.game_id,max(p.completed_at),3,true,0,null,true,bool_or(p.repeat) or count(*)>1,null,true
    from game_playthroughs p where p.user_id=${userId} and p.status='completed' group by p.user_id,p.game_id
-   union all select p.user_id,p.game_id,max(s.played_at),2,false,0,null,true,false,sum(s.minutes_played)
+   union all select p.user_id,p.game_id,max(s.played_at),2,false,0,null,true,false,sum(s.minutes_played),
+    case when bool_or(p.status='dropped') then false end
    from game_playthroughs p join game_sessions s on s.playthrough_id=p.id where p.user_id=${userId} group by p.user_id,p.game_id
   `:sql``}
  ), roots as (
-  select coalesce(e.show_id,s.show_id,r.parent_id,p.id) as id,p.updated,p.id as source_id,p.implicit,p.explicit,p.rating,p.consumed,p.experienced,p.repeated,p.minutes,
+  select coalesce(e.show_id,s.show_id,r.parent_id,p.id) as id,p.updated,p.id as source_id,p.implicit,p.explicit,p.rating,p.consumed,p.experienced,p.repeated,p.minutes,p.completed,
    case when p.implicit<0 then -6 when p.rating is null then greatest(p.explicit,p.implicit)
     when p.rating<2.5 then -5 when p.rating>=3.5 then 5 else 0 end::float as weight,
    p.explicit>0 or coalesce(p.rating>=3.5,false) as positive
@@ -110,7 +115,7 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
     percentile_cont(0.5) within group(order by rating) filter(where rating is not null)) as rating,
    max(explicit) as explicit,coalesce(min(implicit) filter(where source_id=id and implicit<0),
     max(implicit) filter(where implicit>0),min(implicit)) as implicit,
-   bool_or(experienced) as consumed,bool_or(repeated) as repeated,max(minutes) as minutes
+   bool_or(experienced) as consumed,bool_or(repeated) as repeated,max(minutes) as minutes,bool_or(completed) as completed
   from roots group by id
  ), works_with_evidence as (
   select p.*,case when w.category='music' then 'music' else w.kind end as medium
@@ -125,7 +130,25 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
    /(count(*) over()+4) as rank from works_with_evidence where medium='game' and minutes>0
  ) select w.id,w.medium,w.rating,w.explicit,w.implicit,w.consumed,w.repeated,
     coalesce(b.rating_count,0) as "ratingCount",b.median_rating as "medianRating",g.rank as "playtimeRank"
+   ${screenHistory?sql`,case
+    when w.medium='movie' and t.watched then true
+    when t.dropped and (w.consumed or t.position_seconds>0 or t.completed_episodes>0) then false
+    -- Compare long-idle starts only on ended shows with a known, complete episode census.
+    when lower(series.status) in ('ended','canceled','cancelled') and series.episodes>0
+      and t.total_episodes>=series.episodes and t.completed_episodes>0
+     then case when t.completed_episodes>=series.episodes then true
+      when t.last_watched_at<now()-interval '90 days' then false end
+    else w.completed end as completion`:sql`,w.completed as completion`}
    from works_with_evidence w left join baselines b using(medium) left join ranked_games g using(id)
+   ${screenHistory?sql`
+   left join tracking_state t on w.medium in ('movie','show') and t.user_id=${userId} and t.media_id=w.id
+   left join lateral (
+    select m.raw#>>'{facts,status}' as status,(m.raw#>>'{facts,episodeCount}')::int as episodes
+    from metadata_snapshots m where w.medium='show' and t.completed_episodes>0 and not t.dropped
+      and m.media_id=w.id and m.provider='tmdb'
+      and jsonb_typeof(m.raw#>'{facts,episodeCount}')='number'
+    order by m.updated_at desc,m.id limit 1
+   ) series on true`:sql``}
    where exists(select 1 from users u where u.id=${userId} and not u.disabled and coast_feature_enabled(u.id,'personalisation'))
  `:sql`
  ), grouped as (

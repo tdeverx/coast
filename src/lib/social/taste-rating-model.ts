@@ -6,6 +6,10 @@ const featureWeights: Partial<Record<TasteDimension, number>> = {
   artists: 1.3, franchises: 1.6, developers: 1.2, mechanics: 0.5,
 };
 const dimensions = Object.entries(featureWeights) as [TasteDimension, number][];
+export function isDescriptiveTasteDimension(dimension: TasteDimension) {
+  return dimension === 'genres' || dimension === 'tags' || dimension === 'themes';
+}
+const descriptiveDimensions = dimensions.filter(([dimension]) => isDescriptiveTasteDimension(dimension));
 const minRatedTitles = 40;
 const maxWeights = 512;
 const combinationLimits: Record<TasteDimension, number> = {
@@ -24,8 +28,34 @@ const neutralRating = 3;
 
 /** A fixed 3-star neutral point applies to every medium and rating history. */
 export function ratingVote(rating: number, negativeWeight = 1) {
-  const distance = rating - neutralRating;
-  return distance < 0 ? negativeWeight * Math.max(-1, distance / 2.5) : Math.min(1, distance / 2);
+  const vote = Math.max(-1, Math.min(1, (rating - neutralRating) / 2));
+  return vote < 0 ? vote * negativeWeight : vote;
+}
+
+/** Distance from neutral controls how much evidence a rating contributes. */
+export function ratingInfluence(rating: number) {
+  // Neutral ratings count lightly and carry less weight than the nearest half-star rating.
+  return rating === neutralRating ? 0.15 : Math.abs(ratingVote(rating));
+}
+
+export type FriendTasteEvidence = { rating: number | null; shared: number; difference: number };
+export type FriendTasteAdjustment = { watched: number; rated: number; points: number };
+
+/** Compare stated preferences; an unrated watch supplies a small positive signal. */
+export function friendTasteAdjustment(evidence: readonly FriendTasteEvidence[]): FriendTasteAdjustment {
+  let support=0, votes=0, watched=0, rated=0;
+  for (const {rating,shared,difference} of evidence) {
+    const agreement=1-difference/4.5;
+    if (shared<8 || agreement<0.8) continue;
+    const trust=(agreement-0.75)*4*shared/(shared+8);
+    support+=trust;
+    votes+=trust*(rating===null ? 0.25 : ratingVote(rating));
+    watched++;
+    if(rating!==null)rated++;
+  }
+  const adjustment=6*votes/(0.75+support);
+  const rounded=Math.round(Math.abs(adjustment));
+  return {watched,rated,points:rounded ? Math.sign(adjustment)*rounded : 0};
 }
 
 /** A shared dislike is weaker evidence against the title's features. */
@@ -51,7 +81,7 @@ export function tasteCombinations(features: TasteFeatures): TasteCombination[] {
   const keys = new Set<string>();
   const descriptions = new Set<string>();
   for (const [dimension, limit] of combinationDimensions) {
-    const descriptive = dimension === 'genres' || dimension === 'tags' || dimension === 'themes';
+    const descriptive = isDescriptiveTasteDimension(dimension);
     let count = 0;
     for (const feature of features[dimension] ?? []) {
       if (dimension === 'artists' && feature.id.startsWith('artist-name:')) continue;
@@ -81,12 +111,12 @@ export function tasteCombinations(features: TasteFeatures): TasteCombination[] {
   return pairs;
 }
 
-function terms(features: TasteFeatures, names?: Map<string, string>): Term[] {
+function terms(features: TasteFeatures, names?: Map<string, string>, availableDimensions=dimensions): Term[] {
   const terms = new Map<string, Term>();
   const descriptions = new Set<string>();
-  for (const [dimension, weight] of dimensions) {
+  for (const [dimension, weight] of availableDimensions) {
     const available = features[dimension] ?? [];
-    const descriptive = dimension === 'genres' || dimension === 'tags' || dimension === 'themes';
+    const descriptive = isDescriptiveTasteDimension(dimension);
     const entries = descriptive ? available.filter(({ name }) => {
       const concept = name.trim().toLocaleLowerCase('en-US');
       if (descriptions.has(concept)) return false;
@@ -124,11 +154,12 @@ function terms(features: TasteFeatures, names?: Map<string, string>): Term[] {
 
 /** Fit stated opinions jointly. The saved reference keeps coefficients, never rated titles. */
 export function createTasteRatingTrainer(ratingCount: number) {
-  const observations: { value: number; positions: Uint32Array; weights: Float64Array }[] = [];
+  const observations: { value: number; influence: number; positions: Uint32Array; weights: Float64Array }[] = [];
   const support = new Map<string, { position: number; count: number; minimum: number }>();
   return {
     add(rating: number | null, features: TasteFeatures, negativeWeight = 1) {
       if (rating === null || ratingCount < minRatedTitles) return;
+      const influence = ratingInfluence(rating);
       const inputs = terms(features);
       if (!inputs.length) return;
       const positions = new Uint32Array(inputs.length);
@@ -145,7 +176,7 @@ export function createTasteRatingTrainer(ratingCount: number) {
       }
       // Attenuate the same below-neutral evidence used in the saved affinities.
       const value = rating < neutralRating ? neutralRating + (rating - neutralRating) * negativeWeight : rating;
-      observations.push({ value, positions, weights });
+      observations.push({ value, influence, positions, weights });
     },
     async fit(): Promise<RatingWeights | undefined> {
       if (observations.length < minRatedTitles || !observations.some(row => row.value !== observations[0].value)) return;
@@ -157,11 +188,12 @@ export function createTasteRatingTrainer(ratingCount: number) {
         keys.push(key);
       }
       if (!keys.length) return;
-      const average = observations.reduce((total, row) => total + row.value, 0) / observations.length;
+      const totalInfluence = observations.reduce((total, row) => total + row.influence, 0);
+      const average = observations.reduce((total, row) => total + row.value * row.influence, 0) / totalInfluence;
       const weights = new Float64Array(keys.length);
       const accepted = new Float64Array(keys.length);
       const gradient = new Float64Array(keys.length);
-      const scale = 25 / observations.length;
+      const scale = 25 / Math.max(minRatedTitles, totalInfluence);
       const penalty = 0.35;
       let stepSize = 0.13;
       let lastLoss = Infinity;
@@ -170,7 +202,7 @@ export function createTasteRatingTrainer(ratingCount: number) {
           await new Promise<void>(resolve => setTimeout(resolve, 0));
         gradient.fill(0);
         let squaredErrors = 0;
-        for (const { value, positions, weights: inputs } of observations) {
+        for (const { value, influence, positions, weights: inputs } of observations) {
           let error = average - value;
           for (let i = 0; i < positions.length; i++) {
             const position = selected[positions[i]];
@@ -178,9 +210,9 @@ export function createTasteRatingTrainer(ratingCount: number) {
           }
           for (let i = 0; i < positions.length; i++) {
             const position = selected[positions[i]];
-            if (position >= 0) gradient[position] += error * inputs[i];
+            if (position >= 0) gradient[position] += influence * error * inputs[i];
           }
-          squaredErrors += error * error;
+          squaredErrors += influence * error * error;
         }
         const loss = scale * squaredErrors + penalty * weights.reduce((sum, weight) => sum + weight * weight, 0);
         if (loss > lastLoss) {
@@ -195,19 +227,20 @@ export function createTasteRatingTrainer(ratingCount: number) {
           weights[i] -= stepSize * (scale * gradient[i] + penalty * weights[i]);
       }
       const fitted = keys.map((key, position) => [key, Math.round(accepted[position] * 10000) / 10000] as const)
-        .filter(([, weight]) => weight !== 0)
+        .filter(([key, weight]) => weight !== 0 && (key.startsWith('[')
+          || descriptiveDimensions.some(([dimension])=>key.startsWith(dimension+':'))))
         .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0])).slice(0, maxWeights);
       return fitted.length ? Object.fromEntries(fitted) : undefined;
     },
   };
 }
 
-/** Learned ratings refine a match admitted by its underlying affinities. */
+/** Other features help fit the descriptive terms; the affinity blend owns their score contribution. */
 export function tasteRatingAdjustment(ratingWeights: RatingWeights | undefined, features: TasteFeatures, inputs?: TasteRatingTerm[]) {
   if (!ratingWeights) return 0;
   const names = inputs ? new Map<string, string>() : undefined;
   let fit = 0;
-  for (const { key, weight } of terms(features, names)) {
+  for (const { key, weight } of terms(features, names, descriptiveDimensions)) {
     if (!Object.hasOwn(ratingWeights, key)) continue;
     const value = ratingWeights[key] * weight;
     fit += value;

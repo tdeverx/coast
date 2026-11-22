@@ -6,6 +6,7 @@ import {trackReadQuery,withReadCancellation} from '#lib/server/db/read-cancellat
 import {requireFriend} from './service.server';
 import {requireVisible} from './privacy.server';
 import {comparisonMedia,comparisonMediaValues,median,tasteSignals,type TasteWork} from './taste';
+import {tasteDimensionsByMedium} from './taste-profile';
 const friendTasteOptions=v.object({page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(100000)),1),medium:v.optional(v.picklist(comparisonMediaValues),'all'),overlap:v.optional(v.picklist(['shared','onlyYou','onlyFriend']),'shared')});
 type FriendTasteOptions={page?:number;medium?:string;overlap?:'shared'|'onlyYou'|'onlyFriend'};
 export function friendInsights(viewerId:string,friendId:string,options:FriendTasteOptions={},signal?:AbortSignal) {
@@ -119,7 +120,8 @@ async function readFriendInsights(viewerId:string,friendId:string,options:v.Infe
  const media=comparisonMedia.map(({value:medium})=>{
    const left=rows.filter(row=>row.medium===medium&&row.userId===viewerId),right=rows.filter(row=>row.medium===medium&&row.userId===friendId);
    const items=pages.filter(item=>item.medium===medium);
-   return {medium,...tasteSignals(left,right),stats:{you:statistics.find(row=>row.medium===medium&&row.userId===viewerId)??empty,friend:statistics.find(row=>row.medium===medium&&row.userId===friendId)??empty},
+   const dimensions=medium==='movies'?tasteDimensionsByMedium.movie:medium==='tv'?tasteDimensionsByMedium.show:tasteDimensionsByMedium[medium];
+   return {medium,...tasteSignals(left,right,dimensions),stats:{you:statistics.find(row=>row.medium===medium&&row.userId===viewerId)??empty,friend:statistics.find(row=>row.medium===medium&&row.userId===friendId)??empty},
      progressComparisons:items.map(item=>({workId:item.id,you:item.you,friend:item.friend})),
      overlapCounts:overlapCounts.find(row=>row.medium===medium)??{shared:0,onlyYou:0,onlyFriend:0},
      overlap:{shared:items.filter(item=>item.yours&&item.theirs).map(item=>item.id),onlyYou:items.filter(item=>item.yours&&!item.theirs).map(item=>item.id),onlyFriend:items.filter(item=>!item.yours&&item.theirs).map(item=>item.id)}};

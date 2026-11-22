@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { TasteScoreBreakdown } from '#lib/social/taste-profile.js';
+  import type { TasteMedium, TasteScoreBreakdown } from '#lib/social/taste-profile.js';
   import type { CollectionTasteBreakdown } from '#lib/social/collection-taste.server.js';
-  import { displayLabel } from '#lib/ui/labels.js';
+  import { tasteSignalLabel } from '#lib/social/taste.js';
 
-  let { breakdown, score, watchedLabel }: {
+  let { breakdown, score, medium, watchedLabel }: {
     breakdown: TasteScoreBreakdown | CollectionTasteBreakdown;
     score: number | null;
+    medium?: TasteMedium;
     watchedLabel?: string;
   } = $props();
 
@@ -13,6 +14,7 @@
   const percent = (value: number) => `${number.format(value * 100)}%`;
   const points = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : ''}${number.format(Math.abs(value))} pts`;
   const direction = { positive: 'Supports match', negative: 'Lowers match', mixed: 'Mixed feedback' };
+  const friendActivity = $derived(medium==='music'?'listened':medium==='game'?'played':medium==='book'||medium==='comic'?'read':'watched');
 </script>
 
 {#if 'signals' in breakdown}
@@ -26,6 +28,10 @@
         <div><dt>Evidence adjustment <small>{percent(calculation.retained)} of the signal retained</small></dt>
           <dd>{points(calculation.baseScore - calculation.rawScore)}</dd></div>
         <div><dt>Learned adjustment</dt><dd>{points(calculation.ratingAdjustment)}</dd></div>
+        {#if breakdown.friends}
+          {@const friends = breakdown.friends}
+          <div><dt>Friends with similar taste <small>{friends.watched} {friendActivity} · {friends.rated} rated</small></dt><dd>{points(friends.points)}</dd></div>
+        {/if}
         <div class="total"><dt>Final match</dt><dd>{score}%</dd></div>
       </dl>
       {#if calculation.ratingTerms.length}
@@ -59,7 +65,7 @@
         <details open={index === 0}>
           <summary>
             <span class="signal-heading">
-              <span>{displayLabel(signal.dimension)}{#if signal.context}<small> · Context</small>{/if}</span>
+              <span>{tasteSignalLabel(signal.dimension,medium)}{#if signal.context}<small> · Context</small>{/if}</span>
               <span class="signal-numbers">{signal.fit}% fit · {percent(signal.weightShare)} weight</span>
             </span>
           </summary>

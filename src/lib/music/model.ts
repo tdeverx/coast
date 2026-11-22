@@ -29,6 +29,7 @@ export interface MusicItem {
   addedAt?: string;
   year?: number;
   genres: string[];
+  tasteFeatures?: import('#lib/social/taste-profile.js').TasteFeatures;
   overview?: string;
   favourite?: boolean;
   primaryImageTag?: string;

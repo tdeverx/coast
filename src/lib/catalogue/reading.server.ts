@@ -22,6 +22,7 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   facts:v.optional(v.strictObject({
     openLibrary:v.optional(v.strictObject({
       languages:v.optional(v.pipe(v.array(label),v.maxLength(24))),
+      publishers:v.optional(v.pipe(v.array(label),v.maxLength(24))),
       editionCount:v.optional(v.pipe(v.number(),v.safeInteger(),v.minValue(0))),
       firstPublished:v.optional(v.pipe(v.string(),v.maxLength(100))),
       editionSample:v.optional(v.pipe(v.array(v.strictObject({
@@ -30,7 +31,9 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
         publishers:v.optional(v.pipe(v.array(label),v.maxLength(8))),
       })),v.maxLength(3))),
     })),
-    comicVine:v.optional(v.strictObject({coverDate:v.optional(v.pipe(v.string(),v.isoDate()))})),
+    comicVine:v.optional(v.strictObject({coverDate:v.optional(v.pipe(v.string(),v.isoDate())),
+      concepts:v.optional(v.pipe(v.array(label),v.maxLength(50))),
+      subjects:v.optional(v.pipe(v.array(label),v.maxLength(100))),publisher:v.optional(label)})),
   })),
   authors: v.pipe(v.array(label), v.maxLength(50)),
   subjects: v.pipe(v.array(label), v.maxLength(100)),
@@ -85,7 +88,10 @@ export async function importReading(metadata: ReadingMetadata) {
     if (existingIds.length > 1)
       throw new DomainError('These identities already belong to separate saved works. Resolve the conflict before combining them.', 409, 'identity_conflict');
     async function saveFeatures(workId: string) {
-      const features = { tags: namedFeatures(input.subjects), writers: namedFeatures(input.authors), ...(input.seriesTitle ? { franchises: namedFeatures([input.seriesTitle]) } : {}) };
+      const features = { tags: namedFeatures([...input.subjects,...facts?.comicVine?.subjects??[]]),
+        themes:namedFeatures(facts?.comicVine?.concepts??[]),writers:namedFeatures(input.authors),
+        publishers:namedFeatures([...facts?.openLibrary?.publishers??[],...facts?.comicVine?.publisher?[facts.comicVine.publisher]:[]]),
+        ...(input.seriesTitle ? { franchises: namedFeatures([input.seriesTitle]) } : {}) };
       await tx.insert(workFeatures).values({ workId, provider: input.provider, features, updatedAt: new Date() })
         .onConflictDoUpdate({ target: [workFeatures.workId, workFeatures.provider], set: { features: sql`excluded.features`, updatedAt: new Date() }, setWhere: sql`${workFeatures.features} is distinct from excluded.features` });
     }

@@ -1,4 +1,5 @@
 import type { GameCatalogueFacts } from '#lib/games/model.js';
+import {namedFeatures} from '#lib/social/taste-profile.js';
 import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
 import { AppError } from '../../server/security/errors';
@@ -36,6 +37,8 @@ const gameFields = {
   game_modes:v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),
   player_perspectives:v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),
   franchises:v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),
+  collections:v.fallback(v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),[]),
+  language_supports:v.fallback(v.optional(v.array(v.object({language:name})),[]),[]),
   platforms: v.optional(v.pipe(v.array(name), v.maxLength(100)), []),
   genres: v.optional(v.pipe(v.array(name), v.maxLength(100)), []),
   involved_companies: v.optional(v.pipe(v.array(v.object({
@@ -43,7 +46,7 @@ const gameFields = {
   })), v.maxLength(500)), []),
 };
 const remoteGame=v.object({...gameFields,parent_game:v.optional(v.object(gameFields)),version_parent:v.optional(v.object(gameFields))});
-const fields = 'game_status.status,rating,rating_count,aggregated_rating,aggregated_rating_count,release_dates.date,release_dates.human,release_dates.platform.name,external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,keywords.id,keywords.name,themes.id,themes.name,game_modes.id,game_modes.name,player_perspectives.id,player_perspectives.name,franchises.id,franchises.name';
+const fields = 'game_status.status,rating,rating_count,aggregated_rating,aggregated_rating_count,release_dates.date,release_dates.human,release_dates.platform.name,external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,keywords.id,keywords.name,themes.id,themes.name,game_modes.id,game_modes.name,player_perspectives.id,player_perspectives.name,franchises.id,franchises.name,collections.id,collections.name,language_supports.language.name';
 const cardFields = 'name,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name';
 const expandedFields=fields+',parent_game.'+fields.split(',').join(',parent_game.')+',version_parent.'+fields.split(',').join(',version_parent.');
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000));
@@ -51,6 +54,7 @@ export const IGDB_PAGE_SIZE = 60;
 
 function mapGame(game:v.InferOutput<typeof remoteGame>) {
   const companies = game.involved_companies;
+  const franchiseNames=new Set(game.franchises.map(({name})=>name.trim().toLowerCase()));
   const facts: GameCatalogueFacts = {
     ...(game.game_status ? {status:game.game_status.status.slice(0,100)} : {}),
     ...(game.rating !== undefined ? {audience:{score:game.rating,votes:game.rating_count,scale:100}} : {}),
@@ -79,7 +83,12 @@ function mapGame(game:v.InferOutput<typeof remoteGame>) {
       themes:game.themes.map(item=>({id:`igdb:${item.id}`,name:item.name})),
       mechanics:game.game_modes.map(item=>({id:`igdb:${item.id}`,name:item.name})),
       perspectives:game.player_perspectives.map(item=>({id:`igdb:${item.id}`,name:item.name})),
-      franchises:game.franchises.map(item=>({id:`igdb:${item.id}`,name:item.name})),
+      franchises:[
+        ...game.franchises.map(item=>({id:`igdb:${item.id}`,name:item.name})),
+        ...game.collections.filter(({name})=>!franchiseNames.has(name.trim().toLowerCase()))
+          .map(item=>({id:`igdb-collection:${item.id}`,name:item.name})),
+      ],
+      languages:namedFeatures(game.language_supports.map(({language})=>language.name)),
     },
     platforms: [...new Set(game.platforms.map((item) => item.name))],
     genres: [...new Set(game.genres.map((item) => item.name))],

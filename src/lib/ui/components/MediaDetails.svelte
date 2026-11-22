@@ -25,7 +25,7 @@
  {@render intro?.()}
  {@render hierarchy?.()}
  {#if tasteTarget&&page.data.user}
-  {#key `${page.data.user.id}:${tasteTarget.group??'title'}:${tasteTarget.workId}`}<TasteMatch {...tasteTarget} rating={view.item?.rating}/>{/key}
+  {#key `${page.data.user.id}:${tasteTarget.group??'title'}:${tasteTarget.workId}`}<TasteMatch {...tasteTarget} kind={view.item?.kind} rating={view.item?.rating}/>{/key}
  {/if}
  {#each before as row(row.key)}<Shelf {...row.shelf} />{/each}
  {#if model&&selectedSection!=='activity'}<MediaDetailRows {model} section={selectedSection}/>{/if}

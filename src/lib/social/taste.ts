@@ -1,7 +1,23 @@
-import {buildTasteProfile,tasteDimensions,tasteMedia,type TasteFeatures} from './taste-profile';
+import {buildTasteProfile,tasteDimensions,tasteDimensionsByMedium,tasteMedia,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
+import {displayLabel} from '#lib/ui/labels.js';
 export const comparisonMedia = tasteMedia.map(({ comparison: value, label, category }) => ({ value, label, category }));
 export const comparisonMediaValues = ['all', ...comparisonMedia.map(medium => medium.value)] as const;
-export const comparisonSignals = ['ratings','ratingOrder','genres','reactions','interests',...tasteDimensions.filter(dimension => dimension !== 'genres')] as const;
+export function comparisonSignals(medium:string) {
+ const value=tasteMedia.find(entry=>entry.comparison===medium)?.value;
+ const dimensions=value?tasteDimensionsByMedium[value]:[];
+ return ['ratings','ratingOrder','reactions','interests',...dimensions] as const;
+}
+export function tasteSignalLabel(name:string,medium?:TasteMedium) {
+ if(name==='ratings')return 'Rating agreement';
+ if(medium==='book'||medium==='comic'){
+  if(name==='writers')return 'Authors';
+  if(name==='tags')return 'Subjects';
+  if(name==='franchises')return 'Series';
+ }
+ if(name==='mechanics')return 'Game modes';
+ if(name==='perspectives')return 'Player perspectives';
+ return displayLabel(name);
+}
 export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean;features?:TasteFeatures};
 type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
 function cosine(a:Map<string,number>,b:Map<string,number>) {
@@ -31,7 +47,7 @@ function ratingOrder(pairs:number[][]){
  for(let i=0;i<a.length;i++){dot+=a[i]*b[i];left+=a[i]**2;right+=b[i]**2;}
  return 50*(1+Math.max(-1,Math.min(1,dot/Math.sqrt(left*right))));
 }
-export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
+export function tasteSignals(left:TasteWork[],right:TasteWork[],dimensions:readonly TasteDimension[]=tasteDimensions) {
  const byId=new Map(right.map(w=>[w.id,w]));
  const ratingPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.rating!=null&&other?.rating!=null?[[w.rating,other.rating]]:[];});
  const reactionPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.reaction&&other?.reaction?[[w.reaction,other.reaction]]:[];});
@@ -53,7 +69,8 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  // Share the same feature-profile builder with personal recommendations, using only visible evidence.
  const featureProfile=(items:TasteWork[])=>buildTasteProfile(items.map(work=>({id:work.id,weight:work.rating!=null?(work.rating<2.5?-5:work.rating>=3.5?5:0):['❤️','🔥'].includes(work.reaction??'')?4:work.interest?1:work.consumed?1:0,features:work.features??{}})));
  const a=featureProfile(left),b=featureProfile(right);
- for(const dimension of tasteDimensions.filter(value=>value!=='genres')){
+ if(!dimensions.includes('genres'))delete signals.genres;
+ for(const dimension of dimensions.filter(value=>value!=='genres')){
   const av=(a.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2)),bv=(b.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2));
   const rightValues=new Map(bv.map(v=>[v.id,v.value]));
   signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),rightValues):null,shared:av.reduce((shared,v)=>shared+(rightValues.has(v.id)?1:0),0),left:av.length,right:bv.length,weight:dimension==='decades'?0:dimension==='publishers'?2:5};
