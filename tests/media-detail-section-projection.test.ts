@@ -1,5 +1,5 @@
 import {expect,test} from 'bun:test';
-import {and,asc,desc,eq,inArray,or,sql} from 'drizzle-orm';
+import {and,asc,desc,eq,inArray,isNull,or,sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import * as s from '../src/lib/server/db/schema';
 import {AppError} from '../src/lib/server/security/errors';
@@ -29,7 +29,7 @@ function owner(source:string,kind:'season'|'collection'|'movie'){
  const db={select:()=>{let table:unknown;const query:any={from:(value:unknown)=>{table=value;return query;},where:()=>query,innerJoin:()=>query,orderBy:()=>query,limit:()=>query,
   then:(resolve:(value:unknown)=>unknown)=>Promise.resolve(table===s.episodes?episodes:table===s.seasons?seasons:table===s.mediaRelationships?relationships:[]).then(resolve)};return query;}};
  const start=source.indexOf('export async function detailsData('),occurrence=source.slice(source.indexOf('export function applySequenceEntry('),source.indexOf('export async function sequenceNextView('));
- const details=compile(occurrence+'\n'+source.slice(start),{v,uuidSchema:v.pipe(v.string(),v.uuid()),s,and,asc,desc,eq,inArray,or,sql,AppError,getDb:()=>db,
+ const details=compile(occurrence+'\n'+source.slice(start),{v,uuidSchema:v.pipe(v.string(),v.uuid()),s,and,asc,desc,eq,inArray,isNull,or,sql,AppError,getDb:()=>db,
   mediaViews:async(_user:string,{ids}:{ids:string[]})=>{requests.push(ids);return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);},
   mediaViewsForIds:async(_user:string,ids:string[])=>{requests.push(ids);return [...new Set(ids)].flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);},
   sequenceEntries:async(_user:string,{id}:{id:string})=>{sequences.push(id);return entries;},

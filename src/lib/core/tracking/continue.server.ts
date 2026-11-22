@@ -1,5 +1,5 @@
 import { lockFeaturePolicyInTransaction, requireWorkFeature } from '#lib/server/features.js';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
 import * as s from '../../server/db/schema';
@@ -56,7 +56,11 @@ export async function changeContinue(userId: string, raw: unknown) {
       const [latest] = await tx
         .select({ id: s.trackingEvents.id, action: s.trackingEvents.action })
         .from(s.trackingEvents)
-        .where(and(eq(s.trackingEvents.userId, userId), eq(s.trackingEvents.mediaId, mediaId)))
+        .where(and(
+          eq(s.trackingEvents.userId, userId),
+          eq(s.trackingEvents.mediaId, mediaId),
+          isNull(s.trackingEvents.mergedInto)
+        ))
         .orderBy(desc(s.trackingEvents.createdAt), desc(s.trackingEvents.id))
         .limit(1);
       if (!state?.dropped || latest?.id !== input.eventId || latest.action !== 'drop')

@@ -5,6 +5,7 @@ import type {CatalogueFacts,CastMember} from '#lib/providers/contracts.js';
 import {tmdbCastFeatures,tmdbCrewFeatures} from '#lib/providers/tmdb/taste-credits.js';
 import type {ReadingCatalogueFacts} from '#lib/reading/model.js';
 import {namedFeatures,tasteDimensions,type TasteFeature,type TasteFeatures} from './taste-profile';
+import {hasAudienceEvidence,type TasteAudienceRating} from './taste-rating-model';
 
 type ScreenTasteSnapshot = {provider:string;genres:string[]|null;facts:CatalogueFacts|null;cast:Pick<CastMember,'id'|'name'>[]|null};
 const languageNames=new Intl.DisplayNames('en',{type:'language'});
@@ -18,7 +19,7 @@ function screenPeople(snapshots:ScreenTasteSnapshot[]){
 }
 
 /** Read existing metadata in a bounded batch; never fetch providers from a page request. */
-export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy):Promise<Map<string,TasteFeatures>>{
+export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy,audienceRatings?:Map<string,TasteAudienceRating>):Promise<Map<string,TasteFeatures>>{
  if(!ids.length)return new Map();
  const sql=getSql();
  const detailsSources=sql.array([...sourceOrder(policy,'details')],'TEXT');
@@ -26,7 +27,7 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy):Pro
  const rows=await trackReadQuery(()=>sql<{
   id:string;kind:string;genres:string[];subjects:string[];artistNames:string[];artists:TasteFeature[];releaseYear:number|null;
   developers:string[];publishers:string[];authors:string[];series:string|null;features:TasteFeatures[];
-  screen:ScreenTasteSnapshot[];overrideGenres:string[]|null;readingFacts:ReadingCatalogueFacts|null;
+  screen:ScreenTasteSnapshot[];overrideGenres:string[]|null;readingFacts:ReadingCatalogueFacts|null;gameAudience:TasteAudienceRating|null;
  }[]>`
  select w.id,w.kind,coalesce(b.authors,'{}'::text[]) as authors,b.series_title as series,
  coalesce(m.genres,nullif(g.genres,'{}'::text[]),pg.genres,a.genres,'{}'::text[]) as genres,coalesce(b.subjects,'{}'::text[]) as subjects,
@@ -40,6 +41,7 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy):Pro
  case when w.kind<>'artist' then coalesce(extract(year from coalesce(o.release_date,release.release_date,m.release_date,
   g.release_date,pg.release_date,a.release_date,b.release_date))::int,m.year,a.year,b.published_year) end as "releaseYear",
  o.genres as "overrideGenres",coalesce(screen.snapshots,'[]'::jsonb) as screen,b.catalogue_facts as "readingFacts",
+ case when ${audienceRatings!==undefined} then g.catalogue_facts->'audience' end as "gameAudience",
  coalesce(nullif(g.developers,'{}'::text[]),pg.developers,'{}'::text[]) as developers,coalesce(nullif(g.publishers,'{}'::text[]),pg.publishers,'{}'::text[]) as publishers,
  coalesce(saved.features,'[]'::jsonb) as features
  from works w left join media m on m.id=w.id left join metadata_overrides o on o.media_id=m.id
@@ -66,6 +68,10 @@ export async function workTasteFeatures(ids:string[],policy?:MetadataPolicy):Pro
  where w.id=any(${sql.array(ids,'UUID')}::uuid[])`);
  return new Map(rows.map(row=>{
   const screenFacts=row.screen.flatMap(snapshot=>snapshot.facts?[snapshot.facts]:[]);
+  if(audienceRatings){
+   const audience=screenFacts.find(facts=>hasAudienceEvidence(facts.audience))?.audience??row.gameAudience;
+   if(hasAudienceEvidence(audience))audienceRatings.set(row.id,audience);
+  }
   const languageCodes=[...screenFacts.map(facts=>facts.originalLanguage??''),...(row.readingFacts?.openLibrary?.languages??[])];
   const genres=row.overrideGenres??row.screen.find(snapshot=>snapshot.genres?.length)?.genres??row.genres;
   const artists=[...row.artists];

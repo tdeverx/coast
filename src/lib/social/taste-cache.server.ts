@@ -6,13 +6,13 @@ import {getDb,getSql,type Database} from '#lib/server/db/index.js';
 import {getConfig} from '#lib/server/config.js';
 import {interestWorks,visitTasteHistory} from '#lib/recommendations/interests.server.js';
 import {prepareTasteReference,scorerFromReference,type TasteReference,createTasteAccumulator,decodeTasteAffinities,tasteDimensions,tasteMedia,type LifetimeTasteProfile,type SavedAffinity,type TasteAffinity,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
-import {createTasteRatingTrainer} from './taste-rating-model';
+import {createTasteRatingTrainer,negativeRatingWeight,type TasteAudienceRating} from './taste-rating-model';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
 import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 // A saved profile can outlive a new watch. A withdrawn evidence source takes effect on the next read.
-const tastePolicySql=query`'taste-v9-'||md5(concat_ws(':',coast_feature_enabled(u.id,'social')::text,
+const tastePolicySql=query`'taste-v12-'||md5(concat_ws(':',coast_feature_enabled(u.id,'social')::text,
  coalesce((select string_agg(concat_ws('/',c.id,c.status,c.account_generation,c.sync_account_id,i.enabled),',' order by c.id)
   from provider_connections c join provider_instances i on i.id=c.instance_id where c.user_id=u.id),'')))`;
 const readableProfile=query`coast_feature_enabled(u.id,'personalisation')
@@ -213,23 +213,25 @@ async function buildLifetimeProfiles(userId:string,config:FeatureConfig){
  const sql=getSql();
  await visitTasteHistory(userId,categories,async works=>{
   await assertJobLease(sql);
-  const features=await workTasteFeatures(works.map(work=>work.id),config.metadataSource);
+  const audience=works.some(work=>work.rating!==null&&work.rating<3)?new Map<string,TasteAudienceRating>():undefined;
+  const features=await workTasteFeatures(works.map(work=>work.id),config.metadataSource,audience);
   for(const work of works){
    let accumulator=accumulators.get(work.medium);
    if(!accumulator){
     accumulator={history:createTasteAccumulator({count:work.ratingCount,median:work.medianRating}),
-     ratings:createTasteRatingTrainer(work.ratingCount,work.medianRating)};
+     ratings:createTasteRatingTrainer(work.ratingCount)};
     accumulators.set(work.medium,accumulator);
    }
    const facts=features.get(work.id)??{};
-   accumulator.history.add(work,facts);
-   accumulator.ratings.add(work.rating,facts);
+   const negativeWeight=negativeRatingWeight(work.rating,audience?.get(work.id));
+   accumulator.history.add(work,facts,negativeWeight);
+   accumulator.ratings.add(work.rating,facts,negativeWeight);
   }
  });
  return new Map(await Promise.all(enabled.map(async ({value})=>{
   const accumulator=accumulators.get(value);
   const profile=(accumulator?.history??createTasteAccumulator()).snapshot();
-  return [value,{profile,reference:prepareTasteReference(profile,await accumulator?.ratings.fit())}] as const;
+  return [value,{profile,reference:prepareTasteReference(profile,await accumulator?.ratings.fit(),accumulator?.history.returnWeights())}] as const;
  })));
 }
 

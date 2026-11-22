@@ -1,5 +1,5 @@
 import {expect,test} from 'bun:test';
-import {and,asc,desc,eq,inArray,or,sql} from 'drizzle-orm';
+import {and,asc,desc,eq,inArray,isNull,or,sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import * as s from '../src/lib/server/db/schema';
 import {AppError} from '../src/lib/server/security/errors';
@@ -32,7 +32,7 @@ test('detail hydration reuses base identities while preserving repeated sequence
       then:(resolve:(value:unknown)=>unknown)=>Promise.resolve(table===s.mediaRelationships?relationships:[]).then(resolve)};
     return query;
   }};
-  const details=compile({v,uuidSchema:v.pipe(v.string(),v.uuid()),s,and,asc,desc,eq,inArray,or,sql,AppError,getDb:()=>db,
+  const details=compile({v,uuidSchema:v.pipe(v.string(),v.uuid()),s,and,asc,desc,eq,inArray,isNull,or,sql,AppError,getDb:()=>db,
     mediaViews:async(_owner:string,{ids}:{ids:string[]})=>{requested.push(ids);return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);},
     mediaViewsForIds:async(_owner:string,ids:string[])=>{requested.push(ids);return [...new Set(ids)].flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);},
     sequenceEntries:async(_owner:string,{id}:{id:string})=>sequences.get(id)??[],

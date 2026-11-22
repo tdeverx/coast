@@ -16,7 +16,12 @@ import * as trakt from '../src/lib/providers/trakt/connection.server';
 import { executeTraktListExport, exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
 import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
-import { episodes, externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, socialLiveDeliveries, socialScrobbleDeliveries, syncValues, trackingEvents, trackingState, traktImportRecords, traktImportStages, users } from '../src/lib/server/db/schema';
+import { importJellyfinPlayback } from '../src/lib/sync/jellyfin-playback.server';
+import { removeHistory } from '../src/lib/sync/history-removal.server';
+import { mediaHistory } from '../src/lib/server/queries/media-actions';
+import { detailsData } from '../src/lib/server/queries/media';
+import { changeContinue } from '../src/lib/core/tracking/continue.server';
+import { episodes, externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, removedTrackingSources, seasons, socialLiveDeliveries, socialScrobbleDeliveries, syncValues, trackingEvents, trackingState, traktImportRecords, traktImportStages, users } from '../src/lib/server/db/schema';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 
@@ -36,6 +41,77 @@ const remoteItems = [
   {id:200,type:'movie',movie:{title:'Movie sharing show ID',ids:{trakt:numericId}}},
   {id:100,type:'show',show},
 ];
+
+run('import-only sync pairs exact Jellyfin and Trakt watches and keeps Trakt removal identity', async () => {
+  const db = getDb();
+  const [person] = await db.insert(users).values({ username: `watch-merge-${prefix}`, passwordHash: 'fixture' }).returning();
+  const [jellyfinInstance] = await db.insert(providerInstances).values({
+    provider: 'jellyfin', name: 'History merge fixture', baseUrl: 'https://jellyfin.fixture.invalid',
+  }).returning();
+  try {
+    const [jellyfin, account] = await db.insert(providerConnections).values([
+      { userId: person.id, instanceId: jellyfinInstance.id, externalUserId: 'fixture', status: 'connected' },
+      { userId: person.id, instanceId, externalUserId: 'history-merge', status: 'connected',
+        settings: { traktSync: { import: { history: true }, export: {} } } },
+    ]).returning();
+    const first = '2024-02-01T12:34:56.000Z';
+    const later = '2024-02-02T12:34:56.000Z';
+    const jellyfinWatch = (id: string) => importJellyfinPlayback(person.id, jellyfin.id, id, {
+      kind: 'movie', sources: [], metadata: {},
+      userData: { played: true, positionSeconds: 0, playCount: 1, lastPlayedAt: first },
+    });
+    const record = (id: number, watched_at: string, traktId = numericId) => ({
+      id, watched_at, movie: { title: 'Fixture', ids: { trakt: traktId } },
+    });
+    const remote = [record(401, first), record(402, first, numericId + 9)];
+    const adapter = new TraktAdapter(async (path, init) => {
+      expect(init?.method ?? 'GET').toBe('GET');
+      if (path.split('?')[0] === '/sync/history') return remote;
+      throw new Error(`Unexpected fixture read ${path}`);
+    }, 'fixture-client', 'fixture-secret');
+    const importHistory = () => importTraktFromAdapter(person.id, account.id, { adapter, sync: {
+      history: true, progress: false, collection: false, ratings: false, watchlist: false, lists: false, scrobble: false,
+    } });
+    const playCount = async (id: string) => (await db.select().from(trackingState).where(and(
+      eq(trackingState.userId, person.id), eq(trackingState.mediaId, id)
+    )))[0]?.playCount;
+
+    await jellyfinWatch(movieId);
+    const drop = await changeContinue(person.id, { mediaId: movieId, action: 'remove' });
+    await importHistory();
+    await jellyfinWatch(extraMovieId);
+    await importHistory();
+    await changeContinue(person.id, { ...drop, mediaId: movieId, action: 'undo' });
+    expect(await playCount(movieId)).toBe(1);
+    expect(await playCount(extraMovieId)).toBe(1);
+    const history = await mediaHistory(person.id, movieId);
+    expect(history.items).toHaveLength(1);
+    const watch = history.items[0];
+    expect(watch.source).toBe('jellyfin');
+    expect((await detailsData(person.id, movieId)).history.filter(entry => entry.action === 'watch')
+      .map(entry => entry.id)).toEqual([watch.id]);
+    const sourceId = `${account.id}:history:401:${first}`;
+    const [alias] = await db.select().from(trackingEvents).where(eq(trackingEvents.sourceEventId, sourceId));
+    expect(alias).toMatchObject({ applied: false, mergedInto: watch.id });
+
+    remote.push(record(403, first), record(404, later));
+    await importHistory();
+    expect(await playCount(movieId)).toBe(3);
+    expect((await mediaHistory(person.id, movieId)).total).toBe(3);
+    expect(await removeHistory(person.id, movieId, {
+      eventIds: [watch.id], expectedCount: 1, before: new Date().toISOString(),
+    })).toEqual({ removed: 1, queued: 0 });
+    await importHistory();
+    expect(await playCount(movieId)).toBe(2);
+    expect(await db.select().from(removedTrackingSources).where(and(
+      eq(removedTrackingSources.userId, person.id), eq(removedTrackingSources.sourceEventId, sourceId)
+    ))).toHaveLength(1);
+    expect(await db.select().from(outboxActions).where(eq(outboxActions.userId, person.id))).toHaveLength(0);
+  } finally {
+    await db.delete(users).where(eq(users.id, person.id));
+    await db.delete(providerInstances).where(eq(providerInstances.id, jellyfinInstance.id));
+  }
+});
 
 function anthologyFixture(base: number, hasSeriesId = () => true) {
   const calls: string[] = [];

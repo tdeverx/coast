@@ -469,6 +469,7 @@ export const trackingEvents = pgTable(
     action: text('action').$type<TrackingAction>().notNull(),
     source: text('source').notNull().default('coast'),
     sourceEventId: text('source_event_id'),
+    mergedInto: uuid('merged_into').references((): AnyPgColumn => trackingEvents.id, { onDelete: 'cascade' }),
     sequence: jsonb('sequence').$type<{
       kind: 'collection' | 'playlist';
       id: string;
@@ -490,6 +491,7 @@ export const trackingEvents = pgTable(
   (t) => [
     uniqueIndex('tracking_source_event_unique').on(t.userId, t.source, t.sourceEventId),
     index('tracking_history_idx').on(t.userId, t.mediaId, t.occurredAt),
+    index('tracking_merged_event_idx').on(t.mergedInto).where(sql`${t.mergedInto} is not null`),
   ]
 );
 /** Imported event identities explicitly removed by the user, without retaining the watch record. */

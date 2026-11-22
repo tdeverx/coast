@@ -281,20 +281,14 @@ export async function reconcileProviderValue(
       .limit(1);
     // A preferred account can also settle conflicts first observed on another destination.
     const automatic = (decision === 'conflict' || !!pending) && preference !== 'manual';
+    let duplicateObservation = false;
     if (automatic) {
       decision = preference;
       let winning = preference === 'remote' ? remote : local;
       if (preference === 'remote'){
-        if(musicHistory)retainImportWatermark(await applyRemote());
-        else await applySyncValue(
-          tx,
-          userId,
-          mediaId,
-          category,
-          winning,
-          options.source ?? 'provider-sync',
-          options.occurredAt
-        );
+        const result = await applyRemote();
+        retainImportWatermark(result);
+        duplicateObservation = !!(result && typeof result === 'object' && 'duplicate' in result && result.duplicate);
         if(musicHistory)winning=await localSyncValue(tx,userId,mediaId,category);
       }
       await tx
@@ -355,7 +349,7 @@ export async function reconcileProviderValue(
         target: [syncValues.connectionId, syncValues.mediaId, syncValues.category],
         set: { remote:observedRemote, agreed, conflict: decision === 'conflict', updatedAt: new Date() },
       });
-    if (automatic)
+    if (automatic && !duplicateObservation)
       await enqueueSyncValueInTransaction(
         tx,
         userId,

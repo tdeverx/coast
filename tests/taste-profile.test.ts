@@ -2,7 +2,7 @@ import {test,expect} from 'bun:test';
 import {buildTasteProfile,scoreTaste,compileTasteScorer,prepareTasteReference,scorerFromReference,createTasteAccumulator,decodeTasteAffinities,tasteDimensions,namedFeatures,
  type TasteFeatures,type TasteWorkEvidence} from '../src/lib/social/taste-profile';
 import {unknownActivityDate} from '../src/lib/social/model';
-import {createTasteRatingTrainer,tasteRatingAdjustment} from '../src/lib/social/taste-rating-model';
+import {createTasteRatingTrainer,negativeRatingWeight,tasteRatingAdjustment} from '../src/lib/social/taste-rating-model';
 
 const genres=namedFeatures(['Drama']),cast=namedFeatures(['Actor']),tags=namedFeatures(['Space exploration']);
 const watched:TasteWorkEvidence={rating:null,explicit:0,implicit:3,consumed:true,repeated:false};
@@ -20,10 +20,12 @@ test('visible overlap counts each work once and preserves the strongest explicit
  expect(a.dimensions.genres![0]).toMatchObject({samples:1,value:-0.4});
 });
 
-test('a common genre cannot acquire a match by also appearing as a tag, theme, language and country',()=>{
- const features={genres,tags:namedFeatures(['DRAMA']),themes:namedFeatures(['Drama']),languages:namedFeatures(['English']),countries:namedFeatures(['United States'])};
+test('a supported genre can score on its own and its aliases count once',()=>{
+ const features={genres,tags:namedFeatures(['DRAMA']),themes:namedFeatures(['Drama'])};
  const profile=item(100,favourite,features);
- expect(scoreTaste(profile,features)).toMatchObject({score:null,confidence:0,reasons:[]});
+ const genre=scoreTaste(profile,{genres});
+ expect(genre.score!).toBeGreaterThan(50);
+ expect(scoreTaste(profile,features)).toEqual(genre);
  expect(scoreTaste(profile,{})).toMatchObject({score:null,confidence:0,matches:0});
 });
 
@@ -39,17 +41,31 @@ test('one work has one vote per feature, a single title cannot support a score, 
  expect(two.reasons.length).toBeLessThanOrEqual(3);
 });
 
-test('explicit ratings supersede repeats, calibrate to a supported personal median, and retain their raw like rate',()=>{
- const rate=(count:number,median:number,rating:number)=>{
-  const acc=createTasteAccumulator({count,median});
+test('the taste wall leads with sustained evidence while keeping one-off affinities available',()=>{
+ const history=createTasteAccumulator();
+ const regular={tags:namedFeatures(['Quiet mysteries'])};
+ const oneOff={tags:namedFeatures(['Haunted houses'])};
+ for(let count=0;count<10;count++)history.add({...watched,rating:3.5},regular);
+ history.add({...watched,rating:5},oneOff);
+ const profile=history.snapshot();
+ const [regularAffinity,oneOffAffinity]=decodeTasteAffinities(profile.dimensions.tags!);
+ expect(regularAffinity.value).toBeLessThan(oneOffAffinity.value);
+ expect(profile.signals.tags?.preview.map(signal=>signal.name)).toEqual(['Quiet mysteries','Haunted houses']);
+ expect(scoreTaste(profile,oneOff).score).toBeNull();
+});
+
+test('explicit ratings keep the same meaning across rating histories and retain their raw like rate',()=>{
+ const rate=(median:number,rating:number)=>{
+  const acc=createTasteAccumulator({count:20,median});
   for(let i=0;i<8;i++)acc.add({...watched,rating,explicit:5,repeated:true},{cast});
   return acc.snapshot();
  };
- const liked=rate(20,2,3.5),generous=rate(20,5,3.5),sparse=rate(1,5,3.5);
- expect(scoreTaste(liked,{cast}).score!).toBeGreaterThan(scoreTaste(generous,{cast}).score!);
- expect(sparse.dimensions.cast![0][2]).toBe(rate(0,2.75,3.5).dimensions.cast![0][2]);
+ const liked=rate(2,4),generous=rate(5,4);
+ expect(scoreTaste(liked,{cast})).toEqual(scoreTaste(generous,{cast}));
+ expect(scoreTaste(generous,{cast}).score!).toBeGreaterThan(50);
+ expect(generous.medianRating).toBe(5);
  expect(decodeTasteAffinities(generous.dimensions.cast!)[0]).toMatchObject({explicitSamples:8,positiveFeedbackSamples:8,consumedSamples:8,repeatedSamples:8});
- const disliked=rate(20,5,0.5),result=scoreTaste(disliked,{cast});
+ const disliked=rate(5,0.5),result=scoreTaste(disliked,{cast});
  expect(disliked).toMatchObject({works:8,explicitWorks:8,inferredWorks:0,consumedWorks:8,repeatedWorks:8});
  expect(result.score!).toBeLessThan(40);
  expect(result.reasons[0]).toMatchObject({name:'Actor',direction:'negative',samples:8});
@@ -68,7 +84,8 @@ test('frequency measures distinct consumed works across the whole medium and del
  const actor=(profile:typeof frequent)=>decodeTasteAffinities(profile.dimensions.cast!)[0];
  expect(actor(occasional)).toMatchObject({consumedSamples:30,repeatedSamples:0,explicitSamples:0});
  expect(actor(returning)).toMatchObject({consumedSamples:90,repeatedSamples:60,positiveFeedbackSamples:0});
- expect(actor(frequent).value-actor(occasional).value).toBeGreaterThan(0.30);
+ expect(actor(frequent).value).toBeGreaterThan(actor(occasional).value);
+ expect(actor(returning).value-actor(frequent).value).toBeGreaterThan(actor(frequent).value-actor(occasional).value);
  expect(actor(returning).value).toBeGreaterThan(actor(frequent).value);
  expect(actor(occasional).value).toBeGreaterThan(actor(range(30,1000,0)).value);
  expect(scoreTaste(frequent,{cast}).score!).toBeGreaterThan(scoreTaste(occasional,{cast}).score!);
@@ -101,6 +118,26 @@ test('watched titles credited to an explicit opinion cannot add a second inferre
  const overlapSupport=prepareTasteReference(overlapping).dimensions.directors!.actor[5];
  const independentSupport=prepareTasteReference(independent).dimensions.directors!.actor[5];
  expect(overlapSupport).toBeLessThan(independentSupport);
+});
+
+test('a deliberate return reinforces rated features with one observation per title',()=>{
+ const features={genres,tags,cast,franchises:namedFeatures(['A series']),
+  artists:[{id:'artist:1',name:'A musician'}],developers:namedFeatures(['A developer'])};
+ const rating={...watched,rating:4};
+ const once=item(20,rating,features);
+ const repeat=item(20,{...rating,repeated:true},features);
+ const dropped=item(20,{...rating,repeated:true,implicit:-2},features);
+ expect(repeat).toMatchObject({works:20,explicitWorks:20,inferredWorks:0,repeatedWorks:20});
+ for(const dimension of ['genres','tags','cast','franchises','artists','developers'] as const){
+  const [original]=decodeTasteAffinities(once.dimensions[dimension]!);
+  const [returned]=decodeTasteAffinities(repeat.dimensions[dimension]!);
+  const [abandoned]=decodeTasteAffinities(dropped.dimensions[dimension]!);
+  expect(returned.value).toBeGreaterThan(original.value);
+  expect(returned).toMatchObject({samples:20,explicitSamples:20,repeatedSamples:20,medianRating:4});
+  expect(abandoned.value).toBe(original.value);
+ }
+ expect(scoreTaste(repeat,features).score!).toBeGreaterThan(scoreTaste(once,features).score!);
+ expect(scoreTaste(repeat,features).confidence).toBe(scoreTaste(once,features).confidence);
 });
 
 test('balanced opposing opinions yield a mixed explanation and sparse unknown metadata carries no dislike',()=>{
@@ -217,7 +254,7 @@ test('a calculation compiles each affinity once and reuses it without retaining 
  expect(score(features)).toEqual(expected);
 });
 
-test('a genre alone predicts held-out titles only when explicit feedback distinguishes it from the rest of that medium',()=>{
+test('a single genre learns positive and negative preferences without requiring competing genres',()=>{
  const scifi={genres:namedFeatures(['Science fiction'])},comedy={genres:namedFeatures(['Comedy'])};
  const profile=(pairs:number,other:TasteFeatures)=>{
   const acc=createTasteAccumulator();
@@ -231,9 +268,10 @@ test('a genre alone predicts held-out titles only when explicit feedback disting
  expect(ranked(scifi).score!).toBeGreaterThan(50);
  expect(ranked(comedy).score!).toBeLessThan(50);
  expect(ranked(comedy).reasons[0].direction).toBe('negative');
- expect(scoreTaste(profile(3,comedy),scifi).score).toBeNull();
- expect(scoreTaste(profile(100,{}),scifi).score).toBeNull();
- expect(scoreTaste(profile(100,scifi),scifi).score).toBeNull();
+ expect(ranked(scifi).confidence).toBeGreaterThan(scoreTaste(profile(3,comedy),scifi).confidence);
+ expect(scoreTaste(profile(1,comedy),scifi).score).toBeNull();
+ expect(scoreTaste(profile(100,{}),scifi).score!).toBeGreaterThan(50);
+ expect(scoreTaste(profile(100,scifi),scifi).score!).toBeLessThan(ranked(scifi).score!);
 });
 
 test('selective returns distinguish a creator from routine replay across a medium with the same exposures',()=>{
@@ -257,7 +295,20 @@ test('selective returns distinguish a creator from routine replay across a mediu
  }
  const score=compileTasteScorer(acc.snapshot());
  expect(score(drama).score!).toBeGreaterThan(50);
- expect(score(comedy).score).toBeNull();
+ expect(score(drama).score!).toBeGreaterThan(score(comedy).score!);
+});
+
+test('rated returns reinforce a feature more when returning to other rated titles is less common',()=>{
+ const returning={tags:namedFeatures(['Space travel'])},other={tags:namedFeatures(['Haunting'])};
+ const affinity=(routine:boolean)=>{
+  const history=createTasteAccumulator();
+  for(let i=0;i<60;i++){
+   history.add({...watched,rating:4,repeated:true},returning);
+   history.add({...watched,rating:4,repeated:routine},other);
+  }
+  return decodeTasteAffinities(history.snapshot().dimensions.tags!).find(entry=>entry.id==='space travel')!.value;
+ };
+ expect(affinity(false)).toBeGreaterThan(affinity(true));
 });
 
 test('long game exposure provides a small tie-breaker, while short games, missing time and explicit dislikes are protected',()=>{
@@ -279,7 +330,7 @@ test('long game exposure provides a small tie-breaker, while short games, missin
  expect(games(0.9,-0.9,1)).toEqual(games(null,null,1));
 });
 
-test('persisted reference preserves score, evidence and aliases without retaining singleton credits',()=>{
+test('persisted references preserve scores and count a supported tag independently of an unrelated singleton genre',()=>{
  const profile=createTasteAccumulator();
  const features={cast:[{id:'__proto__',name:'Lead'}],tags:namedFeatures(['toString','one-off']),genres:namedFeatures(['Comedy'])};
  for(let i=0;i<12;i++)profile.add(favourite,features);
@@ -287,19 +338,18 @@ test('persisted reference preserves score, evidence and aliases without retainin
  const full=profile.snapshot();
  const reference=JSON.parse(JSON.stringify(prepareTasteReference(full)));
  expect(Object.hasOwn(reference.dimensions.cast,'once')).toBe(false);
- expect(Object.hasOwn(reference.genres,'one-off')).toBe(true);
  expect(Object.hasOwn(reference.dimensions.cast,'__proto__')).toBe(true);
  const lookup=scorerFromReference(reference);
  expect(lookup(features)).toEqual(scoreTaste(full,features));
  expect(lookup({cast:[{id:'constructor',name:'Unknown'}]})).toMatchObject({matches:0,score:null});
- expect(lookup({tags:namedFeatures(['one-off'])})).toMatchObject({matches:0,score:null});
+ expect(lookup({tags:namedFeatures(['one-off'])})).toMatchObject({matches:1,reasons:[{dimension:'tags',name:'one-off'}]});
 });
 
 test('rating combinations contribute after their individual genre and theme effects',async()=>{
  const sciFi=namedFeatures(['Science fiction']),fantasy=namedFeatures(['Fantasy']);
  const quiet=namedFeatures(['Quiet exploration']),loud=namedFeatures(['Intense combat']);
  const target={genres:sciFi,tags:quiet},opposite={genres:sciFi,tags:loud};
- const trainer=createTasteRatingTrainer(60,3.5),history=createTasteAccumulator({count:60,median:3.5});
+ const trainer=createTasteRatingTrainer(60),history=createTasteAccumulator({count:60,median:3.5});
  for(let i=0;i<15;i++)for(const [rating,features] of [[5,target],[2,opposite],[2,{genres:fantasy,tags:quiet}],[5,{genres:fantasy,tags:loud}]] as const){
   trainer.add(rating,features);
   history.add({...watched,rating},features);
@@ -320,9 +370,34 @@ test('rating combinations contribute after their individual genre and theme effe
  expect(breakdown!.calculation!.ratingTerms.some(term=>term.name==='Science fiction + Quiet exploration'&&term.points>0)).toBe(true);
  expect(score(opposite).score!).toBeLessThan(scoreTaste(profile,opposite).score!);
  expect(score({}).score).toBeNull();
- const tooFew=createTasteRatingTrainer(39,3.5);
+ const tooFew=createTasteRatingTrainer(39);
  for(let i=0;i<39;i++)tooFew.add(i%2?5:2,target);
  expect(await tooFew.fit()).toBeUndefined();
+});
+
+test('genre and creator returns separate ties without changing unrated scores or support',()=>{
+ const genre=namedFeatures(['Science fiction']),otherGenre=namedFeatures(['Fantasy']);
+ const writer=namedFeatures(['Writer A']),otherWriter=namedFeatures(['Writer B']);
+ const returning={genres:genre,writers:writer},other={genres:genre,writers:otherWriter};
+ const history=createTasteAccumulator();
+ for(let i=0;i<60;i++){
+  history.add({...watched,repeated:true},returning);
+  history.add(watched,other);
+  history.add(watched,{genres:otherGenre,writers:writer});
+  history.add({...watched,repeated:true},{genres:otherGenre,writers:otherWriter});
+ }
+ const profile=history.snapshot(),returnWeights=history.returnWeights();
+ const reference=prepareTasteReference(profile,undefined,returnWeights);
+ const score=scorerFromReference(reference,true);
+ const first=score(returning),second=score(other);
+ expect(first.score).toBe(scoreTaste(profile,returning).score);
+ expect(second.score).toBe(scoreTaste(profile,other).score);
+ expect(first.score).toBe(second.score);
+ expect(first.confidence).toBe(scoreTaste(profile,returning).confidence);
+ expect(first.returnTieBreak).toBeGreaterThan(0);
+ expect(second.returnTieBreak).toBeLessThan(0);
+ expect(first.breakdown?.calculation?.ratingTerms).toEqual([]);
+ expect(score({}).score).toBeNull();
 });
 
 test('admin breakdown keeps context for a withheld match without a calculated score',()=>{
@@ -333,15 +408,87 @@ test('admin breakdown keeps context for a withheld match without a calculated sc
  expect(result.breakdown?.calculation).toBeUndefined();
 });
 
-test('below-usual ratings outweigh mild familiarity and keep neutral ratings neutral',()=>{
+test('the fixed star scale keeps three stars neutral and preserves explicit dislikes',()=>{
  const profileFor=(rating:number)=>{
   const acc=createTasteAccumulator({count:40,median:4});
   for(let i=0;i<16;i++)acc.add({...watched,rating},{cast});
   return acc.snapshot();
  };
- expect(scoreTaste(profileFor(4),{cast}).score).toBe(50);
- expect(profileFor(3).dimensions.cast![0][5]).toBeGreaterThan(10);
+ expect(scoreTaste(profileFor(3),{cast}).score).toBe(50);
+ expect(scoreTaste(profileFor(2.5),{cast}).score!).toBeLessThan(50);
+ expect(scoreTaste(profileFor(3.5),{cast}).score!).toBeGreaterThan(50);
  expect(profileFor(0.5).dimensions.cast![0][5]).toBe(16);
+});
+
+test('crowd consensus weakens shared dislikes for all affinities while preserving the raw rating',()=>{
+ const audience={score:4,votes:400,scale:10} as const;
+ const weight=negativeRatingWeight(2,audience);
+ expect(weight).toBeCloseTo(0.6);
+ expect(negativeRatingWeight(2,{...audience,score:40,scale:100})).toBe(weight);
+ expect(negativeRatingWeight(2,{...audience,votes:10})).toBe(1);
+ expect(negativeRatingWeight(2,{...audience,score:8})).toBe(1);
+ expect(negativeRatingWeight(0.5,audience)).toBe(1);
+ expect(negativeRatingWeight(4,audience)).toBe(1);
+ expect(negativeRatingWeight(null,audience)).toBe(1);
+ const raw=createTasteAccumulator(),adjusted=createTasteAccumulator();
+ for(let i=0;i<5;i++){
+  const evidence={...watched,rating:2},features={genres,tags,cast};
+  raw.add(evidence,features);
+  adjusted.add(evidence,features,weight);
+ }
+ for(const dimension of ['genres','tags','cast'] as const){
+  const [before]=decodeTasteAffinities(raw.snapshot().dimensions[dimension]!);
+  const [after]=decodeTasteAffinities(adjusted.snapshot().dimensions[dimension]!);
+  expect(after.value).toBeGreaterThan(before.value);
+  expect(after.value).toBeLessThan(0);
+  expect(after).toMatchObject({medianRating:2,explicitSamples:5,positiveFeedbackSamples:0});
+ }
+});
+
+test('the learned rating adjustment also softens a dislike supported by the crowd',async()=>{
+ const disliked={tags:namedFeatures(['Slasher'])},liked={tags:namedFeatures(['Space travel'])};
+ const weight=negativeRatingWeight(2,{score:4,votes:400,scale:10});
+ const raw=createTasteRatingTrainer(60),adjusted=createTasteRatingTrainer(60);
+ for(let i=0;i<30;i++){
+  raw.add(2,disliked);raw.add(3,liked);
+  adjusted.add(2,disliked,weight);adjusted.add(3,liked);
+ }
+ expect(tasteRatingAdjustment(await adjusted.fit(),disliked)).toBeGreaterThan(tasteRatingAdjustment(await raw.fit(),disliked));
+});
+
+test('subject terms beyond the previous fit cutoffs can contribute points',()=>{
+ const features={genres:namedFeatures(Array.from({length:12},(_,i)=>`Genre ${i}`)),
+  tags:namedFeatures(Array.from({length:20},(_,i)=>`Tag ${i}`)),
+  themes:namedFeatures(Array.from({length:12},(_,i)=>`Theme ${i}`))};
+ const inputs:Parameters<typeof tasteRatingAdjustment>[2]=[];
+ expect(tasteRatingAdjustment({'genres:genre 11':0.2,'tags:tag 19':0.2,'themes:theme 11':0.2},features,inputs)).toBeGreaterThan(0);
+ expect(inputs.map(term=>term.name)).toEqual(['Genre 11','Tag 19','Theme 11']);
+});
+
+test('genres, tags and themes carry primary weight alongside cast',()=>{
+ const features={genres,tags,themes:namedFeatures(['Found family']),cast};
+ const result=scorerFromReference(prepareTasteReference(item(20,favourite,features)),true)(features);
+ const signals=new Map(result.breakdown!.signals.map(signal=>[signal.dimension,signal]));
+ for(const dimension of ['genres','tags','themes'] as const){
+  expect(signals.get(dimension)?.context).toBe(false);
+  expect(signals.get(dimension)!.weightShare).toBeGreaterThan(signals.get('cast')!.weightShare);
+ }
+});
+
+test('a profile without ratings learns from returning, dropping and saving to watch later',()=>{
+ const returning={tags:namedFeatures(['Space opera'])},dropped={tags:namedFeatures(['Slasher'])},
+  saved={tags:namedFeatures(['Steampunk'])};
+ const history=createTasteAccumulator();
+ for(let i=0;i<20;i++){
+  history.add({...watched,repeated:true},returning);
+  history.add({...watched,implicit:-2,consumed:false},dropped);
+  history.add({...watched,implicit:1,consumed:false},saved);
+ }
+ const score=compileTasteScorer(history.snapshot()),rewatch=score(returning),later=score(saved),stopped=score(dropped);
+ expect(rewatch.score!).toBeGreaterThan(later.score!);
+ expect(later.score!).toBeGreaterThan(stopped.score!);
+ expect(stopped.score!).toBeLessThan(50);
+ expect(rewatch.confidence).toBeGreaterThan(later.confidence);
 });
 
 test('a substantial opposing signal appears alongside the strongest matches',()=>{

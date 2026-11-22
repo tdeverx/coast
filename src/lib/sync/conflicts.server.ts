@@ -31,6 +31,7 @@ export async function getPendingConflicts(userId: string) {
       and(
         eq(trackingEvents.userId, userId),
         eq(trackingEvents.applied, false),
+        isNull(trackingEvents.mergedInto),
         isNull(trackingEvents.reviewedAt)
       )
     )
@@ -271,7 +272,7 @@ export async function resolveConflict(
     const [event] = await tx
       .select()
       .from(trackingEvents)
-      .where(and(eq(trackingEvents.id, eventId), eq(trackingEvents.userId, userId)));
+      .where(and(eq(trackingEvents.id, eventId), eq(trackingEvents.userId, userId), isNull(trackingEvents.mergedInto)));
     if (!event) throw new DomainError('This imported change was not found.', 404, 'not_found');
     if (event.applied) throw new DomainError('This change has already been applied.');
     if (event.reviewedAt) return { decision: event.reviewDecision, alreadyReviewed: true };

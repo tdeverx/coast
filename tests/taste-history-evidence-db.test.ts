@@ -1,6 +1,7 @@
 import {expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import {visitTasteHistory} from '../src/lib/recommendations/interests.server';
+import {track} from '../src/lib/core/tracking/service.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 type HistoryWork=Parameters<Parameters<typeof visitTasteHistory>[2]>[0][number];
@@ -51,6 +52,61 @@ run('history separates opinions and exposure and gives each canonical work one v
   await db`delete from users where id in (${viewer},${other})`;
   await db`delete from media where id in (${episode1},${episode2},${show},${secondShow},${movie})`;
   await db`delete from works where id in (${reader},${artist})`;
+ }
+});
+
+run('overlapping provider watches cannot inflate taste returns even when the tracking count includes both',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),[movie,summary,instance]=Array.from({length:3},()=>crypto.randomUUID());
+ const history=async()=>{
+  const rows:HistoryWork[]=[];
+  await visitTasteHistory(viewer,['screen'],async page=>{rows.push(...page);});
+  return new Map(rows.map(work=>[work.id,work]));
+ };
+ await db`insert into users(id,username) values(${viewer},${'watch-copies-'+viewer})`;
+ try{
+  await db`insert into media(id,kind,title) values(${movie},'movie','Provider watch copies'),(${summary},'movie','State-only play count')`;
+  await db`insert into tracking_state(user_id,media_id,watched,play_count)
+   values(${viewer},${movie},true,2),(${viewer},${summary},true,3)`;
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,rewatch)
+   values(${viewer},${movie},'watch','jellyfin','2026-01-01 10:00:00+00',false),
+    (${viewer},${movie},'watch','trakt','2026-01-01 10:00:00+00',true)`;
+  let items=await history();
+  expect(items.get(movie)).toMatchObject({consumed:true,repeated:false,implicit:3});
+  expect(items.get(summary)).toMatchObject({consumed:true,repeated:true,implicit:4});
+  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Watch count fixture','https://fixture.invalid')`;
+  const [connection]=await db`insert into provider_connections(user_id,instance_id,status) values(${viewer},${instance},'connected') returning id`;
+  const [source]=await db`insert into provider_items(instance_id,external_id,media_id,kind) values(${instance},'movie',${movie},'movie') returning id`;
+  await db`insert into availability(user_id,connection_id,provider_item_id,media_id,source)
+   values(${viewer},${connection.id},${source.id},${movie},'{"coastUserData":{"playCount":2}}')`;
+  expect((await history()).get(movie)).toMatchObject({consumed:true,repeated:true,implicit:4});
+  await db`update provider_connections set status='disconnected' where id=${connection.id}`;
+  expect((await history()).get(movie)).toMatchObject({consumed:true,repeated:false,implicit:3});
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,rewatch)
+   values(${viewer},${movie},'watch','trakt','2026-01-08 10:00:00+00',true)`;
+  items=await history();
+  expect(items.get(movie)).toMatchObject({consumed:true,repeated:true,implicit:4});
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from provider_instances where id=${instance}`;
+  await db`delete from media where id in (${movie},${summary})`;
+ }
+});
+
+run('a genuine backdated watch after Unwatch still counts as return evidence',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),movie=crypto.randomUUID();
+ await db`insert into users(id,username) values(${viewer},${'backdated-watch-'+viewer})`;
+ try{
+  await db`insert into media(id,kind,title) values(${movie},'movie','Backdated watch')`;
+  await track(viewer,{mediaId:movie,action:'watch',occurredAt:'2024-01-01T10:00:00Z'});
+  await track(viewer,{mediaId:movie,action:'unwatch',acknowledged:true});
+  const watch=await track(viewer,{mediaId:movie,action:'watch',occurredAt:'2024-02-01T10:00:00Z'});
+  expect(watch.state.playCount).toBe(2);
+  const history:HistoryWork[]=[];
+  await visitTasteHistory(viewer,['screen'],async page=>{history.push(...page);});
+  expect(history).toEqual([expect.objectContaining({id:movie,consumed:true,repeated:true,implicit:4})]);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from media where id=${movie}`;
  }
 });
 
