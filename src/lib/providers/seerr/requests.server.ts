@@ -16,6 +16,7 @@ import {
   syncValues,
   providerJobSnapshots,
   availability,
+  seasons,
 } from '#lib/server/db/schema.js';
 import { enqueueAction, PermanentActionError, type OutboxAction } from '#lib/server/queue/index.js';
 import {
@@ -35,6 +36,7 @@ import { getInstance, instanceFetchConfig } from '#lib/providers/instances.serve
 import { connectionFor } from '#lib/providers/connections.server.js';
 import { getSeerr, assertSeerrAccount } from '#lib/providers/seerr/connection.server.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { anthologySeason, anthologyTmdb, isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 import { jobExecution, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 import { createRequestPlaybackCheck, requestPlaybackCandidates } from './playback-readiness.server';
 
@@ -76,19 +78,30 @@ type RequestCache = {
   options: RequestOption[];
 };
 
+async function requestIdentity(mediaId: string) {
+  const [source] = await getDb().select({
+    externalId: externalIds.externalId, kind: externalIds.mediaKind, season: seasons.seasonNumber,
+    provider: externalIds.provider,
+  }).from(externalIds).leftJoin(seasons, eq(seasons.mediaId, externalIds.mediaId))
+    .where(and(eq(externalIds.mediaId, mediaId), sql`(
+      (${externalIds.provider}='tmdb' and ${externalIds.mediaKind} in ('movie','show') and not ${isAnthologyRoot(mediaId)})
+      or (${externalIds.provider}=${anthologyTmdb} and ${externalIds.mediaKind}='season')
+    )`));
+  if (!source) return;
+  return {
+    id: Number(source.externalId), kind: (source.kind === 'movie' ? 'movie' : 'show') as DiscoverKind,
+    season: source.provider === anthologyTmdb ? source.season : null,
+  };
+}
+
 export async function requestOptions(userId: string, mediaId: string, signal?: AbortSignal) {
   signal?.throwIfAborted();
   const config=await getFeatureConfig(userId);
   signal?.throwIfAborted();
   if (!config.features.requests||!config.features.screen) return [];
-  const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
+  const mapping = await requestIdentity(mediaId);
   signal?.throwIfAborted();
-  const [mapping] = await getDb()
-    .select()
-    .from(externalIds)
-    .where(and(eq(externalIds.mediaId, mediaId), eq(externalIds.provider, 'tmdb')));
-  signal?.throwIfAborted();
-  if (!item || !mapping || !['movie', 'show'].includes(item.kind)) return [];
+  if (!mapping) return [];
   const instances = await getDb()
     .select()
     .from(providerInstances)
@@ -101,10 +114,10 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
           userId,
           instance.id, undefined, signal
         ),
-        kind = item.kind as DiscoverKind;
+        kind = mapping.kind;
       const [servers, details, local] = await Promise.all([
         adapter.servers(kind),
-        adapter.details(kind, Number(mapping.externalId)),
+        adapter.details(kind, mapping.id),
         getDb()
           .select()
           .from(mediaRequests)
@@ -116,6 +129,16 @@ export async function requestOptions(userId: string, mediaId: string, signal?: A
             )
           ),
       ]);
+      if (mapping.season !== null) {
+        const localSeason = mapping.season;
+        const translate = <T extends { seasonNumber: number }>(rows: readonly T[]) =>
+          rows.filter(row => row.seasonNumber === 1).map(row => ({ ...row, seasonNumber: localSeason }));
+        details.seasons = translate(details.seasons);
+        if (details.mediaInfo) {
+          if (details.mediaInfo.seasons) details.mediaInfo.seasons = translate(details.mediaInfo.seasons);
+          for (const request of details.mediaInfo.requests ?? []) request.seasons = translate(request.seasons);
+        }
+      }
       signal?.throwIfAborted();
       const destinations = groupDestination(
         instance.id,
@@ -306,7 +329,8 @@ export async function requestMedia(userId: string, input: unknown) {
   const { connection } = await connectionFor(userId, destination.connectionId, 'seerr'),
     serverId = data.is4k ? destination.fourKServerId : destination.standardServerId;
   if (serverId === undefined) throw new Error('This quality variant is not configured.');
-  const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
+  const item = await requestIdentity(data.mediaId);
+  if (!item) throw new Error('Choose an individual season to request this anthology.');
   if (
     item.kind === 'show' &&
     (!requested.length ||
@@ -448,7 +472,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
       }] : [];
     }));
     const sourceVersions = new Map([...candidates.values()].flatMap(rows => rows.map(row => [row.id, row] as const)));
-    type Prepared={remote:SeerrRequest;workId?:string;state:RequestState;sourceId:string|null;pendingIds:string[]};
+    type Prepared={remote:SeerrRequest;workId?:string;seasonNumbers:number[];state:RequestState;sourceId:string|null;pendingIds:string[]};
     let pending:Prepared[]=[];
     async function commit(next:number,complete:boolean){
       await guarded(async tx=>{
@@ -484,7 +508,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
               await tx.update(mediaRequests).set({state,playbackVerifiedSourceId:sourceId,observedScanId:point.scanId,updatedAt:new Date()}).where(eq(mediaRequests.id,local.id));
               if (local.state!==state) notices.push({id:local.id,mediaId:local.mediaId,remoteId:remote.id,state});
             }
-          }else if(workId)insertions.push({userId,instanceId,mediaId:workId,externalId:String(remote.id),serverId:remote.serverId,is4k:remote.is4k,seasons:remote.seasons.map(season=>season.seasonNumber),state,observedScanId:point.scanId});
+          }else if(workId)insertions.push({userId,instanceId,mediaId:workId,externalId:String(remote.id),serverId:remote.serverId,is4k:remote.is4k,seasons:entry.seasonNumbers,state,observedScanId:point.scanId});
         }
         for (const [state, ids] of [['pending',[...pendingSourceIds].filter(id=>!readyIds.has(id))],['ready',[...readyIds]]] as const) {
           if (ids.length) await tx.update(availability).set({source:sql`${availability.source} || jsonb_build_object('coastPlaybackState', ${state}::text)`})
@@ -509,14 +533,17 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
       const remote=page.results[index];
       const known=knownById.get(String(remote.id));
       let workId=known?.mediaId;
+      let seasonNumbers=remote.seasons.map(season=>season.seasonNumber);
       if(!workId&&remote.media?.tmdbId){
         const kind=remote.type==='tv'||remote.media.mediaType==='tv'?'show':'movie';
         workId=(await importTmdb(kind,String(remote.media.tmdbId),{includeEpisodes:false})).id;
+        const story=kind==='show'?await anthologySeason(String(remote.media.tmdbId)):undefined;
+        if(story){workId=story.mediaId;seasonNumbers=seasonNumbers.filter(number=>number===1).map(()=>story.seasonNumber);}
       }
       const state=seerrRequestState(remote);
       const proof=state==='available' ? await checkPlayback(candidates.get(remote.id) ?? [],known?.is4k ?? remote.is4k,known?.state==='available'?known.playbackVerifiedSourceId:undefined)
         : {sourceId:null,pendingIds:[]};
-      pending.push({remote,workId,state,...proof});
+      pending.push({remote,workId,seasonNumbers,state,...proof});
       if(expired()&&index+1<page.results.length){await commit(index+1,false);await jobCheckpoint();}
     }
     await commit(page.results.length,true);
@@ -660,17 +687,15 @@ export async function executeSeerrRequest(action: OutboxAction, resolveAccount: 
   const [request] = await getDb().select().from(mediaRequests)
     .where(and(eq(mediaRequests.id,requestId),eq(mediaRequests.userId,action.userId)));
   if (!request || request.externalId || request.state === 'cancelled') return;
-  const [mapping] = await getDb().select().from(externalIds)
-    .where(and(eq(externalIds.mediaId,request.mediaId),eq(externalIds.provider,'tmdb')));
-  if (!mapping || !['movie','show'].includes(mapping.mediaKind))
-    throw new PermanentActionError('A TMDB movie or show identity is required to request media.');
+  const mapping = await requestIdentity(request.mediaId);
+  if (!mapping) throw new PermanentActionError('Choose an individual season to request this anthology.');
   const { adapter, scope } = await resolveAccount(action.userId,request.instanceId,queuedSeerrAccount(action));
-  const delivery = await adapter.create({kind:mapping.mediaKind as DiscoverKind,tmdbId:Number(mapping.externalId),
-    is4k:request.is4k,seasons:request.seasons,serverId:request.serverId ?? undefined});
+  const delivery = await adapter.create({kind:mapping.kind,tmdbId:mapping.id,
+    is4k:request.is4k,seasons:mapping.season===null?request.seasons:[1],serverId:request.serverId ?? undefined});
   await getDb().transaction(async tx => {
     await assertSeerrAccount(tx,scope);
     const state=seerrRequestState(delivery.request);
-    await tx.update(mediaRequests).set({externalId:String(delivery.request.id),seasons:delivery.seasons,
+    await tx.update(mediaRequests).set({externalId:String(delivery.request.id),seasons:mapping.season===null?delivery.seasons:[mapping.season],
       state:state==='available'?'processing':state,updatedAt:new Date()})
       .where(eq(mediaRequests.id,request.id));
   });

@@ -28,6 +28,7 @@ import {
 } from '#lib/core/tracking/service.server.js';
 import { rateInTransaction, ratingInputSchema } from '#lib/core/ratings/service.server.js';
 import * as v from 'valibot';
+import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 type ExportChange = {
@@ -50,7 +51,8 @@ async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId
     .where(
       and(
         eq(externalIds.mediaId, mediaId),
-        inArray(externalIds.provider, ['trakt', 'tmdb', 'tvdb', 'imdb'])
+        inArray(externalIds.provider, ['trakt', 'tmdb', 'tvdb', 'imdb']),
+        sql`not ${isAnthologyRoot(mediaId)}`
       )
     )
     .limit(1);

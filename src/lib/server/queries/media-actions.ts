@@ -1,4 +1,5 @@
 import { effectiveReleaseDate } from '#lib/catalogue/metadata/release-date.server.js';
+import { anthologySource, isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 import { activeCheckinSql } from '#lib/social/checkins-query.server.js';
 import { supportsCheckin } from '#lib/social/checkins.js';
 import { historyScope } from '../../core/tracking/history-scope.server';
@@ -56,10 +57,15 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
   // Whole-work hydration shares this batch without adding unrelated reset/rewatch targets.
   const views = context.filter(view => parentIds.has(view.id));
   const byId = new Map(views.map((view) => [view.id, view]));
-  const requestTarget = ['season', 'episode'].includes(item.kind)
-    ? (byId.get(item.showId!) ?? null)
+  const season = item.kind === 'season' ? item : views.find(view => view.kind === 'season');
+  const isStory = config.features.requests && season && await anthologySource(season.id);
+  const grouped = config.features.requests && item.kind === 'show' && (await db.execute(sql`select 1 where ${isAnthologyRoot(item.id)}`)).length > 0;
+  const requestTarget = isStory && season
+    ? { ...season, kind: 'show' as const }
+    : ['season', 'episode'].includes(item.kind)
+      ? (byId.get(item.showId!) ?? null)
     : ['show', 'movie'].includes(item.kind)
-      ? item
+      ? (grouped ? null : item)
       : null;
   const refreshTarget =
     [item, requestTarget].find(

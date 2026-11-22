@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { externalIds } from '#lib/server/db/schema.js';
 import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
+import { anthologyTmdb, anthologyTrakt, isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 
 /** A season/episode record also includes its show; the leaf determines identity. */
 export function traktEntry(record: TraktRecord) {
@@ -24,23 +25,50 @@ export const traktPlurals = {
 } as const;
 
 type IdentityInput = {mediaId: string; kind: TraktKind};
+type TraktTarget = { kind: TraktKind; ids: TraktIds };
 /** Read bounded identity batches; results retain input order and missing entries. */
-export async function exportIdentities(items: readonly IdentityInput[]): Promise<TraktIds[]> {
-  const result: TraktIds[] = [];
+export async function exportTargets(items: readonly IdentityInput[]): Promise<(TraktTarget | null)[]> {
+  const result: (TraktTarget | null)[] = [];
   for(let offset=0;offset<items.length;offset+=500) {
     const batch=items.slice(offset,offset+500);
-    const rows=(await getDb().execute(sql`select requested.ordinal, mapping.provider, mapping.external_id as "externalId"
+    const rows=(await getDb().execute(sql`select requested.ordinal, mapping.provider, mapping.external_id as "externalId",
+      case when requested.kind='show' then ${isAnthologyRoot(sql`requested.media_id`)} else false end as "localOnly",
+      case when requested.kind='episode' then exists (
+        select 1 from episodes episode join external_ids x on x.media_id=episode.season_id and x.provider=${anthologyTmdb}
+        where episode.media_id=requested.media_id
+      ) else false end as "storyEpisode"
       from (values ${sql.join(batch.map((item,ordinal)=>sql`(${ordinal}::integer,${item.mediaId}::uuid,${item.kind}::text)`),sql`,`)}) requested(ordinal,media_id,kind)
-      join ${externalIds} mapping on mapping.media_id=requested.media_id and mapping.media_kind=requested.kind`
-    )) as {ordinal:number;provider:string;externalId:string}[];
+      left join ${externalIds} mapping on mapping.media_id=requested.media_id and mapping.media_kind=requested.kind`
+    )) as {ordinal:number;provider:string;externalId:string;localOnly:boolean;storyEpisode:boolean}[];
     const grouped=new Map<number,typeof rows>();
     for(const row of rows){const list=grouped.get(row.ordinal)??[];list.push(row);grouped.set(row.ordinal,list);}
-    for(let ordinal=0;ordinal<batch.length;ordinal++)result.push(identityMappings(grouped.get(ordinal)??[]));
+    for (let ordinal=0; ordinal<batch.length; ordinal++) {
+      const mappings = grouped.get(ordinal) ?? [];
+      const item = batch[ordinal];
+      if (mappings[0]?.localOnly) {
+        result.push(null);
+        continue;
+      }
+      const story = mappings.find(mapping => mapping.provider === anthologyTmdb);
+      if (story) {
+        const trakt = mappings.find(mapping => mapping.provider === anthologyTrakt);
+        result.push({ kind: 'show', ids: identityMappings([
+          { provider: 'tmdb', externalId: story.externalId },
+          ...(trakt ? [{ provider: 'trakt', externalId: trakt.externalId }] : []),
+        ]) });
+        continue;
+      }
+      const relevant = mappings[0]?.storyEpisode ? mappings.filter(mapping => mapping.provider === 'tmdb') : mappings;
+      result.push({ kind: item.kind, ids: identityMappings(relevant) });
+    }
   }
   return result;
 }
 export async function exportIdentity(mediaId: string, kind: TraktKind): Promise<TraktIds> {
-  return (await exportIdentities([{mediaId,kind}]))[0];
+  return (await exportTarget(mediaId, kind))?.ids ?? {};
+}
+export async function exportTarget(mediaId: string, kind: TraktKind) {
+  return (await exportTargets([{mediaId,kind}]))[0];
 }
 function identityMappings(mappings: {provider:string;externalId:string}[]): TraktIds {
   return Object.fromEntries(

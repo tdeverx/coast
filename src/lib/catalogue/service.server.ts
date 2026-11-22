@@ -26,6 +26,7 @@ import { screenListings } from '#lib/providers/screen-discovery.server.js';
 import { screenListingIds } from '#lib/recommendations/screen-ranking.js';
 import type { DiscoverKind, Metadata } from '#lib/providers/contracts.js';
 import type { DiscoverySection } from '#lib/discovery.js';
+import { anthologySource, anthologyTmdb, reconcileAnthology } from './anthology.server.js';
 
 function snapshotValues(metadata: Metadata) {
   return {
@@ -50,30 +51,33 @@ export class CatalogueIdentityConflict extends Error {
   }
 }
 
-export async function ingestMetadata(
-  metadata: Metadata,
-  options: {
-    instanceId?: string;
-    showId?: string;
-    seasonId?: string;
-    mediaId?: string;
-    complete?: boolean;
-    isolateConflictingProviderIds?: boolean;
-  } = {}
-) {
-  const db = getDb();
-  return db.transaction(async (tx) => {
+type IngestOptions = {
+  instanceId?: string;
+  showId?: string;
+  seasonId?: string;
+  mediaId?: string;
+  complete?: boolean;
+  identityOnly?: boolean;
+  identitiesLocked?: boolean;
+  isolateConflictingProviderIds?: boolean;
+};
+export type CatalogueTransaction = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0];
+
+export async function ingestMetadata(metadata: Metadata, options: IngestOptions = {}, transaction?: CatalogueTransaction) {
+  const apply = async (tx: CatalogueTransaction) => {
     const identityProvider =
       metadata.provider === 'jellyfin' ? `jellyfin:${options.instanceId}` : metadata.provider;
     let ids = { ...metadata.externalIds, [identityProvider]: metadata.externalId };
-    for (const key of Object.entries(ids)
-      .map(([provider, id]) => `${provider}:${metadata.kind}:${id}`)
-      .sort())
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key},0))`);
-    if (options.showId)
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${`show:${options.showId}`},0))`
-      );
+    if (!options.identitiesLocked) {
+      for (const key of Object.entries(ids)
+        .map(([provider, id]) => `${provider}:${metadata.kind}:${id}`)
+        .sort())
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key},0))`);
+      if (options.showId)
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${`show:${options.showId}`},0))`
+        );
+    }
     if (options.mediaId && metadata.provider === 'tmdb' && metadata.kind === 'episode') {
       const [owner] = await tx.select({ mediaId: externalIds.mediaId }).from(externalIds).where(and(
         eq(externalIds.provider, 'tmdb'), eq(externalIds.mediaKind, 'episode'), eq(externalIds.externalId, metadata.externalId)
@@ -198,12 +202,16 @@ export async function ingestMetadata(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`metadata:${mediaId}`},0))`
     );
-    if(metadata.tasteFeatures!==undefined)await tx.insert(workFeatures).values({workId:mediaId,provider:metadata.provider,features:metadata.tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:sql`excluded.features`,updatedAt:new Date()}});
     for (const [provider, externalId] of Object.entries(ids))
       await tx
         .insert(externalIds)
         .values({ mediaId, provider, externalId, mediaKind: metadata.kind })
         .onConflictDoNothing();
+    if (options.identityOnly) {
+      const [saved] = await tx.select().from(media).where(eq(media.id, mediaId));
+      return saved;
+    }
+    if(metadata.tasteFeatures!==undefined)await tx.insert(workFeatures).values({workId:mediaId,provider:metadata.provider,features:metadata.tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:sql`excluded.features`,updatedAt:new Date()}});
     const language = metadata.language || 'en-US';
     const region = metadata.region || 'GB';
     const snapshotKey = and(
@@ -256,7 +264,8 @@ export async function ingestMetadata(
       });
     const [saved] = await tx.select().from(media).where(eq(media.id, mediaId));
     return saved;
-  });
+  };
+  return transaction ? apply(transaction) : getDb().transaction(apply);
 }
 export async function importTmdb(
   kind: DiscoverKind,
@@ -314,34 +323,35 @@ async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
   options: { includeEpisodes?: boolean; includeRecommendations?: boolean }
 ) {
   const snapshot = await adapter.details(kind, id, options.includeRecommendations !== false);
-  const saved = await ingestMetadata(snapshot);
+  const saved = await ingestMetadata(snapshot, { identityOnly: kind === 'show' });
+  const anthology = kind === 'show' ? await reconcileAnthology(adapter, saved.id, snapshot) : null;
   const recommendations: (typeof mediaRelationships.$inferInsert)[] = [];
   const relatedItems = await mapConcurrent(options.includeRecommendations === false ? [] : snapshot.recommendations ?? [], 4, (item) =>
     ingestMetadata(item)
   );
+  const seen = new Set([saved.id]);
   for (const [position, related] of relatedItems.entries()) {
-    if (related.id !== saved.id)
-      recommendations.push({
-        parentId: saved.id,
-        childId: related.id,
-        kind: 'related' as const,
-        position,
-      });
+    if (seen.has(related.id)) continue;
+    seen.add(related.id);
+    recommendations.push({
+      parentId: saved.id,
+      childId: related.id,
+      kind: 'related',
+      position,
+    });
   }
-  await getDb().transaction(async (tx) => {
-    if (recommendations.length)
-      await tx
-        .insert(mediaRelationships)
-        .values(recommendations)
-        .onConflictDoUpdate({
-          target: [
-            mediaRelationships.parentId,
-            mediaRelationships.childId,
-            mediaRelationships.kind,
-          ],
-          set: { position: sql`excluded.position` },
-        });
-  });
+  if (recommendations.length)
+    await getDb()
+      .insert(mediaRelationships)
+      .values(recommendations)
+      .onConflictDoUpdate({
+        target: [
+          mediaRelationships.parentId,
+          mediaRelationships.childId,
+          mediaRelationships.kind,
+        ],
+        set: { position: sql`excluded.position` },
+      });
   if (snapshot.collection) {
     const collection = await ingestMetadata({
       provider: 'tmdb',
@@ -354,7 +364,7 @@ async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
       .values({ parentId: collection.id, childId: saved.id, kind: 'collection' })
       .onConflictDoNothing();
   }
-  if (kind === 'show')
+  if (kind === 'show' && anthology === null)
     await mapConcurrent(snapshot.children || [], 3, async (shell) => {
       const seasonSnapshot =
         options.includeEpisodes === false ? shell : await adapter.season(id, shell.seasonNumber!);
@@ -367,10 +377,8 @@ async function importTmdbTitle(adapter: Tmdb, kind: DiscoverKind, id: string,
       for (const episode of seasonSnapshot.children || [])
         await ingestMetadata(episode, { showId: saved.id, seasonId: season.id });
     });
-  await ingestMetadata(snapshot, {
-    mediaId: saved.id,
-    complete: true,
-  });
+  if (anthology === null || anthology && id === await primaryTmdbShow(saved.id))
+    await ingestMetadata(snapshot, { mediaId: saved.id, complete: true });
   return saved;
 }
 async function importTmdbCollection(id: string, adapter: Tmdb) {
@@ -396,11 +404,14 @@ async function tmdbChild(id: string) {
   const [episode] = season ? [] : await db.select().from(episodes).where(eq(episodes.mediaId, id));
   const child = season ?? episode;
   if (!child) return;
+  const seasonId = season?.mediaId ?? episode?.seasonId;
+  const story = seasonId ? await anthologySource(seasonId) : undefined;
+  if (story) return { child, season, episode, show: { externalId: story }, nativeSeason: 1, story };
   const [show] = await db
     .select()
     .from(externalIds)
     .where(and(eq(externalIds.mediaId, child.showId), eq(externalIds.provider, 'tmdb')));
-  if (show) return { child, season, episode, show };
+  if (show) return { child, season, episode, show, nativeSeason: child.seasonNumber, story: undefined };
 }
 
 async function refreshChildDetails(id: string, region: string, episodeExternalId?: string) {
@@ -412,38 +423,71 @@ async function refreshChildDetails(id: string, region: string, episodeExternalId
 }
 
 async function importTmdbChild(id: string, adapter: Tmdb, {
-  child, season, episode, show,
+  child, season, episode, show, nativeSeason, story,
 }: NonNullable<Awaited<ReturnType<typeof tmdbChild>>>, episodeExternalId?: string) {
   let missingPosition: ProviderHttpError | undefined;
   let snapshot = season
-    ? await adapter.season(show.externalId, child.seasonNumber)
-    : await adapter.episode(show.externalId, child.seasonNumber, episode!.episodeNumber).catch(cause => {
+    ? await adapter.season(show.externalId, nativeSeason)
+    : await adapter.episode(show.externalId, nativeSeason, episode!.episodeNumber).catch(cause => {
       if (!episodeExternalId || !(cause instanceof ProviderHttpError) || ![404, 410].includes(cause.status)) throw cause;
       missingPosition = cause;
       return null;
     });
   if (episode && episodeExternalId && snapshot?.externalId !== episodeExternalId) {
-    const currentSeason = await adapter.season(show.externalId, child.seasonNumber);
+    const currentSeason = await adapter.season(show.externalId, nativeSeason);
     const confirmed = currentSeason.children?.find(item => item.externalId === episodeExternalId);
     if (confirmed?.episodeNumber === undefined) throw missingPosition ?? new CatalogueIdentityConflict();
-    snapshot = await adapter.episode(show.externalId, child.seasonNumber, confirmed.episodeNumber);
+    snapshot = await adapter.episode(show.externalId, nativeSeason, confirmed.episodeNumber);
     if (snapshot.externalId !== episodeExternalId) throw new CatalogueIdentityConflict();
-    await updateTmdbEpisodeOrder(child.showId, child.seasonNumber, currentSeason.children ?? []);
+    await updateTmdbEpisodeOrder(child.showId, child.seasonNumber, (currentSeason.children ?? []).map(item => ({ ...item, seasonNumber: child.seasonNumber })));
   }
   if (!snapshot) throw new CatalogueIdentityConflict();
-  const saved = await ingestMetadata(snapshot, {
+  if (season && story) {
+    const [name] = await getDb().select({ title: metadataSnapshots.title }).from(metadataSnapshots)
+      .where(and(eq(metadataSnapshots.mediaId, id), eq(metadataSnapshots.provider, 'tmdb'))).limit(1);
+    if (name?.title) snapshot.title = name.title;
+  }
+  const saved = await ingestMetadata({ ...snapshot, seasonNumber: child.seasonNumber }, {
     mediaId: id,
     showId: child.showId,
     seasonId: episode?.seasonId ?? undefined,
     complete: true,
   });
   if (season) {
-    await updateTmdbEpisodeOrder(season.showId, season.seasonNumber, snapshot.children ?? []);
-    await mapConcurrent(snapshot.children ?? [], 4, (item) =>
+    const children = (snapshot.children ?? []).map(item => ({ ...item, seasonNumber: season.seasonNumber }));
+    await updateTmdbEpisodeOrder(season.showId, season.seasonNumber, children);
+    await mapConcurrent(children, 4, (item) =>
       ingestMetadata(item, { showId: season.showId, seasonId: id })
     );
   }
   return saved;
+}
+
+async function primaryTmdbShow(id: string) {
+  const [source] = await getDb().select({ id: externalIds.externalId })
+    .from(seasons).innerJoin(externalIds, and(eq(externalIds.mediaId, seasons.mediaId), eq(externalIds.provider, anthologyTmdb)))
+    .where(and(eq(seasons.showId, id), eq(seasons.seasonNumber, 1)));
+  return source?.id;
+}
+
+async function tmdbIdentity(id: string) {
+  const [identity] = await getDb().execute<{ externalId: string; mediaKind: Metadata['kind']; unresolvedAnthology: boolean }>(sql`
+    select coalesce(primary_story.external_id,x.external_id) as "externalId",x.media_kind as "mediaKind",
+      case when x.media_kind='show' then exists (
+        select 1 from external_ids alias
+        where alias.media_id=x.media_id and alias.provider='tmdb' and alias.media_kind='show'
+          and not exists (select 1 from external_ids story where (story.provider,story.media_kind,story.external_id)=
+            (${anthologyTmdb},'season',alias.external_id))
+        offset case when primary_story.external_id is null then 1 else 0 end
+      ) else false end as "unresolvedAnthology"
+    from external_ids x
+    left join lateral (
+      select source.external_id from seasons season join external_ids source
+        on source.media_id=season.media_id and source.provider=${anthologyTmdb}
+      where x.media_kind='show' and season.show_id=x.media_id and season.season_number=1
+    ) primary_story on true
+    where x.media_id=${id} and x.provider='tmdb' limit 1`);
+  return identity;
 }
 
 const sharedRefresh = providerSingleFlight<Awaited<ReturnType<typeof importTmdb>>>('tmdb-refresh');
@@ -453,11 +497,7 @@ export function refreshMedia(id: string, region = 'GB', includeRecommendations =
   return sharedRefresh(`${id}:${region}:${includeRecommendations}`, () => refreshMediaNow(id, region, includeRecommendations));
 }
 async function refreshMediaNow(id: string, region = 'GB', includeRecommendations = true) {
-  const [identity] = await getDb()
-    .select()
-    .from(externalIds)
-    .where(and(eq(externalIds.mediaId, id), eq(externalIds.provider, 'tmdb')))
-    .limit(1);
+  const identity = await tmdbIdentity(id);
   if (!identity) {
     const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, id));
     if (item && ['season', 'episode'].includes(item.kind)) return refreshChildDetails(id, region);
@@ -481,11 +521,7 @@ export async function ensureDetails(userId: string, id: string) {
     .from(users)
     .where(eq(users.id, userId));
   const region = viewer?.settings.region ?? 'GB';
-  const [identity] = await getDb()
-    .select()
-    .from(externalIds)
-    .where(and(eq(externalIds.mediaId, id), eq(externalIds.provider, 'tmdb')))
-    .limit(1);
+  const identity = await tmdbIdentity(id);
   const [snapshot] = await getDb()
     .select({ raw: metadataSnapshots.raw })
     .from(metadataSnapshots)
@@ -497,8 +533,10 @@ export async function ensureDetails(userId: string, id: string) {
       )
     )
     .limit(1);
+  const needsRecommendations = (identity?.mediaKind === 'movie' || identity?.mediaKind === 'show') &&
+    !Array.isArray(snapshot?.raw.recommendations);
   if (
-    snapshot?.raw.detailLoaded === true &&
+    !identity?.unresolvedAnthology && !needsRecommendations && snapshot?.raw.detailLoaded === true &&
     (identity?.mediaKind === 'collection' || snapshot.raw.detailVersion === 3) &&
     Date.now() - Date.parse(String(snapshot.raw.detailsUpdatedAt)) < 7 * 86400000
   )

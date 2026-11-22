@@ -1,0 +1,120 @@
+{
+  "epoch": "automatic-anthologies-local-2026-11-22",
+  "baseline": "bc083bff601b9ea53638f506aecd64d99af212bd",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/catalogue/details.server.ts": {
+      "previous": "8fbd69f51f5c8948d4b2e5a47dc836f87ac081b9140b88c289fe685661d83c3d",
+      "current": "97b8f3ec22e69d857219c12c5f5bc81b534d23eb2e2245230f0cf6052d8e3e4c"
+    },
+    "src/lib/catalogue/service.server.ts": {
+      "previous": "67dd234515d8b4cfe38e54dab6181030fc868e9bf0c157a05a1436624f0cf8f1",
+      "current": "d6f1eba250675657e329be3db01e8b6880363c1684222c13abb1317784bb2aab"
+    },
+    "src/lib/catalogue/trakt-identity.server.ts": {
+      "previous": "aa0fc3357be4683c25a33825b5cd01c26fb20e40e09ffea3300bedf51a99bd78",
+      "current": "10dcba676ed7df9759bb0cd9be5a6f4dd5f5ca35edd9ed0245eabece89a5074e"
+    },
+    "src/lib/collection/projection.server.ts": {
+      "previous": "09f06f3d1ec4240f938cf4efb94e7b97bcedc75ed008f8e4239d24d0a5196be0",
+      "current": "9dea187c1334361a1fff705c84dc0a57c01d5783df5d04a724c2965ddf0360ab"
+    },
+    "src/lib/diagnostics.ts": {
+      "previous": "929862efa6994cc5f4bde5eaafc47810e5373519b756be332f2977c9c2802c1c",
+      "current": "51411c0ec89988606c8c2bdb8fb33adb09a3066b9ce8b58db21173a695d765f1"
+    },
+    "src/lib/providers/seerr/playback-readiness.server.ts": {
+      "previous": "2de9fb20e27fb83f341dfdbd0d102e0a9d9cef2d286526ec60172059a888856e",
+      "current": "62b9c7b6d1ae68dbb4eedc26312023cdaf8d626ed58b9c288a8a1d7cac8d6763"
+    },
+    "src/lib/providers/seerr/requests.server.ts": {
+      "previous": "948d00ddcc6f572743747d9d702a509d2e7da3daa4450aec5d30f57950e5354c",
+      "current": "b47ce2f0a4aeeae134132ada1fbf2fbaaedc9643ade2053a3b890156118f2e90"
+    },
+    "src/lib/providers/tmdb/adapter.server.ts": {
+      "previous": "d7324c4d7312b5640ca898f213d67f2eabd81ed27a0123ff913b9b9ac2401fd3",
+      "current": "53c782f072c9e600ee554b82d3515b69dc32f924e326d67389b96dc40e68befc"
+    },
+    "src/lib/server/diagnostics/index.ts": {
+      "previous": "66e9b9de62c14f2f1d1acf1dc1340718f3151ccc6b5fb7f2eae8942bd246d022",
+      "current": "cb6c0b0a8ac26a004a91ca668d9b4ae9cd0c2189b854174c1fd98b5058ef86a1"
+    },
+    "src/lib/server/queries/media-actions.ts": {
+      "previous": "b1a9865803c6b5b27fc1aade5e20fec88adb44d5e881af79248fad15d159e2ea",
+      "current": "acb0749489d9c2776daca7217af944c47eb624b9b561e3cd4481e4830a0d82fd"
+    },
+    "src/lib/server/queue/index.ts": {
+      "previous": "b1c282e9311ce7fa4b42db45615e684238d7f1093e9c09747e78ae6ecb1dbf4e",
+      "current": "5375158c3475706a56492fb3770ae529de5f7dec6950bb0faec559f66b5ef5d9"
+    },
+    "src/lib/sync/changes.server.ts": {
+      "previous": "8a49e70e867d5a91fc45cab53138640e370f55c0f9a89831f0e2ed5bdc2f1206",
+      "current": "ef8071b58e044c79a736f52a9996a9cafc67cd97a91f842de871c439279240b2"
+    },
+    "src/lib/sync/history-removal.server.ts": {
+      "previous": "44f8de148628245173f4a7172b284171389d30254bf1fb03063de20e4ed8d809",
+      "current": "2b2a6d9f72890b53d548a8b377d12bf841d16921de7fb05ef4f9292e83fac174"
+    },
+    "src/lib/sync/jellyfin.server.ts": {
+      "previous": "a0edeec37609719d90ec2638f2558587b92efd4ed740e2d412bcfb789424724e",
+      "current": "a879bbb3ec5cbf7d47798e19723ea614bc420a229ef2792f989a37e398f65ab8"
+    },
+    "src/lib/sync/trakt-export.server.ts": {
+      "previous": "e68a7819dc21e1abdb934c12e834bec89e2bb4736107cc3f0258c2551bded1cf",
+      "current": "0e5a053cb2b32276bd7ca3912e814dbc88a102947af9fc9da6f3113007a2b5c1"
+    },
+    "src/lib/sync/trakt-identity.server.ts": {
+      "previous": "b29aa28dc09d50dead07125314b61e3167899356f570130ad3b1a4820dc21d80",
+      "current": "27f47f79ba801dcb1c1de5ecf56c7b4c7ffac1ca1fc850611c3647c2504ded19"
+    },
+    "src/lib/sync/trakt-import.server.ts": {
+      "previous": "9e67ca1059984699d34786c62201c3ac018fbc197f0b11c36806077764406ccf",
+      "current": "defd31f2408006279a464c2e1b749d9c200f6eaa414c449a558349d2099caca4"
+    },
+    "src/lib/sync/trakt-lists.server.ts": {
+      "previous": "2beb4fdc69390b1f8afc869f2bdcb1efe17965f6a56aa960f4eed767b398715c",
+      "current": "d79b9f40da83f69565f8ddae7979899466bdf80c5b307292ec71e9d7ea36de09"
+    },
+    "src/lib/sync/trakt-staging.server.ts": {
+      "previous": "f239f7c2d7d3313466c83d0e8b00155938e7d469cb487a0a2312dbb1970118a0",
+      "current": "0d24a506b60eafd785e6cb7fa17e159592f2e84173ad10731f9220b2cf829547"
+    },
+    "src/lib/ui/components/PersistentPlayer.svelte": {
+      "previous": "0937a72c139261c5740d65ef50335918cceba7c1ec0d4b218ce13a68e1d85a8d",
+      "current": "70c94912313f8b351090d5fcbd819d6b9ff4be2abf7d559f1a3df961e1389b63"
+    },
+    "tests/fixtures/request-options-cancellation.ts": {
+      "previous": "1803a6372761cdf0e0ff6c361e866d22cfe01f56514791e5044ba8ff9f94aaf5",
+      "current": "6201f97c10f3207e8c7628ae38db310c5029690f4cd04960fe64d4510e135f53"
+    },
+    "tests/media-details-db.test.ts": {
+      "previous": "af01b9638abe62ccb745b57283e8c4d8757bd49209ddfdddf6a974d9c9b73f4a",
+      "current": "ef93e2dc9e3f0d09dca5956e9586043605d5fbb0d458140f9ece094ac45ebc7d"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "b9f1beeab4807ff3c812fafc710b09a6d71cc9b84be9e6b9fe6c8c4760879eb8",
+      "current": "75843e34cfacd6d6d28a211efbe4b76d5b810320bd6ae90bd4f136e9dca1b314"
+    },
+    "tests/queue-diagnostics.test.ts": {
+      "previous": "d8d413a0677b4a776897862408e54848d8331caac76a76963ef88998eecb1b09",
+      "current": "8850d837e50deb9af468c1d91ce52c53673d6755dd01b0b5d6698605de7e0fb9"
+    },
+    "tests/request-availability.test.ts": {
+      "previous": "82019f2d2d3d4b923a27cd008d9f345a4586830b79cf66496c5d8aefaa078352",
+      "current": "c7afc64e786114e27a1d75311ca3418a8e2bad8e67979c4be3bb5f0f738e3e0a"
+    },
+    "tests/seerr-delivery-db.test.ts": {
+      "previous": "70220f8e5b41a4e01272797eeaadee236f1d25b65c4803e6d6226cf9dc8fb73b",
+      "current": "018392ddb52587930d424a4778c8d87c33e6e839673f25c7fa53684b9f0e91ec"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "333fac52bfdcbd0dfeed0029ff3a2a977d98fe74d6f7fe45c532aa35cb033852",
+      "current": "f087287d84c143703ec555af2ad1e6f8043461ac7f06ce66c15514919b5ceb0b"
+    }
+  },
+  "supportingFiles": {
+    "src/lib/catalogue/anthology.server.ts": "98f2d50e74e286a5f2b0b7c4872944dc9ba06cf6756a2a8096ffcb480dc901ed"
+  },
+  "report": "docs/audits/2026-11-22-automatic-anthologies.md",
+  "reportSha256": "7412405c7eea97fb81150712b26175c50efa7c104c270c536045099db2fb65e8"
+}

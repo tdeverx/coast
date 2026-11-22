@@ -277,10 +277,11 @@ export class TmdbAdapter implements MetadataProvider {
       ...tmdbCrewFeatures(crew),
       franchises:data.belongs_to_collection?[{id:`tmdb:${data.belongs_to_collection.id}`,name:data.belongs_to_collection.name}]:[],
     };
-    metadata.recommendations = (data.recommendations?.results ?? [])
-      .filter((entry) => entry.id !== data.id)
-      .slice(0, 20)
-      .map((entry) => mapItem(entry, kind, this.language, this.region));
+    if (includeRecommendations)
+      metadata.recommendations = (data.recommendations?.results ?? [])
+        .filter((entry) => entry.id !== data.id)
+        .slice(0, 20)
+        .map((entry) => mapItem(entry, kind, this.language, this.region));
     metadata.genres = data.genres?.map((x) => x.name);
     metadata.externalIds = {
       tmdb: String(data.id),

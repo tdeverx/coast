@@ -24,7 +24,7 @@ import {
   type TraktKind,
   type TraktIds,
   traktPlurals,
-  exportIdentities,
+  exportTargets,
 } from '#lib/sync/trakt-identity.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { matchTraktList } from './trakt-list-matching';
@@ -116,6 +116,14 @@ export async function exportTraktListToAdapter(
   });
   if (!snapshot) return;
   const { list, local } = snapshot;
+  const exportable = local.flatMap(({ item }) => item.kind === 'collection' ? [] : [{ mediaId: item.id, kind: item.kind }]);
+  const targets = await exportTargets(exportable);
+  const desired = targets.map(target => {
+    if (!target) throw new PermanentActionError('Add the individual seasons to export a grouped anthology to Trakt.');
+    if (!Object.keys(target.ids).length)
+      throw new PermanentActionError('This list contains a title with no identity Trakt can match.');
+    return target;
+  });
   const marker = `Coast reference: ${list.id}`;
   let remoteId =
     (list.source === 'trakt' && list.sourceConnectionId === connectionId
@@ -153,19 +161,7 @@ export async function exportTraktListToAdapter(
     seasons: [],
     episodes: [],
   };
-  const desired: { kind: TraktKind; ids: TraktIds }[] = [];
-  const exportable=local.flatMap(({item})=>item.kind==='collection'?[]:[{id:item.id,kind:item.kind}]);
-  const identities=await exportIdentities(exportable.map(item=>({mediaId:item.id,kind:item.kind})));
-  for (const [index, item] of exportable.entries()) {
-    const category = traktPlurals[item.kind];
-    const ids = identities[index];
-    if (!Object.keys(ids).length)
-      throw new PermanentActionError('This list contains a title with no identity Trakt can match.');
-    if (Object.keys(ids).length) {
-      payload[category].push({ ids });
-      desired.push({ kind: item.kind, ids });
-    }
-  }
+  for (const { kind, ids } of desired) payload[traktPlurals[kind]].push({ ids });
   await adapter.writeList(remoteId, payload);
   const remote = await adapter.listItems(remoteId);
   const matched = matchTraktList(desired, remote.flatMap(record => {

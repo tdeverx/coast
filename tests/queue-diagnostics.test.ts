@@ -144,6 +144,18 @@ test('database deadlocks retain a local retry remedy through wrapped errors',asy
  expect(safeDiagnosticErrorCode(cyclic)).toBeUndefined();
 });
 
+test('a duplicate database write is reported as a local error requiring review', async () => {
+  const { jobFailureDetail } = await import('../src/lib/server/queue');
+  const { safeFields } = await import('../src/lib/diagnostics');
+  const cause = Object.assign(new Error('PRIVATE SQL'), { errno: '21000' });
+  const error = new Error('PRIVATE QUERY', { cause });
+  const code = safeDiagnosticErrorCode(error);
+  expect(code).toBe('local.database-cardinality');
+  expect(safeFields({ errorCode: code })).toEqual({ errorCode: 'local.database-cardinality' });
+  expect(jobFailureDetail(error, true)).toEqual({ code: 'local.database-cardinality', remedy: 'metadata', retryable: false });
+  expect(jobFailureMessage(error, true)).toContain('duplicate data in a database operation');
+});
+
 test('local provider admission saturation is retryable and does not claim a provider outage',async()=>{
  const {ProviderQueueBusyError}=await import('../src/lib/server/security/request-priority');
  const {jobFailureDetail}=await import('../src/lib/server/queue');

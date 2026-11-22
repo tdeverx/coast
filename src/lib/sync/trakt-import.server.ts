@@ -1,6 +1,6 @@
 import { reconcileProviderList } from '#lib/sync/list-values.server.js';
 import { reconcileProviderValue } from '#lib/sync/values.server.js';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import {
   lists,
@@ -12,6 +12,7 @@ import {
 import { notify } from '#lib/server/notifications/index.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
+import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
 import type { SyncCategory, SyncPreferences } from '#lib/providers/contracts.js';
 import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
@@ -198,7 +199,8 @@ export async function importTraktFromAdapter(
     const previous = await getDb()
       .select()
       .from(syncValues)
-      .where(and(eq(syncValues.connectionId, connectionId), eq(syncValues.category, category)));
+      .where(and(eq(syncValues.connectionId, connectionId), eq(syncValues.category, category),
+        sql`not ${isAnthologyRoot(syncValues.mediaId)}`));
     for (const entry of previous)
       if (!seen.has(entry.mediaId)) {
         if(category==='collection'){const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');if(await isGeneratedProjection(connectionId,entry.mediaId))continue;}

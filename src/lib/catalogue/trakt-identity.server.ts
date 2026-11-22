@@ -5,6 +5,39 @@ import { traktEntry } from '#lib/sync/trakt-identity.server.js';
 import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 import { CatalogueIdentityConflict, ingestMetadata, importTmdb } from './service.server';
 import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
+import { anthologyTmdb, anthologyTrakt, isAnthologyRoot } from './anthology.server.js';
+import { providerCache } from '#lib/server/utils/provider-cache.js';
+
+const checkedAnthologies = providerCache<boolean>(128, 5 * 60_000);
+
+async function groupedTraktItem(record: TraktRecord, seasonId: string, boundSeason?: string | null, native?: string | null) {
+  const parent = record.show!;
+  if (boundSeason && boundSeason !== seasonId) throw new CatalogueIdentityConflict();
+  if (!boundSeason)
+    await getDb().insert(externalIds).values({
+      mediaId: seasonId, provider: anthologyTrakt, externalId: String(parent.ids.trakt), mediaKind: 'season',
+    }).onConflictDoNothing();
+  if (!record.episode) {
+    if (record.season && record.season.number !== 1) return null;
+    const [season] = await getDb().select().from(media).where(eq(media.id, seasonId));
+    return season ?? null;
+  }
+  const episode = record.episode;
+  // A native season number is shared by every story. Resolve a known episode ID
+  // within the matched season, including when the provider changes its order.
+  const [target] = await getDb().select({ item: media }).from(episodes)
+    .innerJoin(media, eq(media.id, episodes.mediaId))
+    .innerJoin(externalIds, and(eq(externalIds.mediaId, episodes.mediaId), eq(externalIds.mediaKind, 'episode')))
+    .where(and(eq(episodes.seasonId, seasonId), episode.ids.tmdb
+      ? and(eq(externalIds.provider, 'tmdb'), eq(externalIds.externalId, String(episode.ids.tmdb)))
+      : and(eq(externalIds.provider, 'trakt'), eq(externalIds.externalId, String(episode.ids.trakt)))));
+  if (!target) throw new CatalogueIdentityConflict();
+  if (!native)
+    await getDb().insert(externalIds).values({
+      mediaId: target.item.id, provider: 'trakt', externalId: String(episode.ids.trakt), mediaKind: 'episode',
+    }).onConflictDoNothing();
+  return target.item;
+}
 
 /** Bind only the Trakt alias. A verified TMDB episode in the same TMDB show
  * can take precedence over a numbering scheme from another provider. */
@@ -45,19 +78,37 @@ export async function resolveTrakt(
   const entry = traktEntry(record);
   if (!entry) return null;
   const { item: primary, kind } = entry;
-  const [mapping] = await getDb()
-    .select()
-    .from(externalIds)
-    .where(
-      and(
-        eq(externalIds.provider, 'trakt'),
-        eq(externalIds.externalId, String(primary.ids.trakt)),
-        eq(externalIds.mediaKind, kind)
-      )
-    )
-    .limit(1);
-  if (mapping) {
-    const [item] = await getDb().select().from(media).where(eq(media.id, mapping.mediaId));
+  const sourceId = record.show?.ids.tmdb ? String(record.show.ids.tmdb) : null;
+  const storyTraktId = record.show ? String(record.show.ids.trakt) : null;
+  const [binding] = await getDb().execute<{ native: string | null; season: string | null; traktSeason: string | null; legacy: string | null }>(sql`
+    select
+      (select x.media_id from external_ids x
+        where (x.provider,x.external_id,x.media_kind)=('trakt',${String(primary.ids.trakt)},${kind})) as native,
+      (select x.media_id from external_ids x where (x.provider,x.external_id,x.media_kind)=(${anthologyTmdb},${sourceId},'season')) as season,
+      (select x.media_id from external_ids x where (x.provider,x.external_id,x.media_kind)=(${anthologyTrakt},${storyTraktId},'season')) as "traktSeason",
+      (select root.media_id from external_ids root where (root.provider,root.external_id,root.media_kind)=('tmdb',${sourceId},'show')
+        and exists (select 1 from external_ids sibling where sibling.media_id=root.media_id
+          and sibling.provider='tmdb' and sibling.media_kind='show' and sibling.external_id<>root.external_id)) as legacy`);
+  const grouped = binding.season ?? binding.traktSeason;
+  if (grouped) return groupedTraktItem(record, grouped, binding.traktSeason, binding.native);
+  if (binding.legacy && sourceId)
+    await checkedAnthologies(`${binding.legacy}:${sourceId}`, async () => {
+      if (!(await getTmdb())) return false;
+      await importTmdb('show', sourceId, { includeEpisodes: false, includeRecommendations: false });
+      return true;
+    });
+  if (binding.legacy && sourceId) {
+    const [story] = await getDb().select({ id: externalIds.mediaId }).from(externalIds).where(and(
+      eq(externalIds.provider, anthologyTmdb), eq(externalIds.externalId, sourceId), eq(externalIds.mediaKind, 'season')
+    ));
+    if (story) return groupedTraktItem(record, story.id, null, binding.native);
+    // A provisional series match cannot supply episode ownership by number.
+    if (record.episode || record.season) throw new CatalogueIdentityConflict();
+    if ((await getDb().execute(sql`select 1 where ${isAnthologyRoot(binding.legacy)}`)).length) return null;
+  }
+  if (binding.native) {
+    const [item] = await getDb().select().from(media).where(and(eq(media.id, binding.native),
+      kind === 'show' ? sql`not ${isAnthologyRoot(media.id)}` : undefined));
     return item;
   }
   const ids = Object.fromEntries(
@@ -67,7 +118,16 @@ export async function resolveTrakt(
   );
   if (kind === 'movie' || kind === 'show') {
     if (primary.ids.tmdb && (await getTmdb())) {
-      const item = await importTmdb(kind, String(primary.ids.tmdb), { includeEpisodes: false });
+      const item = await importTmdb(kind, String(primary.ids.tmdb), {
+        includeEpisodes: false, includeRecommendations: false,
+      });
+      if (kind === 'show') {
+        const [story] = await getDb().select({ id: externalIds.mediaId }).from(externalIds).where(and(
+          eq(externalIds.provider, anthologyTmdb), eq(externalIds.externalId, String(primary.ids.tmdb)), eq(externalIds.mediaKind, 'season')
+        ));
+        // Nested callers still need the parent show for legacy episode lookups.
+        if (story) return groupedTraktItem(record, story.id);
+      }
       await getDb()
         .insert(externalIds)
         .values({
@@ -91,6 +151,7 @@ export async function resolveTrakt(
   if (!record.show) return null;
   const show = await resolveTrakt({ show: record.show });
   if (!show) return null;
+  if (show.kind === 'season') return groupedTraktItem(record, show.id);
   if (kind === 'season' && record.season)
     return ingestMetadata(
       {

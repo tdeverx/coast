@@ -2,12 +2,13 @@ import { beforeAll, afterAll, test, expect, spyOn } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ensureDetails, ingestMetadata, refreshMedia } from '../src/lib/catalogue/service.server';
+import { ensureDetails, importTmdb, ingestMetadata, refreshMedia } from '../src/lib/catalogue/service.server';
 import * as tmdb from '../src/lib/providers/tmdb/connection.server';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { detailsData } from '../src/lib/server/queries/media';
 import { playbackDetails } from '../src/lib/playback/service.server';
+import { resolveTrakt } from '../src/lib/catalogue/trakt-identity.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const uid = crypto.randomUUID(),
   ids: string[] = [];
@@ -220,5 +221,56 @@ run('refreshing a moved episode follows its TMDB ID and reorders the season with
     await refreshMedia(one.id);
     const [moved] = await db.select().from(s.episodes).where(eq(s.episodes.mediaId,one.id));
     expect(moved.episodeNumber).toBe(3);
+  } finally { connection.mockRestore(); }
+});
+
+run('TMDB recommendations keep the first position when provider IDs share a Coast title', async () => {
+  const db = getDb();
+  const parent = await ingestMetadata({ provider: 'tmdb', externalId: '820001', kind: 'show', title: 'Parent' });
+  const anthologyIds = { tvdb: '820010' };
+  const repeated = await ingestMetadata({ provider: 'tmdb', externalId: '820002', kind: 'show', title: 'Anthology', externalIds: anthologyIds });
+  const other = await ingestMetadata({ provider: 'tmdb', externalId: '820004', kind: 'show', title: 'Other recommendation' });
+  ids.push(parent.id, repeated.id, other.id);
+  const alias = await ingestMetadata({ provider: 'tmdb', externalId: '820003', kind: 'show', title: 'Anthology alias', externalIds: anthologyIds });
+  expect(alias.id).toBe(repeated.id);
+  const connection = spyOn(tmdb, 'getTmdb').mockImplementation(async () => new TmdbAdapter(async () => ({
+    id: 820001, name: 'Parent', recommendations: { results: [
+      { id: 820002, name: 'Shared recommendation' },
+      { id: 820003, name: 'Recommendation alias' },
+      { id: 820004, name: 'Other recommendation' },
+    ] },
+  }), 'en-US', 'GB', 'related-alias-fixture'));
+  try {
+    await importTmdb('show', '820001', { includeEpisodes: false });
+    await importTmdb('show', '820001', { includeEpisodes: false });
+    const rows = await db.select().from(s.mediaRelationships)
+      .where(eq(s.mediaRelationships.parentId, parent.id)).orderBy(s.mediaRelationships.position);
+    expect(rows.map(({ childId, kind, position }) => [childId, kind, position])).toEqual([
+      [repeated.id, 'related', 0], [other.id, 'related', 2],
+    ]);
+  } finally { connection.mockRestore(); }
+});
+
+run('resolving a Trakt history title skips optional TMDB recommendations', async () => {
+  const requests: URL[] = [];
+  const connection = spyOn(tmdb, 'getTmdb').mockImplementation(async () => new TmdbAdapter(async path => {
+    requests.push(new URL(path, 'https://tmdb.test'));
+    return { id: 840001, name: 'Trakt history fixture', recommendations: { results: [{ id: 840002, name: 'Optional' }] } };
+  }, 'en-US', 'GB', 'trakt-identity-fixture'));
+  try {
+    const resolved = await resolveTrakt({ show: { title: 'Trakt history fixture', ids: { trakt: 840003, tmdb: 840001 } } });
+    expect(resolved?.title).toBe('Trakt history fixture');
+    ids.push(resolved!.id);
+    expect(requests).toHaveLength(1);
+    expect(requests[0].searchParams.get('append_to_response')).not.toContain('recommendations');
+    const related = await getDb().select().from(s.mediaRelationships).where(eq(s.mediaRelationships.parentId, resolved!.id));
+    expect(related).toEqual([]);
+    expect(await ensureDetails(uid, resolved!.id)).toBe(true);
+    expect(requests[1].searchParams.get('append_to_response')).toContain('recommendations');
+    const [enriched] = await getDb().select().from(s.mediaRelationships).where(eq(s.mediaRelationships.parentId, resolved!.id));
+    expect(enriched.kind).toBe('related');
+    ids.push(enriched.childId);
+    expect(await ensureDetails(uid, resolved!.id)).toBe(false);
+    expect(requests).toHaveLength(2);
   } finally { connection.mockRestore(); }
 });
