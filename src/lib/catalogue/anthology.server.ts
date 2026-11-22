@@ -48,21 +48,31 @@ const unresolved = providerCache<false>(128, 5 * 60_000);
 export async function reconcileAnthology(adapter: TmdbAdapter, showId: string, current: Metadata): Promise<boolean | null> {
   if (!current.externalIds?.tvdb)
     return await anthologySeason(current.externalId) ? true : null;
-  const sources = await getDb().execute<{ id: string; mapped: boolean }>(sql`
-    select root.external_id as id, grouped.id is not null as mapped
+  const sources = await getDb().execute<{ id: string; mapped: boolean; unclaimedHierarchy: boolean }>(sql`
+    with hierarchy as (
+      select count(*)>1 and bool_or(not exists(
+        select 1 from external_ids owner where owner.media_id=season.media_id and owner.provider=${anthologyTmdb}
+      )) as unclaimed from seasons season where season.show_id=${showId} and season.season_number>0
+    )
+    select root.external_id as id, grouped.id is not null as mapped, hierarchy.unclaimed as "unclaimedHierarchy"
     from external_ids root left join external_ids grouped
       on (grouped.provider,grouped.external_id,grouped.media_kind)=(${anthologyTmdb},root.external_id,'season')
+    cross join hierarchy
     where root.media_id=${showId} and root.provider='tmdb' and root.media_kind='show'
     order by root.external_id limit ${maxStories + 1}`);
-  if (sources.length < 2) return null;
+  const adopt = !!sources[0]?.unclaimedHierarchy && singleSeason(current) && !sources.some(source => source.id === current.externalId && source.mapped);
+  if (sources.length < 2 && !adopt) return sources[0]?.mapped ? true : null;
   if (sources.every(source => source.mapped)) return true;
   // A shared series ID is insufficient to match children by number.
   if (sources.length > maxStories) return false;
-  const key = JSON.stringify([adapter.cacheScope, showId, sources.map(source => source.id)]);
+  const key = JSON.stringify([adapter.cacheScope, showId, adopt ? current.externalId : null, sources.map(source => source.id)]);
   if (unresolved.peek(key) === false) return false;
   return grouping(key, async () => {
     let stories: Story[];
     try {
+      const nativeSeason = adopt ? await adapter.season(current.externalId, 1) : undefined;
+      if (nativeSeason && await matchExistingSeason(adapter, showId, current, nativeSeason)) return true;
+      if (sources.length < 2) return unresolved.store(key, false);
       const titles = await mapConcurrent(sources, 3, source => source.id === current.externalId
         ? Promise.resolve(current) : adapter.details('show', source.id, false));
       const dates = titles.map(title => title.releaseDate);
@@ -71,7 +81,8 @@ export async function reconcileAnthology(adapter: TmdbAdapter, showId: string, c
         return unresolved.store(key, false);
       titles.sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!));
       stories = await mapConcurrent(titles, 3, async title => {
-        const season = await adapter.season(title.externalId, 1);
+        const season = title.externalId === current.externalId && nativeSeason
+          ? nativeSeason : await adapter.season(title.externalId, 1);
         return { title, season, episodes: season.children ?? [] };
       });
     } catch (error) {
@@ -89,6 +100,50 @@ export async function reconcileAnthology(adapter: TmdbAdapter, showId: string, c
       operation: 'catalogue', stage: 'anthology-identity', provider: 'tmdb', errorCode: 'catalogue.identity-conflict',
     });
     return grouped || unresolved.store(key, false);
+  });
+}
+
+/** A library can already have the complete anthology hierarchy. Use two exact
+ * episode identities to adopt a story without moving local episodes or files. */
+async function matchExistingSeason(adapter: TmdbAdapter, showId: string, title: Metadata, native: Metadata) {
+  const boundary = native.children?.filter(episode => episode.episodeNumber && Number.isSafeInteger(episode.episodeNumber));
+  if (!boundary || boundary.length < 2) return false;
+  const samples = [boundary[0], boundary[boundary.length - 1]];
+  const find = async (examples: Metadata[]) => getDb().execute<{ id: string; season: string; source: string }>(sql`
+    select distinct episode.media_id as id, episode.season_id as season, input.source
+    from jsonb_to_recordset(${JSON.stringify(examples.flatMap(episode =>
+      Object.entries({ ...episode.externalIds, tmdb: episode.externalId })
+        .map(([provider, id]) => ({ provider, id, source: episode.externalId }))))}::text::jsonb)
+      as input(provider text,id text,source text)
+    join external_ids x on (x.provider,x.external_id,x.media_kind)=(input.provider,input.id,'episode')
+    join episodes episode on episode.media_id=x.media_id
+    where episode.show_id=${showId} and episode.season_number>0 and episode.season_id is not null`);
+  let anchors = await find(samples);
+  if (anchors.length < 2) {
+    const detailed = await Promise.all(samples.map(episode =>
+      adapter.episode(title.externalId, 1, episode.episodeNumber!, true)));
+    if (detailed.some((episode, index) => episode.externalId !== samples[index].externalId)) return false;
+    anchors = await find(detailed);
+  }
+  if (anchors.length !== 2 || new Set(anchors.map(anchor => anchor.source)).size !== 2 ||
+      new Set(anchors.map(anchor => anchor.id)).size !== 2 || anchors[0].season !== anchors[1].season) return false;
+  const seasonId = anchors[0].season;
+  return getDb().transaction(async tx => {
+    const ids = { [anthologyTmdb]: title.externalId, tmdb: native.externalId };
+    for (const [provider, id] of Object.entries(ids))
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${provider}:season:${id}`},0))`);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`show:${showId}`},0))`);
+    const [season] = await tx.select().from(seasons).where(and(eq(seasons.mediaId, seasonId), eq(seasons.showId, showId)));
+    if (!season) return false;
+    const conflict = await tx.execute(sql`select 1 from external_ids x where x.media_kind='season' and (
+      (x.provider=${anthologyTmdb} and ((x.external_id=${title.externalId} and x.media_id<>${seasonId})
+        or (x.media_id=${seasonId} and x.external_id<>${title.externalId})))
+      or (x.provider='tmdb' and x.external_id=${native.externalId} and x.media_id<>${seasonId})
+    ) limit 1`);
+    if (conflict.length) return false;
+    await ingestMetadata({ ...native, title: title.title, seasonNumber: season.seasonNumber, externalIds: ids },
+      { showId, mediaId: seasonId, complete: false, identitiesLocked: true }, tx);
+    return true;
   });
 }
 

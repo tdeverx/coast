@@ -430,3 +430,57 @@ run('unverifiable history on a collapsed episode leaves every legacy link and wa
     tmdbConnection.mockRestore();
   }
 });
+
+run('an already grouped library adopts a standalone Trakt season using exact episode IDs from existing services', async () => {
+  const db = getDb(), base = numericId + 400;
+  const common = { tvdb: String(base + 10) };
+  const root = await ingestMetadata({
+    provider: 'tmdb', externalId: String(base + 1), externalIds: common, kind: 'show', title: 'Existing anthology',
+  });
+  const first = await ingestMetadata({
+    provider: 'tmdb', externalId: String(base + 1) + ':season:1', kind: 'season', title: 'First story', seasonNumber: 1,
+  }, { showId: root.id });
+  const second = await ingestMetadata({
+    provider: 'tvdb', externalId: String(base + 20), kind: 'season', title: 'Second story', seasonNumber: 2,
+  }, { showId: root.id });
+  mediaIds.push(root.id, first.id, second.id);
+  const old = [];
+  for (const number of [1, 2]) {
+    const item = await ingestMetadata({
+      provider: 'tvdb', externalId: String(base + 30 + number), kind: 'episode', seasonNumber: 2,
+      title: 'Existing episode ' + number, episodeNumber: number,
+    }, { showId: root.id, seasonId: second.id });
+    old.push(item.id);
+    mediaIds.push(item.id);
+  }
+  const show = { title: 'Second story', ids: { tmdb: base + 2, tvdb: base + 10, trakt: base + 60 } };
+  const calls: URL[] = [];
+  const adapter = new TmdbAdapter(async raw => {
+    const url = new URL(raw, 'https://fixture.invalid');
+    calls.push(url);
+    const detail = (number: number) => ({
+      id: base + 40 + number, season_number: 1, episode_number: number, name: 'Story episode ' + number,
+      ...(url.searchParams.get('append_to_response')?.includes('external_ids') ? { external_ids: { tvdb_id: base + 30 + number } } : {}),
+    });
+    if (url.pathname.endsWith('/episode/1')) return detail(1);
+    if (url.pathname.endsWith('/episode/2')) return detail(2);
+    if (url.pathname.endsWith('/season/1')) return { id: base + 20, name: 'Miniseries', episodes: [detail(1), detail(2)] };
+    return { id: base + 2, name: show.title, first_air_date: '2024-10-01', external_ids: { tvdb_id: base + 10 },
+      seasons: [{ id: base + 20, name: 'Miniseries', season_number: 1 }] };
+  }, 'en-US', 'GB', String(base));
+  const tmdbConnection = spyOn(tmdb, 'getTmdb').mockResolvedValue(adapter);
+  try {
+    const [event] = await db.insert(trackingEvents).values({ mediaId: old[1], userId, action: 'watch' }).returning();
+    expect((await resolveTrakt({ show }))?.id).toBe(second.id);
+    expect(calls.filter(url => url.pathname.includes('/episode/'))).toHaveLength(2);
+    const count = calls.length;
+    expect((await resolveTrakt({ show, episode: { title: 'Story episode 2', season: 1, number: 2, ids: {
+      tmdb: base + 42, tvdb: base + 32, trakt: base + 62,
+    } } }))?.id).toBe(old[1]);
+    expect(calls).toHaveLength(count);
+    expect(await db.select().from(trackingEvents).where(eq(trackingEvents.id, event.id))).toEqual([event]);
+    expect((await db.select().from(episodes).where(eq(episodes.seasonId, second.id))).map(row => row.mediaId).sort()).toEqual(old.sort());
+  } finally {
+    tmdbConnection.mockRestore();
+  }
+});

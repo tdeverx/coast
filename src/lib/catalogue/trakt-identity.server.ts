@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { media, externalIds, episodes, seasons } from '#lib/server/db/schema.js';
 import { traktEntry } from '#lib/sync/trakt-identity.server.js';
@@ -23,15 +23,32 @@ async function groupedTraktItem(record: TraktRecord, seasonId: string, boundSeas
     return season ?? null;
   }
   const episode = record.episode;
+  const tmdbId = episode.ids.tmdb ? String(episode.ids.tmdb) : null;
   // A native season number is shared by every story. Resolve a known episode ID
   // within the matched season, including when the provider changes its order.
-  const [target] = await getDb().select({ item: media }).from(episodes)
+  const identities = Object.entries(episode.ids).filter(([provider, id]) =>
+    ['tmdb', 'tvdb', 'imdb', 'trakt'].includes(provider) && id != null);
+  const targets = await getDb().selectDistinct({ item: media, tmdbOwner: sql<string | null>`(
+    select alias.media_id from external_ids alias
+    where (alias.provider,alias.media_kind,alias.external_id)=('tmdb','episode',${tmdbId})
+  )` }).from(episodes)
     .innerJoin(media, eq(media.id, episodes.mediaId))
     .innerJoin(externalIds, and(eq(externalIds.mediaId, episodes.mediaId), eq(externalIds.mediaKind, 'episode')))
-    .where(and(eq(episodes.seasonId, seasonId), episode.ids.tmdb
-      ? and(eq(externalIds.provider, 'tmdb'), eq(externalIds.externalId, String(episode.ids.tmdb)))
-      : and(eq(externalIds.provider, 'trakt'), eq(externalIds.externalId, String(episode.ids.trakt)))));
-  if (!target) throw new CatalogueIdentityConflict();
+    .where(and(eq(episodes.seasonId, seasonId), or(...identities.map(([provider, id]) =>
+      and(eq(externalIds.provider, provider), eq(externalIds.externalId, String(id)))))));
+  const [target] = targets;
+  if (!target || targets.length !== 1) throw new CatalogueIdentityConflict();
+  if (target.tmdbOwner && target.tmdbOwner !== target.item.id) throw new CatalogueIdentityConflict();
+  if (tmdbId && !target.tmdbOwner) {
+    const [added] = await getDb().insert(externalIds).values({
+      mediaId: target.item.id, provider: 'tmdb', externalId: tmdbId, mediaKind: 'episode',
+    }).onConflictDoNothing().returning({ id: externalIds.id });
+    if (!added) {
+      const [alias] = await getDb().select({ id: externalIds.mediaId }).from(externalIds)
+        .where(and(eq(externalIds.provider, 'tmdb'), eq(externalIds.externalId, tmdbId), eq(externalIds.mediaKind, 'episode')));
+      if (alias?.id !== target.item.id) throw new CatalogueIdentityConflict();
+    }
+  }
   if (!native)
     await getDb().insert(externalIds).values({
       mediaId: target.item.id, provider: 'trakt', externalId: String(episode.ids.trakt), mediaKind: 'episode',

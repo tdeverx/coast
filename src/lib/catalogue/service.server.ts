@@ -428,7 +428,7 @@ async function importTmdbChild(id: string, adapter: Tmdb, {
   let missingPosition: ProviderHttpError | undefined;
   let snapshot = season
     ? await adapter.season(show.externalId, nativeSeason)
-    : await adapter.episode(show.externalId, nativeSeason, episode!.episodeNumber).catch(cause => {
+    : await adapter.episode(show.externalId, nativeSeason, episode!.episodeNumber, !!story && !episodeExternalId).catch(cause => {
       if (!episodeExternalId || !(cause instanceof ProviderHttpError) || ![404, 410].includes(cause.status)) throw cause;
       missingPosition = cause;
       return null;
@@ -442,6 +442,12 @@ async function importTmdbChild(id: string, adapter: Tmdb, {
     await updateTmdbEpisodeOrder(child.showId, child.seasonNumber, (currentSeason.children ?? []).map(item => ({ ...item, seasonNumber: child.seasonNumber })));
   }
   if (!snapshot) throw new CatalogueIdentityConflict();
+  if (episode && story && !episodeExternalId) {
+    const aliases = await getDb().select({ provider: externalIds.provider, id: externalIds.externalId })
+      .from(externalIds).where(eq(externalIds.mediaId, id));
+    if (!aliases.some(alias => snapshot!.externalIds?.[alias.provider] === alias.id))
+      throw new CatalogueIdentityConflict();
+  }
   if (season && story) {
     const [name] = await getDb().select({ title: metadataSnapshots.title }).from(metadataSnapshots)
       .where(and(eq(metadataSnapshots.mediaId, id), eq(metadataSnapshots.provider, 'tmdb'))).limit(1);
@@ -454,7 +460,16 @@ async function importTmdbChild(id: string, adapter: Tmdb, {
     complete: true,
   });
   if (season) {
-    const children = (snapshot.children ?? []).map(item => ({ ...item, seasonNumber: season.seasonNumber }));
+    let children = (snapshot.children ?? []).map(item => ({ ...item, seasonNumber: season.seasonNumber }));
+    if (story) {
+      const positions = await getDb().execute<{ number: number; id: string | null }>(sql`
+        select episode.episode_number as number, x.external_id as id from episodes episode
+        left join external_ids x on x.media_id=episode.media_id and x.provider='tmdb' and x.media_kind='episode'
+        where episode.season_id=${id}`);
+      const known = new Set(positions.map(position => position.id));
+      const occupied = new Set(positions.map(position => position.number));
+      children = children.filter(item => known.has(item.externalId) || !occupied.has(item.episodeNumber!));
+    }
     await updateTmdbEpisodeOrder(season.showId, season.seasonNumber, children);
     await mapConcurrent(children, 4, (item) =>
       ingestMetadata(item, { showId: season.showId, seasonId: id })

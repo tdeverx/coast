@@ -9,11 +9,11 @@
     },
     "src/lib/catalogue/service.server.ts": {
       "previous": "67dd234515d8b4cfe38e54dab6181030fc868e9bf0c157a05a1436624f0cf8f1",
-      "current": "d6f1eba250675657e329be3db01e8b6880363c1684222c13abb1317784bb2aab"
+      "current": "40739130a6fd38e2419bf059603fe4fdaa03785036c7912b244bb2c4728a403c"
     },
     "src/lib/catalogue/trakt-identity.server.ts": {
       "previous": "aa0fc3357be4683c25a33825b5cd01c26fb20e40e09ffea3300bedf51a99bd78",
-      "current": "10dcba676ed7df9759bb0cd9be5a6f4dd5f5ca35edd9ed0245eabece89a5074e"
+      "current": "d5e1be0452e92ae774466de3628b5a1946dbc208a3cb967dbd2390401fa066ec"
     },
     "src/lib/collection/projection.server.ts": {
       "previous": "09f06f3d1ec4240f938cf4efb94e7b97bcedc75ed008f8e4239d24d0a5196be0",
@@ -33,7 +33,7 @@
     },
     "src/lib/providers/tmdb/adapter.server.ts": {
       "previous": "d7324c4d7312b5640ca898f213d67f2eabd81ed27a0123ff913b9b9ac2401fd3",
-      "current": "53c782f072c9e600ee554b82d3515b69dc32f924e326d67389b96dc40e68befc"
+      "current": "0b1bdeb84bf8a7bc111f4690c388d3a37e916cf2becb3ce76ecc5dab2cc30781"
     },
     "src/lib/server/diagnostics/index.ts": {
       "previous": "66e9b9de62c14f2f1d1acf1dc1340718f3151ccc6b5fb7f2eae8942bd246d022",
@@ -109,12 +109,12 @@
     },
     "tests/trakt-sync-db.test.ts": {
       "previous": "333fac52bfdcbd0dfeed0029ff3a2a977d98fe74d6f7fe45c532aa35cb033852",
-      "current": "f087287d84c143703ec555af2ad1e6f8043461ac7f06ce66c15514919b5ceb0b"
+      "current": "322196aeec411ee45032c21e76653096813b7bb6c02b137349f4dfe2ac71b31f"
     }
   },
   "supportingFiles": {
-    "src/lib/catalogue/anthology.server.ts": "98f2d50e74e286a5f2b0b7c4872944dc9ba06cf6756a2a8096ffcb480dc901ed"
+    "src/lib/catalogue/anthology.server.ts": "399cb02543b2ad382c091d984e112cd57aa3237dc27412193f05b703b1108b5f"
   },
   "report": "docs/audits/2026-11-22-automatic-anthologies.md",
-  "reportSha256": "7412405c7eea97fb81150712b26175c50efa7c104c270c536045099db2fb65e8"
+  "reportSha256": "07c2fd00db4a11db8ac9b8cf77333d1dacb65111086941489978f35087a2d37e"
 }

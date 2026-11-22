@@ -351,18 +351,22 @@ export class TmdbAdapter implements MetadataProvider {
       })),
     };
   }
-  async episode(showId: string, seasonNumber: number, episodeNumber: number): Promise<Metadata> {
+  async episode(showId: string, seasonNumber: number, episodeNumber: number, includeExternalIds = false): Promise<Metadata> {
     const data = v.parse(
       detail,
       await this.request(
         this.path(
           `/3/tv/${encodeURIComponent(showId)}/season/${seasonNumber}/episode/${episodeNumber}`,
-          { append_to_response: 'credits' }
+          { append_to_response: includeExternalIds ? 'credits,external_ids' : 'credits' }
         )
       )
     );
     return {
       ...mapItem(data, 'episode', this.language, this.region),
+      ...(includeExternalIds && { externalIds: {
+        ...(data.external_ids?.imdb_id ? { imdb: data.external_ids.imdb_id } : {}),
+        ...(data.external_ids?.tvdb_id ? { tvdb: String(data.external_ids.tvdb_id) } : {}),
+      } }),
       seasonNumber,
       episodeNumber,
       ...releaseCredits(data),
