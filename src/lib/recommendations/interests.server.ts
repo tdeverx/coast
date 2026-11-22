@@ -28,8 +28,10 @@ function interestQuery(userId:string|null,category:DynamicMedium|undefined,taste
    from (
     select media_id,case when occurred_at_known then occurred_at end as instant,source,max(occurred_at) as latest,count(*) as plays
     from (
+     -- No-op admission follows application order. The date the user supplies can
+     -- precede an unwatch that was actually applied before this watch.
      select media_id,source,occurred_at,occurred_at_known,action,rewatch,
-      lag(action) over(partition by media_id order by occurred_at,created_at,id) as previous_action
+      lag(action) over(partition by media_id order by created_at,id) as previous_action
      from tracking_events where user_id=${userId} and applied and action in ('watch','unwatch') and (action='unwatch' or value is distinct from false)
     ) e where e.action='watch' and (e.rewatch or e.previous_action is distinct from 'watch')
     group by media_id,instant,source

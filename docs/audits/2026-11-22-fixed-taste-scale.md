@@ -80,6 +80,8 @@ The same five holdout folds used the same fit model, catalog metadata, and ratin
 
 The replay measures one account's taste evidence with the catalogue and holdouts already available. It identifies weaker ranking once inflated returns are removed, particularly for unrated titles. Recommendation ordering was held fixed.
 
+The history query admits watches in the order Coast applied the actions and then uses the recorded viewing dates to match provider copies. This preserves a genuine backdated watch entered after an Unwatch. The statement's PostgreSQL regression test covers both that sequence and exact Trakt/Jellyfin matches.
+
 The upgrade preserves the source IDs, excludes merged copies from media details and activity, and lets Undo in Progress ignore a duplicate received after the original action. The activity trigger uses the existing owner and source key index when it removes a projection. On synthetic PostgreSQL 17 upgrades, the migration took 0.29 seconds for 4,800 events with 800 matches. With 145,600 events and 11,200 matches it took 20.26 seconds immediately after bulk loading and 2.53 seconds with analyzed statistics. The timing includes schema changes and writes. Both sizes retained every event and original watch, corrected every seeded play count without changing position, and removed all duplicate activity projections. These are individual timings on disposable data, with no live migration.
 
 ## Personal Taste wall

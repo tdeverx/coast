@@ -1,6 +1,7 @@
 import {expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import {visitTasteHistory} from '../src/lib/recommendations/interests.server';
+import {track} from '../src/lib/core/tracking/service.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 type HistoryWork=Parameters<Parameters<typeof visitTasteHistory>[2]>[0][number];
@@ -88,6 +89,24 @@ run('overlapping provider watches cannot inflate taste returns even when the tra
   await db`delete from users where id=${viewer}`;
   await db`delete from provider_instances where id=${instance}`;
   await db`delete from media where id in (${movie},${summary})`;
+ }
+});
+
+run('a genuine backdated watch after Unwatch still counts as return evidence',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),movie=crypto.randomUUID();
+ await db`insert into users(id,username) values(${viewer},${'backdated-watch-'+viewer})`;
+ try{
+  await db`insert into media(id,kind,title) values(${movie},'movie','Backdated watch')`;
+  await track(viewer,{mediaId:movie,action:'watch',occurredAt:'2024-01-01T10:00:00Z'});
+  await track(viewer,{mediaId:movie,action:'unwatch',acknowledged:true});
+  const watch=await track(viewer,{mediaId:movie,action:'watch',occurredAt:'2024-02-01T10:00:00Z'});
+  expect(watch.state.playCount).toBe(2);
+  const history:HistoryWork[]=[];
+  await visitTasteHistory(viewer,['screen'],async page=>{history.push(...page);});
+  expect(history).toEqual([expect.objectContaining({id:movie,consumed:true,repeated:true,implicit:4})]);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from media where id=${movie}`;
  }
 });
 

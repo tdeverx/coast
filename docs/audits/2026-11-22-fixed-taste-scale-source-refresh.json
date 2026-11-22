@@ -65,7 +65,7 @@
     },
     "src/lib/recommendations/interests.server.ts": {
       "previous": "c24dd8516cdbd6f06eb72f1c236d3f494f6648177ed6bcca1a35ca1b121f4274",
-      "current": "63fab16fe58ada44c081a588b7e0f3b6e211824c42e11ce85f9262554c8a5f35"
+      "current": "b6d1cff67494a880825386b7f63b0a6da57a0d15341b85d9a0fe58de3da0a7e9"
     },
     "src/lib/server/db/schema.ts": {
       "previous": "e6fc280324956beb1df7affff9a07f7c453759f90b419fbbfd9501afcaa6bf08",
@@ -89,7 +89,7 @@
     },
     "tests/taste-history-evidence-db.test.ts": {
       "previous": "a8b696bf68306f2193aa162c1a1376866f2f16afedc7fcddb28c9dbf1ea32711",
-      "current": "0a8c10c8d8968196dbec4e8d87fa23b81f54aa7668b5a6e2a501e78950ad9236"
+      "current": "1e90ad283b3030cb9f8e7cb81c0d31a55e0c02df1be97095bd69ffc1d5fd0ad2"
     },
     "tests/trakt-sync-db.test.ts": {
       "previous": "f15f4896204ea8246d0d9b89e8661339f7ad8e3f5b6a67efcd76a93cd5406568",
@@ -117,5 +117,5 @@
     }
   },
   "report": "docs/audits/2026-11-22-fixed-taste-scale.md",
-  "reportSha256": "225b06c5eed7676c3aefe871467e2f1bf62ffb6a9d00e7189b7cc91ffc29399c"
+  "reportSha256": "74137a27253ebdab9c8bff6b123485d16ac9df6c542505e47636b9c52ab18fee"
 }
