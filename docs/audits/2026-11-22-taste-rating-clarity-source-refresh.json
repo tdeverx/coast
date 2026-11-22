@@ -1,0 +1,49 @@
+{
+  "epoch": "taste-rating-clarity-local-2026-11-22",
+  "baseline": "bb992c6c87c574a096e633bc14cc32ae7e1a46e2",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/profile/TasteMatch.svelte": {
+      "previous": "c827e8826bcb7801f798bf0a855d5047baf42cb24a0738dac4a8fa5a3b65ce5d",
+      "current": "2de7b3582226ec1ff60dffe553858ffdd8d24c2ab133534ebd4ff26087d616fd"
+    },
+    "src/lib/ui/components/MediaDetails.svelte": {
+      "previous": "964f744f763ccb0f648422b27601e5cd791c49781ad2e0f1516c6440a65f1840",
+      "current": "4eb0e20a37cd0bc8599e0f7c7754e46329714e109ba884e3cbddfde62b3a4ac4"
+    },
+    "src/lib/ui/components/WorkMenu.svelte": {
+      "previous": "7127c17966ba6f126c5059d21cc914bc007ecb3320123d504957bf4ee8b931f9",
+      "current": "16e90e8d0a50450c6e0c6ca67945d268e47c260c8c58cf6cbf8db83a62095e75"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "7b82b4adce93d8932503ea0debfb18388eef8427e23e868a4f2cd5e8eaf88d6d",
+      "current": "1455f0d2512c4d29b45d64e0155e18f1ce0789ca403a15fa4cf7af72908db60f"
+    },
+    "src/lib/social/taste-profile.ts": {
+      "previous": "399061bde647d053b102c7ea2c6c1239d619368668690b0658d4681cccf4e11f",
+      "current": "07740d774bdc52acee676319c6fad8ad10bdbb92ce0fec6d1bd0cac87e55f841"
+    },
+    "tests/taste-menu-dialog.test.ts": {
+      "previous": "ffd7eb8ac1f3e17ad49031dd0972a819722657b3e4c267b252e5dd40e5066dd1",
+      "current": "a9d8a45b646d8a4a85195d66ca43fc0fddf214b00b687b185d01ae7cc185fa49"
+    },
+    "tests/taste-profile.test.ts": {
+      "previous": "88c91ae322058520d2527d7e672a910310e9a15998fe6579f22f502e6ade2661",
+      "current": "69dbea8d188141112b8083de39773ac697060909371459ab5bc93b43a57aef65"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "88f7e16ecd8a485ee4869235cbc0088759103b1fe41faa95064099f0e8c9e795",
+      "current": "cd90b40d5a647e22322ae4cb7796f4c3ea0f68573d5fa5f07f7bcf07736a9498"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "previous": "cc2b1c96c5c0661bdf3a64f7a706cf28b5edce9ec9b4dd663bf9c32c31908a87",
+      "current": "a7248252b59763d613c2d684f01e94395b0c3f2058d4354509103c1e1ac522a4"
+    },
+    "src/lib/ui/work-menu/CatalogueActions.svelte": {
+      "previous": "7f7babb337b5fe41d8389565fdccc0daa5811d45fb41bccf85c7520b0c3b9f7a",
+      "current": "b26b2accfa917558664bad65ce8a9eb9912ac2f6aa2f497f4d48ce367953b8de"
+    }
+  },
+  "report": "docs/audits/2026-11-22-taste-rating-clarity.md",
+  "reportSha256": "7ecf2ce246f0c61662a2d320d04576f70760662199b2492aa085c7595a2043ff"
+}

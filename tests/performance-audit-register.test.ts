@@ -39,9 +39,14 @@ import tmdbOrderSetupSourceRefresh from '../docs/audits/2026-11-21-tmdb-episode-
 import playbackViewportCropSourceRefresh from '../docs/audits/2026-11-21-playback-viewport-crop-source-refresh.json';
 import playbackSystemMediaSourceRefresh from '../docs/audits/2026-11-21-playback-system-media-source-refresh.json';
 import automaticAnthologiesSourceRefresh from '../docs/audits/2026-11-22-automatic-anthologies-source-refresh.json';
+import anthologyReplaySourceRefresh from '../docs/audits/2026-11-22-anthology-replay-source-refresh.json';
+import tasteWeightsSourceRefresh from '../docs/audits/2026-11-22-taste-weights-source-refresh.json';
+import tasteComparisonsSourceRefresh from '../docs/audits/2026-11-22-taste-comparisons-source-refresh.json';
+import tasteRatingClaritySourceRefresh from '../docs/audits/2026-11-22-taste-rating-clarity-source-refresh.json';
+import adminTasteBreakdownSourceRefresh from '../docs/audits/2026-11-22-admin-taste-breakdown-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh, anthologyReplaySourceRefresh, tasteWeightsSourceRefresh, tasteComparisonsSourceRefresh, tasteRatingClaritySourceRefresh, adminTasteBreakdownSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -64,6 +69,24 @@ test('automatic anthology grouping retains its scoped catalogue and sync evidenc
   for (const [path, hash] of Object.entries(review.supportingFiles))
     await expectCurrentSource(path, hash, 'Review the atomic anthology placement and ownership rules.');
   await expectCurrentSource(review.report, review.reportSha256, 'Review the verification boundaries.');
+});
+
+test('Taste comparisons retain the evidence for a bounded private score adjustment', async () => {
+  const review = tasteComparisonsSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review the ratings comparison and score publication.');
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the bounded rating fit.');
+});
+
+test('admin Taste calculations retain their scoped diagnostic and verification', async () => {
+  const review = adminTasteBreakdownSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review the diagnostic scope and calculation.');
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the admin breakdown presentation.');
 });
 
 test('per-feature Trakt permissions retain their scoped verification', async () => {

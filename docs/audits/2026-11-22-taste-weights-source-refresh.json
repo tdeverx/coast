@@ -1,0 +1,37 @@
+{
+  "epoch": "taste-weights-local-2026-11-22",
+  "baseline": "bb992c6c87c574a096e633bc14cc32ae7e1a46e2",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/profile/PersonalTaste.svelte": {
+      "previous": "d53f56da07c9d6696a59f2bdd66cbf4a3386471d79ef6c2994f491bf0a5c91f8",
+      "current": "59d03c23c26574443b33bb557bed91f1cc2e0a1bffa2c5d038b300cfab1362b2"
+    },
+    "src/lib/social/collection-taste.server.ts": {
+      "previous": "7c98077c383e71226fe980dcb2c040597bd796d21aa5448c79c6e5cea21a8def",
+      "current": "6ecf4898765ab30e880931954fbf1b7813c58168e329f04689d779e2094235fb"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "d38265a5f1e29419c627e6117032d498a5bb274333aba1230ee21c12683f68fa",
+      "current": "24f4f180b54208b6e7f4b6e05f3a97b63926bdbacc210a4ec4166555a51ac0df"
+    },
+    "src/lib/social/taste-profile.ts": {
+      "previous": "5ccf6cf0a41ce6ed912d4cc4fd1d6d280ae52c98663e9fad57bf8a18a9e41ea7",
+      "current": "5f415c245f1d14b0b35b994d0bef5e356c5ac5214d31942326a27777ae80dc5a"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "1d7084d964c944720669281d54854e3fecb774f2e2f1e8c215ee6c04bb037a82",
+      "current": "40dc50ebfa26752d25122dba6cb86b97b852ee09a0fba82e17688ade80b12a40"
+    },
+    "tests/taste-collection-db.test.ts": {
+      "previous": "fb265ea946e99f7dd32e93f1f0cc25cf9f0e67691889259e5920c49783be153c",
+      "current": "4eb37ff0a6791028de3aea954ed8b9ace1520c0bb6ab8f4e7991b11d3540447b"
+    },
+    "tests/taste-profile.test.ts": {
+      "previous": "5da16df194ab07b2fac91809936aaae66106e31da14312e4798a76e54c61be64",
+      "current": "f4c31eacd55f0b127da4161027f91df3d111ba5d68acd44c85a0e012543d5bc8"
+    }
+  },
+  "report": "docs/audits/2026-11-22-taste-weights.md",
+  "reportSha256": "2b46e16cd275988a6d679be1a4e91db75055b74bd49164ecb282dc8b10e4e7f9"
+}

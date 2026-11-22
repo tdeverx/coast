@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { getDb, getSql } from '../src/lib/server/db';
 import { collectionTaste } from '../src/lib/social/collection-taste.server';
 import { tasteRevisionSql } from '../src/lib/social/taste-cache.server';
+import { createTasteAccumulator, namedFeatures, prepareTasteReference } from '../src/lib/social/taste-profile';
 
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const owner = crypto.randomUUID(), other = crypto.randomUUID();
@@ -39,6 +40,28 @@ run('nested screen sets count each movie or show once, including shows represent
   expect(await collectionTaste(owner,set,'collection')).toEqual({score:null,members:{total:2,sampled:2,matched:1}});
   await cached(show,20);
   expect(await collectionTaste(owner,set,'collection')).toEqual({score:50,members:{total:2,sampled:2,matched:2}});
+  await db`update user_taste_scores set score=80,breakdown=jsonb_set(breakdown,'{score}','80') where work_id=${show} and user_id=${owner}`;
+  await db`insert into tracking_state(user_id,media_id,watched,play_count) values(${owner},${movie},true,8)`;
+  expect((await collectionTaste(owner,set,'collection'))?.score).toBe(80);
+  await db`insert into tracking_state(user_id,media_id,completed_episodes) values(${owner},${show},1)`;
+  expect((await collectionTaste(owner,set,'collection'))?.score).toBe(85);
+  await db`update user_taste_scores set score=25,breakdown=jsonb_set(breakdown,'{score}','25') where work_id in (${movie},${show}) and user_id=${owner}`;
+  expect((await collectionTaste(owner,set,'collection'))?.score).toBe(25);
+  const inspected=await collectionTaste(owner,set,'collection','recalculate');
+  expect(inspected?.breakdown).toMatchObject({watched:2,average:null,bonus:0,titles:expect.arrayContaining([
+    {id:movie,title:'Film',score:null,confidence:null},{id:show,title:'Show',score:null,confidence:null},
+  ])});
+  const features={cast:namedFeatures(['Shared actor'])},history=createTasteAccumulator();
+  for(let i=0;i<8;i++)history.add({rating:5,explicit:0,implicit:0,consumed:true,repeated:false},features);
+  await db`insert into work_features(work_id,provider,features) values(${movie},'tmdb',${features}::jsonb),(${show},'tmdb',${features}::jsonb)`;
+  await db`update user_taste_profiles set scoring=${prepareTasteReference(history.snapshot())}::jsonb
+    where user_id=${owner} and medium in ('movie','show')`;
+  const recalculated=await collectionTaste(owner,set,'collection','recalculate');
+  const breakdown=recalculated!.breakdown!;
+  expect(recalculated?.members.matched).toBe(2);
+  expect(breakdown.bonus).toBeGreaterThan(0);
+  expect(breakdown.average).toBe(breakdown.titles.reduce((sum,title)=>sum+title.score!,0)/2);
+  expect(recalculated?.score).toBe(Math.round(breakdown.average!+breakdown.bonus));
   expect(await collectionTaste(other,set,'collection')).toEqual({score:null,members:{total:2,sampled:2,matched:0}});
   expect(await collectionTaste(owner,show,'collection')).toBeNull();
 });

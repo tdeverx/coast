@@ -96,6 +96,7 @@ export async function resolveTrakt(
   if (!entry) return null;
   const { item: primary, kind } = entry;
   const sourceId = record.show?.ids.tmdb ? String(record.show.ids.tmdb) : null;
+  const traktTvdbId = record.show?.ids.tvdb ?? undefined;
   const storyTraktId = record.show ? String(record.show.ids.trakt) : null;
   const [binding] = await getDb().execute<{ native: string | null; season: string | null; traktSeason: string | null; legacy: string | null }>(sql`
     select
@@ -109,9 +110,9 @@ export async function resolveTrakt(
   const grouped = binding.season ?? binding.traktSeason;
   if (grouped) return groupedTraktItem(record, grouped, binding.traktSeason, binding.native);
   if (binding.legacy && sourceId)
-    await checkedAnthologies(`${binding.legacy}:${sourceId}`, async () => {
+    await checkedAnthologies(`${binding.legacy}:${sourceId}:${traktTvdbId ?? ''}`, async () => {
       if (!(await getTmdb())) return false;
-      await importTmdb('show', sourceId, { includeEpisodes: false, includeRecommendations: false });
+      await importTmdb('show', sourceId, { includeEpisodes: false, includeRecommendations: false, traktTvdbId });
       return true;
     });
   if (binding.legacy && sourceId) {
@@ -136,7 +137,7 @@ export async function resolveTrakt(
   if (kind === 'movie' || kind === 'show') {
     if (primary.ids.tmdb && (await getTmdb())) {
       const item = await importTmdb(kind, String(primary.ids.tmdb), {
-        includeEpisodes: false, includeRecommendations: false,
+        includeEpisodes: false, includeRecommendations: false, traktTvdbId,
       });
       if (kind === 'show') {
         const [story] = await getDb().select({ id: externalIds.mediaId }).from(externalIds).where(and(

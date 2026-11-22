@@ -1,0 +1,36 @@
+{
+  "epoch": "taste-comparisons-local-2026-11-22",
+  "baseline": "bb992c6c87c574a096e633bc14cc32ae7e1a46e2",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/profile/TasteMatch.svelte": {
+      "previous": "1040f225c49c69f371a9301279c433ddb30603526092b287f35f8058636460fe",
+      "current": "c827e8826bcb7801f798bf0a855d5047baf42cb24a0738dac4a8fa5a3b65ce5d"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "24f4f180b54208b6e7f4b6e05f3a97b63926bdbacc210a4ec4166555a51ac0df",
+      "current": "7b82b4adce93d8932503ea0debfb18388eef8427e23e868a4f2cd5e8eaf88d6d"
+    },
+    "src/lib/social/taste-profile.ts": {
+      "previous": "5f415c245f1d14b0b35b994d0bef5e356c5ac5214d31942326a27777ae80dc5a",
+      "current": "399061bde647d053b102c7ea2c6c1239d619368668690b0658d4681cccf4e11f"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "40dc50ebfa26752d25122dba6cb86b97b852ee09a0fba82e17688ade80b12a40",
+      "current": "88f7e16ecd8a485ee4869235cbc0088759103b1fe41faa95064099f0e8c9e795"
+    },
+    "tests/taste-cache-db.test.ts": {
+      "previous": "fa905886bbfc95e66faefb53876a1d317116ea080a4b0b96b723d3a9e31374a5",
+      "current": "b942de7c9099d75534e89451c6f64643d08e201c19c427097c98b5f5bcfe5fbe"
+    },
+    "tests/taste-profile.test.ts": {
+      "previous": "f4c31eacd55f0b127da4161027f91df3d111ba5d68acd44c85a0e012543d5bc8",
+      "current": "88c91ae322058520d2527d7e672a910310e9a15998fe6579f22f502e6ade2661"
+    }
+  },
+  "supportingFiles": {
+    "src/lib/social/taste-rating-model.ts": "526f3b62e61551b5a76b1f1f8883f2d1b46f18d0b6003959072c955d5303c968"
+  },
+  "report": "docs/audits/2026-11-22-taste-comparisons.md",
+  "reportSha256": "cabca5180474da8ee238fa929af92e7ced77138bbc9b83a78beadb4b1a7f203a"
+}

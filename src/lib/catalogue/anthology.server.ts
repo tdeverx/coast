@@ -8,6 +8,7 @@ import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { logDiagnostic } from '#lib/server/diagnostics/index.js';
 import type { Metadata } from '#lib/providers/contracts.js';
 import type { TmdbAdapter } from '#lib/providers/tmdb/adapter.server.js';
+import { getTraktCommunity } from '#lib/providers/trakt/connection.server.js';
 import { ingestMetadata, type CatalogueTransaction } from './service.server.js';
 
 export const anthologyTmdb = 'tmdb:anthology';
@@ -45,39 +46,58 @@ const grouping = providerSingleFlight<boolean>('tmdb-anthology');
 const unresolved = providerCache<false>(128, 5 * 60_000);
 
 /** Only hydrate catalogue rows with competing TMDB IDs on a shared series. */
-export async function reconcileAnthology(adapter: TmdbAdapter, showId: string, current: Metadata): Promise<boolean | null> {
-  if (!current.externalIds?.tvdb)
-    return await anthologySeason(current.externalId) ? true : null;
-  const sources = await getDb().execute<{ id: string; mapped: boolean; unclaimedHierarchy: boolean }>(sql`
+export async function reconcileAnthology(adapter: TmdbAdapter, showId: string, current: Metadata, traktTvdbId?: string): Promise<boolean | null> {
+  const currentSeries = current.externalIds?.tvdb ?? traktTvdbId;
+  const canAdopt = singleSeason(current);
+  const sources = await getDb().execute<{ id: string; mapped: boolean; unclaimedHierarchy: boolean; series: string | null }>(sql`
     with hierarchy as (
       select count(*)>1 and bool_or(not exists(
         select 1 from external_ids owner where owner.media_id=season.media_id and owner.provider=${anthologyTmdb}
-      )) as unclaimed from seasons season where season.show_id=${showId} and season.season_number>0
+      )) as unclaimed from seasons season where ${canAdopt} and season.show_id=${showId} and season.season_number>0
     )
-    select root.external_id as id, grouped.id is not null as mapped, hierarchy.unclaimed as "unclaimedHierarchy"
+    select root.external_id as id, grouped.id is not null as mapped, hierarchy.unclaimed as "unclaimedHierarchy",
+      case when ${currentSeries ?? null}::text is null then
+        (select min(alias.external_id) from external_ids alias where alias.media_id=${showId}
+          and alias.provider='tvdb' and alias.media_kind='show' having count(*)=1) end as series
     from external_ids root left join external_ids grouped
       on (grouped.provider,grouped.external_id,grouped.media_kind)=(${anthologyTmdb},root.external_id,'season')
     cross join hierarchy
     where root.media_id=${showId} and root.provider='tmdb' and root.media_kind='show'
     order by root.external_id limit ${maxStories + 1}`);
-  const adopt = !!sources[0]?.unclaimedHierarchy && singleSeason(current) && !sources.some(source => source.id === current.externalId && source.mapped);
+  const adopt = !!sources[0]?.unclaimedHierarchy && !sources.some(source => source.id === current.externalId && source.mapped);
   if (sources.length < 2 && !adopt) return sources[0]?.mapped ? true : null;
   if (sources.every(source => source.mapped)) return true;
+  const series = currentSeries ?? sources[0]?.series;
+  // Competing titles cannot safely fall back to the ordinary numbering-based import.
+  if (!series) return sources.length > 1 ? false : null;
   // A shared series ID is insufficient to match children by number.
   if (sources.length > maxStories) return false;
-  const key = JSON.stringify([adapter.cacheScope, showId, adopt ? current.externalId : null, sources.map(source => source.id)]);
+  const key = JSON.stringify([adapter.cacheScope, showId, adopt ? current.externalId : null, series,
+    !current.externalIds?.tvdb && traktTvdbId ? current.externalId : null, sources.map(source => source.id)]);
   if (unresolved.peek(key) === false) return false;
   return grouping(key, async () => {
     let stories: Story[];
     try {
+      let community: ReturnType<typeof getTraktCommunity> | undefined;
+      const confirmSeries = async (title: Metadata) => {
+        if (title.externalIds?.tvdb) return title.externalIds.tvdb === series;
+        if (title.externalId === current.externalId && traktTvdbId) return traktTvdbId === series;
+        const trakt = await (community ??= getTraktCommunity());
+        const ids = await trakt?.adapter.lookupIds('show', title.externalId);
+        return String(ids?.tmdb) === title.externalId && String(ids?.tvdb) === series;
+      };
+      if (!await confirmSeries(current)) return unresolved.store(key, false);
       const nativeSeason = adopt ? await adapter.season(current.externalId, 1) : undefined;
       if (nativeSeason && await matchExistingSeason(adapter, showId, current, nativeSeason)) return true;
       if (sources.length < 2) return unresolved.store(key, false);
       const titles = await mapConcurrent(sources, 3, source => source.id === current.externalId
         ? Promise.resolve(current) : adapter.details('show', source.id, false));
       const dates = titles.map(title => title.releaseDate);
-      if (titles.some(title => !singleSeason(title) || title.externalIds?.tvdb !== current.externalIds?.tvdb) ||
+      if (titles.some(title => !singleSeason(title)) ||
           dates.some(date => !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) || new Set(dates).size !== titles.length)
+        return unresolved.store(key, false);
+      const siblings = titles.filter(title => title.externalId !== current.externalId);
+      if (!(await mapConcurrent(siblings, 3, confirmSeries)).every(Boolean))
         return unresolved.store(key, false);
       titles.sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!));
       stories = await mapConcurrent(titles, 3, async title => {
@@ -161,6 +181,7 @@ function placements(stories: readonly Story[], oldSeasons: readonly LegacyRow[],
   for (const row of oldEpisodes) {
     if (!row.aliases.length || row.aliases.some(id => !byEpisode.has(id))) return;
     const proven = row.watchedIds ?? [];
+    if (proven.some(id => !row.aliases.includes(id))) return;
     const owners = new Set((proven.length ? proven : row.aliases).map(id => byEpisode.get(id)));
     if (row.ambiguous || owners.size !== 1 || owners.has(undefined)) return;
     const owner = [...owners][0]!;
@@ -236,9 +257,20 @@ async function installAnthology(tx: CatalogueTransaction, showId: string, storie
       from tracking_events te
       left join lateral (
         select distinct r.record->'episode'->'ids'->>'tmdb' as id
-        from trakt_import_stages s join trakt_import_records r on r.stage_id=s.id
-          and r.observed_media_id=te.media_id and r.applied
-        where s.category='history' and te.source='trakt' and te.source_event_id=
+        from trakt_import_stages s
+        join outbox_actions job on job.id=s.action_id and job.user_id=te.user_id
+          and job.connection_id=s.connection_id and job.account_generation=s.account_generation
+        join lateral (
+          select saved.record from trakt_import_records saved
+          where saved.stage_id=s.id and saved.applied and saved.observed_media_id=te.media_id
+          union all
+          -- A history refresh clears observations, but the event's date still locates its staged row.
+          select fresh.record from trakt_import_records fresh
+          where fresh.stage_id=s.id and not fresh.applied and fresh.observed_media_id is null
+            and fresh.sort_key=substring(te.source_event_id from '^[^:]+:history:[^:]+:(.*)$')
+        ) r on true
+        where s.category='history' and s.connection_id::text=split_part(te.source_event_id,':',1)
+          and te.source='trakt' and te.action='watch' and te.applied and te.source_event_id=
           s.connection_id::text||':history:'||coalesce(r.record->>'id',r.record->'episode'->'ids'->>'trakt')||':'||(r.record->>'watched_at')
       ) proven on true where te.media_id=any(${ids}::uuid[]) group by te.media_id`);
     const byId = new Map(proofs.map(proof => [proof.id, proof]));

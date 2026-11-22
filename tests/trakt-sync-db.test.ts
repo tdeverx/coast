@@ -12,6 +12,7 @@ import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import * as tmdb from '../src/lib/providers/tmdb/connection.server';
 import { resolveTrakt } from '../src/lib/catalogue/trakt-identity.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
+import * as trakt from '../src/lib/providers/trakt/connection.server';
 import { executeTraktListExport, exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
 import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
@@ -36,12 +37,12 @@ const remoteItems = [
   {id:100,type:'show',show},
 ];
 
-function anthologyFixture(base: number) {
+function anthologyFixture(base: number, hasSeriesId = () => true) {
   const calls: string[] = [];
   const showFor = (part: number) => ({
     id: base + part, name: part === 1 ? 'First story' : 'Second story',
     first_air_date: `${2016 + 4 * part}-10-01`,
-    external_ids: { tvdb_id: base + 10 },
+    external_ids: hasSeriesId() ? { tvdb_id: base + 10 } : {},
     seasons: [{ id: base + 20 + part, season_number: 1, name: 'Miniseries' }],
   });
   const episodeFor = (part: number) => ({
@@ -355,15 +356,27 @@ run('anthology source IDs keep seasons and Trakt ratings distinct even when the 
   }
 });
 
-run('a legacy collapsed anthology keeps the exact imported watch and moves only the other source alias', async () => {
+run.each([
+  ['original history stage', false],
+  ['refreshed history stage with missing TMDB series IDs', true],
+] as const)('a legacy collapsed anthology preserves the exact imported watch using its %s', async (_scenario, refreshed) => {
   const db = getDb();
-  const base = numericId + 200;
-  const fixture = anthologyFixture(base);
+  const base = numericId + (refreshed ? 250 : 200);
+  let hasSeriesId = true;
+  const fixture = anthologyFixture(base, () => hasSeriesId);
   const tmdbConnection = spyOn(tmdb, 'getTmdb').mockResolvedValue(fixture.adapter);
+  const lookups: string[] = [];
+  const traktConnection = spyOn(trakt, 'getTraktCommunity').mockResolvedValue({
+    instanceId, cacheScope: 'replay-fixture', adapter: new TraktAdapter(async path => {
+      lookups.push(path);
+      return [{ show: fixture.showRecord(2) }];
+    }, 'fixture-client', 'fixture-secret'),
+  });
   try {
     const root = await importTmdb('show', String(base + 1));
     mediaIds.push(root.id);
     const [oldEpisode] = await db.select().from(episodes).where(eq(episodes.showId, root.id));
+    mediaIds.push(oldEpisode.mediaId, oldEpisode.seasonId!);
     await db.update(externalIds).set({ externalId: `${base + 2}:season:1` }).where(and(
       eq(externalIds.mediaId, oldEpisode.seasonId!), eq(externalIds.provider, 'tmdb'), eq(externalIds.mediaKind, 'season')
     ));
@@ -378,29 +391,41 @@ run('a legacy collapsed anthology keeps the exact imported watch and moves only 
     }).returning();
     const [stage] = await db.insert(traktImportStages).values({
       actionId: job.id, connectionId: connection.id, accountGeneration: connection.accountGeneration,
-      category: 'history', phase: 'applying', activity: 'proof',
+      category: 'history', phase: 'applying', activity: 'proof', restarts: refreshed ? 1 : 0,
     }).returning();
     const watched = '2026-01-12T00:00:00.000Z';
     const [event] = await db.insert(trackingEvents).values({
       mediaId: oldEpisode.mediaId, userId, source: 'trakt', action: 'watch',
-      occurredAt: new Date(watched), sourceEventId: connection.id + ':history:32:' + watched,
+      occurredAt: new Date(watched), sourceEventId: `${connection.id}:history:${base}:${watched}`,
     }).returning();
-    await db.insert(traktImportRecords).values({
-      stageId: stage.id, ordinal: 0, sortKey: '0', applied: true, observedMediaId: oldEpisode.mediaId,
-      record: { id: 32, watched_at: watched, show: fixture.showRecord(1), episode: source },
-    });
+    const [observation] = await db.insert(traktImportRecords).values({
+      stageId: stage.id, ordinal: 0, sortKey: watched, applied: !refreshed,
+      observedMediaId: refreshed ? null : oldEpisode.mediaId,
+      record: { id: base, watched_at: watched, show: fixture.showRecord(1), episode: source },
+    }).returning();
 
-    await importTmdb('show', String(base + 2));
+    if (refreshed) {
+      await db.insert(externalIds).values({
+        mediaId: root.id, provider: 'tmdb', externalId: String(base + 2), mediaKind: 'show',
+      });
+      hasSeriesId = false;
+      expect((await resolveTrakt({ show: fixture.showRecord(1), episode: source }))?.id).toBe(oldEpisode.mediaId);
+    } else {
+      await importTmdb('show', String(base + 2));
+    }
     const children = await db.select().from(episodes).where(eq(episodes.showId, root.id)).orderBy(episodes.seasonNumber);
     mediaIds.push(...children.flatMap(row => [row.mediaId, row.seasonId!]));
     expect(children.map(row => row.seasonNumber)).toEqual([1, 2]);
     expect(children[0].mediaId).toBe(oldEpisode.mediaId);
     expect(await db.select().from(trackingEvents).where(eq(trackingEvents.id, event.id))).toEqual([event]);
+    expect(await db.select().from(traktImportRecords).where(eq(traktImportRecords.stageId, stage.id))).toEqual([observation]);
+    expect(lookups).toEqual(refreshed ? [`/search/tmdb/${base + 2}?type=show`] : []);
     const aliases = await db.select().from(externalIds).where(and(eq(externalIds.provider, 'tmdb'),
       inArray(externalIds.externalId, [String(base + 31), String(base + 32)])));
     expect(aliases.find(row => row.externalId === String(base + 31))?.mediaId).toBe(children[0].mediaId);
     expect(aliases.find(row => row.externalId === String(base + 32))?.mediaId).toBe(children[1].mediaId);
   } finally {
+    traktConnection.mockRestore();
     tmdbConnection.mockRestore();
   }
 });
@@ -426,6 +451,23 @@ run('unverifiable history on a collapsed episode leaves every legacy link and wa
     expect(alias.mediaId).toBe(episode.mediaId);
     await expect(resolveTrakt({ show: fixture.showRecord(2), episode: fixture.episodeRecord(2) }))
       .rejects.toThrow('Conflicting provider identities');
+  } finally {
+    tmdbConnection.mockRestore();
+  }
+});
+
+run('an unresolved second source cannot overwrite the legacy episode by season number', async () => {
+  const db = getDb(), base = numericId + 350;
+  const fixture = anthologyFixture(base, () => false);
+  const tmdbConnection = spyOn(tmdb, 'getTmdb').mockResolvedValue(fixture.adapter);
+  try {
+    const root = await importTmdb('show', String(base + 1));
+    const [episode] = await db.select().from(episodes).where(eq(episodes.showId, root.id));
+    mediaIds.push(root.id, episode.mediaId, episode.seasonId!);
+    await db.insert(externalIds).values({ mediaId: root.id, provider: 'tmdb', externalId: String(base + 2), mediaKind: 'show' });
+    await importTmdb('show', String(base + 2));
+    expect(fixture.calls).not.toContain(`/3/tv/${base + 2}/season/1`);
+    expect(await db.select().from(episodes).where(eq(episodes.showId, root.id))).toEqual([episode]);
   } finally {
     tmdbConnection.mockRestore();
   }

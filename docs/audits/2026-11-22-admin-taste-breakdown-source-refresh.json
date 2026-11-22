@@ -1,0 +1,56 @@
+{
+  "epoch": "admin-taste-breakdown-local-2026-11-22",
+  "baseline": "bb992c6c87c574a096e633bc14cc32ae7e1a46e2",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/profile/TasteMatch.svelte": {
+      "previous": "2de7b3582226ec1ff60dffe553858ffdd8d24c2ab133534ebd4ff26087d616fd",
+      "current": "e56d83111f6a7b51000aa38fa9e18c13a15bb42e9be05b0bd9a76ad010f7150b"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "1455f0d2512c4d29b45d64e0155e18f1ce0789ca403a15fa4cf7af72908db60f",
+      "current": "e1c8b031eff394246d6ab79b43bbf429b936f5c66f6ff100adc44336b00c3756"
+    },
+    "src/lib/social/taste-profile.ts": {
+      "previous": "07740d774bdc52acee676319c6fad8ad10bdbb92ce0fec6d1bd0cac87e55f841",
+      "current": "cca9aa40b1f37405b18d4c9b40154aecf1cfa04139280b53cc5c14531cba4f8d"
+    },
+    "src/lib/social/taste-rating-model.ts": {
+      "previous": "526f3b62e61551b5a76b1f1f8883f2d1b46f18d0b6003959072c955d5303c968",
+      "current": "cefc1abfd273d258b5aad431812226913ee75b01ac501835d92e8ac22e78c290"
+    },
+    "src/lib/social/collection-taste.server.ts": {
+      "previous": "6ecf4898765ab30e880931954fbf1b7813c58168e329f04689d779e2094235fb",
+      "current": "804c89c5211c5938dc44514ae5f3a3db01a1f3b4471d5c2baa0c1496a3d94385"
+    },
+    "tests/taste-cache-db.test.ts": {
+      "previous": "b942de7c9099d75534e89451c6f64643d08e201c19c427097c98b5f5bcfe5fbe",
+      "current": "9a63cea7962158f82880816e99abba11b5f8629d0d7d8f0469e17c6428e1f68f"
+    },
+    "tests/taste-collection-db.test.ts": {
+      "previous": "4eb37ff0a6791028de3aea954ed8b9ace1520c0bb6ab8f4e7991b11d3540447b",
+      "current": "c354015e837744de2daf19540fe4a928bf388c04e193f38a32e96d3751e266b5"
+    },
+    "tests/taste-profile.test.ts": {
+      "previous": "69dbea8d188141112b8083de39773ac697060909371459ab5bc93b43a57aef65",
+      "current": "ee8b28f2b9bfab84ab7e3ce5b395ba6b48bf8535852b28f0aa9001e84471de69"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "cd90b40d5a647e22322ae4cb7796f4c3ea0f68573d5fa5f07f7bcf07736a9498",
+      "current": "d2e811390b1d1bad3883dea750fa2f23a91ceb750096dc2cc1cefd6effae8918"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "361da738f0205270292552e7b64af737e11f81625fccb4b618c198547f5fb10d",
+      "current": "d1b23da2d022e4699ce139805a925efa85bb084f1556da461be527f66c16f327"
+    },
+    "tests/ui-reference.test.ts": {
+      "previous": "7f7ab2b1bc6b550bb4a55a3840d4d5a1d0efe5f1381e92e37c4af3fe9bbe39df",
+      "current": "cb26ce3b6440f32d326fa7092884ec5d5e4b7635b96c358ee51a13959a387d0e"
+    }
+  },
+  "supportingFiles": {
+    "src/lib/profile/TasteBreakdown.svelte": "bda21e4492285d6a36e749cb355790072d14653b3673b0d1982a4b2f267581e3"
+  },
+  "report": "docs/audits/2026-11-22-admin-taste-breakdown.md",
+  "reportSha256": "213c5f1f0c0680c6aef3aaafeceb8e8a09d6694881d09f7bc5f91e942af6f297"
+}

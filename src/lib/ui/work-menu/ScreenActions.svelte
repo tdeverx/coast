@@ -76,7 +76,7 @@
     menuOnly?: boolean;
     showTrigger?: boolean;
     entryActions?: Snippet;
-    tasteAction?: Snippet<[string?]>;
+    tasteAction?: Snippet<[workId?: string, rating?: number | null]>;
   } = $props();
   type View =
     | 'root'
@@ -764,7 +764,7 @@
           editAdmin = true;
           editOpen = true;
         }}>Edit metadata…</Button>{/if}
-    {@render tasteAction?.(active.id)}
+    {@render tasteAction?.(active.id, active.rating)}
   {/if}
 {/snippet}
 {#if readOnly()}<Button href={`/media/${item.id}`} size="hero">Learn more</Button>{:else}

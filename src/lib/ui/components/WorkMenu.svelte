@@ -31,7 +31,7 @@
   const entryOperation = createOperation(useRetention());
   const entry = $derived(menuOnly ? item.listContext : undefined);
   let removal = $state<NonNullable<MediaView['listContext']>>();
-  let taste = $state<(NonNullable<ReturnType<typeof detailTaste>> & { scope: string })>();
+  let taste = $state<(NonNullable<ReturnType<typeof detailTaste>> & { rating?: number | null; scope: string })>();
   const canCalculateTaste = $derived(page.data.user?.role === 'admin' && canShowTaste(item, page.data.capabilities));
   reportFailure(() => entryOperation.error);
 
@@ -84,7 +84,7 @@
   {:else if isScreenWork(item)}<ScreenActions entryActions={entry ? entryMenu : undefined} tasteAction={canCalculateTaste ? calculateTaste : undefined} bind:this={screen} {editionName} {item} {context} {next} {requestable} {hero} {menuOnly} {showTrigger} />
   {:else}<CatalogueActions entryActions={entry ? entryMenu : undefined} tasteAction={canCalculateTaste ? calculateTaste : undefined} bind:this={catalogue} {item} {hero} {gameState} {readingState} {selectedPlaythrough} {ongamecreated} {onchanged} {refreshGame} primary={hero && !menuOnly} {showTrigger} />{/if}
   {#if canCalculateTaste && taste?.scope === identity}
-    <TasteMatch workId={taste.workId} group={taste.group} adminTitle={item.title} onclose={() => { taste = undefined; }} />
+    <TasteMatch workId={taste.workId} group={taste.group} rating={taste.rating} adminTitle={item.title} onclose={() => { taste = undefined; }} />
   {/if}
   {#if entry}
     <Dialog open={!!removal} onclose={() => { removal = undefined; }} title="Remove this entry?"
@@ -97,10 +97,10 @@
   {/if}
 {/key}
 
-{#snippet calculateTaste(resolvedWorkId?: string)}
+{#snippet calculateTaste(resolvedWorkId?: string, rating?: number | null)}
   {@const target = detailTaste(item, resolvedWorkId)}
   {#if target}
-    <Button item icon="heart" disabled={preview} onclick={() => { taste = {...target, scope: identity}; }}>Calculate taste score</Button>
+    <Button item icon="heart" disabled={preview} onclick={() => { taste = {...target, rating, scope: identity}; }}>Calculate taste score</Button>
   {/if}
 {/snippet}
 
