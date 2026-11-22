@@ -38,9 +38,10 @@ import traktFeatureSourceRefresh from '../docs/audits/2026-11-21-trakt-feature-p
 import tmdbOrderSetupSourceRefresh from '../docs/audits/2026-11-21-tmdb-episode-order-and-setup-source-refresh.json';
 import playbackViewportCropSourceRefresh from '../docs/audits/2026-11-21-playback-viewport-crop-source-refresh.json';
 import playbackSystemMediaSourceRefresh from '../docs/audits/2026-11-21-playback-system-media-source-refresh.json';
+import automaticAnthologiesSourceRefresh from '../docs/audits/2026-11-22-automatic-anthologies-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
-const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh];
+const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh];
 const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
@@ -54,6 +55,16 @@ async function expectCurrentSource(path: string, historicalHash: string, detail:
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);
 }
+
+test('automatic anthology grouping retains its scoped catalogue and sync evidence', async () => {
+  const review = automaticAnthologiesSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  for (const [path, pin] of Object.entries(review.files))
+    await expectCurrentSource(path, pin.current, 'Review attribution, exact provider targets and bounded grouping.');
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the atomic anthology placement and ownership rules.');
+  await expectCurrentSource(review.report, review.reportSha256, 'Review the verification boundaries.');
+});
 
 test('per-feature Trakt permissions retain their scoped verification', async () => {
   const review = traktFeatureSourceRefresh;

@@ -217,6 +217,7 @@ export function diagnosticErrorCode(error: unknown) {
     for (let depth = 0; depth < 5 && cause && typeof cause === 'object'; depth++) {
       const { code, errno, cause: next } = cause as { code?: unknown; errno?: unknown; cause?: unknown };
       if (code === '40P01' || errno === '40P01') return 'local.database-deadlock';
+      if (code === '21000' || errno === '21000') return 'local.database-cardinality';
       for (const known of systemDiagnosticCodes) if (code === known || errno === known) return known;
       cause = next;
     }

@@ -36,7 +36,7 @@ for(const stage of ['mapped-user','permissions','options']){
  const instanceTransport=load(transportCode,'instanceTransport',{instanceFetchConfig,createProviderTransport});
  const base={...tables,v,getDb,eq:()=>{},and:()=>{},sql:()=>{},getConfig:async()=>({enableRequests:true}),getInstance:async()=>instance,decryptCredential:async()=>'{"apiKey":"inert"}',SeerrAdapter,instanceTransport,saveConnection:async()=>{throw Error('Existing fixture account must not remap');},assertSeerrAccount:async()=>{},PermanentActionError:Error};
  const getSeerr=load(connectionCode,'getSeerr',base);
- const requestOptions=load(optionsCode,'requestOptions',{...base,getSeerr,getFeatureConfig:async()=>({features:{screen:true,requests:true}}),ProviderActionError,instanceFetchConfig});
+ const requestOptions=load(optionsCode,'requestOptions',{...base,getSeerr,getFeatureConfig:async()=>({features:{screen:true,requests:true}}),requestIdentity:async()=>({id:1,kind:'movie',season:null}),ProviderActionError,instanceFetchConfig});
  const handle=load(handlerCode,'handleRequests',{requestOptions,uuid:(value:string)=>value,json:(value:unknown)=>value});
  const pending=handle({uid:'viewer',path:['requests','options'],method:'GET',request,url:new URL(request.url),body:{}});void pending.catch(()=>{});
  try{

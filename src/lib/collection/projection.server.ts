@@ -6,7 +6,8 @@ import { getDb, getSql } from '#lib/server/db/index.js';
 import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews } from '#lib/server/db/schema.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
-import { exportIdentities } from '#lib/sync/trakt-identity.server.js';
+import { exportTargets } from '#lib/sync/trakt-identity.server.js';
+import { anthologyTmdb } from '#lib/catalogue/anthology.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import { collectionCTE, collectionRead } from './query.server';
@@ -46,10 +47,19 @@ export async function readProjectionRemote(adapter:TraktAdapter):Promise<Map<str
   for await (const page of adapter.collectionEpisodePages()) {
     if (!page.length) continue;
     const db = getSql();
-    const episodeIds = page.map(record => String(record.episode.ids.trakt));
-    const mappings = await db<{ external_id: string; media_id: string }[]>`
-      select external_id, media_id from external_ids
-      where provider='trakt' and media_kind='episode' and external_id=any(${db.array(episodeIds, 'TEXT')})
+    const requested = page.map(record => ({
+      trakt: String(record.episode.ids.trakt),
+      episode: record.episode.ids.tmdb ? String(record.episode.ids.tmdb) : null,
+      show: record.show.ids.tmdb ? String(record.show.ids.tmdb) : null,
+    }));
+    const mappings = await db<{ external_id: string; media_id: string | null }[]>`
+      select item.trakt as external_id,
+        case when story.id is null then native.media_id else verified.media_id end as media_id
+      from jsonb_to_recordset(${JSON.stringify(requested)}::text::jsonb) as item(trakt text,episode text,show text)
+      left join external_ids native on (native.provider,native.media_kind,native.external_id)=('trakt','episode',item.trakt)
+      left join external_ids story on (story.provider,story.media_kind,story.external_id)=(${anthologyTmdb},'season',item.show)
+      left join external_ids tmdb on (tmdb.provider,tmdb.media_kind,tmdb.external_id)=('tmdb','episode',item.episode)
+      left join episodes verified on verified.media_id=coalesce(tmdb.media_id,native.media_id) and verified.season_id=story.media_id
     `;
     const known = new Map(mappings.map(row => [row.external_id, row.media_id]));
     for (const record of page) {
@@ -75,17 +85,21 @@ export async function desiredProjection(userId:string,configuration:ProjectionCo
   const blocked=(configuration.source==='server'||configuration.availableOnly)&&((Number(freshness[0]?.total??0)===0&&Number(freshness[0]?.excluded??0)===0)||Number(freshness[0]?.uncertain??0)>0);
   const roots=configuration.source==='server'?sql`select distinct a.media_id as id from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled and ${selected} and not coalesce(${excluded},false)`:
     sql`select c.id from collection c where exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'origin' in ('direct','inherited') and (${configuration.source}='personal' or r->>'relationship'='collected'))`;
-  const rows=await collectionRead(sql`${collectionCTE(userId,userId,'all','all','all',(await getConfig()).metadataSource)}, roots as (${roots}) select distinct a.id,a.title,a.kind,a.release_date,e.show_id,e.season_number,e.episode_number
+  const rows=await collectionRead(sql`${collectionCTE(userId,userId,'all','all','all',(await getConfig()).metadataSource)}, roots as (${roots}) select distinct a.id,a.title,a.kind,a.release_date,e.show_id,e.season_id,e.season_number,e.episode_number,
+    exists(select 1 from external_ids x where x.media_id=e.season_id and x.provider=${anthologyTmdb}) as story
     from roots r join descendants d on d.root=r.id join assessments a on a.id=d.id left join episodes e on e.media_id=a.id
     where a.kind in ('movie','episode') and (a.id=r.id and (a.release_date is null or a.release_date::date<=current_date) or a.release_date::date<=current_date)
     and (${!configuration.availableOnly&&configuration.source!=='server'} or exists(select 1 from availability av join provider_connections c on c.id=av.connection_id join provider_instances i on i.id=c.instance_id where av.user_id=${userId} and av.media_id=a.id and av.state='available' and c.status='connected' and i.enabled and ${selected} and not coalesce(${excluded},false)))`);
   const entries=new Map<string,Entry>(),unresolved:string[]=[];
-  const identities=await exportIdentities(rows.map(row=>row.kind==='movie'
-    ?{mediaId:String(row.id),kind:'movie' as const}:{mediaId:String(row.show_id),kind:'show' as const}));
+  const identities=await exportTargets(rows.map(row=>row.kind==='movie'
+    ?{mediaId:String(row.id),kind:'movie' as const}:row.story
+      ?{mediaId:String(row.season_id),kind:'season' as const}:{mediaId:String(row.show_id),kind:'show' as const}));
   for(const [index,row] of rows.entries()){
     const id=String(row.id),kind=row.kind as 'movie'|'episode';let payload:Record<string,unknown>;
-    if(kind==='movie'){const ids=identities[index];if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={movies:[{ids}]};}
-    else {const ids=identities[index];if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={shows:[{ids,seasons:[{number:row.season_number,episodes:[{number:row.episode_number}]}]}]};}
+    const ids = identities[index]?.ids;
+    if(!ids || !Object.keys(ids).length){unresolved.push(String(row.title));continue;}
+    if(kind==='movie') payload={movies:[{ids}]};
+    else payload={shows:[{ids,seasons:[{number:row.story?1:row.season_number,episodes:[{number:row.episode_number}]}]}]};
     entries.set(id,{workId:id,title:String(row.title),payload,snapshot:{}});
   }
   return {entries,unresolved,blocked};

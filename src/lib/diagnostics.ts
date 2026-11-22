@@ -226,6 +226,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'provider.invalid-data',
       'provider.interrupted',
       'local.database-deadlock',
+      'local.database-cardinality',
       'provider.timeout',
       'local.provider-busy', 'local.provider-queue-timeout',
       'action.rejected', 'local.action-rejected', 'local.feature-disabled',

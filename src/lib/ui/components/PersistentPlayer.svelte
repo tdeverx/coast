@@ -1124,12 +1124,12 @@
     inset: 0;
     z-index: 90;
     pointer-events: none;
-    transition:
-      opacity var(--motion) var(--ease),
-      visibility var(--motion);
   }
   .playback-chrome > * {
     pointer-events: auto;
+    transition:
+      opacity var(--motion) var(--ease),
+      visibility var(--motion);
   }
   .player video {
     position: absolute;
@@ -1219,7 +1219,7 @@
     accent-color: var(--ink);
   }
   .volume input.muted { accent-color: var(--muted); opacity: .55; }
-  .chrome-hidden {
+  .chrome-hidden > * {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;

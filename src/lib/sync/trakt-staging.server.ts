@@ -8,6 +8,7 @@ import { compactTraktHistory } from './trakt-history';
 import { reconcileProviderValue, type ValueCategory } from './values.server';
 import { reconcileProviderList } from './list-values.server';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
+import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Decision = 'agree'|'local'|'remote'|'conflict';
@@ -143,6 +144,7 @@ export async function stagedTraktCategory(options: {
       await reload();await jobCheckpoint();continue;
     }
     const previous=await db.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.category,category),
+      sql`not ${isAnthologyRoot(syncValues.mediaId)}`,
       sql`(${stage.cleanedThrough}::uuid is null or ${syncValues.mediaId}>${stage.cleanedThrough}::uuid)`,
       sql`not exists(select 1 from trakt_import_records r where r.stage_id=${stage.id} and r.observed_media_id=${syncValues.mediaId})`
     )).orderBy(asc(syncValues.mediaId)).limit(20);

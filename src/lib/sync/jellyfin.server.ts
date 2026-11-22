@@ -40,6 +40,7 @@ import { PermanentActionError, tagDiagnosticStage } from '#lib/server/queue/inde
 import { notify } from '#lib/server/notifications/index.js';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { ingestMetadata } from '#lib/catalogue/service.server.js';
+import { anthologySeason, anthologyTmdb } from '#lib/catalogue/anthology.server.js';
 import type { AvailableItem } from '#lib/providers/contracts.js';
 import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '#lib/providers/jellyfin/access-proof.server.js';
 
@@ -339,6 +340,7 @@ async function runJellyfinScan(
       item = detail;
     }
     let showId: string | undefined, seasonId: string | undefined;
+    let canonicalSeason = item.seasonNumber;
     if (!known && (item.kind === 'episode' || item.kind === 'season')) {
       let sourceShowId = item.showId;
       if (!sourceShowId && item.parentId) {
@@ -354,7 +356,14 @@ async function runJellyfinScan(
       }
       if (!sourceShowId) throw new MissingJellyfinShowIdentity();
       const [parent] = await db
-        .select()
+        .select({
+          mediaId: providerItems.mediaId,
+          storyNumber: item.seasonNumber === 1 ? sql<number | null>`(
+            select season.season_number from external_ids source join seasons season on season.media_id=source.media_id
+            where (source.provider,source.external_id,source.media_kind)=
+              (${anthologyTmdb},provider_items.snapshot->'externalIds'->>'tmdb','season') and season.show_id=provider_items.media_id
+          )` : sql<null>`null`,
+        })
         .from(providerItems)
         .where(
           and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, sourceShowId), eq(providerItems.kind, 'show'))
@@ -364,11 +373,14 @@ async function runJellyfinScan(
       const resolvedShow = parent?.mediaId || (parentItem?.kind === 'show' ? await importItem(parentItem, ancestry) : null);
       if (!resolvedShow) return null;
       showId = resolvedShow;
+      const tmdbId = parentItem?.metadata.externalIds?.tmdb;
+      const story = item.seasonNumber === 1 && tmdbId ? await anthologySeason(tmdbId) : undefined;
+      canonicalSeason = parent?.storyNumber ?? (story?.showId === showId ? story?.seasonNumber : undefined) ?? item.seasonNumber;
       if (item.kind === 'episode') {
         const [existing] = await db
           .select()
           .from(seasons)
-          .where(and(eq(seasons.showId, showId), eq(seasons.seasonNumber, item.seasonNumber ?? 0)));
+          .where(and(eq(seasons.showId, showId), eq(seasons.seasonNumber, canonicalSeason ?? 0)));
         if (existing) seasonId = existing.mediaId;
         else if (item.parentId && jellyfinItemKey(item.parentId) !== jellyfinItemKey(sourceShowId)) {
           const parentItem = await readHierarchyItem(item.parentId);
@@ -395,7 +407,7 @@ async function runJellyfinScan(
     item.metadata.backdropPath = item.metadata.artwork.backdrop;
     const saved =
       known?.saved ??
-      (await ingestMetadata(item.metadata, {
+      (await ingestMetadata({ ...item.metadata, seasonNumber: canonicalSeason }, {
         instanceId: instance.id,
         showId,
         seasonId,

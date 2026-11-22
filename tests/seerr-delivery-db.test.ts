@@ -32,9 +32,9 @@ afterAll(async()=>{
   await db.delete(s.works).where(eq(s.works.id,mediaId));
 });
 
-async function fixture(kind:'seerr.request'|'seerr.manage',conflict=false){
+async function fixture(kind:'seerr.request'|'seerr.manage',conflict=false,target={mediaId,seasons:[] as number[]}){
   const db=getDb();
-  const [request]=await db.insert(s.mediaRequests).values({userId:scope.userId,instanceId:scope.instanceId,mediaId,
+  const [request]=await db.insert(s.mediaRequests).values({userId:scope.userId,instanceId:scope.instanceId,...target,
     externalId:kind==='seerr.manage'?'123':null,state:'pending'}).returning();
   const payload=kind==='seerr.request'?{requestId:request.id}:{requestId:request.id,action:'approve',resolved:!conflict,expectedState:'pending'};
   const [row]=await db.insert(s.outboxActions).values({userId:scope.userId,connectionId:scope.connectionId,
@@ -42,14 +42,16 @@ async function fixture(kind:'seerr.request'|'seerr.manage',conflict=false){
   const action:OutboxAction={...row,accountGeneration:row.accountGeneration,correlationId:row.correlationId};
   let entered!:()=>void,release!:()=>void;
   const ready=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+  const submissions: unknown[]=[];
   const adapter=new SeerrAdapter(async(path,init)=>{
     if(path.endsWith('/auth/me'))return account;
     if(path.includes('/movie/'))return{id:1992000001,seasons:[]};
+    if(path.includes('/tv/'))return{id:1992000003,seasons:[{seasonNumber:1,episodeCount:8}]};
     if(conflict&&path.endsWith('/request/123')&&init?.method!=='POST'){
       entered();await gate;return{id:123,status:3,requestedBy:{id:42}};
     }
     if(path.endsWith('/request/123'))return{id:123,status:1,requestedBy:{id:42}};
-    if(init?.method==='POST'){entered();await gate;return{id:123,status:2};}
+    if(init?.method==='POST'){if(init.body)submissions.push(JSON.parse(String(init.body)));entered();await gate;return{id:123,status:2};}
     throw new Error(`Unexpected fixture endpoint ${path}`);
   },'fixture',42);
   const resolve:typeof getSeerr=async(userId,instanceId,expected)=>{
@@ -59,7 +61,7 @@ async function fixture(kind:'seerr.request'|'seerr.manage',conflict=false){
   };
   const execute=(resolver=resolve)=>jobExecution.run({id:action.id,attempts:1,purpose:'interactive',started:performance.now(),checkpoints:0},
     ()=>kind==='seerr.request'?executeSeerrRequest(action,resolver):executeSeerrManagement(action,resolver));
-  return{request,action,execute,ready,release:()=>release()};
+  return{request,action,execute,ready,submissions,release:()=>release()};
 }
 
 run('request and management resolve only the queued identity and reject remapping before mutation',async()=>{
@@ -112,4 +114,27 @@ run('successful request and management publish the accepted state and baseline',
   const managing=managed.execute();await managed.ready;managed.release();await managing;
   expect((await db.select().from(s.mediaRequests).where(eq(s.mediaRequests.id,managed.request.id)))[0].state).toBe('approved');
   expect((await db.select().from(s.syncValues).where(eq(s.syncValues.category,`request:${managed.request.id}`)))[0]).toMatchObject({conflict:false,remote:{value:'approved'},agreed:{value:'approved'}});
+});
+
+run('an anthology request uses the standalone provider show and its native season', async () => {
+  const db = getDb();
+  const show = await ingestMetadata({provider:'tmdb',externalId:'1992000002',kind:'show',title:'Anthology'});
+  const story = await ingestMetadata({
+    provider:'tmdb',externalId:'1992000003:season:1',kind:'season',title:'Second story',seasonNumber:2,
+    externalIds:{'tmdb:anthology':'1992000003'},
+  },{showId:show.id});
+  try {
+    const f=await fixture('seerr.request',false,{mediaId:story.id,seasons:[2]});
+    const delivery=f.execute();
+    await Promise.race([f.ready,delivery]);
+    f.release();
+    await delivery;
+    expect(f.submissions).toMatchObject([{mediaType:'tv',mediaId:1992000003,seasons:[1]}]);
+    const [saved]=await db.select().from(s.mediaRequests).where(eq(s.mediaRequests.id,f.request.id));
+    expect(Array.from(saved.seasons)).toEqual([2]);
+    expect(saved).toMatchObject({externalId:'123',mediaId:story.id});
+  } finally {
+    await db.delete(s.media).where(eq(s.media.id,story.id));
+    await db.delete(s.media).where(eq(s.media.id,show.id));
+  }
 });

@@ -40,6 +40,8 @@ export async function requestPlaybackCandidates(scope: SeerrAccountScope, reques
         where target.id = request."mediaId" and target.kind = 'movie'
         union all select e.media_id, e.season_number, e.episode_number from episodes e
         where e.show_id = request."mediaId" and (request.seasons = '{}' and not e.is_special or e.season_number = any(request.seasons::integer[]))
+        union all select e.media_id, e.season_number, e.episode_number from episodes e
+        where e.season_id = request."mediaId" and not e.is_special
       ) target
       join availability a on a.media_id = target.id and a.user_id = ${scope.userId}
         and a.connection_id = ${scope.linkedConnectionId} and a.state = 'available'

@@ -27,6 +27,7 @@ function fixture(kind:'movie'|'show',details:unknown,permissions=SeerrPermission
   update:()=>({set:()=>({where:async()=>[]})}),execute:async()=>[],
   insert:()=>{counters.inserts++;throw Error('An already covered request must not enqueue work');},transaction:async(fn:(tx:unknown)=>unknown)=>fn(db)};
  const deps={...tables,v,getDb:()=>db,eq:()=>{},and:()=>{},sql:()=>{},groupDestination,seerrSeasonCoverage,requestClaimsQuality,requestDestinationLock,
+  requestIdentity:async()=>({id:1,kind,season:null}),
   getFeatureConfig:async()=>({features:{screen:true,requests:true}}),getSeerr:async()=>({adapter,account:{id:7,permissions},connection,linkedJellyfinUserId:'linked-user'}),
   ProviderActionError,instanceFetchConfig:async()=>{throw Error('Unexpected cache fallback');},getInstance:async()=>instance,
   uuid:v.pipe(v.string(),v.uuid()),requireFeature:async()=>{},requireFeatureInTransaction:async()=>{},connectionFor:async()=>({connection}),trackInTransaction:async()=>{},context:{getStore:()=>undefined},correlationId:()=>uuid};

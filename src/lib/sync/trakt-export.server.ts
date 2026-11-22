@@ -22,18 +22,20 @@ import { PermanentActionError } from '#lib/server/queue/index.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import type { SyncPreferences } from '#lib/providers/contracts.js';
 import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
-import { traktEntry, traktPlurals, exportIdentity } from '#lib/sync/trakt-identity.server.js';
+import { traktEntry, traktPlurals, exportIdentity, exportTarget } from '#lib/sync/trakt-identity.server.js';
 
 /** Read the provider value before overwriting it; imports alone cannot detect edits made since the last sync. */
 export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {
   const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
   if (!item || item.kind === 'collection' || category === 'favourite')
     throw new PermanentActionError('Unsupported Trakt value.');
-  const identity = await exportIdentity(mediaId, item.kind);
+  const target = await exportTarget(mediaId, item.kind);
+  if (!target) throw new PermanentActionError('This anthology has a Coast-only rating.');
+  const identity = target.ids;
   const matches = (record: TraktRecord) => {
     const entry = traktEntry(record);
     return (
-      entry?.kind === item.kind &&
+      entry?.kind === target.kind &&
       Object.entries(identity).some(
         ([provider, id]) =>
           String(entry.item.ids[provider as keyof typeof entry.item.ids]) === String(id)
@@ -51,12 +53,14 @@ export async function readTraktValue(adapter: TraktAdapter, mediaId: string, cat
       .from(episodes)
       .where(eq(episodes.mediaId, mediaId));
     if (!episode) throw new PermanentActionError('Episode identity is missing.');
-    const showIds = await exportIdentity(episode.showId, 'show');
+    const story = episode.seasonId ? await exportTarget(episode.seasonId, 'season') : undefined;
+    const grouped = story?.kind === 'show';
+    const showIds = grouped ? story.ids : await exportIdentity(episode.showId, 'show');
     for await (const page of adapter.collectionEpisodePages()) {
       if (page.some(record => {
         const comparable=Object.keys(identity).filter(provider=>record.episode.ids[provider as keyof typeof record.episode.ids]!=null);
         if(comparable.length)return matches(record);
-        return record.episode.season === episode.seasonNumber && record.episode.number === episode.episodeNumber &&
+        return record.episode.season === (grouped ? 1 : episode.seasonNumber) && record.episode.number === episode.episodeNumber &&
           Object.entries(showIds).some(([provider,id]) => String(record.show.ids[provider as keyof typeof record.show.ids]) === String(id));
       })) return { value:true };
     }
@@ -96,6 +100,8 @@ export async function executeTraktExport(
   const context = await getTrakt(userId, connectionId, 'export', category === 'favourite' ? undefined : category);
   if (!context.sync[category as keyof SyncPreferences]) return;
   const mediaId = String(input.mediaId);
+  const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, mediaId));
+  if (item?.kind === 'show' && !(await exportTarget(mediaId, item.kind))) return;
   const desired = {
     value: category === 'ratings' ? (input.remove ? null : input.value) : !input.remove,
   };
@@ -144,10 +150,12 @@ export async function exportTraktToAdapter(
   if (!item) throw new PermanentActionError('The Coast media item no longer exists.');
   if (item.kind === 'collection')
     throw new PermanentActionError('This media type cannot be exported to Trakt.');
-  const ids = await exportIdentity(item.id, item.kind);
+  const target = await exportTarget(item.id, item.kind);
+  if (!target) return;
+  const { ids } = target;
   if (!Object.keys(ids).length)
     throw new PermanentActionError('This title has no identity Trakt can match.');
-  const plural = traktPlurals[item.kind];
+  const plural = traktPlurals[target.kind];
   let occurredAt = data.occurredAt;
   if (data.eventId) {
     const [event] = await getDb()

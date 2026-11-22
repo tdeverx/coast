@@ -196,7 +196,9 @@ export async function enqueueAction(input: {
 export function jobFailureMessage(error: unknown, permanent: boolean) {
   if (error instanceof PermanentActionError && (error.reason === 'request-quota' || error.reason === 'request-covered'))
     return requestDeliveryMessages[error.reason];
-  if (safeDiagnosticErrorCode(error) === 'local.database-deadlock') return 'Concurrent database work conflicted. Coast will retry automatically; committed work is retained.';
+  const code = safeDiagnosticErrorCode(error);
+  if (code === 'local.database-deadlock') return 'Concurrent database work conflicted. Coast will retry automatically; committed work is retained.';
+  if (code === 'local.database-cardinality') return 'Coast found duplicate data in a database operation. Review diagnostics before retrying. Completed work is retained.';
   if (error instanceof ProviderQueueBusyError) return 'Coast is busy contacting connected services. This job will retry automatically.';
   if (classifyFailure(error) === 'timeout') return 'The service did not respond in time. Coast will retry automatically; completed import pages are retained.';
   if (error instanceof ProviderHttpError) {
@@ -208,7 +210,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
   }
   if (error instanceof AppError && error.code === 'steam_private') return 'Steam game details are private or unavailable. Make game details readable in Steam privacy settings; previous imports are retained.';
   if (error instanceof v.ValiError) return 'The service returned unsupported data. Review diagnostics before retrying.';
-  if (safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict') return 'Conflicting metadata identities need administrator review. Retrying cannot resolve the mapping.';
+  if (code === 'catalogue.identity-conflict') return 'Conflicting metadata identities need administrator review. Retrying cannot resolve the mapping.';
   if(error instanceof DomainError)return 'Coast rejected an invalid local change. Review this task before retrying.';
   return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
 }
@@ -233,7 +235,7 @@ export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure
   if (status && status >= 500) return { code: 'provider.unavailable', remedy: 'retry', retryable: true };
   if (error instanceof v.ValiError) return { code: 'provider.invalid-data', remedy: 'metadata', retryable: false };
   const code = safeDiagnosticErrorCode(error);
-  if (code === 'catalogue.identity-conflict') return { code, remedy: 'metadata', retryable: false };
+  if (code === 'catalogue.identity-conflict' || code === 'local.database-cardinality') return { code, remedy: 'metadata', retryable: false };
   if(error instanceof DomainError)return {code:'local.action-rejected',remedy:'metadata',retryable:false};
   if(error instanceof AppError&&error.code==='feature_disabled')return {code:'local.feature-disabled',remedy:'permissions',retryable:false};
   return { code: code ?? (permanent ? 'action.rejected' : 'provider.interrupted'), remedy: 'retry', retryable: !permanent };
@@ -475,8 +477,9 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           void logDiagnostic('debug','job.yield',{actionId:action.id,durationMs:performance.now()-started});
           return true;
         }
+        const errorCode = safeDiagnosticErrorCode(error);
         const permanent =
-          safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict' ||
+          errorCode === 'catalogue.identity-conflict' || errorCode === 'local.database-cardinality' ||
           (error instanceof AppError && error.code === 'steam_private') ||
           error instanceof PermanentActionError ||
           error instanceof DomainError ||

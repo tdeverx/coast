@@ -11,6 +11,7 @@ import { acknowledgeProviderValue } from './values.server';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
+import { exportIdentity } from './trakt-identity.server.js';
 const uuid = v.pipe(v.string(), v.uuid());
 const inputSchema = v.object({
   eventIds: v.array(uuid),
@@ -276,18 +277,12 @@ export async function executeHistoryRemoval(
   if (data.provider === 'trakt') {
     const { adapter } = await getTrakt(userId, connectionId, 'export', 'history');
     const [item] = await db.select().from(s.media).where(eq(s.media.id, data.mediaId));
-    if (!item || !['movie', 'episode'].includes(item.kind)) return;
-    const mappings = await db
-      .select()
-      .from(s.externalIds)
-      .where(eq(s.externalIds.mediaId, data.mediaId));
-    const ids = Object.fromEntries(
-      mappings.map((mapping) => [mapping.provider, mapping.externalId])
-    );
+    if (!item || item.kind !== 'movie' && item.kind !== 'episode') return;
+    const ids = await exportIdentity(data.mediaId, item.kind);
     await removeTraktHistory(
       adapter,
       connectionId,
-      item.kind as 'movie' | 'episode',
+      item.kind,
       ids,
       data.events
     );

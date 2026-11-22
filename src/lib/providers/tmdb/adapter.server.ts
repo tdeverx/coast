@@ -277,10 +277,11 @@ export class TmdbAdapter implements MetadataProvider {
       ...tmdbCrewFeatures(crew),
       franchises:data.belongs_to_collection?[{id:`tmdb:${data.belongs_to_collection.id}`,name:data.belongs_to_collection.name}]:[],
     };
-    metadata.recommendations = (data.recommendations?.results ?? [])
-      .filter((entry) => entry.id !== data.id)
-      .slice(0, 20)
-      .map((entry) => mapItem(entry, kind, this.language, this.region));
+    if (includeRecommendations)
+      metadata.recommendations = (data.recommendations?.results ?? [])
+        .filter((entry) => entry.id !== data.id)
+        .slice(0, 20)
+        .map((entry) => mapItem(entry, kind, this.language, this.region));
     metadata.genres = data.genres?.map((x) => x.name);
     metadata.externalIds = {
       tmdb: String(data.id),
@@ -350,18 +351,22 @@ export class TmdbAdapter implements MetadataProvider {
       })),
     };
   }
-  async episode(showId: string, seasonNumber: number, episodeNumber: number): Promise<Metadata> {
+  async episode(showId: string, seasonNumber: number, episodeNumber: number, includeExternalIds = false): Promise<Metadata> {
     const data = v.parse(
       detail,
       await this.request(
         this.path(
           `/3/tv/${encodeURIComponent(showId)}/season/${seasonNumber}/episode/${episodeNumber}`,
-          { append_to_response: 'credits' }
+          { append_to_response: includeExternalIds ? 'credits,external_ids' : 'credits' }
         )
       )
     );
     return {
       ...mapItem(data, 'episode', this.language, this.region),
+      ...(includeExternalIds && { externalIds: {
+        ...(data.external_ids?.imdb_id ? { imdb: data.external_ids.imdb_id } : {}),
+        ...(data.external_ids?.tvdb_id ? { tvdb: String(data.external_ids.tvdb_id) } : {}),
+      } }),
       seasonNumber,
       episodeNumber,
       ...releaseCredits(data),
