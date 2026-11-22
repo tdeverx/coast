@@ -92,11 +92,12 @@ export type ReadingCredit={name:string;role:string};
 export interface ReadingCatalogueFacts {
   openLibrary?: {
     languages?: string[];
+    publishers?: string[];
     editionCount?: number;
     firstPublished?: string;
     editionSample?: { id: string; title: string; languages?: string[]; publishers?: string[] }[];
   };
-  comicVine?: { credits?: ReadingCredit[]; coverDate?: string };
+  comicVine?: { credits?: ReadingCredit[]; coverDate?: string; concepts?: string[]; subjects?: string[]; publisher?: string };
 }
 export interface ReadingMetadata {
   provider: ReadingProvider;

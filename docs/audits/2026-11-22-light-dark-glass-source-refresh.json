@@ -1,0 +1,17 @@
+{
+  "epoch": "light-dark-glass-local-2026-11-22",
+  "baseline": "9eff00ef6dbbd1ec197b525950dca3c3e057d4e0",
+  "blanketAcceptance": false,
+  "files": {
+    "src/lib/ui/materials/presets.ts": {
+      "previous": "307caec3f1a42b22f5adbdd6585a6e0ada82f0f4f6e8712b8930178c462580a2",
+      "current": "f30aacfb0a555c8cbbfa02f799a965d16227986df565b535741b1fbf2d6b1976"
+    },
+    "tests/material-tuning.test.ts": {
+      "previous": "ed10d3b679975dd2f94285c1946e4fac8c59e9871f6e67eaf8018bd4b4e4bc5e",
+      "current": "a2ea5148e453498d793d96c72ac5ecdc1df7e2436c6307216dfb744eedc2d278"
+    }
+  },
+  "report": "docs/audits/2026-11-22-light-dark-glass.md",
+  "reportSha256": "8129275c7fde6a1cc81f8731589fb04a2fb0406e9010d962d6ae20275af012f3"
+}

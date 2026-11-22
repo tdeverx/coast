@@ -2,9 +2,9 @@
   import { page } from '$app/state';
   import { onDestroy } from 'svelte';
   import type { personalTaste } from '#lib/social/taste-cache.server.js';
-  import { tasteDimensions, tasteMedia, type TasteAffinity, type TasteDimension, type TasteMedium } from '#lib/social/taste-profile.js';
+  import { tasteDimensionsByMedium, tasteMedia, type TasteAffinity, type TasteDimension, type TasteMedium } from '#lib/social/taste-profile.js';
+  import { tasteSignalLabel } from '#lib/social/taste.js';
   import { useClient } from '#lib/ui/client-context.js';
-  import { displayLabel } from '#lib/ui/labels.js';
   import { createResource } from '#lib/ui/resource.svelte.js';
   import Button from '#lib/ui/components/Button.svelte';
   import DetailCard from '#lib/ui/components/DetailCard.svelte';
@@ -29,7 +29,6 @@
   const count = new Intl.NumberFormat();
   const percent = new Intl.NumberFormat(undefined, {style:'percent'});
   const affinityPercent = (value: number) => percent.format((1 + value) / 2);
-  const columnSize = Math.ceil(tasteDimensions.length / 2);
   function worksLabel(works: number) {
     return works === 1 ? '1 work' : `${count.format(works)} works`;
   }
@@ -37,10 +36,11 @@
   let selected = $state('');
   const active = $derived(media.find(({value}) => value === selected) ?? media.find(({value}) => data.some(profile => profile.medium === value && profile.works > 0)) ?? media[0]);
   const profile = $derived(data.find(({medium}) => medium === active?.value));
-  const signalRows = $derived(tasteDimensions.map(dimension => ({
+  const dimensions = $derived(active ? tasteDimensionsByMedium[active.value] : []);
+  const columnSize = $derived(Math.ceil(dimensions.length / 2));
+  const signalRows = $derived(dimensions.map(dimension => ({
     dimension,
-    label: dimension === 'writers' && (active?.category === 'book' || active?.category === 'comic')
-      ? 'Authors' : displayLabel(dimension),
+    label: tasteSignalLabel(dimension, active?.value),
     value: profile?.signals[dimension]?.preview.map(signal =>
       `${signal.name} ${affinityPercent(signal.value)}`).join(' · ') || null,
     count: profile?.signals[dimension]?.count ?? 0,

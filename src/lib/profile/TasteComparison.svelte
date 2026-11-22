@@ -1,8 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { ProfileTaste } from '#lib/profile/details.server.js';
-  import { comparisonMedia, comparisonSignals } from '#lib/social/taste.js';
-  import { displayLabel } from '#lib/ui/labels.js';
+  import { comparisonMedia, comparisonSignals, tasteSignalLabel } from '#lib/social/taste.js';
+  import { tasteMedia } from '#lib/social/taste-profile.js';
   import Heading from '#lib/ui/components/Heading.svelte';
   import DetailCard from '#lib/ui/components/DetailCard.svelte';
   import FactList from '#lib/ui/components/FactList.svelte';
@@ -26,6 +26,7 @@
   let selected = $state('');
   const active = $derived(media.find(({medium}) => medium === (selected || data.medium))
     ?? media.find(item => item.score !== null || item.stats.you.total || item.stats.friend.total) ?? media[0]);
+  const tasteMedium = $derived(tasteMedia.find(option => option.comparison === active?.medium)?.value);
   const activityLabels = {total:'Tracked',completed:'Completed',active:'In progress',planned:'Planned',dropped:'Dropped',rated:'Rated',reacted:'Reacted'} as const;
   const progressById = $derived(new Map(data.comparison.media.flatMap(({ progressComparisons }) =>
     progressComparisons.map(progress => [progress.workId, progress] as const))));
@@ -47,19 +48,22 @@
     change:value => selected = value,
   }} />
   <MetricGrid items={[
-    { label: 'Overall taste', value: score(data.comparison.score), detail: 'Median across qualifying media' },
-    { label: active ? `${active.label} taste score` : 'Medium taste score', value: score(active?.score) },
+    { label: 'Overall taste agreement', value: score(data.comparison.score), detail: 'Median across qualifying media' },
+    { label: active ? `${active.label} taste agreement` : 'Taste agreement', value: score(active?.score) },
   ]} />
   {#if active}
     <div class="taste-cards">
       <DetailCard title={`${active.label} signals`} description={`Scores use up to ${data.comparison.sampleLimit} titles per person across all media.`}>
-        <FactList items={comparisonSignals.map(name => {
+        <FactList items={comparisonSignals(active.medium).map(name => {
           const signal = active.signals[name];
           return {
-            label:name === 'writers' && (active.medium === 'book' || active.medium === 'comic') ? 'Authors' : displayLabel(name),
+            label:tasteSignalLabel(name,tasteMedium),
             value:score(signal?.score),
             detail:signal && (signal.left || signal.right || signal.shared)
-              ? `${signal.shared} shared${name === 'genres' ? ' genres' : ''} · ${signal.left} yours · ${signal.right} theirs` : undefined,
+              ? name === 'genres'
+                ? `${signal.shared} shared ${signal.shared === 1 ? 'genre' : 'genres'} · ${signal.left} / ${signal.right} titles`
+                : `${signal.shared} shared · ${signal.left} yours · ${signal.right} theirs`
+              : undefined,
           };
         })} />
       </DetailCard>

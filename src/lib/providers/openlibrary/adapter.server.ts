@@ -24,6 +24,7 @@ const documentSchema = v.object({
   cover_i: v.optional(coverId),
   edition_count: v.optional(v.pipe(v.number(),v.integer(),v.minValue(0))),
   language: v.fallback(v.optional(labels),undefined),
+  publisher: v.fallback(v.optional(labels),undefined),
   editions: v.fallback(v.optional(v.object({docs:v.array(v.object({
     key:editionKey,title:label,language:v.optional(labels),publisher:v.optional(labels),
   }))})),undefined),
@@ -44,6 +45,9 @@ const workSchema = v.object({
   title: v.pipe(label, v.minLength(1)),
   description: v.optional(description),
   subjects: v.optional(labels, []),
+  subject_places: v.fallback(v.optional(labels,[]),[]),
+  subject_people: v.fallback(v.optional(labels,[]),[]),
+  subject_times: v.fallback(v.optional(labels,[]),[]),
   covers: v.optional(v.pipe(v.array(v.pipe(v.number(), v.integer())), v.maxLength(1000)), []),
   first_publish_date: v.optional(label),
   links: v.optional(v.pipe(v.array(v.object({ title: v.optional(label), url: v.pipe(v.string(), v.maxLength(2000)) })), v.maxLength(100)), []),
@@ -135,14 +139,15 @@ export class OpenLibraryAdapter {
       if (canonicalWorkId(work.key) !== id) throw new AppError(502, 'Open Library returned a different work identity.', 'openlibrary_unavailable');
       // Work JSON contains author references. One exact indexed lookup supplies
       // names and edition references without requesting every author or edition.
-      const result = await this.searchRequest(`key:/works/${id}`, 1, 1, undefined, undefined, `${fields},language,edition_count,editions,editions.key,editions.title,editions.language,editions.publisher`);
+      const result = await this.searchRequest(`key:/works/${id}`, 1, 1, undefined, undefined, `${fields},language,publisher,edition_count,editions,editions.key,editions.title,editions.language,editions.publisher`);
       const indexed = result.docs.find(document => canonicalWorkId(document.key) === id);
       const metadata = mapDocument(indexed ?? { key: work.key, title: work.title, author_name: [], subject: [] });
       const overview = work.description ? readingPlainText(typeof work.description === 'string' ? work.description : work.description.value).slice(0, 5000) : undefined;
       const cover = work.covers.find(value => Number.isSafeInteger(value) && value > 0);
       const title = readingPlainText(work.title).slice(0, 500);
       if (!title) throw new AppError(502, 'Open Library returned an empty book title.', 'openlibrary_unavailable');
-      const subjects = work.subjects.length ? cleanLabels(work.subjects) : metadata.subjects;
+      const subjects = cleanLabels([...(work.subjects.length?work.subjects:metadata.subjects),
+        ...work.subject_places,...work.subject_people,...work.subject_times]);
       const identities = work.links.flatMap(link => {
         // Only a dedicated metadata link to an issue is a cross-reference.
         // Volume/series links, arbitrary description links and editions cannot merge works.
@@ -159,6 +164,7 @@ export class OpenLibraryAdapter {
         subjects, kind: openLibraryKind(subjects),
         facts: {openLibrary:{
           ...(indexed?.language ? {languages:cleanLabels(indexed.language,24)} : {}),
+          ...(indexed?.publisher ? {publishers:cleanLabels(indexed.publisher,24)} : {}),
           ...(indexed?.edition_count !== undefined ? {editionCount:indexed.edition_count} : {}),
           ...(indexed?.editions ? {editionSample:indexed.editions.docs.slice(0,3).flatMap(edition => {
             const title=readingPlainText(edition.title).slice(0,250);

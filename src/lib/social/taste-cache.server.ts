@@ -5,14 +5,14 @@ import {sql as query} from 'drizzle-orm';
 import {getDb,getSql,type Database} from '#lib/server/db/index.js';
 import {getConfig} from '#lib/server/config.js';
 import {interestWorks,visitTasteHistory} from '#lib/recommendations/interests.server.js';
-import {prepareTasteReference,scorerFromReference,type TasteReference,createTasteAccumulator,decodeTasteAffinities,tasteDimensions,tasteMedia,type LifetimeTasteProfile,type SavedAffinity,type TasteAffinity,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
+import {prepareTasteReference,scorerFromReference,type TasteReference,createTasteAccumulator,decodeTasteAffinities,tasteDimensions,tasteDimensionsByMedium,tasteMedia,type LifetimeTasteProfile,type SavedAffinity,type TasteAffinity,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
 import {createTasteRatingTrainer,negativeRatingWeight,type TasteAudienceRating} from './taste-rating-model';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
 import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 // A saved profile can outlive a new watch. A withdrawn evidence source takes effect on the next read.
-const tastePolicySql=query`'taste-v12-'||md5(concat_ws(':',coast_feature_enabled(u.id,'social')::text,
+const tastePolicySql=query`'taste-v13-'||md5(concat_ws(':',coast_feature_enabled(u.id,'social')::text,
  coalesce((select string_agg(concat_ws('/',c.id,c.status,c.account_generation,c.sync_account_id,i.enabled),',' order by c.id)
   from provider_connections c join provider_instances i on i.id=c.instance_id where c.user_id=u.id),'')))`;
 const readableProfile=query`coast_feature_enabled(u.id,'personalisation')
@@ -53,6 +53,8 @@ export async function personalTaste(userId: string): Promise<PersonalTasteEntry[
 /** Read only the selected signal from the caller's saved profile. */
 export async function personalTasteAffinities(userId: string, medium: TasteMedium, dimension: TasteDimension, page: number): Promise<{items:TasteAffinity[];pages:number}> {
  await requireFeature(userId,'personalisation');
+ const dimensions:readonly TasteDimension[]=tasteDimensionsByMedium[medium];
+ if(!dimensions.includes(dimension))return {items:[],pages:1};
  const offset=(page-1)*tasteAffinityPageSize;
  const [row]=await getDb().execute<{items:TasteAffinity[]|SavedAffinity[];total:number}>(query`
    with saved as materialized (
@@ -82,6 +84,10 @@ function targetFeatures(target:Target, features:Map<string,TasteFeatures>):Taste
  if(target.kind==='track'){
   const artists=child.artists?.filter(artist=>artist.id.startsWith('artist:'));
   if(artists?.length)merged.artists=artists;
+  for(const dimension of ['tags','writers','composers','studios'] as const){
+   if(child[dimension]?.length)
+    merged[dimension]=[...new Map([...(parent[dimension]??[]),...child[dimension]].map(feature=>[feature.id,feature])).values()];
+  }
  }else{
   // A season or episode can add guests to the show cast and has its own crew.
   for(const dimension of ['cast','directors','writers','composers','cinematographers'] as const){
@@ -110,6 +116,9 @@ export async function titleTastes(userId:string,workIds:readonly string[],verifi
     case when album.parent_id is not null then exists(
      select 1 from music_credits cr join music_works artist on artist.id=cr.artist_id and artist.kind='artist'
      where cr.work_id=w.id and cr.role in ('artist','album-artist'))
+      or exists(select 1 from work_features f where f.work_id=w.id and
+       (f.features->'tags'->0 is not null or f.features->'writers'->0 is not null
+        or f.features->'composers'->0 is not null or f.features->'studios'->0 is not null))
     when coalesce(e.show_id,s.show_id) is not null then exists(select 1 from work_features f where f.work_id=w.id and f.provider='tmdb'
      and (f.features->'cast'->0 is not null or f.features->'directors'->0 is not null or f.features->'writers'->0 is not null
       or f.features->'composers'->0 is not null or f.features->'cinematographers'->0 is not null))
@@ -153,6 +162,19 @@ export async function titleTastes(userId:string,workIds:readonly string[],verifi
     const match=scored.get(key)??score(targetFeatures(t,features));
     scored.set(key,match);
     result.set(t.id,match);
+   }
+  }
+ }
+ if(mode==='recalculate'&&config.features.social){
+  const scoreable=[...result].flatMap(([id,match])=>match.score===null?[]:[id]);
+  if(scoreable.length){
+   const {visibleFriendTaste}=await import('./friend-taste.server');
+   const friends=await visibleFriendTaste(userId,scoreable);
+   for(const [id,signal] of friends){
+    const match=result.get(id);
+    if(match?.score==null||!signal.watched)continue;
+    const score=Math.max(0,Math.min(100,match.score+signal.points));
+    result.set(id,{...match,score,...(match.breakdown?{breakdown:{...match.breakdown,friends:{...signal,points:score-match.score}}}:{})});
    }
   }
  }

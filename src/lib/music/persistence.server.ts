@@ -3,7 +3,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { getDb, type Database } from '#lib/server/db/index.js';
-import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
+import { works, musicWorks, workIdentifiers, providerItems, workEditions, workFeatures, mediaRelationships, musicArtists, musicCredits, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
 import type { MusicItem } from './model';
 import { DomainError } from '#lib/core/errors.js';
 import * as v from 'valibot';
@@ -15,6 +15,13 @@ import { musicAlbumMembers } from './editions.server';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 const sameMetadata = (a: unknown, b: unknown) => isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+async function saveMusicTasteFeatures(tx:Transaction,workId:string,instanceId:string,features:MusicItem['tasteFeatures']){
+ if(!features)return;
+ const merged=sql`${workFeatures.features} || excluded.features`;
+ await tx.insert(workFeatures).values({workId,provider:`jellyfin:${instanceId}`,features})
+  .onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:merged,updatedAt:new Date()},
+   setWhere:sql`${workFeatures.features} is distinct from (${merged})`});
+}
 /** Shared provider metadata must never carry one account's personal state. */
 function musicMetadataSnapshot(item: MusicItem) {
   return {id:item.id,kind:item.kind,title:item.title,artists:item.artists.map(({id,name})=>({id,name})),albumArtists:item.albumArtists.map(({id,name})=>({id,name})),
@@ -33,6 +40,7 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
       const metadata={title:item.title,overview:item.overview??null,genres:item.genres,updatedAt:new Date()};
       await tx.insert(musicWorks).values({id:artist.workId,kind:'artist',...metadata}).onConflictDoUpdate({target:musicWorks.id,set:metadata,
         setWhere:sql`(${musicWorks.title},${musicWorks.overview},${musicWorks.genres}) is distinct from (excluded.title,excluded.overview,excluded.genres)`});
+      await saveMusicTasteFeatures(tx,artist.workId,instanceId,item.tasteFeatures);
       const snapshot=musicMetadataSnapshot(item);
       snapshot.externalIds={...snapshot.externalIds};
       if(!v.safeParse(v.pipe(v.string(),v.uuid()),snapshot.externalIds.musicbrainzartist).success)delete snapshot.externalIds.musicbrainzartist;
@@ -63,6 +71,7 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
     await tx.insert(musicWorks).values(data).onConflictDoUpdate({target:musicWorks.id,set:data,
       setWhere:sql`(${musicWorks.title},${musicWorks.kind},${musicWorks.artistNames},${musicWorks.releaseDate},${musicWorks.year},${musicWorks.durationSeconds},${musicWorks.overview},${musicWorks.genres})
         is distinct from (excluded.title,excluded.kind,excluded.artist_names,excluded.release_date,excluded.year,excluded.duration_seconds,excluded.overview,excluded.genres)`});
+    await saveMusicTasteFeatures(tx,id,instanceId,item.tasteFeatures);
     if(verified) await tx.insert(workIdentifiers).values({workId:id,provider,externalId:verified,kind}).onConflictDoNothing();
     const snapshot={...musicMetadataSnapshot(item),addedAt:item.addedAt??mapping?.snapshot.addedAt};
     const externalId=mapping?.externalId??item.id;

@@ -3,6 +3,12 @@ import {getSql} from '../src/lib/server/db';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
 import type {TasteAudienceRating} from '../src/lib/social/taste-rating-model';
 import {importReading} from '../src/lib/catalogue/reading.server';
+import {OpenLibraryAdapter} from '../src/lib/providers/openlibrary/adapter.server';
+import {ComicVineAdapter} from '../src/lib/providers/comic-vine/adapter.server';
+import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
+import {importIgdbMetadata} from '../src/lib/core/games/service.server';
+import {musicItems} from '../src/lib/providers/jellyfin/music.server';
+import {persistMusic} from '../src/lib/music/persistence.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 
@@ -94,4 +100,51 @@ run('a fresh reading import saves each subject only under tags',async()=>{
   expect(saved.features.genres).toBeUndefined();
   expect((await workTasteFeatures([book.id])).get(book.id)).toEqual({tags});
  }finally{await db`delete from works where id=${book.id}`;}
+});
+
+run('medium-specific provider metadata survives validation, persistence and the shared Taste read',async()=>{
+ const db=getSql(),instance=crypto.randomUUID(),items:string[]=[];
+ await db`insert into system_settings(key,value) values('coast','{"experimentalBooks":true,"experimentalComics":true,"experimentalGaming":true,"experimentalMusic":true}')
+  on conflict(key) do update set value=excluded.value`;
+ try{
+  const openLibrary=new OpenLibraryAdapter(async path=>path.startsWith('/works/')?
+   {key:'/works/OL944114018W',title:'Fixture Book',subjects:['Exploration'],subject_places:['Antarctica']}:
+   {docs:[{key:'/works/OL944114018W',title:'Fixture Book',author_name:['An Author'],language:['eng'],publisher:['Example Press']}],numFound:1});
+  const book=await importReading(await openLibrary.details('OL944114018W'));items.push(book.id);
+  const comicVine=new ComicVineAdapter('fixture',async path=>{
+   expect(new URL(path,'https://fixture.invalid').searchParams.get('field_list')).toContain('concept_credits');
+   return {status_code:1,results:{id:944114018,site_detail_url:'https://comicvine.gamespot.com/fixture/4000-944114018/',
+    name:'Fixture Comic',volume:{id:21,name:'Fixture Series',publisher:{name:'Comic Press'}},
+    concept_credits:[{name:'Space travel'}],character_credits:[{name:'Star Captain'}],
+    person_credits:[{name:'Comic Writer',role:'Writer'},{name:'Comic Artist',role:'Penciller'}]}};
+  });
+  const comic=await importReading(await comicVine.details('4000-944114018'));items.push(comic.id);
+  const game=await importIgdbMetadata(mapIgdbGame({id:944114018,name:'Fixture Game',
+   collections:[{id:41,name:'Fixture Games'},{id:42,name:'Game Franchise'}],franchises:[{id:21,name:'Game Franchise'}],
+   language_supports:[{language:{name:'English'}},{language:{name:'English'}}]}));items.push(game.id);
+  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Music fixture','https://fixture.invalid')`;
+  const trackId='c'.repeat(32),composerId='d'.repeat(32);
+  const [remote]=await musicItems(async()=>({TotalRecordCount:1,Items:[{Id:trackId,Name:'Fixture Track',Type:'Audio',
+   Tags:['Dream pop'],Studios:[{Name:'Fixture Studio'}],People:[{Id:composerId,Name:'Fixture Composer',Type:'Composer'}]}]}),'account',[trackId]);
+  const track=await persistMusic(instance,remote);items.push(track.workId!);
+  await persistMusic(instance,{...remote,tasteFeatures:undefined});
+  const features=await workTasteFeatures(items);
+  const names=(id:string,dimension:keyof NonNullable<ReturnType<typeof features.get>>)=>features.get(id)?.[dimension]?.map(({name})=>name);
+  expect(names(book.id,'tags')).toEqual(['Exploration','Antarctica']);
+  expect(names(book.id,'publishers')).toEqual(['Example Press']);
+  expect(names(book.id,'languages')).toEqual(['English']);
+  expect(names(comic.id,'themes')).toEqual(['Space travel']);
+  expect(names(comic.id,'tags')).toEqual(['Star Captain']);
+  expect(names(comic.id,'illustrators')).toEqual(['Comic Artist']);
+  expect(names(comic.id,'publishers')).toEqual(['Comic Press']);
+  expect(names(game.id,'franchises')).toEqual(['Game Franchise','Fixture Games']);
+  expect(names(game.id,'languages')).toEqual(['English']);
+  expect(names(game.id,'cast')).toBeUndefined();
+  expect(names(track.workId!,'tags')).toEqual(['Dream pop']);
+  expect(names(track.workId!,'studios')).toEqual(['Fixture Studio']);
+  expect(names(track.workId!,'composers')).toEqual(['Fixture Composer']);
+ }finally{
+  await db`delete from provider_instances where id=${instance}`;
+  await db`delete from works where id=any(${db.array(items,'UUID')}::uuid[])`;
+ }
 });

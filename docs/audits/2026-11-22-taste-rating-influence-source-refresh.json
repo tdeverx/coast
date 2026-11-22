@@ -1,0 +1,117 @@
+{
+  "epoch": "taste-rating-influence-local-2026-11-22",
+  "baseline": "9eff00ef6dbbd1ec197b525950dca3c3e057d4e0",
+  "blanketAcceptance": false,
+  "files": {
+    "docs/experimental-features.md": {
+      "previous": "250065dcb65765a1d3fae5ef2f47efa628a6504291ab898f0d630abce9512103",
+      "current": "72c962478ae11f36c77370416cae5db3a833caf50c2b80fa672c7b8084ea2b10"
+    },
+    "src/lib/catalogue/reading.server.ts": {
+      "previous": "02a1a78dd07c10a10b376030ecd7184e63e80eb350b73fb1340e61cf683f607d",
+      "current": "05009ae28cacd4ac70c8d049d84b4e78ef3ee3a9a3330478ba81f2e06ef068a2"
+    },
+    "src/lib/music/model.ts": {
+      "previous": "8024238cfbd49b9d52da213a40d6973951ff8c6474b9f9142f38fd4f4557a979",
+      "current": "d57c452dccf4530704e21e0e0d52180e69b02b2da72697e03b569634180ad212"
+    },
+    "src/lib/music/persistence.server.ts": {
+      "previous": "0e252c6a284098f56937f8aac555cd342156a9e9520522eb891d05b8b9c271fc",
+      "current": "19e555fe25d43732622632f10ee5ae2ae3ecba905431916a0d494a63e501e510"
+    },
+    "src/lib/profile/PersonalTaste.svelte": {
+      "previous": "127a12aa5cc40428933e8871980318bcd85f2fbf541b8e02652f9d85bee115cf",
+      "current": "e5a34f8b0f5f758d915fe8f0d4f60873219303322b2aeeb41a544bb83cbe3857"
+    },
+    "src/lib/profile/TasteBreakdown.svelte": {
+      "previous": "c1190ea144a9399fedc93600a204028d2ef03aec553f19d927b957975c193592",
+      "current": "47808988331299d9b7e2a8930453c19850d29706ebddb6210d4c73a13ab0ec95"
+    },
+    "src/lib/profile/TasteComparison.svelte": {
+      "previous": "24e49c4dbded1cfdd1c3091106f9b4120053fd82a3b019c401372c51ee47bcef",
+      "current": "2c853804efcfaa828ee49586dcc4950e751d66744a2b6682c5b37edf552303b1"
+    },
+    "src/lib/profile/TasteMatch.svelte": {
+      "previous": "a286bccbaba35e7a25d3fc20bb09dc188466e23931b642a1b5c22e42a6cdc678",
+      "current": "81e661fb4d58f28641d6a1309e2ba275a0ba20202001e3b0b2b5bd80dfd8b3d5"
+    },
+    "src/lib/providers/comic-vine/adapter.server.ts": {
+      "previous": "15fcd96c8fba8172bf931109d780bc747c735120b373c53cc50ed6e93670c1a8",
+      "current": "8f36e51edd05b69929af61c27a45ac4964b3c71d897f553e350260137c9c6d23"
+    },
+    "src/lib/providers/igdb/adapter.server.ts": {
+      "previous": "87ce90739319b51c9f81e7031c21db24c3fc7f3f7934ed71638dca315795c83d",
+      "current": "3d680152c0fddb3dcd5731068f83b1fe73e2394278ae9960cc8dd2ece6c8d807"
+    },
+    "src/lib/providers/jellyfin/music.server.ts": {
+      "previous": "3b6396c14f41f617313005aab1ffcea0964b22215a008698d45abc84fcea4108",
+      "current": "7e1b14b3d16bfab22e513e0836e94ff5ce6f9ec85e78c42ca58a84550a641e62"
+    },
+    "src/lib/providers/openlibrary/adapter.server.ts": {
+      "previous": "d504bcc45f96861c55190c0180f101530dc2cb1a17018e63a3ac417233e3d053",
+      "current": "196c69c412cd39e65c15b50b77f1670b4f87116465a73779c63599d426c35901"
+    },
+    "src/lib/reading/model.ts": {
+      "previous": "54c220069491cd8871ec0b2e4e15e5548c885011f38ad5f5d7b286e6105260ea",
+      "current": "db84f30352b835232eea942b9a762abc0ebc92fd82ff4fddf88b312e9f95590f"
+    },
+    "src/lib/recommendations/interests.server.ts": {
+      "previous": "b6d1cff67494a880825386b7f63b0a6da57a0d15341b85d9a0fe58de3da0a7e9",
+      "current": "45dbe161fc7a97411193175ad92bf38adb3abace2aef4fe9e5fee38cc7a4277d"
+    },
+    "src/lib/social/insights.server.ts": {
+      "previous": "c71d8974c6e16597ec6eefee85d0017becb0a97b3b56a852fe95436983717642",
+      "current": "d7c9c86d526dbf4b3393b22b3d1ba38303fdd63b63957f9293b9c05d3e2d0571"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "46ee1855f125da1d106829059e9dbfe20fd8c48caa8290031ced862916dfdb0b",
+      "current": "f1b21b81215cf2b0f2e36d8f385a6e0f39d343e41756d54a9dc3f83b368f9fec"
+    },
+    "src/lib/social/taste-profile.ts": {
+      "previous": "5a09c9a557598055dcd821eb6cabbf5f54994a1244966dc02ed6c69c70614126",
+      "current": "4ed7eef8ad6e80166cf654eef409926b0f0a9fa082d90c431975f5bc4fe74bee"
+    },
+    "src/lib/social/taste-rating-model.ts": {
+      "previous": "c163bba3eee4aa594f0b7ce2840927db7ef4ace6195007acee76af60f70ed77f",
+      "current": "b7fdcb780934a3c79acd4ac23b8548a80520bb362a0e4dad7f203c6705d85c5f"
+    },
+    "src/lib/social/taste.ts": {
+      "previous": "51a1013cdf8daaf29a5221bf2dbbcef7cce813b7cbbfdc7eb9e87b4d21cd12f2",
+      "current": "fad94a5941b6b92b16709e5b13f7f6b1bd80f6fe3f19c1a026ce0437b473ac03"
+    },
+    "src/lib/social/work-features.server.ts": {
+      "previous": "124aa9c34f47b1881bc75f2e83a82e019db2514bf16fbf62278e5178fed16fec",
+      "current": "c701ecb05dcf672634d59568014899a2da7e87e8180cc30d2682819ae29ed530"
+    },
+    "src/lib/ui/components/MediaDetails.svelte": {
+      "previous": "4eb0e20a37cd0bc8599e0f7c7754e46329714e109ba884e3cbddfde62b3a4ac4",
+      "current": "73807fbd90176a4192873fce364f219fe2dfc2192b294eca101d0aa6e9fddfea"
+    },
+    "src/lib/ui/components/WorkMenu.svelte": {
+      "previous": "16e90e8d0a50450c6e0c6ca67945d268e47c260c8c58cf6cbf8db83a62095e75",
+      "current": "b3a71085db981170ea19e2575fb59240b29591c34290d1097ff0d8152176d71c"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "ff203379fe235ded5a9e3fbd339ea103b995f9d264c8c4f26ff62fedf7bfa763",
+      "current": "09703e7d11093109c1705a5ea555fbee4fca9eff7915dc0a95ef456cfe95108c"
+    },
+    "tests/taste-cache-db.test.ts": {
+      "previous": "246e2a15600e7d83f1077dd5627a89843cd5d0e7a780bf380fe2c970b8d5d45e",
+      "current": "5f5d68d13c7def0887fda89c96743f1acbead390ce7cf4e98df3780f988cfc5b"
+    },
+    "tests/taste-history-evidence-db.test.ts": {
+      "previous": "1e90ad283b3030cb9f8e7cb81c0d31a55e0c02df1be97095bd69ffc1d5fd0ad2",
+      "current": "d79640f44f68ebf652a0d55695380dff5f07c7c15d5d486ce4c7f6319204f276"
+    },
+    "tests/taste-metadata-db.test.ts": {
+      "previous": "3508f09b1f2653a165a003c9db3dcb08d34c177e64c85c6ed1b5686e6e26d1af",
+      "current": "2411aac6b648ac084b8933ea484543e5a0c60a5e6405d8d8e05fdde81a53d74f"
+    },
+    "tests/taste-profile.test.ts": {
+      "previous": "db83c26625807a86d31370b56cd4252e4ded3fd99a6ace5b1db037c5a4606c03",
+      "current": "feb7ade838d0524a2627148b8735b20842e84418583ab34d1b9fb22c8076d132"
+    }
+  },
+  "report": "docs/audits/2026-11-22-taste-rating-influence.md",
+  "reportSha256": "fb48fadecd7afb946037c65ea33fe3aee309ac49d9f0589cfd70cc2b2b0259d1"
+}

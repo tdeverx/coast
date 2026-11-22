@@ -15,6 +15,8 @@ import {workTasteFeatures} from '../src/lib/social/work-features.server';
 import * as featureReads from '../src/lib/social/work-features.server';
 import * as permissions from '../src/lib/server/features';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
+import {createTasteAccumulator,namedFeatures,prepareTasteReference} from '../src/lib/social/taste-profile';
+import {visibleFriendTaste} from '../src/lib/social/friend-taste.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql();for(const id of [user,other])await sql`insert into users(id,username) values(${id},${'taste-'+id})`;
@@ -23,7 +25,7 @@ beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql()
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql();await sql`delete from users where id=any(${sql.array([user,other],'UUID')}::uuid[])`;await sql`delete from media where id=any(${sql.array(ids,'UUID')}::uuid[])`;});
 run('task computes private bounded scores and excludes stale cached rankings',async()=>{
- await track(user,{mediaId:ids[0],action:'favourite',value:true});await track(user,{mediaId:ids[1],action:'favourite',value:true});
+ for(const id of [ids[0],ids[1],ids[3]])await track(user,{mediaId:id,action:'favourite',value:true});
  // Match creators/tags even when the candidate's genres do not overlap.
  await getSql()`update media set genres=array['Comedy'] where id=${ids[2]}`;
  await refreshTasteCaches();const sql=getSql();
@@ -43,6 +45,123 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  const [rebuilt]=await sql`select score,revision from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;
  expect(rebuilt.revision).toBe(current.revision);expect(rebuilt.score).toBeGreaterThan(50);
  expect(await sql`select 1 from user_taste_scores where user_id=${user} and revision=${score.revision}`).toHaveLength(0);
+});
+
+run('explicit title scores use only current, permitted activity from taste-aligned friends',async()=>{
+ const sql=getSql();
+ const [owner,friend,opposite,pending,publicUser]=Array.from({length:5},()=>crypto.randomUUID());
+ const viewers=[owner,friend,opposite,pending,publicUser];
+ const shared=Array.from({length:8},()=>crypto.randomUUID());
+ const targets=Array.from({length:6},()=>crypto.randomUUID());
+ const [liked,disliked,unrated,neutral,ratingOnly,show]=targets;
+ try{
+  for(const id of viewers)await sql`insert into users(id,username) values(${id},${'friend-taste-'+id})`;
+  await sql`update users set settings='{"social":{"audience":"public"}}' where id=${publicUser}`;
+  for(const [id,state] of [[friend,'accepted'],[opposite,'accepted'],[pending,'pending']] as const){
+   await sql`insert into friendships(user_a,user_b,requested_by,state)
+    values(least(${owner}::uuid,${id}::uuid),greatest(${owner}::uuid,${id}::uuid),${owner},${state})`;
+  }
+  for(const id of [...shared,...targets]){
+   await sql`insert into media(id,kind,title,genres)
+    values(${id},${id===show?'show':'movie'},'Friend taste fixture',array['Drama'])`;
+  }
+  for(const id of viewers)for(const work of shared){
+   await sql`insert into ratings(user_id,media_id,value) values(${id},${work},${id===opposite?1:5})`;
+  }
+  for(const id of viewers.slice(1))for(const work of [liked,disliked,unrated,neutral,show]){
+   await sql`insert into tracking_state(user_id,media_id,watched,play_count) values(${id},${work},true,3)`;
+  }
+  for(const [work,value] of [[liked,5],[disliked,1],[neutral,3],[ratingOnly,5],[show,5]] as const){
+   for(const id of viewers.slice(1))await sql`insert into ratings(user_id,media_id,value) values(${id},${work},${value})`;
+  }
+  const history=createTasteAccumulator();
+  for(let i=0;i<12;i++)history.add({rating:4,explicit:0,implicit:3,consumed:true,repeated:false},{genres:namedFeatures(['Drama'])});
+  const profile=history.snapshot(),reference=prepareTasteReference(profile);
+  const [{revision}]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${owner}::uuid`);
+  for(const medium of ['movie','show']){
+   await sql`insert into user_taste_profiles(user_id,medium,revision,profile,scoring)
+    values(${owner},${medium},${revision},${profile}::jsonb,${reference}::jsonb)`;
+  }
+  const baseline=await titleTastes(owner,targets);
+  const inspected=await titleTastes(owner,targets,undefined,'recalculate',true);
+  for(const [id,points,rated] of [[liked,2,1],[disliked,-2,1],[unrated,1,0],[neutral,0,1]] as const){
+   expect(inspected.get(id)?.breakdown?.friends).toEqual({watched:1,rated,points});
+   expect(inspected.get(id)?.score).toBe(baseline.get(id)!.score!+points);
+  }
+  for(const id of [ratingOnly,show]){
+   expect(inspected.get(id)?.breakdown?.friends).toBeUndefined();
+   expect(inspected.get(id)?.score).toBe(baseline.get(id)?.score);
+  }
+  expect(await titleTastes(owner,targets)).toEqual(baseline);
+  expect(await sql`select 1 from user_taste_scores where user_id=${owner}`).toHaveLength(0);
+  await sql`delete from ratings where user_id=${owner} and media_id=${shared[0]}`;
+  await sql`insert into ratings(user_id,media_id,value) values(${owner},${liked},5)`;
+  expect((await titleTaste(owner,liked,'recalculate'))?.breakdown?.friends).toBeUndefined();
+  await sql`insert into ratings(user_id,media_id,value) values(${owner},${shared[0]},5)`;
+  for(const section of ['activity','insights','ratings']){
+   await sql`update users set settings=${{social:{sections:{[section]:'private'}}}}::jsonb where id=${friend}`;
+   expect((await titleTaste(owner,liked,'recalculate'))?.breakdown?.friends,section).toBeUndefined();
+  }
+  await sql`update users set settings='{}' where id=${friend}`;
+  await sql`update friendships set state='removed'
+   where user_a=least(${owner}::uuid,${friend}::uuid) and user_b=greatest(${owner}::uuid,${friend}::uuid)`;
+  expect((await titleTaste(owner,liked,'recalculate'))?.score).toBe(baseline.get(liked)?.score);
+ }finally{
+  await sql`delete from users where id=any(${sql.array(viewers,'UUID')}::uuid[])`;
+  await sql`delete from media where id=any(${sql.array([...shared,...targets],'UUID')}::uuid[])`;
+ }
+});
+
+run('similar friend evidence recognizes reading, gameplay and listening through their own records',async()=>{
+ const db=getSql(),[viewer,friend,member,gamePlay]=Array.from({length:4},()=>crypto.randomUUID());
+ const group=[['book','book'],['comic','comic'],['game','game'],['album','music'],['track','music']] as const;
+ const works:string[]=[member],targets:string[]=[];
+ const [saved]=await db`select value from system_settings where key='coast'`;
+ try{
+  await db`insert into system_settings(key,value) values('coast','{"experimentalBooks":true,"experimentalComics":true,"experimentalGaming":true,"experimentalMusic":true}')
+   on conflict(key) do update set value=system_settings.value || excluded.value`;
+  for(const id of [viewer,friend])await db`insert into users(id,username) values(${id},${'other-friend-taste-'+id})`;
+  await db`insert into friendships(user_a,user_b,requested_by,state)
+   values(least(${viewer}::uuid,${friend}::uuid),greatest(${viewer}::uuid,${friend}::uuid),${viewer},'accepted')`;
+  for(const [kind,category] of group){
+   for(let i=0;i<9;i++){
+    const id=crypto.randomUUID();works.push(id);
+    if(kind==='game')await db`insert into games(id,title) values(${id},'Game fixture')`;
+    else await db`insert into works(id,category,kind) values(${id},${category},${kind})`;
+    if(i<8){
+     await db`insert into ratings(user_id,media_id,value) values(${viewer},${id},5),(${friend},${id},5)`;
+     continue;
+    }
+    targets.push(id);
+    await db`insert into ratings(user_id,media_id,value) values(${friend},${id},5)`;
+    if(kind==='book'||kind==='comic'){
+     await db`insert into reading_works(id,kind,provider,external_id,title,source_url)
+      values(${id},${kind},'openlibrary',${id},'Reading fixture','https://fixture.invalid/book')`;
+     await db`insert into reading_progress(user_id,work_id,state,completed_at) values(${friend},${id},'completed',now())`;
+    }else if(kind==='game'){
+     await db`insert into game_playthroughs(id,user_id,game_id,status) values(${gamePlay},${friend},${id},'in-progress')`;
+     await db`insert into game_sessions(id,playthrough_id,minutes_played,played_at) values(gen_random_uuid(),${gamePlay},30,now())`;
+    }else{
+     await db`insert into music_works(id,kind,title) values(${id},${kind},'Music fixture')`;
+     if(kind==='album'){
+      await db`insert into works(id,category,kind) values(${member},'music','track')`;
+      await db`insert into music_works(id,kind,title) values(${member},'track','Album track')`;
+      await db`insert into media_relationships(parent_id,child_id,kind) values(${id},${member},'contains')`;
+     }
+     await db`insert into music_progress(user_id,track_id,play_count) values(${friend},${kind==='album'?member:id},2)`;
+    }
+   }
+  }
+  const matches=await visibleFriendTaste(viewer,targets);
+  for(const id of targets)expect(matches.get(id)).toEqual({watched:1,rated:1,points:2});
+  await db`update users set settings='{"social":{"sections":{"progress":"private"},"categories":{"music":"private"}}}' where id=${friend}`;
+  const filtered=await visibleFriendTaste(viewer,targets);
+  expect([...filtered.keys()]).toEqual([targets[2]]);
+ }finally{
+  await db`delete from users where id in (${viewer},${friend})`;
+  await db`delete from works where id=any(${db.array(works,'UUID')}::uuid[])`;
+  await db`update system_settings set value=${saved.value}::jsonb where key='coast'`;
+ }
 });
 run('taste metadata retains complementary sources and resolves genres with the configured priority',async()=>{
  const sql=getSql(),id=ids[3];
@@ -228,7 +347,7 @@ run('private profile and match reads withdraw old source permissions immediately
  const db=getSql(),owner=crypto.randomUUID();
  await db`insert into users(id,username) values(${owner},${'taste-policy-'+owner})`;
  try{
-  for(const id of ids.slice(0,2))await track(owner,{mediaId:id,action:'favourite',value:true});
+  for(const id of [ids[0],ids[1],ids[3]])await track(owner,{mediaId:id,action:'favourite',value:true});
   await refreshTasteCaches();
   const saved=await titleTaste(owner,ids[2]);
   expect(saved?.score).toBeGreaterThan(50);
@@ -279,7 +398,7 @@ run('private profile and match reads withdraw old source permissions immediately
   expect(await titleTaste(owner,ids[2])).toBeNull();
   expect((await titleTastes(owner,ids)).size).toBe(0);
   await refreshTasteCaches();
-  expect((await personalTaste(owner)).find(profile=>profile.medium==='movie')?.works).toBe(2);
+  expect((await personalTaste(owner)).find(profile=>profile.medium==='movie')?.works).toBe(3);
  }finally{await db`delete from users where id=${owner}`;}
 });
 

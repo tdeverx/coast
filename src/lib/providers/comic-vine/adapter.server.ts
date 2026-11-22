@@ -15,6 +15,7 @@ const idSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(Numbe
 const label = v.pipe(v.string(), v.maxLength(1000));
 const nullableLabel = v.optional(v.nullable(label));
 const description = v.optional(v.nullable(v.pipe(v.string(), v.maxLength(100000))));
+const namedCredits = v.fallback(v.optional(v.nullable(v.pipe(v.array(v.object({ name: label })),v.maxLength(1000)))),undefined);
 const issueSchema = v.object({
   id: idSchema,
   site_detail_url: v.pipe(v.string(), v.maxLength(2000)),
@@ -28,8 +29,10 @@ const issueSchema = v.object({
   image: v.optional(v.nullable(v.object({
     small_url: nullableLabel, medium_url: nullableLabel, super_url: nullableLabel,
   }))),
-  volume: v.optional(v.nullable(v.object({ id: idSchema, name: label }))),
+  volume: v.optional(v.nullable(v.object({ id: idSchema, name: label,
+    publisher:v.fallback(v.optional(v.nullable(v.object({name:label}))),undefined) }))),
   person_credits: v.optional(v.nullable(v.pipe(v.array(v.object({ name: label, role: nullableLabel })), v.maxLength(1000)))),
+  concept_credits:namedCredits,character_credits:namedCredits,team_credits:namedCredits,location_credits:namedCredits,
 });
 const envelope = v.object({ status_code: v.pipe(v.number(), v.integer()) });
 const total = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(Number.MAX_SAFE_INTEGER));
@@ -45,6 +48,7 @@ const querySchema = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(250
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(READING_PROVIDER_PAGE_LIMIT));
 const volumeSearches = providerCache<v.InferOutput<typeof volumesSchema>>(100, 15 * 60_000);
 const fields = 'id,name,issue_number,deck,description,cover_date,store_date,image,volume,person_credits,resource_type,site_detail_url';
+const detailFields = `${fields},concept_credits,character_credits,team_credits,location_credits`;
 const cardFields = 'id,name,issue_number,store_date,image,volume,site_detail_url';
 
 function coverUrl(raw: string | null | undefined): string | undefined {
@@ -72,13 +76,20 @@ function mapIssue(issue: v.InferOutput<typeof issueSchema>): ReadingMetadata {
   const publishedYear = date?.match(/^([0-9]{4})(?:-|$)/)?.[1];
   const summary = readingPlainText(issue.description || issue.deck || '').slice(0, 5000);
   const authors = [...new Set((issue.person_credits ?? []).filter(person => !person.role || /\b(writer|script|story)\b/i.test(person.role)).map(person => readingPlainText(person.name).slice(0, 500)).filter(Boolean))].slice(0, 50);
+  const cleanCredits=(credits:{name:string}[],limit:number)=>[...new Set(credits.map(({name})=>readingPlainText(name).slice(0,500)).filter(Boolean))].slice(0,limit);
+  const concepts=cleanCredits(issue.concept_credits??[],50);
+  const subjects=cleanCredits([...(issue.character_credits??[]),...(issue.team_credits??[]),...(issue.location_credits??[])],100);
+  const publisher=readingPlainText(issue.volume?.publisher?.name??'').slice(0,500);
+  const facts={comicVine:{
+    ...(issue.cover_date&&v.safeParse(v.pipe(v.string(),v.isoDate()),issue.cover_date).success?{coverDate:issue.cover_date}:{}),
+    ...(concepts.length?{concepts}:{}),...(subjects.length?{subjects}:{}),...(publisher?{publisher}:{}),
+  }};
   return {
     provider: 'comic-vine', externalId, kind: 'comic', title,
     sourceUrl,
     overview: summary || undefined,
     coverUrl: coverUrl(issue.image?.super_url) ?? coverUrl(issue.image?.medium_url) ?? coverUrl(issue.image?.small_url),
-    ...(issue.cover_date&&v.safeParse(v.pipe(v.string(),v.isoDate()),issue.cover_date).success
-      ? {facts:{comicVine:{coverDate:issue.cover_date}}}:{}),
+    ...(Object.keys(facts.comicVine).length?{facts}:{}),
     ...(issue.store_date&&v.safeParse(v.pipe(v.string(),v.isoDate()),issue.store_date).success?{releaseDate:issue.store_date}:{}),
     credits:(issue.person_credits??[]).slice(0,100).map(person=>({name:readingPlainText(person.name).slice(0,500),role:readingPlainText(person.role||'Contributor').slice(0,500)||'Contributor'})).filter(person=>person.name),
     authors, subjects: [], publishedYear: publishedYear && Number(publishedYear) > 0 ? Number(publishedYear) : undefined,
@@ -183,7 +194,7 @@ export class ComicVineAdapter {
   async details(id: string): Promise<ReadingMetadata> {
     v.parse(comicVineIdSchema, id);
     try {
-      const result = v.parse(detailSchema, await this.read(`/api/issue/${id}/`, new URLSearchParams()));
+      const result = v.parse(detailSchema, await this.read(`/api/issue/${id}/`, new URLSearchParams(),detailFields));
       if (`4000-${result.results.id}` !== id) throw new AppError(502, 'Comic Vine returned a different issue identity.', 'comic_vine_unavailable');
       return mapIssue(result.results);
     } catch (error) { providerError(error); }

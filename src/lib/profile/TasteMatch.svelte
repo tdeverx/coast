@@ -1,24 +1,26 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { useClient } from '#lib/ui/client-context.js';
-  import { displayLabel } from '#lib/ui/labels.js';
+  import { tasteSignalLabel } from '#lib/social/taste.js';
   import { createResource } from '#lib/ui/resource.svelte.js';
   import Button from '#lib/ui/components/Button.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import MetricGrid from '#lib/ui/components/MetricGrid.svelte';
   import TasteBreakdown from './TasteBreakdown.svelte';
-  import type { scoreTaste } from '#lib/social/taste-profile.js';
+  import type { TasteMatch } from '#lib/social/taste-cache.server.js';
+  import { mediumForTasteKind } from '#lib/social/taste-profile.js';
   import type { CollectionTaste, TasteGroup } from '#lib/social/collection-taste.server.js';
 
-  let { workId, group, rating, adminTitle, onclose }: {
-    workId: string; group?: TasteGroup; rating?: number | null; adminTitle?: string; onclose?: () => void;
+  let { workId, group, kind, rating, adminTitle, onclose }: {
+    workId: string; group?: TasteGroup; kind?: string; rating?: number | null; adminTitle?: string; onclose?: () => void;
   } = $props();
   const { api } = useClient();
-  const match = createResource<{ match: ReturnType<typeof scoreTaste> | CollectionTaste | null }>({ match: null });
+  const match = createResource<{ match: TasteMatch | CollectionTaste | null }>({ match: null });
   let open = $state(false);
   const result = $derived(match.data.match);
   const personalRating = $derived(!group ? rating : null);
   const members = $derived(result && 'members' in result ? result.members : null);
+  const medium = $derived(mediumForTasteKind(kind));
   function load() {
     const params = new URLSearchParams({ workId });
     if (group) params.set('group', group);
@@ -40,7 +42,7 @@
       {#if personalRating != null || result?.score != null}
         <MetricGrid items={[
           ...(personalRating != null ? [{ label: 'Your rating', value: `${personalRating.toLocaleString()} / 5` }] : []),
-          ...(result?.score != null ? [{ label: 'Fit with your history', value: `${result.score}%`, detail: '50% is neutral' }] : []),
+          ...(result?.score != null ? [{ label: 'Taste match', value: `${result.score}%`, detail: '50% is neutral' }] : []),
           ...(result?.score != null && 'confidence' in result ? [{ label: 'Evidence strength', value: `${result.confidence}%` }] : []),
           ...(adminTitle !== undefined && result && !result.breakdown && 'ratingAdjustment' in result && result.ratingAdjustment
             ? [{ label: 'Learned adjustment', value: `${result.ratingAdjustment > 0 ? '+' : '−'}${Math.abs(result.ratingAdjustment)} points` }]
@@ -50,7 +52,7 @@
       {#if result?.score != null}
         {#if 'reasons' in result && result.reasons.length && (adminTitle === undefined || !result.breakdown)}<ul>
           {#each result.reasons as reason (`${reason.dimension}:${reason.name}`)}
-            <li>{displayLabel(reason.dimension)} · {reason.name} · {reason.direction === 'negative' ? 'Lower match' : reason.direction === 'positive' ? 'Higher match' : 'Mixed feedback'}{#if adminTitle !== undefined} · {reason.samples} {reason.samples === 1 ? 'title' : 'titles'} in your history{/if}</li>
+            <li>{tasteSignalLabel(reason.dimension,medium)} · {reason.name} · {reason.direction === 'negative' ? 'Lowers match' : reason.direction === 'positive' ? 'Supports match' : 'Mixed feedback'}{#if adminTitle !== undefined} · {reason.samples} {reason.samples === 1 ? 'title' : 'titles'} in your history{/if}</li>
           {/each}
         </ul>{/if}
       {:else if group}<p>Coast needs enough history to match at least two titles and half the sample.</p>
@@ -60,7 +62,7 @@
       <p>Matched {members.matched} of {members.sampled} {group === 'reading-group' ? 'known issues' : 'titles'}.{members.sampled < members.total ? ` Sampled from ${members.total} in the catalogue.` : ''}</p>
     {/if}
     {#if adminTitle !== undefined && !match.busy && !match.error && result?.breakdown}
-      <TasteBreakdown breakdown={result.breakdown} score={result.score} watchedLabel={group === 'collection' ? 'Titles watched' : undefined} />
+      <TasteBreakdown breakdown={result.breakdown} score={result.score} {medium} watchedLabel={group === 'collection' ? 'Titles watched' : undefined} />
     {/if}
   </Dialog>
 {/if}
