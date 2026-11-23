@@ -114,6 +114,7 @@ run('disabling Trakt import or live activity clears just the current observation
  const db=getSql(),{updateSyncPreferences}=await import('../src/lib/providers/trakt/connection.server');
  const connection=context.connection, accountGeneration=connection.accountGeneration;
  const preferences = initialTraktSync();
+ preferences.import.live = true;
  preferences.export.scrobble = true;
  const observation={started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),action:'checkin',type:'movie',movie};
  await db`update provider_instances set enabled=true where id=${context.instance.id}`;

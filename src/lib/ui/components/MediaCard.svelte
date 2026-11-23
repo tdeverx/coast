@@ -411,7 +411,7 @@
   .caption-status[data-tone='negative'] {color:var(--danger);}
   .caption-status {display:grid;place-items:center;width:var(--control-compact-height);height:var(--control-compact-height);}
   .caption-row { display:flex; align-items:center; gap:8px; }
-  .caption { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; -webkit-touch-callout:none; user-select:none; }
+  .caption { flex:1; min-width:0; display:flex; flex-direction:column; gap:var(--row-text-gap); -webkit-touch-callout:none; user-select:none; }
   .caption-action { flex-shrink:0; }
   .card-body { font-size:var(--text-sm); line-height:var(--leading-relaxed); overflow-wrap:anywhere; }
   .card-body :global(p) { margin:0; }

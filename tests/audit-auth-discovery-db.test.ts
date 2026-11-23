@@ -7,6 +7,7 @@ import { getConfig } from '../src/lib/server/config';
 import { setupState } from '../src/lib/server/auth';
 import { actions as setupActions } from '../src/routes/setup/+page.server';
 import { beginOnboardingImports, onboardingStatus, pollOnboardingTrakt, startOnboardingTrakt } from '../src/lib/server/auth/onboarding';
+import { initialTraktSync } from '../src/lib/providers/trakt/access';
 import { encryptCredential } from '../src/lib/server/security/credentials';
 import * as instances from '../src/lib/providers/instances.server';
 import * as providerFetch from '../src/lib/server/security/provider-fetch';
@@ -147,7 +148,9 @@ run('failed onboarding Trakt reconnect cancels stale evidence and completes only
   });
   try {
     expect(await onboardingStatus(owner.id)).toMatchObject({ reconnect: true, traktLinked: false, complete: false });
-    const challenge = await startOnboardingTrakt(owner.id, { instanceId: instance.id });
+    const traktSync = initialTraktSync();
+    traktSync.import.lists = true;
+    const challenge = await startOnboardingTrakt(owner.id, { instanceId: instance.id, traktSync });
     expect(challenge).toMatchObject({ userCode: 'FIXTURE' });
     const [pending] = await db.select().from(s.providerConnections).where(eq(s.providerConnections.id, connection.id));
     expect(pending.status).toBe('disconnected');
@@ -166,6 +169,7 @@ run('failed onboarding Trakt reconnect cancels stale evidence and completes only
     expect(selected).toHaveLength(2);
     expect(selected.some(id => jobs.some(job => job.id === id))).toBe(false);
     const replacements = await db.select().from(s.outboxActions).where(inArray(s.outboxActions.id, selected));
+    expect(replacements.map(job => job.kind).sort()).toEqual(['trakt.import', 'trakt.lists-import']);
     expect(replacements.every(job => job.accountGeneration === replaced.accountGeneration && job.state === 'pending' && job.payload.initialImport === true)).toBe(true);
     await db.update(s.outboxActions).set({ state: 'succeeded' }).where(inArray(s.outboxActions.id, selected));
     expect(await onboardingStatus(owner.id)).toMatchObject({ complete: true });

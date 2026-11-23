@@ -10,10 +10,17 @@ import { message } from './client';
 let opening: Promise<void> = Promise.resolve();
 let closingState: App.PageState | undefined;
 
+export function inviteProfileTarget(href: string | undefined) {
+  if (!href || !['/invite','/register','/ui-preview/login'].includes(page.url.pathname) ||
+      !(page.data.publicProfiles || page.data.publicRead)) return null;
+  const target = mediaDetailTarget(href,page.url);
+  return target?.kind === 'profile' ? target : null;
+}
+
 function overlayTarget(href: string, section = false) {
   const target = page.data.user && !page.url.pathname.startsWith('/ui-preview')
     ? mediaDetailTarget(href,page.url) ?? (section || detailPanelHref(panelAddress(page),page.state) ? sectionTarget(href,page.url) : null)
-    : null;
+    : inviteProfileTarget(href);
   return target && 'kind' in target && target.kind === 'profile' && page.data.user?.access?.libraryOnly ? null : target;
 }
 export function openMediaDetails(href:string,section=false,replace=false){

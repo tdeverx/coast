@@ -1,7 +1,7 @@
 import type {IconName} from '#lib/ui/components/Icon.svelte';
 export type FilterSection = 'content' | 'access' | 'activity' | 'order';
 export type FilterReset = { disabled: boolean; run: () => unknown };
-export type SegmentOption = { value: string; label: string; disabled?: boolean };
+export type SegmentOption = { value: string; label: string; disabled?: boolean; href?: string };
 export type FilterGroup = {
   label: string;
   section?: FilterSection;

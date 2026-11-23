@@ -15,8 +15,8 @@
     children?: Snippet; text?: string; icon?: IconName; id?:string;
     onclick?: (event: MouseEvent) => void;
     primaryAction?: () => void;
-    emphasis?: 'standard' | 'subtle'; size?: 'standard' | 'hero' | 'icon'; fallback?: boolean;
-    disabled?: boolean; type?: 'button' | 'submit'; label?: string; title?: string;
+    emphasis?: 'standard' | 'subtle'; size?: 'standard' | 'hero' | 'segment' | 'icon'; fallback?: boolean;
+    disabled?: boolean; type?: 'button' | 'submit'; form?: string; label?: string; title?: string;
     pressed?: boolean; compact?: boolean;
  trigger?: Snippet; hideTrigger?: boolean;
     align?: 'start' | 'end'; upward?: boolean; triggerClass?: string; onopen?: () => void; onclose?: () => void;
@@ -31,7 +31,7 @@
   );
   let {
     children, text, icon, id: suppliedId, href, onclick, primaryAction, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
-    type = 'button', label, title, pressed, compact = false,
+    type = 'button', form, label, title, pressed, compact = false,
     menu = false, item = false, trigger, hideTrigger = false,
     align = 'end', upward = false, triggerClass, onopen, onclose, panel = false,
     disabledReason, danger = false, branch = false, submenuIcon = 'right', openOnHover, checked, showCheckmark = true,
@@ -55,9 +55,9 @@
   export function focusFirst(last = false) { return controller?.focusFirst(last); }
   const nested = $derived(controller?.nested ?? false);
   const usesMaterial = $derived(!menu && !item && !compact && size !== 'icon' && emphasis === 'standard');
-  const controlMaterial = $derived(material ?? (size === 'hero' ? 'clear' : 'glassDark'));
+  const controlMaterial = $derived(material ?? (size === 'hero' || size === 'segment' ? 'clear' : 'glassDark'));
   const controlClass = $derived(`${menu ? triggerClass ?? (nested ? 'menu-row' : text ? 'button control-subtle' : 'icon-button')
-    : item ? 'menu-row' : size === 'icon' ? 'icon-button' : compact ? 'availability-toggle' : `button control-${emphasis}${size === 'hero' ? ' hero' : ''}`} ${className}`);
+    : item ? 'menu-row' : size === 'icon' ? `icon-button control-${emphasis}` : compact ? 'availability-toggle' : `button control-${emphasis}${size === 'standard' ? '' : ` ${size}`}`} ${className}`);
   const role = $derived(item || (menu && nested)
     ? (checked === undefined ? 'menuitem' : selection === 'radio' ? 'menuitemradio' : 'menuitemcheckbox')
     : undefined);
@@ -104,13 +104,16 @@
     {:else if item && checked && showCheckmark}<span class="menu-chevron"><Icon name="check" /></span>{/if}
   {/if}
 {/snippet}
+{#snippet buttonContent()}
+  {#if usesMaterial}<span class="glass-button-content">{@render content()}</span>{:else}{@render content()}{/if}
+{/snippet}
 {#snippet control()}
   {#if href && !menu}<a class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
     id={suppliedId} href={disabled ? undefined : href} role={role ?? (disabled ? 'link' : undefined)} tabindex={disabled ? -1 : undefined}
     aria-label={label} aria-disabled={disabled || undefined} aria-describedby={disabled && disabledReason ? `${id}-reason` : undefined}
-    {title} onclick={activate}>{@render content()}</a>
-  {:else}<button bind:this={triggerNode} class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:active={pressed} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
+    {title} onclick={activate}>{@render buttonContent()}</a>
+  {:else}<button {form} bind:this={triggerNode} class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:active={pressed} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
     id={suppliedId ?? (menu ? `${id}-trigger` : undefined)} {type} hidden={hideTrigger} disabled={disabled && !(item && disabledReason)}
     {role} aria-label={label ?? (menu ? 'More options' : undefined)} aria-pressed={pressed} aria-checked={checked}
@@ -118,7 +121,7 @@
     aria-haspopup={menu || branch ? 'menu' : undefined} aria-expanded={controller?.open} aria-controls={menu ? `${id}-menu` : undefined}
     title={title ?? (disabled ? disabledReason : undefined)} data-menu-keep-open={menu || item && keepOpen ? true : undefined}
     onkeydown={controller?.triggerKey} onpointerenter={controller?.hoverTrigger}
-    onclick={activate}>{@render content()}</button>{/if}
+    onclick={activate}>{@render buttonContent()}</button>{/if}
 {/snippet}
 {#if controller}<div bind:this={root} use:presentInline class="context" class:external-trigger={hideTrigger} class:submenu={nested} role="presentation"
   onpointerenter={controller.cancelHoverDismiss} onpointerleave={controller.leaveHover}>
@@ -144,11 +147,41 @@
   .menu-surface.inline-preview { position: relative; }
   .menu-surface.drill-hidden {visibility:hidden;pointer-events:none;}
   .button.control-standard {color:var(--ink);background:var(--coast-glass-fill);border:0;}
-  .button.control-standard:hover {background:color-mix(in srgb,var(--coast-glass-fill),var(--white) 5%);}
-  .button.control-standard.hero:hover {background:var(--coast-glass-fill);}
+  .button.control-standard:hover:where(:not(:disabled, [aria-disabled="true"])) {background:color-mix(in srgb,var(--coast-glass-fill),var(--white) 5%);}
+  .button.segment.control-standard:hover:not(:disabled):not([aria-disabled='true']) {
+    background: color-mix(in srgb, var(--coast-glass-fill), var(--white) var(--control-hover-opacity));
+  }
+  .button.control-standard.hero:hover:where(:not(:disabled, [aria-disabled="true"])) {background:var(--coast-glass-fill);}
+  .button.segment {
+    min-height: var(--segment-height);
+    padding-inline: calc(var(--segment-padding-inline) + var(--segment-inset));
+    border-radius: 999px;
+    color: var(--white);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-relaxed);
+  }
   .button.control-subtle {color:var(--muted);background:transparent;border-color:transparent;}
   .button.control-subtle:hover {color:var(--ink);background:color-mix(in srgb,var(--white) 5%,transparent);}
-  .button.control-danger, .button.control-danger:hover, .icon-button.control-danger, .icon-button.control-danger:hover {color:var(--danger);}
+  .button.control-subtle.inset-row-action {
+    padding-inline:var(--menu-item-inset, 10px);
+    border-radius:var(--menu-row-radius, 8px);
+    background:rgb(0 0 0 / 30%);
+    color:var(--menu-row-ink);
+    font-size:var(--text-sm);
+    font-weight:var(--weight-semibold);
+    cursor:pointer;
+  }
+  .button.control-subtle.inset-row-action:hover:not(:disabled, [aria-disabled="true"]) { background:rgb(0 0 0 / 40%); }
+  .button.control-danger, .button.control-danger:hover, .icon-button.control-danger:not(.control-subtle) {color:var(--danger);}
+  .icon-button.control-subtle {
+    --icon-control: var(--icon-inline);
+    background: transparent;
+    color: color-mix(in srgb, var(--menu-row-ink) calc(var(--control-disabled-opacity) * 100%), transparent);
+    transition: color var(--fast);
+  }
+  .icon-button.control-subtle:hover { background: transparent; }
+  .icon-button.control-subtle:not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible) { color: var(--white); }
+  .icon-button.control-subtle.control-danger:not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible) { color: var(--danger); }
   .button.light-material {color:var(--canvas);}
   .availability-toggle {display:grid;place-items:center;flex:0 0 auto;width:var(--control-compact-height);height:var(--control-compact-height);padding:0;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:color 150ms ease;}
   .availability-toggle:hover,.availability-toggle:focus-visible,.availability-toggle.active {color:var(--ink);}

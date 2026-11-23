@@ -37,7 +37,7 @@
 {#if actions.length}<div class="queue">
     {#each actions as action (action.id)}{@const waiting = jobWaiting(action)}
 <div class="row action" use:contextGesture={(point) => menus[action.id]?.openAt(point)}>
-  <div class="details">
+  <div class="details row-text-stack">
     <h3>{displayLabel(action.kind)}</h3>
     {#if action.connectionLabel}<p>{action.connectionLabel}</p>{/if}
     <p>
@@ -103,7 +103,6 @@
   p {
     font-size: var(--text-sm);
     color: var(--muted);
-    margin: 6px 0 0;
   }
   .job-error {
     color: var(--ink);

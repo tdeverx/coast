@@ -3,6 +3,8 @@
   import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import AccessFields from '#lib/providers/trakt/AccessFields.svelte';
+  import PairingCode from '#lib/providers/trakt/PairingCode.svelte';
+  import { beginTraktActivation } from '#lib/providers/trakt/activation.js';
   import { initialTraktSync, traktPreferences } from '#lib/providers/trakt/access.js';
   import type {SourceImpact} from '#lib/collection/source-changes.server.js';
   import { untrack } from 'svelte';
@@ -147,9 +149,12 @@
     if (busy) return;
     busy = true;
     error = '';
+    const activate = preview ? undefined : beginTraktActivation();
     try {
       device = await change('providers/trakt/start', { instanceId: provider.id, traktSync: linkSync });
+      void activate?.(device);
     } catch (e) {
+      void activate?.(null);
       error = message(e);
     } finally {
       busy = false;
@@ -187,7 +192,7 @@
               : 'request'}
         /></span
       >
-      <div>
+      <div class="row-text-stack">
         <h3>{provider.name}</h3>
         <p class="small">
           {provider.provider === 'jellyfin'
@@ -317,9 +322,9 @@
         <p>
           Open <a class="text-accent" href={device.verificationUrl} target="_blank" rel="noreferrer"
             >Trakt’s activation page</a
-          > and enter:
+          > and enter the code.
         </p>
-        <strong class="device-code">{device.userCode}</strong>
+        <PairingCode code={device.userCode} />
       </div>
       {#if pending}<p class="small">
           Waiting for authorisation. Finish on Trakt, then check again.
@@ -376,12 +381,5 @@
     display: grid;
     place-items: center;
     background: var(--surface);
-  }
-  .device-code {
-    display: block;
-    font-size: var(--text-2xl);
-    letter-spacing: var(--tracking-wide);
-    color: var(--ink);
-    margin-top: 15px;
   }
 </style>

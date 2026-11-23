@@ -28,7 +28,9 @@
 <div class="picker-container" class:navigation={presentation==='navigation'} class:glass={!!material} use:materialSurface={{variant:material??'glassDark',enabled:!!material}}>
  <div class="control-viewport">
   <div class="segmented-control" role="group" aria-label={label} use:slidingPill>
-    {#each options as option}<button
+    {#each options as option}
+      {#if option.href && !option.disabled}<a href={option.href} aria-current={value === option.value ? 'page' : undefined}>{option.label}</a>
+      {:else}<button
         type="button"
         disabled={option.disabled}
         aria-pressed={!option.disabled && value === option.value}
@@ -36,7 +38,7 @@
           value = option.value;
           onchange?.(value);
         }}>{option.label}</button
-      >{/each}
+      >{/if}{/each}
   </div>
  </div>
 </div>

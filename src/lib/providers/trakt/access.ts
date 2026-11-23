@@ -33,7 +33,7 @@ type TraktSettings = { traktSync?: unknown; traktAccess?: unknown; sync?: unknow
 
 export function initialTraktSync(): TraktSync {
   return {
-    import: { history: true, progress: true, collection: false, ratings: true, watchlist: true, lists: true, live: true, recommendations: true },
+    import: { history: true, progress: true, collection: false, ratings: true, watchlist: true, lists: false, live: false, recommendations: true },
     export: { ...defaultSyncPreferences },
   };
 }

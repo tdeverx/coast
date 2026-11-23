@@ -20,7 +20,7 @@ try{
   await page.route('**/api/v1/playback',async route=>{const request=route.request();if(request.method()!=='POST')return route.continue();const data=request.postDataJSON();if(data.mediaType==='audio'&&delivery==='hls')data.browser.containers=[];return route.continue({postData:JSON.stringify(data)});});
   page.on('response',async response=>{if(response.url()===origin+'/api/v1/playback'&&response.request().method()==='POST'){const data=await response.json();if(data.mediaType==='audio')audioDelivery=data.kind;}});page.setDefaultTimeout(10000);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-  await page.goto(`${origin}/for-you`);if(page.url().includes('/login')){await page.locator('input[name="username"]').fill(fixture.username);await page.locator('input[name="password"]').fill(fixture.password);await page.getByRole('button',{name:'Sign in',exact:true}).click();}await expect(page).toHaveURL(/for-you$/);
+  await page.goto(`${origin}/for-you`);if(page.url().includes('/login')){await page.locator('input[name="username"]').fill(fixture.username);await page.locator('input[name="password"]').fill(fixture.password);await page.getByRole('button',{name:'Continue',exact:true}).click();}await expect(page).toHaveURL(/for-you$/);
   await context.storageState({path:sessionFile});
   await page.goto(`${origin}/music?connection=${fixture.connectionId}&kind=album`);
   await expect(page.locator('[data-coast-glass-renderer]').first()).toBeAttached();

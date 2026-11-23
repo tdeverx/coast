@@ -1,11 +1,13 @@
 import { provisionOnboarding } from '#lib/providers/jellyfin/provisioning.server.js';
+import { sql } from 'drizzle-orm';
+import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
 import * as v from 'valibot';
 import { getSql } from '../db';
 import { inviteDefaultsSchema } from '#lib/auth/invites.js';
 import { registrationSchema } from '#lib/auth/registration.js';
 import { getConfig } from '../config';
 import { startTraktDevice, finishTraktDevice } from '#lib/providers/trakt/connection.server.js';
-import { initialTraktSync, traktSyncSchema } from '#lib/providers/trakt/access.js';
+import { initialTraktSync, traktPreferences, traktSyncSchema } from '#lib/providers/trakt/access.js';
 import { hashToken, newSession, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '#lib/providers/jellyfin/connection.server.js';
@@ -57,7 +59,7 @@ export async function registerAccount(input: unknown, client: string, inviteOnly
         await recordAccountEvent(sql,'invite.claimed',row.id,invite.id);
       }
       const {access_defaults:access,...user}=row;
-      return {user:{...user,access} as SessionUser,provision};
+      return {user:{...user,access} as SessionUser,provision: provision && defaults?.account !== 'choice'};
     });
   } catch (cause) {
     if ((cause as { errno?: string }).errno === '23505') throw new AppError(409,'That username is already in use.');
@@ -80,9 +82,10 @@ export async function onboardingPending(userId: string) {
   return !!row;
 }
 export async function onboardingServices(userId: string) {
-  return getSql()`select p.id,p.name from provider_instances p where p.provider='jellyfin' and p.enabled
+  return getSql()<{id:string;name:string}[]>`select p.id,p.name from provider_instances p where p.provider='jellyfin' and p.enabled
     and p.server_identity is not null and p.settings->>'approved'='true'
-    and not exists(select 1 from onboarding_provisioning job where job.user_id=${userId} and job.state<>'complete')
+    and not exists(select 1 from onboarding_provisioning job where job.user_id=${userId} and job.state<>'complete'
+      and not (job.remote_id is null and job.state='pending' and exists(select 1 from invite_claims c join registration_invites i on i.id=c.invite_id where c.user_id=job.user_id and i.defaults->>'account'='choice')))
     and not exists(select 1 from invite_claims c join registration_invites i on i.id=c.invite_id
       where c.user_id=${userId} and i.provision_generation is not null and i.provision_instance_id is distinct from p.id and not exists(
         select 1 from provider_connections a where a.id=i.provision_connection_id and a.instance_id=p.id and a.account_generation=i.provision_generation))
@@ -91,14 +94,37 @@ export async function onboardingServices(userId: string) {
 export async function linkOnboarding(userId: string, input: unknown) {
   if (!await onboardingPending(userId)) throw new AppError(409, 'Onboarding is already complete.');
   checkLoginRate(`onboarding:${userId}`);
-  const data = v.parse(v.object({ instanceId:v.pipe(v.string(),v.uuid()),username:v.pipe(v.string(),v.minLength(1),v.maxLength(250)),password:v.pipe(v.string(),v.maxLength(4096)) }),input);
-  const instance=(await onboardingServices(userId)).find((entry:{id:string})=>entry.id===data.instanceId);
-  if(!instance)throw new AppError(403,'Choose an enabled, approved Jellyfin server.');
+  const data = v.parse(v.object({
+    instanceId:v.optional(v.pipe(v.string(),v.uuid())), serverUrl:v.optional(v.pipe(v.string(),v.url(),v.maxLength(2048))),
+    username:v.pipe(v.string(),v.trim(),v.minLength(1),v.maxLength(250)), password:v.pipe(v.string(),v.maxLength(4096)),
+  }),input);
+  let instanceId = data.instanceId;
+  if (data.serverUrl) {
+    if (!(await getConfig()).allowArbitraryServers) throw new AppError(403,'Server URL entry is disabled.');
+    // Resolve locally before sending credentials. Only an approved instance can receive them.
+    const [server] = await getSql()`select id from provider_instances where provider='jellyfin' and enabled
+      and rtrim(base_url,'/')=${data.serverUrl.replace(/\/+$/, '')} and settings->>'approved'='true' limit 1`;
+    instanceId = server?.id;
+  }
+  const instance = (await onboardingServices(userId)).find(entry => entry.id === instanceId);
+  if (!instance) throw new AppError(403,'Choose an enabled, approved Jellyfin server.');
   const started = new Date();
-  const connection = await connectJellyfin(userId,data);
-  // Read the stored generation: it is deliberately separate from authentication binding.
-  await getSql()`UPDATE user_onboarding o SET connection_id=c.id,account_generation=c.account_generation,requested_at=${started}
-    FROM provider_connections c WHERE o.user_id=${userId} AND c.id=${connection.id} AND c.user_id=o.user_id AND o.completed_at IS NULL`;
+  await connectJellyfin(userId,{instanceId:instance.id,username:data.username,password:data.password},undefined,async (tx,connection) => {
+    // Claim the choice and bind this generation in the same transaction as the verified identity.
+    const [job] = await tx.execute<{state:string;remote_id:string|null;kind:string|null}>(sql`select p.state,p.remote_id,i.defaults->>'account' as kind
+      from onboarding_provisioning p left join invite_claims c on c.user_id=p.user_id left join registration_invites i on i.id=c.invite_id
+      where p.user_id=${userId} for update of p`);
+    if (job?.state === 'complete') {
+      if (!job.remote_id || jellyfinItemKey(job.remote_id) !== jellyfinItemKey(connection.externalUserId ?? ''))
+        throw new AppError(409,'Connect the assigned Jellyfin account.');
+    } else if (job) {
+      if (job.kind !== 'choice' || job.remote_id || job.state !== 'pending') throw new AppError(409,'Finish the existing Jellyfin setup first.');
+      await tx.execute(sql`delete from onboarding_provisioning where user_id=${userId}`);
+    }
+    const linked = await tx.execute(sql`update user_onboarding set connection_id=${connection.id},account_generation=${connection.accountGeneration},requested_at=${started.toISOString()}::timestamptz
+      where user_id=${userId} and completed_at is null returning user_id`);
+    if (!linked.length) throw new AppError(409,'Onboarding is already complete.');
+  });
 }
 export async function retryOnboarding(userId: string) {
   if (!await onboardingPending(userId)) return;
@@ -118,7 +144,7 @@ export async function retryOnboarding(userId: string) {
 
 export async function onboardingTraktServices() {
  if(!(await getConfig()).enableTrakt)return [];
- return getSql()`select id,name from provider_instances where provider='trakt' and enabled and credentials is not null order by name`;
+ return getSql()<{id:string;name:string}[]>`select id,name from provider_instances where provider='trakt' and enabled and credentials is not null order by name`;
 }
 async function pendingOnboarding(userId:string) {
  const [row]=await getSql()`select * from user_onboarding where user_id=${userId} and completed_at is null`;
@@ -154,11 +180,22 @@ async function onboardingRow(userId:string) {
  t.status as trakt_status,t.account_generation as current_trakt_generation,
  coast_trakt_sync_allowed(t.settings,'import','tracking') as trakt_tracking,
  coast_trakt_sync_allowed(t.settings,'import','lists') as trakt_lists,
- case when i.defaults is not null then claim.id end as claim_id from user_onboarding o
+ claim.id is not null as invited, case when i.defaults is not null then claim.id end as claim_id from user_onboarding o
  left join invite_claims claim on claim.user_id=o.user_id left join registration_invites i on i.id=claim.invite_id
  left join provider_connections c on c.id=o.connection_id and c.user_id=o.user_id
  left join provider_connections t on t.id=o.trakt_connection_id and t.user_id=o.user_id where o.user_id=${userId}`;
  return row;
+}
+export async function onboardingConnections(userId:string) {
+ const [row] = await getSql()`select o.connection_id, o.trakt_connection_id, t.settings, t.account_generation,
+    c.username as jellyfin_name, t.username as trakt_name, i.defaults->>'account' as invite_account
+    from user_onboarding o left join provider_connections c on c.id=o.connection_id and c.user_id=o.user_id
+    left join provider_connections t on t.id=o.trakt_connection_id and t.user_id=o.user_id
+    left join invite_claims claim on claim.user_id=o.user_id left join registration_invites i on i.id=claim.invite_id
+    where o.user_id=${userId}`;
+ return {jellyfinId:row?.connection_id as string|null, traktId:row?.trakt_connection_id as string|null,
+   traktGeneration:row?.account_generation as string|null, sync:row?.settings ? traktPreferences(row.settings) : initialTraktSync(),
+   jellyfinName:String(row?.jellyfin_name??''), traktName:String(row?.trakt_name??''), inviteAccount:String(row?.invite_account??'coast')};
 }
 export async function beginOnboardingImports(userId:string) {
  const row=await onboardingRow(userId);
@@ -184,11 +221,11 @@ async function ensureTraktImports(userId:string,row:any) {
   if(job?.payload?.initialImport===true)await db`update user_onboarding set import_jobs=import_jobs||${{[kind]:id}}::jsonb where user_id=${userId} and trakt_account_generation=${row.trakt_account_generation} and completed_at is null`;
  }
 }
-type OnboardingImport={label:string;state:string;processed:number;total:number|null;error:string|null;stage:string};
-type OnboardingStatus={complete:boolean;phase:'complete'|'connections'|'importing';progress:Awaited<ReturnType<typeof libraryScanProgress>>|null;imports:OnboardingImport[];reconnect:boolean;linked:boolean;traktLinked:boolean;requiredProvider:string};
+type OnboardingImport={kind:string;label:string;state:string;processed:number;total:number|null;error:string|null;stage:string};
+type OnboardingStatus={invited:boolean;complete:boolean;phase:'complete'|'connections'|'importing';progress:Awaited<ReturnType<typeof libraryScanProgress>>|null;imports:OnboardingImport[];reconnect:boolean;linked:boolean;traktLinked:boolean;requiredProvider:string};
 export async function onboardingStatus(userId:string):Promise<OnboardingStatus> {
  let row=await onboardingRow(userId);
- if(!row||row.completed_at)return {complete:true,phase:'complete' as const,progress:null,imports:[],reconnect:false,linked:false,traktLinked:false,requiredProvider:'none'};
+ if(!row||row.completed_at)return {invited:!!row?.invited,complete:true,phase:'complete' as const,progress:null,imports:[],reconnect:false,linked:false,traktLinked:false,requiredProvider:'none'};
  const jf=row.connection_status==='connected'&&row.current_generation===row.account_generation;
  const trakt=row.trakt_status==='connected'&&row.current_trakt_generation===row.trakt_account_generation;
  let jfAuthFailed=false,traktAuthFailed=false;
@@ -209,7 +246,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    }
    jfAuthFailed=!!progress?.authenticationFailed;reconnect||=jfAuthFailed;
    const jfReconnect=!jf||jfAuthFailed;
-   imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.stageProcessed??0,total:progress?.stageTotal??null,stage:done?'Complete':jellyfinImportStage(progress?.phase??'scanning'),error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
+   imports.push({kind:'jellyfin.bootstrap',label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.stageProcessed??0,total:progress?.stageTotal??null,stage:done?'Complete':jellyfinImportStage(progress?.phase??'scanning'),error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
   }
   if(row.trakt_account_generation && selectedTraktImports(row).length){
    if(trakt)await ensureTraktImports(userId,row);
@@ -221,7 +258,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
     const [job]=id?await getSql()`select state,last_error,payload from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
     traktAuthFailed||=job?.payload?._jobFailure?.code==='provider.authentication';reconnect||=traktAuthFailed;
     const done=trakt&&job?.state==='succeeded';ready&&=row.claim_id&&row.account_generation ? !!job : done;
-    imports.push({label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,stage:kind==='trakt.import'?'Importing history, progress and favourites':'Importing saved titles and lists',error:trakt?job?.last_error??null:'Reconnect Trakt to continue.'});
+    imports.push({kind,label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,stage:kind==='trakt.import'?'Importing history, progress and favourites':'Importing saved titles and lists',error:!trakt||job?.payload?._jobFailure?.code==='provider.authentication'?'Reconnect Trakt to continue.':job?.last_error??null});
    }
   }
   if(ready&&requiredConnection(row.required_provider,jf,trakt)){
@@ -241,7 +278,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    if(outcome)return onboardingStatus(userId);
   }
  }
- return {complete:false,phase:row.imports_started_at?'importing' as const:'connections' as const,progress,imports,reconnect,linked:jf&&!jfAuthFailed,traktLinked:trakt&&!traktAuthFailed,requiredProvider:row.required_provider};
+ return {invited:!!row.invited,complete:false,phase:row.imports_started_at?'importing' as const:'connections' as const,progress,imports,reconnect,linked:jf&&!jfAuthFailed,traktLinked:trakt&&!traktAuthFailed,requiredProvider:row.required_provider};
 }
 async function jellyfinReady(row:Awaited<ReturnType<typeof onboardingRow>>) {
  const [checkpoint]=row.claim_id
@@ -252,34 +289,38 @@ async function jellyfinReady(row:Awaited<ReturnType<typeof onboardingRow>>) {
  return !!checkpoint;
 }
 
-export async function retryInitialImports(userId:string) {
+export async function retryInitialImports(userId:string, kindFilter?:string) {
  const row=await onboardingRow(userId);
  if(!row||row.completed_at)throw new AppError(409,'Onboarding is already complete.');
  for(const kind of selectedTraktImports(row)){
+ if(kindFilter && kind !== kindFilter)continue;
  const id = row.import_jobs?.[kind];
  if (id) await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
  }
- if(row.connection_id&&!await jellyfinReady(row))await retryOnboarding(userId);
+ if((!kindFilter || kindFilter==='jellyfin.bootstrap')&&row.connection_id&&!await jellyfinReady(row))await retryOnboarding(userId);
  return onboardingStatus(userId);
 }
 
 // Only a member explicitly viewing their initial imports reads these three task slots.
 async function backgroundImportRows(db:ReturnType<typeof getSql>,userId:string) {
   return db<{id:string|null;kind:string;state:string;progress:unknown;startedAt:Date|null;canRetry:boolean}[]>`
-    select j.id,j.kind,j.state,j.progress,j."startedAt",j."canRetry"
+    select j.id,j.kind,case when j.auth_failed then 'reconnect' else j.state end as state,
+      j.progress,j."startedAt",j."canRetry" and not coalesce(j.auth_failed,false) as "canRetry"
     from user_onboarding o cross join lateral (
       select bootstrap.id,'jellyfin.bootstrap' as kind,case when c.status='connected' then coalesce(bootstrap.state,'succeeded') else 'reconnect' end as state,
         c.settings->'initialSync' as progress,bootstrap.created_at as "startedAt",
-        c.status='connected' and bootstrap.state in ('failed','cancelled') as "canRetry"
+        c.status='connected' and bootstrap.state in ('failed','cancelled') as "canRetry",
+        bootstrap.state='failed' and bootstrap.failure_code='provider.authentication' as auth_failed
       from provider_connections c left join lateral (
-        select q.id,q.state,q.created_at from outbox_actions q where q.user_id=o.user_id and q.connection_id=c.id
+        select q.id,q.state,q.created_at,q.payload#>>'{_jobFailure,code}' as failure_code from outbox_actions q where q.user_id=o.user_id and q.connection_id=c.id
           and q.account_generation=o.account_generation and q.kind='jellyfin.bootstrap' and q.created_at>=o.requested_at
         order by q.created_at desc,q.id desc limit 1
       ) bootstrap on true
       where c.id=o.connection_id and c.user_id=o.user_id and c.account_generation=o.account_generation
       union all
       select job.id,requested.kind,case when c.status='connected' then coalesce(job.state,'succeeded') else 'reconnect' end,
-        null::jsonb,null::timestamptz,c.status='connected' and job.state in ('failed','cancelled')
+        null::jsonb,null::timestamptz,c.status='connected' and job.state in ('failed','cancelled'),
+        job.state='failed' and job.payload#>>'{_jobFailure,code}'='provider.authentication'
       from (values ('trakt.import'),('trakt.lists-import')) requested(kind)
       join provider_connections c on c.id=o.trakt_connection_id and c.user_id=o.user_id and c.account_generation=o.trakt_account_generation
       left join outbox_actions job on job.id=(o.import_jobs->>requested.kind)::uuid and job.account_generation=c.account_generation
@@ -294,16 +335,16 @@ export async function backgroundOnboardingImports(userId:string) {
     const label=row.kind==='jellyfin.bootstrap'?'Jellyfin':row.kind==='trakt.import'?'Trakt tracking':'Trakt lists';
     const parsed=v.safeParse(jellyfinScanProgressSchema,row.progress);
     const current=parsed.success&&row.startedAt&&new Date(parsed.output.startedAt)>=row.startedAt?parsed.output:null;
-    return {label,state:row.state,canRetry:row.canRetry===true,
+    return {kind:row.kind,label,state:row.state,canRetry:row.canRetry===true,
       stage:current ? jellyfinImportStage(current.phase) : 'Importing',
       processed:current?.stageProcessed??current?.processed??0,total:current?.stageTotal===undefined?current?.total??null:current.stageTotal,error:null};
   });
 }
 
-export async function retryBackgroundOnboardingImports(userId:string) {
+export async function retryBackgroundOnboardingImports(userId:string, kindFilter?:string) {
   await getSql().begin(async db=>{
     await db`select pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
-    const jobs=(await backgroundImportRows(db,userId)).flatMap(row=>row.canRetry&&row.id?[row.id]:[]);
+    const jobs=(await backgroundImportRows(db,userId)).flatMap(row=>row.canRetry&&row.id&&(!kindFilter||row.kind===kindFilter)?[row.id]:[]);
     if(!jobs.length)return;
     await db`update outbox_actions q set state='pending',next_attempt_at=now(),last_error=null,updated_at=now()
       from provider_connections c where q.id=any(${db.array(jobs,'UUID')}::uuid[]) and q.user_id=${userId}

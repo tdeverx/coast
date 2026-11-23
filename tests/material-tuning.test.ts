@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { blendModes, glassPresets } from '../src/lib/ui/materials/presets';
-import { materialNames, defaultMaterialDrafts, readMaterialDrafts, sliderGroups, colorControls } from '../src/lib/ui/materials/tuning';
+import { materialNames, defaultMaterialDrafts, materialDraftOverrides, readMaterialDrafts, sliderGroups, colorControls } from '../src/lib/ui/materials/tuning';
 import { approvalStatus } from '../src/routes/ui-preview/reference';
 
 describe('material drafts', () => {
@@ -14,8 +14,8 @@ describe('material drafts', () => {
     expect(approvalStatus('temporary')).toBe('unapproved');
     const { clear, glassLight, glassDark, glassProminent } = glassPresets.materials;
     expect(clear).toMatchObject({ fillOpacity: 0, blur: 2 });
-    expect(glassLight).toEqual({ ...clear, tint: 'var(--white)', fillOpacity: 40, blur: 5, brightness: 110 });
-    expect(glassDark).toEqual({ ...clear, tint: 'var(--canvas)', fillOpacity: 40, blur: 5, brightness: 80 });
+    expect(glassLight).toEqual({ ...clear, tint: 'var(--white)', fillOpacity: 70, blur: 7, brightness: 110 });
+    expect(glassDark).toEqual({ ...clear, tint: 'var(--canvas)', fillOpacity: 70, blur: 7, brightness: 80 });
     expect(glassProminent).toEqual({ ...glassLight, tint: 'var(--accent)', fillOpacity: 50, blur: 3 });
   });
   test('prominent glass uses the theme accent and remains independently editable', () => {
@@ -59,5 +59,24 @@ describe('material drafts', () => {
       expect(draft.materials.clear.noiseTintBlend).toBe(blend);
       expect(draft.materials.clear.strokeBlend).toBe(blend);
     }
+  });
+  test('stored edits round-trip while unedited properties follow the defaults', () => {
+    const drafts = defaultMaterialDrafts();
+    expect(materialDraftOverrides(drafts)).toEqual({ materials: {}, fallbacks: {} });
+    drafts.materials.glassLight.strokeOpacity = 31;
+    drafts.fallbacks.glassDark.fillOpacity = 40;
+    const saved = materialDraftOverrides(drafts);
+    expect(saved).toEqual({ materials: { glassLight: { strokeOpacity: 31 } }, fallbacks: { glassDark: { fillOpacity: 40 } } });
+    expect(readMaterialDrafts(saved)).toEqual(drafts);
+  });
+  test('legacy untouched surfaces follow new defaults while customized surfaces are kept', () => {
+    const legacy = defaultMaterialDrafts();
+    legacy.materials.glassLight = { ...legacy.materials.glassLight, fillOpacity: 20, blur: 3 };
+    legacy.fallbacks.glassDark = { ...legacy.fallbacks.glassDark, fillOpacity: 40, blur: 5 };
+    legacy.materials.glassDark = { ...legacy.materials.glassDark, fillOpacity: 40, blur: 5, strokeOpacity: 31 };
+    const drafts = readMaterialDrafts(legacy, { legacy: true });
+    expect(drafts.materials.glassLight).toEqual(glassPresets.materials.glassLight);
+    expect(drafts.fallbacks.glassDark).toEqual(glassPresets.fallbacks.glassDark);
+    expect(drafts.materials.glassDark).toEqual(legacy.materials.glassDark);
   });
 });

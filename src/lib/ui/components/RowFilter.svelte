@@ -26,9 +26,9 @@
         <Button menu label={group.label}>
           {#snippet trigger()}
             <Icon name={group.icon ?? filterGroupIcon(group.label)} />
-            <span class="menu-action-label filter-choice">
+            <span class="menu-action-label menu-row-copy">
               <span>{group.label}</span>
-              <span class="filter-value">{group.options.find(option => option.value === group.value)?.label ?? group.value}</span>
+              <small class="filter-value">{group.options.find(option => option.value === group.value)?.label ?? group.value}</small>
             </span>
             <span class="menu-chevron"><Icon name="right" /></span>
           {/snippet}
@@ -49,8 +49,7 @@
 </div>
 
 <style>
-  .filter-choice{display:flex;flex-direction:column;gap:2px;}
-  .filter-value{font-size:var(--text-sm);font-weight:var(--weight-regular);color:var(--muted);overflow-wrap:anywhere;}
+  .filter-value{overflow-wrap:anywhere;}
   .row-filter { min-width: 0; }
   .row-filter :global(.row-filter-trigger) {
     max-width: 160px; min-width: 0; height: var(--control-compact-height); padding: 0 8px;

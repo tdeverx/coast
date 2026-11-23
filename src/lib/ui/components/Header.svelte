@@ -22,6 +22,7 @@
   import {openNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import {openFriends} from '#lib/ui/panels/friends.svelte.js';
   import {openStreams} from '#lib/ui/panels/streams.svelte.js';
+  import AccountIdentity from '#lib/auth/ui/AccountIdentity.svelte';
   import Avatar from './Avatar.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import { profilePath } from '#lib/profile/url.js';
@@ -187,11 +188,8 @@
             <Button menu label={showStatus ? `Profile · ${displayName} · ${accountStatus}` : `Profile · ${displayName}`}
               primaryAction={() => { if (!preview) void navigateMedia(ownProfile); }}>
               {#snippet trigger()}
-                <Avatar name={displayName} src={user.settings?.profile?.avatar} size={28} status={showStatus ? status.status : undefined} />
-                <span class="menu-action-label account-profile-label">
-                  <span>{displayName}</span>
-                  {#if showStatus}<small>{accountStatus}</small>{/if}
-                </span>
+                <AccountIdentity name={displayName} avatar={user.settings?.profile?.avatar}
+                  detail={showStatus ? accountStatus : undefined} status={showStatus ? status.status : undefined}/>
                 <span class="menu-chevron" data-menu-disclosure><Icon name="right" /></span>
               {/snippet}
               <Button item icon="user" href={ownProfile}>View profile</Button>
@@ -245,8 +243,6 @@
   .status-choice {display:inline-flex;align-items:center;gap:8px;}
   .status-menu-icon {width:var(--menu-icon-size);flex:none;justify-content:center;}
   .status-option {gap:var(--menu-item-inset);}
-  .account-profile-label {display:grid;min-width:0;line-height:var(--leading-tight);}
-  .account-profile-label small {font-weight:var(--weight-regular);}
   header {
     position: fixed;
     inset: 0 0 auto;

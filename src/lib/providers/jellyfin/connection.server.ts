@@ -8,14 +8,15 @@ import { decryptCredential } from '#lib/server/security/credentials.js';
 import { enqueueAction } from '#lib/server/queue/index.js';
 import { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
 import { getInstance, instanceTransport } from '#lib/providers/instances.server.js';
-import { connectionFor, saveConnection } from '#lib/providers/connections.server.js';
+import { connectionFor, saveConnection, type ConnectionSaved } from '#lib/providers/connections.server.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
 export async function connectJellyfin(
   userId: string,
   input: { instanceId: string; username: string; password: string },
-  expectedId?: string
+  expectedId?: string,
+  onSaved?: ConnectionSaved
 ) {
   const instance = await getInstance(v.parse(uuid, input.instanceId), 'jellyfin');
   const account = await new JellyfinAdapter(instanceTransport(instance), userId).authenticate(
@@ -26,7 +27,7 @@ export async function connectJellyfin(
   if (expectedId && jellyfinItemKey(expectedId)!==jellyfinItemKey(account.id)) throw new AppError(409,'Jellyfin returned a different account.');
   const connection = await saveConnection(userId, instance.id, account.id, account.username, {
     accessToken: account.accessToken,
-  }, {}, true);
+  }, {}, true, onSaved);
   await enqueueAction({
     userId,
     connectionId: connection.id,

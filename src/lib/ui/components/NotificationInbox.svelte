@@ -127,7 +127,7 @@
      <div class="notice-copy">
       <div class="notice-heading">
        <span class="skeleton skeleton-circle prefix-placeholder"></span>
-       <div class="notice-text placeholder-copy">
+       <div class="notice-text row-text-stack">
         <span class="skeleton skeleton-line title-placeholder"></span>
         <span class="skeleton skeleton-line details-placeholder"></span>
        </div>
@@ -145,7 +145,7 @@
    <div class="notice-row">
     <div class="notice-copy">
      <div class="notice-heading">
-      <div class="notice-text"><h3>{#if notice.actor}<a class="notice-prefix" href={`/profile/${encodeURIComponent(notice.actor.username)}`} aria-label={`${notice.actor.username}'s profile`}><Avatar name={notice.actor.username} src={notice.actor.avatar} status={notice.actor.status} size={20}/></a>{:else}<span class="notice-prefix" title={notice.sourceLabel??'Coast'}><Icon name={notice.kind==='administrator'?'shield':notice.kind==='request'?'request':'bell'} size={18}/></span>{/if}{#if notice.actor}<a href={`/profile/${encodeURIComponent(notice.actor.username)}`}>{headline(notice)}</a>{:else}{headline(notice)}{/if}</h3>
+      <div class="notice-text row-text-stack"><h3>{#if notice.actor}<a class="notice-prefix" href={`/profile/${encodeURIComponent(notice.actor.username)}`} aria-label={`${notice.actor.username}'s profile`}><Avatar name={notice.actor.username} src={notice.actor.avatar} status={notice.actor.status} size={20}/></a>{:else}<span class="notice-prefix" title={notice.sourceLabel??'Coast'}><Icon name={notice.kind==='administrator'?'shield':notice.kind==='request'?'request':'bell'} size={18}/></span>{/if}{#if notice.actor}<a href={`/profile/${encodeURIComponent(notice.actor.username)}`}>{headline(notice)}</a>{:else}{headline(notice)}{/if}</h3>
      {#if detail(notice)}<p>{detail(notice)}</p>{/if}
       </div>
       <time class:unread-time={!notice.readAt&&!seenAt[notice.id]} datetime={notice.createdAt}>{activityDateLabel(notice.createdAt,preview?previewTime:clock.now)}</time>
@@ -194,12 +194,11 @@
  .notice-copy{display:grid;gap:8px;flex:1;min-width:0;overflow-wrap:anywhere;}
  h3{display:flex;align-items:center;gap:6px;font-size:var(--text-md);font-weight:var(--weight-semibold);margin:0;}
  h3 a{color:inherit;}
- p{margin:6px 0 0;font-size:var(--text-sm);color:var(--muted);}
+ p{font-size:var(--text-sm);color:var(--muted);}
  .notice-actions{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0;}
 
  time{white-space:nowrap;color:var(--quiet);font-size:var(--text-sm);}
 
- .placeholder-copy{display:grid;gap:6px;}
  .prefix-placeholder{width:20px;}
  .title-placeholder{width:min(55%,140px);height:calc(var(--text-md) * var(--leading-normal));}
  .details-placeholder{width:min(90%,240px);}

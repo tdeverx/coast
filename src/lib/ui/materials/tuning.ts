@@ -49,24 +49,49 @@ export const colorControls = [
   { key: 'shadowColor', label: 'Shadow color' },
   { key: 'topInnerColor', label: 'Top light color' }, { key: 'bottomInnerColor', label: 'Bottom light color' },
 ] as const;
-export type MaterialDrafts = Record<'materials' | 'fallbacks', Record<GlassVariant, GlassSurface>>;
+const materialLayers = ['materials', 'fallbacks'] as const;
+type MaterialLayer = typeof materialLayers[number];
+export type MaterialDrafts = Record<MaterialLayer, Record<GlassVariant, GlassSurface>>;
 export function defaultMaterialDrafts(): MaterialDrafts {
   return {
     materials: Object.fromEntries(materialNames.map(({ value }) => [value, { ...glassPresets.materials[value] }])) as Record<GlassVariant, GlassSurface>,
     fallbacks: Object.fromEntries(materialNames.map(({ value }) => [value, { ...glassPresets.fallbacks[value] }])) as Record<GlassVariant, GlassSurface>,
   };
 }
+
+export function materialDraftOverrides(drafts: MaterialDrafts) {
+  const overrides: Record<MaterialLayer, Partial<Record<GlassVariant, Partial<GlassSurface>>>> = { materials: {}, fallbacks: {} };
+  for (const layer of materialLayers) {
+    for (const { value: variant } of materialNames) {
+      const defaults = glassPresets[layer][variant];
+      const edits = Object.entries(drafts[layer][variant]).filter(([key, value]) => value !== defaults[key as keyof GlassSurface]);
+      if (edits.length) overrides[layer][variant] = Object.fromEntries(edits);
+    }
+  }
+  return overrides;
+}
+
+function isPreviousDefault(layer: MaterialLayer, variant: GlassVariant, fields: Record<string, unknown>) {
+  if (variant !== 'glassLight' && variant !== 'glassDark') return false;
+  const previousFillAndBlur = [[40, 5], [variant === 'glassLight' ? 20 : 40, 3]];
+  // Legacy storage recorded every value. Exact matches can safely follow the new defaults.
+  return previousFillAndBlur.some(([fillOpacity, blur]) =>
+    Object.entries({ ...glassPresets[layer][variant], fillOpacity, blur }).every(([key, value]) => fields[key] === value),
+  );
+}
+
 /** Read only known fields and bounded finite numbers from browser-local drafts. */
-export function readMaterialDrafts(value: unknown): MaterialDrafts {
+export function readMaterialDrafts(value: unknown, { legacy = false } = {}): MaterialDrafts {
   const result = defaultMaterialDrafts();
   if (!value || typeof value !== 'object') return result;
-  for (const layer of ['materials', 'fallbacks'] as const) {
+  for (const layer of materialLayers) {
     const group = (value as Record<string, unknown>)[layer];
     if (!group || typeof group !== 'object') continue;
     for (const { value: variant } of materialNames) {
       const source = (group as Record<string, unknown>)[variant];
       if (!source || typeof source !== 'object') continue;
       const fields = source as Record<string, unknown>;
+      if (legacy && isPreviousDefault(layer, variant, fields)) continue;
       for (const { controls } of sliderGroups) for (const { key, min, max } of controls) {
         const number = fields[key];
         if (typeof number === 'number' && Number.isFinite(number)) result[layer][variant][key] = Math.min(max, Math.max(min, number));

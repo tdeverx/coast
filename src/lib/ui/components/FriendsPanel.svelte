@@ -177,7 +177,7 @@
  .paging{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
  .loading{display:grid;gap:12px;}
  .friend-placeholder{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;}
- .placeholder-copy{display:grid;gap:4px;flex:1;min-width:0;}
+ .placeholder-copy{display:grid;gap:var(--row-text-gap);flex:1;min-width:0;}
  .avatar-placeholder{width:40px;}
  .name-placeholder{width:min(65%,160px);height:calc(var(--text-md) * var(--leading-normal));}
  .status-placeholder{width:min(45%,110px);height:calc(var(--text-sm) * var(--leading-normal));}

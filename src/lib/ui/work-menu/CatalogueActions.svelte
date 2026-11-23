@@ -219,7 +219,7 @@
         {#each playthroughs.data.items as choice (choice.id)}
           <Button item selection="radio" checked={choice.id===(activePlaythrough??game?.playthrough?.id)} keepOpen
             disabled={busy||work.busy} onclick={()=>{chosenPlaythrough=choice.id;}}>
-            <span class="menu-detail"><span>{choice.platform || 'Playthrough'}</span>
+            <span class="menu-row-copy"><span>{choice.platform || 'Playthrough'}</span>
               <small>{displayLabel(choice.status)} · {choice.progressPercent}% · {new Date(choice.createdAt).toLocaleDateString()}</small></span>
           </Button>
         {/each}
@@ -302,7 +302,7 @@
         <Button menu label="Share" icon="share" panel disabled={busy}>
           {#if canShare}
             <Button item icon="link" onclick={() => { sharingOpen = true; }}>
-              <span class="menu-detail"><span>Create disposable link…</span><small>No sign-in · expires</small></span>
+              <span class="menu-row-copy"><span>Create disposable link…</span><small>No sign-in · expires</small></span>
             </Button>
             {#if socialAllowed || planningAllowed}<div class="menu-divider" role="separator"></div>{/if}
           {/if}
@@ -336,6 +336,4 @@
 {#if workId && (music || artist)}<MusicCommands bind:this={musicCommands} {workId} {artist} album={item.kind === 'album'} {changed} />{/if}
 
 <style>
-  .menu-detail { display: grid; }
-  .menu-detail small { color: var(--muted); font-weight: var(--weight-regular); }
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { reportFailure, reportImportFailure } from '#lib/ui/client-context.js';
   import '../app.css';
+  import LoginBackdrop from '#lib/auth/ui/LoginBackdrop.svelte';
   let { data, children } = $props();
   import { reader, closeReading } from '#lib/reading/client.svelte.js';
   import { createResource } from '#lib/ui/resource.svelte.js';
@@ -28,7 +29,7 @@
   import { onMount, onDestroy, untrack } from 'svelte';
   import { page } from '$app/state';
   import { onNavigate, goto } from '$app/navigation';
-  import { mediaDetailLinks } from '#lib/ui/media-navigation.js';
+  import { inviteProfileTarget, mediaDetailLinks } from '#lib/ui/media-navigation.js';
   import { detailPanelHref, detailPanelUrl, panelAddress } from '#lib/media/detail-target.js';
   import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
   import Header from '#lib/ui/components/Header.svelte';
@@ -154,12 +155,14 @@
 
   const MediaDetailPanel = $derived(detailImport.data);
 
+  const canShowDetails = $derived(!!data.user || !!inviteProfileTarget(detailsHref));
+
   function loadDetails() {
-    if (data.user && detailsHref && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
+    if (canShowDetails && detailsHref && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
   }
 
   $effect(() => {
-    if (!data.user && detailsHref) goto(detailPanelUrl(activePanelUrl), {
+    if (!canShowDetails && detailsHref) goto(detailPanelUrl(activePanelUrl), {
       shallow: true, reset: false,
       replace: true,
       state: {
@@ -174,8 +177,7 @@
 
   $effect(() => {
     const viewer = data.user?.id;
-
-    if (!viewer || !detailsHref) return;
+    if (!detailsHref || (!viewer && !inviteProfileTarget(detailsHref))) return;
 
     untrack(() => {
       if (!detailImport.data) void loadDetails();
@@ -184,7 +186,7 @@
     return () => detailImport.cancel();
   });
 
-  reportImportFailure(() => data.user && detailsHref && detailImport.error
+  reportImportFailure(() => canShowDetails && detailsHref && detailImport.error
     ? 'Title details could not load. Reload the page to try again.'
     : '', 'current-viewer');
 
@@ -250,6 +252,21 @@
       navigation.to?.url.pathname === `/media/${hero?.dataset.heroId}`
     )
       return;
+    const authSteps = ['/login', '/register', '/invite', '/onboarding'];
+    const from = authSteps.indexOf(navigation.from?.url.pathname ?? '');
+    const to = authSteps.indexOf(navigation.to?.url.pathname ?? '');
+    if (from >= 0 && to >= 0) {
+      if (from === to) return;
+      const card = content.querySelector<HTMLElement>('.auth-card');
+      if (!card) return;
+      const side = to > from ? 1 : -1;
+      const vertical = (from === 0 || to === 0) && authSteps[from] !== '/onboarding' && authSteps[to] !== '/onboarding';
+      const offset = (direction: number) => vertical
+        ? { top: `${direction * card.offsetHeight * 0.24}px` }
+        : { left: `${direction * 24}%` };
+      await card.animate([{ ...offset(0), opacity: 1 }, { ...offset(-side), opacity: 0 }], { duration: 120, easing: 'ease-in' }).finished.catch(() => {});
+      return () => { card.animate([{ ...offset(side), opacity: 0 }, { ...offset(0), opacity: 1 }], { duration: 180, easing: 'ease-out' }); };
+    }
     await content
       .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'ease-out' })
       .finished.catch(() => {});
@@ -351,9 +368,9 @@
   class:watching
 >
   {#if readerAllowed&&Reader}<Reader />{/if}
-  {#if data.user&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
+  {#if canShowDetails&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
-  {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
+  {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && page.url.pathname !== '/share'}<Header
       user={data.user}
       publicBrowse={data.publicRead}
       unread={data.unreadNotifications}
@@ -361,7 +378,13 @@
       hasActiveLinks={!!activeShareUntil}
     />{/if}
   <div class="page-shell" class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
-    <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
+    <main bind:this={content} id="main-content" tabindex="-1">
+      {#if page.data.authArtwork}
+        <LoginBackdrop artwork={page.data.authArtwork}>
+          <div class="auth-page access-shell"><div class="auth-card">{@render children()}</div></div>
+        </LoginBackdrop>
+      {:else}{@render children()}{/if}
+    </main>
   </div>
   {#key `${data.user?.id}:${data.user?.access?.libraryOnly===true}`}
     {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??activePanelUrl.searchParams.get('notificationKind')??'all'}

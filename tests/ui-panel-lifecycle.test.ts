@@ -47,6 +47,7 @@ const connectionCode=compileRunes(`import {untrack} from ${JSON.stringify(import
  import {traktPreferences,initialTraktSync} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};
  export function create(initial,transport){
   const reportFailure=()=>{},useClient=()=>({api:transport,change:transport,feedback:{notify:()=>{}}});
+  const beginTraktActivation=()=>async()=>false;
   ${connectionScript}
   return {setProvider(next){provider=next;},get scan(){return scan;},get error(){return scanStatus.error;},
     start,finish,saveTraktSync,link(next){linkSync=next;},edit(direction,category,value){traktSync[direction][category]=value;},get sync(){return traktSync;},initialTraktSync};
@@ -179,7 +180,10 @@ test('Trakt saves separate per-feature choices before linking and on an existing
  try{
    await settle();
    await card.start();
-   expect(calls[0]).toEqual({path:'providers/trakt/start',body:{instanceId:'service',traktSync:card.initialTraktSync()}});
+   const defaults = card.initialTraktSync();
+   expect(Object.keys(defaults.import).filter(key=>defaults.import[key]).sort()).toEqual(['history','progress','ratings','recommendations','watchlist']);
+   expect(Object.values(defaults.export)).not.toContain(true);
+   expect(calls[0]).toEqual({path:'providers/trakt/start',body:{instanceId:'service',traktSync:defaults}});
    const granular=card.initialTraktSync();
    granular.import.progress=false;
    granular.export.progress=true;

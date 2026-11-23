@@ -47,7 +47,7 @@
   <div class="stack">
     {#each history.data.items as entry(entry.id)}
       <div class="row">
-        <div class="grow"><strong>{entry.title}</strong><div class="small quiet">{entry.dateKnown===false?'Date unknown':new Date(entry.occurredAt).toLocaleString()}{#if entry.source} · {displayLabel(entry.source)}{/if}</div>{#if entry.note}<p class="small">{entry.note}</p>{/if}</div>
+        <div class="grow row-text-stack"><strong>{entry.title}</strong><div class="small quiet">{entry.dateKnown===false?'Date unknown':new Date(entry.occurredAt).toLocaleString()}{#if entry.source} · {displayLabel(entry.source)}{/if}</div>{#if entry.note}<p class="small">{entry.note}</p>{/if}</div>
         <Button icon="close" label="Remove history entry" disabled={mutation.busy||history.busy} onclick={()=>{removal={kind,target,entry};}} />
       </div>
     {/each}

@@ -49,10 +49,11 @@ import lightDarkGlassSourceRefresh from '../docs/audits/2026-11-22-light-dark-gl
 import tasteRatingInfluenceSourceRefresh from '../docs/audits/2026-11-22-taste-rating-influence-source-refresh.json';
 
 import personalMatchSourceRefresh from '../docs/audits/2026-11-23-personal-match-source-refresh.json';
+import loginReworkSourceRefresh from '../docs/audits/2026-11-23-login-rework-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
 const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh, anthologyReplaySourceRefresh, tasteWeightsSourceRefresh, tasteComparisonsSourceRefresh, tasteRatingClaritySourceRefresh, adminTasteBreakdownSourceRefresh, fixedTasteScaleSourceRefresh, tasteRatingInfluenceSourceRefresh, lightDarkGlassSourceRefresh];
-const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh].map(receipt => receipt.files);
+const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh, loginReworkSourceRefresh].map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
   // Walk only exact predecessor pins. Dated hosted receipts keep their own epoch.

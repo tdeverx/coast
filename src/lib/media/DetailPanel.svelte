@@ -4,7 +4,8 @@
  import {reader} from '#lib/reading/client.svelte.js';
  import {playbackVisible} from '#lib/playback/visibility.js';
  import { page } from '$app/state';
- import {backMediaDetails,closeMediaDetails,navigateMedia} from '#lib/ui/media-navigation.js';
+ import { preloadData } from '$app/navigation';
+ import {backMediaDetails,closeMediaDetails,inviteProfileTarget,navigateMedia} from '#lib/ui/media-navigation.js';
  import {sectionTarget} from '#lib/ui/section-target.js';
  import {detailPanelHref,mediaDetailTarget,panelAddress} from '#lib/media/detail-target.js';
  import DetailOverlay from '#lib/ui/components/DetailOverlay.svelte';
@@ -36,12 +37,18 @@
  const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['tracking']),page.data.capabilities]));
  const profileRevision=$derived(contentRevisionKey(page.data,['social']));
  const currentHref=$derived(detailPanelHref(panelAddress(page),page.state));
+ async function publicProfile(href:string):Promise<Detail> {
+   const result=await preloadData(href);
+   if(result.type!=='loaded'||result.status!==200||!result.data.profile?.visibility.details)throw new ApiError('This profile is private or unavailable.',404);
+   const profile:Profile=result.data.profile;
+   return {kind:'profile',data:{...profile,activity:await profile.activity}};
+ }
  function closed(){if(playbackVisible(player)||reader.visible)return;closeMediaDetails();}
  $effect(()=>{
   const href=currentHref,depth=page.state.mediaDetailDepth??1,viewer=page.data.user?.id,target=href?mediaDetailTarget(href,page.url)??sectionTarget(href,page.url):null;
   if(!href||viewer!==loadedViewer){open=false;resolved=null;editionName=undefined;}
   loadedViewer=viewer;error='';
-  if(!viewer||!href)return;
+  if(!href||!viewer&&!inviteProfileTarget(href))return;
   if(!target||'kind' in target&&target.kind==='profile'&&page.data.user?.access?.libraryOnly){
     void closeMediaDetails();
     return;
@@ -49,7 +56,7 @@
   refreshKey;
   const controller=new AbortController();
   if ('kind' in target && target.kind === 'profile') profileRevision;
-  const response = !('kind' in target) ? Promise.resolve<Detail>({kind:'row',data:{href:target.href}})
+  const response = !viewer ? publicProfile(target.href) : !('kind' in target) ? Promise.resolve<Detail>({kind:'row',data:{href:target.href}})
     : api<Detail>(`${target.kind === 'profile' ? 'profile/presentation' : 'media/details'}?href=${encodeURIComponent(target.href)}`,
       undefined,'GET',{signal:controller.signal});
   void response

@@ -22,7 +22,7 @@ try {
   await page.waitForLoadState('networkidle');
   await page.locator('input[name="username"]').fill('diagnostic-browser-admin');
   await page.locator('input[name="password"]').fill('Diagnostic-test-passphrase-2026!');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page).toHaveURL(/\/for-you$/);
   await page.goto(`${origin}/settings/policies`);
   const toggles = ['Music','Gaming','Parties'].map(name=>page.getByRole('checkbox',{name,exact:true}));
@@ -95,7 +95,7 @@ try {
   await member.goto(`${origin}/login`);
   await member.locator('input[name="username"]').fill(memberName);
   await member.locator('input[name="password"]').fill('Experiment-member-passphrase-2026!');
-  await member.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await member.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(member).toHaveURL(/\/for-you$/);
   expect((await memberContext.request.get(`${origin}/games`)).status()).toBe(200);
   expect((await memberContext.request.get(`${origin}/settings/policies`)).status()).toBe(403);
