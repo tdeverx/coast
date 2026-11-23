@@ -4,7 +4,8 @@
   "blanketAcceptance": false,
   "scope": [
     "Compare the portable selected rules with the retained movie and show holdouts and independently generated catalogue predictions.",
-    "Review normal owner-specific profile, match and explanation reads, effective permissions, bounded batches, and refresh publication. Retain the earlier private comparison as a historical control."
+    "Review normal owner-specific profile, match and explanation reads, effective permissions, bounded batches, and refresh publication. Retain the earlier private comparison as a historical control.",
+    "Verify collection sampling, watched-title bonuses and comic access against published personal models trained on independent titles."
   ],
   "verification": {
     "hosted": false,
@@ -15,6 +16,10 @@
   "report": "docs/audits/2026-11-23-personal-match-serving.md",
   "reportSha256": "db747774e55e6f6b4154583b44340e8a05caedbf468d7c8064f17e5296f5e5e4",
   "files": {
+    "tests/taste-collection-db.test.ts": {
+      "previous": "c354015e837744de2daf19540fe4a928bf388c04e193f38a32e96d3751e266b5",
+      "current": "d95f234cabe8bfe08dee0b98832531dca8323c8e8cdd40b3892227c977b1595c"
+    },
     "src/lib/providers/tmdb/adapter.server.ts": {
       "previous": "0b1bdeb84bf8a7bc111f4690c388d3a37e916cf2becb3ce76ecc5dab2cc30781",
       "current": "3c1467d56680f11f5a62fca12668e7a473c0bf28cd548cd0c82f833545b1d77d"
