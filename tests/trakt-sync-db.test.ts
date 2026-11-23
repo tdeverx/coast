@@ -2,7 +2,7 @@ import * as network from '../src/lib/server/security/provider-fetch';
 import { encryptCredential } from '../src/lib/server/security/credentials';
 import { startCheckin } from '../src/lib/social/checkins.server';
 import { deliverCheckin } from '../src/lib/social/trakt.server';
-import { trackWithExports } from '../src/lib/sync/changes.server';
+import { bulkTrackWithExports, trackWithExports } from '../src/lib/sync/changes.server';
 import { createList } from '../src/lib/core/lists/service.server';
 import { afterAll, beforeAll, expect, spyOn, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -295,6 +295,22 @@ run('Trakt show tracking preserves Coast pauses and viewing history through drop
       'POST /users/hidden/dropped/remove',
       'POST /users/hidden/dropped',
     ]);
+
+    for (const restoreFromEpisode of [
+      () => trackWithExports(person.id, { mediaId: episode.id, action: 'progress', positionSeconds: 60, durationSeconds: 1800 }),
+      () => bulkTrackWithExports(person.id, { mediaId: trackedShow.id, action: 'progress', acknowledged: true }),
+    ]) {
+      await changeContinue(person.id, { mediaId: trackedShow.id, action: 'remove' });
+      await deliver();
+      expect(remoteDropped).toBe(true);
+      await restoreFromEpisode();
+      expect(await state()).toMatchObject({ paused: false, dropped: false });
+      const pending = await jobs();
+      expect(pending).toHaveLength(1);
+      expect(pending[0].payload).toMatchObject({ mediaId: trackedShow.id, category: 'trackingStatus', remove: true });
+      await deliver();
+      expect(remoteDropped).toBe(false);
+    }
   } finally {
     await db.delete(users).where(eq(users.id, person.id));
   }

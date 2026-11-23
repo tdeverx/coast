@@ -51,10 +51,11 @@ import tasteRatingInfluenceSourceRefresh from '../docs/audits/2026-11-22-taste-r
 import personalMatchSourceRefresh from '../docs/audits/2026-11-23-personal-match-source-refresh.json';
 import loginReworkSourceRefresh from '../docs/audits/2026-11-23-login-rework-source-refresh.json';
 import mainFollowupSourceRefresh from '../docs/audits/2026-11-23-main-followup-source-refresh.json';
+import traktAncestorStatusRefresh from '../docs/audits/2026-11-23-trakt-ancestor-status-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
 const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh, anthologyReplaySourceRefresh, tasteWeightsSourceRefresh, tasteComparisonsSourceRefresh, tasteRatingClaritySourceRefresh, adminTasteBreakdownSourceRefresh, fixedTasteScaleSourceRefresh, tasteRatingInfluenceSourceRefresh, lightDarkGlassSourceRefresh];
-const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh, loginReworkSourceRefresh, mainFollowupSourceRefresh].map(receipt => receipt.files);
+const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh, loginReworkSourceRefresh, mainFollowupSourceRefresh, traktAncestorStatusRefresh].map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
   // Walk only exact predecessor pins. Dated hosted receipts keep their own epoch.
