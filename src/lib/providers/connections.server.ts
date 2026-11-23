@@ -20,6 +20,7 @@ import { cancelDisabledTraktJobs } from './trakt/access.server';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Connection = typeof providerConnections.$inferSelect;
+export type ConnectionSaved = (tx: Tx, connection: Connection) => Promise<void>;
 type TraktDeviceProof = { expectedCredential: string; slug?: string; sync: TraktSync };
 
 /** A verified slug-to-UUID correction preserves the durable account and its generation. */
@@ -56,7 +57,8 @@ export async function saveConnection(
   username: string,
   credentials: Record<string, unknown>,
   settings: Record<string, unknown> = {},
-  identity: boolean | TraktDeviceProof = false
+  identity: boolean | TraktDeviceProof = false,
+  onSaved?: ConnectionSaved
 ) {
   const jellyfinIdentity = identity === true;
   const device = typeof identity === 'object' ? identity : undefined;
@@ -158,6 +160,7 @@ export async function saveConnection(
           sql`${userIdentities.externalUserId} <> ${externalUserId}`
         )
       );
+    await onSaved?.(tx,connection);
     return connection;
   });
   return { id: connection.id, username: connection.username, status: connection.status };

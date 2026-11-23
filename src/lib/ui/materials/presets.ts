@@ -48,14 +48,14 @@ const clear = {
 const glassLight = {
   ...clear,
   tint: 'var(--white)',
-  fillOpacity: 40,
-  blur: 5,
+  fillOpacity: 70,
+  blur: 7,
   brightness: 110,
 } as const;
 const glassDark = {
   ...clear,
-  fillOpacity: 40,
-  blur: 5,
+  fillOpacity: 70,
+  blur: 7,
   brightness: 80,
 } as const;
 const glassProminent = {

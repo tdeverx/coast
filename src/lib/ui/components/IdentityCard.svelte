@@ -6,7 +6,7 @@
 <section class="identity-card" class:has-progress={progress!=null&&Number.isFinite(progress)} class:wrap-actions={wrapActions} aria-label={label}>
  {#if background}<img class="background" src={background} alt="" loading="lazy"/>{/if}
  <div class="header">
-  <div class="identity">{#if identity}<div class="avatar">{@render identity()}</div>{/if}<div class="metadata"><div class="title">{@render title()}</div>{#if details}<div class="details">{@render details()}</div>{/if}</div></div>
+  <div class="identity">{#if identity}<div class="avatar">{@render identity()}</div>{/if}<div class="metadata row-text-stack"><div class="title">{@render title()}</div>{#if details}<div class="details">{@render details()}</div>{/if}</div></div>
   {#if actions}<div class="actions">{@render actions()}</div>{/if}
  </div>
  {#if progress!=null&&Number.isFinite(progress)}
@@ -22,7 +22,6 @@
  .metadata{min-width:0;overflow-wrap:anywhere;}
  .title{font-weight:var(--weight-semibold);color:var(--ink);}
  .title :global(a){color:inherit;}
- .details{margin-top:4px;}
  .details :global(p){margin:0;overflow-wrap:anywhere;}
  .actions{display:flex;align-items:center;gap:4px;}
  .has-progress{padding-bottom:28px;}

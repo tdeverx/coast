@@ -18,7 +18,7 @@ try {
     await page.locator('input[name="passwordConfirmation"]').fill('Diagnostic-test-passphrase-2026!');
   }
   await page
-    .getByRole('button', { name: setup ? 'Create your Coast' : 'Sign in', exact: true })
+    .getByRole('button', { name: setup ? 'Create your Coast' : 'Continue', exact: true })
     .click();
   await expect(page).toHaveURL(/\/for-you$/);
   step = 'settings';
@@ -118,7 +118,7 @@ try {
   await memberPage.waitForTimeout(1000);
   await memberPage.locator('input[name="username"]').fill(memberName);
   await memberPage.locator('input[name="password"]').fill('Diagnostic-member-passphrase-2026!');
-  await memberPage.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await memberPage.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(memberPage).toHaveURL(/\/for-you$/);
   expect((await context.request.get(`${origin}/api/v1/diagnostics?download`)).status()).toBe(403);
   const adminConfig = await page.request.get(`${origin}/settings/activity`);

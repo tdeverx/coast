@@ -195,7 +195,7 @@
 
 <article id={`job-${provider.id}-${task.id}`} class="task-row" aria-label={`${provider.name}: ${task.title}`}>
   <div class="task-summary" use:contextGesture={(point) => menu?.openAt(point)}>
-    <div class="task-meta">
+    <div class="task-meta row-text-stack">
       <h3>{task.title}</h3>
       <p class="small">{showSource ? `${provider.name} · ` : ''}{status}{timing && task.scope && !local && jobIdentityScope(task.kinds[0])==='account' ? ` · ${timing.completed ?? 0}/${timing.eligible} users completed · latest runs` : ''}</p>
       {#if lastRun}<p class="small last-result" title={`Last run · ${new Date(lastRun.at).toLocaleString()} · ${lastResult}`}>
@@ -506,7 +506,6 @@
   .task-summary {display:flex;align-items:center;gap:12px;}
   .task-meta {flex:1;min-width:0;}
   h3 {font-size:var(--text-sm);font-weight:var(--weight-semibold);margin:0;}
-  .task-meta p {margin:4px 0 0;}
   .last-result {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   time {margin-left:8px;}
   .task-details {gap:12px;overflow-wrap:anywhere;}

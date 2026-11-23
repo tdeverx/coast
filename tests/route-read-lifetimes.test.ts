@@ -25,11 +25,13 @@ const {createProfile,createOnboarding}=await import(moduleUrl(compileRunes(`
    get favouriteError(){return favouriteError;},get insightError(){return insightError;}};
  }
  export function createOnboarding(initial,initialForm,fetch,refreshRouteDependencies,deserialize=JSON.parse){
-  let data=$state(initial),form=$state(initialForm);const mounts=[],onMount=callback=>mounts.push(callback);
+  let data=$state(initial),form=$state(initialForm),readError;
   const reportFailure=()=>{};
-  ${onboardingScript}
-  return {get error(){return deviceError;},setForm(next){form=next;},setData(next){data=next;},
-   mount(){const cleanups=mounts.map(callback=>callback());return()=>cleanups.forEach(cleanup=>cleanup?.());}};
+  const dispose=$effect.root(()=>{
+   ${onboardingScript}
+   readError=()=>deviceError;
+  });
+  return {get error(){return readError();},setForm(next){form=next;},setData(next){data=next;},mount:()=>dispose};
  }
 `,'route-read-lifetimes.svelte.js')));
 
@@ -120,6 +122,20 @@ function browser(){
 const onboardingData=(phase='connections')=>({profile:{avatar:null},requiredProvider:'none',traktLinked:false,linked:false,phase});
 const deviceForm=(challengeId='one')=>({device:{instanceId:'service',challengeId,interval:5}});
 const action=(result:unknown)=>({text:async()=>JSON.stringify(result)});
+
+test('onboarding only runs its polling timer while a device or import needs updates',()=>{
+ const env=browser();let controller:any,cleanup=()=>{};
+ const dispose=runtime.effect_root(()=>controller=createOnboarding(onboardingData(),null,()=>{},()=>{}));
+ try {
+  runtime.flush();cleanup=controller.mount();
+  expect(env.timers.size).toBe(0);
+  controller.setForm(deviceForm());runtime.flush();expect(env.timers.size).toBe(1);
+  controller.setForm(null);runtime.flush();expect(env.timers.size).toBe(0);
+  controller.setData(onboardingData('importing'));runtime.flush();expect(env.timers.size).toBe(1);
+  controller.setData({...onboardingData('complete'),background:true,imports:[{state:'succeeded'}]});
+  runtime.flush();expect(env.timers.size).toBe(0);expect(env.listeners.size).toBe(0);
+ } finally {cleanup();dispose();env.restore();}
+});
 
 test('onboarding aborts the owned device wait on teardown and ignores a late successful body',async()=>{
  const env=browser(),response=deferred<any>();let controller:any,signal!:AbortSignal,refreshes=0,calls=0,bodies=0,cleanup=()=>{};

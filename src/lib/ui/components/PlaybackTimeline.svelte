@@ -37,7 +37,7 @@
       {:else}<Icon name={audio ? 'volume' : 'film'} size={18} />{/if}
     </svelte:element>
   <div class="seek-area">
-    <div class="track-info"><div class="track-copy"><strong>{title}</strong><span>{detail}</span></div></div>
+    <div class="track-info"><div class="track-copy row-text-stack"><strong>{title}</strong><span>{detail}</span></div></div>
   <div class="times" aria-hidden="true">{#if reading||readingActive}<span>{readingLocationLabel(reading)}</span>{:else}<span>{time(position)}</span><span>−{time(length - position)}</span>{/if}</div>
   <div class="progress-track" aria-hidden={!!onseek}><ProgressBar progress={progress/100}/></div>
   {#if onseek}<input
@@ -65,7 +65,7 @@
   .track-copy { display: grid; min-width: 0; font-size: var(--text-sm); line-height: var(--leading-normal); }
   .track-copy strong, .track-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .track-copy strong { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
-  .track-copy span { opacity: .72; margin-top: 2px; }
+  .track-copy span { opacity: .72; }
   .times { position: absolute; inset: 7px 0 auto; display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(3px); transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); pointer-events: none; }
   .progress-track { position: absolute; bottom: 3px; width: 100%; height: 3px; transition: height var(--fast) var(--ease); pointer-events: none; }
   input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; touch-action: pan-y; }

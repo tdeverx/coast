@@ -176,7 +176,7 @@
   .toast-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 24px; margin-block-end: 4px; }
   .toast-source { display: inline-flex; align-items: center; gap: 6px; color: var(--toast-accent); font-size: var(--text-sm); font-weight: var(--weight-semibold); line-height: var(--leading-tight); }
   .toast-source :global(svg) { flex: none; }
-  .toast-copy { display: grid; gap: 3px; overflow-wrap: anywhere; }
+  .toast-copy { display: grid; gap: var(--row-text-gap); overflow-wrap: anywhere; }
   .toast-title { color: var(--ink); font-size: var(--text-md); font-weight: var(--weight-semibold); line-height: var(--leading-tight); }
   .toast.glass .toast-title { letter-spacing: var(--tracking-tight); }
   .toast-detail { color: var(--muted); font-size: var(--text-sm); line-height: var(--leading-normal); }

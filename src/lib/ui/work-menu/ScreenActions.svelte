@@ -646,7 +646,7 @@
       <Button menu label="Create disposable link" icon="link" panel>
         {#snippet trigger()}
           <Icon name="link" />
-          <span class="menu-action-label menu-detail"><span>Create disposable link</span><small>No sign-in · expires</small></span>
+          <span class="menu-action-label menu-row-copy"><span>Create disposable link</span><small>No sign-in · expires</small></span>
           <span class="menu-chevron"><Icon name="right" /></span>
         {/snippet}
         {@render content('disposable-link')}
@@ -895,9 +895,8 @@
 {/if}
 
 <style>
-  .menu-detail { display: grid; }
   .menu-season { display: flex; gap: var(--menu-inset); justify-content: space-between; }
-  :is(.menu-detail, .menu-season) small { color: var(--muted); font-weight: var(--weight-regular); }
+  .menu-season small { color: var(--muted); font-weight: var(--weight-regular); }
   .actions {
     gap: 12px;
   }

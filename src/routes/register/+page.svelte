@@ -1,22 +1,7 @@
 <script lang="ts">
-  import { reportFailure } from '#lib/ui/client-context.js';
-  import {onMount} from 'svelte';
-  import {enhance} from '$app/forms';
-  import Brand from '#lib/ui/components/Brand.svelte';
-  import Button from '#lib/ui/components/Button.svelte';
-  import AccountFields from '#lib/ui/components/AccountFields.svelte';
-  import { goto } from '$app/navigation';
-  let {data,form}=$props(); let busy=$state(false),code=$state('');
-  onMount(()=>{const params=new URLSearchParams(location.hash.slice(1));code=params.get('invite')??'';if(code)void goto('/invite#invite='+encodeURIComponent(code),{replaceState:true});});
-  reportFailure(()=>form?.error);
+  import AccountAccess from '#lib/auth/ui/AccountAccess.svelte';
+  import type { PageProps } from './$types';
+  let {data, form}: PageProps = $props();
 </script>
-<svelte:head><title>Join Coast</title></svelte:head>
-<div class="auth-page"><div class="auth-card">
-  <div class="row brand"><Brand /></div><h1>Join Coast.</h1><p>Create your account, then connect your services to import your progress.</p>
-  <form method="POST" class="stack" use:enhance={()=>{busy=true;form=null;return async({update})=>{try{await update();}finally{busy=false;}};}}>
-
-    {#if data.registrationMode==='invite'}<label class="field">Invite code<input name="code" bind:value={code} required maxlength="43" autocomplete="off" /></label>{:else if code}<input type="hidden" name="code" value={code} />{/if}
-    <AccountFields />
-    <Button type="submit" disabled={busy}>{busy?'Creating account…':'Create account'}</Button>
-  </form><div class="auth-footer"><a href="/login">Already have an account? Sign in</a></div>
-</div></div>
+<svelte:head><title>Sign up · Coast</title></svelte:head>
+<AccountAccess registering gated={data.registrationMode === 'invite'} error={form && 'error' in form ? form.error : undefined} />

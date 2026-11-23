@@ -17,7 +17,7 @@ import {
   withoutRequestConfig
 } from '#lib/server/config.js';
 
-import { building } from '$app/env';
+import { building, dev } from '$app/env';
 import { authenticateSession, setupState } from '#lib/server/auth/index.js';
 import { SESSION_COOKIE, setSessionCookie } from '#lib/server/auth/cookies.js';
 import { assertSameOrigin } from '#lib/server/security/csrf.js';
@@ -49,7 +49,10 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   event.locals.setup = false;
   event.locals.needsTmdb = false;
   if (event.url.pathname === '/api/v1/health') return resolve(event);
-  const session = await authenticateSession(event.cookies.get(SESSION_COOKIE));
+  // The development preview renders the signed-out screen even during setup.
+  const loginPreview = event.route.id === '/ui-preview/login';
+  if (loginPreview && !dev) error(404, 'Not found');
+  const session = loginPreview ? null : await authenticateSession(event.cookies.get(SESSION_COOKIE));
   if (session) {
     event.locals.user = session.user;
     event.locals.expiresAt = session.expiresAt;
@@ -68,11 +71,11 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     response.headers.delete('link');
     return response;
   }
-  const setup = await setupState();
+  const setup = loginPreview ? { needsAccount: false, needsTmdb: false } : await setupState();
   event.locals.setup = setup.needsAccount;
   event.locals.needsTmdb = setup.needsTmdb;
   const config = await getFeatureConfig(event.locals.user?.id ?? null);
-  const isPublic = ['/login', '/setup', '/register', '/invite'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
+  const isPublic = loginPreview || ['/login', '/setup', '/register', '/invite'].includes(event.url.pathname) || ['GET', 'HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname, config.siteAccess);
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
       return Response.json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });

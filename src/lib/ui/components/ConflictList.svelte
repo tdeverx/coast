@@ -63,7 +63,7 @@
 
   {#each conflicts as conflict}<article class="panel stack">
       <div class="spread">
-        <div>
+        <div class="row-text-stack">
           <a href={conflict.mediaId ? `/${conflict.kind==='album'||conflict.kind==='track'||conflict.kind==='artist'?'music/work':conflict.kind==='game'?'games':'media'}/${conflict.mediaId}` : '/lists'}
             ><h3>{conflict.title}</h3></a
           >

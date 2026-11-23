@@ -1,9 +1,13 @@
+import { authArtwork } from '#lib/auth/artwork.server.js';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { login } from '#lib/server/auth/index.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { setSessionCookie } from '#lib/server/auth/cookies.js';
-export const load:PageServerLoad=({locals})=>{if(locals.user)redirect(303,'/for-you');};
+export const load: PageServerLoad = async ({locals}) => {
+  if (locals.user) redirect(303,'/for-you');
+  return {authArtwork:await authArtwork()};
+};
 export const actions = {
  default: async ({request,cookies,url,getClientAddress})=>{
   const form=await request.formData();let session;

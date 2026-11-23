@@ -73,10 +73,10 @@
         <Field label="Username"><input autocomplete="username" required maxlength="32" /></Field>
         <Field label="Password"><input type="password" autocomplete="current-password" required maxlength="128" /></Field>
       {/if}
-      <Button type="submit" disabled={busy}>{busy ? 'Signing in…' : scenario === 'register' ? 'Create account' : scenario === 'setup' ? 'Create your Coast' : scenario === 'password' ? 'Update password' : 'Sign in'}</Button>
+      <Button type="submit" disabled={busy}>{busy ? 'Working…' : scenario === 'setup' ? 'Create your Coast' : 'Continue'}</Button>
       {#if saved}<p class="small quiet" role="status">{saved}</p>{/if}
     </form>
-    <div class="auth-footer">{#if scenario === 'setup'}Self-hosted. No telemetry. Yours to keep.{:else}<a href={scenario === 'register' ? '/login' : '/register'} onclick={event => event.preventDefault()}>{scenario === 'register' ? 'Already have an account? Sign in' : 'Create an account'}</a>{/if}</div>
+    <div class="auth-footer">{#if scenario === 'setup'}Self-hosted. No telemetry. Yours to keep.{:else}<a href={scenario === 'register' ? '/login' : '/register'} onclick={event => event.preventDefault()}>{scenario === 'register' ? 'Sign in' : 'Sign up'}</a>{/if}</div>
   </div></div>
   {/if}
 {:else if name === 'settings'}
@@ -148,7 +148,7 @@
   .health-grid .panel :global(svg) { color:var(--muted); }
   .health-grid strong { font-size:var(--text-xl); font-weight:var(--weight-semibold); text-transform:capitalize; }
   .health-grid h3 { font-size:var(--text-sm); color:var(--muted); }
-  .diagnostic-date { display:block; margin-top:6px; }
+  .diagnostic-date { display:block; margin-block-start:var(--row-text-gap); }
   pre { font-size:var(--text-sm); white-space:pre-wrap; overflow-wrap:anywhere; background:color-mix(in srgb,var(--canvas) calc(68 / 255 * 100%),transparent); padding:16px; border-radius:8px; margin-top:20px; }
   summary { font-size:var(--text-sm); color:var(--muted); }
   @media (max-width:800px) { .health-grid { grid-template-columns:1fr; } .health-grid .panel { padding:20px; } }

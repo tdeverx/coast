@@ -5,7 +5,7 @@
 <dl>
   {#each items as item}<div>
       <dt>{item.label}</dt>
-      <dd class:missing={item.value === null}>
+      <dd class="row-text-stack" class:missing={item.value === null}>
         {item.value ?? 'No data'}
         {#if item.detail}<small>{item.detail}</small>{/if}
       </dd>

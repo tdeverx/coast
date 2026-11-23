@@ -72,7 +72,7 @@
     line-height: var(--leading-relaxed);
   }
   .description {
-    margin: 6px 0 0;
+    margin-block-start: var(--row-text-gap);
   }
   .body {
     min-width: 0;

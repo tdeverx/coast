@@ -7,11 +7,14 @@ import { AppError } from '#lib/server/security/errors.js';
 import { avatarRequestLimit, avatarImage, storeAvatar, pruneAvatars } from './avatar-storage.server';
 const uuid = v.pipe(v.string(), v.uuid());
 const position = v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(100));
+const profileText = {
+  displayName: v.pipe(v.string(), v.trim(), v.maxLength(60)),
+  bio: v.pipe(v.string(), v.trim(), v.maxLength(240)),
+};
 const profileInput = v.variant('action', [
   v.object({
     action: v.literal('edit'),
-    displayName: v.pipe(v.string(), v.trim(), v.maxLength(60)),
-    bio: v.pipe(v.string(), v.trim(), v.maxLength(240)),
+    ...profileText,
     avatar: v.nullable(v.pipe(v.string(), v.maxLength(avatarRequestLimit))),
     background: v.optional(v.object({ mediaId: uuid, position: v.nullable(v.object({ x: position, y: position })) })),
   }),
@@ -24,6 +27,7 @@ const profileInput = v.variant('action', [
     action: v.literal('position'),
     value: position,
   }),
+  v.object({ action: v.literal('details'), ...profileText }),
   v.object({ action: v.literal('background'), mediaId: v.nullable(uuid) }),
   v.object({ action: v.literal('background-mode'), mode: v.picklist(['fixed','activity']) }),
   v.object({ action: v.literal('pin'), mediaId: uuid, value: v.boolean() }),
@@ -60,6 +64,7 @@ export async function updateProfile(userId: string, input: unknown) {
       const avatar = image ? await storeAvatar(userId,image) : data.avatar;
       Object.assign(profile, { displayName: data.displayName, bio: data.bio, avatar });
     }
+    else if (data.action === 'details') Object.assign(profile,{displayName:data.displayName,bio:data.bio});
     else if (data.action === 'preferences') {
       if (data.period !== undefined) profile.period = data.period;
       if (data.favouriteKind !== undefined) profile.favouriteKind = data.favouriteKind;

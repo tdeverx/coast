@@ -30,7 +30,7 @@
         {@const active = controls.chosen?.id === result.id && controls.chosen.index === selected}
         <Button item selection="radio" checked={active}
           keepOpen disabled={!!controls.downloading || active} onclick={() => void controls.download(result)}>
-          <span class="release"><span>{result.name}</span>
+          <span class="release menu-row-copy"><span>{result.name}</span>
             <small>{controls.downloading === result.id ? 'Downloading…' : [result.exact ? 'Exact match' : '', result.sdh ? 'SDH' : '', result.forced ? 'Forced' : ''].filter(Boolean).join(' · ')}</small>
           </span>
         </Button>
@@ -79,8 +79,6 @@
 </Button>
 
 <style>
-  .release { display: grid; gap: 2px; min-width: 0; }
   .release > span { overflow: hidden; text-overflow: ellipsis; }
-  .release small { color: var(--muted); }
   .release small:empty { display: none; }
 </style>

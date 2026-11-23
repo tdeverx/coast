@@ -102,7 +102,7 @@ try {
   const stored=Bun.file('/private/tmp/coast-fixture-browser-session.json');
   if(await stored.exists())await page.context().addCookies(JSON.parse(await stored.text()).cookies);
   await page.goto(`${origin}/for-you`);
-  if(page.url().includes('/login')){await page.locator('input[name=username]').fill('fixtureadmin');await page.locator('input[name=password]').fill('Coast-fixture-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();}
+  if(page.url().includes('/login')){await page.locator('input[name=username]').fill('fixtureadmin');await page.locator('input[name=password]').fill('Coast-fixture-password');await page.getByRole('button',{name:'Continue',exact:true}).click();}
   await expect(page).toHaveURL(/\/for-you$/);
   await page.context().storageState({path:'/private/tmp/coast-fixture-browser-session.json'});
   step = 'subtitle preferences';

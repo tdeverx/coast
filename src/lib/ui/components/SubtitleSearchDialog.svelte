@@ -27,7 +27,7 @@
     <ul class="results">
       {#each matches as result (result.id)}
         {@const active = controls.chosen?.id === result.id && controls.chosen.index === selected}
-        <li><div><strong>{result.name}</strong>
+        <li><div class="row-text-stack"><strong>{result.name}</strong>
           <small>{[result.format?.toUpperCase(), result.exact ? 'Exact match' : '', result.sdh ? 'SDH' : '', result.forced ? 'Forced' : '', result.translated ? 'Machine translated' : '', result.downloads ? `${result.downloads.toLocaleString()} downloads` : ''].filter(Boolean).join(' · ')}</small></div>
           <Button icon={active ? 'check' : 'download'} emphasis="subtle" disabled={!!controls.downloading || active}
             onclick={() => void controls.download(result)}>{active ? 'Selected' : controls.downloading === result.id ? 'Downloading…' : 'Download'}</Button>
@@ -41,6 +41,6 @@
   .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
   .results { margin: 0; padding: 0; list-style: none; }
   .results li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-block-start: 1px solid var(--line); }
-  .results li > div { display: grid; min-width: 0; overflow-wrap: anywhere; }
+  .results li > div { overflow-wrap: anywhere; }
   .results small { color: var(--muted); }
 </style>

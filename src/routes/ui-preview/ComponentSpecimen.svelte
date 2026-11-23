@@ -68,6 +68,7 @@
   {#if bindings.includes('open')}<Current {...resolvedProps} bind:open={()=>Boolean(resolvedProps.open),value=>change('open',value)} bind:this={instance} />
   {:else if name==='AvatarPicker'}<Current {...resolvedProps} bind:avatar={()=>resolvedProps.avatar??null,value=>change('avatar',value)} bind:reading={()=>Boolean(resolvedProps.reading),value=>change('reading',value)} />
   {:else if name==='SegmentedControl'}<Current {...resolvedProps} bind:value={()=>resolvedProps.value,value=>change('value',value)} />
+  {:else if name==='Toggle'}<Current {...resolvedProps} bind:checked={()=>Boolean(resolvedProps.checked),value=>change('checked',value)} />
   {:else if name==='RowStyleMenu'}<Current {...resolvedProps} bind:this={instance} bind:overridePriority={()=>resolvedProps.overridePriority??null,value=>change('overridePriority',value)} bind:overrideShape={()=>resolvedProps.overrideShape??null,value=>change('overrideShape',value)} bind:overrideArtwork={()=>resolvedProps.overrideArtwork??null,value=>change('overrideArtwork',value)} bind:overrideOverlay={()=>resolvedProps.overrideOverlay??null,value=>change('overrideOverlay',value)} />
   {:else if name==='PlaybackTimeline'}<Current {...resolvedProps} bind:scrubbing={()=>Boolean(resolvedProps.scrubbing),value=>change('scrubbing',value)} />
   {:else if name==='Shelf'}<Current {...resolvedProps} bind:availableOnly={()=>Boolean(resolvedProps.availableOnly),value=>change('availableOnly',value)} />

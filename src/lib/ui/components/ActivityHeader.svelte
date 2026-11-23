@@ -12,7 +12,7 @@
  {#if trailing}<span class="small quiet time">{@render trailing()}</span>{/if}
 </div>
 <style>
- .activity-header{display:flex;align-items:center;gap:8px;min-height:24px;font-size:var(--text-md);}
+ .activity-header{--text-link-gap:2px;display:flex;align-items:center;gap:8px;min-height:24px;font-size:var(--text-md);}
  .actor{flex-shrink:0;}
  .actor-space{width:20px;height:20px;flex-shrink:0;}
  .username{min-width:0;color:var(--ink);font-weight:var(--weight-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

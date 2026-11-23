@@ -2,14 +2,14 @@
   "AccountFields": {
     "path": "src/lib/ui/components/AccountFields.svelte",
     "elements": [
-      "Field"
+      "Field",
+      "Icon"
     ],
     "usedBy": [
-      "src/routes/invite/+page.svelte",
-      "src/routes/register/+page.svelte",
+      "src/lib/auth/ui/AccountAccess.svelte",
       "src/routes/setup/+page.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "ActivityHeader": {
     "path": "src/lib/ui/components/ActivityHeader.svelte",
@@ -27,6 +27,8 @@
     "path": "src/lib/ui/components/Avatar.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/auth/ui/AccountIdentity.svelte",
+      "src/lib/auth/ui/InviterField.svelte",
       "src/lib/ui/components/ActivityHeader.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/FriendRoster.svelte",
@@ -46,8 +48,7 @@
       "RowFilter"
     ],
     "usedBy": [
-      "src/lib/ui/components/ProfileEditor.svelte",
-      "src/routes/onboarding/+page.svelte"
+      "src/lib/ui/components/ProfileEditor.svelte"
     ],
     "dynamicComposition": true
   },
@@ -56,10 +57,6 @@
     "elements": [],
     "usedBy": [
       "src/lib/ui/components/Header.svelte",
-      "src/routes/invite/+page.svelte",
-      "src/routes/login/+page.svelte",
-      "src/routes/onboarding/+page.svelte",
-      "src/routes/register/+page.svelte",
       "src/routes/setup/+page.svelte"
     ],
     "dynamicComposition": false
@@ -70,10 +67,13 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/auth/ui/AccountAccess.svelte",
       "src/lib/auth/ui/AccountAccessControls.svelte",
       "src/lib/auth/ui/AdminInviteSettings.svelte",
+      "src/lib/auth/ui/InviteCodeField.svelte",
       "src/lib/auth/ui/InviteDefaultsFields.svelte",
       "src/lib/auth/ui/InviteSecret.svelte",
+      "src/lib/auth/ui/InviterField.svelte",
       "src/lib/auth/ui/MemberInvites.svelte",
       "src/lib/backups/BackupSettings.svelte",
       "src/lib/benchmarks/BenchmarkSettings.svelte",
@@ -86,6 +86,8 @@
       "src/lib/profile/TasteInspection.svelte",
       "src/lib/profile/TasteMatch.svelte",
       "src/lib/profile/TasteSignals.svelte",
+      "src/lib/providers/trakt/AccessFields.svelte",
+      "src/lib/providers/trakt/PairingCode.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
@@ -144,17 +146,15 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/invite/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
-      "src/routes/login/+page.svelte",
       "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/onboarding/+page.svelte",
+      "src/routes/onboarding/Services.svelte",
       "src/routes/planning/+page.svelte",
       "src/routes/progress/+page.svelte",
-      "src/routes/register/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/setup/+page.svelte",
@@ -328,6 +328,9 @@
     "path": "src/lib/ui/components/Field.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/auth/ui/InviteCodeField.svelte",
+      "src/lib/auth/ui/JellyfinFields.svelte",
+      "src/lib/auth/ui/ProfileFields.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
@@ -339,7 +342,7 @@
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
-      "src/routes/login/+page.svelte"
+      "src/routes/onboarding/Services.svelte"
     ],
     "dynamicComposition": true
   },
@@ -441,6 +444,14 @@
     "path": "src/lib/ui/components/Icon.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/auth/ui/ImportRow.svelte",
+      "src/lib/auth/ui/InviteCodeField.svelte",
+      "src/lib/auth/ui/JellyfinFields.svelte",
+      "src/lib/auth/ui/ProfileFields.svelte",
+      "src/lib/auth/ui/ServiceHeader.svelte",
+      "src/lib/providers/trakt/AccessFields.svelte",
+      "src/lib/providers/trakt/PairingCode.svelte",
+      "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/Button.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
       "src/lib/ui/components/EmptyState.svelte",
@@ -457,6 +468,7 @@
       "src/lib/ui/components/Toast.svelte",
       "src/lib/ui/components/WorkActions.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
+      "src/routes/onboarding/Services.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -668,8 +680,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/reading/Reader.svelte",
-      "src/lib/ui/components/ConnectionCard.svelte",
-      "src/routes/onboarding/+page.svelte"
+      "src/lib/ui/components/ConnectionCard.svelte"
     ],
     "dynamicComposition": false
   },
@@ -885,6 +896,7 @@
       "src/lib/ui/materials/MaterialTweaker.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
+      "src/routes/onboarding/+page.svelte",
       "src/routes/planning/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -982,6 +994,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/auth/ui/InviterField.svelte",
       "src/lib/ui/components/ActivityHeader.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/Shelf.svelte"
@@ -1000,6 +1013,14 @@
       "src/lib/ui/components/NotificationToasts.svelte"
     ],
     "dynamicComposition": true
+  },
+  "Toggle": {
+    "path": "src/lib/ui/components/Toggle.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/providers/trakt/AccessFields.svelte"
+    ],
+    "dynamicComposition": false
   },
   "WorkActions": {
     "path": "src/lib/ui/components/WorkActions.svelte",

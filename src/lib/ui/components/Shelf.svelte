@@ -286,7 +286,7 @@
         captionAction={captionAction ? cardAction : undefined} body={body ? cardBody : undefined} footer={footer ? cardFooter : undefined} />
       {#if entry.run}<details class="journal-run">
         <summary>Show {entry.run.length} episodes</summary>
-        <div class="episode-list">{#each entry.run as episode}<a href={episode.href}><span>{episode.title}</span><small>{episode.note.time} · {episode.note.source}{episode.note.repeat ? ' · Rewatch' : ''}</small></a>{/each}</div>
+        <div class="episode-list">{#each entry.run as episode}<a class="row-text-stack" href={episode.href}><span>{episode.title}</span><small>{episode.note.time} · {episode.note.source}{episode.note.repeat ? ' · Rewatch' : ''}</small></a>{/each}</div>
       </details>
       {:else if entry.activity && entry.note}
         {#if journal?.selection}<label class="check"><input type="checkbox" checked={journal.selection.checked(entry.activity.eventId)} disabled={journal.selection.disabled} onchange={() => journal?.selection?.toggle(entry.activity!.eventId)} />Select {item.captionSubtitle || item.title}</label>{/if}
@@ -422,7 +422,7 @@
   .name-placeholder{width:40%;}
   .time-placeholder{width:20%;margin-left:auto;}
   .placeholder-caption{display:flex;align-items:center;gap:8px;margin-top:8px;}
-  .placeholder-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+  .placeholder-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--row-text-gap);}
   .placeholder-line{display:flex;align-items:center;height:calc(var(--text-md) * var(--leading-relaxed));}
   .placeholder-line.short{height:calc(var(--text-sm) * var(--leading-relaxed));}
   .reaction-placeholder{width:28px;}
@@ -555,10 +555,6 @@
     display: grid;
     gap: 12px;
     margin-top: 14px;
-  }
-  .episode-list a {
-    display: grid;
-    gap: 4px;
   }
   .episode-list small {
     font-size: var(--text-sm);

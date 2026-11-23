@@ -53,6 +53,7 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
   'src/lib/auth/ui/InviteSecret.svelte': {owner:'src/lib/auth/ui/AdminInviteSettings.svelte',reason:'One-time output for issued invites.'},
   'src/lib/auth/ui/MemberInvites.svelte': {owner:'src/lib/ui/components/FriendsPanel.svelte',reason:'Friends owns the member invitation tab.'},
   'src/lib/providers/trakt/AccessFields.svelte': {owner:'src/lib/ui/components/ConnectionCard.svelte',reason:'Connections and onboarding share the personal Trakt sync permission fields.'},
+  'src/lib/providers/trakt/PairingCode.svelte': {owner:'src/lib/ui/components/ConnectionCard.svelte',reason:'Connections and onboarding share the Trakt activation code row.'},
   'src/lib/ui/task-control/Recovery.svelte': {owner:'src/lib/ui/components/JobsSettings.svelte',reason:'Recoverable bulk commands are owned by the existing Jobs settings surface.'},
   'src/lib/ui/charts/ChartView.svelte': { owner: 'src/routes/ui-preview/charts/ChartGallery.svelte', reason: 'The Charts section owns the selected chart renderer.' },
   'src/lib/ui/charts/StandardChart.svelte': { owner: 'src/lib/ui/charts/ChartView.svelte', reason: 'Demand-loaded standard chart implementation.' },

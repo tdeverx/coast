@@ -10,9 +10,10 @@
   import { experimentalMaterial, experimentalDefaults, effectGroups, readExperimentalEffects } from './experimental';
   import { blendOptions, glassPresets, type GlassSurface, type GlassVariant } from './presets';
   import { exportMaterialPreset } from './export';
-  import { defaultMaterialDrafts, readMaterialDrafts, materialNames, sliderGroups, colorControls } from './tuning';
+  import { defaultMaterialDrafts, materialDraftOverrides, readMaterialDrafts, materialNames, sliderGroups, colorControls } from './tuning';
   const previewModes = ['materials', 'fallbacks'] as const;
-  const storageKey = 'coast.material-drafts.v1';
+  const storageKey = 'coast.material-drafts.v2';
+  const legacyStorageKey = 'coast.material-drafts.v1';
   let drafts = $state(defaultMaterialDrafts());
   const experimentKey = 'coast.material-experiment.v1';
   const choices = [...materialNames, { value: 'temporary', label: 'Temporary experiment' }];
@@ -36,7 +37,14 @@
   onMount(() => {
     supportedBlends = blendOptions.filter(option => CSS.supports('mix-blend-mode', option.value)).map(option => option.value);
     supportedTintBlends = blendOptions.filter(option => CSS.supports('background-blend-mode', option.value)).map(option => option.value);
-    try { const saved = localStorage.getItem(storageKey); if (saved) drafts = readMaterialDrafts(JSON.parse(saved)); }
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) drafts = readMaterialDrafts(JSON.parse(saved));
+      else {
+        const legacy = localStorage.getItem(legacyStorageKey);
+        if (legacy) drafts = readMaterialDrafts(JSON.parse(legacy), { legacy: true });
+      }
+    }
     catch { failure = 'Saved drafts could not be loaded.'; }
     try {
       const saved = localStorage.getItem(experimentKey);
@@ -50,7 +58,7 @@
     loaded = true;
   });
   $effect(() => {
-    const current = JSON.stringify(drafts);
+    const current = JSON.stringify(materialDraftOverrides(drafts));
     if (loaded) try { localStorage.setItem(storageKey, current); } catch { failure = 'Browser storage is unavailable. Export your draft to keep it.'; }
   });
   $effect(() => {

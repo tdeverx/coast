@@ -20,7 +20,7 @@ export const elements = [
   'ActivityHeader', 'ProgressBar', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
   'MetricGrid', 'Toast', 'OperationProgress', 'SettingsRow',
   'Pagination', 'PlaybackTimeline', 'Rating', 'TextLink',
-  'SegmentedControl',
+  'SegmentedControl', 'Toggle',
 ] as const satisfies readonly (typeof components[number])[];
 
 export const menuComponents = ['WorkMenu', 'WorkListActions', 'RowFilter', 'RowStyleMenu', 'PartyMenu'] as const satisfies readonly (typeof components[number])[];

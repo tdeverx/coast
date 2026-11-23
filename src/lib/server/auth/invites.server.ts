@@ -1,4 +1,8 @@
 import * as v from 'valibot';
+import { profilePath } from '#lib/profile/url.js';
+import { canView } from '#lib/social/privacy.server.js';
+import { isPublicReadPath } from '#lib/social/public.server.js';
+import { getConfig } from '../config';
 import { emptyInviteDefaults, inviteBatchLimit, inviteCode, inviteDefaultsSchema, inviteLabel, inviteLimit, jellyfinSettingsSchema, jellyfinUserId, provisioningAccessWindows, uuid, type InviteDefaults } from '#lib/auth/invites.js';
 import { jellyfinConfigurationSchema, jellyfinHasFamilyLimits } from '#lib/auth/jellyfin-preset.js';
 import { jellyfinItemKey } from '#lib/providers/jellyfin/paging.js';
@@ -195,9 +199,9 @@ export async function regenerateInvite(actor: SessionUser | null, id: string) {
 
 export async function findRedeemableInvite(db: Db, tokenHash: string, lock = false) {
   const [invite] = await db<{
-    id:string; created_by:string|null; inviter:string|null; defaults:InviteDefaults|null; preset_name:string|null;
+    id:string; created_by:string|null; inviter:string|null; inviter_avatar:string|null; defaults:InviteDefaults|null; preset_name:string|null;
     provision_connection_id:string|null; provision_instance_id:string|null; provision_generation:string|null; provision_folders:string[]|null; instance_name:string|null;
-  }[]>`select i.id,i.created_by,coalesce(nullif(u.settings#>>'{profile,displayName}',''),u.username) as inviter,
+  }[]>`select i.id,i.created_by,u.username as inviter,u.settings#>>'{profile,avatar}' as inviter_avatar,
     i.defaults,i.preset_name,i.provision_connection_id,i.provision_instance_id,i.provision_generation,i.provision_folders,p.name as instance_name
     from registration_invites i left join users u on u.id=i.created_by and not u.disabled and (u.membership_expires_at is null or u.membership_expires_at>now())
     left join provider_connections c on c.id=i.provision_connection_id left join provider_instances p on p.id=coalesce(i.provision_instance_id,c.instance_id)
@@ -216,7 +220,13 @@ export async function previewInvite(input: unknown, client: string) {
   const code = v.parse(inviteCode,input);
   const invite = await findRedeemableInvite(getSql(),await hashToken(code));
   if (!invite) throw new AppError(400,inviteUnavailable);
-  return {code,inviter:invite.inviter,server:invite.instance_name,preset:invite.preset_name,
+  let inviterProfile: string | null = null;
+  if (invite.inviter && invite.created_by) {
+    const path = profilePath(invite.inviter);
+    if (isPublicReadPath(path, (await getConfig()).siteAccess) && await canView(invite.created_by, null, 'details')) inviterProfile = path;
+  }
+  const inviterAvatar = inviterProfile && invite.inviter_avatar?.startsWith(`/api/v1/profile/avatar/${invite.created_by}/`) ? invite.inviter_avatar : null;
+  return {code,inviter:invite.inviter,inviterProfile,inviterAvatar,server:invite.instance_name,preset:invite.preset_name,
     account:invite.defaults?.account ?? (invite.provision_generation ? 'managed' : 'coast'),
     libraryOnly:invite.defaults?.access.libraryOnly === true, membershipDays:invite.defaults?.membershipDays ?? null};
 }

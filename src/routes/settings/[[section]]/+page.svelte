@@ -1349,7 +1349,7 @@
             {#each data.diagnostics as event}<details class="panel">
                 <summary
                   ><strong>{event.level} · {event.kind}</strong> · {event.message}<small
-                    style="display:block;margin-top:6px"
+                    style="display:block;margin-block-start:var(--row-text-gap)"
                     >{new Date(event.createdAt).toLocaleString()}</small
                   ></summary
                 >

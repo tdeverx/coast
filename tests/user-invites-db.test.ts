@@ -1,13 +1,14 @@
-import {afterAll,beforeAll,expect,test} from 'bun:test';
+import {afterAll,beforeAll,expect,spyOn,test} from 'bun:test';
 import {getSql,closeDb} from '../src/lib/server/db';
 import {updateConfig} from '../src/lib/application/configuration.server';
 import {authenticateSession,hashToken,randomToken,type SessionUser} from '../src/lib/server/auth';
-import {registerAccount,beginOnboardingImports,onboardingStatus,backgroundOnboardingImports,retryBackgroundOnboardingImports} from '../src/lib/server/auth/onboarding';
+import {registerAccount,onboardingServices,linkOnboarding,beginOnboardingImports,onboardingStatus,backgroundOnboardingImports,retryBackgroundOnboardingImports} from '../src/lib/server/auth/onboarding';
 import {accountDetails,changeMemberAccess,expireMemberships,manageAccount} from '../src/lib/server/auth/account-management.server';
 import {createInvite,issueMemberInvite,inviteClaims,listInvites,memberInviteOverview,memberInviteGrant,previewInvite,regenerateInvite,requestMemberInvite,saveInvitePreset} from '../src/lib/server/auth/invites.server';
 import {getFeatureConfig} from '../src/lib/server/features';
 import {notifyMany} from '../src/lib/server/notifications';
 import {markNotification,notificationInbox,notificationToasts} from '../src/lib/server/notifications/inbox';
+import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
 import {saveConnection} from '../src/lib/providers/connections.server';
 import {managedDetails,managedLibrary,managedRoute} from '../src/lib/server/auth/managed-library.server';
 
@@ -24,6 +25,22 @@ beforeAll(async()=>{
   preset=(await saveInvitePreset(admin,{name:'Coast access',defaults:{access:{sharing:false},preferences:{theme:'light'}}})).id;
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST==='1')await closeDb();});
+
+run('invite previews link to the inviter only when their profile details are public to signed-out visitors',async()=>{
+  const invite=await createInvite(admin,{presetId:preset});
+  const db=getSql();
+  try {
+    await db`update users set settings=${{social:{audience:'public'}}}::jsonb where id=${admin.id}`;
+    expect((await previewInvite(invite.code,'private-site')).inviterProfile).toBeNull();
+    await updateConfig(admin,{siteAccess:'public-profiles'});
+    expect((await previewInvite(invite.code,'public-inviter')).inviterProfile).toBe('/profile/'+admin.username);
+    await db`update users set settings=${{social:{audience:'public',sections:{details:'friends'}}}}::jsonb where id=${admin.id}`;
+    expect((await previewInvite(invite.code,'private-details')).inviterProfile).toBeNull();
+  } finally {
+    await updateConfig(admin,{siteAccess:'private'});
+    await db`update users set settings='{}'::jsonb where id=${admin.id}`;
+  }
+});
 
 run('Coast admins use the admin workflow and replacing a server key invalidates old managed codes',async()=>{
   await expect(requestMemberInvite(admin,{})).rejects.toMatchObject({code:'admin_invite_workflow'});
@@ -42,6 +59,31 @@ run('Coast admins use the admin workflow and replacing a server key invalidates 
     await expect(previewInvite(replacement.code,'server-key')).resolves.toMatchObject({account:'managed'});
     await expect(previewInvite(code,'server-key')).rejects.toMatchObject({status:400});
   }finally{await db`delete from registration_invites where provision_instance_id=${server}`;await db`delete from provider_instances where id=${server}`;}
+});
+
+run('a choice invite keeps its managed offer until an existing account on the invited server connects',async()=>{
+  const db=getSql(),server=crypto.randomUUID(),generation=crypto.randomUUID(),code=randomToken();
+  await db`insert into provider_instances(id,provider,name,base_url,credentials,server_identity,settings)
+    values(${server},'jellyfin','Choice server','https://choice.invalid','fixture','choice-server',${{managementKeyGeneration:generation,approved:true}}::jsonb)`;
+  const defaults={account:'choice',connectionId:server,access:{},folders:[],jellyfin:{EnableAllFolders:true}};
+  await db`insert into registration_invites(token_hash,created_by,expires_at,defaults,provision_instance_id,provision_generation,provision_folders)
+    values(${await hashToken(code)},${admin.id},now()+interval '1 hour',${defaults}::jsonb,${server},${generation},'[]')`;
+  const {user}=await registerAccount(account(code,'choice-invitee'),'choice-registration',true);
+  const offer=()=>db`select state,remote_id from onboarding_provisioning where user_id=${user.id}`;
+  expect((await offer())[0]).toMatchObject({state:'pending',remote_id:null});
+  expect((await onboardingServices(user.id)).map(row=>row.id)).toEqual([server]);
+  const credentials={instanceId:server,username:'existing',password:'fixture'};
+  await expect(linkOnboarding(user.id,{...credentials,instanceId:crypto.randomUUID()})).rejects.toMatchObject({status:403});
+  const auth=spyOn(JellyfinAdapter.prototype,'authenticate');
+  try {
+    auth.mockRejectedValueOnce(new Error('Credentials rejected'));
+    await expect(linkOnboarding(user.id,credentials)).rejects.toThrow('Credentials rejected');
+    expect(await offer()).toHaveLength(1);
+    auth.mockResolvedValueOnce({id:crypto.randomUUID(),username:'existing',accessToken:'fixture-only',serverId:'choice-server'});
+    await linkOnboarding(user.id,credentials);
+    expect(await offer()).toHaveLength(0);
+    expect(await onboardingStatus(user.id)).toMatchObject({linked:true,requiredProvider:'jellyfin'});
+  } finally {auth.mockRestore();}
 });
 
 run('atomic multi-use claims, one-time secrets, regeneration and friendship',async()=>{
@@ -196,6 +238,11 @@ run('completed onboarding shows and retries only the member’s current initial 
   expect(await backgroundOnboardingImports(user)).toMatchObject([{label:'Trakt tracking',state:'failed',canRetry:true}]);
   await retryBackgroundOnboardingImports(member.id);
   expect(await backgroundOnboardingImports(user)).toMatchObject([{state:'failed'}]);
+  await db`update outbox_actions set payload='{"_jobFailure":{"code":"provider.authentication"}}' where id=${job}`;
+  expect(await backgroundOnboardingImports(user)).toMatchObject([{state:'reconnect',canRetry:false}]);
+  await retryBackgroundOnboardingImports(user);
+  expect(await backgroundOnboardingImports(user)).toMatchObject([{state:'reconnect'}]);
+  await db`update outbox_actions set payload='{}' where id=${job}`;
   await retryBackgroundOnboardingImports(user);
   expect(await backgroundOnboardingImports(user)).toMatchObject([{state:'pending',canRetry:false}]);
   const [unrelated]=await db`select state from outbox_actions where id=${other}`;
