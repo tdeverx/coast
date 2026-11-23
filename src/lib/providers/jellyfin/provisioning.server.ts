@@ -11,8 +11,20 @@ import { checkLoginRate, randomToken } from '#lib/server/auth/index.js';
 import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { getInstance, jellyfinManagement } from '#lib/providers/instances.server.js';
 
-export function provisionPolicy(policy:Record<string,unknown>,folders:string[],settings:JellyfinSettings={}){
- return {...policy,IsAdministrator:false,IsDisabled:false,IsHidden:true,EnableAllFolders:false,EnabledFolders:folders,
+// Defaults for optional UserPolicy fields not already controlled by Coast's managed baseline.
+const jellyfinPolicyDefaults: JellyfinSettings = {
+  EnableAudioPlaybackTranscoding: true, EnableVideoPlaybackTranscoding: true, EnablePlaybackRemuxing: true,
+  ForceRemoteSourceTranscoding: false, EnableSyncTranscoding: true, EnableRemoteAccess: true,
+  PasswordResetProviderId: 'Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider',
+  LoginAttemptsBeforeLockout: -1, MaxActiveSessions: 0, RemoteClientBitrateLimit: 0,
+  MaxParentalRating: null, MaxParentalSubRating: null, AllowedTags: [], BlockedTags: [], BlockUnratedItems: [],
+  AccessSchedules: [], SyncPlayAccess: 'CreateAndJoinGroups',
+};
+
+export function provisionPolicy(policy:Record<string,unknown>,folders:string[],settings:JellyfinSettings={},previous:JellyfinSettings={}){
+ const released = Object.fromEntries(Object.entries(jellyfinPolicyDefaults)
+   .filter(([key]) => Object.hasOwn(previous, key) && !Object.hasOwn(settings, key)));
+ return {...policy,...released,IsAdministrator:false,IsDisabled:false,IsHidden:true,EnableAllFolders:false,EnabledFolders:folders,
   EnableContentDeletion:false,EnableContentDeletionFromFolders:[],EnableContentDownloading:false,EnablePublicSharing:false,
   EnableRemoteControlOfOtherUsers:false,EnableSharedDeviceControl:false,EnableLiveTvManagement:false,EnableLiveTvAccess:false,EnableAllChannels:false,EnabledChannels:[],EnableCollectionManagement:false,
   EnableSubtitleManagement:false,EnableLyricManagement:false,EnableMediaConversion:false,EnableUserPreferenceAccess:true,EnableMediaPlayback:true,
@@ -32,8 +44,8 @@ function confirmed(applied:Record<string,unknown>,expected:Record<string,unknown
 }
 
 export async function applyJellyfinPreset(adapter:JellyfinAdapter,id:string,remote:Awaited<ReturnType<JellyfinAdapter['userForProvisioning']>>,
-  defaults:InviteDefaults,coastUserId:string,disabled=false) {
-  const policy={...provisionPolicy(remote.Policy,defaults.folders,defaults.jellyfin),IsDisabled:disabled};
+  defaults:InviteDefaults,coastUserId:string,disabled=false,previous:JellyfinSettings={}) {
+  const policy={...provisionPolicy(remote.Policy,defaults.folders,defaults.jellyfin,previous),IsDisabled:disabled};
   // Coast is the managed account's connection. Keep it in an explicit allowlist.
   if(!policy.EnableAllDevices)policy.EnabledDevices=[...new Set([...(defaults.jellyfin.EnabledDevices??[]),coastUserId])];
   const preferences=defaults.jellyfinConfiguration;
@@ -44,7 +56,7 @@ export async function applyJellyfinPreset(adapter:JellyfinAdapter,id:string,remo
   await adapter.setProvisionPolicy(id,policy);
   const applied=await adapter.userForProvisioning(id);
   const policyKeys=['IsAdministrator','IsDisabled','IsHidden','EnableAllFolders','EnabledFolders','EnableLiveTvAccess','EnableAllChannels',
-    'EnableContentDeletion','EnableContentDeletionFromFolders','EnableAllDevices','EnabledDevices',...Object.keys(defaults.jellyfin)];
+    'EnableContentDeletion','EnableContentDeletionFromFolders','EnableAllDevices','EnabledDevices',...Object.keys(defaults.jellyfin),...Object.keys(previous)];
   if(!confirmed(applied.Policy,policy,policyKeys) || preferences && !confirmed(applied.Configuration??{},preferences,Object.keys(preferences)))
     throw new Error('Jellyfin did not confirm the requested settings.');
 }

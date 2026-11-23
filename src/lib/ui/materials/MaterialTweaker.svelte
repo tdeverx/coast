@@ -24,6 +24,7 @@
   const baseVariant = $derived(variant === 'temporary' ? 'clear' : variant);
   const selected = $derived(experimental ? experiment : { materials: drafts["materials"][baseVariant], fallbacks: drafts["fallbacks"][baseVariant] });
   let layer = $state<'materials' | 'fallbacks'>('materials');
+  let samples = $state<Partial<Record<'materials' | 'fallbacks', HTMLDivElement>>>({});
   let loaded = $state(false);
   let failure = $state('');
   reportFailure(()=>failure);
@@ -86,10 +87,12 @@
   function prepareExport() {
     const probe = document.createElement('span');
     probe.hidden = true;
-    document.body.append(probe);
     try {
-      source = JSON.stringify(exportMaterialPreset(variant, selected, value => {
+      source = JSON.stringify(exportMaterialPreset(variant, selected, (value, mode) => {
         if (!CSS.supports('color', value)) throw new Error('A draft contains an invalid color. Correct it before exporting.');
+        const sample = samples[mode];
+        if (!sample) throw new Error('Open the material preview before exporting.');
+        if (probe.parentElement !== sample) sample.append(probe);
         probe.style.color = value;
         return getComputedStyle(probe).color;
       }, experimental ? effects : undefined), null, 2);
@@ -119,7 +122,7 @@
       {#each previewModes as mode}
         {@const approved = !experimental && Object.entries(glassPresets[mode][baseVariant]).every(([key, value]) => selected[mode][key as keyof GlassSurface] === value)}
         <div class="sample glass" class:light={variant === 'glassLight'}
-          data-material-sample={mode}
+          data-material-sample={mode} bind:this={samples[mode]}
           role={experimental ? 'group' : undefined}
           aria-label={experimental ? `${mode === 'materials' ? 'Native' : 'Fallback'} experimental material sample` : undefined}
           use:experimentalMaterial={{ enabled: experimental, effects }}

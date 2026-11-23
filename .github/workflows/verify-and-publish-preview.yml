@@ -220,10 +220,10 @@ jobs:
     needs: image
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    # Serialize tag updates without cancelling a running publish.
+    # Retain queued releases while serializing changes to shared image tags.
     concurrency:
       group: coast-image-publish
-      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       packages: write

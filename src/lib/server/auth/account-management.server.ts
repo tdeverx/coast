@@ -191,7 +191,7 @@ export async function executeMemberPolicy(job:OutboxAction) {
     else if(wasDisabled)lifecycle='disabled-external';
   } else if(defaults) {
     await validatePresetLibraries(authority.adapter,defaults.folders,defaults.jellyfin);
-    await applyJellyfinPreset(authority.adapter,target.remote_id,remote,defaults,userId,remote.Policy.IsDisabled===true);
+    await applyJellyfinPreset(authority.adapter,target.remote_id,remote,defaults,userId,remote.Policy.IsDisabled===true,target.active_defaults?.jellyfin);
     if(remote.Policy.IsDisabled===true)lifecycle='disabled-external';
   }
   await getDb().transaction(async tx=>{

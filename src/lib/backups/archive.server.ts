@@ -93,7 +93,7 @@ export async function captureBackup(input: {
       return null;
     });
     if (avatars && !avatars.isDirectory()) throw new Error('The uploaded avatars directory is invalid.');
-    await seal(['tar', '-C', input.data, '-czf', '-', 'secrets', ...(avatars ? ['avatars'] : [])],
+    await seal(['tar', '-C', input.data, '--exclude=avatars/*.tmp', '-czf', '-', 'secrets', ...(avatars ? ['avatars'] : [])],
       env, join(stage, 'app-files.cms'), recipient, input.signal);
     await unlink(recipient);
 

@@ -47,6 +47,7 @@ export async function requestPlaybackCandidates(scope: SeerrAccountScope, reques
         and a.connection_id = ${scope.linkedConnectionId} and a.state = 'available'
       join provider_items mapped on mapped.id = a.provider_item_id and mapped.instance_id = ${scope.linkedInstanceId}
       order by (a.id is not distinct from request."previousId" and a.source->>'coastPlaybackState' is distinct from 'pending') desc,
+        a.source->>'coastPlaybackProbedAt' asc nulls first,
         (a.source->>'coastPlaybackState' = 'pending') asc nulls first,
         case when request."is4k" then a.width end desc nulls last,
         target.season_number, target.episode_number, a.id
@@ -67,13 +68,14 @@ export function createRequestPlaybackCheck(scope: SeerrAccountScope) {
   let config: ReturnType<typeof getConfig> | undefined;
   let identityVerified = false;
   return async (candidates: Candidate[], is4k: boolean, previous?: string | null) => {
-    if (!candidates.length) return { sourceId: null, pendingIds: [] };
-    if (previous && candidates.some(candidate => candidate.id === previous && !candidate.pending)) return { sourceId: previous, pendingIds: [] };
+    if (!candidates.length) return { sourceId: null, pendingIds: [], probedIds: [] };
+    if (previous && candidates.some(candidate => candidate.id === previous && !candidate.pending)) return { sourceId: previous, pendingIds: [], probedIds: [] };
     const pendingIds: string[] = [];
+    const probedIds: string[] = [];
     const signal = AbortSignal.timeout(3_000);
     try {
       const [jellyfin, policy] = await Promise.all([ready ??= getJellyfin(scope.userId, scope.linkedConnectionId), config ??= getConfig()]);
-      if (jellyfin.connection.accountGeneration !== scope.linkedGeneration || !jellyfin.connection.externalUserId) return { sourceId: null, pendingIds };
+      if (jellyfin.connection.accountGeneration !== scope.linkedGeneration || !jellyfin.connection.externalUserId) return { sourceId: null, pendingIds, probedIds };
       if (!identityVerified) {
         await jellyfin.adapter.identity(jellyfin.instance.serverIdentity || undefined, signal);
         identityVerified = true;
@@ -86,6 +88,8 @@ export function createRequestPlaybackCheck(scope: SeerrAccountScope) {
           const info = await jellyfin.adapter.playbackInfo(itemId, jellyfin.connection.externalUserId, browser, maxBitrate,
             { signal, probe: true });
           for (const row of rows) {
+            if (signal.aborted) break;
+            probedIds.push(row.id);
             const sources = info.sources.filter(source => (row.sourceId === source.id || row.sourceId === 'default') &&
               source.streams.some(stream => stream.type === 'Video' && (!is4k || (stream.width ?? 0) >= 3800 || (stream.height ?? 0) >= 2100)));
             try {
@@ -93,21 +97,23 @@ export function createRequestPlaybackCheck(scope: SeerrAccountScope) {
                 const plan = planPlayback(sources, browser, {delivery:'relay-only',maxBitrate,allowTranscoding:policy.allowTranscoding});
                 const { probeJellyfinVideo } = await import('#lib/playback/service.server.js');
                 const result = await probeJellyfinVideo(scope.userId, jellyfin, itemId, plan, signal);
-                if (result === 'ready') return { sourceId: row.id, pendingIds };
+                if (result === 'ready') return { sourceId: row.id, pendingIds, probedIds };
                 if (result === 'pending') pendingIds.push(row.id);
               }
-              // A different edition is not evidence that this one has no stream.
               if (!info.sources.some(source => source.streams.some(stream => stream.type === 'Video'))) pendingIds.push(row.id);
             } catch (cause) {
               if (cause instanceof JobYield) throw cause;
-              // Try another mapped source if this one cannot be played.
             }
           }
         } catch (cause) {
           if (cause instanceof JobYield) throw cause;
           pendingIds.length = previousPending;
           if ((cause instanceof AppError && cause.code === 'playback_source_unavailable') ||
-              (cause instanceof ProviderHttpError && cause.status === 404)) pendingIds.push(...rows.map(row => row.id));
+              (cause instanceof ProviderHttpError && cause.status === 404)) {
+            const ids = rows.map(row => row.id);
+            pendingIds.push(...ids);
+            probedIds.push(...ids);
+          }
           if (signal.aborted) break;
         }
       }
@@ -115,6 +121,6 @@ export function createRequestPlaybackCheck(scope: SeerrAccountScope) {
       if (cause instanceof JobYield) throw cause;
       // Account or provider verification can be retried by the next request sync.
     }
-    return { sourceId: null, pendingIds };
+    return { sourceId: null, pendingIds, probedIds };
   };
 }

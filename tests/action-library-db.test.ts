@@ -39,9 +39,15 @@ describe.skipIf(!target)('action Library container counts and pagination',()=>{
    // The insert trigger pins jobs to the live account. Age this fixture after insertion.
    await db.update(s.outboxActions).set({accountGeneration:crypto.randomUUID()}).where(eq(s.outboxActions.id,stale.id));
    expect(await libraryImportStatus(owner)).toBeNull();
-   await db.insert(s.outboxActions).values({...job,accountGeneration:connection.accountGeneration});
+   const [bootstrap]=await db.insert(s.outboxActions).values({...job,accountGeneration:connection.accountGeneration}).returning({id:s.outboxActions.id});
    expect(await libraryImportStatus(owner)).toContain('queued');
    expect(await libraryImportStatus(other)).toBeNull();
+   await db.update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,bootstrap.id));
+   const [background]=await db.insert(s.outboxActions).values({...job,kind:'jellyfin.sync',state:'running'}).returning();
+   await db.update(s.providerConnections).set({settings:{userSync:{phase:'scanning',processed:2,total:10,startedAt:new Date(background.createdAt.getTime()+1000).toISOString()}}}).where(eq(s.providerConnections.id,connection.id));
+   expect(await libraryImportStatus(owner)).toBe('Checking library access · 2 of 10');
+   await db.update(s.outboxActions).set({state:'failed'}).where(eq(s.outboxActions.id,background.id));
+   expect(await libraryImportStatus(owner)).toContain('needs attention');
   } finally {
    await db.delete(s.outboxActions).where(eq(s.outboxActions.userId,owner));
    await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instance.id));

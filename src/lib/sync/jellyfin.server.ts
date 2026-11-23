@@ -508,9 +508,14 @@ async function runJellyfinScan(
           mediaId: sql`excluded.media_id`, edition: sql`excluded.edition`, container: sql`excluded.container`,
           videoCodec: sql`excluded.video_codec`, audioCodec: sql`excluded.audio_codec`, bitrate: sql`excluded.bitrate`,
           width: sql`excluded.width`, height: sql`excluded.height`, durationSeconds: sql`excluded.duration_seconds`,
-          source: sql`excluded.source || case when ${availability.source}->>'coastPlaybackState'='pending'
-            and (excluded.source->'MediaStreams') is not distinct from (${availability.source}->'MediaStreams')
-            then jsonb_build_object('coastPlaybackState','pending') else '{}'::jsonb end`,
+          source: sql`excluded.source || case
+            when excluded.media_id=${availability.mediaId}
+              and (excluded.source->'MediaStreams') is not distinct from (${availability.source}->'MediaStreams')
+            then jsonb_strip_nulls(jsonb_build_object(
+              'coastPlaybackState', case when ${availability.source}->>'coastPlaybackState'='pending' then 'pending' end,
+              'coastPlaybackProbedAt', ${availability.source}->'coastPlaybackProbedAt'
+            ))
+            else '{}'::jsonb end`,
           state: sql`excluded.state`, verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
         },
       });

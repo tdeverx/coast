@@ -222,6 +222,16 @@ test('odd-face sanitization is on by default and can be disabled without droppin
   expect(pages.physicalPage(4)).toBe(pages.count-1);
  }
 });
+test('a transient renderer fault does not block the next external navigation',async()=>{
+ const value=await fixture();
+ try{
+  const failure=new Error('Temporary raster failure');
+  value.calls.onError!(failure);
+  expect(value.errors).toEqual([failure]);
+  await value.engine.go({format:'cbz',page:3,total:6});
+  expect(value.moved).toEqual([6]);
+ }finally{value.engine.destroy();}
+});
 test('outside dismissal uses the Coast callback and cannot fire after disposal', async () => {
   const value = await fixture();
   value.calls.onDismiss!();

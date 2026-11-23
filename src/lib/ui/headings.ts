@@ -15,7 +15,7 @@ export function browseHeading(surface: 'watch' | 'listen' | 'play' | 'read', con
     selection: surfaceEnabled(config,surface) ? {
       label: 'Library media', value: surface,
       options: [{value:'watch',label:'Watch'},{value:'listen',label:'Listen'},{value:'play',label:'Play'},{value:'read',label:'Read'}].filter(option=>surfaceEnabled(config,option.value)),
-      change: (value: string) => { void goto(value === 'watch' ? '/library' : value === 'listen' ? '/music' : value==='play' ? '/games' : '/library?view=read'); },
+      change: (value: string) => { void goto(value === 'watch' ? '/library?view=watch' : value === 'listen' ? '/music' : value==='play' ? '/games' : '/library?view=read'); },
     } : undefined,
   };
 }

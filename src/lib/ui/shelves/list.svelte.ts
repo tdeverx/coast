@@ -7,6 +7,7 @@ import { page } from '$app/state';
 import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
 import { message } from '#lib/ui/client.js';
 import { useClient } from '#lib/ui/client-context.js';
+import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
   import { createResource,uniqueItems } from '#lib/ui/resource.svelte.js';
 type Content = {
     selected?: { playlist: boolean;name?:string } | null;
@@ -86,11 +87,21 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
 
     if (result && !location.embedded && !preview && layout === 'grid') goto(href(result.page), { shallow: true, replace: true, reset: false, state: page.state });
   }
+  const refreshKey = $derived(contentRevisionKey(page.data, ['tracking', 'social']));
+  let previousRefresh = untrack(() => refreshKey);
+  $effect(() => {
+    const next = refreshKey;
+    if (next === previousRefresh) return;
+    previousRefresh = next;
+    untrack(() => {
+      if (!preview && !initial && resource.activated) void load(content.page);
+    });
+  });
   async function edit(id: string, direction?: number) {
     try {
       if (direction) await change(`lists/${view}/move`, { entryId: id, direction });
       else await change(`lists/${view}/items`, { entryId: id }, 'DELETE');
-      await load(content.page);
+      if (initial || preview) await load(content.page);
     } catch (cause) {
       resource.error = message(cause);
     }
@@ -187,7 +198,9 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
               arranging = !arranging;
             }
           },
-          ...(ondelete ? [{ label: 'Delete list', run: ondelete }] : [])
+          ...(ondelete ? [{ label: 'Delete list', run: ondelete }] : profile
+            ? [{ label: 'Manage list', run: () => goto(`/lists?${new URLSearchParams({ view })}`) }]
+            : [])
         ]
         : [];
     },

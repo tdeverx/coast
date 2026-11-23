@@ -211,6 +211,22 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   }
   function render() {
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
+    if (options.enabled === false) {
+      node.classList.remove('liquid-glass-active');
+      node.dataset.coastGlassRenderer = 'disabled';
+      delete node.dataset.coastGlassVariant;
+      node.style.removeProperty('-webkit-backdrop-filter');
+      node.style.removeProperty('backdrop-filter');
+      for (const property of materialProperties) node.style.removeProperty(property);
+      materialProperties.clear();
+      grain?.remove();
+      grain = undefined;
+      mapCache = undefined;
+      definition?.remove();
+      definition = null;
+      definitionKey = undefined;
+      return;
+    }
     const variant = options.variant ?? 'clear';
     const preset = glassPresets.materials[variant];
     const material = options.surface ? { ...preset, ...options.surface } : preset;
@@ -219,7 +235,6 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       !appearancePreferences?.matches &&
       options.renderer !== 'css' &&
       material.refraction > 0 &&
-      options.enabled !== false &&
       (options.preview || document.querySelector('[data-coast-glass="on"]'));
     if (!enabled) {
       clearNative(options.renderer === 'css' || !nativeSupported || material.refraction === 0 ? 'css' : 'disabled', variant, options.fallback);

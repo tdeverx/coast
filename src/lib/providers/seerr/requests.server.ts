@@ -472,7 +472,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
       }] : [];
     }));
     const sourceVersions = new Map([...candidates.values()].flatMap(rows => rows.map(row => [row.id, row] as const)));
-    type Prepared={remote:SeerrRequest;workId?:string;seasonNumbers:number[];state:RequestState;sourceId:string|null;pendingIds:string[]};
+    type Prepared={remote:SeerrRequest;workId?:string;seasonNumbers:number[];state:RequestState;sourceId:string|null;pendingIds:string[];probedIds:string[]};
     let pending:Prepared[]=[];
     async function commit(next:number,complete:boolean){
       await guarded(async tx=>{
@@ -481,7 +481,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
         // observation may have committed while metadata was being fetched.
         const current=ids.length?await tx.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),inArray(mediaRequests.externalId,ids))):[];
         const byId=new Map(current.map(request=>[request.externalId,request]));
-        const checkedIds = [...new Set(pending.flatMap(row => row.sourceId ? [row.sourceId, ...row.pendingIds] : row.pendingIds))];
+        const checkedIds = [...new Set(pending.flatMap(row => row.sourceId ? [row.sourceId, ...row.probedIds] : row.probedIds))];
         const checked = checkedIds.length ? await tx.select({
           id: availability.id, mediaId: availability.mediaId, verifiedAt: sql<string>`${availability.verifiedAt}::text`,
         }).from(availability).where(and(
@@ -493,14 +493,17 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
           const observed = sourceVersions.get(row.id);
           return observed?.mediaId === row.mediaId && observed.verifiedAt === row.verifiedAt;
         }).map(row => row.id));
-        const readyIds = new Set<string>(), pendingSourceIds = new Set<string>();
+        const readyIds = new Set<string>(), pendingSourceIds = new Set<string>(), probedSourceIds = new Set<string>();
         const unchanged:string[]=[],insertions:typeof mediaRequests.$inferInsert[]=[],notices:{id:string;mediaId:string;remoteId:number;state:RequestState}[]=[];
         for(const entry of pending){
           const {remote,workId}=entry;
           const local=byId.get(String(remote.id));
           const sourceId=entry.sourceId && local?.mediaId===workId && present.has(entry.sourceId) ? entry.sourceId : null;
           if (sourceId) readyIds.add(sourceId);
-          if (local?.mediaId===workId) for (const id of entry.pendingIds) if (present.has(id)) pendingSourceIds.add(id);
+          if (local?.mediaId===workId) {
+            for (const id of entry.pendingIds) if (present.has(id)) pendingSourceIds.add(id);
+            for (const id of entry.probedIds) if (present.has(id)) probedSourceIds.add(id);
+          }
           const state=entry.state==='available' && !sourceId ? 'processing' : entry.state;
           if(local){
             if(local.state===state && local.playbackVerifiedSourceId===sourceId)unchanged.push(local.id);
@@ -515,6 +518,9 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
             .where(and(eq(availability.userId,userId),eq(availability.connectionId,scope.linkedConnectionId),inArray(availability.id,ids),
               sql`(${availability.source}->>'coastPlaybackState') is distinct from ${state}`));
         }
+        if (probedSourceIds.size) await tx.update(availability)
+          .set({source:sql`${availability.source} || jsonb_build_object('coastPlaybackProbedAt', ${new Date().toISOString()}::text)`})
+          .where(and(eq(availability.userId,userId),eq(availability.connectionId,scope.linkedConnectionId),inArray(availability.id,[...probedSourceIds])));
         if(unchanged.length)await tx.update(mediaRequests).set({observedScanId:point.scanId}).where(inArray(mediaRequests.id,unchanged));
         if(insertions.length)await tx.insert(mediaRequests).values(insertions);
         // Notification persistence and the cursor are one commit: a resumed page
@@ -542,7 +548,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
       }
       const state=seerrRequestState(remote);
       const proof=state==='available' ? await checkPlayback(candidates.get(remote.id) ?? [],known?.is4k ?? remote.is4k,known?.state==='available'?known.playbackVerifiedSourceId:undefined)
-        : {sourceId:null,pendingIds:[]};
+        : {sourceId:null,pendingIds:[],probedIds:[]};
       pending.push({remote,workId,seasonNumbers,state,...proof});
       if(expired()&&index+1<page.results.length){await commit(index+1,false);await jobCheckpoint();}
     }

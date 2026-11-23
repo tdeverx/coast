@@ -3,14 +3,16 @@ import { getDb } from '#lib/server/db/index.js';
 import { media, externalIds, episodes, seasons } from '#lib/server/db/schema.js';
 import { traktEntry } from '#lib/sync/trakt-identity.server.js';
 import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
-import { CatalogueIdentityConflict, ingestMetadata, importTmdb } from './service.server';
+import { CatalogueIdentityConflict, ingestMetadata, importTmdb, refreshMedia } from './service.server';
 import { getTmdb } from '#lib/providers/tmdb/connection.server.js';
-import { anthologyTmdb, anthologyTrakt, isAnthologyRoot } from './anthology.server.js';
+import { anthologySource, anthologyTmdb, anthologyTrakt, isAnthologyRoot } from './anthology.server.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { providerCache } from '#lib/server/utils/provider-cache.js';
 
 const checkedAnthologies = providerCache<boolean>(128, 5 * 60_000);
+const refreshedStories = providerCache<boolean>(128, 5 * 60_000);
 
-async function groupedTraktItem(record: TraktRecord, seasonId: string, boundSeason?: string | null, native?: string | null) {
+async function groupedTraktItem(record: TraktRecord, seasonId: string, boundSeason?: string | null, native?: string | null, refreshed = false) {
   const parent = record.show!;
   if (boundSeason && boundSeason !== seasonId) throw new CatalogueIdentityConflict();
   if (!boundSeason)
@@ -37,6 +39,21 @@ async function groupedTraktItem(record: TraktRecord, seasonId: string, boundSeas
     .where(and(eq(episodes.seasonId, seasonId), or(...identities.map(([provider, id]) =>
       and(eq(externalIds.provider, provider), eq(externalIds.externalId, String(id)))))));
   const [target] = targets;
+  if (!target && !refreshed && tmdbId && parent.ids.tmdb && await anthologySource(seasonId) === String(parent.ids.tmdb)) {
+    const adapter = await getTmdb();
+    if (adapter) {
+      const found = await refreshedStories(JSON.stringify([adapter.cacheScope, seasonId]), async () => {
+        try {
+          await refreshMedia(seasonId, 'GB', false);
+          return true;
+        } catch (cause) {
+          if (!(cause instanceof ProviderHttpError) || ![404, 410].includes(cause.status)) throw cause;
+          return false;
+        }
+      });
+      if (found) return groupedTraktItem(record, seasonId, boundSeason, native, true);
+    }
+  }
   if (!target || targets.length !== 1) throw new CatalogueIdentityConflict();
   if (target.tmdbOwner && target.tmdbOwner !== target.item.id) throw new CatalogueIdentityConflict();
   if (tmdbId && !target.tmdbOwner) {

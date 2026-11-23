@@ -6,22 +6,22 @@ import { colorControls } from './tuning';
 export function exportMaterialPreset(
   variant: GlassVariant | 'temporary',
   surfaces: { materials: GlassSurface; fallbacks: GlassSurface },
-  resolveColor: (value: string) => string,
+  resolveColor: (value: string, mode: 'materials' | 'fallbacks') => string,
   effects?: ExperimentalEffects,
 ) {
-  const concrete = (surface: GlassSurface) => {
+  const concrete = (surface: GlassSurface, mode: 'materials' | 'fallbacks') => {
     const result = { ...surface };
-    for (const { key } of colorControls) result[key] = resolveColor(result[key]);
+    for (const { key } of colorControls) result[key] = resolveColor(result[key], mode);
     return result;
   };
   const experiment = effects ? { ...effects } : undefined;
-  if (experiment) for (const { color } of effectGroups) experiment[color] = resolveColor(experiment[color]);
+  if (experiment) for (const { color } of effectGroups) experiment[color] = resolveColor(experiment[color], 'materials');
   return {
     format: 'coast-material-preset',
     version: 1,
     variant,
-    materials: concrete(surfaces.materials),
-    fallbacks: concrete(surfaces.fallbacks),
+    materials: concrete(surfaces.materials, 'materials'),
+    fallbacks: concrete(surfaces.fallbacks, 'fallbacks'),
     ...(experiment ? { effects: experiment } : {}),
   };
 }

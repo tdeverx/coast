@@ -36,7 +36,7 @@ function notificationValues(input: NotificationInput, settings: UserSettings, co
   if (!input.locked && input.data && socialNotifications?.[input.kind] === false) return null;
   const preference = config.allowNotificationSilencing && settings.notificationLevel !== 'silent'
     ? settings.notificationLevel : undefined;
-  const level = input.locked || (input.level ?? preference ?? config.notificationLevel) === 'persistent'
+  const level = input.locked || input.level === 'persistent' || (preference ?? input.level ?? config.notificationLevel) === 'persistent'
     ? 'persistent' : 'normal';
   return sql`(${input.userId}::uuid, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null},
     ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data ?? null}::jsonb)`;

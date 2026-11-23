@@ -215,14 +215,24 @@ export async function configureInstance(adminId: string, input: unknown, signal?
       ? { credentials: await encryptCredential(JSON.stringify(secret)) }
       : data.removeJellyfinKey && data.provider==='jellyfin' ? {credentials:null} : {}),
   };
-  const [row] = data.id
-    ? await getDb()
+  const row = await getDb().transaction(async tx => {
+    if (data.provider === 'seerr' && data.linkedMediaInstanceId) {
+      // Hold the linked row until the reference is visible to deletion.
+      const [linked] = await tx.select({ id: providerInstances.id }).from(providerInstances)
+        .where(and(eq(providerInstances.id, data.linkedMediaInstanceId), eq(providerInstances.provider, 'jellyfin')))
+        .for('share');
+      if (!linked) throw new AppError(409, 'The selected Jellyfin instance no longer exists.');
+    }
+    const [saved] = data.id
+    ? await tx
         .update(providerInstances)
         .set(values)
         .where(and(eq(providerInstances.id,data.id),data.provider==='jellyfin'
           ? sql`${providerInstances.credentials} is not distinct from ${previous?.credentials??null}`:undefined))
         .returning()
-    : await getDb().insert(providerInstances).values(values).returning();
+    : await tx.insert(providerInstances).values(values).returning();
+    return saved;
+  });
   if (!row) throw new AppError(409,'The integration changed. Reload before saving again.');
   return { id: row.id, name: row.name, provider: row.provider, baseUrl: row.baseUrl };
 }

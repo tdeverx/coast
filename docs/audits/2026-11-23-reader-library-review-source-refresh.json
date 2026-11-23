@@ -1,0 +1,57 @@
+{
+  "epoch": "2026-11-23-reader-library-review",
+  "baseline": "135527776be25b1ea9aca143768c00588d7ff5e2",
+  "blanketAcceptance": false,
+  "scope": [
+    "Address outstanding reader recovery, texture scheduling, Profile Lists, explicit Watch routing, Activity subtype filtering, and initial Library import review findings."
+  ],
+  "verification": {
+    "hosted": false
+  },
+  "files": {
+    "src/lib/reading/reader/physical-reader.ts": {
+      "previous": "10d12bbf6508d0046b44c01ebb03cfe875e9069e63f48cc0812f0b18c88dcc08",
+      "current": "8f805a4d442e6a578d7fe4961ca56d8822f8d14f12b574bd8d0a89f0742114be"
+    },
+    "src/lib/reading/reader/physical/renderer.ts": {
+      "previous": "6db746363913e7b49662249912d01858f6d7f7c099d6d6e42c19f81ec21c113c",
+      "current": "ef59927fd06e4599cb0d6c9f6152b6663bd2b67c7ebafbf0bf4d2ce6395607bc"
+    },
+    "src/lib/server/queries/library-content.ts": {
+      "previous": "dd66aff97ecefe07d00f93d7b8d0fd7cb2593d5a1ea84dadf31dbc715a711002",
+      "current": "70007dbf648300d1cb318df0738ecd0d2696dfc6321204ddf22dc49eb140a9f8"
+    },
+    "src/lib/social/queries.server.ts": {
+      "previous": "61d76643eb597d4c9367a0d5429307ecbd0e1b35893850cb7a6ada77227c68f1",
+      "current": "c7c768b773037107e39719a49fb41fc38322ec8c53770bd9393dccdbb567d538"
+    },
+    "src/lib/ui/components/MediaHero.svelte": {
+      "previous": "e3f2eab5efab467bba22506c56e59dd237bbf21f12c73c3ca133928e045b3bbf",
+      "current": "302098b8f8ea992e78826e24a85ea9d3051bc1f997336ae728f33025faca88b2"
+    },
+    "src/lib/ui/headings.ts": {
+      "previous": "11df691fc1088b603d974f5fcfa6b6412555cf644307b6ee25b10bd71299f53d",
+      "current": "6e4e492d7979b8c887b102a4a07537c7dc9519aefd9d0e4e28248e6f0565cad6"
+    },
+    "src/lib/ui/shelves/list.svelte.ts": {
+      "previous": "4db37b1c2e9120017120cef24b664a572092da3a8af85a2ffd49ca5f3cd0be95",
+      "current": "11a9c3aa894c9b99d5db1c728197789af30ce121f86482c93ad13fa6adb67e13"
+    },
+    "tests/action-library-db.test.ts": {
+      "previous": "5861d2ea752fca591d7f0b39dda699559fea233b3d01ebe5ac845f7affd6530f",
+      "current": "4b97e4ac8f19d9181fde2e1c20309369adbc8ffbe9bfcc7fb172ecbc2103c879"
+    },
+    "tests/artist-activity-db.test.ts": {
+      "previous": "3007390c93d65054a8485e32f4a3f8e82ccbe8541cead20c4e17c971b0470b6c",
+      "current": "c6e85a7bec4b080bc3b5b9daefe9a84c544ba3fdc06ee7543132e39cbe74aa17"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "44bf8cbc746ef614c7b474e1252794ee9354b93f88e53083678e34f91f044de1",
+      "current": "9ae8dc3abd0cce9def0120f8b85f7eda7cc1cdf7315c8baf6e964cc213f3e892"
+    },
+    "tests/reading-physical.test.ts": {
+      "previous": "8d9bc6c4b68a7384fea36381f290edad2468056cc07bde3d54ecdeefed489948",
+      "current": "cef245b7df595753df1edaf1f6381b08b1bf37b52714d334677b55a0c35d2005"
+    }
+  }
+}
