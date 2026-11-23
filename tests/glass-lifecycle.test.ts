@@ -58,6 +58,26 @@ function runtime(blink=true){
   };
 }
 
+test('Light and Dark presets reach the native and CSS renderers', () => {
+  const env = runtime();
+  try {
+    for (const variant of ['glassLight', 'glassDark'] as const) {
+      const preset = glassPresets.materials[variant];
+      const native = env.mount({ variant });
+      const fallback = env.mount({ variant, renderer: 'css' });
+      const fill = `color-mix(in srgb, ${preset.tint} ${preset.fillOpacity}%, transparent)`;
+      expect(native.node.dataset.coastGlassRenderer).toBe('original-svg-backdrop');
+      expect(native.node.style.getPropertyValue('--coast-glass-fill')).toBe(fill);
+      expect(native.definition().children[0].children.find(child => child.tag === 'feGaussianBlur')?.attributes.get('stdDeviation')).toBe(String(preset.blur));
+      expect(fallback.node.dataset.coastGlassRenderer).toBe('css');
+      expect(fallback.node.style.getPropertyValue('--coast-glass-fill')).toBe(fill);
+      expect(fallback.node.style.getPropertyValue('backdrop-filter')).toBe(`blur(${preset.blur}px) saturate(${preset.saturation}%) brightness(${preset.brightness}%)`);
+    }
+  } finally {
+    env.restore();
+  }
+});
+
 test('unchanged effective native updates retain SVG identity and the existing displacement map',()=>{
   const env=runtime();try{
     const current=env.mount(),definition=current.definition(),mapCount=env.maps;

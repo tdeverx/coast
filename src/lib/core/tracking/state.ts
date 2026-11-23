@@ -84,7 +84,8 @@ export function projectTracking(
       break;
     }
     case 'pause':
-      if (!state.dropped) state.paused = true;
+      state.paused = true;
+      state.dropped = false;
       break;
     case 'resume':
       state.paused = false;

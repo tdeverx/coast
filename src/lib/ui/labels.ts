@@ -29,6 +29,8 @@ const labels: Record<string, string> = {
   unwatch: 'Unwatched',
   history: 'Watch history',
   progress: 'Playback progress',
+  trackingStatus: 'Show tracking status',
+  rewatch: 'Rewatch start date',
   favourite: 'Favourites',
   watchlist: 'Watchlist',
   ratings: 'Rating',

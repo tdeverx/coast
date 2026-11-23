@@ -84,8 +84,13 @@ async function libraryRead(userId:string,rawOptions:unknown,firstPage?:number,si
     : undefined;
   const segment=await librarySegmentCondition(userId,userId,input.segment,s.media.id,'screen');
   signal?.throwIfAborted();
+  const progressSegment=input.segment==='continue'||input.segment==='next';
+  // Resolve the small personal selection before joining the full source inventory.
+  const catalogue=progressSegment
+    ? sql`(select * from ${s.media} where ${segment} offset 0) as media`
+    : s.media;
   const where = and(
-    segment,
+    progressSegment ? undefined : segment,
     input.kind === 'all' ? inArray(s.media.kind, ['movie', 'show']) : eq(s.media.kind, input.kind),
     permittedSource,
     tracking,
@@ -98,7 +103,7 @@ async function libraryRead(userId:string,rawOptions:unknown,firstPage?:number,si
   const [result] = (await db.execute(sql`
     with eligible as materialized (
       select ${s.media.id} as id, ${s.media.updatedAt} as updated_at, ${s.media.createdAt} as created_at, ${s.media.title} as title
-      from ${s.media} join ${s.works} on ${s.works.id}=${s.media.id} left join ${s.trackingState} on ${join} where ${where}
+      from ${catalogue} join ${s.works} on ${s.works.id}=${s.media.id} left join ${s.trackingState} on ${join} where ${where}
     ), total as (select count(*)::int as total from eligible)
     select total, coalesce((select jsonb_agg(id order by ${order})
       from (select * from eligible order by ${order} limit ${interval ? sql`(least(${interval.lastPage}, greatest(1, ceil(total::numeric / ${pageSize})::int))

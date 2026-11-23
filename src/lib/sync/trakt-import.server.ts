@@ -4,6 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import {
   lists,
+  media,
   providerConnections,
   removedTrackingSources,
   syncValues,
@@ -14,9 +15,10 @@ import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
-import type { SyncCategory, SyncPreferences } from '#lib/providers/contracts.js';
+import type { SyncCategory } from '#lib/providers/contracts.js';
+import { isTraktShowTrackingFeature, type TraktShowTrackingFeature, type TraktTrackingPreferences } from '#lib/providers/trakt/access.js';
 import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
-import { traktEntry } from '#lib/sync/trakt-identity.server.js';
+import { resolveTraktShowTarget, traktEntry } from '#lib/sync/trakt-identity.server.js';
 import { compactTraktHistory, type TraktHistoryTitles } from '#lib/sync/trakt-history.js';
 import { jobCheckpoint, jobExecution, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 import { stagedTraktCategory, stagedTraktLists, type StageCommit } from './trakt-staging.server';
@@ -38,15 +40,17 @@ export async function importTrakt(
           collection: false,
           ratings: false,
           watchlist: false,
+          trackingStatus: false,
+          rewatch: false,
         };
-  return importTraktFromAdapter(userId, connectionId, { ...context, sync });
+  return importTraktFromAdapter(userId, connectionId, { ...context, sync, accountGeneration: context.connection.accountGeneration });
 }
 
 /** Internal engine: service entrypoints resolve the authenticated connection before supplying capabilities. */
 export async function importTraktFromAdapter(
   userId: string,
   connectionId: string,
-  { adapter, sync }: { adapter: TraktAdapter; sync: SyncPreferences }
+  { adapter, sync, accountGeneration }: { adapter: TraktAdapter; sync: TraktTrackingPreferences; accountGeneration?: string }
 ) {
   const checkpoint = await readJobCheckpoint();
   const resume = checkpoint?.task === 'trakt-import' ? checkpoint : null;
@@ -59,11 +63,18 @@ export async function importTraktFromAdapter(
     await jobCheckpoint();
   };
   const seen = new Set<string>();
+  const confirmedRewatch = async (mediaId: string) => {
+    const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, mediaId));
+    if (item?.kind !== 'show' && item?.kind !== 'season') return;
+    const id = await resolveTraktShowTarget(adapter, mediaId, item.kind);
+    if (id) return { value: await adapter.showRewatchDate(id) };
+  };
   const apply = async (
-    category: Exclude<SyncCategory, 'lists' | 'scrobble'>,
+    category: Exclude<SyncCategory, 'lists' | 'scrobble'> | TraktShowTrackingFeature,
     record: TraktRecord,
     staged?: StageCommit
   ) => {
+    if (category === 'rewatch' && !record.reset_at) return;
     const item = await resolveTrakt(record);
     if (!item) {
       if(category==='collection')throw new Error('Trakt returned a collection item that Coast could not match.');
@@ -120,6 +131,7 @@ export async function importTraktFromAdapter(
       return;
     const duration = (item.runtimeMinutes || 0) * 60;
     if (category === 'progress' && !duration) return;
+    if (isTraktShowTrackingFeature(category) && (!record.show || (item.kind !== 'show' && item.kind !== 'season'))) return;
     if(!staged)seen.add(item.id);
     const remote =
       category === 'progress'
@@ -128,7 +140,7 @@ export async function importTraktFromAdapter(
               Math.round(((duration * (record.progress || 0)) / 100) * 1000) / 1000,
             durationSeconds: duration,
           }
-        : { value: true };
+        : { value: category === 'rewatch' ? record.reset_at! : true };
     const decision = await reconcileProviderValue(
       userId,
       connectionId,
@@ -137,7 +149,7 @@ export async function importTraktFromAdapter(
       remote,
       {
         source: 'trakt',
-        accountGeneration:staged?.generation,
+        accountGeneration:staged?.generation ?? accountGeneration,
         onReconciled:staged?(tx,decision)=>staged.commit(tx,item.id,decision):undefined,
         occurredAt: timestamp,
         ...(category === 'history'
@@ -167,10 +179,16 @@ export async function importTraktFromAdapter(
     'collection',
     'ratings',
     'watchlist',
+    'trackingStatus',
+    'rewatch',
   ] as const) {
     if (!sync[category] || completedCategories.has(category)) continue;
+    const readPage = (page: number) => category === 'trackingStatus' ? adapter.droppedShowsPage(page)
+      : category === 'rewatch' ? adapter.rewatchingShowsPage(page) : adapter.read(category, page);
     if(jobExecution.getStore()) {
-      const result=await stagedTraktCategory({userId,connectionId,category,adapter,apply:(record,commit)=>apply(category,record,commit)});
+      const result=await stagedTraktCategory({userId,connectionId,category,adapter,
+        readPage:isTraktShowTrackingFeature(category)?readPage:undefined,
+        missingValue:category==='rewatch'?confirmedRewatch:undefined,apply:(record,commit)=>apply(category,record,commit)});
       imported+=result.imported;review+=result.review;
       completedCategories.add(category);
       await commitChunk();
@@ -180,11 +198,11 @@ export async function importTraktFromAdapter(
     const history: TraktRecord[] = [];
     const historyTitles: TraktHistoryTitles = new Map();
     for (let page = 1; ; page++) {
-      const records = await adapter.read(category, page);
+      const records = await readPage(page);
       if (category === 'history')
         for (const record of records) history.push(compactTraktHistory(record, historyTitles));
       else for (const record of records) await apply(category, record);
-      if (records.length < 100) break;
+      if (isTraktShowTrackingFeature(category) ? !records.length : records.length < 100) break;
       if (page >= 10000) throw new Error('Trakt import exceeded the supported page bound.');
     }
     if (category === 'history') {
@@ -200,12 +218,16 @@ export async function importTraktFromAdapter(
       .select()
       .from(syncValues)
       .where(and(eq(syncValues.connectionId, connectionId), eq(syncValues.category, category),
+        category==='rewatch'?sql`${syncValues.remote}->>'value' is not null`:undefined,
+        category==='trackingStatus'?sql`${syncValues.remote}->'value'='true'::jsonb`:undefined,
         sql`not ${isAnthologyRoot(syncValues.mediaId)}`));
     for (const entry of previous)
       if (!seen.has(entry.mediaId)) {
         if(category==='collection'){const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');if(await isGeneratedProjection(connectionId,entry.mediaId))continue;}
         const remote =
-          category === 'ratings'
+          category === 'rewatch'
+            ? await confirmedRewatch(entry.mediaId)
+            : category === 'ratings'
             ? { value: null }
             : category === 'progress'
               ? {
@@ -213,13 +235,14 @@ export async function importTraktFromAdapter(
                   durationSeconds: Number(entry.remote.durationSeconds) || 0,
                 }
               : { value: false };
+        if (!remote) continue;
         const decision = await reconcileProviderValue(
           userId,
           connectionId,
           entry.mediaId,
           category,
           remote,
-          { source: 'trakt' }
+          { source: 'trakt', accountGeneration }
         );
         if (decision === 'conflict') review++;
       }

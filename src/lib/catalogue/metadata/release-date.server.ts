@@ -36,8 +36,8 @@ export function episodeHasAiredForProgress(id: SQL, policy: MetadataSource) {
   const today=sql`(now() at time zone 'UTC')::date`;
   const series=sql`(select (resolved.air_date+(timing.raw->'airSchedule'->>'time')::time)
     at time zone (timing.raw->'airSchedule'->>'timeZone')
-    from episodes e join metadata_snapshots timing on timing.media_id=e.show_id
-    where e.media_id=${id} and resolved.air_date is not null and not e.is_special
+    from metadata_snapshots timing
+    where timing.media_id=(select subject.show_id from episodes subject where subject.media_id=${id} and not subject.is_special)
       and (timing.raw->'airSchedule'->>'timeZone') in (select name from pg_timezone_names)
       and coalesce((timing.raw->'airSchedule'->>'weekday')::int,extract(dow from resolved.air_date))=extract(dow from resolved.air_date)
     order by ${snapshotRank(policy,'release',sql`timing.provider`)},timing.updated_at desc,timing.id limit 1)`;
@@ -45,6 +45,7 @@ export function episodeHasAiredForProgress(id: SQL, policy: MetadataSource) {
   // schedule only needs checking around the air date, including across UTC midnight.
   return sql<boolean>`(select case
     when resolved.first_aired is not null and resolved.override_date is null then resolved.first_aired::timestamptz<=now()
+    when resolved.air_date is null then false
     when resolved.air_date < ${today}-1 then true
     when resolved.air_date > ${today}+1 then false
     else coalesce(${series}<=now(),resolved.air_date<${today},false)

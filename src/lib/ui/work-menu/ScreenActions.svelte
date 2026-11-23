@@ -129,7 +129,7 @@
       )
   );
   const canPauseTracking = $derived((wholeWork.kind === 'movie' || wholeWork.kind === 'show') &&
-    !wholeWork.dropped && (trackingPaused || continuing || (wholeWork.watchlist && !wholeWork.watched)));
+    (wholeWork.dropped || trackingPaused || continuing || (wholeWork.watchlist && !wholeWork.watched)));
   const recordAgain = $derived(active.watched || active.playCount > 0);
   const isAdmin = $derived(allowed('admin', page.data.user?.role === 'admin'));
   const featureTarget=$derived(['movie','show','season','episode'].includes(active.kind)?active:null);

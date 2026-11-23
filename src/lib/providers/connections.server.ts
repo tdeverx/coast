@@ -16,7 +16,7 @@ import { getInstance } from '#lib/providers/instances.server.js';
 import { jellyfinItemKey } from './jellyfin/paging';
 import { maintenanceKinds } from '#lib/providers/tasks.js';
 import type { TraktSync } from './trakt/access';
-import { cancelDisabledTraktJobs } from './trakt/access.server';
+import { cancelDisabledTraktJobs, enqueueExistingTraktShowTracking } from './trakt/access.server';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Connection = typeof providerConnections.$inferSelect;
@@ -146,6 +146,7 @@ export async function saveConnection(
       )`)).returning();
       if (restored) connection = restored;
       await cancelDisabledTraktJobs(tx, connection, previousSettings);
+      await enqueueExistingTraktShowTracking(tx, connection, previousSettings);
     }
     // A verified reconnect supersedes failed reads, while outbound intent keeps its order.
     const superseded=await tx.update(outboxActions).set({state:'cancelled',lastError:'Superseded by a verified account reconnect.',updatedAt:new Date()})

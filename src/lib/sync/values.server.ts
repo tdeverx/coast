@@ -1,6 +1,6 @@
-import { traktAllows } from '#lib/providers/trakt/access.js';
+import { isTraktShowTrackingFeature, traktAllows, type TraktShowTrackingFeature } from '#lib/providers/trakt/access.js';
 import { conflictPreference } from './preference.server';
-import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
+import { lockFeaturePolicyInTransaction, requireWorkFeature } from '#lib/server/features.js';
 import { and, eq, sql, inArray } from 'drizzle-orm';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import {
@@ -10,10 +10,12 @@ import {
   ratings,
   trackingEvents,
   outboxActions,
+  rewatches,
   works, musicProgress,
   type JsonObject,
 } from '#lib/server/db/schema.js';
 import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import { writeRewatchBoundary } from '#lib/core/tracking/rewatch.server.js';
 import { rateInTransaction } from '#lib/core/ratings/service.server.js';
 import { enqueueSyncValueInTransaction } from './changes.server';
 import { assertJobLease } from '#lib/server/queue/execution.js';
@@ -26,7 +28,8 @@ export type ValueCategory =
   | 'watchlist'
   | 'collection'
   | 'favourite'
-  | 'ratings';
+  | 'ratings'
+  | TraktShowTrackingFeature;
 export const valueCategories: ValueCategory[] = [
   'history',
   'progress',
@@ -34,6 +37,8 @@ export const valueCategories: ValueCategory[] = [
   'collection',
   'favourite',
   'ratings',
+  'trackingStatus',
+  'rewatch',
 ];
 export function sameValue(a: JsonObject | null | undefined, b: JsonObject) {
   // Resume positions arrive as percentages, ticks or rounded seconds.
@@ -52,6 +57,11 @@ export async function localSyncValue(
   mediaId: string,
   category: ValueCategory
 ): Promise<JsonObject> {
+  if (category === 'rewatch') {
+    const [rewatch] = await tx.select({ startedAt: rewatches.startedAt }).from(rewatches)
+      .where(and(eq(rewatches.userId, userId), eq(rewatches.mediaId, mediaId)));
+    return { value: rewatch?.startedAt.toISOString() ?? null };
+  }
   const [work]=await tx.select().from(works).where(eq(works.id,mediaId));
   if(work?.category==='music'&&(category==='history'||category==='progress')){
     const [state]=await tx.select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,mediaId)));
@@ -75,6 +85,7 @@ export async function localSyncValue(
     .select()
     .from(trackingState)
     .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, mediaId)));
+  if (category === 'trackingStatus') return { value: !!(state?.paused || state?.dropped) };
   if (category === 'progress')
     return {
       // Providers clear resume markers after completion. Preserve concrete Coast
@@ -98,6 +109,22 @@ export async function applySyncValue(
   occurredAt?: string
 ) {
   const [work]=await tx.select().from(works).where(eq(works.id,mediaId));
+  if (category === 'rewatch') {
+    if (!work || (work.kind !== 'show' && work.kind !== 'season')) return;
+    if (typeof value.value === 'string') await requireWorkFeature(tx, userId, mediaId);
+    await writeRewatchBoundary(tx, userId, mediaId, work.kind,
+      typeof value.value === 'string' ? new Date(value.value) : null);
+    return;
+  }
+  if (category === 'trackingStatus') {
+    if (!work || (work.kind !== 'show' && work.kind !== 'season')) return;
+    const [state] = await tx.select({ paused: trackingState.paused, dropped: trackingState.dropped })
+      .from(trackingState).where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, mediaId)));
+    if (!!(state?.paused || state?.dropped) === value.value) return;
+    const action = value.value ? 'drop' : state?.paused ? 'resume' : 'restore';
+    await trackInTransaction(tx, userId, { mediaId, action, source, acknowledged: true, occurredAt });
+    return;
+  }
   if(work?.category==='music'&&(category==='history'||category==='progress')){
     // Aggregate-only observations cannot rematerialize lifetime history into the
     // active counter. The domain importer owns accepted occurrence deltas.
@@ -230,7 +257,8 @@ export async function reconcileProviderValue(
           ? ['watch', 'unwatch']
           : category === 'collection'
             ? ['collect']
-            : [category];
+            : category === 'trackingStatus' ? ['pause', 'resume', 'drop', 'restore']
+              : [category];
       const [edited] = await tx
         .select({ id: trackingEvents.id })
         .from(trackingEvents)
@@ -259,7 +287,9 @@ export async function reconcileProviderValue(
           )
         )
         .limit(1);
-      if (edited || queued) decision = 'conflict';
+      if (queued && isTraktShowTrackingFeature(category) && options.traktDirection === 'export')
+        decision = 'local';
+      else if (edited || queued) decision = 'conflict';
     }
     const selectedPreference = await conflictPreference(tx, userId, connectionId);
     const preference=!importRemote&&selectedPreference==='remote'?'manual':selectedPreference;

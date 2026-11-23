@@ -5,11 +5,13 @@ import { getDb, type Database } from '../../server/db';
 import * as s from '../../server/db/schema';
 import { DomainError } from '../errors';
 import { consumedQueueCondition, trackInTransaction } from './service.server';
+import { enqueueTraktChangeInTransaction } from '#lib/sync/changes.server.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 const uuid = v.pipe(v.string(), v.uuid());
 const snapshotSchema = v.object({
   dropped: v.boolean(),
+  paused: v.optional(v.boolean(), false),
   queued: v.array(v.object({ mediaId: uuid, addedAt: v.pipe(v.string(), v.isoTimestamp()) })),
 });
 export type ContinueSnapshot = v.InferOutput<typeof snapshotSchema>;
@@ -47,9 +49,17 @@ export async function changeContinue(userId: string, raw: unknown) {
     await requireWorkFeature(tx,userId,input.mediaId);
     const mediaId = await wholeWorkId(tx, input.mediaId);
     const [state] = await tx
-      .select({ dropped: s.trackingState.dropped })
+      .select({ dropped: s.trackingState.dropped, paused: s.trackingState.paused })
       .from(s.trackingState)
       .where(and(eq(s.trackingState.userId, userId), eq(s.trackingState.mediaId, mediaId)));
+    const changeStatus = async (action: 'drop' | 'restore' | 'pause') => {
+      const result = await trackInTransaction(tx, userId, { mediaId, action, acknowledged: true });
+      if (result.trackingStatusChanged)
+        await enqueueTraktChangeInTransaction(tx, userId, {
+          mediaId, category: 'trackingStatus', remove: !(result.state.dropped || result.state.paused),
+        });
+      return result;
+    };
     if (input.action === 'undo') {
       if (!input.previous || !input.eventId)
         throw new DomainError('Missing the previous Continue state.');
@@ -68,11 +78,7 @@ export async function changeContinue(userId: string, raw: unknown) {
           'This title has changed since removal. Restore it from its menu instead.',
           409
         );
-      await trackInTransaction(tx, userId, {
-        mediaId,
-        action: input.previous.dropped ? 'drop' : 'restore',
-        acknowledged: true,
-      });
+      await changeStatus(input.previous.dropped ? 'drop' : input.previous.paused ? 'pause' : 'restore');
       if (input.previous.queued.length)
         await tx
           .insert(s.upNext)
@@ -88,21 +94,18 @@ export async function changeContinue(userId: string, raw: unknown) {
     }
     if (input.action === 'add') {
       if (state?.dropped)
-        await trackInTransaction(tx, userId, { mediaId, action: 'restore', acknowledged: true });
+        await changeStatus('restore');
       await tx.insert(s.upNext).values({ userId, mediaId }).onConflictDoNothing();
       return { mediaId, restored: !!state?.dropped };
     }
     const queued = await tx.select().from(s.upNext).where(consumedQueueCondition(userId, mediaId));
-    const result = await trackInTransaction(tx, userId, {
-      mediaId,
-      action: 'drop',
-      acknowledged: true,
-    });
+    const result = await changeStatus('drop');
     return {
       mediaId,
       eventId: result.eventId,
       previous: {
         dropped: state?.dropped ?? false,
+        paused: state?.paused ?? false,
         queued: queued
           .filter((row) => result.removedQueueIds?.includes(row.mediaId))
           .map((row) => ({ mediaId: row.mediaId, addedAt: row.addedAt.toISOString() })),

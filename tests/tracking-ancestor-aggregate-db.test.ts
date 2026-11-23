@@ -17,7 +17,7 @@ function consumer(start:number,collection=false){
  const setStart=source.indexOf('      .set({',b)+'      .set('.length,setEnd=source.indexOf('\n      })',setStart)+8;
  if(a<0||b<a||setStart<0||setEnd<setStart)throw Error('Review ancestor projection consumer source before updating this contract.');
  const body='function project(){'+source.slice(a,b)+'return '+source.slice(setStart,setEnd)+';}';
- return new Function('children','existing','rebuilding','relationships','Date',new Bun.Transpiler({loader:'ts'}).transformSync(body)+';return project();');
+ return new Function('children','existing','rebuilding','relationships','Date','preserveTrackingStatus = rebuilding',new Bun.Transpiler({loader:'ts'}).transformSync(body)+';return project();');
 }
 if(episodeStart<0||episodeEnd<episodeStart||collectionStart<0||collectionEnd<collectionStart||queryStart<10||queryEnd<queryStart||!episodeQuery.includes('.from(episodes)')||!collectionQuery.includes('.from(trackingState)')||!episodeQuery.includes('minimumPlayCount')||!collectionQuery.includes('minimumPlayCount'))throw Error('Review both real ancestor aggregate statements before updating this contract.');
 const episodeConsumer=consumer(episodeEnd),collectionConsumer=consumer(collectionEnd,true);
@@ -57,6 +57,7 @@ run('ancestor episode aggregates preserve empty, missing, partial, complete and 
    const parentId=id(c.parent+(kind==='season'?100:0)),children=await execute(tx,compile(episodeQuery,{userId,parentId,kind}),tables(states,episodeRows));
    expect(children).toEqual({total:c.total,completed:c.completed,minimumPlayCount:c.min,lastWatchedAt:c.date?new Date(c.date):null});
    for(const rebuilding of [false,true])expect(episodeConsumer(children,existing,rebuilding,[],ObservationDate)).toEqual({totalEpisodes:c.total,completedEpisodes:c.completed,watched:c.watched,dropped:rebuilding,playCount:rebuilding?c.min:c.watched?8:7,lastWatchedAt:c.date?new Date(c.date):rebuilding?null:oldDate,updatedAt:new Date(clock)});
+   expect(episodeConsumer(children,existing,false,[],ObservationDate,true).dropped).toBe(true);
    if(c.watched)expect(episodeConsumer(children,{...existing,watched:true},false,[],ObservationDate).playCount).toBe(7);
   }
  });

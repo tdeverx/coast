@@ -5,6 +5,8 @@ export type ProviderField =
   | 'availability'
   | 'history'
   | 'progress'
+  | 'trackingStatus'
+  | 'rewatch'
   | 'favourite'
   | 'collection'
   | 'ratings'
@@ -28,8 +30,8 @@ export const providerCapabilities = {
   },
   trakt: {
     categories: ['screen'],
-    read: ['metadata', 'history', 'progress', 'collection', 'ratings', 'watchlist', 'lists'],
-    write: ['history', 'progress', 'collection', 'ratings', 'watchlist', 'lists', 'scrobble'],
+    read: ['metadata', 'history', 'progress', 'trackingStatus', 'rewatch', 'collection', 'ratings', 'watchlist', 'lists'],
+    write: ['history', 'progress', 'trackingStatus', 'rewatch', 'collection', 'ratings', 'watchlist', 'lists', 'scrobble'],
     playback: false,
   },
   seerr: {

@@ -4442,21 +4442,23 @@
       },
       {
         "name": "onsettled",
-        "type": "() => void",
+        "type": "(empty: boolean) => void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
         "nullable": false
       },
       {
-        "name": "appendWhenReady",
-        "type": "boolean",
+        "name": "feedLoad",
+        "type": "'queued' | 'active'",
         "optional": true,
         "bindable": false,
-        "kind": "boolean",
+        "kind": "select",
         "nullable": false,
-        "defaultSource": "false",
-        "defaultValue": false
+        "choices": [
+          "queued",
+          "active"
+        ]
       },
       {
         "name": "onactivate",

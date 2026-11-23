@@ -4,6 +4,7 @@ import type {LibrarySegment} from '#lib/library.js';
 import {progressOptionsSchema} from '#lib/progress.js';
 import {screenProgressPlan,mediumProgressIds,readingProgressIds} from './progress';
 import {libraryTrackingCondition} from './library';
+import {getDb} from '../db';
 
 /** Apply personal segments before counting/paging; share the Progress continuation planner. */
 export async function librarySegmentCondition(ownerId:string,viewerId:string,segment:LibrarySegment,id:SQLWrapper,category:'screen'|'game'|'reading'|'music'){
@@ -15,8 +16,15 @@ export async function librarySegmentCondition(ownerId:string,viewerId:string,seg
     const options=v.parse(progressOptionsSchema,{view:segment==='continue'?'watching':'up-next',category:category==='reading'?'reading':category,scope:'all'});
     const ids=category==='screen'?(await screenProgressPlan(ownerId,options,viewerId,{firstEpisode:segment==='next',sortByActivity:false})).allIds
       :category==='game'?await mediumProgressIds(ownerId,options,viewerId):await readingProgressIds(ownerId,options,viewerId);
+    if(!ids.length)return sql`false`;
     const candidates=sql`${`{${ids.join(',')}}`}::uuid[]`;
-    return sql`${visible('progress')} and (${id}=any(${candidates}) or exists(select 1 from episodes e where e.show_id=${id} and e.media_id=any(${candidates})) or exists(select 1 from seasons season where season.show_id=${id} and season.media_id=any(${candidates})))`;
+    // The page query can use the resulting IDs directly. Keep visibility in that query.
+    const parents=await getDb().execute<{id:string}>(sql`
+      select show_id as id from episodes where media_id=any(${candidates})
+      union select show_id as id from seasons where media_id=any(${candidates})
+    `);
+    const roots=[...new Set([...ids,...Array.from(parents,row=>row.id)])];
+    return sql`${id}=any(${`{${roots.join(',')}}`}::uuid[]) and ${visible('progress')}`;
   }
   if(category==='screen')return sql`${visible('progress')} and exists(select 1 from media segment_media left join tracking_state segment_tracking on segment_tracking.media_id=segment_media.id and segment_tracking.user_id=${ownerId} where segment_media.id=${id} and ${libraryTrackingCondition(ownerId,segment==='finished'?'watched':segment,{id:sql`segment_media.id`,kind:sql`segment_media.kind`,state:sql`segment_tracking`,dropped:sql`segment_tracking.dropped`})})`;
   const state=category==='game'?sql`(select p.status from game_playthroughs p where p.game_id=${id} and p.user_id=${ownerId} order by p.created_at desc,p.id desc limit 1)`

@@ -86,7 +86,9 @@
   } = $props();
   const retainCard=provideRetention(()=>retain?.()??(()=>{}));
   const {current:getTasteBatch, explain:explainTaste}=getCardTaste();
+  const libraryKind=$derived((item.kind==='movie' || item.kind==='show') && !item.captionSubtitle ? item.kind : undefined);
   const tasteId=$derived(!preview && page.data.experimentalCardTasteScores && showCaption && !artworkOnly && !item.captionActor && item.kind!=='collection' &&
+    item.kind!=='episode' && item.kind!=='season' &&
     !('href' in item && item.href===null) && canShowTaste(item,page.data.capabilities) ? detailTaste(item)?.workId : undefined);
   const tasteBatch=$derived(tasteId ? getTasteBatch() : undefined);
   let match=$state.raw<{batch:NonNullable<ReturnType<typeof getTasteBatch>>;id:string;score:number}>();
@@ -357,6 +359,14 @@
       <div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>
     </div>{/if}
   </div>
+  {#snippet matchLink()}
+    {#if tasteScore!==undefined && tasteId}
+      <span class="taste-match" data-tone={tasteScore>=80?'positive':tasteScore<50?'negative':undefined}>
+        <TextLink text={`${tasteScore}% match`} label={`Your taste match for ${item.title} is ${tasteScore}%. View breakdown`} dialog
+          onclick={openTasteBreakdown}/>
+      </span>
+    {/if}
+  {/snippet}
   {#if showCaption || captionAction}<div class="caption-row">
   {#if showCaption}
   {#if item.captionActor}
@@ -367,7 +377,12 @@
   {:else}
     <div class="caption">
     <div class="title">{#if item.captionTitleHref ?? href}<TextLink href={(item.captionTitleHref ?? href)!} text={item.captionTitle ?? item.title} onclick={event=>{if(!item.captionTitleHref)select(event);}}/>{:else}{item.captionTitle ?? item.title}{/if}</div>
-    {#if item.kind!=='person'||item.captionSubtitle}<div class="meta" class:taste-eligible={!!tasteId} class:with-match={tasteScore!==undefined}>
+    {#if libraryKind}
+      <div class="meta library-meta">
+        {@render matchLink()}
+        <TextLink href={`/library?view=watch&kind=${libraryKind}`} text={libraryKind==='movie'?'Movies':'Shows'}/>
+      </div>
+    {:else if item.kind!=='person'||item.captionSubtitle}<div class="meta" class:taste-eligible={!!tasteId} class:with-match={tasteScore!==undefined}>
       <span class="meta-content">{#if item.captionSubtitle}<span class="subtitle">
         {#if item.captionCredits?.length && item.captionCredits.map(credit=>credit.name).join(', ')===item.captionSubtitle}
           {#each item.captionCredits as credit,index}{#if index}{', '}{/if}{#if credit.href}<TextLink href={credit.href} text={credit.name}/>{:else}{credit.name}{/if}{/each}
@@ -378,12 +393,7 @@
           : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined && href}<TextLink {href} text={`S${String(trackedItem.seasonNumber).padStart(2,'0')}E${String(trackedItem.episodeNumber??0).padStart(2,'0')}`} onclick={select}/>{:else}{item.year ?? ''}{#if item.year}<span class="kind-separator">·</span>{/if}{displayLabel(item.kind)}{/if}</span>{#if item.rating}<span>·</span><span class="rating"
           ><Icon name="star" size={14} filled /> {item.rating}</span
         >{/if}
-      {#if tasteScore!==undefined && tasteId}<span class="taste-match">
-        <span class="match-separator" aria-hidden="true">·</span><span data-tone={tasteScore>=80?'positive':tasteScore<50?'negative':undefined}>
-          <TextLink text={`${tasteScore}% match`} label={`Your taste match for ${item.title} is ${tasteScore}%. View breakdown`} dialog
-            onclick={openTasteBreakdown}/>
-        </span>
-      </span>{/if}
+      {#if tasteScore!==undefined && tasteId}<span class="match-separator" aria-hidden="true">·</span>{@render matchLink()}{/if}
     </div>{/if}
   </div>
   {/if}
@@ -626,10 +636,11 @@
   .with-match .meta-content {display:block; min-width:0; overflow:hidden; text-overflow:ellipsis;}
   .with-match .kind-separator {margin-inline:8px;}
   .with-match .meta-content:empty,
-  .meta-content:empty + .taste-match > .match-separator {display:none;}
+  .meta-content:empty + .match-separator {display:none;}
+  .library-meta {white-space:nowrap;}
   .taste-match {display:inline-flex; flex:none; align-items:baseline; gap:inherit; white-space:nowrap;}
-  .taste-match [data-tone='positive'] {color:var(--success);}
-  .taste-match [data-tone='negative'] {color:var(--danger);}
+  .taste-match[data-tone='positive'] {color:var(--success);}
+  .taste-match[data-tone='negative'] {color:var(--danger);}
   .subtitle {
     min-width: 0;
     overflow: hidden;

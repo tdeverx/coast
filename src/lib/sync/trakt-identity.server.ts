@@ -1,7 +1,7 @@
-import { sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { externalIds } from '#lib/server/db/schema.js';
-import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
+import type { TraktAdapter, TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 import { anthologyTmdb, anthologyTrakt, isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 
 /** A season/episode record also includes its show; the leaf determines identity. */
@@ -27,7 +27,7 @@ export const traktPlurals = {
 type IdentityInput = {mediaId: string; kind: TraktKind};
 type TraktTarget = { kind: TraktKind; ids: TraktIds };
 /** Read bounded identity batches; results retain input order and missing entries. */
-export async function exportTargets(items: readonly IdentityInput[]): Promise<(TraktTarget | null)[]> {
+export async function exportTargets(items: readonly IdentityInput[], requireUniqueIds = false): Promise<(TraktTarget | null)[]> {
   const result: (TraktTarget | null)[] = [];
   for(let offset=0;offset<items.length;offset+=500) {
     const batch=items.slice(offset,offset+500);
@@ -59,7 +59,7 @@ export async function exportTargets(items: readonly IdentityInput[]): Promise<(T
         continue;
       }
       const relevant = mappings[0]?.storyEpisode ? mappings.filter(mapping => mapping.provider === 'tmdb') : mappings;
-      result.push({ kind: item.kind, ids: identityMappings(relevant) });
+      result.push({ kind: item.kind, ids: identityMappings(relevant, requireUniqueIds) });
     }
   }
   return result;
@@ -70,21 +70,52 @@ export async function exportIdentity(mediaId: string, kind: TraktKind): Promise<
 export async function exportTarget(mediaId: string, kind: TraktKind) {
   return (await exportTargets([{mediaId,kind}]))[0];
 }
-function identityMappings(mappings: {provider:string;externalId:string}[]): TraktIds {
-  return Object.fromEntries(
-    mappings
-      .filter((mapping) => ['trakt', 'tmdb', 'tvdb', 'imdb'].includes(mapping.provider))
-      // Hierarchy placeholders such as "123:season:1" are not provider IDs.
-      .filter((mapping) =>
-        mapping.provider === 'imdb'
-          ? mapping.externalId.trim() !== ''
-          : /^\d+$/.test(mapping.externalId) &&
-            Number.isSafeInteger(Number(mapping.externalId)) &&
-            Number(mapping.externalId) > 0
-      )
-      .map((mapping) => [
-        mapping.provider,
-        mapping.provider === 'imdb' ? mapping.externalId : Number(mapping.externalId),
-      ])
-  );
+
+export async function resolveTraktHistoryTarget(adapter: TraktAdapter, mediaId: string, kind: 'movie' | 'episode') {
+  const [target] = await exportTargets([{ mediaId, kind }], true);
+  if (target?.kind !== kind) return;
+  const id = await adapter.resolveExactId(kind, target.ids);
+  if (!id) return;
+  if (target.ids.trakt !== id) {
+    const [otherOwner] = await getDb().select({ id: externalIds.id }).from(externalIds).where(and(
+      eq(externalIds.provider, 'trakt'),
+      eq(externalIds.mediaKind, kind),
+      eq(externalIds.externalId, String(id)),
+      ne(externalIds.mediaId, mediaId)
+    ));
+    if (otherOwner) return;
+  }
+  return { kind, id };
+}
+
+export async function resolveTraktShowTarget(adapter: TraktAdapter, mediaId: string, kind: 'show' | 'season') {
+  const [target] = await exportTargets([{ mediaId, kind }], true);
+  if (target?.kind !== 'show') return;
+  const id = await adapter.resolveExactId('show', target.ids);
+  if (!id) return;
+  const owners = await getDb().select({ mediaId: externalIds.mediaId })
+    .from(externalIds).where(and(sql`(${externalIds.provider},${externalIds.mediaKind}) in
+      (('trakt','show'),(${anthologyTrakt},'season'))`, eq(externalIds.externalId, String(id))));
+  if (owners.some(owner => owner.mediaId !== mediaId)) return;
+  return id;
+}
+
+function identityMappings(mappings: {provider:string;externalId:string}[], requireUniqueIds = false): TraktIds {
+  const entries = mappings
+    .filter((mapping) => ['trakt', 'tmdb', 'tvdb', 'imdb'].includes(mapping.provider))
+    // Hierarchy placeholders such as "123:season:1" are not provider IDs.
+    .filter((mapping) =>
+      mapping.provider === 'imdb'
+        ? mapping.externalId.trim() !== ''
+        : /^\d+$/.test(mapping.externalId) &&
+          Number.isSafeInteger(Number(mapping.externalId)) &&
+          Number(mapping.externalId) > 0
+    )
+    .map((mapping) => [
+      mapping.provider,
+      mapping.provider === 'imdb' ? mapping.externalId : Number(mapping.externalId),
+    ] as const);
+  const ids = Object.fromEntries(entries);
+  if (requireUniqueIds && entries.some(([provider, id]) => ids[provider] !== id)) return {};
+  return ids;
 }

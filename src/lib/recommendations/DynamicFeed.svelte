@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { reportFailure } from '#lib/ui/client-context.js';
  import {onDestroy,untrack} from 'svelte';
  import {page} from '$app/state';
- import {useClient} from '#lib/ui/client-context.js';
+ import {reportFailure,useClient} from '#lib/ui/client-context.js';
  import {createResource} from '#lib/ui/resource.svelte.js';
  import {lazyContent} from '#lib/ui/lazy-content.js';
  import Shelf from '#lib/ui/components/Shelf.svelte';
@@ -11,13 +10,15 @@
  import {actionFromCategory} from '#lib/actions.js';
  let {category,mode='personal'}:{category?:import('./model').DynamicMedium;mode?:'personal'|'generic'}=$props();
  const {api}=useClient();
- let revision=$state(0);
  let seed=$state('initial');
- let pendingKey=$state<string>();
+ let settledCount=$state(0);
+ let lastVisibleKey=$state<string>();
  const resource=createResource({rows:[] as DynamicRow[]},false);
  let snapshotLoaded=$state(false),revealed=$state(0);
  const rows=$derived(resource.data.rows.slice(0,revealed));
- const complete=$derived(snapshotLoaded&&revealed>=resource.data.rows.length);
+ const pendingKey=$derived(rows[settledCount]?.key);
+ const complete=$derived(snapshotLoaded&&settledCount>=resource.data.rows.length);
+ const pairSize=2;
  async function load(){
   if(resource.busy||pendingKey||complete)return;
   if(!snapshotLoaded){
@@ -26,10 +27,33 @@
    if(!result||seed!==visitSeed)return;
    snapshotLoaded=true;
   }
-  const next=resource.data.rows[revealed];
-  if(next){pendingKey=next.key;revealed++;}
+  revealed=Math.min(resource.data.rows.length,revealed+pairSize);
  }
- function settled(key:string){if(pendingKey===key){pendingKey=undefined;revision++;}}
+ function settled(key:string,empty=false){
+  if(key!==pendingKey)return;
+  settledCount++;
+  // Only a visible shelf can be the next demand boundary. Even a series of
+  // empty pairs must stop fetching once the reader leaves this part of the page.
+  if(!empty)lastVisibleKey=key;
+ }
+ // On For You the first pair follows the last enabled static shelf. The
+ // boundary also covers an empty static shelf and Discover's standalone feed.
+ function watchStart(node:HTMLElement){
+  const boundary=lazyContent(node,{load:()=>void load(),rootMargin:'0px 0px 240px'});
+  let previous=node.parentElement?.previousElementSibling;
+  while(previous?.matches('[data-shelf]')){
+   const section=previous.querySelector<HTMLElement>(':scope > section:not([hidden])');
+   if(section){
+    const stop=watchLastRow(section);
+    return ()=>{stop();boundary.destroy();};
+   }
+   previous=previous.previousElementSibling;
+  }
+  return boundary.destroy;
+ }
+ function watchLastRow(node:HTMLElement){
+  return lazyContent(node,{load:()=>void load(),rootMargin:'0px'}).destroy;
+ }
  // Row contents subscribe to their own revisions. The definition cursor/order
  // belongs to this visit; edits must not replay all previously consumed pages.
  const scopeKey=$derived(JSON.stringify([category,mode,page.data.user?.id,
@@ -40,46 +64,45 @@
   (!category||category==='reading')&&[page.data.experimentalBooks,page.data.capabilities?.book,page.data.experimentalComics,page.data.capabilities?.comic],
  ]));
  $effect(()=>{scopeKey;untrack(()=>{
-  revision++;
   seed=Math.random().toString(36).slice(2);
-  pendingKey=undefined;
+  settledCount=0;lastVisibleKey=undefined;
   snapshotLoaded=false;revealed=0;
   resource.replace({rows:[]});
  });});
  onDestroy(resource.dispose);
 
-  reportFailure(()=>resource.error, ()=>void load());
+ reportFailure(()=>resource.error, ()=>void load());
 </script>
 <div aria-label={mode==='generic'?'Discover recommendations':'For You recommendations'} class="dynamic-feed">
- {#each rows as row (row.key)}
+ {#if !snapshotLoaded && resource.busy}
+  {#each Array(pairSize) as _}<Shelf busy size={category==='music'?'square':'poster'} enrichSocial={false} artworkOptions={false} />{/each}
+ {:else if !lastVisibleKey && !pendingKey && !complete && !resource.error}
+  <div class="feed-start" {@attach watchStart}></div>
+ {/if}
+ {#each rows as row, index (row.key)}
   {@const shape=dynamicRowShape(row,seed)}
   {@const artworkStyle=shape==='poster'?'primary':shape==='fanart'?'thumb':undefined}
+  {@const feedLoad=index<=settledCount?'active':'queued'}
+  <div {@attach row.key===lastVisibleKey && !pendingKey && !complete ? watchLastRow : undefined}>
   {#if row.surface==='popular'}
-   <Shelf {shape} {artworkStyle} appendWhenReady source={{type:'social',surface:'popular',category:row.category,title:row.title}} onsettled={()=>settled(row.key)} />
+   <Shelf {shape} {artworkStyle} {feedLoad} source={{type:'social',surface:'popular',category:row.category,title:row.title}} onsettled={empty=>settled(row.key,empty)} />
   {:else if row.surface==='discovery'}
-   <Shelf appendWhenReady source={{type:'discovery',section:row.section,surface:actionFromCategory(row.category),scoped:true,
-     mediums:{...page.data,features:page.data.capabilities}}} onsettled={()=>settled(row.key)} />
+   <Shelf {feedLoad} source={{type:'discovery',section:row.section,surface:actionFromCategory(row.category),scoped:true,
+     mediums:{...page.data,features:page.data.capabilities}}} onsettled={empty=>settled(row.key,empty)} />
   {:else if row.surface==='recommendations'}
-   <Shelf {shape} {artworkStyle} appendWhenReady source={{type:'recommendation',mode,feature:'recommendations',category:row.category,kind:row.kind,title:row.title,available:row.available,seed}} onsettled={()=>settled(row.key)} />
+   <Shelf {shape} {artworkStyle} {feedLoad} source={{type:'recommendation',mode,feature:'recommendations',category:row.category,kind:row.kind,title:row.title,available:row.available,seed}} onsettled={empty=>settled(row.key,empty)} />
   {:else if row.surface==='seed'}
-   <Shelf {shape} {artworkStyle} appendWhenReady source={{type:'recommendation',mode,feature:'row',category:row.category,workId:row.workId,title:row.title,seed}} onsettled={()=>settled(row.key)} />
+   <Shelf {shape} {artworkStyle} {feedLoad} source={{type:'recommendation',mode,feature:'row',category:row.category,workId:row.workId,title:row.title,seed}} onsettled={empty=>settled(row.key,empty)} />
   {:else if row.surface==='browse'}
-   <Shelf {shape} {artworkStyle} appendWhenReady source={{type:'recommendation',mode,feature:'browse',category:row.category,genre:row.genre,kind:row.kind,variant:row.variant,title:row.title,seed}} onsettled={()=>settled(row.key)} />
+   <Shelf {shape} {artworkStyle} {feedLoad} source={{type:'recommendation',mode,feature:'browse',category:row.category,genre:row.genre,kind:row.kind,variant:row.variant,title:row.title,seed}} onsettled={empty=>settled(row.key,empty)} />
   {:else}
-   <Shelf {shape} {artworkStyle} appendWhenReady source={{type:'recommendation',mode,feature:'row',category:row.category,genre:row.genre,kind:row.kind,reason:row.reason,title:row.title,available:row.available,seed}} onsettled={()=>settled(row.key)} />
+   <Shelf {shape} {artworkStyle} {feedLoad} source={{type:'recommendation',mode,feature:'row',category:row.category,genre:row.genre,kind:row.kind,reason:row.reason,title:row.title,available:row.available,seed}} onsettled={empty=>settled(row.key,empty)} />
   {/if}
+  </div>
  {/each}
- <div class="feed-end" aria-busy={resource.busy || !!pendingKey}>
-   {#if !pendingKey && !complete}
-    {#key `${revision}:${revealed}`}
-     <div class="feed-trigger" use:lazyContent={{load:()=>void load(),rootMargin:'0px 0px 240px',enabled:()=>!resource.busy&&!resource.error}}></div>
-    {/key}
-   {/if}
- </div>
 </div>
 <style>
  /* Keep the viewport in place when the document grows at the feed's end. */
  :global(body:has(.dynamic-feed)) { overflow-anchor:none; }
- .feed-end { min-height:1px; }
- .feed-trigger { min-height:1px; }
+ .feed-start { min-height:1px; }
 </style>

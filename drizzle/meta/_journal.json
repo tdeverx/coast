@@ -624,6 +624,20 @@
       "when": 1795418284244,
       "tag": "0089_taste_synopsis_vectors",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795435200000,
+      "tag": "0090_trakt_show_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1795435460842,
+      "tag": "0091_activity_child_lookup",
+      "breakpoints": true
     }
   ]
 }

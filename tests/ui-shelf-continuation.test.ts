@@ -106,8 +106,8 @@ test('the Shelf script distinguishes loading, settled empty and failed shelves d
  expect(render({hideEmpty:false},shelfControls)).toMatchObject({loading:false,emptyRow:true,hidden:false,preserveHeight:false});
  expect(render({hideEmpty:false,preserveHeight:true},shelfControls)).toMatchObject({emptyRow:true,preserveHeight:true});
  const emptySource={items:[],busy:false,error:'',ready:true,filters:[],controls:[]};
- expect(render({source:{},fixtureSource:{...emptySource,ready:false},appendWhenReady:true},shelfControls)).toMatchObject({loading:true,hidden:true});
- expect(render({source:{},fixtureSource:emptySource,appendWhenReady:true},shelfControls)).toMatchObject({loading:false,hidden:true});
+ for(const feedLoad of ['active','queued'])expect(render({source:{},fixtureSource:{...emptySource,ready:false},feedLoad},shelfControls)).toMatchObject({loading:true,hidden:false});
+ expect(render({source:{},fixtureSource:emptySource,feedLoad:'active'},shelfControls)).toMatchObject({loading:false,hidden:true});
  expect(render({source:{},fixtureSource:emptySource,layout:'grid'},shelfControls)).toMatchObject({loading:false,emptyGrid:true,hidden:false});
  expect(render({source:{},fixtureSource:{...emptySource,error:'Could not load titles'},layout:'grid'},shelfControls)).toMatchObject({loading:false,emptyGrid:false,hidden:false});
 });
