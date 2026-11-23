@@ -166,6 +166,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     signal.throwIfAborted();
     if (leaving || external || options.controlled?.() === false)
       return;
+    if (!state?.busy) fault = undefined;
     await renderer!.turn(direction);
     await idle();
   }
@@ -176,6 +177,9 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     external++;
     const pending = navigation.catch(() => {
     }).then(async () => {
+      if (at !== revision)
+        return;
+      fault = undefined;
       await idle();
       if (at !== revision)
         return;

@@ -66,3 +66,14 @@ run('merged aliases and disconnected canonical artist details expose root and cr
  await getDb().update(s.users).set({settings:{features:{music:false}}}).where(eq(s.users.id,viewer));
  expect((await activityFeed(viewer,options)).items).toEqual([]);
 });
+run('track Activity includes a listen displayed under its parent album',async()=>{
+ const album=await persistMusic(first,metadata('album',{title:'Activity filter album'}));
+ const song=await persistMusic(first,metadata('track',{title:'Activity filter track',albumId:album.id,trackNumber:1}));
+ workIds.add(album.workId!);
+ workIds.add(song.workId!);
+ await logMusic(owner,song.workId!,{batchId:crypto.randomUUID()});
+ const tracks=await activityFeed(owner,{category:'music',mediaKind:'track'});
+ expect(tracks.events.find(event=>event.workId===song.workId)).toMatchObject({displayWorkId:album.workId,eventKind:'listen'});
+ const albums=await activityFeed(owner,{category:'music',mediaKind:'album'});
+ expect(albums.events.some(event=>event.workId===song.workId)).toBe(false);
+});

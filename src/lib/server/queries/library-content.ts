@@ -17,12 +17,12 @@ import { jellyfinImportStage, jellyfinScanProgressSchema } from '#lib/sync/jelly
 export async function libraryImportStatus(userId: string) {
   const [job] = await getSql()<{
     state: string; progress: unknown; createdAt: Date;
-  }[]>`select j.state, c.settings->'initialSync' as progress, j.created_at as "createdAt"
+  }[]>`select j.state, c.settings->(case when j.kind='jellyfin.bootstrap' then 'initialSync' else 'userSync' end) as progress, j.created_at as "createdAt"
     from provider_connections c join provider_instances i on i.id=c.instance_id
     cross join lateral (
-      select state, created_at from outbox_actions
+      select state, kind, created_at from outbox_actions
       where user_id=c.user_id and connection_id=c.id and account_generation=c.account_generation
-        and kind='jellyfin.bootstrap'
+        and kind in ('jellyfin.bootstrap','jellyfin.sync')
       order by created_at desc, id desc limit 1
     ) j
     where c.user_id=${userId} and c.status='connected' and i.provider='jellyfin' and i.enabled

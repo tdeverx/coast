@@ -157,7 +157,7 @@
             ><span aria-hidden="true">›</span>{/each}<span aria-current="page">{hero.active.title}</span>
         </nav>{:else if hero.active.genres?.length}<div class="genres">
           {#each hero.active.genres.slice(0, 4) as genre}{#if screenItem(hero.active)}<a
-                href={`/library?scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
+                href={`/library?view=watch&scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
               >{:else}<span>{genre}</span>{/if}{/each}
         </div>{/if}
       <div class="metadata">

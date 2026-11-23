@@ -540,8 +540,8 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     }
     return keep;
   }
-  function trim() {
-    const keep = budgetedPages(textureSizes, requiredPages(), preloader.wanted);
+  function trim(wanted = preloader.wanted) {
+    const keep = budgetedPages(textureSizes, requiredPages(), wanted);
     for (const [i, t] of textures) if (!keep.has(i)) {
       t.dispose();
       textures.delete(i);
@@ -558,9 +558,9 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   cleanups.push(() => preloader.stop());
   const warmNeighbors = () => {
     if (entrancePending || disposed) return;
-    const work = preloader.warm(nearbyPages(cascade.busy ? cascade.reserved : index, count));
-    trim();
-    return work;
+    const nearby = nearbyPages(cascade.busy ? cascade.reserved : index, count);
+    trim(nearby);
+    return preloader.warm(nearby);
   };
   const insideTexture = (i: number) => pageTexture(count === 1 ? 0 : interiorPage(i, count));
   function previewTextures(atIndex: number) {
