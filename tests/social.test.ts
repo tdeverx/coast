@@ -1,21 +1,7 @@
 import {test,expect} from 'bun:test';
-import {tasteSignals,median,type TasteWork} from '../src/lib/social/taste';
-const works=(rating=5,reaction='❤️'):TasteWork[]=>Array.from({length:5},(_,i)=>({id:String(i),rating,reaction,genres:['Drama'],interest:true,consumed:true}));
-test('taste keeps independent signals and blends qualifying samples',()=>{
- const result=tasteSignals(works(),works(2.5,'😂'));
- expect(result.signals.ratings.score).toBeCloseTo(100*(1-2.5/4.5));expect(result.signals.reactions.score).toBe(0);
- expect(result.signals.genres.score).toBe(100);expect(result.signals.interests.score).toBe(100);expect(result.score).toBeCloseTo(result.signals.ratings.score!*0.4+40);
-});
-test('negatively rated titles do not establish a shared positive genre preference',()=>{
- const result=tasteSignals(works(),works(0.5,'😂'));
- expect(result.signals.ratings.score).toBe(0);expect(result.signals.reactions.score).toBe(0);
- expect(result.signals.genres.score).toBeNull();expect(result.signals.interests.score).toBe(100);
- expect(result.score).toBeCloseTo(100*10/70);
-});
-test('missing and sparse signals are excluded, never disagreements',()=>{
- const a=works().map(w=>({...w,rating:null,reaction:null}));
- expect(tasteSignals(a,a).score).toBe(100);
- expect(tasteSignals(a.slice(0,4),a.slice(0,4)).score).toBe(null);
+import {sharedTasteSignals,median,type SharedTasteEvidence} from '../src/lib/social/taste';
+
+test('overall taste uses the median across qualifying media',()=>{
  expect(median([90,50,70])).toBe(70);expect(median([10,100])).toBe(55);expect(median([])).toBe(null);
 });
 
@@ -27,15 +13,13 @@ test('missing and sparse signals are excluded, never disagreements',()=>{
   expect(await adapter.profile()).toMatchObject({id:'fixture-stable-uuid',avatar:'https://walter-r2.trakt.tv/images/users/fixture.webp'});
  });
 
-test('shared rating order accounts for personal scales and ties using the original rating budget',()=>{
- const rated=(values:number[])=>values.map((rating,id)=>({id:String(id),rating,interest:false,consumed:false,genres:[]}));
- const left=rated([1,1,2,3,3,4]),aligned=rated([2,2,3,4,4,5]),inverse=rated([5,5,4,3,3,2]);
- const shared=tasteSignals(left,aligned),opposed=tasteSignals(left,inverse);
- expect(shared.signals.ratingOrder.score).toBe(100);
- expect(opposed.signals.ratingOrder.score).toBe(0);
- expect(shared.signals.ratings.weight+shared.signals.ratingOrder.weight).toBe(40);
- expect(tasteSignals([...aligned].reverse(),left)).toEqual(shared);
- expect(shared.score!).toBeGreaterThan(opposed.score!);
- expect(tasteSignals(left,rated([3,3,3,3,3,3])).signals.ratingOrder.score).toBeNull();
- expect(tasteSignals(left.slice(0,4),aligned).signals.ratingOrder.score).toBeNull();
+test('shared rating order preserves tied ranks, including repeated pairs beyond a sample limit',()=>{
+ const stats={you:{rated:606,reacted:0},friend:{rated:606,reacted:0}};
+ const order=(cells:NonNullable<SharedTasteEvidence['ratings']>)=>sharedTasteSignals({
+  ratings:cells,works:cells.reduce((n,c)=>n+c[2],0),score:null,reactionWorks:0,reactionScore:null
+ },stats).ratingOrder.score;
+ expect(order([[1,2,202],[2,3,101],[3,4,202],[4,5,101]])).toBe(100);
+ expect(order([[1,5,202],[2,4,101],[3,3,202],[4,2,101]])).toBe(0);
+ expect(order([[1,5,303],[2,5,303]])).toBeNull();
+ expect(order([[1,1,1],[2,2,1],[3,3,1]])).toBeNull();
 });

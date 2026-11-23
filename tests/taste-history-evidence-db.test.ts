@@ -6,6 +6,52 @@ import {track} from '../src/lib/core/tracking/service.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 type HistoryWork=Parameters<Parameters<typeof visitTasteHistory>[2]>[0][number];
 
+run('release timing, repeated binges and overdue episodes use distinct dated watches', async () => {
+ const db = getSql(), viewer = crypto.randomUUID(), show = crypto.randomUUID(), movie = crypto.randomUUID();
+ const episodes = Array.from({length: 10}, () => crypto.randomUUID());
+ await db`insert into users(id,username) values(${viewer},${'habits-'+viewer})`;
+ try {
+  await db`insert into media(id,kind,title,release_date)
+   values(${show},'show','Viewing habits',null),(${movie},'movie','Repeat plays','2020-01-01')`;
+  await db`insert into shows(media_id) values(${show})`;
+  await db`insert into media(id,kind,title,release_date) select id,'episode','Viewing habits episode',
+   case when at<=3 then date '2020-01-01' when at<=6 then date '2020-01-15'
+    when at<=8 then date '2020-02-01' when at=9 then date '2099-01-01' end
+   from unnest(${db.array(episodes,'UUID')}) with ordinality as e(id,at)`;
+  await db`insert into episodes(media_id,show_id,season_number,episode_number)
+   select id,${show},1,at from unnest(${db.array(episodes,'UUID')}) with ordinality as e(id,at)`;
+  await db`insert into tracking_events(user_id,media_id,action,source,applied,occurred_at_known,occurred_at,rewatch)
+   select ${viewer},id,'watch','trakt',true,true,(case when at<=3 then timestamptz '2020-01-01 12:00Z'
+      else timestamptz '2020-01-15 12:00Z' end) + ((at-1)%3)*interval '1 hour',true
+   from unnest(${db.array(episodes,'UUID')}) with ordinality as e(id,at) where at<=6`;
+  await db`insert into tracking_events(user_id,media_id,action,source,applied,occurred_at_known,occurred_at,rewatch)
+   select ${viewer},${movie},'watch','trakt',true,true,timestamptz '2020-01-01 13:00Z'+n*interval '10 days',true
+   from generate_series(0,2) n`;
+  const history = async () => {
+   const rows: HistoryWork[] = [];
+   await visitTasteHistory(viewer, ['screen'], async page => { rows.push(...page); });
+   return new Map(rows.map(work => [work.id, work]));
+  };
+  let rows = await history();
+  expect(rows.get(show)?.watchHabits).toEqual({pace: expect.closeTo(0.65), binge: expect.closeTo(2/3), behind: 0.5});
+  expect(rows.get(movie)).toMatchObject({deliberateReturn: true, watchHabits: {pace: 0.65}});
+  await db`insert into tracking_state(user_id,media_id,paused) values(${viewer},${show},true)`;
+  rows = await history();
+  expect(rows.get(show)?.watchHabits?.behind).toBeUndefined();
+  const again=(episode:string,day:number)=>db`insert into tracking_events(user_id,media_id,action,source,occurred_at,rewatch)
+    values(${viewer},${episode},'watch','coast',timestamptz '2020-03-01'+${day}::int*interval '1 day',true)`;
+  await again(episodes[0],1);await again(episodes[0],2);
+  expect((await history()).get(show)).toMatchObject({implicit:3,repeated:false,deliberateReturn:false});
+  await again(episodes[1],1);
+  expect((await history()).get(show)).toMatchObject({implicit:4,repeated:true,deliberateReturn:false});
+  await again(episodes[1],2);
+  expect((await history()).get(show)).toMatchObject({repeated:true,deliberateReturn:true});
+ } finally {
+  await db`delete from users where id=${viewer}`;
+  await db`delete from media where id=any(${db.array([...episodes, show, movie],'UUID')})`;
+ }
+});
+
 run('history separates opinions and exposure and gives each canonical work one vote in its medium',async()=>{
  const db=getSql();
  const [viewer,other,show,episode1,episode2,secondShow,movie,reader,artist]=Array.from({length:9},()=>crypto.randomUUID());
@@ -31,18 +77,24 @@ run('history separates opinions and exposure and gives each canonical work one v
   await db`insert into ratings(user_id,media_id,value) values(${viewer},${episode1},2.5),(${viewer},${episode2},5),
    (${viewer},${secondShow},4.5),(${other},${show},0.5),(${viewer},${artist},1)`;
 
+  await db`update ratings set source='trakt' where user_id=${viewer} and media_id=${secondShow}`;
   let works=await collect(['screen','book','music']);
   expect(works.size).toBe(5);
-  expect(works.get(show)).toMatchObject({rating:3.75,ratingCount:2,medianRating:4.125,explicit:5,implicit:3,consumed:true,repeated:false});
+  expect(works.get(show)).toMatchObject({rating:3.75,ratingCount:2,ratingReliability:expect.closeTo(Math.sqrt(2/4)),medianRating:4.125,explicit:5,implicit:3,dropped:false,consumed:true,repeated:false});
+  expect(works.get(show)?.childRatings).toEqual(expect.arrayContaining([{id:episode1,rating:2.5},{id:episode2,rating:5}]));
+  expect(works.get(show)?.lastRatedAt).toBeNull();
+  expect(works.get(secondShow)?.lastExperiencedAt).toBeNull();
+  expect(works.get(secondShow)?.lastRatedAt).toBeNull();
   expect(works.get(movie)).toMatchObject({rating:null,ratingCount:0,medianRating:null,explicit:4,implicit:3,consumed:true,repeated:false});
   expect(works.get(reader)).toMatchObject({rating:null,explicit:0,implicit:2,consumed:true,repeated:false,medium:'book'});
   expect(works.get(artist)).toMatchObject({rating:1,ratingCount:1,medianRating:1,consumed:false,repeated:false,medium:'music'});
-  await db`insert into ratings(user_id,media_id,value) values(${viewer},${show},2)`;
+  await db`insert into ratings(user_id,media_id,value,updated_at) values(${viewer},${show},2,'2020-05-01T12:00:00Z')`;
   await db`insert into tracking_state(user_id,media_id,dropped,favourite) values(${viewer},${show},true,true)`;
   await db`insert into tracking_events(user_id,media_id,action,applied,rewatch) values(${viewer},${movie},'watch',true,true)`;
   works=await collect(['screen']);
   expect(works.size).toBe(3);
-  expect(works.get(show)).toMatchObject({rating:2,ratingCount:2,medianRating:3.25,explicit:5,implicit:-2,consumed:true,repeated:false});
+  expect(new Date(works.get(show)!.lastRatedAt!).toISOString()).toBe('2020-05-01T12:00:00.000Z');
+  expect(works.get(show)).toMatchObject({rating:2,ratingCount:2,ratingReliability:1,medianRating:3.25,explicit:5,implicit:-2,dropped:true,consumed:true,repeated:false});
   expect(works.get(movie)).toMatchObject({implicit:4,consumed:true,repeated:true});
   await db`update users set settings=jsonb_set(settings,'{features}','{"social":false}') where id=${viewer}`;
   expect((await collect(['screen'])).get(movie)).toMatchObject({explicit:0,implicit:4});
@@ -67,12 +119,16 @@ run('overlapping provider watches cannot inflate taste returns even when the tra
   await db`insert into media(id,kind,title) values(${movie},'movie','Provider watch copies'),(${summary},'movie','State-only play count')`;
   await db`insert into tracking_state(user_id,media_id,watched,play_count)
    values(${viewer},${movie},true,2),(${viewer},${summary},true,3)`;
-  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,rewatch)
-   values(${viewer},${movie},'watch','jellyfin','2026-01-01 10:00:00+00',false),
-    (${viewer},${movie},'watch','trakt','2026-01-01 10:00:00+00',true)`;
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,created_at,rewatch)
+   values(${viewer},${movie},'watch','jellyfin','2026-01-01 10:00Z','2026-01-02 10:00Z',false),
+    (${viewer},${movie},'watch','trakt','2026-01-01 10:00Z','2026-01-03 10:00Z',true)`;
   let items=await history();
   expect(items.get(movie)).toMatchObject({consumed:true,repeated:false,implicit:3});
   expect(items.get(summary)).toMatchObject({consumed:true,repeated:true,implicit:4});
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,created_at) values
+   (${viewer},${movie},'unwatch','jellyfin','2026-01-05 10:00Z',now()+interval '1 minute'),
+   (${viewer},${movie},'watch','jellyfin','2026-01-01 10:00Z',now()+interval '2 minutes')`;
+  expect((await history()).get(movie)).toMatchObject({consumed:true,repeated:false,implicit:3});
   await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Watch count fixture','https://fixture.invalid')`;
   const [connection]=await db`insert into provider_connections(user_id,instance_id,status) values(${viewer},${instance},'connected') returning id`;
   const [source]=await db`insert into provider_items(instance_id,external_id,media_id,kind) values(${instance},'movie',${movie},'movie') returning id`;
@@ -82,7 +138,7 @@ run('overlapping provider watches cannot inflate taste returns even when the tra
   await db`update provider_connections set status='disconnected' where id=${connection.id}`;
   expect((await history()).get(movie)).toMatchObject({consumed:true,repeated:false,implicit:3});
   await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,rewatch)
-   values(${viewer},${movie},'watch','trakt','2026-01-08 10:00:00+00',true)`;
+   values(${viewer},${movie},'watch','trakt','2026-01-01 10:00:00+00',true)`;
   items=await history();
   expect(items.get(movie)).toMatchObject({consumed:true,repeated:true,implicit:4});
  }finally{
@@ -115,6 +171,7 @@ run('show completion evidence requires an ended show and a complete episode cens
  const scenarios=[
   {status:'Ended',total:10,completed:10,days:120,outcome:true},
   {status:'Canceled',total:10,completed:2,days:120,outcome:false},
+  {status:'Ended',total:10,completed:2,days:120,outcome:null,paused:true},
   {status:'Ended',total:10,completed:2,days:5,outcome:null},
   {status:'Returning Series',total:10,completed:10,days:120,outcome:null},
   {status:'Ended',total:5,completed:5,days:120,outcome:null},
@@ -122,12 +179,12 @@ run('show completion evidence requires an ended show and a complete episode cens
  ].map(scenario=>({...scenario,id:crypto.randomUUID()}));
  await db`insert into users(id,username) values(${viewer},${'completion-'+viewer})`;
  try{
-  for(const {id,status,total,completed,days} of scenarios){
+  for(const {id,status,total,completed,days,paused} of scenarios){
    await db`insert into media(id,kind,title) values(${id},'show','Completion fixture')`;
    await db`insert into metadata_snapshots(media_id,provider,raw)
     values(${id},'tmdb',${{facts:{status,episodeCount:10}}}::jsonb)`;
-   await db`insert into tracking_state(user_id,media_id,watched,favourite,position_seconds,completed_episodes,total_episodes,last_watched_at)
-    values(${viewer},${id},${completed===total},true,${completed>0?1:0},${completed},${total},now()-make_interval(days=>${days}::int))`;
+   await db`insert into tracking_state(user_id,media_id,watched,favourite,position_seconds,completed_episodes,total_episodes,paused,last_watched_at)
+    values(${viewer},${id},${completed===total},true,${completed>0?1:0},${completed},${total},${paused??false},now()-make_interval(days=>${days}::int))`;
   }
   const outcomes=new Map<string,boolean|null|undefined>();
   await visitTasteHistory(viewer,['screen'],async page=>{
@@ -169,7 +226,9 @@ run('repeat exposure counts once across sources, tracks, reading cycles and game
   let items=await history();
   expect(items.size).toBe(3);
   for(const id of [album,book,game])expect(items.get(id)).toMatchObject({consumed:true,repeated:false});
-  expect(items.get(album)?.completion).toBeNull();
+  expect(items.get(album)).toMatchObject({chosen:true,completion:null});
+  await db`delete from music_listens where user_id=${viewer} and track_id=${track2}`;
+  expect((await history()).get(album)).toMatchObject({consumed:true,chosen:false});
   expect(items.get(book)?.completion).toBe(true);
   expect(items.get(game)?.completion).toBe(true);
   await db`insert into music_listens(user_id,track_id,batch_id) values(${viewer},${track1},${crypto.randomUUID()})`;
@@ -178,6 +237,15 @@ run('repeat exposure counts once across sources, tracks, reading cycles and game
   await db`insert into game_playthroughs(user_id,game_id,status,completed_at,repeat) values(${viewer},${game},'completed',now(),true)`;
   items=await history();
   for(const id of [album,book,game])expect(items.get(id)).toMatchObject({consumed:true,repeated:true});
+  expect(items.get(game)?.deliberateReturn).toBe(false);
+  await db`insert into game_playthroughs(user_id,game_id,status,completed_at,repeat)
+    values(${viewer},${game},'completed',now()-interval '10 days',true),(${viewer},${game},'completed',now()-interval '20 days',true)`;
+  await db`insert into music_listens(user_id,track_id,batch_id,occurred_at,occurred_at_known)
+    select ${viewer},track_id,gen_random_uuid(),now()-n*interval '4 days',true
+    from unnest(${db.array([track1,track2],'UUID')}) as t(track_id) cross join generate_series(1,5) n`;
+  items=await history();
+  expect(items.get(game)?.deliberateReturn).toBe(true);
+  expect(items.get(album)?.deliberateReturn).toBe(true);
  }finally{
   await db`delete from users where id=${viewer}`;
   await db`delete from games where id=${game}`;
@@ -215,5 +283,38 @@ run('game playtime ranks use the owner’s known durations, deduplicate overlapp
   await db`delete from users where id in (${viewer},${other})`;
   await db`delete from provider_instances where id=${instance}`;
   await db`delete from games where id=any(${db.array(games,'UUID')}::uuid[])`;
+ }
+});
+
+run('release pace learns a regular weekly viewer and respects a later library arrival',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),instance=crypto.randomUUID();
+ const shows=Array.from({length:4},()=>crypto.randomUUID());
+ const eps=Array.from({length:12},()=>crypto.randomUUID());
+ const movie=crypto.randomUUID();
+ await db`insert into users(id,username) values(${viewer},${'viewer-pace-'+viewer})`;
+ try{
+  await db`insert into media(id,kind,title,release_date) select id,'show','Weekly fixture',date '2020-01-01' from unnest(${db.array(shows,'UUID')}) id`;
+  await db`insert into shows(media_id) select id from unnest(${db.array(shows,'UUID')}) id`;
+  await db`insert into media(id,kind,title,release_date) select id,'episode','Weekly fixture',date '2020-01-01'+((n::int-1)%3)*7
+   from unnest(${db.array(eps,'UUID')}) with ordinality e(id,n)`;
+  await db`insert into episodes(media_id,show_id,season_number,episode_number)
+   select id,(${db.array(shows,'UUID')}::uuid[])[1+(n::int-1)/3],1,1+(n-1)%3 from unnest(${db.array(eps,'UUID')}) with ordinality e(id,n)`;
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,occurred_at_known) select
+    ${viewer},id,'watch','trakt',release_date+interval '5 days',true from media where id=any(${db.array(eps,'UUID')})`;
+  await db`insert into media(id,kind,title,release_date) values(${movie},'movie','Late library arrival',date '2019-07-01')`;
+  await db`insert into tracking_events(user_id,media_id,action,source,occurred_at,occurred_at_known)
+   values(${viewer},${movie},'watch','jellyfin','2020-01-09T12:00:00Z',true)`;
+  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Fixture','https://fixture.invalid')`;
+  const [connection]=await db`insert into provider_connections(user_id,instance_id,status) values(${viewer},${instance},'connected') returning id`;
+  const [item]=await db`insert into provider_items(instance_id,external_id,media_id,kind,snapshot) values(${instance},'film',${movie},'movie','{"addedAt":"2020-01-09T10:00:00Z"}') returning id`;
+  await db`insert into availability(user_id,connection_id,provider_item_id,media_id) values(${viewer},${connection.id},${item.id},${movie})`;
+  const result=new Map<string,HistoryWork>();
+  await visitTasteHistory(viewer,['screen'],async rows=>{for(const row of rows)result.set(row.id,row);});
+  expect(result.get(movie)?.watchHabits?.pace).toBe(1);
+  for(const id of shows)expect(result.get(id)?.watchHabits?.pace).toBeCloseTo(0.75*0.65);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from provider_instances where id=${instance}`;
+  await db`delete from media where id=any(${db.array([movie,...shows,...eps],'UUID')})`;
  }
 });

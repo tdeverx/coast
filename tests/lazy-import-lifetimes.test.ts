@@ -29,6 +29,7 @@ const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(
   ${imports(importReporter)}
   const replaceState=(_url,state)=>{page.state=state;};
   const notificationSegments=[],friendViews=[], streamViews=[],linkedPanelView=()=>undefined;
+  const provideCardTaste=()=>{};
   ${imports(rootScript)}
   return {feedback,get reloads(){return reloads;},get components(){return {Reader,StreamsPanel,MediaDetailPanel,NotificationInbox,FriendsPanel};},
    setReader(value){reader.visible=value;},setReadingSession(value){reader.session=value;},setState(next){page.state=next;},setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());}};

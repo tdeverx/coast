@@ -1,42 +1,91 @@
 import { getFeatureConfig, requireFeature, type FeatureConfig } from '#lib/server/features.js';
-import { AppError } from '#lib/server/security/errors.js';
 import { categoryEnabled } from '#lib/experimental.js';
 import {sql as query} from 'drizzle-orm';
 import {getDb,getSql,type Database} from '#lib/server/db/index.js';
 import {getConfig} from '#lib/server/config.js';
-import {interestWorks,visitTasteHistory} from '#lib/recommendations/interests.server.js';
-import {prepareTasteReference,scorerFromReference,type TasteReference,createTasteAccumulator,decodeTasteAffinities,tasteDimensions,tasteDimensionsByMedium,tasteMedia,type LifetimeTasteProfile,type SavedAffinity,type TasteAffinity,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
-import {createTasteRatingTrainer,negativeRatingWeight,type TasteAudienceRating} from './taste-rating-model';
-import {workTasteFeatures} from './work-features.server';
+import {warmTasteScores} from './taste-shortlist.server';
+import {interestWorks} from '#lib/recommendations/interests.server.js';
+import {type TasteReference,tasteDimensions,tasteMedia,type LifetimeTasteProfile,type TasteAffinity,type TasteDimension,type TasteFeatures,type TasteMedium} from './taste-profile';
+import {visitTasteObservations} from './taste-history.server';
+import {trainTasteMedium} from './taste-training';
+import {createTasteSelectionTrainer,summarizeTasteSelection,type TasteSelection} from './taste-selection';
+import {addTasteOpportunities} from './taste-selection.server';
 import * as v from 'valibot';
 import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 // A saved profile can outlive a new watch. A withdrawn evidence source takes effect on the next read.
 const tastePolicySql=query`'taste-v13-'||md5(concat_ws(':',coast_feature_enabled(u.id,'social')::text,
  coalesce((select string_agg(concat_ws('/',c.id,c.status,c.account_generation,c.sync_account_id,i.enabled),',' order by c.id)
-  from provider_connections c join provider_instances i on i.id=c.instance_id where c.user_id=u.id),'')))`;
-const readableProfile=query`coast_feature_enabled(u.id,'personalisation')
+  from provider_connections c join provider_instances i on i.id=c.instance_id where c.user_id=u.id),''),
+ case when u.access_defaults->>'libraryOnly'='true' then 'library-only' end))`;
+export const readableTasteProfileSql=query`coast_feature_enabled(u.id,'personalisation')
  and coast_category_enabled(u.id,case when p.medium in ('show','movie') then 'screen' else p.medium end)
  and split_part(p.revision,':',1)=${tastePolicySql}`;
-export const tasteRevisionSql=query`${tastePolicySql}||':'||md5(concat_ws(':',
+// Keep old personal evidence readable while the worker republishes. Only serve a warm
+// numeric result if it was calculated with the same scorer used for cache misses.
+export const shortlistScoreFormat='fit-3';
+/** Presence and ordinary shelf refreshes do not change a published taste profile. */
+export async function cardTastePublication(userId:string) {
+ const [row]=await getDb().execute<{scope:string|null;revision:string|null}>(query`
+  select md5(string_agg(p.medium||':'||split_part(p.revision,':',1),',' order by p.medium)) as scope,
+   md5(string_agg(p.medium||':'||p.revision||':'||p.published_at::text,',' order by p.medium)) as revision
+  from user_taste_match_models p join users u on u.id=p.user_id
+  where u.id=${userId}::uuid and not u.disabled and p.fold=-1 and ${readableTasteProfileSql}
+  and right(p.revision,length(${personalMatchVersion}::text)+1)=':'||${personalMatchVersion}::text`);
+ return row?.scope && row.revision ? {scope:row.scope,revision:row.revision} : null;
+}
+export const tasteRevisionSql=query`${tastePolicySql}||':'||md5(concat_ws(':',coalesce(u.settings->>'region','GB'),
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='tracking'),'0'),
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='social'),'0'),
- coalesce((select extract(epoch from max(s.updated_at))::text from recommendation_sets s left join provider_connections c on c.id=s.connection_id where s.connection_id is null or c.user_id=u.id),'0'),
- coalesce((select value::text from system_settings where key='coast'),'{}'),coalesce(u.settings->'features','{}'::jsonb)::text))`;
+ coalesce((select (value-'experimentalCardTasteScores')::text from system_settings where key='coast'),'{}'),coalesce(u.settings->'features','{}'::jsonb)::text))||':'||${shortlistScoreFormat}::text`;
+// A provider list changes which titles need a warm score, independently of the viewer's evidence.
+const shortlistRevisionSql=query`coalesce((select max(s.updated_at)::text from recommendation_sets s
+ left join provider_connections c on c.id=s.connection_id where s.connection_id is null or c.user_id=u.id),'')`;
 const hasFreshTasteProfile=query`coalesce((select min(p.updated_at)>now()-interval '7 days'
  and bool_and(p.scoring is not null) and min(p.revision)=max(p.revision) and min(p.revision)=${tasteRevisionSql}
  from user_taste_profiles p where p.user_id=u.id),false)`;
+const hasFreshShortlist=query`exists(select 1 from user_taste_profiles p where p.user_id=u.id and p.shortlist_revision=${shortlistRevisionSql})`;
+export const personalMatchVersion='personal-v1';
+export const personalMatchRevision=query`${tasteRevisionSql}||':'||${personalMatchVersion}::text`;
+// A publication updates all admitted media atomically. Empty histories publish an empty model.
+const hasFreshMatches=query`exists(select 1 from user_taste_match_models m where m.user_id=u.id and m.fold=-1
+ and m.revision=${personalMatchRevision} and m.published_at>now()-interval '7 days')`;
+const tasteRefreshDue=query`(not ${hasFreshTasteProfile} or not ${hasFreshShortlist} or not ${hasFreshMatches})`;
 const tasteUserEligible=query`not u.disabled and coast_feature_enabled(u.id,'personalisation') and exists(
  select 1 from unnest(array['screen','music','game','book','comic']) as medium where coast_category_enabled(u.id,medium))`;
 
-type TasteSignalSummary = NonNullable<LifetimeTasteProfile['signals'][TasteDimension]>;
+type TasteSignalPreview = Pick<TasteAffinity, 'name' | 'value' | 'samples' | 'viewingChoice'>;
+type TasteSignalSummary = { count: number; preview: TasteSignalPreview[] };
+
+/** Build the owner's display at publication so summary reads stay small and pagination keeps its saved order. */
+function appendTasteChoiceDisplay(profile: LifetimeTasteProfile & {choiceOnly?: Partial<Record<TasteDimension, TasteAffinity[]>>}, selection: TasteSelection) {
+ const genreNames = Object.fromEntries((profile.dimensions.genres ?? []).map(([id,name]) => [id,name]));
+ for (const dimension of tasteDimensions) {
+  const rules = selection[dimension];
+  if (!rules) continue;
+  const entries = profile.dimensions[dimension] ?? [];
+  const observed = new Set(entries.map(entry => entry[0]));
+  const extras: TasteAffinity[] = [];
+  for (const [id, patterns] of Object.entries(rules)) {
+   if (observed.has(id) || !patterns.length) continue;
+   extras.push({id,name:patterns[0].name ?? id,value:0,samples:0,
+    viewingChoice:summarizeTasteSelection(patterns,0,genreNames)});
+  }
+  extras.sort((a,b) => (a.viewingChoice?.value ?? 0) - (b.viewingChoice?.value ?? 0) || a.id.localeCompare(b.id));
+  if (extras.length) (profile.choiceOnly ??= {})[dimension] = extras;
+  const preview: TasteSignalPreview[] = entries.slice(0,3).map(([id,name,value,samples]) => ({
+   name,value,samples,...(Object.hasOwn(rules,id) ? {viewingChoice:summarizeTasteSelection(rules[id],value,genreNames)} : {}),
+  }));
+  for (const {name,value,samples,viewingChoice} of extras.slice(0,3-preview.length))
+   preview.push({name,value,samples,viewingChoice});
+  profile.signals[dimension] = {count:entries.length+extras.length,preview};
+ }
+}
 type PersonalTasteEntry = {
  medium: TasteMedium; works: number; updatedAt: Date;
  worksWithSignals: number; consumedWorks: number; repeatedWorks: number; explicitWorks: number; inferredWorks: number; ratings: number; medianRating: number|null;
  signals: Partial<Record<TasteDimension, TasteSignalSummary>>;
 };
-export const tasteAffinityPageSize = 25;
-export const maxTasteAffinityPage = Math.floor(Number.MAX_SAFE_INTEGER/tasteAffinityPageSize);
 
 /** The personal view shows the latest saved snapshot without rebuilding profiles or scores. */
 export async function personalTaste(userId: string): Promise<PersonalTasteEntry[]> {
@@ -46,37 +95,13 @@ export async function personalTaste(userId: string): Promise<PersonalTasteEntry[
   from users u join user_taste_profiles p on p.user_id=u.id
   cross join lateral jsonb_to_record(p.profile) as summary(
     works int, "worksWithSignals" int, "consumedWorks" int, "repeatedWorks" int, "explicitWorks" int, "inferredWorks" int, ratings int, "medianRating" float8, signals jsonb)
-  where u.id=${userId}::uuid and ${readableProfile}`) as PersonalTasteEntry[];
+  where u.id=${userId}::uuid and ${readableTasteProfileSql}`) as PersonalTasteEntry[];
  return rows;
 }
 
-/** Read only the selected signal from the caller's saved profile. */
-export async function personalTasteAffinities(userId: string, medium: TasteMedium, dimension: TasteDimension, page: number): Promise<{items:TasteAffinity[];pages:number}> {
- await requireFeature(userId,'personalisation');
- const dimensions:readonly TasteDimension[]=tasteDimensionsByMedium[medium];
- if(!dimensions.includes(dimension))return {items:[],pages:1};
- const offset=(page-1)*tasteAffinityPageSize;
- const [row]=await getDb().execute<{items:TasteAffinity[]|SavedAffinity[];total:number}>(query`
-   with saved as materialized (
-     select coalesce(profile->'dimensions'->${dimension}::text,'[]'::jsonb) as entries
-     from users u join user_taste_profiles p on p.user_id=u.id
-     where u.id=${userId}::uuid and medium=${medium} and ${readableProfile}
-   )
-   select jsonb_array_length(entries) as total, coalesce((
-     select jsonb_agg(entries->position::int order by position)
-     from generate_series(${offset}::bigint,least(${offset+tasteAffinityPageSize-1}::bigint,jsonb_array_length(entries)-1)) position
-   ),'[]'::jsonb) as items from saved`);
- return {items:decodeTasteAffinities(row?.items??[]),pages:Math.max(1,Math.ceil((row?.total??0)/tasteAffinityPageSize))};
-}
-
-export type TasteMatch = ReturnType<ReturnType<typeof scorerFromReference>>;
 export type TasteScoreMode = 'published' | 'recalculate';
-export const maxTasteBatchSize = 72;
-type Target = {id:string;root:string;kind:string;precise:boolean;cached:TasteMatch|null};
-type MatchGroup = {reference:TasteReference|null;targets:Target[]};
-function hasComparableFeatures(reference:TasteReference){return Object.keys(reference.dimensions).length>0;}
 
-function targetFeatures(target:Target, features:Map<string,TasteFeatures>):TasteFeatures {
+export function targetFeatures(target:{root:string;id:string;kind:string;precise:boolean}, features:Map<string,TasteFeatures>):TasteFeatures {
  const parent=features.get(target.root)??{};
  if(!target.precise)return parent;
  const child=features.get(target.id)??{};
@@ -101,89 +126,6 @@ function targetFeatures(target:Target, features:Map<string,TasteFeatures>):Taste
  return merged;
 }
 
-/** Fetch each required private reference once. Warm targets need only their published result. */
-export async function titleTastes(userId:string,workIds:readonly string[],verifiedConfig?:FeatureConfig,mode:TasteScoreMode='published',inspect=false):Promise<Map<string,TasteMatch>> {
- const config=verifiedConfig??await requireFeature(userId,'personalisation');
- if(workIds.length>maxTasteBatchSize)throw new AppError(400,`Choose up to ${maxTasteBatchSize} titles.`);
- const result=new Map<string,TasteMatch>();
- if(!workIds.length)return result;
- const ids=[...new Set(workIds.map(id=>id.toLowerCase()))];
- const idArray=`{${ids.join(',')}}`; // Callers supply validated UUIDs or catalogue IDs.
- const groups=await getDb().execute<MatchGroup>(query`
-  with roots as materialized (
-   select w.id,w.kind,coalesce(e.show_id,s.show_id,album.parent_id,w.id) as root,
-    case when w.category='music' then 'music' when w.kind in ('season','episode') then 'show' else w.kind end as medium,
-    case when album.parent_id is not null then exists(
-     select 1 from music_credits cr join music_works artist on artist.id=cr.artist_id and artist.kind='artist'
-     where cr.work_id=w.id and cr.role in ('artist','album-artist'))
-      or exists(select 1 from work_features f where f.work_id=w.id and
-       (f.features->'tags'->0 is not null or f.features->'writers'->0 is not null
-        or f.features->'composers'->0 is not null or f.features->'studios'->0 is not null))
-    when coalesce(e.show_id,s.show_id) is not null then exists(select 1 from work_features f where f.work_id=w.id and f.provider='tmdb'
-     and (f.features->'cast'->0 is not null or f.features->'directors'->0 is not null or f.features->'writers'->0 is not null
-      or f.features->'composers'->0 is not null or f.features->'cinematographers'->0 is not null))
-     or exists(select 1 from metadata_snapshots snap where snap.media_id=w.id and snap.provider='tmdb'
-      and (snap.raw#>'{cast,0}' is not null or snap.raw#>'{facts,credits,0}' is not null))
-    else false end as precise
-   from works w left join episodes e on e.media_id=w.id left join seasons s on s.media_id=w.id
-   left join lateral (
-    select r.parent_id from media_relationships r join works parent on parent.id=r.parent_id and parent.kind='album'
-    where w.kind='track' and r.child_id=w.id and r.kind='contains' order by r.position,r.parent_id limit 1
-   ) album on true
-   where w.id=any(${idArray}::uuid[])
-  )
-  select batch.targets,case when batch.cold then p.scoring end as reference
-  from users u join user_taste_profiles p on p.user_id=u.id
-  join lateral (
-   select jsonb_agg(jsonb_build_object('id',r.id,'root',r.root,'kind',r.kind,'precise',r.precise,'cached',ts.breakdown)) as targets,
-    bool_or(ts.work_id is null) as cold
-   from roots r left join user_taste_scores ts on ${mode==='published'} and not r.precise and ts.user_id=p.user_id and ts.work_id=r.root and ts.revision=p.revision
-   where r.medium=p.medium
-  ) batch on batch.targets is not null
-  where u.id=${userId}::uuid and ${readableProfile}`);
- const missing=new Set<string>();
- for(const {targets,reference} of groups){
-  const empty=reference?.works&&!hasComparableFeatures(reference)?scorerFromReference(reference,inspect)({}):null;
-  for(const target of targets){
-   const match=target.cached??empty;
-   if(match)result.set(target.id,match);
-   else if(reference?.works){missing.add(target.root);if(target.precise)missing.add(target.id);}
-  }
- }
- if(missing.size){
-  const features=await workTasteFeatures([...missing],config.metadataSource);
-  for(const group of groups){
-   if(!group.reference?.works)continue;
-   const score=scorerFromReference(group.reference,inspect);
-   const scored=new Map<string,TasteMatch>();
-   for(const t of group.targets){
-    if(result.has(t.id))continue;
-    const key=t.precise?t.id:t.root;
-    const match=scored.get(key)??score(targetFeatures(t,features));
-    scored.set(key,match);
-    result.set(t.id,match);
-   }
-  }
- }
- if(mode==='recalculate'&&config.features.social){
-  const scoreable=[...result].flatMap(([id,match])=>match.score===null?[]:[id]);
-  if(scoreable.length){
-   const {visibleFriendTaste}=await import('./friend-taste.server');
-   const friends=await visibleFriendTaste(userId,scoreable);
-   for(const [id,signal] of friends){
-    const match=result.get(id);
-    if(match?.score==null||!signal.watched)continue;
-    const score=Math.max(0,Math.min(100,match.score+signal.points));
-    result.set(id,{...match,score,...(match.breakdown?{breakdown:{...match.breakdown,friends:{...signal,points:score-match.score}}}:{})});
-   }
-  }
- }
- return new Map(workIds.flatMap(id=>{const match=result.get(id.toLowerCase());return match?[[id,match] as const]:[];}));
-}
-
-export async function titleTaste(userId:string,workId:string,mode?:TasteScoreMode){
- return (await titleTastes(userId,[workId],undefined,mode,mode==='recalculate')).get(workId)??null;
-}
 /** Piggyback on existing maintenance/outbox. Ten stale users per run; no cartesian user/catalogue scan. */
 const scheduleSchema=v.object({enabled:v.optional(v.boolean(),true),intervalMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),60)});
 export async function tasteJob(){
@@ -214,7 +156,7 @@ export async function scheduleTasteRefresh(tx:Tx,force=false){
  // Check the backlog promptly. A weekly rebuild picks up metadata-only changes.
  // The configured cadence separates batches, and manual runs retain admission/deduplication.
  if(!force){const [last]=await tx.execute<{due:boolean}>(query`select updated_at<now()-make_interval(mins=>case when coalesce((payload->'_jobOutcome'->>'deferred')::int,0)>0 or coalesce((payload->'_jobOutcome'->>'checked')::int,0)>=10 then 1 else ${schedule.intervalMinutes} end) as due from outbox_actions where kind='taste.refresh' and state='succeeded' order by updated_at desc limit 1`);if(last&&!last.due)return {queued:0,active:0};}
- const [needed]=await tx.execute<{userId:string}>(query`select u.id as "userId" from users u where ${tasteUserEligible} and not ${hasFreshTasteProfile} order by u.created_at,u.id limit 1`);
+ const [needed]=await tx.execute<{userId:string}>(query`select u.id as "userId" from users u where ${tasteUserEligible} and ${tasteRefreshDue} order by u.created_at,u.id limit 1`);
  if(!needed)return {queued:0,active:0};
  await tx.execute(query`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${needed.userId}::uuid,'taste.refresh',${{_manual:force}}::jsonb,'taste.refresh')`);
  return {queued:1,active:0};
@@ -228,48 +170,52 @@ const refreshCheckpointSchema=v.object({
 });
 type RefreshCheckpoint=v.InferOutput<typeof refreshCheckpointSchema>;
 
-async function buildLifetimeProfiles(userId:string,config:FeatureConfig){
+async function buildLifetimeProfiles(userId:string,config:FeatureConfig,region:string){
  const enabled=tasteMedia.filter(({category})=>categoryEnabled(config,category));
  const categories=[...new Set(enabled.map(({category})=>category))];
- const accumulators=new Map<TasteMedium,{history:ReturnType<typeof createTasteAccumulator>;ratings:ReturnType<typeof createTasteRatingTrainer>}>();
- const sql=getSql();
- await visitTasteHistory(userId,categories,async works=>{
-  await assertJobLease(sql);
-  const audience=works.some(work=>work.rating!==null&&work.rating<3)?new Map<string,TasteAudienceRating>():undefined;
-  const features=await workTasteFeatures(works.map(work=>work.id),config.metadataSource,audience);
-  for(const work of works){
-   let accumulator=accumulators.get(work.medium);
-   if(!accumulator){
-    accumulator={history:createTasteAccumulator({count:work.ratingCount,median:work.medianRating}),
-     ratings:createTasteRatingTrainer(work.ratingCount)};
-    accumulators.set(work.medium,accumulator);
-   }
-   const facts=features.get(work.id)??{};
-   const negativeWeight=negativeRatingWeight(work.rating,audience?.get(work.id));
-   accumulator.history.add(work,facts,negativeWeight);
-   accumulator.ratings.add(work.rating,facts,negativeWeight);
+ const accumulators=new Map<TasteMedium,ReturnType<typeof trainTasteMedium>>();
+ const selection: Partial<Record<TasteMedium, ReturnType<typeof createTasteSelectionTrainer>>> = {};
+ const knownTitles = new Map<string,boolean>();
+ await visitTasteObservations(userId,categories,config.metadataSource,region,(row,ratingCount,medianRating)=>{
+  const {work}=row;
+  let accumulator=accumulators.get(work.medium);
+  if(!accumulator){
+   accumulator=trainTasteMedium(work.medium,ratingCount,medianRating);
+   accumulators.set(work.medium,accumulator);
   }
+  accumulator.add(row);
+  knownTitles.set(work.id,work.chosen);
  });
- return new Map(await Promise.all(enabled.map(async ({value})=>{
-  const accumulator=accumulators.get(value);
-  const profile=(accumulator?.history??createTasteAccumulator()).snapshot();
-  return [value,{profile,reference:prepareTasteReference(profile,await accumulator?.ratings.fit(),accumulator?.history.returnWeights())}] as const;
- })));
+ for(const [medium,accumulator] of accumulators)
+  if(accumulator.selection.ready())selection[medium]=accumulator.selection;
+ await addTasteOpportunities(userId,config.metadataSource,region,config.libraryOnly===true,selection,knownTitles);
+ const profiles=new Map<TasteMedium,{profile:LifetimeTasteProfile;reference:TasteReference}>();
+ for(const {value} of enabled){
+  const trained=await (accumulators.get(value)??trainTasteMedium(value,0,null)).finish();
+  if(trained.reference.selection)appendTasteChoiceDisplay(trained.profile,trained.reference.selection);
+  profiles.set(value,trained);
+ }
+ return profiles;
+}
+
+async function loadPublishedProfiles(userId:string,revision:string){
+ const rows=await getSql()<Array<{medium:TasteMedium;profile:LifetimeTasteProfile;reference:TasteReference}>>`
+  select medium,profile,scoring as reference from user_taste_profiles where user_id=${userId} and revision=${revision}`;
+ return new Map(rows.map(row=>[row.medium,row]));
 }
 
 export async function refreshTasteCaches(){
- const sql=getSql();
  const parsed=v.safeParse(refreshCheckpointSchema,await readJobCheckpoint());
  let checkpoint:RefreshCheckpoint|null=parsed.success?parsed.output:null;
  if(!checkpoint){
-  const stale=await getDb().execute<{id:string}>(query`select u.id from users u where ${tasteUserEligible} and not ${hasFreshTasteProfile} order by (select min(updated_at) from user_taste_profiles where user_id=u.id) asc nulls first,u.id limit 10`);
+  const stale=await getDb().execute<{id:string}>(query`select u.id from users u where ${tasteUserEligible} and ${tasteRefreshDue} order by (select min(updated_at) from user_taste_profiles where user_id=u.id) asc nulls first,u.id limit 10`);
   checkpoint={task:'taste-refresh',users:stale.map(user=>user.id),next:0,checked:0,refreshed:0,deferred:0};
   await saveJobCheckpoint(checkpoint);
  }
  while(checkpoint.next<checkpoint.users.length){
   const user:{id:string}={id:checkpoint.users[checkpoint.next]};
   // Other users' calculations must not age this user's revision snapshot.
-  const [snapshot]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user.id}::uuid and ${tasteUserEligible}`);
+  const [snapshot]=await getDb().execute<{revision:string;region:string;shortlist:string;reuse:boolean;freshMatches:boolean;freshShortlist:boolean}>(query`select ${tasteRevisionSql} as revision,${shortlistRevisionSql} as shortlist,${hasFreshTasteProfile} as reuse,${hasFreshShortlist} as "freshShortlist",${hasFreshMatches} as "freshMatches",coalesce(u.settings->>'region','GB') as region from users u where u.id=${user.id}::uuid and ${tasteUserEligible}`);
   if(!snapshot){
    checkpoint.next++;
    await saveJobCheckpoint(checkpoint);
@@ -277,56 +223,27 @@ export async function refreshTasteCaches(){
    continue;
   }
   const config=await getFeatureConfig(user.id);
-  const [profiles,evidence]=await Promise.all([buildLifetimeProfiles(user.id,config),interestWorks(user.id)]);
-  const scoreable=[...profiles].filter(([,row])=>hasComparableFeatures(row.reference));
-  const candidateKinds=scoreable.map(([medium])=>medium==='music'?'album':medium);
-  const probes=scoreable.flatMap(([medium,{profile}])=>tasteDimensions.flatMap(dimension=>{
-   const selected=[];
-   for(const [id,,value,samples] of profile.dimensions[dimension]??[]){
-    if(value<=0)continue;
-    if(dimension==='cast'&&samples<2)continue;
-    selected.push({medium,features:{[dimension]:[{id}]}});
-    if(selected.length===8)break;
-   }
-   return selected;
-  }));
-  const positive=evidence.filter(work=>work.weight>0),seedIds=positive.map(work=>work.id),genres=[...new Set(positive.flatMap(work=>work.genres))];
-  const candidates=candidateKinds.length?await sql<{id:string;medium:TasteMedium}[]>`with provider_ids as (
-   select distinct unnest(s.items) as id from recommendation_sets s join provider_instances i on i.id=s.instance_id and i.enabled left join provider_connections c on c.id=s.connection_id and c.status='connected' and c.account_generation=s.account_generation
-   where s.connection_id is null and s.seed_id=any(${sql.array(seedIds,'UUID')}::uuid[]) or c.user_id=${user.id} and ${config.enableTrakt}
-  ), feature_ids as (
-   select distinct f.work_id as id from work_features f join works w on w.id=f.work_id
-   where exists(select 1 from jsonb_to_recordset(${JSON.stringify(probes)}::text::jsonb) p(medium text,features jsonb)
-    where f.features @> p.features and case when w.category='music' then 'music' else w.kind end=p.medium)
-  ), ranked as (
-   select w.id,case when w.category='music' then 'music' else w.kind end as medium,
-    row_number() over(partition by case when w.category='music' then 'music' else w.kind end order by (p.id is not null) desc,(fi.id is not null) desc,coalesce(m.release_date,g.release_date,a.release_date,b.release_date) desc nulls last,w.id) as rank
-   from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id left join provider_ids p on p.id=w.id left join feature_ids fi on fi.id=w.id
-   where w.kind=any(${sql.array(candidateKinds,'TEXT')}::text[])
-   and (p.id is not null or fi.id is not null or coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[])&&${sql.array(genres,'TEXT')}::text[])
-   and not w.id=any(${sql.array(evidence.map(work=>work.id),'UUID')}::uuid[])
-   and not exists(select 1 from tracking_state t where t.user_id=${user.id} and t.media_id=w.id and (t.watched or t.dropped or t.collected or t.watchlist or t.favourite))
-  ) select id,medium from ranked where rank<=500`:[];
-  const scorers=new Map(scoreable.map(([medium,{reference}])=>[medium,scorerFromReference(reference)]));
-  const scores:(TasteMatch & {workId:string})[]=[];
-  for(let offset=0;offset<candidates.length;offset+=300){
-   await assertJobLease(sql);
-   const batch=candidates.slice(offset,offset+300);
-   const features=await workTasteFeatures(batch.map(work=>work.id),config.metadataSource);
-   for(const work of batch)scores.push({workId:work.id,...scorers.get(work.medium)!(features.get(work.id)??{})});
-  }
+  const needsShortlist=!snapshot.reuse||!snapshot.freshShortlist;
+  const [profiles,evidence]=needsShortlist?await Promise.all([
+    snapshot.reuse?loadPublishedProfiles(user.id,snapshot.revision):buildLifetimeProfiles(user.id,config,snapshot.region),
+    interestWorks(user.id)]):[new Map(),[]];
+  const scores=needsShortlist?await warmTasteScores(user.id,snapshot.region,config,evidence,profiles):[];
+  const personal=await import('./taste-personal-publish.server');
+  const matches=snapshot.freshMatches?null:await personal.buildPersonalMatches(user.id,config,snapshot.region);
   // Recheck revisions after calculation; concurrent imports invalidate the result, not history.
   const progress:RefreshCheckpoint=checkpoint;
   checkpoint=await getDb().transaction<RefreshCheckpoint>(async(tx):Promise<RefreshCheckpoint>=>{
-   const [current]=await tx.execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user.id}::uuid and not u.disabled and coast_feature_enabled(u.id,'personalisation') for update of u`) as {revision:string}[];
+   const [current]=await tx.execute<{revision:string;shortlist:string}>(query`select ${tasteRevisionSql} as revision,${shortlistRevisionSql} as shortlist from users u where u.id=${user.id}::uuid and not u.disabled and coast_feature_enabled(u.id,'personalisation') for update of u`) as {revision:string;shortlist:string}[];
    await assertJobLease(tx,true);
-   const applied:boolean=current?.revision===snapshot.revision;
-   if(applied){
+   const applied=!!current&&current.revision===snapshot.revision&&(!needsShortlist||!snapshot.reuse||(profiles.size>0&&current.shortlist===snapshot.shortlist));
+   if(applied&&matches)await personal.savePersonalMatches(tx,user.id,snapshot.revision+':'+personalMatchVersion,matches);
+   if(applied&&needsShortlist){
     await tx.execute(query`delete from user_taste_scores where user_id=${user.id}::uuid`);
     // Publish the complete enabled-medium set. An old disabled medium must not satisfy a later refresh.
-    await tx.execute(query`delete from user_taste_profiles where user_id=${user.id}::uuid
+    if(!snapshot.reuse)await tx.execute(query`delete from user_taste_profiles where user_id=${user.id}::uuid
       and not (medium = any(array[${query.join([...profiles.keys()].map(medium=>query`${medium}`),query`, `)}]::text[]))`);
-    for(const [medium,{profile,reference}] of profiles)await tx.execute(query`insert into user_taste_profiles(user_id,medium,revision,profile,scoring) values(${user.id}::uuid,${medium},${snapshot.revision},${profile}::jsonb,${reference}::jsonb) on conflict(user_id,medium) do update set revision=excluded.revision,profile=excluded.profile,scoring=excluded.scoring,updated_at=now()`);
+    if(!snapshot.reuse)for(const [medium,{profile,reference}] of profiles)await tx.execute(query`insert into user_taste_profiles(user_id,medium,revision,profile,scoring,shortlist_revision) values(${user.id}::uuid,${medium},${snapshot.revision},${profile}::jsonb,${reference}::jsonb,${snapshot.shortlist}) on conflict(user_id,medium) do update set revision=excluded.revision,profile=excluded.profile,scoring=excluded.scoring,shortlist_revision=excluded.shortlist_revision,updated_at=now()`);
+    if(snapshot.reuse)await tx.execute(query`update user_taste_profiles set shortlist_revision=${snapshot.shortlist} where user_id=${user.id}::uuid and revision=${snapshot.revision}`);
     if(scores.length)await tx.execute(query`insert into user_taste_scores(user_id,work_id,score,confidence,revision,breakdown)
      select ${user.id}::uuid,(r->>'workId')::uuid,(r->>'score')::real,(r->>'confidence')::real,${snapshot.revision},r-'workId'
      from jsonb_array_elements(${JSON.stringify(scores)}::text::jsonb) r`);

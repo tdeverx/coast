@@ -1,0 +1,9 @@
+# Restoring part of a downward calibration
+
+Freeze the selected exact-team and personalised TMDB forecasts and the margin caps for the newer rules. The change under test is a final presentation step. All rules use predictions and eligible history only. The target's actual rating enters evaluation after its forecast is fixed.
+
+The ordinary candidate restores half of the drop from the pre-display personal score to the native calibrated score. The gentle control restores a quarter. Both apply only to retained scores strictly between 50 and 80. Limit the increase to the distance from 50 and the distance to 80, then use Coast's rounding. This keeps the anchors, preserves confirmed red scores by construction, and preserves the effect of other adjustments when calculating the original calibration drop. A title can reach 80.
+
+For a content-specific control, compare each proposed half restoration to errors on the viewer's other independently predicted films or shows. Require a shared provider keyword or a person credited in the same lead role, at least one-half overlap in genre sets, and two independent comparison families. For a cue to qualify, every relevant eligible work must have a direct rating of at least four stars and an independent calibrated prediction that underestimated its star utility by at least the proposed increase. A prior low or missing forecast abstains for that cue. Test one qualifying cue and, separately, an editorial cue plus a lead credit supported by disjoint families. The latter protects against counting the same past work twice.
+
+Use the original 870 complete-title predictions, both franchise assignments and the 382 eligible earlier-day predictions. Check the exact retained dislike IDs and their scores. Count score increases for all other dislikes, favourite scores improved at each rating, movements across 80 and overall absolute error. Report how the weakest known favourites fare. All candidates are research comparisons.

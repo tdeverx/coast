@@ -1,3 +1,4 @@
+import {tastePreviewUser} from '../social/taste-preview-access.server';
 import { initializeReadingCache, stopReadingCache } from '#lib/reading/cache.server.js';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -51,8 +52,12 @@ export function initializePlatform(registerHandlers?: () => void): Promise<void>
     runtimeEvidence.start();
     process.once('SIGTERM',onShutdown);process.once('SIGINT',onShutdown);
     process.once('sveltekit:shutdown',onShutdown);
-    startQueueWorker();
-    stopBackups = startBackupScheduler();
+    // A private taste replay uses a copy with real provider credentials; its dedicated
+    // worker runs only the candidate job, never copied sync, delivery or backup jobs.
+    if (!tastePreviewUser(process.env.COAST_TASTE_PREVIEW_USER)) {
+      startQueueWorker();
+      stopBackups = startBackupScheduler();
+    }
   })();
   return runtime.initialization;
 }

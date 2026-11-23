@@ -1,0 +1,38 @@
+{
+  "untouched": {
+    "eligibleViewers": 38015,
+    "heldRatings": 4015155,
+    "originalOpportunities": 2813,
+    "earlierDifferentTeam": 675,
+    "cases": 153,
+    "dislikes": 104,
+    "liked": 9,
+    "middling": 40,
+    "fives": 0,
+    "participatingViewers": 86
+  },
+  "1": {
+    "eligibleViewers": 2693,
+    "heldRatings": 280575,
+    "originalOpportunities": 192,
+    "earlierDifferentTeam": 39,
+    "cases": 6,
+    "dislikes": 5,
+    "liked": 0,
+    "middling": 1,
+    "fives": 0,
+    "participatingViewers": 4
+  },
+  "0": {
+    "eligibleViewers": 2734,
+    "heldRatings": 297010,
+    "originalOpportunities": 177,
+    "earlierDifferentTeam": 31,
+    "cases": 3,
+    "dislikes": 1,
+    "liked": 0,
+    "middling": 2,
+    "fives": 0,
+    "participatingViewers": 3
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "coverage": {
+    "originalOpportunities": 177,
+    "atLeastOneEarlierDifferentTeam": 31
+  },
+  "requiredOtherSuccessfulTeams": {
+    "1": {
+      "cases": 15,
+      "dislikes": 7,
+      "middling": 6,
+      "liked": 2,
+      "fives": 0,
+      "viewers": 14
+    },
+    "2": {
+      "cases": 3,
+      "dislikes": 1,
+      "middling": 2,
+      "liked": 0,
+      "fives": 0,
+      "viewers": 3
+    }
+  }
+}

@@ -1,0 +1,1458 @@
+[
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        73.267,
+        505
+      ],
+      [
+        73.267,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        65.941,
+        505
+      ],
+      [
+        65.941,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        64.653,
+        505
+      ],
+      [
+        64.653,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        70.099,
+        505
+      ],
+      [
+        70.099,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        50.693,
+        505
+      ],
+      [
+        50.693,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        68.416,
+        505
+      ],
+      [
+        68.416,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        72.376,
+        505
+      ],
+      [
+        72.376,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        59.802,
+        505
+      ],
+      [
+        59.802,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        68.119,
+        505
+      ],
+      [
+        68.119,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        71.287,
+        505
+      ],
+      [
+        71.287,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        62.277,
+        505
+      ],
+      [
+        62.277,
+        505
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "franchise",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        69.958,
+        476
+      ],
+      [
+        69.958,
+        476
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "franchise",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        69.748,
+        476
+      ],
+      [
+        69.748,
+        476
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "reassigned-franchise",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        75.109,
+        460
+      ],
+      [
+        75.109,
+        460
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "reassigned-franchise",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 444,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        75.978,
+        460
+      ],
+      [
+        75.978,
+        460
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "rolling-day",
+    "budget": "dated ratings only",
+    "counts": {
+      "folds": 85,
+      "learnedNegativeSlope": 0,
+      "scored": 194,
+      "riskAvailable": 0,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        89.231,
+        65
+      ],
+      [
+        89.231,
+        65
+      ]
+    ],
+    "anchorDiagnostics": {
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 0
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        83.699,
+        1871
+      ],
+      [
+        83.699,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        64.27,
+        1871
+      ],
+      [
+        64.27,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        61.064,
+        1871
+      ],
+      [
+        61.064,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        70.657,
+        1871
+      ],
+      [
+        70.657,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        66.007,
+        1871
+      ],
+      [
+        66.007,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        71.807,
+        1871
+      ],
+      [
+        71.807,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        72.982,
+        1871
+      ],
+      [
+        72.982,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        69.241,
+        1871
+      ],
+      [
+        69.241,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#1",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 1,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 62,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 2,
+      "fiveLostGreen": 1,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0.475,
+      "disliked": 0.061
+    },
+    "dislikeLikedPairOrder": [
+      [
+        77.525,
+        1871
+      ],
+      [
+        74.826,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#2",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 1,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 15,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 3,
+      "fiveLostGreen": 1,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": -0.051,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        78.808,
+        1871
+      ],
+      [
+        78.594,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#3",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        79.957,
+        1871
+      ],
+      [
+        79.957,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "franchise",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        83.699,
+        1871
+      ],
+      [
+        83.699,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "franchise",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 305,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        64.27,
+        1871
+      ],
+      [
+        64.27,
+        1871
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "reassigned-franchise",
+    "budget": "all",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 2,
+      "scored": 429,
+      "riskAvailable": 299,
+      "changed": 1,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        85.632,
+        1900
+      ],
+      [
+        85.632,
+        1900
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "reassigned-franchise",
+    "budget": "0",
+    "counts": {
+      "folds": 5,
+      "learnedNegativeSlope": 0,
+      "scored": 429,
+      "riskAvailable": 299,
+      "changed": 0,
+      "disliked": 33,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        60.711,
+        1900
+      ],
+      [
+        60.711,
+        1900
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "rolling-day",
+    "budget": "dated ratings only",
+    "counts": {
+      "folds": 30,
+      "learnedNegativeSlope": 0,
+      "scored": 188,
+      "riskAvailable": 84,
+      "changed": 0,
+      "disliked": 7,
+      "dislikedRed": 0,
+      "likedNewRed": 0,
+      "middleNewRed": 0,
+      "fiveLower": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0
+    },
+    "meanDelta": {
+      "five": 0,
+      "disliked": 0
+    },
+    "dislikeLikedPairOrder": [
+      [
+        53.713,
+        202
+      ],
+      [
+        53.713,
+        202
+      ]
+    ],
+    "anchorDiagnostics": {
+      "returned": {
+        "all": 29,
+        "rated": 21,
+        "disliked": 0,
+        "liked": 16,
+        "five": 7
+      },
+      "movedOn": {
+        "all": 4,
+        "rated": 1,
+        "disliked": 0,
+        "liked": 1,
+        "five": 1
+      }
+    }
+  }
+]

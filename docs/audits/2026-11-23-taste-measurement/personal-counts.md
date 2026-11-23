@@ -1,0 +1,30 @@
+# Can one viewer’s rating counts identify exceptions?
+
+A viewer might enjoy animation from a particular studio even if the wider genre is a weak match. We tested whether their own past ratings can distinguish that exception from a studio, genre or tag that simply occurs often in their history. The best evidence for using the extra counts came from the two movie franchise holdouts. The effect reversed for movies rated after 2023. The show tests also lost ordering among favourites, so we would keep the new model experimental.
+
+## Comparing a feature with a combination
+
+We counted distinct rated titles meeting each of four thresholds (3½, 4, 4½ and 5 stars) separately per viewer and medium. A beta-binomial model shrinks a sparse feature toward the viewer’s earlier rating prevalence. The amount of shrinkage is learned separately for genres, tags, cast and the other metadata families by training-set marginal likelihood. Multiple cast members in one title share the cast contribution. This is a personal content classification experiment. It uses no peer ratings, audience scores or implicit negatives. Earlier research demonstrated learning a content recommender from one reader’s labelled examples. Work on hierarchical interactions motivates testing pairs alongside their individual terms. [Mooney and Roy](https://www.cs.utexas.edu/~ai-lab/pubs/libra-dl-00.pdf) · [Bien, Taylor and Tibshirani](https://arxiv.org/abs/1205.5050)
+
+We compared counting individual features, adding a pair’s raw preference and adding only the portion of its preference that the standalone features failed to explain. A pair needs three co-rated works and at least two independently rated works for each parent outside the pair. Its expected rate comes from predictions for the works that contain it, removing each work’s own vote from the marginal counts. The raw and residual pair models each learn a separate shrinkage strength per family of pairs. These counts overlap across features, so their combined scores are empirical estimates rather than independent votes. The current implementation already learns bounded co-occurrence coefficients. The experimental difference is estimating an explicitly conditional effect and its support using only that viewer’s counts. [Existing combination model](../../../src/lib/social/taste-rating-model.ts)
+
+The primary test trained on direct ratings before January 2022 or January 2024 and predicted the next group of real rating dates, using current catalogue metadata. All ratings from a UTC day stayed in the same partition. We compared standalone predicted four-star probabilities, and bounded corrections to Coast using the evidence across all four thresholds. The original Coast baseline uses only earlier ratings in these time windows. The correction is capped at ±0.55 log-odds. [Time splits and limitations](ordinal.md) · [Runnable model](personal-counts.py)
+
+| Later ratings | Training / test | Coast | With individual features | With raw pairs | With conditional pairs |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Movies, 2022–23 | 362 / 49 | 76.8% | 81.1% | 81.4% | 84.3% |
+| Movies, 2024 onward | 411 / 33 | 93.8% | 90.2% | 90.2% | 89.3% |
+| Shows, 2022–23 | 326 / 88 | 71.9% | 71.3% | 71.0% | 72.5% |
+| Shows, 2024 onward | 414 / 13 | 75.0% | 85.0% | 90.0% | 90.0% |
+
+The table measures how often a ≥4-star work scores above a ≤3-star work, giving ties half credit. The corresponding **standalone** conditional model scored 57.1%, 67.0%, 65.2% and 90.0% respectively. A model built entirely from explicit feature counts lost substantial information in the three larger windows. Conditional pairs were available for 182 of the 183 held-out titles. The early movie change of +7.5 points had a paired 95% UTC-day bootstrap interval of +0.5 to +15.4 points. The later movie change of −4.5 had an interval of −18.4 to +4.3. Those windows contained just four and two weak movies. The late show result rests on one weak show.
+
+The conditional correction improved movie franchise ordering on both group assignments (76.54% to 77.73% and 76.39% to 77.51%). Yet for later movies it dropped all-rating concordance from 64.3% to 59.4%. On early shows its ability to distinguish a five-star favourite from a 3½-star show dropped from 68.1% to 62.6%. Caution about automatically turning the correction on when enough ratings exist is warranted. A separate blend selected solely by held-out Brier loss inside the earlier history chose zero correction in both movie windows. It selected 100% of the conditional correction for early shows and 70% for later shows. Later show favourite-versus-3½ ordering fell from 25% to 12.5%, based on only two five-star shows.
+
+## What the viewer had actually rated
+
+Before January 2024, 38 of 51 directly rated Animation movies and 84 of 118 Science Fiction movies earned at least four stars. Eight of the 11 movies carrying both features met the same threshold. The shared label supplies little additional evidence over those individual rates. For shows, the corresponding counts were 29/52 for Animation, 144/184 for Sci-Fi & Fantasy, and 14/20 for the combination. Only one directly rated film in the historical snapshot carried both the anime tag and a Studio Ghibli credit, at 4½ stars. That one title supplies no way to distinguish an independent studio preference from the genre or other credits. These counts apply specifically to the dated direct-rating subset and the captured provider metadata.
+
+Recording the number of distinct titles supporting a proposed exception, and the number that separate its parents, would help the admin breakdown explain why a pattern is or is not decisive. The prediction tests provide little support for replacing the existing score with raw co-occurrence counts or routinely adding an interaction boost.
+
+To reproduce, run `personal-counts.py` with the frozen capture and the private folds from `ordinal-inputs.ts`. Add `--select` to rerun earlier-only model selection or `--groups` to include individual and franchise holdouts.

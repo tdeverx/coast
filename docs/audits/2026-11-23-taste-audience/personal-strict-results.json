@@ -1,0 +1,2118 @@
+{
+ "baselineHash": "cb32d4dafef676b9ef9181568ed4f1bea5512d345561b6b978f12a522088d001",
+ "trainingScoreHash": "ecfee9e135b9db7a27eea3fb5ceba771eafb652fba14f063208e7a4105f6d033",
+ "runs": [
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.61694,
+     "dislikeLikedOrder": 0.73267
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 375,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 20,
+      "fiveHigher": 40,
+      "fiveLostGreen": 5,
+      "fiveGainedGreen": 5,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 20,
+      "againstCrowdFiveHigher": 30,
+      "againstCrowdFiveLostGreen": 5,
+      "againstCrowdFiveGainedGreen": 5,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.48,
+      "five": 1.333,
+      "againstCrowdFive": 0.661,
+      "dislikes": -3.571
+     },
+     "order": 0.68379,
+     "dislikeLikedOrder": 0.73861
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57153,
+     "dislikeLikedOrder": 0.65941
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57153,
+     "dislikeLikedOrder": 0.65941
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "2#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56012,
+     "dislikeLikedOrder": 0.64653
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56012,
+     "dislikeLikedOrder": 0.64653
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "2#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55035,
+     "dislikeLikedOrder": 0.70099
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55035,
+     "dislikeLikedOrder": 0.70099
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "2#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.53155,
+     "dislikeLikedOrder": 0.50693
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.53155,
+     "dislikeLikedOrder": 0.50693
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "10#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56645,
+     "dislikeLikedOrder": 0.68416
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56645,
+     "dislikeLikedOrder": 0.68416
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "10#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57227,
+     "dislikeLikedOrder": 0.72376
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57227,
+     "dislikeLikedOrder": 0.72376
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "10#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54688,
+     "dislikeLikedOrder": 0.59802
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54688,
+     "dislikeLikedOrder": 0.59802
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "50#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57846,
+     "dislikeLikedOrder": 0.68119
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 25,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 6,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 2,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.052,
+      "five": 0.303,
+      "againstCrowdFive": 0.089,
+      "dislikes": 0.143
+     },
+     "order": 0.58033,
+     "dislikeLikedOrder": 0.6703
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "50#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.60088,
+     "dislikeLikedOrder": 0.71287
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 50,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 16,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 6,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 10,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 5,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.068,
+      "five": 0.409,
+      "againstCrowdFive": 0.286,
+      "dislikes": 0.0
+     },
+     "order": 0.61854,
+     "dislikeLikedOrder": 0.73861
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "work",
+   "budget": "50#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56207,
+     "dislikeLikedOrder": 0.62277
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 93,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 5,
+      "fiveHigher": 19,
+      "fiveLostGreen": 5,
+      "fiveGainedGreen": 1,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 5,
+      "againstCrowdFiveHigher": 15,
+      "againstCrowdFiveLostGreen": 5,
+      "againstCrowdFiveGainedGreen": 1,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.086,
+      "five": 0.424,
+      "againstCrowdFive": 0.232,
+      "dislikes": 0.0
+     },
+     "order": 0.56712,
+     "dislikeLikedOrder": 0.61287
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "franchise",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.59465,
+     "dislikeLikedOrder": 0.69958
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 365,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 19,
+      "fiveHigher": 41,
+      "fiveLostGreen": 10,
+      "fiveGainedGreen": 6,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 19,
+      "againstCrowdFiveHigher": 31,
+      "againstCrowdFiveLostGreen": 10,
+      "againstCrowdFiveGainedGreen": 5,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.432,
+      "five": 1.288,
+      "againstCrowdFive": 0.536,
+      "dislikes": -3.429
+     },
+     "order": 0.65251,
+     "dislikeLikedOrder": 0.73739
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "franchise",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54922,
+     "dislikeLikedOrder": 0.69748
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54922,
+     "dislikeLikedOrder": 0.69748
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "reassigned-franchise",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "five": 0.0,
+      "absoluteErrorChange": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.57863,
+     "dislikeLikedOrder": 0.75109
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 353,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 20,
+      "fiveHigher": 40,
+      "fiveLostGreen": 8,
+      "fiveGainedGreen": 5,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 20,
+      "againstCrowdFiveHigher": 31,
+      "againstCrowdFiveLostGreen": 8,
+      "againstCrowdFiveGainedGreen": 4,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "five": 1.167,
+      "absoluteErrorChange": -0.385,
+      "againstCrowdFive": 0.589,
+      "dislikes": -2.857
+     },
+     "order": 0.64616,
+     "dislikeLikedOrder": 0.7913
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "reassigned-franchise",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "five": 0.0,
+      "absoluteErrorChange": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54702,
+     "dislikeLikedOrder": 0.75978
+    },
+    "strict": {
+     "counts": {
+      "scored": 444,
+      "changed": 0,
+      "liked": 326,
+      "likedNewlyRed": 0,
+      "five": 66,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 56,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "five": 0.0,
+      "absoluteErrorChange": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.54702,
+     "dislikeLikedOrder": 0.75978
+    }
+   }
+  },
+  {
+   "medium": "movie",
+   "split": "rolling-day",
+   "budget": "dated ratings only",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 194,
+      "changed": 0,
+      "liked": 144,
+      "likedNewlyRed": 0,
+      "five": 35,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 27,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55061,
+     "dislikeLikedOrder": 0.89231
+    },
+    "strict": {
+     "counts": {
+      "scored": 194,
+      "changed": 151,
+      "liked": 144,
+      "likedNewlyRed": 0,
+      "five": 35,
+      "fiveLower": 9,
+      "fiveHigher": 21,
+      "fiveLostGreen": 5,
+      "fiveGainedGreen": 4,
+      "againstCrowdFive": 27,
+      "againstCrowdFiveLower": 9,
+      "againstCrowdFiveHigher": 13,
+      "againstCrowdFiveLostGreen": 5,
+      "againstCrowdFiveGainedGreen": 4,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0,
+      "missingReception": 1
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.325,
+      "five": 1.371,
+      "againstCrowdFive": 0.259,
+      "dislikes": -5.0
+     },
+     "order": 0.65693,
+     "dislikeLikedOrder": 1.0
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.7005,
+     "dislikeLikedOrder": 0.83699
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 357,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 10,
+      "fiveHigher": 39,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 10,
+      "againstCrowdFiveHigher": 17,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.531,
+      "five": 1.576,
+      "againstCrowdFive": 0.216,
+      "dislikes": -1.303
+     },
+     "order": 0.73657,
+     "dislikeLikedOrder": 0.85329
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5541,
+     "dislikeLikedOrder": 0.6427
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5541,
+     "dislikeLikedOrder": 0.6427
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "2#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56035,
+     "dislikeLikedOrder": 0.61064
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56035,
+     "dislikeLikedOrder": 0.61064
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "2#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5934,
+     "dislikeLikedOrder": 0.70657
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5934,
+     "dislikeLikedOrder": 0.70657
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "2#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55657,
+     "dislikeLikedOrder": 0.66007
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55657,
+     "dislikeLikedOrder": 0.66007
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "10#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5988,
+     "dislikeLikedOrder": 0.71807
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5988,
+     "dislikeLikedOrder": 0.71807
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "10#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.62133,
+     "dislikeLikedOrder": 0.72982
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.62133,
+     "dislikeLikedOrder": 0.72982
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "10#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56978,
+     "dislikeLikedOrder": 0.69241
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.56978,
+     "dislikeLikedOrder": 0.69241
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "50#1",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.62587,
+     "dislikeLikedOrder": 0.77525
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 152,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 4,
+      "fiveHigher": 31,
+      "fiveLostGreen": 1,
+      "fiveGainedGreen": 13,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 4,
+      "againstCrowdFiveHigher": 14,
+      "againstCrowdFiveLostGreen": 1,
+      "againstCrowdFiveGainedGreen": 5,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.331,
+      "five": 1.627,
+      "againstCrowdFive": 0.459,
+      "dislikes": 0.03
+     },
+     "order": 0.66824,
+     "dislikeLikedOrder": 0.78274
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "50#2",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.64011,
+     "dislikeLikedOrder": 0.78808
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 26,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 6,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 1,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 2,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 1,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.051,
+      "five": 0.153,
+      "againstCrowdFive": 0.054,
+      "dislikes": 0.0
+     },
+     "order": 0.64905,
+     "dislikeLikedOrder": 0.80011
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "work",
+   "budget": "50#3",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.65665,
+     "dislikeLikedOrder": 0.79957
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 152,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 34,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 22,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 15,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 8,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.364,
+      "five": 1.186,
+      "againstCrowdFive": 0.595,
+      "dislikes": -0.061
+     },
+     "order": 0.68485,
+     "dislikeLikedOrder": 0.81614
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "franchise",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.7005,
+     "dislikeLikedOrder": 0.83699
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 357,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 10,
+      "fiveHigher": 39,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 10,
+      "againstCrowdFiveHigher": 17,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.531,
+      "five": 1.576,
+      "againstCrowdFive": 0.216,
+      "dislikes": -1.303
+     },
+     "order": 0.73657,
+     "dislikeLikedOrder": 0.85329
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "franchise",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5541,
+     "dislikeLikedOrder": 0.6427
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.5541,
+     "dislikeLikedOrder": 0.6427
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "reassigned-franchise",
+   "budget": "all",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.70143,
+     "dislikeLikedOrder": 0.85632
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 338,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 9,
+      "fiveHigher": 36,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 1,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 9,
+      "againstCrowdFiveHigher": 14,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.464,
+      "five": 1.542,
+      "againstCrowdFive": 0.108,
+      "dislikes": -1.212
+     },
+     "order": 0.73895,
+     "dislikeLikedOrder": 0.86605
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "reassigned-franchise",
+   "budget": "0",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55369,
+     "dislikeLikedOrder": 0.60711
+    },
+    "strict": {
+     "counts": {
+      "scored": 429,
+      "changed": 0,
+      "liked": 287,
+      "likedNewlyRed": 0,
+      "five": 59,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 37,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 33,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.55369,
+     "dislikeLikedOrder": 0.60711
+    }
+   }
+  },
+  {
+   "medium": "show",
+   "split": "rolling-day",
+   "budget": "dated ratings only",
+   "arms": {
+    "baseline": {
+     "counts": {
+      "scored": 188,
+      "changed": 0,
+      "liked": 128,
+      "likedNewlyRed": 0,
+      "five": 24,
+      "fiveLower": 0,
+      "fiveHigher": 0,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 0,
+      "againstCrowdFive": 14,
+      "againstCrowdFiveLower": 0,
+      "againstCrowdFiveHigher": 0,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": 0.0,
+      "five": 0.0,
+      "againstCrowdFive": 0.0,
+      "dislikes": 0.0
+     },
+     "order": 0.60465,
+     "dislikeLikedOrder": 0.53713
+    },
+    "strict": {
+     "counts": {
+      "scored": 188,
+      "changed": 155,
+      "liked": 128,
+      "likedNewlyRed": 0,
+      "five": 24,
+      "fiveLower": 2,
+      "fiveHigher": 16,
+      "fiveLostGreen": 0,
+      "fiveGainedGreen": 3,
+      "againstCrowdFive": 14,
+      "againstCrowdFiveLower": 2,
+      "againstCrowdFiveHigher": 6,
+      "againstCrowdFiveLostGreen": 0,
+      "againstCrowdFiveGainedGreen": 0,
+      "dislikes": 7,
+      "dislikesRed": 0,
+      "dislikesNewlyRed": 0
+     },
+     "meanDeltas": {
+      "absoluteErrorChange": -0.638,
+      "five": 2.125,
+      "againstCrowdFive": 0.286,
+      "dislikes": -1.714
+     },
+     "order": 0.64679,
+     "dislikeLikedOrder": 0.69802
+    }
+   }
+  }
+ ]
+}

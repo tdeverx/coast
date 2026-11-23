@@ -1,0 +1,7 @@
+# Does runtime distinguish titles within a genre?
+
+Freeze the selected model and test an additional movie- or show-specific preference on the same four panels. Use film duration or the median duration of ordinary first-season episodes. If episode data is missing, use recorded series runtime. Missing or nonpositive measurements give no new evidence.
+
+Use only other eligible works with genre Jaccard of at least one half. Keep only the most similar genre matches from each family, averaging them if tied. Compare two ways people might prefer a duration. The first fits a straight line on log duration after subtracting the mean of comparable families. Shrink the slope with six families of prior mass and one standard error. The second compares works within a factor of 1.25 of the target's duration against works at least a factor of 1.5 away. Require four different families on each side, shrink the difference with six families of prior mass and one standard error. Cap each change at four points.
+
+Fit each estimate to both star utilities and errors on other independently predicted titles. Test the two estimates individually and the smaller adjustment where both agree in direction. Keep all previously adjusted and red scores intact. Stop if lower-tail separation and favourite preservation fail to transfer across time and franchise splits. In particular, increasing the apparent range of scores is insufficient evidence for adoption.

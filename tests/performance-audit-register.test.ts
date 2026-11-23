@@ -48,16 +48,18 @@ import fixedTasteScaleSourceRefresh from '../docs/audits/2026-11-22-fixed-taste-
 import lightDarkGlassSourceRefresh from '../docs/audits/2026-11-22-light-dark-glass-source-refresh.json';
 import tasteRatingInfluenceSourceRefresh from '../docs/audits/2026-11-22-taste-rating-influence-source-refresh.json';
 
+import personalMatchSourceRefresh from '../docs/audits/2026-11-23-personal-match-source-refresh.json';
+
 type SourceRefresh = {previous: string; current: string};
 const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh, anthologyReplaySourceRefresh, tasteWeightsSourceRefresh, tasteComparisonsSourceRefresh, tasteRatingClaritySourceRefresh, adminTasteBreakdownSourceRefresh, fixedTasteScaleSourceRefresh, tasteRatingInfluenceSourceRefresh, lightDarkGlassSourceRefresh];
-const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = sourceReceipts.map(receipt => receipt.files);
+const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh].map(receipt => receipt.files);
 
 async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
   // Walk only exact predecessor pins. Dated hosted receipts keep their own epoch.
   const expected = sourceRefreshes.reduce((hash, files) => files[path]?.previous === hash ? files[path].current : hash, historicalHash);
-  const retired: Readonly<Record<string, string>> = tasteProfileEntrySourceRefresh.retiredFiles;
+  const retired: Readonly<Record<string, string>> = {...tasteProfileEntrySourceRefresh.retiredFiles, ...personalMatchSourceRefresh.retiredFiles};
   if (retired[path] === expected) {
-    expect(await Bun.file(path).exists(), `${path}: retired by the profile destination review`).toBe(false);
+    expect(await Bun.file(path).exists(), `${path}: covered by a reviewed source retirement`).toBe(false);
     return;
   }
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
@@ -361,4 +363,30 @@ test('hosted companion evidence binds permission repairs without promoting party
  expect(cleanup.ffmpegProcessesAfter).toBe(0);
  expect(cleanup.liveServerHealth).toBe(200);
  expect(pins.remaining).toContain('Coast party orchestration and multi-device synchronization/drift');
+});
+
+test('ordinary personal matches retain their selected rules, publication boundaries and verification', async () => {
+  const review = personalMatchSourceRefresh;
+  expect(review.blanketAcceptance).toBe(false);
+  expect(review.verification.hosted).toBe(false);
+  expect(review.verification.scoredCatalogue).toBe(11707);
+  const preceding = new Map<string, string>();
+  for (const receipt of sourceReceipts) {
+    for (const [path, pin] of Object.entries(receipt.files)) preceding.set(path, pin.current);
+    if ('supportingFiles' in receipt)
+      for (const [path, hash] of Object.entries(receipt.supportingFiles)) preceding.set(path, hash);
+  }
+  const retired: Readonly<Record<string, string>> = review.retiredFiles;
+  for (const [path, hash] of Object.entries(retired)) {
+    if (preceding.has(path)) expect(hash, path).toBe(preceding.get(path)!);
+    await expectCurrentSource(path, hash, 'Review the retired source and its replacement.');
+  }
+  for (const [path, pin] of Object.entries(review.files)) {
+    if (preceding.has(path)) expect(pin.previous, path).toBe(preceding.get(path)!);
+    expect(pin.previous).not.toBe(pin.current);
+    await expectCurrentSource(path, pin.previous, 'Review the changed source against the earlier register.');
+  }
+  for (const [path, hash] of Object.entries(review.supportingFiles))
+    await expectCurrentSource(path, hash, 'Review the supporting source, fixtures and local measurements.');
+  await expectCurrentSource(review.report, review.reportSha256, 'Review the permissions, replay and measurement boundaries.');
 });

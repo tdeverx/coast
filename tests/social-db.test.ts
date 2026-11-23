@@ -162,6 +162,28 @@ run('taste and overlap respect privacy and reaction reads retain only one select
  }
  finally{await getSql()`update users set settings='{}'::jsonb where id=${ids[0]}`;}
 });
+run('shared episode ratings count once per series and retain granular overlap',async()=>{
+ const db=getSql(),show=crypto.randomUUID(),episodes=Array.from({length:8},()=>crypto.randomUUID());
+ try{
+  await db`insert into media(id,kind,title) values(${show},'show','Series taste fixture')`;
+  await db`insert into shows(media_id) values(${show})`;
+  await db`insert into media(id,kind,title) select unnest(${db.array(episodes,'UUID')}),'episode','Episode taste fixture'`;
+  await db`insert into episodes(media_id,show_id,season_number,episode_number)
+   select id,${show},1,pos from unnest(${db.array(episodes,'UUID')}) with ordinality as e(id,pos)`;
+  for(const user of ids.slice(0,2)){
+   await db`insert into ratings(user_id,media_id,value) select ${user},unnest(${db.array(episodes,'UUID')}),5`;
+  }
+  const tv=(await friendInsights(ids[1],ids[0],{medium:'tv'})).media.find(row=>row.medium==='tv')!;
+  expect(tv.overlap.shared).toEqual(expect.arrayContaining(episodes));
+  expect(tv.signals.ratings).toMatchObject({shared:1,score:null});
+  await db`update users set settings='{"social":{"sections":{"ratings":"private"}}}' where id=${ids[0]}`;
+  const hidden=(await friendInsights(ids[1],ids[0],{medium:'tv'})).media.find(row=>row.medium==='tv')!;
+  expect(hidden.signals.ratings.shared).toBe(0);
+ }finally{
+  await db`update users set settings='{}' where id=${ids[0]}`;
+  await db`delete from works where id=any(${db.array([...episodes,show],'UUID')}::uuid[])`;
+ }
+});
 run('a live response from a replaced account cannot write tracking or baselines',async()=>{
  const db=getSql(),instance=crypto.randomUUID(),connection=crypto.randomUUID();
  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'trakt','Social account generation fixture','https://fixture.invalid')`;

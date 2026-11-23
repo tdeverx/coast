@@ -46,6 +46,8 @@
         media: comparisonMedia.map(({ value: medium }) => ({
           medium,
           score: unknown ? null : 78,
+          comparison:{score:unknown?null:78,viewing:{shared:unknown?0:10,onlyYou:unknown?0:4,onlyFriend:unknown?0:2},
+            preferences:{score:unknown?null:82,traits:unknown?0:4,examples:[]},agreement:{works:0,score:null}},
           signals: { genres: { score: unknown ? null : 82, shared: unknown ? 0 : 4, left: unknown ? 0 : 8, right: unknown ? 0 : 6, weight: 30 } },
           stats: { you: stats(unknown ? 0 : 24, unknown ? 0 : 3), friend: stats(unknown ? 0 : 18, unknown ? 0 : 2) },
           overlapCounts: { shared: unknown ? 0 : 12, onlyYou: unknown ? 0 : 4, onlyFriend: unknown ? 0 : 2 },

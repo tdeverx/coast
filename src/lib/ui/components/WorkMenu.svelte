@@ -5,7 +5,7 @@
   import CatalogueActions from '../work-menu/CatalogueActions.svelte';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
-  import TasteMatch from '#lib/profile/TasteMatch.svelte';
+  import TasteInspection from '#lib/profile/TasteInspection.svelte';
   import { canShowTaste, detailTaste, readingVolumeId } from '../pages/detail';
   import { useClient, reportFailure } from '#lib/ui/client-context.js';
   import { createOperation } from '#lib/ui/operation.svelte.js';
@@ -84,7 +84,7 @@
   {:else if isScreenWork(item)}<ScreenActions entryActions={entry ? entryMenu : undefined} tasteAction={canCalculateTaste ? calculateTaste : undefined} bind:this={screen} {editionName} {item} {context} {next} {requestable} {hero} {menuOnly} {showTrigger} />
   {:else}<CatalogueActions entryActions={entry ? entryMenu : undefined} tasteAction={canCalculateTaste ? calculateTaste : undefined} bind:this={catalogue} {item} {hero} {gameState} {readingState} {selectedPlaythrough} {ongamecreated} {onchanged} {refreshGame} primary={hero && !menuOnly} {showTrigger} />{/if}
   {#if canCalculateTaste && taste?.scope === identity}
-    <TasteMatch workId={taste.workId} group={taste.group} kind={item.kind} rating={taste.rating} adminTitle={item.title} onclose={() => { taste = undefined; }} />
+    <TasteInspection workId={taste.workId} group={taste.group} kind={item.kind} rating={taste.rating} inspect={{title:item.title,admin:true}} onclose={() => { taste = undefined; }} />
   {/if}
   {#if entry}
     <Dialog open={!!removal} onclose={() => { removal = undefined; }} title="Remove this entry?"

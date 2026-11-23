@@ -11,7 +11,10 @@ export const load = (async ({ locals, depends,params,url }) => {
   const viewedUsername=params.username??url.searchParams.get('username');
   const regularUser=locals.user?.role==='user'?locals.user:null;
   const membershipToasts=locals.user?.access?.libraryOnly ? await notificationToasts(locals.user) : [];
-  const [notifications,unreadNotifications,friendRequestCount,revision,activeShareUntil]=locals.user&&!locals.user.access?.libraryOnly?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername),regularUser?activeShareExpiry(regularUser):null]):[membershipToasts,locals.user?await notificationUnread(locals.user):0,0,null,null];
+  const userId=locals.user?.id;
+  const publication=userId&&config.experimentalCardTasteScores&&config.features.personalisation&&!config.libraryOnly
+    ? import('#lib/social/taste-cache.server.js').then(({cardTastePublication})=>cardTastePublication(userId)) : null;
+  const [notifications,unreadNotifications,friendRequestCount,revision,activeShareUntil,tastePublication]=locals.user&&!locals.user.access?.libraryOnly?await Promise.all([notificationToasts(locals.user,config.experimentalRichToasts),notificationUnread(locals.user),config.features.social?incomingFriendRequests(locals.user.id):0,contentRevision(locals.user.id,viewedUsername),regularUser?activeShareExpiry(regularUser):null,publication]):[membershipToasts,locals.user?await notificationUnread(locals.user):0,0,null,null,null];
   return {
     action:resolveAction(url.searchParams,locals.user?.settings.action,config),
     capabilities:config.features,
@@ -25,6 +28,8 @@ export const load = (async ({ locals, depends,params,url }) => {
     experimentalComics: config.experimentalComics,
     experimentalParties: config.experimentalParties,
     experimentalRichToasts: config.experimentalRichToasts,
+    experimentalCardTasteScores: config.experimentalCardTasteScores,
+    tastePublication,
     experiments:{planning:config.experimentalPlanning},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
     activeShareUntil,

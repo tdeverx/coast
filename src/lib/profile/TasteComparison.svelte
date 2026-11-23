@@ -16,20 +16,21 @@
     navigate: (href: string) => void;
   } = $props();
 
-  const media = $derived(comparisonMedia.flatMap(option => {
-    if (!page.data.capabilities[option.category]) return [];
+  const enabledMedia=$derived(comparisonMedia.filter(option=>page.data.capabilities[option.category]));
+  const media = $derived(enabledMedia.flatMap(option => {
     const result = data.comparison.media.find(({ medium }) => medium === option.value);
     return result ? [{ ...result, label: option.label }] : [];
   }));
   const mediumOptions = $derived([{ value: 'all', label: 'All media' },
-    ...media.map(({ medium, label }) => ({ value: medium, label }))]);
+    ...media.map(({ medium:value, label }) => ({ value, label }))]);
   let selected = $state('');
   const active = $derived(media.find(({medium}) => medium === (selected || data.medium))
     ?? media.find(item => item.score !== null || item.stats.you.total || item.stats.friend.total) ?? media[0]);
   const tasteMedium = $derived(tasteMedia.find(option => option.comparison === active?.medium)?.value);
+  const activityVerb = $derived(tasteMedium==='game'?'played':tasteMedium==='music'?'listened to':tasteMedium==='book'||tasteMedium==='comic'?'read':'watched');
   const activityLabels = {total:'Tracked',completed:'Completed',active:'In progress',planned:'Planned',dropped:'Dropped',rated:'Rated',reacted:'Reacted'} as const;
-  const progressById = $derived(new Map(data.comparison.media.flatMap(({ progressComparisons }) =>
-    progressComparisons.map(progress => [progress.workId, progress] as const))));
+  const progressById = $derived(new Map(data.comparison.media.flatMap(item=>item.progressComparisons)
+    .map(progress => [progress.workId, progress] as const)));
   const score = (value: number | null | undefined) => value == null ? null : `${Math.round(value)}%`;
   const progressLabel = (value: number | null) => value === null ? 'Unknown' : `${Math.round(value)}%`;
 
@@ -45,7 +46,7 @@
 <section class="section">
   <Heading variant="row" title="Taste & overlap" selection={active && {
     label:'Comparison medium',options:media.map(({medium:value,label})=>({value,label})),value:active.medium,
-    change:value => selected = value,
+    change:value => { selected = value; },
   }} />
   <MetricGrid items={[
     { label: 'Overall taste agreement', value: score(data.comparison.score), detail: 'Median across qualifying media' },
@@ -53,21 +54,25 @@
   ]} />
   {#if active}
     <div class="taste-cards">
-      <DetailCard title={`${active.label} signals`} description={`Scores use up to ${data.comparison.sampleLimit} titles per person across all media.`}>
+      <DetailCard title={`${active.label} signals`} description={`Preferences use up to ${data.comparison.sampleLimit} independently chosen works per person and medium. Rating agreement includes every shared opinion.`}>
         <FactList items={comparisonSignals(active.medium).map(name => {
           const signal = active.signals[name];
           return {
             label:tasteSignalLabel(name,tasteMedium),
             value:score(signal?.score),
             detail:signal && (signal.left || signal.right || signal.shared)
-              ? name === 'genres'
-                ? `${signal.shared} shared ${signal.shared === 1 ? 'genre' : 'genres'} · ${signal.left} / ${signal.right} titles`
-                : `${signal.shared} shared · ${signal.left} yours · ${signal.right} theirs`
+              ? `${signal.shared} shared · ${signal.left} yours · ${signal.right} theirs`
               : undefined,
           };
         })} />
       </DetailCard>
       <div class="taste-counts">
+        <DetailCard title="Shared preferences">
+          <FactList items={[
+            {label:'Preference agreement',value:score(active.comparison.preferences.score),detail:`${active.comparison.preferences.traits} comparable traits`},
+            ...active.comparison.preferences.examples.map(trait=>({label:trait.name,value:`${trait.you}% / ${trait.friend}%`,detail:'You / friend'})),
+          ]}/>
+        </DetailCard>
         <DetailCard title="Activity" description="You / friend">
           <FactList items={Object.entries(activityLabels).map(([key,label]) => {
             const stat = key as keyof typeof activityLabels;
@@ -78,6 +83,9 @@
         </DetailCard>
         <DetailCard title="Overlap">
           <FactList items={[
+            {label:`Both ${activityVerb}`,value:active.comparison.viewing.shared.toLocaleString()},
+            {label:`Only you ${activityVerb}`,value:active.comparison.viewing.onlyYou.toLocaleString()},
+            {label:`Only your friend ${activityVerb}`,value:active.comparison.viewing.onlyFriend.toLocaleString()},
             {label:'Shared items',value:active.stats.you.total || active.stats.friend.total ? active.overlapCounts.shared.toLocaleString() : null},
             {label:'Only you',value:active.stats.you.total ? active.overlapCounts.onlyYou.toLocaleString() : null},
             {label:'Only your friend',value:active.stats.friend.total ? active.overlapCounts.onlyFriend.toLocaleString() : null},

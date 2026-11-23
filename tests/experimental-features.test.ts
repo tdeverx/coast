@@ -1,8 +1,16 @@
 import { expect, test } from 'bun:test';
-import { defaultConfig } from '../src/lib/server/config';
+import { defaultConfig, parseConfig } from '../src/lib/server/config';
 import { categoryEnabled, mediumOptions, surfaceEnabled, type ExperimentalFeature } from '../src/lib/experimental';
 import { experimentalPathFeature, requireExperimentalFeature } from '../src/lib/server/experimental';
 import { mediaTypeOptions } from '../src/lib/ui/filter-options';
+import {experimentalPolicies,policyFields} from '../src/lib/settings/sections';
+
+test('the card taste experiment defaults off and can be saved from admin policies',()=>{
+  expect(parseConfig({}).experimentalCardTasteScores).toBe(false);
+  expect(experimentalPolicies.map(([key])=>key)).toContain('experimentalCardTasteScores');
+  expect(policyFields).toContain('experimentalCardTasteScores');
+  expect(parseConfig({experimentalCardTasteScores:true}).experimentalCardTasteScores).toBe(true);
+});
 
 test('each experimental medium and Parties defaults off and enables independently', () => {
   for (const feature of ['music','gaming','parties','books','comics'] as const) {

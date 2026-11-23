@@ -42,7 +42,10 @@ describe('TMDB boundary and relevant metadata', () => {
       let requests=0;
       const adapter=new TmdbAdapter(async path=>{
         requests++;expect(path).toContain('keywords');expect(path).toContain('credits');
-        return {id:10,title:'Film',name:'Show',keywords:kind==='movie'?{keywords:[{id:1,name:'Space travel'}]}:{results:[{id:1,name:'Space travel'}]},credits:{cast:[{id:2,name:'Actor'}],crew:[{id:3,name:'Director',job:'Director'},{id:4,name:'Writer',job:'Screenplay'},{id:6,name:'Score credit',job:'Original Music Composer'},{id:7,name:'Camera credit',job:'Director of Photography'}]},belongs_to_collection:{id:5,name:'Series'}};
+        const crew=[{id:3,name:'Director',job:'Director'},{id:4,name:'Writer',job:'Screenplay'},{id:6,name:'Score credit',job:'Original Music Composer'},{id:7,name:'Camera credit',job:'Director of Photography'}];
+        return {id:10,title:'Film',name:'Show',keywords:kind==='movie'?{keywords:[{id:1,name:'Space travel'}]}:{results:[{id:1,name:'Space travel'}]},credits:{cast:[{id:2,name:'Actor'}],crew},
+          ...kind==='show'?{number_of_episodes:8,aggregate_credits:{crew:crew.map(p=>({...p,jobs:[{job:p.job,episode_count:4}]}))}}:{},
+          belongs_to_collection:{id:5,name:'Series'}};
       });
       const result=await adapter.details(kind,'10',false);
       expect(requests).toBe(1);
@@ -59,8 +62,8 @@ describe('TMDB boundary and relevant metadata', () => {
     let calls=0;
     const adapter=new TmdbAdapter(async()=>{
       calls++;
-      return {id:10,name:'Series',created_by:[{id:7,name:'Co-creator'},{id:8,name:'Creator'}],
-        credits:{cast:[],crew:[{id:7,name:'Co-creator',job:'Screenplay'}]}};
+      return {id:10,name:'Series',number_of_episodes:4,created_by:[{id:7,name:'Co-creator'},{id:8,name:'Creator'}],
+        aggregate_credits:{crew:[{id:7,name:'Co-creator',jobs:[{job:'Screenplay',episode_count:2}]}]}};
     });
     const result=await adapter.details('show','10',false);
     expect(calls).toBe(1);

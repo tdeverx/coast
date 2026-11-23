@@ -1,0 +1,598 @@
+{
+  "cellOrder": [
+    "neither",
+    "first only",
+    "second only",
+    "both"
+  ],
+  "profiles": [
+    {
+      "medium": "movie",
+      "ratings": true,
+      "activeGrading": true,
+      "trainedPairCount": 5,
+      "viewingReturnPairs": 0,
+      "ratedRoots": 444,
+      "literalThemedRated": 0,
+      "catalogue": 4892,
+      "literalThemedCatalogue": 0,
+      "changedWhenDroppingPairs": 0,
+      "abstained": 33,
+      "patterns": [
+        {
+          "first": [
+            "studios",
+            "studio ghibli"
+          ],
+          "second": [
+            "tags",
+            "tmdb:210024"
+          ],
+          "cells": [
+            {
+              "trials": 441,
+              "families": 343,
+              "meanStars": 4.1,
+              "low": 7,
+              "high": 323
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 3,
+              "families": 3,
+              "meanStars": 4.67,
+              "low": 0,
+              "high": 3
+            }
+          ],
+          "anchors": 83,
+          "v1": [
+            82,
+            82,
+            31,
+            83
+          ],
+          "graded": [
+            80,
+            80,
+            81,
+            81
+          ],
+          "learnedOffset": null
+        },
+        {
+          "first": [
+            "directors",
+            "tmdb:525"
+          ],
+          "second": [
+            "genres",
+            "science fiction"
+          ],
+          "cells": [
+            {
+              "trials": 316,
+              "families": 260,
+              "meanStars": 4.08,
+              "low": 7,
+              "high": 234
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 126,
+              "families": 86,
+              "meanStars": 4.15,
+              "low": 0,
+              "high": 90
+            },
+            {
+              "trials": 2,
+              "families": 2,
+              "meanStars": 4,
+              "low": 0,
+              "high": 2
+            }
+          ],
+          "anchors": 566,
+          "v1": [
+            80,
+            81,
+            81,
+            82
+          ],
+          "graded": [
+            80,
+            80,
+            80,
+            80
+          ],
+          "learnedOffset": null
+        },
+        {
+          "first": [
+            "studios",
+            "pixar"
+          ],
+          "second": [
+            "genres",
+            "animation"
+          ],
+          "cells": [
+            {
+              "trials": 384,
+              "families": 289,
+              "meanStars": 4.08,
+              "low": 7,
+              "high": 279
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 45,
+              "families": 43,
+              "meanStars": 4.3,
+              "low": 0,
+              "high": 35
+            },
+            {
+              "trials": 15,
+              "families": 14,
+              "meanStars": 4.1,
+              "low": 0,
+              "high": 12
+            }
+          ],
+          "anchors": 622,
+          "v1": [
+            80,
+            80,
+            82,
+            82
+          ],
+          "graded": [
+            80,
+            80,
+            81,
+            81
+          ],
+          "learnedOffset": null
+        }
+      ]
+    },
+    {
+      "medium": "movie",
+      "ratings": false,
+      "activeGrading": false,
+      "trainedPairCount": 0,
+      "viewingReturnPairs": 0,
+      "ratedRoots": 444,
+      "literalThemedRated": 0,
+      "catalogue": 4892,
+      "literalThemedCatalogue": 0,
+      "changedWhenDroppingPairs": 0,
+      "abstained": 33,
+      "patterns": [
+        {
+          "first": [
+            "studios",
+            "studio ghibli"
+          ],
+          "second": [
+            "tags",
+            "tmdb:210024"
+          ],
+          "cells": [
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            }
+          ],
+          "anchors": 83,
+          "v1": [
+            61,
+            61,
+            15,
+            61
+          ],
+          "graded": [
+            76,
+            78,
+            76,
+            78
+          ],
+          "learnedOffset": null
+        },
+        {
+          "first": [
+            "directors",
+            "tmdb:525"
+          ],
+          "second": [
+            "genres",
+            "science fiction"
+          ],
+          "cells": [
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            }
+          ],
+          "anchors": 566,
+          "v1": [
+            61,
+            62,
+            61,
+            62
+          ],
+          "graded": [
+            78,
+            79,
+            78,
+            79
+          ],
+          "learnedOffset": null
+        },
+        {
+          "first": [
+            "studios",
+            "pixar"
+          ],
+          "second": [
+            "genres",
+            "animation"
+          ],
+          "cells": [
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            }
+          ],
+          "anchors": 622,
+          "v1": [
+            62,
+            62,
+            62,
+            62
+          ],
+          "graded": [
+            79,
+            81,
+            79,
+            81
+          ],
+          "learnedOffset": null
+        }
+      ]
+    },
+    {
+      "medium": "show",
+      "ratings": true,
+      "activeGrading": true,
+      "trainedPairCount": 9,
+      "viewingReturnPairs": 0,
+      "ratedRoots": 429,
+      "literalThemedRated": 0,
+      "catalogue": 3558,
+      "literalThemedCatalogue": 0,
+      "changedWhenDroppingPairs": 0,
+      "abstained": 11,
+      "patterns": [
+        {
+          "first": [
+            "networks",
+            "hbo"
+          ],
+          "second": [
+            "genres",
+            "drama"
+          ],
+          "cells": [
+            {
+              "trials": 157,
+              "families": 157,
+              "meanStars": 3.69,
+              "low": 24,
+              "high": 79
+            },
+            {
+              "trials": 1,
+              "families": 1,
+              "meanStars": 5,
+              "low": 0,
+              "high": 1
+            },
+            {
+              "trials": 259,
+              "families": 259,
+              "meanStars": 4.1,
+              "low": 8,
+              "high": 198
+            },
+            {
+              "trials": 12,
+              "families": 12,
+              "meanStars": 4.29,
+              "low": 1,
+              "high": 9
+            }
+          ],
+          "anchors": 1540,
+          "v1": [
+            81,
+            81,
+            84,
+            85
+          ],
+          "graded": [
+            76,
+            77,
+            81,
+            83
+          ],
+          "learnedOffset": null
+        }
+      ]
+    },
+    {
+      "medium": "show",
+      "ratings": false,
+      "activeGrading": false,
+      "trainedPairCount": 0,
+      "viewingReturnPairs": 0,
+      "ratedRoots": 429,
+      "literalThemedRated": 0,
+      "catalogue": 3558,
+      "literalThemedCatalogue": 0,
+      "changedWhenDroppingPairs": 0,
+      "abstained": 13,
+      "patterns": [
+        {
+          "first": [
+            "networks",
+            "hbo"
+          ],
+          "second": [
+            "genres",
+            "drama"
+          ],
+          "cells": [
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            },
+            {
+              "trials": 0,
+              "families": 0,
+              "meanStars": null,
+              "low": 0,
+              "high": 0
+            }
+          ],
+          "anchors": 1534,
+          "v1": [
+            63,
+            63,
+            67,
+            67
+          ],
+          "graded": [
+            66,
+            66,
+            70,
+            70
+          ],
+          "learnedOffset": null
+        }
+      ]
+    }
+  ],
+  "networkThemeFixture": [
+    {
+      "name": "independent four cells",
+      "cells": [
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 3.5,
+          "low": 0,
+          "high": 0
+        },
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 2.5,
+          "low": 20,
+          "high": 0
+        },
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 2.5,
+          "low": 20,
+          "high": 0
+        },
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 5,
+          "low": 0,
+          "high": 20
+        }
+      ],
+      "arms": {
+        "context": {
+          "offset": 10,
+          "activeGrading": false,
+          "withPair": 84,
+          "withoutPairs": 74
+        },
+        "calibrated": {
+          "offset": 10,
+          "activeGrading": false,
+          "withPair": 80,
+          "withoutPairs": 80
+        }
+      }
+    },
+    {
+      "name": "always co-occur",
+      "cells": [
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 3.5,
+          "low": 0,
+          "high": 0
+        },
+        {
+          "trials": 0,
+          "families": 0,
+          "meanStars": null,
+          "low": 0,
+          "high": 0
+        },
+        {
+          "trials": 0,
+          "families": 0,
+          "meanStars": null,
+          "low": 0,
+          "high": 0
+        },
+        {
+          "trials": 20,
+          "families": 20,
+          "meanStars": 5,
+          "low": 0,
+          "high": 20
+        }
+      ],
+      "arms": {
+        "context": {
+          "offset": null,
+          "activeGrading": false,
+          "withPair": 98,
+          "withoutPairs": 98
+        },
+        "calibrated": {
+          "offset": null,
+          "activeGrading": false,
+          "withPair": 93,
+          "withoutPairs": 93
+        }
+      }
+    }
+  ]
+}

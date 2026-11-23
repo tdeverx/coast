@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   integer,
+  smallint,
   bigint,
   boolean,
   date,
@@ -1585,8 +1586,21 @@ export const gameVariants=pgTable('game_variants',{
 export const userTasteProfiles=pgTable('user_taste_profiles',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),revision:text('revision').notNull(),
  profile:jsonb('profile').$type<import('#lib/social/taste-profile.js').SavedTasteProfile>().notNull(),
- scoring:jsonb('scoring').$type<import('#lib/social/taste-profile.js').TasteReference>(),updatedAt:updatedAt(),
+ scoring:jsonb('scoring').$type<import('#lib/social/taste-profile.js').TasteReference>(),shortlistRevision:text('shortlist_revision'),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.userId,t.medium]})]);
+export const userTasteMatchModels=pgTable('user_taste_match_models',{
+ userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),fold:smallint('fold').notNull(),
+ revision:text('revision').notNull(),model:jsonb('model').notNull(),evidence:jsonb('evidence').notNull(),
+ publishedAt:timestamp('published_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.userId,t.medium,t.fold]}),check('user_taste_match_models_fold',sql`${t.fold} between -1 and 4`)]);
+export const userTasteMatchMembers=pgTable('user_taste_match_members',{
+ userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),
+ root:uuid('root').notNull().references(()=>works.id,{onDelete:'cascade'}),fold:smallint('fold').notNull(),
+},t=>[primaryKey({columns:[t.userId,t.root]}),check('user_taste_match_members_fold',sql`${t.fold} between 0 and 4`)]);
+export const workTasteSynopses=pgTable('work_taste_synopses',{
+ workId:uuid('work_id').primaryKey().references(()=>works.id,{onDelete:'cascade'}),
+ model:text('model').notNull(),synopsisSha256:text('synopsis_sha256').notNull(),embedding:real('embedding').array().notNull(),
+},t=>[check('work_taste_synopses_dimension',sql`cardinality(${t.embedding})=384`)]);
 export const userTasteScores=pgTable('user_taste_scores',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),
  score:real('score'),confidence:real('confidence').notNull(),revision:text('revision').notNull(),
