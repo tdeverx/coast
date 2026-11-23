@@ -379,6 +379,7 @@ async function refreshAncestors(
     // SHARE allows other users' watches and FK checks, but fences membership import.
     await tx.select({ id: media.id }).from(media).where(eq(media.id, parentId)).for('share');
   }
+  const restoredParents: string[] = [];
   for (const [parentId, kind] of orderedParents) {
     const existing = await ensureProjection(tx, userId, parentId);
     const [children] = await tx
@@ -402,6 +403,7 @@ async function refreshAncestors(
     const total = children.total;
     const completed = children.completed;
     const watched = total > 0 && completed === total;
+    const dropped = preserveTrackingStatus && existing.dropped;
     const lastWatchedAt = children.lastWatchedAt ?? (rebuilding ? null : existing.lastWatchedAt);
     await tx
       .update(trackingState)
@@ -409,7 +411,7 @@ async function refreshAncestors(
         totalEpisodes: total,
         completedEpisodes: completed,
         watched,
-        dropped: preserveTrackingStatus ? existing.dropped : false,
+        dropped,
         playCount: rebuilding
           ? children.minimumPlayCount
           : !existing.watched && watched
@@ -419,8 +421,14 @@ async function refreshAncestors(
         updatedAt: new Date(),
       })
       .where(trackingKey(userId, parentId));
+    if (existing.dropped && !dropped && !existing.paused) restoredParents.push(parentId);
   }
   await refreshCollections(tx, userId, [...ids, ...parents.keys()], rebuilding);
+  if (restoredParents.length) {
+    const { enqueueTraktChangeInTransaction } = await import('#lib/sync/changes.server.js');
+    for (const mediaId of restoredParents)
+      await enqueueTraktChangeInTransaction(tx, userId, { mediaId, category: 'trackingStatus', remove: true });
+  }
 }
 
 async function refreshCollections(

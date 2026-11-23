@@ -1,0 +1,25 @@
+{
+  "epoch": "2026-11-23-trakt-ancestor-status",
+  "baseline": "0febc66592b81783c2fb7da0703dd184a5ead3de",
+  "blanketAcceptance": false,
+  "scope": [
+    "Queue optional Trakt show-status export when native episode tracking restores an ancestor, including bulk mutations."
+  ],
+  "verification": {
+    "hosted": false
+  },
+  "files": {
+    "src/lib/core/tracking/service.server.ts": {
+      "previous": "160a6c53ed5bdeb51fd614188834b7a4a16f46d8c5af84c83aa5d04a1629292b",
+      "current": "84b254f215bd135002c2bb62451854412b07b0d8d1addb3097ebb8c4ce6247e9"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "5bc52adf8e361bbf5a7c3453ad1258cb6fae1fb30e416087412d99bc9a513dc5",
+      "current": "44bf8cbc746ef614c7b474e1252794ee9354b93f88e53083678e34f91f044de1"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "4d05191c795ef0b5056e4755dd2713b00c655561b205a975fb6ba2139777c5fc",
+      "current": "959be1e7879c1f411ffeb04fc3a78b723671b93de503d02af44de176108aa6ee"
+    }
+  }
+}
