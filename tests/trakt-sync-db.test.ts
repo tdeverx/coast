@@ -13,15 +13,17 @@ import * as tmdb from '../src/lib/providers/tmdb/connection.server';
 import { resolveTrakt } from '../src/lib/catalogue/trakt-identity.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import * as trakt from '../src/lib/providers/trakt/connection.server';
+import { initialTraktSync } from '../src/lib/providers/trakt/access';
 import { executeTraktListExport, exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
-import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
+import { executeLiveScrobble, executeProgressExport, executeTraktExport, exportShowTracking, exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
 import { importJellyfinPlayback } from '../src/lib/sync/jellyfin-playback.server';
 import { removeHistory } from '../src/lib/sync/history-removal.server';
 import { mediaHistory } from '../src/lib/server/queries/media-actions';
 import { detailsData } from '../src/lib/server/queries/media';
 import { changeContinue } from '../src/lib/core/tracking/continue.server';
-import { episodes, externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, removedTrackingSources, seasons, socialLiveDeliveries, socialScrobbleDeliveries, syncValues, trackingEvents, trackingState, traktImportRecords, traktImportStages, users } from '../src/lib/server/db/schema';
+import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
+import { episodes, externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, removedTrackingSources, rewatches, seasons, socialLiveDeliveries, socialScrobbleDeliveries, syncValues, trackingEvents, trackingState, traktImportRecords, traktImportStages, users } from '../src/lib/server/db/schema';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 
@@ -170,6 +172,134 @@ afterAll(async()=>{
   if(mediaIds.length)await getDb().delete(media).where(inArray(media.id,[...new Set(mediaIds)]));
 });
 
+run('Trakt show tracking preserves Coast pauses and viewing history through drop and rewatch sync', async () => {
+  const db = getDb();
+  const [person] = await db.insert(users).values({ username: `show-sync-${prefix}` }).returning();
+  const showTraktId = numericId + 899;
+  const show = { title: 'Show tracking fixture', ids: { trakt: showTraktId } };
+  const trackedShow = await ingestMetadata({
+    provider: 'trakt', externalId: String(showTraktId), kind: 'show', title: show.title,
+  });
+  const episode = await ingestMetadata({
+    provider: 'trakt', externalId: String(numericId + 900), kind: 'episode', title: 'Previous watch', seasonNumber: 1, episodeNumber: 1,
+  }, { showId: trackedShow.id });
+  mediaIds.push(trackedShow.id, episode.id);
+  const personal = { ...sync, ratings: false, watchlist: false, lists: false, trackingStatus: true, rewatch: true };
+  const first = '2024-03-01T13:30:00.000Z';
+  const second = '2024-04-01T14:30:00.000Z';
+  let remoteDate: string | null = first, remoteDropped = true, omitFromRewatchList = false;
+  const writes: string[] = [];
+  const adapter = new TraktAdapter(async (path, init) => {
+    const method = init?.method ?? 'GET';
+    const [route, query] = path.split('?');
+    if (method === 'GET') {
+      if (route === '/sync/last_activities') return { all: '2024-04-01T14:30:00.000Z' };
+      if (route === '/users/hidden/dropped')
+        return new URLSearchParams(query).get('page') === '1' && remoteDropped ? [{ show }] : [];
+      if (route === '/sync/progress/watched')
+        return new URLSearchParams(query).get('page') === '1' && remoteDate && !omitFromRewatchList
+          ? [{ show, progress: { reset_at: remoteDate } }] : [];
+      if (route === `/shows/${showTraktId}/progress/watched`) return { reset_at: remoteDate };
+      if (route === `/search/trakt/${showTraktId}` && query === 'type=show') return [{ show }];
+      throw new Error(`Unexpected Trakt read ${path}`);
+    }
+    writes.push(`${method} ${route}`);
+    if (route.startsWith('/users/hidden/dropped')) {
+      expect(JSON.parse(String(init?.body))).toEqual({ shows: [{ ids: { trakt: showTraktId } }] });
+      remoteDropped = !route.endsWith('/remove');
+      return { [remoteDropped ? 'added' : 'deleted']: { shows: 1 }, not_found: {} };
+    }
+    expect(route).toBe(`/shows/${showTraktId}/progress/watched/reset`);
+    remoteDate = method === 'DELETE' ? null : JSON.parse(String(init?.body)).reset_at;
+    return remoteDate ? { reset_at: remoteDate } : null;
+  }, 'fixture-client', 'fixture-secret');
+  try {
+    const [account] = await db.insert(providerConnections).values({
+      userId: person.id, instanceId, status: 'connected', externalUserId: 'show-sync',
+      settings: { traktSync: { import: personal, export: {} } },
+    }).returning();
+    const state = async () => (await db.select().from(trackingState).where(and(
+      eq(trackingState.userId, person.id), eq(trackingState.mediaId, trackedShow.id),
+    )))[0];
+    const boundary = async () => (await db.select().from(rewatches).where(and(
+      eq(rewatches.userId, person.id), eq(rewatches.mediaId, trackedShow.id),
+    )))[0]?.startedAt.toISOString();
+    const jobs = () => db.select().from(outboxActions).where(and(
+      eq(outboxActions.userId, person.id), eq(outboxActions.kind, 'trakt.export'), eq(outboxActions.state, 'pending'),
+    ));
+    const importTracking = async () => {
+      const [job] = await db.insert(outboxActions).values({
+        userId: person.id, connectionId: account.id, accountGeneration: account.accountGeneration,
+        kind: 'trakt.import', payload: {}, state: 'running', attempts: 1,
+      }).returning();
+      try {
+        for (let chunk = 0; chunk < 10; chunk++) {
+          try {
+            return await jobExecution.run({ id: job.id, attempts: 1, purpose: 'scheduled', started: performance.now(), checkpoints: 0 },
+              () => importTraktFromAdapter(person.id, account.id, { adapter, sync: personal }));
+          } catch (error) {
+            if (!(error instanceof JobYield)) throw error;
+          }
+        }
+        throw new Error('The show census did not finish after resuming.');
+      } finally {
+        await db.delete(outboxActions).where(eq(outboxActions.id, job.id));
+      }
+    };
+    const deliver = async () => {
+      for (const job of await jobs()) {
+        const category = job.payload.category as 'trackingStatus' | 'rewatch';
+        await exportShowTracking(person.id, account.id, category, job.payload, { connection: account, adapter, sync: personal });
+        await db.update(outboxActions).set({ state: 'succeeded' }).where(eq(outboxActions.id, job.id));
+      }
+    };
+    await trackWithExports(person.id, { mediaId: episode.id, action: 'watch', occurredAt: '2024-01-01T12:00:00Z', acknowledged: true });
+    await importTracking();
+    expect(await state()).toMatchObject({ paused: false, dropped: true, playCount: 1 });
+    expect(await boundary()).toBe(first);
+    expect(await jobs()).toHaveLength(0);
+    await trackWithExports(person.id, { mediaId: trackedShow.id, action: 'pause' });
+    omitFromRewatchList = true;
+    await importTracking();
+    expect(await state()).toMatchObject({ paused: true, dropped: false, playCount: 1 });
+    expect(await boundary()).toBe(first);
+    expect(writes).toEqual([]);
+    const grants = initialTraktSync();
+    await trakt.updateSyncPreferences(person.id, account.id, {
+      accountGeneration: account.accountGeneration,
+      traktSync: { import: { ...grants.import, ...personal }, export: { ...grants.export, ...personal } },
+    });
+    expect((await jobs()).map(job => job.payload.category).sort()).toEqual(['rewatch', 'trackingStatus']);
+    await deliver();
+    expect(writes).toEqual(['POST /users/hidden/dropped']);
+    writes.length = 0;
+    await setRewatch(person.id, { mediaId: trackedShow.id, startedAt: second });
+    await deliver();
+    expect(remoteDate).toBe(second);
+    expect(remoteDropped).toBe(true);
+    await setRewatch(person.id, { mediaId: trackedShow.id, startedAt: null });
+    await trackWithExports(person.id, { mediaId: trackedShow.id, action: 'resume' });
+    await deliver();
+    expect(remoteDate).toBeNull();
+    expect(remoteDropped).toBe(false);
+    expect(await boundary()).toBeUndefined();
+    await changeContinue(person.id, { mediaId: trackedShow.id, action: 'remove' });
+    await deliver();
+    expect(remoteDropped).toBe(true);
+    remoteDropped = false;
+    await importTracking();
+    expect(await state()).toMatchObject({ paused: false, dropped: false, playCount: 1 });
+    expect(writes).toEqual([
+      `POST /shows/${showTraktId}/progress/watched/reset`,
+      `DELETE /shows/${showTraktId}/progress/watched/reset`,
+      'POST /users/hidden/dropped/remove',
+      'POST /users/hidden/dropped',
+    ]);
+  } finally {
+    await db.delete(users).where(eq(users.id, person.id));
+  }
+});
+
 run('season ratings, watchlist and mixed-list imports preserve season identity and Coast ratings',async()=>{
   const paths:string[]=[];
   const adapter=new TraktAdapter(async(path)=>{
@@ -294,12 +424,18 @@ run('an export-only account delivers native history and a private list without i
     credentials:await encryptCredential(JSON.stringify({access_token:'synthetic',refresh_token:'synthetic',created_at:Math.floor(Date.now()/1000),expires_in:3600}))}).returning();
   await db.update(providerInstances).set({baseUrl:'https://api.trakt.tv',credentials:await encryptCredential(JSON.stringify({clientId:'synthetic',clientSecret:'synthetic'}))}).where(eq(providerInstances.id,instanceId));
   const writes:{path:string;body:Record<string,unknown>}[]=[];
+  const historyReads: string[] = [];
   const transport=spyOn(network,'createProviderTransport').mockImplementation(config=>async(path,init={})=>{
     await config.beforeDispatch?.();
     const route=path.split('?')[0];
     if(!init.method||init.method==='GET'){
       if(route==='/users/me/watching')return null;
-      if(route==='/sync/history'||route===`/sync/history/movies/${numericId}`||route==='/users/me/lists')return [];
+      if (route === `/search/trakt/${numericId}`) return [remoteItems[1]];
+      if (route === `/sync/history/movies/${numericId}`) {
+        historyReads.push(path);
+        return [];
+      }
+      if(route==='/users/me/lists')return [];
       if(route==='/users/me/lists/45/items/movie,show,season,episode')return [remoteItems[1]];
     }else if(init.method==='POST'){
       writes.push({path:route,body:JSON.parse(String(init.body))});
@@ -318,9 +454,17 @@ run('an export-only account delivers native history and a private list without i
     await executeTraktListExport(otherId,account.id,{listId:list.id});
     expect(writes.map(row=>row.path)).toEqual(['/sync/history','/users/me/lists','/users/me/lists/45/items','/users/me/lists/45/items/reorder']);
     expect(writes[0].body.movies).toEqual([{ids:{trakt:numericId},watched_at:occurredAt}]);
+    const historyPath = `/sync/history/movies/${numericId}`;
+    const dates = new URLSearchParams({ start_at: occurredAt, end_at: occurredAt, limit: '100' });
+    expect(historyReads).toEqual([`${historyPath}?limit=1`, `${historyPath}?${dates}`]);
     expect(writes[1].body.privacy).toBe('private');
     const episode=await ingestMetadata({provider:'trakt',externalId:`${numericId}:episode:1:7`,kind:'episode',title:'Unmapped episode',seasonNumber:1,episodeNumber:7,runtimeMinutes:24},{showId,seasonId});
     mediaIds.push(episode.id);
+    await trackWithExports(otherId,{mediaId:episode.id,action:'watch',occurredAt});
+    const job = await db.select().from(outboxActions).where(and(eq(outboxActions.connectionId,account.id),eq(outboxActions.kind,'trakt.export')));
+    const unmatched = job.find(row=>row.payload.mediaId===episode.id)!;
+    expect(await executeTraktExport(otherId,account.id,unmatched.payload)).toEqual({skipped:1});
+    expect(await db.select().from(syncValues).where(and(eq(syncValues.connectionId,account.id),eq(syncValues.mediaId,episode.id)))).toHaveLength(0);
     await db.update(providerConnections).set({settings:{...account.settings,sync:{...sync,scrobble:true,progress:true}}}).where(eq(providerConnections.id,account.id));
     const sessionId=crypto.randomUUID();
     expect(await executeLiveScrobble(otherId,account.id,{mediaId:episode.id,sessionId,event:'stop',progress:100})).toEqual({skipped:1});
@@ -330,8 +474,24 @@ run('an export-only account delivers native history and a private list without i
     expect(await db.select().from(socialScrobbleDeliveries).where(eq(socialScrobbleDeliveries.sessionId,sessionId))).toHaveLength(0);
     expect(await db.select().from(socialLiveDeliveries).where(eq(socialLiveDeliveries.checkinId,checkin.id))).toHaveLength(0);
     expect(writes).toHaveLength(4);
-    expect((await db.select().from(trackingEvents).where(eq(trackingEvents.userId,otherId))).map(event=>event.source)).toEqual(['coast']);
+    expect((await db.select().from(trackingEvents).where(eq(trackingEvents.userId,otherId))).map(event=>event.source)).toEqual(['coast','coast']);
   }finally{transport.mockRestore();}
+});
+
+run('history export skips a Trakt ID already attached to another Coast movie', async () => {
+  const tmdbId = numericId + 25;
+  const { id } = await ingestMetadata({ provider: 'tmdb', externalId: String(tmdbId), kind: 'movie', title: 'Movie with conflicting ownership' });
+  mediaIds.push(id);
+  const paths: string[] = [];
+  const adapter = new TraktAdapter(async path => {
+    paths.push(path);
+    return [{ movie: { title: 'Movie sharing show ID', ids: { trakt: numericId, tmdb: tmdbId } } }];
+  }, 'fixture', 'fixture');
+  const result = await exportTraktToAdapter(userId, {
+    mediaId: id, category: 'history', occurredAt: '2025-03-08T12:00:00.000Z',
+  }, { adapter, sync: { ...sync, history: true } });
+  expect(result).toEqual({ skipped: 1 });
+  expect(paths).toEqual([`/search/tmdb/${tmdbId}?type=movie`]);
 });
 
 run('staged history follows a verified TMDB episode across numbering differences and a conflicting IMDb alias', async () => {

@@ -11,11 +11,16 @@
   const rows = [
     { label: 'Watch history', icon: 'history', import: 'history', export: 'history' },
     { label: 'Viewing progress', icon: 'play', import: 'progress', export: 'progress' },
+    { label: 'Paused and dropped shows', icon: 'pause', import: 'trackingStatus', export: 'trackingStatus',
+      detail: 'Trakt records paused and dropped shows as dropped.' },
+    { label: 'Show rewatch dates', icon: 'refresh', import: 'rewatch', export: 'rewatch',
+      detail: 'Exporting show rewatch dates requires Trakt VIP.' },
     { label: 'Collection', icon: 'collection', import: 'collection', export: 'collection' },
     { label: 'Ratings', icon: 'star', import: 'ratings', export: 'ratings' },
     { label: 'Watchlist', icon: 'bookmark', import: 'watchlist', export: 'watchlist' },
     { label: 'Custom lists', icon: 'list', import: 'lists', export: 'lists' },
-    { label: 'Live activity', icon: 'broadcast', import: 'live', export: 'scrobble' },
+    { label: 'Live activity', icon: 'broadcast', import: 'live', export: 'scrobble',
+      detail: 'Live activity export sends scrobbles and check-ins. Trakt can turn completed sessions into watch history.' },
     { label: 'Recommendations', icon: 'heart', import: 'recommendations' },
   ] as const;
   type Activity = (typeof rows)[number];
@@ -33,10 +38,10 @@
   <div class="activity">
     <Icon name={row.icon} size={16} />
     <span>{row.label}</span>
-    {#if row.import === 'live'}
+    {#if 'detail' in row}
       <div class="sync-info-slot">
-        <Button menu align="end" icon="info" iconSize={16} label="About Live activity export" triggerClass="icon-button field-info">
-          <Button item text="Live activity export sends scrobbles and check-ins. Trakt can turn completed sessions into watch history." />
+        <Button menu align="end" icon="info" iconSize={16} label={`About ${row.label}`} triggerClass="icon-button field-info">
+          <Button item text={row.detail} />
         </Button>
       </div>
     {/if}

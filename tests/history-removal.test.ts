@@ -165,7 +165,12 @@ run(
         });
       await db
         .insert(s.providerConnections)
-        .values({ id: connection, instanceId: instance, userId: owner });
+        .values({
+          id: connection,
+          instanceId: instance,
+          userId: owner,
+          settings: { traktSync: { export: { history: true } } },
+        });
       const watched = await track(owner, {
         mediaId: episode,
         action: 'watch',
@@ -227,7 +232,8 @@ test('Trakt removal uses exact history IDs and fails ambiguous matching before a
     sourceEventId: null,
     occurredAt: '2025-01-01T12:00:00.000Z',
   };
-  await removeTraktHistory(adapter, 'connection', 'movie', { trakt: 9 }, [
+  const resolveId = async () => 9;
+  await removeTraktHistory(adapter, 'connection', 'movie', resolveId, [
     event,
     { ...event, source: 'trakt', sourceEventId: 'connection:history:42' },
   ]);
@@ -235,15 +241,20 @@ test('Trakt removal uses exact history IDs and fails ambiguous matching before a
   writes.length = 0;
   matches = [...matches, { ...matches[0], id: 74 }];
   await expect(
-    removeTraktHistory(adapter, 'connection', 'movie', { trakt: 9 }, [event])
+    removeTraktHistory(adapter, 'connection', 'movie', resolveId, [event])
   ).rejects.toThrow('Multiple Trakt watches');
   expect(writes).toHaveLength(0);
   await expect(
-    removeTraktHistory(adapter, 'connection', 'movie', { trakt: 9 }, [
+    removeTraktHistory(adapter, 'connection', 'movie', resolveId, [
       { ...event, occurredAt: null },
     ])
   ).rejects.toThrow('no date');
   matches = [];
-  await removeTraktHistory(adapter, 'connection', 'movie', { trakt: 9 }, [event]);
+  await removeTraktHistory(adapter, 'connection', 'movie', resolveId, [event]);
   expect(writes).toHaveLength(0);
+  expect(await removeTraktHistory(adapter, 'connection', 'movie', async () => undefined, [
+    event,
+    { ...event, source: 'trakt', sourceEventId: 'connection:history:42' },
+  ])).toEqual({ skipped: 1 });
+  expect(writes).toEqual([['history', { ids: [42] }, true]]);
 });

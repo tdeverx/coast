@@ -17,15 +17,19 @@ import {
   syncValues,
   socialScrobbleDeliveries,
   providerConnections,
+  type JsonObject,
 } from '#lib/server/db/schema.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import type { SyncPreferences } from '#lib/providers/contracts.js';
 import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
-import { traktEntry, traktPlurals, exportIdentity, exportTarget } from '#lib/sync/trakt-identity.server.js';
+import { traktEntry, traktPlurals, exportIdentity, exportTarget, resolveTraktHistoryTarget, resolveTraktShowTarget } from '#lib/sync/trakt-identity.server.js';
+import { isTraktShowTrackingFeature, type TraktShowTrackingFeature } from '#lib/providers/trakt/access.js';
+
+type HistoryTarget = NonNullable<Awaited<ReturnType<typeof resolveTraktHistoryTarget>>>;
 
 /** Read the provider value before overwriting it; imports alone cannot detect edits made since the last sync. */
-export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {
+export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: Exclude<ValueCategory, 'history' | TraktShowTrackingFeature>) {
   const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
   if (!item || item.kind === 'collection' || category === 'favourite')
     throw new PermanentActionError('Unsupported Trakt value.');
@@ -94,11 +98,13 @@ export async function executeTraktExport(
   connectionId: string,
   input: Record<string, unknown>
 ) {
-  const category = input.category as ValueCategory;
-  if (!['history', 'collection', 'ratings', 'watchlist'].includes(category))
+  const category = input.category;
+  if (isTraktShowTrackingFeature(category))
+    return exportShowTracking(userId, connectionId, category, input, await getTrakt(userId, connectionId, 'export', category));
+  if (category !== 'history' && category !== 'collection' && category !== 'ratings' && category !== 'watchlist')
     throw new PermanentActionError('Unsupported Trakt export.');
-  const context = await getTrakt(userId, connectionId, 'export', category === 'favourite' ? undefined : category);
-  if (!context.sync[category as keyof SyncPreferences]) return;
+  const context = await getTrakt(userId, connectionId, 'export', category);
+  if (!context.sync[category]) return;
   const mediaId = String(input.mediaId);
   const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, mediaId));
   if (item?.kind === 'show' && !(await exportTarget(mediaId, item.kind))) return;
@@ -109,7 +115,16 @@ export async function executeTraktExport(
     localSyncValue(tx, userId, mediaId, category)
   );
   if (!sameValue(local, desired)) return;
-  const remote = await readTraktValue(context.adapter, mediaId, category);
+  let history: HistoryTarget | undefined;
+  let remote: JsonObject;
+  if (category === 'history') {
+    if (item?.kind !== 'movie' && item?.kind !== 'episode') return {skipped:1};
+    history = await resolveTraktHistoryTarget(context.adapter, mediaId, item.kind);
+    if (!history) return {skipped:1};
+    remote = { value: (await context.adapter.historyFor(history.kind, history.id)).length > 0 };
+  } else {
+    remote = await readTraktValue(context.adapter, mediaId, category);
+  }
   const decision = await reconcileProviderValue(
     userId,
     connectionId,
@@ -122,17 +137,66 @@ export async function executeTraktExport(
   );
   if (decision === 'conflict') return {applied:0,review:1};
   if (decision === 'remote') return;
-  await exportTraktToAdapter(userId, input, context);
+  const result = await dispatchTraktExport(userId, input, context, history);
+  if (result?.skipped) return result;
   await acknowledgeProviderValue(userId, connectionId, String(input.mediaId), category, {
     value: category === 'ratings' ? (input.remove ? null : input.value) : !input.remove,
   },context.connection.accountGeneration);
 }
 
+export async function exportShowTracking(
+  userId: string, connectionId: string, category: TraktShowTrackingFeature,
+  input: Record<string, unknown>, context: Pick<Awaited<ReturnType<typeof getTrakt>>, 'adapter' | 'sync' | 'connection'>
+) {
+  const { adapter, sync, connection } = context;
+  if (!sync[category]) return;
+  const { mediaId, remove, occurredAt } = v.parse(v.object({
+    mediaId: v.pipe(v.string(), v.uuid()),
+    remove: v.optional(v.boolean(), false),
+    occurredAt: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.transform(date => new Date(date).toISOString()))),
+  }), input);
+  if (category === 'rewatch' && !remove && !occurredAt)
+    throw new PermanentActionError('The rewatch has no start date.');
+  const desired = { value: category === 'trackingStatus' ? !remove : remove ? null : occurredAt! };
+  const current = () => getDb().transaction(tx => localSyncValue(tx, userId, mediaId, category));
+  if (!sameValue(await current(), desired)) return;
+  const [item] = await getDb().select({ kind: media.kind }).from(media).where(eq(media.id, mediaId));
+  if (item?.kind !== 'show' && item?.kind !== 'season') return { skipped: 1 };
+  const id = await resolveTraktShowTarget(adapter, mediaId, item.kind);
+  if (!id) return { skipped: 1 };
+  const generation = connection.accountGeneration;
+  if (category === 'rewatch') {
+    const remote = { value: await adapter.showRewatchDate(id) };
+    const decision = await reconcileProviderValue(userId, connectionId, mediaId, category, remote, {
+      source: 'trakt', traktDirection: 'export', accountGeneration: generation,
+    });
+    if (decision === 'conflict') return { applied: 0, review: 1 };
+    if (decision !== 'local' || !sameValue(await current(), desired)) return;
+    if (await adapter.writeShowRewatch(id, remove ? null : occurredAt!) !== desired.value)
+      throw new PermanentActionError('Trakt saved a different rewatch start date. Review the date before retrying.');
+  } else {
+    // The explicit local edit is a binary, idempotent write. There is no reason
+    // to fetch the whole remote drop list for every edited show.
+    if (!sameValue(await current(), desired)) return;
+    await adapter.writeDroppedShow(id, !remove);
+  }
+  await acknowledgeProviderValue(userId, connectionId, mediaId, category, desired, generation);
+}
+
 /** Shared dispatch engine; only server-resolved adapters can reach it. */
-export async function exportTraktToAdapter(
+export function exportTraktToAdapter(
   userId: string,
   input: Record<string, unknown>,
-  { adapter, sync }: { adapter: TraktAdapter; sync: SyncPreferences }
+  context: { adapter: TraktAdapter; sync: SyncPreferences }
+) {
+  return dispatchTraktExport(userId, input, context);
+}
+
+async function dispatchTraktExport(
+  userId: string,
+  input: Record<string, unknown>,
+  { adapter, sync }: { adapter: TraktAdapter; sync: SyncPreferences },
+  history?: HistoryTarget
 ) {
   const data = v.parse(
     v.object({
@@ -150,7 +214,12 @@ export async function exportTraktToAdapter(
   if (!item) throw new PermanentActionError('The Coast media item no longer exists.');
   if (item.kind === 'collection')
     throw new PermanentActionError('This media type cannot be exported to Trakt.');
-  const target = await exportTarget(item.id, item.kind);
+  if (data.category === 'history') {
+    if (item.kind !== 'movie' && item.kind !== 'episode') return {skipped:1};
+    history ??= await resolveTraktHistoryTarget(adapter, item.id, item.kind);
+    if (!history || history.kind !== item.kind) return {skipped:1};
+  }
+  const target = history ? { kind: history.kind, ids: { trakt: history.id } } : await exportTarget(item.id, item.kind);
   if (!target) return;
   const { ids } = target;
   if (!Object.keys(ids).length)
@@ -199,29 +268,10 @@ export async function exportTraktToAdapter(
       ? { rating: Math.round((data.value || 0) * 2) }
       : {}),
   };
-  if (
-    data.category === 'history' &&
-    !data.remove &&
-    (item.kind === 'movie' || item.kind === 'episode')
-  ) {
-    let traktId = typeof ids.trakt === 'number' ? ids.trakt : undefined;
-    if (!traktId && typeof ids.tmdb === 'number')
-      traktId = (await adapter.lookupIds(item.kind, ids.tmdb))?.trakt;
-    if (traktId) {
-      const existing = await adapter.historyFor(item.kind, traktId, String(record.watched_at));
-      if (
-        existing.some(
-          (event) =>
-            event.watched_at &&
-            new Date(event.watched_at).getTime() ===
-              new Date(String(record.watched_at)).getTime()
-        )
-      )
-        return;
-    } else
-      throw new PermanentActionError(
-        'Trakt could not resolve this title for a retry-safe history export.'
-      );
+  if (history && !data.remove && occurredAt) {
+    const existing = await adapter.historyFor(history.kind, history.id, occurredAt);
+    const timestamp = Date.parse(occurredAt);
+    if (existing.some(event => event.watched_at && Date.parse(event.watched_at) === timestamp)) return;
   }
   await adapter.write(data.category, { [plural]: [record] }, data.remove);
 }

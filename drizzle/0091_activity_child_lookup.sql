@@ -1,0 +1,1 @@
+CREATE INDEX "media_relationships_contains_child_idx" ON "media_relationships" USING btree ("child_id","position","parent_id") WHERE "media_relationships"."kind" = 'contains';

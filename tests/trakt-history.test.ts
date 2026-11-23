@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { compactTraktHistory, type TraktHistoryTitles } from '../src/lib/sync/trakt-history';
-import type { TraktRecord } from '../src/lib/providers/trakt/adapter.server';
+import { TraktAdapter, type TraktRecord } from '../src/lib/providers/trakt/adapter.server';
 
 test('compact history preserves chronological ties, source IDs and timestamp fallbacks', () => {
   const titles: TraktHistoryTitles = new Map();
@@ -49,4 +49,34 @@ test('history title sharing remains bounded without discarding records', () => {
   expect(titles.size).toBe(1);
   expect(first?.movie?.title).toBe('Movie 1');
   expect(titles.has('movie:1')).toBe(false);
+});
+
+test('history export finds the exact episode ID through TMDB, TVDB or IMDb', async () => {
+  const ids = { trakt: 7, tmdb: 10, tvdb: 20, imdb: 'tt30' };
+  const episode = { title: 'Story episode', season: 1, number: 2, ids };
+  const wrongEpisode = { ...episode, ids: { ...ids, trakt: 8, tmdb: 11, tvdb: 21, imdb: 'tt31' } };
+  const paths: string[] = [];
+  const adapter = new TraktAdapter(async path => {
+    paths.push(path);
+    return [{ show: { title: 'Story', ids } }, { episode: wrongEpisode }, { episode }];
+  }, 'fixture', 'fixture');
+  expect(await adapter.resolveExactId('episode', { tmdb: 10, tvdb: 20, imdb: 'tt30' })).toBe(7);
+  expect(await adapter.resolveExactId('episode', { tvdb: 20 })).toBe(7);
+  expect(await adapter.resolveExactId('episode', { imdb: 'tt30' })).toBe(7);
+  expect(paths).toEqual(['/search/tmdb/10?type=episode', '/search/tvdb/20?type=episode', '/search/imdb/tt30?type=episode']);
+});
+
+test('history export skips absent, conflicting and ambiguous identities', async () => {
+  const movie = { title: 'Film', ids: { trakt: 7, tmdb: 10, tvdb: 20 } };
+  const adapter = new TraktAdapter(async path => {
+    if (path === '/search/tmdb/12?type=movie') return [{ movie }, { movie: { ...movie, ids: { trakt: 8, tmdb: 12 } } }, { movie: { ...movie, ids: { trakt: 9, tmdb: 12 } } }];
+    if (path === '/search/tmdb/11?type=movie') return [{ movie: { ...movie, ids: { trakt: 8, tmdb: 11 } } }];
+    if (path === '/search/imdb/tt30?type=movie') return [{ movie: { ...movie, ids: { trakt: 9, imdb: 'tt30' } } }];
+    return [{ movie }];
+  }, 'fixture', 'fixture');
+  expect(await adapter.resolveExactId('movie', {})).toBeUndefined();
+  expect(await adapter.resolveExactId('movie', { tmdb: 999 })).toBeUndefined();
+  expect(await adapter.resolveExactId('movie', { trakt: 7, tmdb: 11 })).toBeUndefined();
+  expect(await adapter.resolveExactId('movie', { tmdb: 11, imdb: 'tt30' })).toBeUndefined();
+  expect(await adapter.resolveExactId('movie', { tmdb: 12 })).toBeUndefined();
 });

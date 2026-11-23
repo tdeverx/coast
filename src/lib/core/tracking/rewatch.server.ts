@@ -1,9 +1,11 @@
 import { requireWorkFeature } from '#lib/server/features.js';
 import { and, eq, sql, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '../../server/db';
+import { getDb, type Database } from '../../server/db';
 import { media, rewatches, trackingState } from '../../server/db/schema';
 import { DomainError } from '../errors';
+
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** A viewing boundary, never a mutation of canonical watched history. */
 export function rewatchBoundary(userId: string | SQL, mediaId: SQL) {
@@ -50,32 +52,37 @@ export async function setRewatch(userId: string, raw: unknown) {
     if (startedAt) await requireWorkFeature(tx,userId,input.mediaId);
     else await tx.execute(sql`select coast_lock_feature_policy(${userId}::uuid)`);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
-    if (!startedAt) {
-      await tx
-        .delete(rewatches)
-        .where(and(eq(rewatches.userId, userId), eq(rewatches.mediaId, input.mediaId)));
-      return;
+    await writeRewatchBoundary(tx, userId, input.mediaId, item.kind, startedAt);
+    const { enqueueTraktChangeInTransaction } = await import('#lib/sync/changes.server.js');
+    if (startedAt) {
+      const [restored] = await tx.update(trackingState).set({ dropped: false })
+        .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, input.mediaId), eq(trackingState.dropped, true)))
+        .returning({ paused: trackingState.paused });
+      if (restored && !restored.paused) {
+        await enqueueTraktChangeInTransaction(tx, userId, { mediaId: input.mediaId, category: 'trackingStatus', remove: true });
+      }
     }
-    // A whole-show run supersedes old season/episode boundaries, never historical watches.
-    if (item.kind === 'show')
-      await tx
-        .delete(rewatches)
-        .where(
-          and(
-            eq(rewatches.userId, userId),
-            sql`${rewatches.mediaId} in (select media_id from seasons where show_id=${input.mediaId} union select media_id from episodes where show_id=${input.mediaId})`
-          )
-        );
-    await tx
-      .insert(trackingState)
-      .values({ userId, mediaId: input.mediaId, dropped: false })
-      .onConflictDoUpdate({
-        target: [trackingState.userId, trackingState.mediaId],
-        set: { dropped: false },
-      });
-    await tx
-      .insert(rewatches)
-      .values({ userId, mediaId: input.mediaId, startedAt })
-      .onConflictDoUpdate({ target: [rewatches.userId, rewatches.mediaId], set: { startedAt } });
+    await enqueueTraktChangeInTransaction(tx, userId, {
+      mediaId: input.mediaId, category: 'rewatch', occurredAt: startedAt?.toISOString(), remove: !startedAt,
+    });
   });
+}
+
+/** Remote boundaries only change how progress is counted. */
+export async function writeRewatchBoundary(
+  tx: Transaction, userId: string, mediaId: string, kind: string, startedAt: Date | null
+) {
+  if (!startedAt) {
+    await tx.delete(rewatches).where(and(eq(rewatches.userId, userId), eq(rewatches.mediaId, mediaId)));
+    return;
+  }
+  // A whole-show run supersedes old season/episode boundaries.
+  if (kind === 'show')
+    await tx.delete(rewatches).where(and(
+      eq(rewatches.userId, userId),
+      sql`${rewatches.mediaId} in (select media_id from seasons where show_id=${mediaId} union select media_id from episodes where show_id=${mediaId})`
+    ));
+  await tx.insert(trackingState).values({ userId, mediaId }).onConflictDoNothing();
+  await tx.insert(rewatches).values({ userId, mediaId, startedAt })
+    .onConflictDoUpdate({ target: [rewatches.userId, rewatches.mediaId], set: { startedAt } });
 }

@@ -1,4 +1,4 @@
-import { traktPreferences } from '#lib/providers/trakt/access.js';
+import { isTraktShowTrackingFeature, traktPreferences, type TraktShowTrackingFeature } from '#lib/providers/trakt/access.js';
 import { traktExportAllowed, traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
 import type { MediaCategory } from '#lib/media/model.js';
 import { context } from '#lib/server/diagnostics/index.js';
@@ -28,12 +28,12 @@ import {
 } from '#lib/core/tracking/service.server.js';
 import { rateInTransaction, ratingInputSchema } from '#lib/core/ratings/service.server.js';
 import * as v from 'valibot';
-import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
+import { anthologyTmdb, anthologyTrakt, isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 type ExportChange = {
   mediaId: string;
-  category: 'history' | 'collection' | 'ratings' | 'watchlist';
+  category: 'history' | 'collection' | 'ratings' | 'watchlist' | TraktShowTrackingFeature;
   remove?: boolean;
   value?: number;
   occurredAt?: string;
@@ -42,7 +42,7 @@ type ExportChange = {
   excludeConnectionId?: string;
   excludeConnectionIds?: string[];
 };
-async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId: string) {
+async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId: string, anthology = false) {
   const [settings] = await tx.select().from(systemSettings).where(eq(systemSettings.key, 'coast'));
   if ((settings?.value as { enableTrakt?: boolean } | undefined)?.enableTrakt === false) return [];
   const [mapping] = await tx
@@ -51,7 +51,7 @@ async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId
     .where(
       and(
         eq(externalIds.mediaId, mediaId),
-        inArray(externalIds.provider, ['trakt', 'tmdb', 'tvdb', 'imdb']),
+        inArray(externalIds.provider, anthology ? [anthologyTmdb, anthologyTrakt] : ['trakt', 'tmdb', 'tvdb', 'imdb']),
         sql`not ${isAnthologyRoot(mediaId)}`
       )
     )
@@ -149,8 +149,9 @@ export async function enqueueTraktChangeInTransaction(
   userId: string,
   change: ExportChange
 ) {
-  const [work] = await tx.select({ category: works.category }).from(works).where(eq(works.id, change.mediaId));
+  const [work] = await tx.select({ category: works.category, kind: works.kind }).from(works).where(eq(works.id, change.mediaId));
   if (!work || !supportsProviderField('trakt', work.category as MediaCategory, change.category, 'write')) return;
+  if (isTraktShowTrackingFeature(change.category) && work.kind !== 'show' && work.kind !== 'season') return;
   let occurredAt = change.occurredAt;
   if (change.category === 'history' && !change.remove && !change.eventId && !occurredAt) {
     const [state] = await tx
@@ -159,7 +160,8 @@ export async function enqueueTraktChangeInTransaction(
       .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, change.mediaId)));
     occurredAt = state?.date?.toISOString();
   }
-  const connections = await traktConnectionsForMedia(tx, userId, change.mediaId);
+  const connections = await traktConnectionsForMedia(tx, userId, change.mediaId,
+    isTraktShowTrackingFeature(change.category) && work.kind === 'season');
   for (const { connection } of connections) {
     const sync = traktPreferences(connection.settings).export;
     if (connection.id === change.excludeConnectionId || change.excludeConnectionIds?.includes(connection.id)) continue;
@@ -313,6 +315,7 @@ export async function enqueueSyncValueInTransaction(
     mediaId,
     category,
     value: typeof value.value === 'number' ? value.value : undefined,
+    occurredAt: category === 'rewatch' && typeof value.value === 'string' ? value.value : undefined,
     remove: value.value === false || value.value === null,
     excludeConnectionId,
   });
@@ -320,6 +323,12 @@ export async function enqueueSyncValueInTransaction(
 export async function trackWithExports(userId: string, input: TrackingInput, transaction?: Transaction) {
   const apply = async (tx: Transaction) => {
     const result = await trackInTransaction(tx, userId, input);
+    if (result.trackingStatusChanged)
+      await enqueueTraktChangeInTransaction(tx, userId, {
+        mediaId: input.mediaId,
+        category: 'trackingStatus',
+        remove: !(result.state.paused || result.state.dropped),
+      });
     if (
       result.changed &&
       result.eventId &&

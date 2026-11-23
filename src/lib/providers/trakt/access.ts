@@ -17,24 +17,30 @@ export function traktAccess(settings: TraktSettings): TraktAccess {
   return result.success ? result.output : { import: false, export: false };
 }
 
-export const trackingFeatures = ['history', 'progress', 'collection', 'ratings', 'watchlist'] as const;
+export const showTrackingFeatures = ['trackingStatus', 'rewatch'] as const;
+export type TraktShowTrackingFeature = typeof showTrackingFeatures[number];
+export const isTraktShowTrackingFeature = (value: unknown): value is TraktShowTrackingFeature =>
+  showTrackingFeatures.some(feature => feature === value);
+export const trackingFeatures = ['history', 'progress', 'collection', 'ratings', 'watchlist', ...showTrackingFeatures] as const;
 const categories = [...trackingFeatures, 'lists'] as const;
 const trackingFields = {
   history: v.boolean(), progress: v.boolean(), collection: v.boolean(),
   ratings: v.boolean(), watchlist: v.boolean(), lists: v.boolean(),
+  trackingStatus: v.optional(v.boolean(), false), rewatch: v.optional(v.boolean(), false),
 };
 export const traktSyncSchema = v.object({
   import: v.object({ ...trackingFields, live: v.boolean(), recommendations: v.boolean() }),
   export: v.object({ ...trackingFields, scrobble: v.boolean() }),
 });
 export type TraktSync = v.InferOutput<typeof traktSyncSchema>;
+export type TraktTrackingPreferences = import('../contracts').SyncPreferences & Partial<Record<TraktShowTrackingFeature, boolean>>;
 export type TraktFeature = keyof TraktSync['import'] | keyof TraktSync['export'];
 type TraktSettings = { traktSync?: unknown; traktAccess?: unknown; sync?: unknown; liveRead?: unknown; collectionProjection?: unknown };
 
 export function initialTraktSync(): TraktSync {
   return {
-    import: { history: true, progress: true, collection: false, ratings: true, watchlist: true, lists: false, live: false, recommendations: true },
-    export: { ...defaultSyncPreferences },
+    import: { history: true, progress: true, collection: false, ratings: true, watchlist: true, lists: false, live: false, recommendations: true, trackingStatus: false, rewatch: false },
+    export: { ...defaultSyncPreferences, trackingStatus: false, rewatch: false },
   };
 }
 
@@ -42,8 +48,8 @@ export function traktPreferences(settings: TraktSettings): TraktSync {
   if (settings.traktSync !== undefined) {
     const stored = settings.traktSync as { import?: Partial<TraktSync['import']>; export?: Partial<TraktSync['export']> } | null;
     const result: TraktSync = {
-      import: { ...defaultSyncPreferences, live: stored?.import?.live === true, recommendations: stored?.import?.recommendations === true },
-      export: { ...defaultSyncPreferences, scrobble: stored?.export?.scrobble === true },
+      import: { ...defaultSyncPreferences, trackingStatus: false, rewatch: false, live: stored?.import?.live === true, recommendations: stored?.import?.recommendations === true },
+      export: { ...defaultSyncPreferences, trackingStatus: false, rewatch: false, scrobble: stored?.export?.scrobble === true },
     };
     for (const category of categories) {
       result.import[category] = stored?.import?.[category] === true;
@@ -55,10 +61,11 @@ export function traktPreferences(settings: TraktSettings): TraktSync {
   const sync = settings.sync as Partial<Record<SyncCategory, unknown>> | undefined;
   const projection = settings.collectionProjection as { enabled?: unknown } | undefined;
   const result: TraktSync = {
-    import: { ...defaultSyncPreferences, live: legacy.import && settings.liveRead !== false, recommendations: legacy.import },
-    export: { ...defaultSyncPreferences, scrobble: legacy.export && sync?.scrobble === true },
+    import: { ...defaultSyncPreferences, trackingStatus: false, rewatch: false, live: legacy.import && settings.liveRead !== false, recommendations: legacy.import },
+    export: { ...defaultSyncPreferences, trackingStatus: false, rewatch: false, scrobble: legacy.export && sync?.scrobble === true },
   };
   for (const category of categories) {
+    if (isTraktShowTrackingFeature(category)) continue;
     result.import[category] = legacy.import && sync?.[category] === true;
     result.export[category] = legacy.export && sync?.[category] === true;
   }
@@ -68,6 +75,7 @@ export function traktPreferences(settings: TraktSettings): TraktSync {
 
 /** Legacy consumers had an account-wide grant. Granular grants are authoritative once saved. */
 export function traktAllows(settings: TraktSettings, direction: TraktDirection, feature?: TraktFeature) {
+  if (isTraktShowTrackingFeature(feature) && settings.traktSync === undefined) return false;
   if (!feature || settings.traktSync === undefined) return traktAccess(settings)[direction];
   const scope: Partial<Record<TraktFeature, boolean>> = traktPreferences(settings)[direction];
   return scope[feature] === true;
@@ -104,6 +112,8 @@ export function traktJobFeatures(kind: string, payload: Record<string, unknown> 
 export function traktJobAllowed(settings: TraktSettings, kind: string, payload?: Record<string, unknown>) {
   const direction = traktJobDirection(kind);
   if (!direction) return true;
+  if (kind === 'trakt.export' && isTraktShowTrackingFeature(payload?.category))
+    return traktAllows(settings, direction, payload.category);
   if (settings.traktSync === undefined) return traktAccess(settings)[direction];
   const selected: Partial<Record<TraktFeature, boolean>> = traktPreferences(settings)[direction];
   return traktJobFeatures(kind, payload).some(feature => selected[feature] === true);

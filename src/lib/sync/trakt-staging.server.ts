@@ -9,11 +9,12 @@ import { reconcileProviderValue, type ValueCategory } from './values.server';
 import { reconcileProviderList } from './list-values.server';
 import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 import { isAnthologyRoot } from '#lib/catalogue/anthology.server.js';
+import { isTraktShowTrackingFeature, type TraktShowTrackingFeature } from '#lib/providers/trakt/access.js';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Decision = 'agree'|'local'|'remote'|'conflict';
 export type StageCommit = { stageId:string; ordinal:number; generation: string; commit: (tx: Tx, mediaId: string, decision: Decision) => Promise<void> };
-type Category = 'history'|'progress'|'ratings'|'watchlist'|'collection'|'lists';
+type Category = 'history'|'progress'|'ratings'|'watchlist'|'collection'|'lists'|TraktShowTrackingFeature;
 
 /** Stage and account effects share the worker lease and account generation. A
  * replaced worker rolls back its reconciliation instead of advancing a cursor. */
@@ -38,6 +39,7 @@ export async function stagedTraktCategory(options: {
   userId:string; connectionId:string; category:Category; adapter:TraktAdapter;
   stageKey?:string; readPage?:(page:number)=>Promise<TraktRecord[]>; skipCleanup?:boolean; retainRecords?:boolean;
   apply:(record:TraktRecord, commit:StageCommit)=>Promise<boolean|void>;
+  missingValue?:(mediaId:string)=>Promise<{ value: string | null } | undefined>;
 }) {
   const {userId,connectionId,category,adapter,apply}=options;
   const execution=jobExecution.getStore()!;
@@ -81,9 +83,9 @@ export async function stagedTraktCategory(options: {
       // Collection movies and episodes form one census. Negative page
       // numbers retain which endpoint comes next without a second cursor table.
       const episodes=category==='collection'&&stage.nextPage<0;
-      const page:TraktRecord[]=options.readPage?await options.readPage(stage.nextPage):episodes?await adapter.collectionEpisodesPage(-stage.nextPage):await adapter.read(category as Exclude<Category,'lists'>,stage.nextPage);
+      const page:TraktRecord[]=options.readPage?await options.readPage(stage.nextPage):episodes?await adapter.collectionEpisodesPage(-stage.nextPage):await adapter.read(category as Exclude<Category,'lists'|TraktShowTrackingFeature>,stage.nextPage);
       if(page.length>100)throw new Error('Trakt returned an oversized import page; incomplete coverage has not been published.');
-      const complete=page.length<100&&(category!=='collection'||episodes);
+      const complete=(isTraktShowTrackingFeature(category)?!page.length:page.length<100)&&(category!=='collection'||episodes);
       const nextPage=episodes?stage.nextPage-1:category==='collection'&&page.length<100?-1:stage.nextPage+1;
       const titles=new Map();
       await db.transaction(async tx=>{
@@ -145,6 +147,8 @@ export async function stagedTraktCategory(options: {
     }
     const previous=await db.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.category,category),
       sql`not ${isAnthologyRoot(syncValues.mediaId)}`,
+      category==='rewatch'?sql`${syncValues.remote}->>'value' is not null`:undefined,
+      category==='trackingStatus'?sql`${syncValues.remote}->'value'='true'::jsonb`:undefined,
       sql`(${stage.cleanedThrough}::uuid is null or ${syncValues.mediaId}>${stage.cleanedThrough}::uuid)`,
       sql`not exists(select 1 from trakt_import_records r where r.stage_id=${stage.id} and r.observed_media_id=${syncValues.mediaId})`
     )).orderBy(asc(syncValues.mediaId)).limit(20);
@@ -156,11 +160,15 @@ export async function stagedTraktCategory(options: {
           continue;
         }
       }
-      const remote=category==='ratings'?{value:null}:category==='progress'?{positionSeconds:0,durationSeconds:Number(entry.remote.durationSeconds)||0}:{value:false};
-      await reconcileProviderValue(userId,connectionId,entry.mediaId,category as ValueCategory,remote,{source:'trakt',accountGeneration:stage.accountGeneration,onReconciled:async(tx,decision)=>{
+      const remote=options.missingValue?await options.missingValue(entry.mediaId)
+        :category==='ratings'?{value:null}:category==='progress'?{positionSeconds:0,durationSeconds:Number(entry.remote.durationSeconds)||0}:{value:false};
+      const advance = async (tx: Tx, decision: Decision) => {
         await assertLease(tx,userId,connectionId);
         await tx.update(stages).set({cleanedThrough:entry.mediaId,review:sql`${stages.review}+${decision==='conflict'?1:0}`,updatedAt:new Date()}).where(eq(stages.id,stage.id));
-      }});
+      };
+      if (remote) await reconcileProviderValue(userId,connectionId,entry.mediaId,category as ValueCategory,remote,
+        {source:'trakt',accountGeneration:stage.accountGeneration,onReconciled:advance});
+      else await db.transaction(tx => advance(tx, 'local'));
       if(performance.now()-execution.started>=10_000)await jobCheckpoint();
     }
     if(!previous.length)await db.transaction(async tx=>{

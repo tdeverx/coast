@@ -63,6 +63,7 @@ export interface TrackingResult {
   state: TrackingProjection;
   eventId: string | null;
   changed: boolean;
+  trackingStatusChanged?: boolean;
   progressChanged: boolean;
   duplicate: boolean;
   reviewRequired: boolean;
@@ -346,6 +347,7 @@ async function applyChange(
   }
   return {
     state: projected.state,
+    trackingStatusChanged: (state.dropped || state.paused) !== (projected.state.dropped || projected.state.paused),
     removedQueueIds,
     eventId: event.id,
     changed: projected.changed,
@@ -359,7 +361,8 @@ async function refreshAncestors(
   tx: Transaction,
   userId: string,
   ids: string[],
-  rebuilding = false
+  rebuilding = false,
+  preserveTrackingStatus = rebuilding
 ) {
   if (!ids.length) return;
   const changed = await tx.select().from(episodes).where(inArray(episodes.mediaId, ids));
@@ -406,7 +409,7 @@ async function refreshAncestors(
         totalEpisodes: total,
         completedEpisodes: completed,
         watched,
-        dropped: rebuilding ? existing.dropped : false,
+        dropped: preserveTrackingStatus ? existing.dropped : false,
         playCount: rebuilding
           ? children.minimumPlayCount
           : !existing.watched && watched
@@ -535,7 +538,7 @@ export async function trackInTransaction(
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
   const result = await applyChange(tx, userId, input);
   if (result.progressChanged && !result.duplicate && !result.reviewRequired)
-    await refreshAncestors(tx, userId, [input.mediaId]);
+    await refreshAncestors(tx, userId, [input.mediaId], false, input.source !== 'coast' && input.source !== 'playback');
   if (result.changed && !result.reviewRequired && !result.duplicate) {
     const { emitWebhook } = await import('#lib/server/public-api/webhooks.server.js');
     await emitWebhook(

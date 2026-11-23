@@ -63,6 +63,11 @@ const tokens = v.object({
   token_type: v.string(),
   scope: v.string(),
 });
+const traktDate = v.pipe(v.string(), v.isoTimestamp(), v.check(date => Number.isFinite(Date.parse(date))),
+  v.transform(date => new Date(date).toISOString()));
+const syncShow = v.object({ ...title.entries, ids: v.object({
+  ...ids.entries, trakt: v.pipe(v.number(), v.safeInteger(), v.minValue(1)),
+}) });
 export const traktRecordSchema = v.object({
   id: v.optional(v.number()),
   type: v.optional(v.string()),
@@ -72,6 +77,7 @@ export const traktRecordSchema = v.object({
   metadata: v.nullish(v.record(v.string(),v.unknown())),
   listed_at: v.optional(v.string()),
   paused_at: v.optional(v.string()),
+  reset_at: v.optional(traktDate),
   rating: v.optional(v.number()),
   progress: v.optional(v.number()),
   movie: v.nullish(title),
@@ -234,6 +240,42 @@ export class TraktAdapter {
   async lastActivity(): Promise<string> {
     return v.parse(v.object({ all: v.string() }), await this.call('/sync/last_activities')).all;
   }
+  async droppedShowsPage(page: number) {
+    return v.parse(v.array(v.object({ show: syncShow })), await this.call(`/users/hidden/dropped?page=${page}&limit=100`));
+  }
+  async rewatchingShowsPage(page: number) {
+    const rows = v.parse(v.array(v.object({ show: syncShow, progress: v.object({ reset_at: traktDate }) })),
+      await this.call(`/sync/progress/watched?only_rewatching=true&page=${page}&limit=100`));
+    return rows.map(({ show, progress }) => ({ show, reset_at: progress.reset_at }));
+  }
+  async showRewatchDate(id: number) {
+    const progress = v.parse(v.object({ reset_at: v.nullable(traktDate) }),
+      await this.call(`/shows/${id}/progress/watched`));
+    return progress.reset_at;
+  }
+  async writeDroppedShow(id: number, dropped: boolean) {
+    const response = await this.call(`/users/hidden/dropped${dropped ? '' : '/remove'}`, {
+      method: 'POST', body: JSON.stringify({ shows: [{ ids: { trakt: id } }] }),
+    });
+    confirmItemWrite(response, !dropped);
+  }
+  async writeShowRewatch(id: number, date: string | null) {
+    const path = `/shows/${id}/progress/watched/reset`;
+    try {
+      if (!date) {
+        await this.call(path, { method: 'DELETE' });
+        return null;
+      }
+      const receipt = v.parse(v.object({ reset_at: traktDate }), await this.call(path, {
+        method: 'POST', body: JSON.stringify({ reset_at: date }),
+      }));
+      return receipt.reset_at;
+    } catch (error) {
+      if ((error as { status?: number }).status === 403)
+        throw new ProviderActionError('Trakt requires VIP to sync a show rewatch date. Your Coast rewatch is saved.', 'permission');
+      throw error;
+    }
+  }
   async collectionEpisodesPage(page=1) {
     return v.parse(collectedEpisodes,await this.call(`/sync/collection/episodes?extended=full&page=${page}&limit=100`));
   }
@@ -387,14 +429,53 @@ export class TraktAdapter {
     );
     return (results[0]?.movie || results[0]?.episode || results[0]?.show)?.ids;
   }
-  async historyFor(kind: 'movie' | 'episode', traktId: number, at: string) {
-    const query = new URLSearchParams({ start_at: at, end_at: at, limit: '100' });
-    return v.parse(
+  /** Resolve an item by its own IDs, never by title or its parent show. */
+  async resolveExactId(kind: 'movie' | 'episode' | 'show', identity: Record<string, string | number>) {
+    const providers = ['trakt', 'tmdb', 'tvdb', 'imdb'] as const;
+    const verified = new Set<string>();
+    let traktId: number | undefined;
+    for (const provider of providers) {
+      const id = identity[provider];
+      if (!id || verified.has(provider)) continue;
+      let response: unknown;
+      try {
+        response = await this.call(`/search/${provider}/${encodeURIComponent(id)}?type=${kind}`);
+      } catch (error) {
+        if ((error as { status?: number }).status === 404) continue;
+        throw error;
+      }
+      const matches = v.parse(
+        v.array(traktRecordSchema),
+        response
+      ).flatMap(record => {
+        const item = record[kind];
+        return item?.ids[provider] === id ? [item.ids] : [];
+      });
+      if (!matches.length) continue;
+      if (matches.length !== 1) return;
+      const [remote] = matches;
+      if (!Number.isSafeInteger(remote.trakt) || remote.trakt <= 0 ||
+        (traktId !== undefined && traktId !== remote.trakt)) return;
+      for (const key of providers) {
+        if (!identity[key] || remote[key] == null) continue;
+        if (remote[key] !== identity[key]) return;
+        verified.add(key);
+      }
+      traktId = remote.trakt;
+    }
+    return traktId;
+  }
+  async historyFor(kind: 'movie' | 'episode', traktId: number, at?: string) {
+    const query = new URLSearchParams(at ? { start_at: at, end_at: at, limit: '100' } : { limit: '1' });
+    const records = v.parse(
       v.array(traktRecordSchema),
       await this.call(
         `/sync/history/${kind === 'movie' ? 'movies' : 'episodes'}/${traktId}?${query}`
       )
     );
+    if (records.some(record => record[kind]?.ids.trakt !== traktId))
+      throw new ProviderActionError('Trakt returned history for a different title.', 'identity');
+    return records;
   }
   async write(
     category: 'history' | 'collection' | 'ratings' | 'watchlist',

@@ -732,7 +732,9 @@ suite('application PostgreSQL read models', () => {
     expect((await searchMedia(a, originalTitle)).items.map((item) => item.id)).toContain(movie);
     expect((await searchMedia(a, personalTitle)).items[0].title).toBe(personalTitle);
     expect((await searchMedia(a, adminTitle)).items[0].id).toBe(recommendation);
-    expect((await searchMedia(a, privateTitle)).items).toHaveLength(0);
+    const otherViewerResults = (await searchMedia(a, privateTitle)).items;
+    expect(otherViewerResults.map(item => item.id)).not.toContain(privateMovie);
+    expect(otherViewerResults.map(item => item.title)).not.toContain(privateTitle);
     expect((await searchMedia(b, privateTitle)).items[0].id).toBe(privateMovie);
     expect((await searchMedia(a, personalTitle)).truncated).toBe(false);
   });

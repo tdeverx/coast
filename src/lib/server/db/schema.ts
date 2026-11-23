@@ -259,6 +259,7 @@ export const mediaRelationships = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.parentId, t.childId, t.kind] }),
+    index('media_relationships_contains_child_idx').on(t.childId, t.position, t.parentId).where(sql`${t.kind} = 'contains'`),
     check('media_relationship_not_self', sql`${t.parentId} <> ${t.childId}`),
   ]
 );

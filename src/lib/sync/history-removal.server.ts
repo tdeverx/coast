@@ -11,7 +11,7 @@ import { acknowledgeProviderValue } from './values.server';
 import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import { getTrakt } from '#lib/providers/trakt/connection.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
-import { exportIdentity } from './trakt-identity.server.js';
+import { exportIdentity, resolveTraktHistoryTarget } from './trakt-identity.server.js';
 const uuid = v.pipe(v.string(), v.uuid());
 const inputSchema = v.object({
   eventIds: v.array(uuid),
@@ -223,10 +223,12 @@ export async function removeTraktHistory(
   adapter: Awaited<ReturnType<typeof getTrakt>>['adapter'],
   connectionId: string,
   kind: 'movie' | 'episode',
-  ids: Record<string, string | number>,
+  resolveId: () => Promise<number | undefined>,
   events: RemovalEvent[]
 ) {
   const removals = new Set<number>();
+  let verifiedId: Promise<number | undefined> | undefined;
+  let skipped = 0;
   for (const event of events.filter((entry) => entry.action === 'watch')) {
     const source =
       event.source === 'trakt' && event.sourceEventId?.startsWith(`${connectionId}:history:`)
@@ -240,18 +242,11 @@ export async function removeTraktHistory(
       throw new PermanentActionError(
         'A watch has no date or matching Trakt history ID. Remove that entry in Trakt manually.'
       );
-    let traktId = Number(ids.trakt) || undefined;
-    if (!traktId)
-      for (const provider of ['tmdb', 'tvdb', 'imdb']) {
-        if (ids[provider]) {
-          traktId = (await adapter.lookupIds(kind, ids[provider], provider))?.trakt;
-          if (traktId) break;
-        }
-      }
-    if (!traktId)
-      throw new PermanentActionError(
-        'This title could not be matched to Trakt. No Trakt history was removed.'
-      );
+    const traktId = await (verifiedId ??= resolveId());
+    if (!traktId) {
+      skipped++;
+      continue;
+    }
     const matches = (await adapter.historyFor(kind, traktId, event.occurredAt)).filter(
       (row) => row.watched_at && Date.parse(row.watched_at) === Date.parse(event.occurredAt!)
     );
@@ -262,6 +257,7 @@ export async function removeTraktHistory(
     if (matches[0]?.id) removals.add(matches[0].id);
   }
   if (removals.size) await adapter.write('history', { ids: [...removals] }, true);
+  if (skipped) return { skipped };
 }
 export async function executeHistoryRemoval(
   userId: string,
@@ -300,18 +296,18 @@ export async function executeHistoryRemoval(
     const { adapter } = await getTrakt(userId, connectionId, 'export', 'history');
     const [item] = await db.select().from(s.media).where(eq(s.media.id, data.mediaId));
     if (!item || item.kind !== 'movie' && item.kind !== 'episode') return;
-    const ids = await exportIdentity(data.mediaId, item.kind);
-    await removeTraktHistory(
+    const kind = item.kind;
+    const result = await removeTraktHistory(
       adapter,
       connectionId,
-      item.kind,
-      ids,
+      kind,
+      async () => (await resolveTraktHistoryTarget(adapter, data.mediaId, kind))?.id,
       data.events
     );
     // Progress records are distinct from completed history. Do not erase newer remote playback.
     const progress = data.events.filter((event) => event.action === 'progress');
     if (progress.length)
-      await adapter.clearProgress(item.kind as 'movie' | 'episode', ids, {
+      await adapter.clearProgress(kind, await exportIdentity(data.mediaId, kind), {
         ids: progress.flatMap((event) =>
           event.source === 'trakt' && event.sourceEventId?.startsWith(`${connectionId}:progress:`)
             ? [Number(event.sourceEventId.split(':')[2])].filter(Number.isSafeInteger)
@@ -319,6 +315,7 @@ export async function executeHistoryRemoval(
         ),
         dates: progress.flatMap((event) => (event.occurredAt ? [event.occurredAt] : [])),
       });
+    return result;
   } else {
     const { adapter, connection } = await getJellyfin(userId, connectionId);
     const [current] = await db

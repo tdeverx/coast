@@ -6,11 +6,10 @@ import { providerInstances, providerConnections, users } from '#lib/server/db/sc
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
 import { getConfig } from '#lib/server/config.js';
 import { TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
-import type { SyncPreferences } from '#lib/providers/contracts.js';
 import { getInstance, instanceTransport, instanceFetchConfig } from '#lib/providers/instances.server.js';
 import { createProviderTransport, ProviderHttpError } from '#lib/server/security/provider-fetch.js';
-import { initialTraktSync, traktAllows, traktPreferences, traktSyncSchema, type TraktDirection, type TraktFeature } from './access';
-import { cancelDisabledTraktJobs, traktFeatureAllowed } from './access.server';
+import { initialTraktSync, traktAllows, traktPreferences, traktSyncSchema, type TraktDirection, type TraktFeature, type TraktTrackingPreferences } from './access';
+import { cancelDisabledTraktJobs, enqueueExistingTraktShowTracking, traktFeatureAllowed } from './access.server';
 import { connectionFor, saveConnection, upgradeTraktIdentity } from '#lib/providers/connections.server.js';
 import { PermanentActionError } from '#lib/server/queue/index.js';
 import { jobExecution, JobYield } from '#lib/server/queue/execution.js';
@@ -245,7 +244,7 @@ export async function getTrakt(userId: string, connectionId: string, direction: 
   const connection=context.connection.settings.traktIdentityPending
     ? await verifyTraktIdentity(context.connection,await adapter.profile()) : context.connection;
   const preferences = traktPreferences(connection.settings);
-  const sync: SyncPreferences = direction === 'export' ? preferences.export : { ...preferences.import, scrobble: false };
+  const sync: TraktTrackingPreferences = direction === 'export' ? preferences.export : { ...preferences.import, scrobble: false };
   return { ...context, connection, adapter, sync };
 }
 
@@ -260,6 +259,7 @@ export async function updateSyncPreferences(
     traktSync: traktSyncSchema,
   }), input);
   await getDb().transaction(async tx=>{
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     const [current]=await tx.select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId))).for('update');
     if(!current||current.accountGeneration!==accountGeneration||current.accountGeneration!==expected.accountGeneration||current.status!=='connected')
       throw new AppError(409,'The connected account changed. Reload before saving preferences.');
@@ -268,6 +268,7 @@ export async function updateSyncPreferences(
       updatedAt: new Date(),
     }).where(eq(providerConnections.id,connectionId)).returning();
     await cancelDisabledTraktJobs(tx, saved, current.settings);
+    await enqueueExistingTraktShowTracking(tx, saved, current.settings);
   });
   return { accountGeneration, traktSync };
 }

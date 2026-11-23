@@ -1,0 +1,153 @@
+{
+  "epoch": "2026-11-23-main-followup",
+  "baseline": "e173d832ea2ee1729a01c5d2b17faac4b09b97c1",
+  "blanketAcceptance": false,
+  "scope": [
+    "Update source pins for media-card captions, Progress and Activity performance, recommendation shelves, opt-in Trakt show tracking, and search privacy regression coverage.",
+    "Retain earlier audit receipts and their verification boundaries."
+  ],
+  "verification": {
+    "hosted": false,
+    "isolatedRealDataComparison": true
+  },
+  "files": {
+    "docs/performance.md": {
+      "previous": "6644e055ec98dc6fe2b1e176ad3e850ca44106276e80e824842483ff7dc20c9e",
+      "current": "5ce11bedbd0fb1b6e038d2a7dfa1159bb9ef0d20d3ccb704ba9cb564a19f89ba"
+    },
+    "drizzle/meta/_journal.json": {
+      "previous": "8f48204060d44d40c2f27683ff85d254d6b9725af4c639ee22c4974d081ecd19",
+      "current": "842ed2c90e72c4f334dfbaf7ef51aec4affc8b3d9995b176a41b4bd69403dce2"
+    },
+    "src/lib/catalogue/metadata/release-date.server.ts": {
+      "previous": "ff34cc4db0b6431e6ec6b91d1c42f19424d2baefb8faa546d7abf6d4c0b80d1a",
+      "current": "4e63f7bb81efb48cc7ffc6d2dfb2aef9c797ef9b26a2dc858c86ad4b9b0de4e2"
+    },
+    "src/lib/core/tracking/continue.server.ts": {
+      "previous": "4b9dbaf7e31f5bcf22450825e53dec3f6857a5537a73ebc39e304e66774fb0ac",
+      "current": "43705486c8aced986bfd5a43b4d2bcd5922899d6a988da9c7558c6e79744ce59"
+    },
+    "src/lib/core/tracking/rewatch.server.ts": {
+      "previous": "f242776a16470c8662c464ee4d7e41eba22af7e66410dbad71d6ec12c40b5451",
+      "current": "0842eafa4b44e4694e19771636546f316129ff48bc8395bf4eb15bbf94b016dc"
+    },
+    "src/lib/core/tracking/service.server.ts": {
+      "previous": "29e0ad298a0482d8f0d2bcdba698764d78ccec322383e599ecedc085fd486489",
+      "current": "160a6c53ed5bdeb51fd614188834b7a4a16f46d8c5af84c83aa5d04a1629292b"
+    },
+    "src/lib/providers/connections.server.ts": {
+      "previous": "9968769bd83dadca6bc5a92cce4c25619ff9bc7bd46140d7635843f1eab1026c",
+      "current": "93d5d53b950b8b82721afbd243f70ef62419e0b30849e2a8ea2f348af577fc79"
+    },
+    "src/lib/providers/trakt/AccessFields.svelte": {
+      "previous": "c57560c75010e98cd74a54862c68d78ae66e56a738e512fe2b96a47f74646c1d",
+      "current": "4423a786b2674c994734a2ba0241adc648e5270c35f306710317229d351dc2f6"
+    },
+    "src/lib/providers/trakt/access.server.ts": {
+      "previous": "34375fc9c9696ebfd99bc581a0e26518a0ecbad30493c759dd2a602efbd2ec6c",
+      "current": "23234ac344d4184f97c9bdb1c4ac5bad5e92f6c432447a78fdbcdfbacdab3707"
+    },
+    "src/lib/providers/trakt/access.ts": {
+      "previous": "38395bc8e44e67a0b084119fd3db35610ec98874df9fad451dd912c49795dd8d",
+      "current": "80c54d55e04ca0524c4658cec38e4babba3bc3f5aeab06d6f6463b05ebc7492c"
+    },
+    "src/lib/providers/trakt/adapter.server.ts": {
+      "previous": "6910aac8f1b4a66411673309d96f393fb3162321ba58deaeae786a294e212a4d",
+      "current": "d7c66ad49a5231d9ca475815f59f5f390a5018898d8c2d3a098e914efd8cac58"
+    },
+    "src/lib/providers/trakt/connection.server.ts": {
+      "previous": "bece877e361015989d0ea9ce85bed76596ab54457a1546f67f97c8fecbb1a51b",
+      "current": "eaeb36a1ea103560cd3710ea5ab49601b899a62f9fa318e8276d123fbe619e81"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "cdbe1d2482017eb3f5cca6a33d9d834ab59c1714bb327d08fa42e5a3e468ceb4",
+      "current": "b50255e3adbb154348cb454c37f2f583c0ebcaced69b35530bd8ac1db9458a9a"
+    },
+    "src/lib/server/queries/library-segments.ts": {
+      "previous": "5044757edb32f5eb762f6f7860e9572ac62204aa357957a394e27f3192265c67",
+      "current": "6693211abc55c56d69eb786feda4ccc221f4617b597ededf0898e845e82a8efe"
+    },
+    "src/lib/server/queries/library.ts": {
+      "previous": "757ea9fc8e0c668547d03b34aeba316f9b2b2f34a2b397e3fe814c10be941e4a",
+      "current": "88fee21c8a45fa1b483b76a155af93857b151aa1b694aa93494f469354281316"
+    },
+    "src/lib/social/queries.server.ts": {
+      "previous": "ba72191e0218f0642a5bb31477f10600483bce52044205cd3ccb92e4abd73074",
+      "current": "61d76643eb597d4c9367a0d5429307ecbd0e1b35893850cb7a6ada77227c68f1"
+    },
+    "src/lib/sync/changes.server.ts": {
+      "previous": "ef8071b58e044c79a736f52a9996a9cafc67cd97a91f842de871c439279240b2",
+      "current": "1f4c11e5c221aa56df0ff9acd6e8b4626174138f533b4479eb918018460998e6"
+    },
+    "src/lib/sync/history-removal.server.ts": {
+      "previous": "3e253a815772fd15113ec17ad6b5e0e333f17d3773b68fb13555a2204a6f04fd",
+      "current": "1bd7badc6319f06f17b4e6e70cf064aec44e88b3a2e1a827b334c0b90b062bc7"
+    },
+    "src/lib/sync/trakt-export.server.ts": {
+      "previous": "0e5a053cb2b32276bd7ca3912e814dbc88a102947af9fc9da6f3113007a2b5c1",
+      "current": "2812803f6a3016a4c19adf6fb62d80c71bb6b2aa5ecd0a693af60df239028cee"
+    },
+    "src/lib/sync/trakt-identity.server.ts": {
+      "previous": "27f47f79ba801dcb1c1de5ecf56c7b4c7ffac1ca1fc850611c3647c2504ded19",
+      "current": "c121fe15c3f6dc6f193c9b3d645fb52193257070b1a5a93c48b86c791f3f8905"
+    },
+    "src/lib/sync/trakt-import.server.ts": {
+      "previous": "defd31f2408006279a464c2e1b749d9c200f6eaa414c449a558349d2099caca4",
+      "current": "fba47d59af45c6ad64c1d62061c1d2f4e6680f58f17d300024274889d3886ebe"
+    },
+    "src/lib/sync/trakt-staging.server.ts": {
+      "previous": "0d24a506b60eafd785e6cb7fa17e159592f2e84173ad10731f9220b2cf829547",
+      "current": "1e74595cfa50e129f5aad8f4fa1acfff8bacbd185dbd7f695275455194977b5c"
+    },
+    "src/lib/sync/values.server.ts": {
+      "previous": "9a78902bd24021985eb01c7241fcf7223222f2d3196dbbb7bf7d50bb415154ed",
+      "current": "c2cfddd733f46d7f67390547f819b2fadd05edd273633788c4c8dbef7685b112"
+    },
+    "src/lib/ui/components/ConflictList.svelte": {
+      "previous": "7780a11ec1975fbadb57f4b24e02f2106e75e1b9b92ba9bc8f2b8cd57eb122cf",
+      "current": "986e6a94cd861fdc470d578c27c0f9fce42185eca79a14bcde1ecf7e32934998"
+    },
+    "src/lib/ui/components/MediaCard.svelte": {
+      "previous": "e6d27f648310724c6f93712d685e77dc3497bb4c16070959fc1d7ecc7109733a",
+      "current": "2adbe22e1a3f5b81bfa0f56e1b5382a0657bdf3e1f0d4c4cec3dd50791725245"
+    },
+    "src/lib/ui/components/Shelf.svelte": {
+      "previous": "69d0543432a48fea6ec0f8bfac25aeac8ba6fa61ecd326cf8494ee0ab9f695dc",
+      "current": "2dd81f4365a1a6761172f0598b773c2013888e80e9adc29a52fdaddd1843713b"
+    },
+    "src/lib/ui/labels.ts": {
+      "previous": "e0aa8963ef27ec77f1d1ebc9b7cdcb22e1561ee3e637908c4537ca7567c4e194",
+      "current": "0ed07d8618043c7a53b2afe4de92aac87695a788f7ac19db7e6b481b84385108"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "previous": "18ea6e6bd7bf73cb6b73c6746cff1ef530a4493bcca5a963013c7f6ea0f685e3",
+      "current": "bff742a1e28e3a908caa773554502a5b54636fe1ce97f12d76e99d8be1391a11"
+    },
+    "src/routes/ui-preview/prop-manifest.json": {
+      "previous": "8a850455ebddba6186c6f53b9b6fe3408b63c23d4fe97908bffa828206b7e71a",
+      "current": "76b862eda5e8f8986fade9c7504cea81aa9c4fcafb2151233b23f5499233d646"
+    },
+    "tests/domain-application-db.test.ts": {
+      "previous": "8154ca29c8e23517d1a83c6c422dde3ab1873f98d03a127fae02042fa6bc7d8b",
+      "current": "b5af24f11561c5f61346bdc02ab27145e4ca6360d658f4d2b6ab45dcfc98975d"
+    },
+    "tests/for-you-db.test.ts": {
+      "previous": "16dc1d62e749c2a3cc2e0ffea728e828d467ddb6716cea7ea359886182934026",
+      "current": "8b301cf8a803f19388adb7d76f7495ca2f6bc2db362f46c91608d1222ff0a305"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "cf5a2725b4ce4f6a3f00b15d0d0160f75dd1db4598d78d74b6c0712171f7e0e8",
+      "current": "5bc52adf8e361bbf5a7c3453ad1258cb6fae1fb30e416087412d99bc9a513dc5"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "11bdca4b6f442663d42afde27444ad654ba3463c02916e20b6f1faed40f32443",
+      "current": "4d05191c795ef0b5056e4755dd2713b00c655561b205a975fb6ba2139777c5fc"
+    },
+    "tests/ui-shelf-continuation.test.ts": {
+      "previous": "ac81d18aa85c30b01b756c43fc7ab7af5beb8574fa95d2b3219687f2a161c9bb",
+      "current": "215a423dc69a1299d5c880b439c56959cbecafff4432bcdf653a357bf1004d98"
+    }
+  },
+  "report": "docs/audits/2026-11-22-progress-continuation.md",
+  "reportSha256": "a049fdfc836a8a86367610f11bc157b7412f09f4bb04975cbe5c8d990d655ca9"
+}

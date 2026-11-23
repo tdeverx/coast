@@ -166,6 +166,7 @@ beforeAll(async () => {
         expect(request.headers.get('authorization')).toBe('Bearer synthetic-refreshed');
         return json({user:{username:'fixture',ids:{uuid:traktAccountId,slug:'fixture'}}});
       }
+      if (path === `/search/trakt/${traktId}`) return json([{ movie: historyRecords[0].movie }]);
       if (path.startsWith('/sync/history/movies/')) return json(exportedHistory);
       if (path === '/sync/history' && request.method === 'GET') return json(historyRecords);
       if (path === '/sync/history' && request.method === 'POST') {

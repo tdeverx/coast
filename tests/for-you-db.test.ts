@@ -1,5 +1,5 @@
 import {beforeAll,afterAll,expect,test} from 'bun:test';
-import {eq} from 'drizzle-orm';
+import {eq,sql} from 'drizzle-orm';
 import {getDb,getSql,closeDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {getConfig} from '../src/lib/server/config';
@@ -17,6 +17,8 @@ import {cardArtwork} from '../src/lib/media/artwork';
 import {progressCardStyle} from '../src/lib/ui/progress-card-style';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
 import {saveTraktAirSchedule} from '../src/lib/catalogue/air-schedule.server';
+import {continuationIds} from '../src/lib/server/queries/continuations';
+import {librarySegmentCondition} from '../src/lib/server/queries/library-segments';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),friend=crypto.randomUUID();
 const show=crypto.randomUUID(),season=crypto.randomUUID(),episodes=[crypto.randomUUID(),crypto.randomUUID()],game=crypto.randomUUID(),track=crypto.randomUUID();
@@ -156,6 +158,38 @@ run('Progress prefers the episode airtime and falls back to a time-zoned series 
  expect(await progress()).toMatchObject({items:[],total:0});
  await store(null,'00:00','Pacific/Kiritimati');
  expect(await progress()).toMatchObject({items:[{id:next,available:false}],total:1});
+});
+
+run('continuations and the Library Next segment use only the episode’s own series airtime',async()=>{
+ const db=getDb(),owner=crypto.randomUUID();
+ const [series,rival,chapter,pilot,next,rivalEpisode]=Array.from({length:6},()=>crypto.randomUUID());
+ const today=new Date().toISOString().slice(0,10);
+ await db.insert(s.users).values({id:owner,username:`own-schedule-${owner}`});
+ await db.insert(s.media).values([
+  {id:series,kind:'show',title:'Series'}, {id:rival,kind:'show',title:'Unrelated series'},
+  {id:chapter,kind:'season',title:'Season 1'}, {id:pilot,kind:'episode',title:'Pilot',releaseDate:'2020-01-01'},
+  {id:next,kind:'episode',title:'Next episode',releaseDate:today}, {id:rivalEpisode,kind:'episode',title:'Unrelated episode',releaseDate:today},
+ ]);
+ await db.insert(s.shows).values([{mediaId:series},{mediaId:rival}]);
+ await db.insert(s.seasons).values({mediaId:chapter,showId:series,seasonNumber:1});
+ await db.insert(s.episodes).values([
+  {mediaId:pilot,showId:series,seasonId:chapter,seasonNumber:1,episodeNumber:1},
+  {mediaId:next,showId:series,seasonId:chapter,seasonNumber:1,episodeNumber:2},
+  {mediaId:rivalEpisode,showId:rival,seasonNumber:1,episodeNumber:1},
+ ]);
+ await db.insert(s.trackingState).values({userId:owner,mediaId:pilot,watched:true});
+ const [scheduled]=await db.insert(s.metadataSnapshots).values([
+  {mediaId:series,provider:'jellyfin',raw:{airSchedule:{time:'00:00',timeZone:'Pacific/Kiritimati'}},updatedAt:new Date('2001-01-01')},
+  {mediaId:rival,provider:'jellyfin',raw:{airSchedule:{time:'23:59',timeZone:'Pacific/Honolulu'}},updatedAt:new Date('2099-01-01')},
+ ]).returning({id:s.metadataSnapshots.id});
+ expect((await continuationIds(owner,[pilot],false)).nextIds).toEqual([next]);
+ await db.insert(s.upNext).values({userId:owner,mediaId:next});
+ const selection=await librarySegmentCondition(owner,owner,'next',s.media.id,'screen');
+ const rows=await db.select({id:s.media.id}).from(s.media).where(sql`${s.media.kind}='show' and ${selection}`);
+ expect(rows).toEqual([{id:series}]);
+ await db.update(s.metadataSnapshots).set({raw:{airSchedule:{time:'23:59',timeZone:'Pacific/Honolulu'}}})
+  .where(eq(s.metadataSnapshots.id,scheduled.id));
+ expect((await continuationIds(owner,[pilot],false)).nextIds).toEqual([]);
 });
 
 run('pausing a movie or whole show hides each progress entry and preserves the position, queue and rewatch history',async()=>{

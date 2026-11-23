@@ -54,7 +54,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
    case when e.media_id is not null then 'S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') end as episode_code,
    history.page as reading_page,history.total_pages as reading_total,rating.value as rating, session.minutes_played as minutes,coalesce(tracking.rewatch,false) as rewatch,music.title as track_title
   from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id join users u on u.id=a.user_id and not u.disabled
-  join activity_policy policy on policy.user_id=a.user_id and policy.section is not distinct from a.section and policy.category is not distinct from w.category
+  join activity_policy policy on policy.user_id=a.user_id and policy.section=a.section and policy.category=w.category
   left join reading_history history on history.id=substring(a.source_key from '^reading:([0-9a-f-]{36})$')::uuid
   left join music_works music on music.id=a.work_id
   left join ratings rating on a.event_kind='rating' and rating.user_id=a.user_id and rating.media_id=a.work_id
