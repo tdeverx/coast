@@ -207,6 +207,10 @@
       "previous": "91a5677dd7a4ff083c638b043dbba87321b76bd0c436938c904e8a0a269e8af2",
       "current": "bc796bd5dcb537ad528c1b71770f9c6e3af0bedc2d6d5bd744e20482a8a37b64"
     },
+    "tests/audit-auth-discovery-db.test.ts": {
+      "previous": "beb29b8a35e9b78ba15a033a9b54d6384f96debe608008acfd43bbee8459e3a8",
+      "current": "14b7820224544877d308e66139e9661ebe8ada0bca24ba28a84638eed573adb5"
+    },
     "tests/lazy-import-lifetimes.test.ts": {
       "previous": "fa1d9986c0d92e39ff70671f4c3a4e167820786c61012e2b222f3248835f33da",
       "current": "5aa6fc1be9466c6f9d69ee7423f045ba6d7bc8089a91f0d9de02fa5a5ec92f01"
