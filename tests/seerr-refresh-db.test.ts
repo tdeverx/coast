@@ -7,6 +7,7 @@ import {SeerrAdapter,SeerrPermission} from '../src/lib/providers/seerr/adapter.s
 import * as accountModule from '../src/lib/providers/seerr/connection.server';
 import {type getSeerr,type SeerrAccountScope} from '../src/lib/providers/seerr/connection.server';
 import {refreshRequests} from '../src/lib/providers/seerr/requests.server';
+import {requestPlaybackCandidates} from '../src/lib/providers/seerr/playback-readiness.server';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
 import * as providerFetch from '../src/lib/server/security/provider-fetch';
@@ -132,6 +133,14 @@ run('a catalogue-only request stays in progress until a mapped Jellyfin stream p
   expect(playbackReads).toBe(4);
   expect(headReads).toBe(3);
   expect(await noticeCount()).toBe(1);
+  const localSources=await db.select().from(s.availability).where(eq(s.availability.providerItemId,mapped.id));
+  expect(localSources.find(row=>row.id===source.id)?.source.coastPlaybackProbedAt).toEqual(expect.any(String));
+  const nextRead=()=>requestPlaybackCandidates(scope,[{ requestId:1, mediaId, seasons:[], is4k:false, previousId:null }]);
+  const unprobed=(await nextRead()).get(1)!;
+  expect(unprobed.map(row=>row.id)).not.toContain(source.id);
+  await db.update(s.availability).set({source:{coastPlaybackProbedAt:new Date(Date.now()+60000).toISOString()}})
+   .where(and(eq(s.availability.providerItemId,mapped.id),sql`${s.availability.id}<>${source.id}`));
+  expect((await nextRead()).get(1)?.[0].id).toBe(source.id);
  }finally{jellyfin.mockRestore();relay.mockRestore();}
 });
 run('a slow partial page retains only that bounded page and resumes without refetching it',async()=>{

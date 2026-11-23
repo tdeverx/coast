@@ -1,0 +1,117 @@
+{
+  "epoch": "2026-11-23-merged-review-cleanup",
+  "baseline": "dfa472b5ec9e25a879b5bce831b86cb7ab33e58f",
+  "blanketAcceptance": false,
+  "scope": [
+    "Address outstanding review findings in backup consistency, provider scheduling and policy, diagnostics, notifications, publishing, and material presets."
+  ],
+  "verification": {
+    "hosted": false
+  },
+  "files": {
+    ".github/workflows/verify-and-publish-preview.yml": {
+      "previous": "a896d36dccdd50972bd5b1f522ab4636bdef6d3392ef87e1eca5cab58e26d90f",
+      "current": "203c166db90acb0e2e007d62ad094046cc021bce5ee1f1c27c889a2d0c5af10c"
+    },
+    "scripts/container-application.ts": {
+      "previous": "af153c56b244a30de3a0aef7b26f9c43a6a55bc38d0efd7245794a0e6fa3e05a",
+      "current": "2219b68edc649811308e5ef6205f55fb4e105a20e0804816a02314a69650c6b7"
+    },
+    "scripts/container-stderr.ts": {
+      "previous": "1ef3f953518188167f69ba4b4be8ed197ee5053006038c5e377e52376f65e2c7",
+      "current": "54d0fc69fc36efeccf3e775d1d6342b42f64acb95e80c41df1aa492f9f004d6f"
+    },
+    "src/lib/backups/archive.server.ts": {
+      "previous": "049849472b82b16be469ca2bc195ef77084aba4b9ac2ff0247224335d27b9ad2",
+      "current": "dcb7515eb9b92e853cfdc7ce06376495d7fb5be2a59a4593d8c1f54e037505e6"
+    },
+    "src/lib/backups/model.ts": {
+      "previous": "eca8416c6bf89da1f5df020dfd57e1662c608483bf6f67e7d9bbc046ce7b0684",
+      "current": "df15dd7388dcaa98db76b3f7bc0c5cb86830aea6454e996cfbe7d3289f752169"
+    },
+    "src/lib/backups/service.server.ts": {
+      "previous": "52c07a29a823ea53ed5870022eacd4a83c5025d1ea8f1df9bd7a8aa6c406c150",
+      "current": "10ff9c80d8775805e25f685eb21f44237a90d8772c3844be264a20ea5ae7fcc0"
+    },
+    "src/lib/catalogue/trakt-identity.server.ts": {
+      "previous": "9d9be5c48d42e1beeb958f5a0570d059dc40b5a577d842269bdafdeb5e5a3abf",
+      "current": "b5452a940717bdca3bc240fdea0e8e96a4d59021eeefd2ffaec6322bcca94d7b"
+    },
+    "src/lib/core/profile/avatar-storage.server.ts": {
+      "previous": "be4dd291a21005260b530423ddc85bc3cbaf3748e50cac263f5aadfd897357f4",
+      "current": "3cc1d949a06c3330bf9ebb52e5d3bb79c1ae57f7fb99457751f40484c49c684c"
+    },
+    "src/lib/providers/instances.server.ts": {
+      "previous": "f3f73787cd4ff6f58d0fc4ae88f15abc392e6953e8be589e7bb21766c9c68dfc",
+      "current": "eb777f199e34fd89969a4b55ac3194d2f6ff29a3c6e1608beb72000d33ba795e"
+    },
+    "src/lib/providers/jellyfin/provisioning.server.ts": {
+      "previous": "fd3a7762fe4745349c4bb88b3493f13583b88527c5ea2358c79d3976697f66c6",
+      "current": "b5867309022dad09c4776be8c5c836ed38702644425534cceee8c28d2dea946b"
+    },
+    "src/lib/providers/seerr/playback-readiness.server.ts": {
+      "previous": "62b9c7b6d1ae68dbb4eedc26312023cdaf8d626ed58b9c288a8a1d7cac8d6763",
+      "current": "a89b469a87c9d72d0f5f925b4f065a3ff375ee78679be62929cc036f724653d0"
+    },
+    "src/lib/providers/seerr/requests.server.ts": {
+      "previous": "b47ce2f0a4aeeae134132ada1fbf2fbaaedc9643ade2053a3b890156118f2e90",
+      "current": "7fbdb4efbcf5c723c33334c4a95fdaaba51162a0c1ad9deb9bbbf8f41ada7a7b"
+    },
+    "src/lib/server/auth/account-management.server.ts": {
+      "previous": "d850432d93b5d32544e224777f0cf74ce88ec44aa2272d813f2ed112494f6def",
+      "current": "eb2b7459eac80be4c8d63f17255cd70c59569944a827dc9a184c24acf42ebded"
+    },
+    "src/lib/server/notifications/index.ts": {
+      "previous": "9361ee1adb63397ff0baf8dba75b7155ed0e1144119ae8256e6f99619a146a3c",
+      "current": "f39a4a746fa62c3f016e4f074723104f9f55083b8d2f4fb27dbc9051954e40a0"
+    },
+    "src/lib/sync/jellyfin.server.ts": {
+      "previous": "32ddfc43edb2fa8492379c0e92c5049b501bfe8ec883183b73981900754a5f43",
+      "current": "04aa70d1da28d7b8ac008861c7f594f2a73afbde14b61b4eaca0e6bb14ab0f85"
+    },
+    "src/lib/ui/materials/MaterialTweaker.svelte": {
+      "previous": "9496dd3fd4e82242b8d7e5483037546927911d9f34cfb4ef76ea5d189fc90176",
+      "current": "201e218bb5dc84c10d99343db4ea27901311561cd6d5b0ed266179eb46aa80f8"
+    },
+    "src/lib/ui/materials/export.ts": {
+      "previous": "dd04601ec4bbdadda7297aaff5e6176f4faa49bfcb4f46fc995a25391e9b4c85",
+      "current": "333a8060477f272e3153d09a2a265526b0e81452a9ac00b059b5f6de12aaab6c"
+    },
+    "src/lib/ui/materials/glass.ts": {
+      "previous": "cd3214897b64490886a4d262bd5ea447b40f20c399ec86dea3ce8903de5b586c",
+      "current": "8cef3d0234e1eedbdfb55c5b7e5f53f4c0bf52c5aac58194bbd0869b01d058fb"
+    },
+    "tests/container-stderr.test.ts": {
+      "previous": "c276e8acd6ae67f4f5fb76769446b7e35df875fd64bfc5386fa5d6301a3f311d",
+      "current": "8b995040962cecc34670b574b08331b44857e9faf61fa90eb6d58d17647f7673"
+    },
+    "tests/glass-lifecycle.test.ts": {
+      "previous": "c96e7ac25c6c7816b5629001a76051d82a6aee64e280c89e1ffeebfc06ea6dca",
+      "current": "d0ea63773a3834c1057950afdede64558eeca2ea869d26362b506aea8dc7bf85"
+    },
+    "tests/material-export.test.ts": {
+      "previous": "6baa33be1f860671b78b0cb61c36382046bba664dd7d18c84aba9714923fbab4",
+      "current": "742c8f9eb001da6b16506d95b6e4ee203afaaeb597859038dc64d688b2c44108"
+    },
+    "tests/notification-batching.test.ts": {
+      "previous": "ac63350179688f0e20389ecbe14febcad9a032a8e288491469ef8d97487e1eab",
+      "current": "c2fbc068c6a940e45efa17981ed730daf233b31d28e382fe7a3c35dfddd22386"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "9ae8dc3abd0cce9def0120f8b85f7eda7cc1cdf7315c8baf6e964cc213f3e892",
+      "current": "3054b9f5675292170850f8befe2756d9d8c63d406c9de7a1451f0e2f133cbb2f"
+    },
+    "tests/provisioning-db.test.ts": {
+      "previous": "9442f05e812f749ebf31b942167c7e426412caf01b2d8495c18a7e1439b5fbcd",
+      "current": "405641d226174ec43757be9697af3364068a3daf47677818ea3b97bad97213e2"
+    },
+    "tests/seerr-refresh-db.test.ts": {
+      "previous": "5c8bec48e551d65a8d075b6f08b3d695ce4cbc3331242c243770abfeea05be75",
+      "current": "259e4a792aa27c6c4ea98d525f72913ee2d56c75d0294f32863d95ee270aed1e"
+    },
+    "tests/trakt-sync-db.test.ts": {
+      "previous": "959be1e7879c1f411ffeb04fc3a78b723671b93de503d02af44de176108aa6ee",
+      "current": "d151cd199d4a96cb313bf0ef819c230633b5b21e8387edcf7dd799a1bff2891b"
+    }
+  }
+}

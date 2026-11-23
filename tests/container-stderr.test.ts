@@ -1,5 +1,17 @@
 import {expect,test} from 'bun:test';
-import {drainStderr} from '../scripts/container-stderr';
+import {drainStderr,writeConsoleChunk} from '../scripts/container-stderr';
+test('console writes keep the remainder after a short write or interruption',()=>{
+  const output:number[]=[];
+  let calls=0;
+  writeConsoleChunk(new Uint8Array([1,2,3,4,5]),part=>{
+    if(++calls===2)throw Object.assign(new Error('Interrupted'),{code:'EINTR'});
+    const written=part.subarray(0,2);
+    output.push(...written);
+    return written.length;
+  });
+  expect(output).toEqual([1,2,3,4,5]);
+  expect(calls).toBe(4);
+});
 test('an inherited pipe cannot conceal a completed child or change its status', async () => {
   let cancelled=false;
   const stream=new ReadableStream<Uint8Array>({start(c){c.enqueue(new TextEncoder().encode('final evidence'));},cancel(){cancelled=true;}});

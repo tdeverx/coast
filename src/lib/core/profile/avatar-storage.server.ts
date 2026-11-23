@@ -7,10 +7,18 @@ import { users } from '#lib/server/db/schema.js';
 import { dataDirectory } from '#lib/server/security/credentials.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { requireVisible } from '#lib/social/privacy.server.js';
+import { avatarBackupLease } from '#lib/backups/model.js';
 
 export const avatarRequestLimit = 7 * 1024 * 1024;
 const directory = () => join(dataDirectory(), 'avatars');
 const avatarUrl = (userId: string, hash: string) => `/api/v1/profile/avatar/${userId}/${hash}`;
+
+async function canPruneAvatars(tx: Pick<ReturnType<typeof getDb>, 'execute'>) {
+  const [lock] = await tx.execute<{ acquired: boolean }>(sql`
+    select pg_try_advisory_xact_lock_shared(hashtextextended(${avatarBackupLease}, 0)) as acquired
+  `);
+  return lock.acquired;
+}
 
 function gifBytes(avatar: string) {
   const bytes = Buffer.from(avatar.split(',')[1], 'base64');
@@ -65,6 +73,7 @@ export async function pruneAvatars(userId:string,previousAvatar:string|null|unde
   const hash=previousAvatar.slice(prefix.length);
   if(!/^[0-9a-f]{64}$/.test(hash))return;
   await getDb().transaction(async tx => {
+    if (!await canPruneAvatars(tx)) return;
     const [user]=await tx.select({avatar:sql<string|null>`${users.settings}#>>'{profile,avatar}'`}).from(users).where(eq(users.id,userId)).for('update');
     if(user?.avatar===previousAvatar)return;
     for(const format of formats){
@@ -116,6 +125,10 @@ async function sweepAvatars():Promise<AvatarSweep>{
     }
     if(epoch!==sweepEpoch){await closeSweepCursor(cursor);return result;}
     if(files.length)await getDb().transaction(async tx=>{
+      if (!await canPruneAvatars(tx)) {
+        result.skipped += files.length;
+        return;
+      }
       const ids=[...new Set(files.map(file=>file.userId))].sort();
       // A skipped locked user is distinct from a missing user. Never delete an
       // asset while its writer holds the existing account row lock.

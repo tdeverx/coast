@@ -1,5 +1,5 @@
 import { chmodSync, closeSync, mkdirSync, openSync, renameSync, statSync, writeSync } from 'node:fs';
-import {drainStderr} from './container-stderr';
+import {drainStderr, writeConsoleChunk} from './container-stderr';
 
 // Keep stderr independently of replaceable container stdout. Two private 256 KiB
 // segments bound disk use; writes are best effort and never change child status.
@@ -45,7 +45,7 @@ persist(new TextEncoder().encode(`\nApplication started ${new Date().toISOString
 try {
   process.exitCode = await drainStderr(child.stderr, child.exited, bytes => {
     persist(bytes);
-    try { writeSync(2, bytes); } catch { /* A disconnected console must not stop the application. */ }
+    try { writeConsoleChunk(bytes, part => writeSync(2, part)); } catch { /* A disconnected console must not stop the application. */ }
   });
 } finally {
   process.off('SIGTERM', terminate);

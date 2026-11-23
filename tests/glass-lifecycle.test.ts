@@ -130,6 +130,8 @@ test('native gate transitions, shared observers and deferred teardown preserve o
     env.appearance(true);env.flush();expect(env.body.children.filter(node=>node.tag==='svg')).toHaveLength(0);env.appearance(false);env.flush();
     one.action.update({renderer:'css'});env.flush();expect(one.node.dataset.coastGlassRenderer).toBe('css');
     one.action.update({enabled:false});env.flush();expect(one.node.dataset.coastGlassRenderer).toBe('disabled');
+    expect(one.node.style.getPropertyValue('backdrop-filter')).toBe('');
+    expect(one.node.style.getPropertyValue('--coast-glass-fill')).toBe('');
     one.action.update({surface:{refraction:0}});env.flush();expect(one.node.dataset.coastGlassRenderer).toBe('css');
     one.action.update({});env.flush();expect(one.node.dataset.coastGlassRenderer).toBe('original-svg-backdrop');
     env.resize();const stale=two.definition();env.destroy();expect(env.mediaListeners.size).toBe(0);expect(env.mutations.every(entry=>entry.disconnected)).toBe(true);expect(env.resizes.every(entry=>entry.disconnected)).toBe(true);

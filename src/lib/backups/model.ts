@@ -1,3 +1,5 @@
+export const avatarBackupLease = 'coast-backup-avatars';
+
 export type BackupPolicy = {
   enabled: boolean;
   time: string;

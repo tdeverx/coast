@@ -7,7 +7,7 @@ import { dataDirectory } from '#lib/server/security/credentials.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { classifyFailure, diagnosticErrorCode, logDiagnostic } from '#lib/server/diagnostics/index.js';
 import { captureBackup, pruneBackups, recipientCertificate } from './archive.server';
-import { defaultBackupPolicy, dueBackupDay, type BackupPolicy, type BackupStatus } from './model';
+import { avatarBackupLease, defaultBackupPolicy, dueBackupDay, type BackupPolicy, type BackupStatus } from './model';
 
 const policyKey = 'backup-policy';
 const jobKey = 'backup-job';
@@ -133,8 +133,11 @@ async function work(signal: AbortSignal) {
     const started = performance.now();
     const captureSignal = AbortSignal.any([signal, AbortSignal.timeout(20 * 60_000)]);
     let snapshot: Job['latest'];
+    let preservingAvatars = false;
     try {
       if (!policy.recipient) throw new Error('Missing recovery certificate.');
+      await connection`select pg_advisory_lock(hashtextextended(${avatarBackupLease}, 0))`;
+      preservingAvatars = true;
       snapshot = await captureBackup({
         data: dataDirectory(), recipient: policy.recipient, database,
         signal: captureSignal,
@@ -155,6 +158,8 @@ async function work(signal: AbortSignal) {
           'Backup failed. Check PostgreSQL access, free space and the backups folder permissions.',
       });
       return;
+    } finally {
+      if (preservingAvatars) await connection`select pg_advisory_unlock(hashtextextended(${avatarBackupLease}, 0))`;
     }
     let warning: string | null = null;
     try {

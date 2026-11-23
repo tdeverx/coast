@@ -1,7 +1,14 @@
 import {test,beforeAll,afterAll,expect,mock} from 'bun:test';
 import {getSql,closeDb} from '../src/lib/server/db';
 import * as connection from '../src/lib/providers/jellyfin/connection.server';
-import {provisionOnboarding} from '../src/lib/providers/jellyfin/provisioning.server';
+import {provisionOnboarding,provisionPolicy} from '../src/lib/providers/jellyfin/provisioning.server';
+test('a replacement preset resets former managed restrictions and retains independent policy',()=>{
+ const previous={EnableVideoPlaybackTranscoding:false,RemoteClientBitrateLimit:1250000,AccessSchedules:[{DayOfWeek:'Monday' as const,StartHour:12,EndHour:15}]};
+ expect(provisionPolicy({...previous,AuthenticationProviderId:'unchanged'},[],{},previous)).toMatchObject({
+  EnableVideoPlaybackTranscoding:true,RemoteClientBitrateLimit:0,AccessSchedules:[],AuthenticationProviderId:'unchanged',
+ });
+ expect(provisionPolicy(previous,[],{EnableVideoPlaybackTranscoding:false},previous).EnableVideoPlaybackTranscoding).toBe(false);
+});
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const admin=crypto.randomUUID(),instance=crypto.randomUUID(),source=crypto.randomUUID(),generation=crypto.randomUUID(),folder='a'.repeat(32);
 let mode='ok',creates=0,policies:Record<string,unknown>[]=[],remoteName='';

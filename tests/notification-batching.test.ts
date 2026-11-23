@@ -72,7 +72,7 @@ test('shared preparation presents delivered notices as toasts while retaining ca
   const inputs=[
    {userId:id(1),kind:'administrator',title:'Silent',sourceKey:'one'},
    {userId:id(1),kind:'administrator',title:'Locked',level:'silent' as const,locked:true,sourceKey:'locked'},
-   {userId:id(2),kind:'administrator',title:'Persistent',sourceKey:'two'},
+   {userId:id(2),kind:'administrator',title:'Persistent',level:'normal' as const,sourceKey:'two'},
    {userId:id(3),kind:'recommendation',title:'Suppressed',data:{actorId:id(2),subjectId:id(3),destination:'/for-you'},sourceKey:'social'},
    {userId:id(4),kind:'administrator',title:'Before',sourceKey:'repeat'},
    {userId:id(4),kind:'administrator',title:'After',sourceKey:'repeat'},

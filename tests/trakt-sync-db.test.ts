@@ -749,6 +749,7 @@ run('an already grouped library adopts a standalone Trakt season using exact epi
   }
   const show = { title: 'Second story', ids: { tmdb: base + 2, tvdb: base + 10, trakt: base + 60 } };
   const calls: URL[] = [];
+  let seasonGrew = false;
   const adapter = new TmdbAdapter(async raw => {
     const url = new URL(raw, 'https://fixture.invalid');
     calls.push(url);
@@ -758,7 +759,7 @@ run('an already grouped library adopts a standalone Trakt season using exact epi
     });
     if (url.pathname.endsWith('/episode/1')) return detail(1);
     if (url.pathname.endsWith('/episode/2')) return detail(2);
-    if (url.pathname.endsWith('/season/1')) return { id: base + 20, name: 'Miniseries', episodes: [detail(1), detail(2)] };
+    if (url.pathname.endsWith('/season/1')) return { id: base + 20, name: 'Miniseries', episodes: [detail(1), detail(2), ...(seasonGrew ? [detail(3)] : [])] };
     return { id: base + 2, name: show.title, first_air_date: '2024-10-01', external_ids: { tvdb_id: base + 10 },
       seasons: [{ id: base + 20, name: 'Miniseries', season_number: 1 }] };
   }, 'en-US', 'GB', String(base));
@@ -774,6 +775,16 @@ run('an already grouped library adopts a standalone Trakt season using exact epi
     expect(calls).toHaveLength(count);
     expect(await db.select().from(trackingEvents).where(eq(trackingEvents.id, event.id))).toEqual([event]);
     expect((await db.select().from(episodes).where(eq(episodes.seasonId, second.id))).map(row => row.mediaId).sort()).toEqual(old.sort());
+    seasonGrew = true;
+    const newRecord = { show, episode: { title: 'Story episode 3', season: 1, number: 3, ids: { tmdb: base + 43, trakt: base + 63 } } };
+    const added = await resolveTrakt(newRecord);
+    expect(added?.kind).toBe('episode');
+    mediaIds.push(added!.id);
+    expect((await db.select().from(episodes).where(eq(episodes.mediaId, added!.id)))[0])
+      .toMatchObject({ showId: root.id, seasonId: second.id, episodeNumber: 3 });
+    expect(await db.select().from(trackingEvents).where(eq(trackingEvents.id, event.id))).toEqual([event]);
+    expect(calls.filter(url => url.pathname.endsWith('/season/1'))).toHaveLength(2);
+    expect((await resolveTrakt(newRecord))?.id).toBe(added?.id);
   } finally {
     tmdbConnection.mockRestore();
   }
