@@ -3,7 +3,7 @@ import type { CatalogueFacts } from '#lib/providers/contracts.js';
 
 const featureWeights: Partial<Record<TasteDimension, number>> = {
   genres: 1, tags: 0.9, themes: 0.85, cast: 0.8, directors: 1.2, writers: 1,
-  artists: 1.3, franchises: 1.6, developers: 1.2, mechanics: 0.5,
+  artists: 1.3, franchises: 1.6, developers: 1.2, mechanics: 0.5, studios:.48, networks:.48, publishers:.25, illustrators:.78,
 };
 const dimensions = Object.entries(featureWeights) as [TasteDimension, number][];
 export function isDescriptiveTasteDimension(dimension: TasteDimension) {
@@ -12,7 +12,7 @@ export function isDescriptiveTasteDimension(dimension: TasteDimension) {
 const descriptiveDimensions = dimensions.filter(([dimension]) => isDescriptiveTasteDimension(dimension));
 const minRatedTitles = 40;
 const maxWeights = 512;
-const combinationLimits: Record<TasteDimension, number> = {
+const combinationLimits: Partial<Record<TasteDimension, number>> = {
   genres:4, tags:8, themes:3, cast:2, directors:1, writers:1, illustrators:1, composers:1, cinematographers:1,
   franchises:1, developers:1, publishers:1, mechanics:2, perspectives:1, artists:2, studios:1, networks:1,
   languages:1, countries:1, decades:1,
@@ -20,7 +20,7 @@ const combinationLimits: Record<TasteDimension, number> = {
 const combinationDimensions = Object.entries(combinationLimits) as [TasteDimension, number][];
 type CombinationFeature = TasteFeature & { dimension: TasteDimension; key: string };
 type TasteCombination = { key: string; left: CombinationFeature; right: CombinationFeature };
-type Term = { key: string; weight: number; pair?: true };
+type Term = { key: string; weight: number; pair?: true; parents?:readonly [string,string] };
 type RatingWeights = Record<string, number>;
 export type TasteRatingTerm = { name: string; points: number };
 export type TasteAudienceRating = NonNullable<CatalogueFacts['audience']>;
@@ -38,25 +38,7 @@ export function ratingInfluence(rating: number) {
   return rating === neutralRating ? 0.15 : Math.abs(ratingVote(rating));
 }
 
-export type FriendTasteEvidence = { rating: number | null; shared: number; difference: number };
 export type FriendTasteAdjustment = { watched: number; rated: number; points: number };
-
-/** Compare stated preferences; an unrated watch supplies a small positive signal. */
-export function friendTasteAdjustment(evidence: readonly FriendTasteEvidence[]): FriendTasteAdjustment {
-  let support=0, votes=0, watched=0, rated=0;
-  for (const {rating,shared,difference} of evidence) {
-    const agreement=1-difference/4.5;
-    if (shared<8 || agreement<0.8) continue;
-    const trust=(agreement-0.75)*4*shared/(shared+8);
-    support+=trust;
-    votes+=trust*(rating===null ? 0.25 : ratingVote(rating));
-    watched++;
-    if(rating!==null)rated++;
-  }
-  const adjustment=6*votes/(0.75+support);
-  const rounded=Math.round(Math.abs(adjustment));
-  return {watched,rated,points:rounded ? Math.sign(adjustment)*rounded : 0};
-}
 
 /** A shared dislike is weaker evidence against the title's features. */
 export function negativeRatingWeight(rating: number | null, audience?: TasteAudienceRating) {
@@ -147,6 +129,22 @@ function terms(features: TasteFeatures, names?: Map<string, string>, availableDi
       names?.set(key, `${genre.name} + ${subject.name}`);
     }
   }
+  // Fit descriptive contexts against identifiable collaborators, accounting for both main
+  // effects. Use the same bounded interaction vocabulary in the worker and foreground.
+  const collaborators = (['cast','writers','directors','studios','networks','developers','artists','illustrators','publishers','franchises'] as const)
+    .flatMap(dimension => (features[dimension] ?? []).filter(f => dimension!=='artists'||!f.id.startsWith('artist-name:'))
+      .slice(0,dimension==='cast'?2:1).map(f => ({...f,dimension})));
+  if(collaborators.length){
+    const anchors = (['genres','tags','themes'] as const).flatMap(dimension => (features[dimension] ?? []).slice(0,2)
+      .map(f => ({...f,dimension})));
+    const weight = .4 / Math.sqrt(Math.max(1,anchors.length*collaborators.length));
+    for(const a of anchors)for(const b of collaborators){
+      const parents = [a.dimension+':'+a.id,b.dimension+':'+b.id] as const;
+      const key = JSON.stringify(parents);
+      terms.set(key,{key,weight,pair:true,parents});
+      names?.set(key,a.name+' + '+b.name);
+    }
+  }
   const pairWeight = 0.4 / Math.sqrt(Math.max(1, pairs.size));
   for (const key of pairs) terms.set(key, { key, weight: pairWeight, pair: true });
   return [...terms.values()];
@@ -155,19 +153,19 @@ function terms(features: TasteFeatures, names?: Map<string, string>, availableDi
 /** Fit stated opinions jointly. The saved reference keeps coefficients, never rated titles. */
 export function createTasteRatingTrainer(ratingCount: number) {
   const observations: { value: number; influence: number; positions: Uint32Array; weights: Float64Array }[] = [];
-  const support = new Map<string, { position: number; count: number; minimum: number }>();
+  const support = new Map<string, { position: number; count: number; minimum: number; parents?:readonly [string,string] }>();
   return {
-    add(rating: number | null, features: TasteFeatures, negativeWeight = 1) {
+    add(rating: number | null, features: TasteFeatures, negativeWeight = 1, reliability = 1) {
       if (rating === null || ratingCount < minRatedTitles) return;
-      const influence = ratingInfluence(rating);
+      const influence = ratingInfluence(rating)*reliability;
       const inputs = terms(features);
       if (!inputs.length) return;
       const positions = new Uint32Array(inputs.length);
       const weights = new Float64Array(inputs.length);
-      for (const [i, { key, pair, weight }] of inputs.entries()) {
+      for (const [i, { key, pair, weight, parents }] of inputs.entries()) {
         let entry = support.get(key);
         if (!entry) {
-          entry = { position: support.size, count: 0, minimum: pair ? 5 : 3 };
+          entry = { position: support.size, count: 0, minimum: pair ? 5 : 3, parents };
           support.set(key, entry);
         }
         entry.count++;
@@ -182,8 +180,10 @@ export function createTasteRatingTrainer(ratingCount: number) {
       if (observations.length < minRatedTitles || !observations.some(row => row.value !== observations[0].value)) return;
       const selected = new Int32Array(support.size).fill(-1);
       const keys: string[] = [];
-      for (const [key, { position, count, minimum }] of support) {
+      for (const [key, { position, count, minimum, parents }] of support) {
         if (count < minimum) continue;
+        // With no outside observations the pair is indistinguishable from one parent.
+        if (parents?.some(parent => (support.get(parent)?.count ?? 0)-count < 3)) continue;
         selected[position] = keys.length;
         keys.push(key);
       }

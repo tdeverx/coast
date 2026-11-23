@@ -73,6 +73,7 @@ export const experimentalPolicies = [
   ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
   ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
   ['experimentalRichToasts', 'Rich toasts', 'Show one toast at a time with stacked edges, glass, and artwork or avatars when available.'],
+  ['experimentalCardTasteScores', 'Taste matches on cards', 'Show a personal match percentage in media card subtitles for viewers who have Personalisation enabled.'],
 ] as const;
 
 export const policyFields = [
@@ -82,7 +83,7 @@ export const policyFields = [
   'registrationProvider',
   'experimentalMusic','experimentalGaming','experimentalParties',
   'experimentalBooks','experimentalComics',
-  'experimentalPlanning','experimentalRichToasts','allowPlaybackSharing',
+  'experimentalPlanning','experimentalRichToasts','experimentalCardTasteScores','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',
   'maxBitrateMbps',

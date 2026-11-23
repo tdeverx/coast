@@ -1,0 +1,28 @@
+{
+  "verifiedSeries": 62,
+  "scorableSeries": 27,
+  "independentCompatiblePairs": 0,
+  "compatibleTeams": 0,
+  "result": {
+    "1": {
+      "negative": {
+        "users": 0,
+        "teams": 0
+      },
+      "positive": {
+        "users": 0,
+        "teams": 0
+      }
+    },
+    "2": {
+      "negative": {
+        "users": 0,
+        "teams": 0
+      },
+      "positive": {
+        "users": 0,
+        "teams": 0
+      }
+    }
+  }
+}

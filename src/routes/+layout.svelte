@@ -18,8 +18,12 @@
   import {startPresence,userStatus} from '#lib/social/status.svelte.js';
   import {playbackVisible} from '#lib/playback/visibility.js';
   import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '#lib/playback/synced/client.svelte.js';
-  import { refreshRouteDependencies } from '#lib/ui/client.js';
+  import { isFeatureDisabled, refreshRouteDependencies } from '#lib/ui/client.js';
   import { useClient } from '#lib/ui/client-context.js';
+  import { createCardTasteBatch } from '#lib/ui/card-taste-batch.js';
+  import { provideCardTaste, type CardTasteTarget } from '#lib/ui/card-taste-context.js';
+  import TasteInspection from '#lib/profile/TasteInspection.svelte';
+  import type { CardTasteResponse } from '#lib/social/card-taste.js';
   import { installBrowserDiagnostics } from '#lib/ui/diagnostics.js';
   import { onMount, onDestroy, untrack } from 'svelte';
   import { page } from '$app/state';
@@ -31,6 +35,32 @@
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
   const { api } = useClient();
+  const scoreScope=$derived(data.user && data.experimentalCardTasteScores && data.tastePublication
+    ? data.user.id+':'+data.tastePublication.scope : undefined);
+  const scoreBatch = $derived(scoreScope ? createCardTasteBatch(fetchCardScores) : undefined);
+  async function fetchCardScores(ids: string[], signal: AbortSignal): Promise<CardTasteResponse> {
+    try {
+      return await api<CardTasteResponse>(`profile/card-taste?ids=${ids.join(',')}`, undefined, 'GET', { signal });
+    } catch (error) {
+      if (!signal.aborted && isFeatureDisabled(error)) {
+        scoreBatch?.dispose();
+        await refreshRouteDependencies(['session']);
+      }
+      throw error;
+    }
+  }
+  let cardTasteTarget = $state.raw<(CardTasteTarget & {scope:string;url:string})>();
+  provideCardTaste(() => scoreBatch, target => {
+    if (scoreScope) cardTasteTarget = {...target,scope:scoreScope,url:page.url.href};
+  });
+  $effect(() => {
+    if (cardTasteTarget && (cardTasteTarget.scope !== scoreScope || cardTasteTarget.url !== page.url.href))
+      cardTasteTarget = undefined;
+  });
+  $effect(() => {
+    if (data.tastePublication) scoreBatch?.refresh(data.tastePublication.revision);
+  });
+  $effect(() => { const batch = scoreBatch; return () => batch?.dispose(); });
   let expiredViewer = $state<string>();
   let content: HTMLElement;
   const activePanelUrl = $derived(panelAddress(page));
@@ -340,6 +370,10 @@
   {/key}
   {#if streamsOpen&&StreamsPanel}
     {#key data.user?.id}<StreamsPanel open={true} isAdmin={data.user?.role==='admin'} initialView={streamsView} onselectView={value=>selectPanelView('streams',value)} onclose={closeStreams}/>{/key}
+  {/if}
+  {#if cardTasteTarget && cardTasteTarget.scope === scoreScope && cardTasteTarget.url === page.url.href}
+    {#key cardTasteTarget}<TasteInspection workId={cardTasteTarget.workId} kind={cardTasteTarget.kind}
+      inspect={cardTasteTarget} onclose={() => {cardTasteTarget = undefined;}}/>{/key}
   {/if}
   {#key data.user?.id}<NotificationToasts notifications={data.user ? data.notifications : []} rich={data.experimentalRichToasts} initialFailure={typeof page.form?.error==='string'?page.form.error:undefined} />{/key}
 </div>

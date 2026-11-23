@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
-import {workTasteFeatures} from '../src/lib/social/work-features.server';
+import {childTasteCredits,workTasteFeatures} from '../src/lib/social/work-features.server';
 import type {TasteAudienceRating} from '../src/lib/social/taste-rating-model';
 import {importReading} from '../src/lib/catalogue/reading.server';
 import {OpenLibraryAdapter} from '../src/lib/providers/openlibrary/adapter.server';
@@ -9,8 +9,61 @@ import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
 import {importIgdbMetadata} from '../src/lib/core/games/service.server';
 import {musicItems} from '../src/lib/providers/jellyfin/music.server';
 import {persistMusic} from '../src/lib/music/persistence.server';
+import {TmdbAdapter} from '../src/lib/providers/tmdb/adapter.server';
+import {ingestMetadata} from '../src/lib/catalogue/service.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
+
+run('a detail refresh replaces newest-season crew with roles verified across the series',async()=>{
+ const db=getSql(),externalId='920001';
+ const guest={id:11,name:'Guest director',job:'Director'};
+ const recurring={id:12,name:'Director and guest writer',jobs:[{job:'Director',episode_count:3},{job:'Teleplay',episode_count:1}]};
+ let episodes:number|undefined=12,requests=0;
+ const adapter=new TmdbAdapter(async path=>{
+  requests++;
+  expect(path).toContain('aggregate_credits');
+  return {id:Number(externalId),name:'Crew fixture',number_of_episodes:episodes,credits:{cast:[],crew:[guest]},
+   created_by:[{id:14,name:'Creator'}],aggregate_credits:{crew:[
+    {...guest,jobs:[{job:guest.job,episode_count:1}]},recurring,
+    {id:13,name:'Overlapping credits',jobs:[{job:'Writer',episode_count:2},{job:'Writer',episode_count:2}]},
+    {id:15,name:'Series writer',jobs:[{job:'Screenplay',episode_count:6}]},
+   ]}};
+ });
+ const refreshed=await adapter.details('show',externalId,false);
+ const legacy={id:String(guest.id),name:guest.name,role:guest.job};
+ const show=await ingestMetadata({...refreshed,facts:{credits:[legacy]},tasteFeatures:{directors:[{id:'tmdb:11',name:guest.name}]}});
+ try{
+  await ingestMetadata(refreshed);
+  const facts=(await workTasteFeatures([show.id])).get(show.id)!;
+  expect(facts.directors).toEqual([{id:'tmdb:12',name:recurring.name}]);
+  expect(facts.writers).toEqual([{id:'tmdb:15',name:'Series writer'}]);
+  expect(refreshed.facts?.credits).toContainEqual({id:'14',name:'Creator',role:'Creator'});
+  episodes=undefined;
+  expect((await adapter.details('show',externalId,false)).tasteFeatures?.directors).toBeUndefined();
+  episodes=1;
+  expect((await adapter.details('show',externalId,false)).tasteFeatures?.directors).toEqual([{id:'tmdb:11',name:guest.name}]);
+  expect(requests).toBe(3);
+ }finally{await db`delete from media where id=${show.id}`;}
+});
+
+run('screen taste uses certification from the requested region and omits unknown ratings',async()=>{
+ const db=getSql(),[movie,show,unknown]=Array.from({length:3},()=>crypto.randomUUID());
+ try{
+  await db`insert into media(id,kind,title) values(${movie},'movie','Movie'),(${show},'show','Show'),(${unknown},'movie','Unknown')`;
+  await db`insert into metadata_snapshots(media_id,provider,region,certificate) values
+    (${movie},'tmdb','GB',' 15 '),(${movie},'tmdb','US','R'),(${show},'tmdb','GB','12'),
+    (${unknown},'tmdb','GB','Not Rated'),(${unknown},'tmdb','US','PG')`;
+  const uk=await workTasteFeatures([movie,show,unknown],undefined,undefined,'GB');
+  expect(uk.get(movie)?.ageRatings).toEqual([{id:'GB:15',name:'15'}]);
+  expect(uk.get(show)?.ageRatings).toEqual([{id:'GB:12',name:'12'}]);
+  expect(uk.get(unknown)?.ageRatings).toBeUndefined();
+  const us=await workTasteFeatures([movie,show],undefined,undefined,'US');
+  expect(us.get(movie)?.ageRatings).toEqual([{id:'US:R',name:'R'}]);
+  expect(us.get(show)?.ageRatings).toBeUndefined();
+  await db`insert into metadata_overrides(media_id,certificate) values(${movie},'Unrated')`;
+  expect((await workTasteFeatures([movie],undefined,undefined,'GB')).get(movie)?.ageRatings).toBeUndefined();
+ }finally{await db`delete from media where id in (${movie},${show},${unknown})`;}
+});
 
 run('taste maps typed screen credits by provider identity and selects the release decade independently of details',async()=>{
  const db=getSql(),movie=crypto.randomUUID();
@@ -146,5 +199,49 @@ run('medium-specific provider metadata survives validation, persistence and the 
  }finally{
   await db`delete from provider_instances where id=${instance}`;
   await db`delete from works where id=any(${db.array(items,'UUID')}::uuid[])`;
+ }
+});
+
+run('a rated episode contributes guest credits once per canonical show',async()=>{
+ const db=getSql(),[show,one,two]=Array.from({length:3},()=>crypto.randomUUID());
+ const cast=[{id:'tmdb:1',name:'Regular'},{id:'tmdb:2',name:'Guest'}];
+ try{
+  await db`insert into media(id,kind,title) values(${show},'show','Guests'),(${one},'episode','Part one'),(${two},'episode','Part two')`;
+  await db`insert into work_features(work_id,provider,features) values
+    (${one},'tmdb',${{cast}}::jsonb),(${two},'tmdb',${{cast}}::jsonb)`;
+  const work={id:show,kind:'show',childRatings:[{id:one,rating:4},{id:two,rating:5}]};
+  const facts=await childTasteCredits([work],new Map([[show,{cast:[cast[0]]}]]));
+  expect(facts.get(show)).toEqual([{rating:4.5,features:{cast:[cast[1]]}}]);
+ }finally{await db`delete from media where id=any(${db.array([show,one,two],'UUID')})`;}
+});
+
+run('reading edition preferences use the verified file and leave ambiguous translations unknown',async()=>{
+ const db=getSql(),[book,viewer,instance]=Array.from({length:3},()=>crypto.randomUUID());
+ const facts={openLibrary:{languages:['eng','jpn'],publishers:['Local Press','Tokyo Press'],editionSample:[
+  {id:'OL1M',title:'Translation',languages:['eng'],publishers:['Local Press']},
+  {id:'OL2M',title:'Original',languages:['jpn'],publishers:['Tokyo Press']},
+ ]}};
+ try{
+  await db`insert into users(id,username) values(${viewer},${'edition-'+viewer})`;
+  await db`insert into works(id,category,kind) values(${book},'book','book')`;
+  await db`insert into reading_works(id,provider,external_id,kind,title,source_url,catalogue_facts)
+   values(${book},'openlibrary',${book},'book','Many editions','https://fixture.invalid',${facts}::jsonb)`;
+  await db`insert into work_features(work_id,provider,features) values(${book},'openlibrary',${{publishers:[{id:'tokyo press',name:'Tokyo Press'},{id:'local press',name:'Local Press'}]}}::jsonb)`;
+  const ambiguous=(await workTasteFeatures([book])).get(book);
+  expect(ambiguous?.languages).toBeUndefined();
+  expect(ambiguous?.publishers).toBeUndefined();
+  await db`insert into provider_instances(id,provider,name,base_url) values(${instance},'jellyfin','Reading fixture','https://fixture.invalid')`;
+  const [connection]=await db`insert into provider_connections(user_id,instance_id,status) values(${viewer},${instance},'connected') returning id,account_generation`;
+  await db`insert into work_editions(work_id,instance_id,external_id,format,metadata) values
+   (${book},${instance},'file','pdf','{"version":"verified-file","openLibraryEditionId":"OL2M"}')`;
+  await db`insert into reading_sessions(user_id,work_id,connection_id,account_generation,external_id,format,edition,location,expires_at)
+   values(${viewer},${book},${connection.id},${connection.account_generation},'file','pdf','verified-file','{"format":"pdf","page":3,"total":30}',now())`;
+  const selected=(await workTasteFeatures([book],undefined,undefined,undefined,viewer)).get(book);
+  expect(selected?.languages).toEqual([{id:'japanese',name:'Japanese'}]);
+  expect(selected?.publishers).toEqual([{id:'tokyo press',name:'Tokyo Press'}]);
+ }finally{
+  await db`delete from users where id=${viewer}`;
+  await db`delete from provider_instances where id=${instance}`;
+  await db`delete from works where id=${book}`;
  }
 });

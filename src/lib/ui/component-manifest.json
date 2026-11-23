@@ -83,8 +83,9 @@
       "src/lib/media/Details.svelte",
       "src/lib/media/PersonDetails.svelte",
       "src/lib/profile/Details.svelte",
-      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteInspection.svelte",
       "src/lib/profile/TasteMatch.svelte",
+      "src/lib/profile/TasteSignals.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
@@ -218,8 +219,8 @@
     "usedBy": [
       "src/lib/games/Details.svelte",
       "src/lib/profile/Details.svelte",
-      "src/lib/profile/PersonalTaste.svelte",
       "src/lib/profile/TasteComparison.svelte",
+      "src/lib/profile/TasteSignals.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
@@ -250,7 +251,7 @@
       "src/lib/auth/ui/AdminInviteSettings.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
-      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteInspection.svelte",
       "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/sharing/ShareAction.svelte",
@@ -316,8 +317,9 @@
     "path": "src/lib/ui/components/FactList.svelte",
     "elements": [],
     "usedBy": [
-      "src/lib/profile/PersonalTaste.svelte",
       "src/lib/profile/TasteComparison.svelte",
+      "src/lib/profile/TasteMatch.svelte",
+      "src/lib/profile/TasteSignals.svelte",
       "src/lib/ui/components/DetailCard.svelte"
     ],
     "dynamicComposition": false
@@ -679,7 +681,7 @@
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/profile/Details.svelte",
-      "src/lib/profile/PersonalTaste.svelte",
+      "src/lib/profile/TasteSignals.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/library/+page.svelte",
@@ -984,7 +986,7 @@
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/Shelf.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "Toast": {
     "path": "src/lib/ui/components/Toast.svelte",

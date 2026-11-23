@@ -1,0 +1,174 @@
+{
+  "epoch": "2026-11-23-private-personal-taste-rebuild",
+  "baseline": "614bbcd284e87b1b064aaa5c15efcade889a3774",
+  "blanketAcceptance": false,
+  "scope": [
+    "Independent movie and show personal profiles, exact root exclusion, behaviour and star-rating fits, and a display projection trained on separate works.",
+    "Permission-filtered friend comparison and separate private social diagnostics. Private job publication, candidate card batches and explanations on the copied installation.",
+    "Matched work, franchise, sparse-rating and chronological evaluation, score distribution, prospective ledger evaluation, and per-batch serving measurements."
+  ],
+  "precedingEvidence": {
+    "report": "docs/audits/2026-11-23-taste-measurement/README.md",
+    "files": [
+      "src/lib/recommendations/interests.server.ts",
+      "scripts/taste-replay.ts",
+      "tests/taste-history-evidence-db.test.ts",
+      "tests/taste-replay-db.test.ts"
+    ],
+    "scope": "These inputs predate the independent model. The previous local study verified duplicate Jellyfin observations and original rating dates. The rebuilt model uses those canonical inputs and the new replay reproduces the incumbent controls. The root-fold fixture also verifies the parameterized interest query that cannot be exercised by copying its raw template text into SQL. Their changed pins are attributed to that preceding verification."
+  },
+  "verification": {
+    "hosted": false,
+    "ordinaryScorer": "incumbent",
+    "scope": "Local checks and offline measurements on one copied account. No future labels were available at sealing. The prospective ledger and account data stay private.",
+    "remaining": [
+      "The candidate assigned no sub-50 predictions to the 7 disliked movies and 33 disliked shows withheld from training.",
+      "Movie date-ordered evaluation lost some five-star green matches. The show date-ordered evaluation also missed the protected favourite comparison.",
+      "Absent later observations, the prospective comparison cannot establish real future accuracy. The small friendship sample cannot establish the benefit of social signals."
+    ]
+  },
+  "files": {
+    "scripts/taste-replay.ts": {
+      "previous": "068ad914fa2b38ecaff08bf410bc4fa896e3442aefe435bad042caf393c2c7c2",
+      "current": "37423e6871823d97b605aeb47dc3750697461d7bf63cc478949c4eeddc791c01"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "b19a925875d5c5a88c213e98781fe8e75172f1c8b3c0312c2d9d632333b4f3c9",
+      "current": "fa393f76d845f7bac92c2280d92661c169aaba12a4e9a38c443b8f4389d0d353"
+    },
+    "src/lib/profile/Details.svelte": {
+      "previous": "e93fead11a44d46350a807d35d4fb728453b23280bf0a343cb5c6fc25f77d032",
+      "current": "70b81042311f4ad07b0c685ae724041af2db05d9b6f8399cf4a0e87c1d7c7a2c"
+    },
+    "src/lib/profile/PersonalTaste.svelte": {
+      "previous": "43a0d5895f1c329d23aa33f2c28a13e4ab99a1881f249fd43456572a0370653b",
+      "current": "597b841a9b17488cc60bc5652394c5b4da06c9a7c4c4025e83a0d9a0ebff43c6"
+    },
+    "src/lib/profile/TasteComparison.svelte": {
+      "previous": "72716fd66b557c28248767b7f540e3bca827eb01d0d056ae1346af31f8f79b64",
+      "current": "a6417e4d7ff6cbd1ba2a53172ae923f90daa4edb43d4e7a525e4e6be91cee956"
+    },
+    "src/lib/profile/TasteMatch.svelte": {
+      "previous": "2ceb1d931ba8eb7f265c844062bd3328cc57d048c2760eca1e93e8ba581abd5c",
+      "current": "842d56921de08f40a1d96db82f8175a73a08cb75b9800625c7514d1fda345125"
+    },
+    "src/lib/profile/details.server.ts": {
+      "previous": "14fde51dff84aeb7f074b9e7d000ecf2cd5da6579b12b2b641c966e1c87c0cda",
+      "current": "965270d56e020d25efe91b774d853d79138a73617d3c0a8d920288f81f377250"
+    },
+    "src/lib/recommendations/interests.server.ts": {
+      "previous": "91a5da8313f26c9841237f795f23e513d1bae9b337bfa381337c08a369f37ab7",
+      "current": "4d6af1198a87755f9f6588d1caf14c964fb583d78f1323a9934809cd2a291b0f"
+    },
+    "src/lib/server/api/profile.server.ts": {
+      "previous": "5297814b0b0044f4c9bd5b4a8af7085284bde771019f15a8d1c45f97f9c247ed",
+      "current": "a2916cf988fd12a2f47e2a5ae6c8d6bc4da072c200c9c8e57996361ed6c17260"
+    },
+    "src/lib/server/startup.ts": {
+      "previous": "67de5ffb8fe5f65d0be90d5695b9bdce00012f6bb73eb80c2f7aa1c3293569cf",
+      "current": "dd10e44aba126a025391c48aa957d09e4fbb89fce7366cd8f92c4f9e3d24144e"
+    },
+    "src/lib/social/card-taste.ts": {
+      "previous": "06cda8daca4cc7452189358e68a18ee9342e06da4f0a08824635784fa4a1093b",
+      "current": "6464a9541b6eb7864e9b9b39f894814b40cd783c62d85f2e4fc3c306eefdbe44"
+    },
+    "src/lib/social/taste-cache.server.ts": {
+      "previous": "bfeefb4598b9994afa76a96e1d7186c598bdb3b5ba9b4697fa37188ebd94e44c",
+      "current": "bd221bf2ea3f17a9829ee28ea9d620ae20e082545a0875b99bf0d94e172d19ad"
+    },
+    "src/lib/social/taste-history.server.ts": {
+      "previous": "4e6a7f4810474940de882f287f4823280598cbc2fc9e1c89682a33cf04b35b73",
+      "current": "1e9d83a93406d40a3768f38df9432aed4ed86446fb032ec723f91fd4d3c177a2"
+    },
+    "src/lib/social/work-features.server.ts": {
+      "previous": "523c4511e73765738f6500c22fd5b42aa6ffaf964dc390f55f054dc26878bb88",
+      "current": "6fff7aaee518675f4482bb72bda4c65bf9283068815222e72f14ad2d380e1100"
+    },
+    "src/lib/ui/card-taste-batch.ts": {
+      "previous": "50361d08cf72368739ff73446fd13a533fcb1f7cfa14737a37ae5761269e6c25",
+      "current": "4ac68e2f09af416e1f184dc7c07b7be29608eb117340bce4bee409724f9f625b"
+    },
+    "src/lib/ui/component-manifest.json": {
+      "previous": "f5c4d428a7576282a561b19d1a0c6e1b5be9b94460c5dcb45847ddf9c1d4369a",
+      "current": "6be46b397d4ac507e28c0298150399dbdfaf51202f7fffdba604f8d99183484e"
+    },
+    "src/routes/+layout.server.ts": {
+      "previous": "08f77c1488724dfdfe3a0a0cf1f327d102bff3b15494270777f4a31fd7d152cc",
+      "current": "8306bc964005a6e994732759df8a94fcdc60d25afd85470750cd6f5f3ac62922"
+    },
+    "src/routes/+layout.svelte": {
+      "previous": "54d7b9ca50e27eaaa2bbf46194a29f15cafce7f1b554f6410313c0c57a7d3261",
+      "current": "2c15887ac082c05e0b7e3d51ef0f59be5e08d9d0ba5aedbbee87bfd61ba1a96d"
+    },
+    "src/routes/ui-preview/FeatureExamples.svelte": {
+      "previous": "7e67df13964510ff67afac1bf6cdb9bbea048dbdf0d69b00dcdadece2f643a4a",
+      "current": "b17238e7a12aadd2a4bc9e59427c1e9bb5fa344bdf4b38cfee60b863003cf9e4"
+    },
+    "tests/card-taste-batch.test.ts": {
+      "previous": "a056d1bf1d7458041677c50c4dbe6835af519710f2310ddeb3fab949c5a5bc0e",
+      "current": "a3468f0290286a16e8b3e82209eed21d5d202fbb57d9eff456f14f914e943799"
+    },
+    "tests/interest-root-fallback-db.test.ts": {
+      "previous": "db05c1c4d1349be33b33dca5794ef2943444e3389b9e022f39e64c07916fc9f1",
+      "current": "63144019c45343a88d6a1859d24e83acbbf5b80fc7d8ceb32d4898f4422c677c"
+    },
+    "tests/lazy-import-lifetimes.test.ts": {
+      "previous": "ff59685e440188eb2e1b8c625191da7cfc7d69eca2e7bd4df12d2eb65b1b0eef",
+      "current": "fa1d9986c0d92e39ff70671f4c3a4e167820786c61012e2b222f3248835f33da"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "3092ad463e4d5195cbf6cea0533e457804c7f3a25e64b79ca206d7bdcf568a6c",
+      "current": "86707cc6a66eff5408120bf3d899bce254cd6b818a2b2ccb2089dbb6f5c50de0"
+    },
+    "tests/taste-history-evidence-db.test.ts": {
+      "previous": "e4f4ac3c4e747aa94b49d16a4ba61995e82655fb858149b9d86af36c5fa71fbe",
+      "current": "945b1639074a5904550a137c3b3cff4074c6f32d02868121f4661bf49d74079f"
+    },
+    "tests/taste-menu-dialog.test.ts": {
+      "previous": "fe7babf8a45a14784c5d93ee60de4bdb1da47221113095aeaff0263eaeafaeb8",
+      "current": "7cc270790e47d5f17b2b6fd856e3f5f26bc9cd16224beb4daeccc2d4aed4c3b2"
+    },
+    "tests/taste-replay-db.test.ts": {
+      "previous": "1090353cc2b6440adb21f1f95b18301896d4d914394ebe1e27a3f1d88645bfc9",
+      "current": "29a4ea73d1f6a7695673ef74304ba38cd47c1db3de39b22351de7f301aa2fd1d"
+    },
+    "tests/ui-reference.test.ts": {
+      "previous": "cb26ce3b6440f32d326fa7092884ec5d5e4b7635b96c358ee51a13959a387d0e",
+      "current": "c67918d59efd27b43c9bdc17eb69e9d580881bf0f0b922931f1948c9c68110f6"
+    }
+  },
+  "supportingFiles": {
+    "docs/audits/2026-11-23-taste-measurement/README.md": "97fe79329199dd37b7d271d580e9cc25fff24212b5d59148da3645be8434a4d0",
+    "docs/audits/2026-11-23-taste-v2/evaluate.py": "c91d2a3cc09abe529c72a9d3353ab0a3146e7fff6e2e25227b2562fe06e0f478",
+    "docs/audits/2026-11-23-taste-v2/friend-study.ts": "fe5b18dc3eeafade674b0e7a714d0a2baeb50a8bbf02e14dcb3d0b488f7a9913",
+    "docs/audits/2026-11-23-taste-v2/graded-results.json": "61c35ac685a59878b9f6d42ccf4ee81b63fd280c4b5a16033d0fa6f5d202adfc",
+    "docs/audits/2026-11-23-taste-v2/graded-scale.ts": "60a75d7986e814878edf43a968cadfaaea173f665db67adeae73b68361fb0439",
+    "docs/audits/2026-11-23-taste-v2/negative-tail.py": "3d8196cbc28cea9cedfb76b9bde260b4cdee5ddd435f6568e48372dfc5085584",
+    "docs/audits/2026-11-23-taste-v2/prospective.py": "e60f91d18b3b9f410df5fdc40d1de21bf81061e4b413bf46ced5480dec9eb6ca",
+    "docs/audits/2026-11-23-taste-v2/raw-results.json": "b1880d3a960823223f7bf6ed28831a4148a00a64a7f3e59ed69d91f7c72ddae9",
+    "docs/audits/2026-11-23-taste-v2/replay.ts": "eaadf75dbb9999dff78d1970d8c4c69aa53002e3771248dbd96040a2f130f087",
+    "docs/audits/2026-11-23-taste-v2/scale.py": "24d556f441043d60b1884da5bd6849e9d2d002e8d0262440f88795418173d7a8",
+    "docs/audits/2026-11-23-taste-v2/serving.md": "1d4c91091e5ce1c689fe7d3d4fc018e977be8d5677854d675093e22804a15f74",
+    "docs/audits/2026-11-23-taste-v2/social.md": "fa62110401c7ee921f850fbf35649805012e603b5eb304e30bc1d066ebdfbaad",
+    "scripts/taste-preview-benchmark.ts": "a12c0d4391c021cfc3c0ec79b8723e626519111d5e00a58382e61191132654e8",
+    "scripts/taste-preview-worker.ts": "488ea01e3d1548dbaa5a08e9fc861617c316b7c6fe73dd0e96743addb5e04d99",
+    "src/lib/profile/TastePreviewFriend.svelte": "baed570ac75d75eeb66c5810451e17304a3e004924acf1d0c95ddde409cb3e01",
+    "src/lib/profile/TastePreviewItem.svelte": "58b4e9faaa6c653a60210077fee27df7b6235508e91c0d3aec347691f56fcf40",
+    "src/lib/profile/TastePreviewProfile.svelte": "3d314b42865ed2ea5557fa5a4efdb214046468ee683a39a4bc4be88c0acc6f72",
+    "src/lib/social/friend-taste-v2.server.ts": "81ea6e54494a5505992bbda5a079addce1997ae74805ba877615d75e31bf4240",
+    "src/lib/social/friend-taste-v2.ts": "cdb5000ebc0232ba7f4012e842753cdfb815302567351b94e14bfacb5ec32b44",
+    "src/lib/social/taste-preview-access.server.ts": "6e27ab96e6d57d918fe3be416260eb240fe541924e6565d8165b15d38332ce7f",
+    "src/lib/social/taste-preview-policy.ts": "414beeedaa59fd7ef52d7323c9f834e1934cdef6ad9c9122f63a39f351f869c6",
+    "src/lib/social/taste-preview-worker.server.ts": "28cd24d5a0ae3d1f994d4809771a3887b83afd3938e79d4158cba757ea263f82",
+    "src/lib/social/taste-preview.server.ts": "24fc393a664cce9b4259d9ead0e24b00696646ba2ed90656a9f88bded8b124dd",
+    "src/lib/social/taste-v2-display.ts": "17556830cd93a8655362dc735d0b360c49c033cfa0fd5e177fe05c574adceea7",
+    "src/lib/social/taste-v2-ordinal.ts": "ec264b9a52bb69a409b0d506fe7825ab6a876ce7425a47fc047c253d4fce2e75",
+    "src/lib/social/taste-v2.ts": "0842281b9d77b41c8cef4316bd22fb8e081eb32da9d2a3d0a582f05bc7a4cd3f",
+    "tests/friend-taste-v2-db.test.ts": "d102681cccec882ae37b1d2253774799578a3f916d7cb21490295f8b9d1d79d4",
+    "tests/friend-taste-v2.test.ts": "4f4addf49e1945bfbf39a975b12c3c67bfbe19c5b2468d6971c5dd5c31ab6591",
+    "tests/taste-preview-db.test.ts": "ae12ffb3af17ba54a44ab4dfed7a8923f660f317a04a21f5583d12d0d0b67085",
+    "tests/taste-v2.test.ts": "56f577ca1837676e38370464a117d95c3c8225de10d3978ce1157f55389a2ffd"
+  },
+  "report": "docs/audits/2026-11-23-taste-v2/README.md",
+  "reportSha256": "730c71983453e0be4b22a584df80db41506a4be058d6d261e1872449e5b7a563"
+}

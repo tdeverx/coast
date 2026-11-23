@@ -1,0 +1,144 @@
+{
+  "sample": {
+    "eligibleViewers": 38015,
+    "heldRatings": 4015155,
+    "originalOpportunities": 2813,
+    "earlierDifferentTeam": 675,
+    "cases": 153,
+    "dislikes": 104,
+    "liked": 9,
+    "middling": 40,
+    "fives": 0,
+    "participatingViewers": 86
+  },
+  "arms": {
+    "one": {
+      "eligible": 153,
+      "scored": 153,
+      "changed": 126,
+      "correctRed": 6,
+      "likedRed": 1,
+      "middlingRed": 6,
+      "fiveLowered": 0,
+      "fiveLostGreen": 0,
+      "fiveNewlyRed": 0,
+      "redToLower": 112,
+      "netUtilityErrorChange": 597,
+      "changedDislikes": 86,
+      "changedMiddle": 34,
+      "changedLiked": 6,
+      "affectedUsers": 74,
+      "affectedDirectorTeams": 40,
+      "usersWithLoweredFive": 0,
+      "correctRedTeams": 5,
+      "falseLikedRedTeams": 1,
+      "predictionError": {
+        "closer": 53,
+        "farther": 72,
+        "equal": 1
+      },
+      "eligibleMeanAbsoluteError": [
+        16.705882352941178,
+        20.607843137254903
+      ],
+      "usersWithNewCorrectRed": 5,
+      "usersWithNewLikedRed": 1
+    },
+    "two": {
+      "eligible": 13,
+      "scored": 13,
+      "changed": 11,
+      "correctRed": 0,
+      "likedRed": 0,
+      "middlingRed": 0,
+      "fiveLowered": 0,
+      "fiveLostGreen": 0,
+      "fiveNewlyRed": 0,
+      "redToLower": 11,
+      "netUtilityErrorChange": -35,
+      "changedDislikes": 11,
+      "changedMiddle": 0,
+      "changedLiked": 0,
+      "affectedUsers": 8,
+      "affectedDirectorTeams": 4,
+      "usersWithLoweredFive": 0,
+      "correctRedTeams": 0,
+      "falseLikedRedTeams": 0,
+      "predictionError": {
+        "closer": 7,
+        "farther": 4,
+        "equal": 0
+      },
+      "eligibleMeanAbsoluteError": [
+        11.461538461538462,
+        8.76923076923077
+      ],
+      "usersWithNewCorrectRed": 0,
+      "usersWithNewLikedRed": 0
+    },
+    "oneAttenuated": {
+      "eligible": 153,
+      "scored": 153,
+      "changed": 122,
+      "correctRed": 5,
+      "likedRed": 1,
+      "middlingRed": 4,
+      "fiveLowered": 0,
+      "fiveLostGreen": 0,
+      "fiveNewlyRed": 0,
+      "redToLower": 108,
+      "netUtilityErrorChange": 143,
+      "changedDislikes": 85,
+      "changedMiddle": 31,
+      "changedLiked": 6,
+      "affectedUsers": 72,
+      "affectedDirectorTeams": 39,
+      "usersWithLoweredFive": 0,
+      "correctRedTeams": 4,
+      "falseLikedRedTeams": 1,
+      "predictionError": {
+        "closer": 57,
+        "farther": 63,
+        "equal": 2
+      },
+      "eligibleMeanAbsoluteError": [
+        16.705882352941178,
+        17.640522875816995
+      ],
+      "usersWithNewCorrectRed": 4,
+      "usersWithNewLikedRed": 1
+    },
+    "twoAttenuated": {
+      "eligible": 13,
+      "scored": 13,
+      "changed": 11,
+      "correctRed": 0,
+      "likedRed": 0,
+      "middlingRed": 0,
+      "fiveLowered": 0,
+      "fiveLostGreen": 0,
+      "fiveNewlyRed": 0,
+      "redToLower": 11,
+      "netUtilityErrorChange": -27,
+      "changedDislikes": 11,
+      "changedMiddle": 0,
+      "changedLiked": 0,
+      "affectedUsers": 8,
+      "affectedDirectorTeams": 4,
+      "usersWithLoweredFive": 0,
+      "correctRedTeams": 0,
+      "falseLikedRedTeams": 0,
+      "predictionError": {
+        "closer": 7,
+        "farther": 4,
+        "equal": 0
+      },
+      "eligibleMeanAbsoluteError": [
+        11.461538461538462,
+        9.384615384615385
+      ],
+      "usersWithNewCorrectRed": 0,
+      "usersWithNewLikedRed": 0
+    }
+  }
+}

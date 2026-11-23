@@ -47,6 +47,7 @@ export async function getFeatureConfig(userId: string | null, database?: ReturnT
     for (const key of ['sharing','requests','api','personalisation','parties','planning','game'] as const) deny(key,'library-only');
   if (!features.social) {deny('presence','social');deny('parties','social');}
   return {...config, features, featureDenials, libraryOnly:user?.access_defaults?.libraryOnly===true, managedBitrate:user?.managed_bitrate??undefined, experimentalMusic:features.music, experimentalGaming:features.game,
+    experimentalCardTasteScores:!!userId && config.experimentalCardTasteScores && features.personalisation,
     experimentalBooks:features.book, experimentalComics:features.comic, experimentalParties:features.parties,
     experimentalPlanning:features.planning,
     allowPlaybackSharing:features.sharing, enableRequests:features.requests};

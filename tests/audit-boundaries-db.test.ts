@@ -7,7 +7,8 @@ import { mediaActionData } from '../src/lib/server/queries/media-actions';
 import { progressData } from '../src/lib/server/queries/progress';
 import { deleteUser, type SessionUser } from '../src/lib/server/auth';
 import { friendInsights } from '../src/lib/social/insights.server';
-import { personalTaste, personalTasteAffinities, tasteRevisionSql } from '../src/lib/social/taste-cache.server';
+import {personalTasteAffinities} from '../scripts/benchmarks/incumbent-taste';
+import { personalTaste, tasteRevisionSql } from '../src/lib/social/taste-cache.server';
 import { recommend, respondRecommendation } from '../src/lib/social/service.server';
 import { createApiToken } from '../src/lib/server/public-api/tokens.server';
 import { createWebhook, deliverWebhook, emitWebhook } from '../src/lib/server/public-api/webhooks.server';
@@ -129,10 +130,14 @@ run('taste counts and overlap pages remain exact beyond the scoring sample and u
   const works = await db`insert into works(category,kind) select 'screen','movie' from generate_series(1,321) returning id`;
   const ids = works.map((row: { id: string }) => row.id);
   await db`insert into media(id,kind,title) select id,'movie','Paged taste' from works where id in ${db(ids)}`;
-  for (const user of users) await db`insert into tracking_state(user_id,media_id,collected) select ${user},id,true from works where id in ${db(ids)}`;
+  for (const user of users) {
+    await db`insert into tracking_state(user_id,media_id,collected) select ${user},id,true from works where id in ${db(ids)}`;
+    await db`insert into ratings(user_id,media_id,value) select ${user},id,4 from works where id in ${db(ids)}`;
+  }
   const first = await friendInsights(users[0], users[1], { medium: 'movies' });
   const second = await friendInsights(users[0], users[1], { medium: 'movies', page: 2 });
   expect(first.total).toBe(321);
+  expect(first.media.find(row=>row.medium==='movies')?.comparison.agreement).toEqual({works:321,score:100});
   expect(first.pages).toBe(6);
   expect(first.ids).toHaveLength(60);
   expect(second.ids).toHaveLength(60);

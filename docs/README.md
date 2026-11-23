@@ -15,6 +15,7 @@
 - [Games](games.md): metadata, shared relationships and private playthrough details.
 - [Books and comics](reading.md): shared browsing/tracking, lazy readers, Jellyfin file access, reading parties and acceptance limits.
 - [Social target and roadmap](social.md): first-pass implementation, privacy decisions and deferred social work.
+- [Personal taste matches](taste-match.md) defines the intended card score and how to judge changes against a viewer’s own history.
 - [Future connector contract](connectors.md): proposed HTTP/webhook boundary; not implemented.
 - [Design](design.md): inherited visual language and UI composition.
 - [Chart preview](chart-preview.md): non-approved chart families, fictional fixtures and preview isolation.

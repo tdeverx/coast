@@ -1,7 +1,10 @@
+import {personalTasteAffinities,titleTaste,titleTastes} from '../scripts/benchmarks/incumbent-taste';
 import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
-import {personalTaste,personalTasteAffinities,refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql,titleTaste,titleTastes,maxTasteBatchSize} from '../src/lib/social/taste-cache.server';
+import {cardTastePublication,personalTaste,refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql} from '../src/lib/social/taste-cache.server';
+import {maxTasteBatchSize} from '../src/lib/social/card-taste';
+import {selectedItemMatches} from '../src/lib/social/taste-personal-match.server';
 import {handleProfile} from '../src/lib/server/api/profile.server';
 import {handleAdmin} from '../src/lib/server/api/admin.server';
 import type {ApiContext} from '../src/lib/server/api/context.server';
@@ -16,7 +19,8 @@ import * as featureReads from '../src/lib/social/work-features.server';
 import * as permissions from '../src/lib/server/features';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 import {createTasteAccumulator,namedFeatures,prepareTasteReference} from '../src/lib/social/taste-profile';
-import {visibleFriendTaste} from '../src/lib/social/friend-taste.server';
+import {visibleFriendTaste} from '../scripts/benchmarks/incumbent-friend-taste';
+import {tasteOpportunityIds} from '../src/lib/social/taste-selection.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql();for(const id of [user,other])await sql`insert into users(id,username) values(${id},${'taste-'+id})`;
@@ -25,13 +29,29 @@ beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql()
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql();await sql`delete from users where id=any(${sql.array([user,other],'UUID')}::uuid[])`;await sql`delete from media where id=any(${sql.array(ids,'UUID')}::uuid[])`;});
 run('task computes private bounded scores and excludes stale cached rankings',async()=>{
+ const sql=getSql();
+ for(const id of ids)await sql`insert into metadata_snapshots(media_id,provider,language,region,certificate) values(${id},'tmdb','en-GB','GB','15')`;
  for(const id of [ids[0],ids[1],ids[3]])await track(user,{mediaId:id,action:'favourite',value:true});
  // Match creators/tags even when the candidate's genres do not overlap.
  await getSql()`update media set genres=array['Comedy'] where id=${ids[2]}`;
- await refreshTasteCaches();const sql=getSql();
+ await refreshTasteCaches();
  const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles.map((profile:any)=>profile.medium).sort()).toEqual(['game','movie','music','show']);
  const [score]=await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;expect(score.score).toBeGreaterThan(50);expect(score.breakdown.reasons.some((r:any)=>r.dimension==='cast')).toBe(true);
  expect(await titleTaste(user,ids[2])).toMatchObject({score:score.score,confidence:score.confidence});
+ // During an upgrade, the last published profile remains available. Its old precomputed
+ // percentage must never win over a cold calculation using the new scoring formula.
+ const previousFormat=String(score.revision).split(':').slice(0,2).join(':');
+ await sql`update user_taste_profiles set revision=${previousFormat} where user_id=${user} and medium='movie'`;
+ await sql`update user_taste_scores set revision=${previousFormat},breakdown=jsonb_set(breakdown,'{score}','1'::jsonb)
+  where user_id=${user} and work_id=${ids[2]}`;
+ expect(await titleTaste(user,ids[2])).toMatchObject({score:score.score,confidence:score.confidence});
+ await sql`update user_taste_profiles set revision=${score.revision} where user_id=${user} and medium='movie'`;
+ await sql`update user_taste_scores set revision=${score.revision},breakdown=${score.breakdown}::jsonb
+  where user_id=${user} and work_id=${ids[2]}`;
+ expect((await personalTasteAffinities(user,'movie','ageRatings',1)).items).toMatchObject([{id:'GB:15',name:'15',samples:3}]);
+ const inspected=await titleTaste(user,ids[2],'recalculate');
+ expect(inspected?.breakdown?.signals).toContainEqual(expect.objectContaining({dimension:'ageRatings',context:true}));
+ expect(typeof inspected?.breakdown?.calculation?.ageRatingPoints).toBe('number');
  expect(await titleTaste(other,ids[2])).toBeNull();
  const [none]=await sql`select count(*)::int as count from user_taste_scores where user_id=${other}`;expect(none.count).toBe(0);
  const result=await recommendationRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
@@ -47,12 +67,173 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  expect(await sql`select 1 from user_taste_scores where user_id=${user} and revision=${score.revision}`).toHaveLength(0);
 });
 
+run('provider updates replace the warm shortlist without training lifetime profiles again',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),service=crypto.randomUUID(),job=crypto.randomUUID();
+ const [movieA,movieB,showA,showB,released,upcoming,crossMedium,nextPick]=Array.from({length:8},()=>crypto.randomUUID());
+ const [trackA,trackB,album]=Array.from({length:3},()=>crypto.randomUUID());
+ const seeds:string[]=[movieA,movieB,showA,showB,trackA,trackB],all=[...seeds,released,upcoming,crossMedium,nextPick,album];
+ const profiles=()=>db`select medium,revision,profile,scoring,updated_at::text as timestamp
+  from user_taste_profiles where user_id=${viewer} order by medium`;
+ const cached=async()=>new Set((await db<{work_id:string}[]>`select work_id from user_taste_scores where user_id=${viewer}`).map(row=>row.work_id));
+ try{
+  await db`insert into users(id,username) values(${viewer},${'shortlist-'+viewer})`;
+  await db`insert into provider_instances(id,provider,name,base_url)
+   values(${service},'tmdb','Taste shortlist fixture','https://fixture.invalid')`;
+  for(const id of [movieA,movieB,showA,showB,released,upcoming,crossMedium,nextPick]){
+   const show=[showA,showB,crossMedium].includes(id);
+   const genre=[movieA,movieB,crossMedium].includes(id)?'Cinema fixture':show?'Television fixture':'Unrelated fixture';
+   await db`insert into media(id,kind,title,genres,release_date)
+    values(${id},${show?'show':'movie'},'Shortlist fixture',${db.array([genre],'TEXT')},current_date+case when ${id===upcoming} then 1 else -1 end)`;
+  }
+  for(const id of [trackA,trackB,album]){
+   const kind=id===album?'album':'track';
+   await db`insert into works(id,category,kind) values(${id},'music',${kind})`;
+   await db`insert into music_works(id,kind,title,genres) values(${id},${kind},'Seed kind fixture',array['Music fixture'])`;
+  }
+  await db`insert into ratings(user_id,media_id,value) select ${viewer},unnest(${db.array(seeds,'UUID')}),5`;
+  await refreshTasteCaches();
+  // The fixed timestamp remains within freshness and distinguishes reuse from an unnecessary identical rebuild.
+  await db`update user_taste_profiles set updated_at=now()-interval '6 hours' where user_id=${viewer}`;
+  const initial=await profiles();
+  expect(initial.length).toBeGreaterThan(2);
+  const first=await cached();
+  expect(first.has(album)).toBe(true);
+  expect(first.has(crossMedium)).toBe(false);
+  expect(first.has(released)).toBe(false);
+  await db`insert into recommendation_sets(instance_id,key,seed_id,items)
+   values(${service},'shortlist',${movieA},${db.array([released,upcoming],'UUID')})`;
+  await refreshTasteCaches();
+  expect(await profiles()).toEqual(initial);
+  const second=await cached();
+  expect(second.has(released)).toBe(true);
+  expect(second.has(upcoming)).toBe(false);
+  expect(second.has(crossMedium)).toBe(false);
+
+  // A provider may replace its set while an earlier shortlist-only job hydrates candidates.
+  await db`update recommendation_sets set updated_at=now(),items=${db.array([nextPick],'UUID')} where instance_id=${service}`;
+  const checkpoint={task:'taste-refresh',users:[viewer],next:0,checked:0,refreshed:0,deferred:0};
+  await db`insert into outbox_actions(id,user_id,kind,state,attempts,payload)
+   values(${job},${viewer},'taste.refresh','running',1,${{_checkpoint:checkpoint}}::jsonb)`;
+  const original=featureReads.workTasteFeatures;
+  let changed=false;
+  const reads=spyOn(featureReads,'workTasteFeatures').mockImplementation(async(...args)=>{
+   const result=await original(...args);
+   if(!changed){changed=true;await db`update recommendation_sets set updated_at=now(),items='{}' where instance_id=${service}`;}
+   return result;
+  });
+  try{
+   const outcome=await jobExecution.run({id:job,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>refreshTasteCaches());
+   expect(outcome).toMatchObject({checked:1,refreshed:0,deferred:1});
+   expect(reads.mock.calls.flatMap(call=>call[0]).some(id=>seeds.includes(id))).toBe(false);
+  }finally{reads.mockRestore();}
+  expect(await cached()).toEqual(second);
+  await refreshTasteCaches();
+  expect((await cached()).has(released)).toBe(false);
+  expect((await cached()).has(nextPick)).toBe(false);
+  expect(await profiles()).toEqual(initial);
+ }finally{
+  await db`delete from outbox_actions where id=${job}`;
+  await db`delete from users where id=${viewer}`;
+  await db`delete from provider_instances where id=${service}`;
+  await db`delete from works where id=any(${db.array(all,'UUID')}::uuid[])`;
+ }
+});
+
+run('viewing choices publish per affinity and use the same private reference for cards and inspection',async()=>{
+ const sql=getSql(), viewer=crypto.randomUUID();
+ const titles=Array.from({length:680},()=>crypto.randomUUID());
+ const [ordinary,exception]=titles.slice(180,182);
+ try{
+  await sql`insert into users(id,username) values(${viewer},${'choice-'+viewer})`;
+  await sql`insert into media(id,kind,title,genres,release_date)
+   select unnest(${sql.array(titles,'UUID')}),'movie','Taste choices',array['Animation'],'2010-01-01'`;
+  await sql`insert into work_features(work_id,provider,features)
+   select id,'tmdb',jsonb_build_object('tags',jsonb_build_array(jsonb_build_object(
+     'id',case when pos<=5 or pos between 181 and 250 then 'stop-motion-fixture' when pos between 251 and 320 then 'unchosen-fixture' else 'journey-fixture' end,
+     'name',case when pos<=5 or pos between 181 and 250 then 'Stop motion' when pos between 251 and 320 then 'Unchosen fixture' else 'Journey' end
+   ))) || case when pos<=5 or pos between 182 and 188
+    then '{"studios":[{"id":"fixture-studio","name":"Fixture studio"}]}'::jsonb else '{}'::jsonb end
+   from unnest(${sql.array(titles,'UUID')}) with ordinality as t(id,pos)`;
+  await sql`insert into tracking_state(user_id,media_id,watched,play_count)
+   select ${viewer},unnest(${sql.array(titles.slice(0,180),'UUID')}),true,1`;
+  await sql`insert into ratings(user_id,media_id,value)
+   select ${viewer},unnest(${sql.array(titles.slice(0,180),'UUID')}),4.5`;
+  expect(await tasteOpportunityIds(viewer,['movie'],true)).toEqual([]);
+  await refreshTasteCaches();
+  const inspected=await titleTastes(viewer,[ordinary,exception],undefined,'recalculate',true);
+  const cards=await titleTastes(viewer,[ordinary,exception]);
+  expect(inspected.get(ordinary)?.score).toBeLessThan(50);
+  expect(inspected.get(exception)?.score).toBeGreaterThan(80);
+  expect(inspected.get(exception)?.breakdown?.selection?.exception).toBe('Fixture studio');
+  for(const id of [ordinary,exception])expect(cards.get(id)?.score).toBe(inspected.get(id)?.score);
+  const affinities=await personalTasteAffinities(viewer,'movie','tags',1);
+  expect(affinities.items.find(item=>item.id==='unchosen-fixture')).toMatchObject({
+   samples:0,name:'Unchosen fixture',viewingChoice:{selected:0},
+  });
+  const summary=(await personalTaste(viewer)).find(row=>row.medium==='movie')!;
+  expect(summary.signals.tags?.count).toBe(3);
+  expect(summary.signals.tags?.preview.find(signal=>signal.name==='Unchosen fixture')).toMatchObject({samples:0,viewingChoice:{selected:0}});
+  const stopMotion=affinities.items.find(item=>item.id==='stop-motion-fixture');
+  expect(stopMotion?.medianRating).toBe(4.5);
+  expect(stopMotion?.viewingChoice?.selected).toBe(5);
+  expect(stopMotion?.viewingChoice?.value).toBeLessThan(0);
+  expect(affinities.items.find(item=>item.id==='journey-fixture')?.viewingChoice).toBeUndefined();
+  expect((await personalTasteAffinities(other,'movie','tags',1)).items.some(item=>item.id==='stop-motion-fixture')).toBe(false);
+  await sql`update users set access_defaults='{"libraryOnly":true}' where id=${viewer}`;
+  await expect(personalTasteAffinities(viewer,'movie','tags',1)).rejects.toMatchObject({status:403});
+ }finally{
+  await sql`delete from users where id=${viewer}`;
+  await sql`delete from media where id=any(${sql.array(titles,'UUID')}::uuid[])`;
+ }
+});
+
+run('opportunity samples admit released albums, owned games and reading works according to library permissions',async()=>{
+ const sql=getSql(),[viewer,steam,jellyfin,game,album,track,book,comic,future]=Array.from({length:9},()=>crypto.randomUUID());
+ const ownedWorkIds:string[]=[game,album,track,book,comic,future];
+ try{
+  await sql`insert into users(id,username) values(${viewer},${'opportunities-'+viewer})`;
+  await sql`insert into provider_instances(id,provider,name,base_url) values
+   (${steam},'steam','Owned games test','https://steam.fixture.invalid'),
+   (${jellyfin},'jellyfin','Music test','https://jellyfin.fixture.invalid')`;
+  const accounts=await sql<{id:string;instance_id:string}[]>`insert into provider_connections(user_id,instance_id,status)
+   values(${viewer},${steam},'connected'),(${viewer},${jellyfin},'connected') returning id,instance_id`;
+  await sql`insert into games(id,title,release_date) values(${game},'Released game','2012-01-01')`;
+  await sql`insert into works(id,category,kind) values
+   (${album},'music','album'),(${track},'music','track'),(${book},'book','book'),
+   (${comic},'comic','comic'),(${future},'book','book')`;
+  await sql`insert into music_works(id,kind,title,year) values(${album},'album','Album',2012),(${track},'track','Track',2012)`;
+  await sql`insert into media_relationships(parent_id,child_id,kind,position) values(${album},${track},'contains',1)`;
+  await sql`insert into reading_works(id,kind,provider,external_id,title,source_url,published_year) values
+   (${book},'book','openlibrary',${book},'Published book','https://fixture.invalid/book',2012),
+   (${comic},'comic','openlibrary',${comic},'Published comic','https://fixture.invalid/comic',2012),
+   (${future},'book','openlibrary',${future},'Upcoming book','https://fixture.invalid/future',2999)`;
+  for(const [id,instance,kind,source] of [[game,steam,'game','steam-owned'],[track,jellyfin,'track','default']] as const){
+   const [item]=await sql`insert into provider_items(instance_id,media_id,external_id,kind)
+    values(${instance},${id},${id},${kind}) returning id`;
+   await sql`insert into availability(user_id,connection_id,provider_item_id,media_id,source_id)
+    values(${viewer},${accounts.find(account=>account.instance_id===instance)!.id},${item.id},${id},${source})`;
+  }
+  const media=['game','music','book','comic'] as const;
+  const all=(await tasteOpportunityIds(viewer,media)).filter(work=>ownedWorkIds.includes(work.id));
+  expect(all.map(work=>work.medium).sort()).toEqual(['book','comic','game','music']);
+  expect((await tasteOpportunityIds(viewer,media,true)).map(work=>work.id).sort()).toEqual([game,album].sort());
+  await sql`update provider_connections set status='disconnected' where user_id=${viewer} and instance_id=${jellyfin}`;
+  expect((await tasteOpportunityIds(viewer,media,true)).map(work=>work.id)).toEqual([game]);
+ }finally{
+  await sql`delete from users where id=${viewer}`;
+  await sql`delete from provider_instances where id in (${steam},${jellyfin})`;
+  await sql`delete from games where id=${game}`;
+  await sql`delete from works where id=any(${sql.array(ownedWorkIds,'UUID')}::uuid[])`;
+ }
+});
+
 run('explicit title scores use only current, permitted activity from taste-aligned friends',async()=>{
  const sql=getSql();
  const [owner,friend,opposite,pending,publicUser]=Array.from({length:5},()=>crypto.randomUUID());
  const viewers=[owner,friend,opposite,pending,publicUser];
  const shared=Array.from({length:8},()=>crypto.randomUUID());
  const targets=Array.from({length:6},()=>crypto.randomUUID());
+ const solos=Array.from({length:121},()=>crypto.randomUUID());
  const [liked,disliked,unrated,neutral,ratingOnly,show]=targets;
  try{
   for(const id of viewers)await sql`insert into users(id,username) values(${id},${'friend-taste-'+id})`;
@@ -68,6 +249,9 @@ run('explicit title scores use only current, permitted activity from taste-align
   for(const id of viewers)for(const work of shared){
    await sql`insert into ratings(user_id,media_id,value) values(${id},${work},${id===opposite?1:5})`;
   }
+  // Recent solo ratings must not displace older shared evidence.
+  await sql`insert into media(id,kind,title) select unnest(${sql.array(solos,'UUID')}),'movie','Solo rating fixture'`;
+  await sql`insert into ratings(user_id,media_id,value) select ${owner},unnest(${sql.array(solos,'UUID')}),4`;
   for(const id of viewers.slice(1))for(const work of [liked,disliked,unrated,neutral,show]){
    await sql`insert into tracking_state(user_id,media_id,watched,play_count) values(${id},${work},true,3)`;
   }
@@ -97,6 +281,9 @@ run('explicit title scores use only current, permitted activity from taste-align
   await sql`delete from ratings where user_id=${owner} and media_id=${shared[0]}`;
   await sql`insert into ratings(user_id,media_id,value) values(${owner},${liked},5)`;
   expect((await titleTaste(owner,liked,'recalculate'))?.breakdown?.friends).toBeUndefined();
+  const one=await visibleFriendTaste(owner,[disliked]),batch=await visibleFriendTaste(owner,[liked,disliked]);
+  expect(one.get(disliked)).toMatchObject({watched:1,rated:1});
+  expect(batch.get(disliked)).toEqual(one.get(disliked));
   await sql`insert into ratings(user_id,media_id,value) values(${owner},${shared[0]},5)`;
   for(const section of ['activity','insights','ratings']){
    await sql`update users set settings=${{social:{sections:{[section]:'private'}}}}::jsonb where id=${friend}`;
@@ -108,7 +295,7 @@ run('explicit title scores use only current, permitted activity from taste-align
   expect((await titleTaste(owner,liked,'recalculate'))?.score).toBe(baseline.get(liked)?.score);
  }finally{
   await sql`delete from users where id=any(${sql.array(viewers,'UUID')}::uuid[])`;
-  await sql`delete from media where id=any(${sql.array([...shared,...targets],'UUID')}::uuid[])`;
+  await sql`delete from media where id=any(${sql.array([...shared,...targets,...solos],'UUID')}::uuid[])`;
  }
 });
 
@@ -351,7 +538,15 @@ run('private profile and match reads withdraw old source permissions immediately
   await refreshTasteCaches();
   const saved=await titleTaste(owner,ids[2]);
   expect(saved?.score).toBeGreaterThan(50);
-  // A warmed result and the on-demand scorer use the same reference and explanation.
+  const publication=await cardTastePublication(owner);
+  expect(publication?.revision).toBeTruthy();
+  await db`update user_taste_match_models set published_at=published_at+interval '1 second' where user_id=${owner} and medium='movie' and fold=-1`;
+  const updated=await cardTastePublication(owner);
+  expect(updated?.scope).toBe(publication?.scope);
+  expect(updated?.revision).not.toBe(publication?.revision);
+  const current=(await selectedItemMatches(owner,[ids[2]],true)).get(ids[2]);
+  expect(current?.score).toBeGreaterThan(50);
+  expect(current).toMatchObject({root:ids[2],rule:'personal',withheld:false,pending:false});
   const spy=spyOn(featureReads,'workTasteFeatures');
   try{
    expect(await titleTaste(owner,ids[2])).toEqual(saved);
@@ -360,15 +555,11 @@ run('private profile and match reads withdraw old source permissions immediately
    const adminContext={uid:owner,subjectId:other,method:'GET',request:adminRequest,url:new URL(adminRequest.url),path:['admin','taste-score'],
     user:{id:owner,username:'tester',email:null,settings:{},role:'admin'}} as ApiContext;
    await expect(handleAdmin({...adminContext,user:{...adminContext.user,role:'user'}})).rejects.toMatchObject({status:403});
-   // The testing action always evaluates current metadata. It must not publish a new result.
+   // A stale recommendation score must never overwrite the viewer's current item match.
    await db`update user_taste_scores set breakdown=jsonb_set(breakdown,'{score}','7') where user_id=${owner} and work_id=${ids[2]}`;
    const adminResponse=await handleAdmin(adminContext);
    expect(adminResponse!.headers.get('cache-control')).toContain('no-store');
-   const {match:{breakdown,...result}}=await adminResponse!.json();
-   expect(result).toEqual(saved);
-   expect(breakdown.signals.some((signal:{dimension:string;matched:number})=>signal.dimension==='cast'&&signal.matched>0)).toBe(true);
-   expect(breakdown.calculation.baseScore+breakdown.calculation.ratingAdjustment).toBe(saved!.score!);
-   expect(spy).toHaveBeenCalledTimes(1);
+   expect(await adminResponse!.json()).toEqual({match:current});
    expect((await titleTaste(owner,ids[2]))?.score).toBe(7);
    const unavailable=new URL(adminRequest.url);
    unavailable.searchParams.set('workId',crypto.randomUUID());
@@ -388,11 +579,12 @@ run('private profile and match reads withdraw old source permissions immediately
    const request=new Request('http://coast.test/api/v1/profile/taste-match?'+new URLSearchParams({workId:ids[2]}));
    const context={uid:owner,subjectId:other,request,url:new URL(request.url),method:'GET',path:['profile','taste-match']} as ApiContext;
    const response=await handleProfile(context);
-   expect(await response!.json()).toEqual({match:saved});
+   expect(await response!.json()).toMatchObject({match:{score:current!.score,rule:'personal',root:ids[2]}});
    const abort=new AbortController();abort.abort();
    await expect(handleProfile({...context,request:new Request(request,{signal:abort.signal})})).rejects.toMatchObject({name:'AbortError'});
   }finally{spy.mockRestore();}
   await db`update users set access_defaults='{"social":false}' where id=${owner}`;
+  expect(await cardTastePublication(owner)).toBeNull();
   expect(await personalTaste(owner)).toEqual([]);
   expect(await personalTasteAffinities(owner,'movie','genres',1)).toEqual({items:[],pages:1});
   expect(await titleTaste(owner,ids[2])).toBeNull();
@@ -400,6 +592,58 @@ run('private profile and match reads withdraw old source permissions immediately
   await refreshTasteCaches();
   expect((await personalTaste(owner)).find(profile=>profile.medium==='movie')?.works).toBe(3);
  }finally{await db`delete from users where id=${owner}`;}
+});
+
+run('card score batches are viewer-only, bounded and independent of profile rebuilding',async()=>{
+ const db=getSql(),viewer=crypto.randomUUID(),path='profile/card-taste';
+ const {handler}=await import('../src/lib/server/api/index.server');
+ const [{value:priorConfig}]=await db`select value from system_settings where key='coast'`;
+ const request=(id:string|null,works:string[],signal?:AbortSignal)=>{
+  const url=new URL('http://coast.test/api/v1/'+path);
+  url.searchParams.set('ids',works.join(','));
+  url.searchParams.set('username','an-unrelated-profile');
+  return handler({request:new Request(url,{signal}),url,params:{path},
+   locals:{user:id?{id,username:'fixture',role:'user',email:null,settings:{}}:null}} as Parameters<typeof handler>[0]);
+ };
+ const revision=async()=>(await getDb().execute<{value:string}>(query`select ${tasteRevisionSql} as value from users u where id=${viewer}::uuid`))[0].value;
+ const explanation=()=>{
+  const path='profile/taste-match',url=new URL('http://coast.test/api/v1/'+path);
+  url.search=new URLSearchParams({workId:ids[2],breakdown:'true',username:'someone-else'}).toString();
+  return handler({request:new Request(url),url,params:{path},locals:{user:{id:viewer,username:'fixture',role:'user',email:null,settings:{}}}} as Parameters<typeof handler>[0]);
+ };
+ try{
+  await db`insert into users(id,username) values(${viewer},${'card-taste-'+viewer})`;
+  for(const id of [ids[0],ids[1],ids[3]])await track(viewer,{mediaId:id,action:'favourite',value:true});
+  await refreshTasteCaches();
+  const expected=(await selectedItemMatches(viewer,[ids[2]],true)).get(ids[2]),before=await revision();
+  expect(expected?.score).toBeGreaterThan(50);
+  expect((await request(null,[ids[2]])).status).toBe(401);
+  expect((await request(viewer,[ids[2]])).status).toBe(403);
+  expect((await explanation()).status).toBe(403);
+  await db`update system_settings set value=jsonb_set(value,'{experimentalCardTasteScores}','true') where key='coast'`;
+  const explained=await explanation();
+  expect(explained.headers.get('cache-control')).toContain('no-store');
+  expect(await explained.json()).toEqual({match:expected});
+  expect(expected?.signals.some(signal=>signal.supporting.length>0)).toBe(true);
+  expect(await revision()).toBe(before);
+  const response=await request(viewer,[ids[2],ids[2],crypto.randomUUID()]);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
+  expect(await response.json()).toEqual({scores:{[ids[2]]:expected!.score}});
+  expect(await (await request(other,[ids[2]])).json()).toEqual({scores:{}});
+  expect((await request(viewer,['invalid'])).status).toBe(400);
+  expect((await request(viewer,Array(maxTasteBatchSize+1).fill(ids[0]))).status).toBe(400);
+  expect((await request(viewer,[ids[2]],AbortSignal.abort())).status).toBe(499);
+  await db`update users set settings='{"features":{"screen":false}}' where id=${viewer}`;
+  expect(await (await request(viewer,[ids[2]])).json()).toEqual({scores:{}});
+  await db`update users set settings='{"features":{"personalisation":false}}' where id=${viewer}`;
+  expect((await request(viewer,[ids[2]])).status).toBe(403);
+  await db`update users set settings='{}',access_defaults='{"libraryOnly":true}' where id=${viewer}`;
+  expect((await request(viewer,[ids[2]])).status).toBe(403);
+ }finally{
+  await db`update system_settings set value=${priorConfig}::jsonb where key='coast'`;
+  await db`delete from users where id=${viewer}`;
+ }
 });
 
 run('a withdrawn medium or personalisation permission is checked again when private taste is read',async()=>{

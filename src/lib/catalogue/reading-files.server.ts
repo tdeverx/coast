@@ -70,7 +70,8 @@ export async function observeReadingFile(input:{userId:string;connectionId:strin
    return {conflict:true as const,newlyHeld:!!needsHold.length||!!availabilityHeld.length||(!editions.length&&!mappings.length)};
   }
   const existing=editions[0],previous=mappings[0];
-  const editionMetadata={version:edition,identityConflict:false};
+  const libraryId=jellyfinOpenLibraryId(Object.entries(book.ProviderIds).find(([key])=>key.toLowerCase()==='openlibrary')?.[1]);
+  const editionMetadata={version:edition,identityConflict:false,...(libraryId?.endsWith('M')?{openLibraryEditionId:libraryId}:{})};
   if(existing)await tx.update(workEditions).set({format,metadata:editionMetadata}).where(eq(workEditions.id,existing.id));
   else await tx.insert(workEditions).values({workId,instanceId,externalId:key,format,metadata:editionMetadata});
   const snapshot={format,title:book.Name??'',version:edition,addedAt:jellyfinAddedDate(book.DateCreated)??previous?.snapshot.addedAt};

@@ -1,0 +1,274 @@
+{
+  "movie": {
+    "work": {
+      "coverage": {
+        "targets": 444,
+        "hasLeadCredit": 350,
+        "hasExclusiveEpCredit": 289,
+        "leadToLead": 108,
+        "hasAnyEpEdge": 171,
+        "sameRoleEpEdge": 151,
+        "targetLeadDonorEp": 37,
+        "targetEpDonorLead": 40,
+        "hasAdditionalDonorFamilyFromEp": 168,
+        "hasTwoAdditionalFamiliesFromEp": 110,
+        "hasEpWithNoLeadHistory": 108
+      },
+      "real": {
+        "all": {
+          "n": 444,
+          "maeImprovement": -0.00858587077406622,
+          "displayUp": 47,
+          "displayDown": 8,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 3,
+          "loseGreen": 0
+        },
+        "dislike": {
+          "n": 7,
+          "maeImprovement": -0.0629495571813631,
+          "displayUp": 0,
+          "displayDown": 0,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "five": {
+          "n": 66,
+          "maeImprovement": 0.10322480053759835,
+          "displayUp": 7,
+          "displayDown": 0,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        }
+      },
+      "allDescriptiveCredits": {
+        "observedMaeImprovement": -0.00858587077406622,
+        "nullMedian": -0.025053039089801932,
+        "nullRange90": [
+          -0.04193614991736513,
+          -0.01054651626513562
+        ],
+        "upperTail": 0.04,
+        "meanFractionEdgesMoved": 0.6052350978571183
+      },
+      "knownDonorCreditsOnly": {
+        "observedMaeImprovement": -0.00858587077406622,
+        "nullMedian": -0.015546399635273093,
+        "nullRange90": [
+          -0.019459169629119186,
+          -0.011142272479299253
+        ],
+        "upperTail": 0.02,
+        "meanFractionEdgesMoved": 0.5606461894770635
+      }
+    },
+    "rolling-day": {
+      "coverage": {
+        "targets": 194,
+        "hasLeadCredit": 147,
+        "hasExclusiveEpCredit": 130,
+        "leadToLead": 34,
+        "hasAnyEpEdge": 72,
+        "sameRoleEpEdge": 64,
+        "targetLeadDonorEp": 8,
+        "targetEpDonorLead": 15,
+        "hasAdditionalDonorFamilyFromEp": 71,
+        "hasTwoAdditionalFamiliesFromEp": 45,
+        "hasEpWithNoLeadHistory": 54
+      },
+      "real": {
+        "all": {
+          "n": 194,
+          "maeImprovement": 0.01928952807528801,
+          "displayUp": 17,
+          "displayDown": 3,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "dislike": {
+          "n": 7,
+          "maeImprovement": -0.056914783329876935,
+          "displayUp": 0,
+          "displayDown": 0,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "five": {
+          "n": 35,
+          "maeImprovement": 0.08675860898180718,
+          "displayUp": 4,
+          "displayDown": 0,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        }
+      },
+      "allDescriptiveCredits": {
+        "observedMaeImprovement": 0.01928952807528801,
+        "nullMedian": 0.024963955269734262,
+        "nullRange90": [
+          -0.0008952402574380782,
+          0.05211911279199954
+        ],
+        "upperTail": 0.64,
+        "meanFractionEdgesMoved": 0.6052350978571183
+      },
+      "knownDonorCreditsOnly": {
+        "observedMaeImprovement": 0.01928952807528801,
+        "nullMedian": 0.020122649404445782,
+        "nullRange90": [
+          0.012610376273252918,
+          0.027320101268564875
+        ],
+        "upperTail": 0.62,
+        "meanFractionEdgesMoved": 0.6104245835913945
+      }
+    }
+  },
+  "show": {
+    "work": {
+      "coverage": {
+        "targets": 429,
+        "hasLeadCredit": 406,
+        "hasExclusiveEpCredit": 284,
+        "leadToLead": 127,
+        "hasAnyEpEdge": 197,
+        "sameRoleEpEdge": 159,
+        "targetLeadDonorEp": 62,
+        "targetEpDonorLead": 50,
+        "hasAdditionalDonorFamilyFromEp": 175,
+        "hasTwoAdditionalFamiliesFromEp": 112,
+        "hasEpWithNoLeadHistory": 107
+      },
+      "real": {
+        "all": {
+          "n": 429,
+          "maeImprovement": -0.016641407934309405,
+          "displayUp": 25,
+          "displayDown": 20,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 1,
+          "loseGreen": 1
+        },
+        "dislike": {
+          "n": 33,
+          "maeImprovement": -0.03545988749144502,
+          "displayUp": 1,
+          "displayDown": 1,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "five": {
+          "n": 59,
+          "maeImprovement": 0.011578380106455417,
+          "displayUp": 3,
+          "displayDown": 4,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        }
+      },
+      "allDescriptiveCredits": {
+        "observedMaeImprovement": -0.016641407934309405,
+        "nullMedian": -0.0055755862261278625,
+        "nullRange90": [
+          -0.01958142265263073,
+          0.0061915552883164875
+        ],
+        "upperTail": 0.94,
+        "meanFractionEdgesMoved": 0.6782950642599765
+      },
+      "knownDonorCreditsOnly": {
+        "observedMaeImprovement": -0.016641407934309405,
+        "nullMedian": -0.013293739883311638,
+        "nullRange90": [
+          -0.017072444778169868,
+          -0.008561619055966845
+        ],
+        "upperTail": 0.92,
+        "meanFractionEdgesMoved": 0.6491955660721404
+      }
+    },
+    "rolling-day": {
+      "coverage": {
+        "targets": 188,
+        "hasLeadCredit": 183,
+        "hasExclusiveEpCredit": 124,
+        "leadToLead": 46,
+        "hasAnyEpEdge": 82,
+        "sameRoleEpEdge": 57,
+        "targetLeadDonorEp": 27,
+        "targetEpDonorLead": 22,
+        "hasAdditionalDonorFamilyFromEp": 72,
+        "hasTwoAdditionalFamiliesFromEp": 42,
+        "hasEpWithNoLeadHistory": 45
+      },
+      "real": {
+        "all": {
+          "n": 188,
+          "maeImprovement": -0.028420343940044508,
+          "displayUp": 8,
+          "displayDown": 9,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "dislike": {
+          "n": 7,
+          "maeImprovement": -0.04761779615577666,
+          "displayUp": 0,
+          "displayDown": 1,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        },
+        "five": {
+          "n": 24,
+          "maeImprovement": 0.010768597937431087,
+          "displayUp": 0,
+          "displayDown": 1,
+          "newRed": 0,
+          "loseRed": 0,
+          "newGreen": 0,
+          "loseGreen": 0
+        }
+      },
+      "allDescriptiveCredits": {
+        "observedMaeImprovement": -0.028420343940044508,
+        "nullMedian": -6.671371548301047e-05,
+        "nullRange90": [
+          -0.019821693964323595,
+          0.013896008507819699
+        ],
+        "upperTail": 0.99,
+        "meanFractionEdgesMoved": 0.6782950642599765
+      },
+      "knownDonorCreditsOnly": {
+        "observedMaeImprovement": -0.028420343940044508,
+        "nullMedian": -0.022465787180199894,
+        "nullRange90": [
+          -0.028901705313904232,
+          -0.014853842332681142
+        ],
+        "upperTail": 0.93,
+        "meanFractionEdgesMoved": 0.673117699317174
+      }
+    }
+  }
+}

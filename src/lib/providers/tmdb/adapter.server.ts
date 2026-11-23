@@ -43,10 +43,17 @@ const credits = v.object({
   cast: v.array(castMember),
   guest_stars: v.optional(v.array(castMember), []),
 });
+const aggregateCrew = v.object({
+  id: v.number(), name: v.string(),
+  jobs: v.optional(v.array(v.object({job:v.string(),episode_count:v.fallback(v.number(),0)})),[]),
+});
 const detail = v.object({
   keywords:v.optional(v.object({keywords:v.optional(v.array(keyword),[]),results:v.optional(v.array(keyword),[])})),
   credits: v.optional(credits),
-  aggregate_credits: v.optional(credits),
+  aggregate_credits: v.optional(v.object({
+    cast:v.optional(v.array(castMember)),
+    crew:v.fallback(v.optional(v.array(aggregateCrew),[]),[]),
+  })),
   created_by: v.fallback(v.optional(v.array(v.object({id:v.number(),name:v.string()})),[]),[]),
   ...releaseCreditFields,
   recommendations: v.optional(result),
@@ -137,6 +144,17 @@ function crewFacts(people:v.InferOutput<typeof crewMember>[]) {
     if(!credits.has(key))credits.set(key,{id:String(person.id),name:person.name.slice(0,250),role:person.job.slice(0,150)});
   }
   return [...credits.values()];
+}
+
+function seriesCrew(people:v.InferOutput<typeof aggregateCrew>[],episodes:number|null|undefined){
+  if(!Number.isSafeInteger(episodes)||!episodes||episodes<1)return [];
+  // TV /credits describes the newest season. Only a recurring role in /aggregate_credits
+  // establishes breadth across a series. Job counts may overlap, so never sum them.
+  const minimum=episodes===1?1:Math.max(2,Math.ceil(episodes/4));
+  return people.flatMap(({id,name,jobs})=>jobs
+    .filter(job=>Number.isSafeInteger(job.episode_count)&&job.episode_count>=minimum&&job.episode_count<=episodes)
+    .map(job=>({id,name,job:job.job,episodes:job.episode_count})))
+    .sort((a,b)=>b.episodes-a.episodes||a.id-b.id||a.job.localeCompare(b.job));
 }
 
 type ReleaseCredits=Pick<v.InferOutput<typeof detail>,'credits'|'crew'|'guest_stars'>;
@@ -269,8 +287,10 @@ export class TmdbAdapter implements MetadataProvider {
       }));
     const feature=(person:{id:number;name:string})=>({id:`tmdb:${person.id}`,name:person.name});
     const creators=kind==='show'?data.created_by.map(person=>({...person,job:'Creator'})):[];
-    const crew=crewFacts([...creators,...(data.credits?.crew??[])]);
-    if(data.credits||creators.length)metadata.facts.credits=crew.slice(0,40);
+    const crew=crewFacts(kind==='show'
+      ?[...creators,...seriesCrew(data.aggregate_credits?.crew??[],data.number_of_episodes)]
+      :data.credits?.crew??[]);
+    if(kind==='show'||data.credits)metadata.facts.credits=crew.slice(0,40);
     metadata.tasteFeatures={
       tags:[...(data.keywords?.keywords??[]),...(data.keywords?.results??[])].map(feature),
       cast:tmdbCastFeatures(data.aggregate_credits?.cast??data.credits?.cast??[]),

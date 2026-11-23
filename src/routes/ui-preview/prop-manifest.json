@@ -4457,7 +4457,7 @@
       {
         "name": "href",
         "type": "string",
-        "optional": false,
+        "optional": true,
         "bindable": false,
         "kind": "text",
         "nullable": false
@@ -4469,6 +4469,24 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "dialog",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       },
       {
         "name": "onclick",

@@ -1,0 +1,2109 @@
+[
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "all",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        60.82,
+        75.93,
+        67.24
+      ],
+      "greenWeak": 13,
+      "greenFive": 59,
+      "greenAll": 339,
+      "bands": {
+        "6": 2,
+        "7": 103,
+        "8": 326,
+        "9": 13
+      },
+      "genres": {
+        "all": {
+          "n": 444,
+          "likedIn20": 18.5
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 16.0
+        },
+        "sci": {
+          "n": 128,
+          "likedIn20": 17.62
+        },
+        "drama": {
+          "n": 137,
+          "likedIn20": 16.22
+        },
+        "comedy": {
+          "n": 119,
+          "likedIn20": 14.79
+        },
+        "horror": {
+          "n": 59,
+          "likedIn20": 15.0
+        },
+        "action": {
+          "n": 138,
+          "likedIn20": 17.2
+        },
+        "romance": {
+          "n": 101,
+          "likedIn20": 17.33
+        }
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        61.69,
+        78.61,
+        68.62
+      ],
+      "greenWeak": 9,
+      "greenFive": 60,
+      "greenAll": 332,
+      "bands": {
+        "6": 1,
+        "7": 111,
+        "8": 331,
+        "9": 1
+      },
+      "delta95": [
+        [
+          -0.57,
+          2.32,
+          400
+        ],
+        [
+          -0.8,
+          6.5,
+          400
+        ],
+        [
+          -1.94,
+          5.37,
+          400
+        ]
+      ],
+      "genres": {
+        "all": {
+          "n": 444,
+          "likedIn20": 18.71
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 16.3
+        },
+        "sci": {
+          "n": 128,
+          "likedIn20": 16.2
+        },
+        "drama": {
+          "n": 137,
+          "likedIn20": 17.5
+        },
+        "comedy": {
+          "n": 119,
+          "likedIn20": 15.52
+        },
+        "horror": {
+          "n": 59,
+          "likedIn20": 14.0
+        },
+        "action": {
+          "n": 138,
+          "likedIn20": 16.38
+        },
+        "romance": {
+          "n": 101,
+          "likedIn20": 17.65
+        }
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "0",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.41,
+        64.73,
+        56.48
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      },
+      "genres": {
+        "all": {
+          "n": 444,
+          "likedIn20": 16.3
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 15.22
+        },
+        "sci": {
+          "n": 128,
+          "likedIn20": 16.17
+        },
+        "drama": {
+          "n": 137,
+          "likedIn20": 15.0
+        },
+        "comedy": {
+          "n": 119,
+          "likedIn20": 15.4
+        },
+        "horror": {
+          "n": 59,
+          "likedIn20": 13.0
+        },
+        "action": {
+          "n": 138,
+          "likedIn20": 15.38
+        },
+        "romance": {
+          "n": 101,
+          "likedIn20": 16.5
+        }
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        57.15,
+        69.19,
+        56.36
+      ],
+      "greenWeak": 8,
+      "greenFive": 49,
+      "greenAll": 267,
+      "bands": {
+        "7": 177,
+        "8": 267
+      },
+      "delta95": [
+        [
+          -2.54,
+          4.59,
+          400
+        ],
+        [
+          -4.92,
+          15.58,
+          400
+        ],
+        [
+          -7.98,
+          9.58,
+          400
+        ]
+      ],
+      "genres": {
+        "all": {
+          "n": 444,
+          "likedIn20": 16.71
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 16.11
+        },
+        "sci": {
+          "n": 128,
+          "likedIn20": 15.14
+        },
+        "drama": {
+          "n": 137,
+          "likedIn20": 15.05
+        },
+        "comedy": {
+          "n": 119,
+          "likedIn20": 15.22
+        },
+        "horror": {
+          "n": 59,
+          "likedIn20": 11.57
+        },
+        "action": {
+          "n": 138,
+          "likedIn20": 14.27
+        },
+        "romance": {
+          "n": 101,
+          "likedIn20": 17.0
+        }
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#1",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.3,
+        64.91,
+        57.38
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.01,
+        64.19,
+        57.05
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#2",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        55.17,
+        64.31,
+        55.75
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        55.04,
+        63.89,
+        55.5
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "2#3",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        53.54,
+        51.14,
+        53.91
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        53.16,
+        50.18,
+        53.18
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 444
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#1",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.48,
+        66.2,
+        59.41
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 378,
+        "7": 66
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.64,
+        68.28,
+        60.11
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 284,
+        "7": 160
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#2",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        57.78,
+        72.11,
+        61.86
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 226,
+        "7": 218
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        57.23,
+        70.54,
+        60.64
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 153,
+        "7": 291
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "10#3",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        53.75,
+        59.7,
+        49.19
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 401,
+        "7": 43
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        54.69,
+        61.57,
+        51.18
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "6": 322,
+        "7": 122
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#1",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        55.73,
+        66.2,
+        56.4
+      ],
+      "greenWeak": 0,
+      "greenFive": 15,
+      "greenAll": 83,
+      "bands": {
+        "6": 71,
+        "7": 290,
+        "8": 83
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        57.85,
+        71.72,
+        59.33
+      ],
+      "greenWeak": 6,
+      "greenFive": 41,
+      "greenAll": 220,
+      "bands": {
+        "7": 224,
+        "8": 220
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#2",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        57.47,
+        74.22,
+        61.0
+      ],
+      "greenWeak": 0,
+      "greenFive": 15,
+      "greenAll": 84,
+      "bands": {
+        "6": 96,
+        "7": 264,
+        "8": 84
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        60.09,
+        78.07,
+        64.59
+      ],
+      "greenWeak": 3,
+      "greenFive": 36,
+      "greenAll": 195,
+      "bands": {
+        "6": 1,
+        "7": 248,
+        "8": 195
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "work",
+    "budget": "50#3",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        55.11,
+        67.23,
+        55.22
+      ],
+      "greenWeak": 1,
+      "greenFive": 9,
+      "greenAll": 68,
+      "bands": {
+        "6": 33,
+        "7": 343,
+        "8": 68
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14944,
+        1660,
+        1227
+      ],
+      "ranking": [
+        56.21,
+        67.95,
+        59.25
+      ],
+      "greenWeak": 7,
+      "greenFive": 49,
+      "greenAll": 257,
+      "bands": {
+        "7": 187,
+        "8": 257
+      }
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "franchise",
+    "budget": "all",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14812,
+        1592,
+        1233
+      ],
+      "ranking": [
+        58.57,
+        76.63,
+        59.53
+      ],
+      "greenWeak": 10,
+      "greenFive": 57,
+      "greenAll": 322,
+      "bands": {
+        "7": 122,
+        "8": 319,
+        "9": 3
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14812,
+        1592,
+        1233
+      ],
+      "ranking": [
+        59.47,
+        80.34,
+        63.87
+      ],
+      "greenWeak": 5,
+      "greenFive": 57,
+      "greenAll": 320,
+      "bands": {
+        "7": 124,
+        "8": 320
+      },
+      "delta95": [
+        [
+          -1.08,
+          2.59,
+          400
+        ],
+        [
+          0.54,
+          7.35,
+          400
+        ],
+        [
+          0.62,
+          8.05,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "franchise",
+    "budget": "0",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14812,
+        1592,
+        1233
+      ],
+      "ranking": [
+        56.16,
+        69.6,
+        55.47
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 10,
+        "6": 434
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14812,
+        1592,
+        1233
+      ],
+      "ranking": [
+        54.92,
+        74.5,
+        51.95
+      ],
+      "greenWeak": 4,
+      "greenFive": 37,
+      "greenAll": 213,
+      "bands": {
+        "7": 231,
+        "8": 213
+      },
+      "delta95": [
+        [
+          -4.62,
+          2.53,
+          400
+        ],
+        [
+          -4.57,
+          14.34,
+          400
+        ],
+        [
+          -12.58,
+          6.87,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "reassigned-franchise",
+    "budget": "all",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14963,
+        1601,
+        1233
+      ],
+      "ranking": [
+        57.13,
+        76.73,
+        58.43
+      ],
+      "greenWeak": 9,
+      "greenFive": 56,
+      "greenAll": 328,
+      "bands": {
+        "6": 1,
+        "7": 115,
+        "8": 325,
+        "9": 3
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14963,
+        1601,
+        1233
+      ],
+      "ranking": [
+        57.86,
+        78.33,
+        59.89
+      ],
+      "greenWeak": 8,
+      "greenFive": 56,
+      "greenAll": 325,
+      "bands": {
+        "7": 119,
+        "8": 325
+      },
+      "delta95": [
+        [
+          -0.91,
+          2.46,
+          400
+        ],
+        [
+          -1.27,
+          4.54,
+          400
+        ],
+        [
+          -3.02,
+          5.96,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "reassigned-franchise",
+    "budget": "0",
+    "targets": 444,
+    "v1": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14963,
+        1601,
+        1233
+      ],
+      "ranking": [
+        54.87,
+        67.74,
+        52.39
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 439
+      }
+    },
+    "calibrated": {
+      "scored": 444,
+      "common": 444,
+      "ratingPairs": [
+        14963,
+        1601,
+        1233
+      ],
+      "ranking": [
+        54.7,
+        73.42,
+        52.51
+      ],
+      "greenWeak": 4,
+      "greenFive": 34,
+      "greenAll": 200,
+      "bands": {
+        "7": 244,
+        "8": 200
+      },
+      "delta95": [
+        [
+          -4.04,
+          3.75,
+          400
+        ],
+        [
+          -4.38,
+          16.01,
+          400
+        ],
+        [
+          -8.82,
+          10.96,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "movie",
+    "split": "rolling-day",
+    "budget": "dated ratings only",
+    "targets": 194,
+    "v1": {
+      "scored": 194,
+      "common": 194,
+      "ratingPairs": [
+        1472,
+        109,
+        120
+      ],
+      "ranking": [
+        52.38,
+        66.51,
+        55.42
+      ],
+      "greenWeak": 9,
+      "greenFive": 32,
+      "greenAll": 164,
+      "bands": {
+        "7": 30,
+        "8": 162,
+        "9": 2
+      },
+      "equalDay": [
+        57.26,
+        74.54,
+        55.28
+      ]
+    },
+    "calibrated": {
+      "scored": 194,
+      "common": 194,
+      "ratingPairs": [
+        1472,
+        109,
+        120
+      ],
+      "ranking": [
+        55.06,
+        85.32,
+        57.5
+      ],
+      "greenWeak": 5,
+      "greenFive": 29,
+      "greenAll": 128,
+      "bands": {
+        "7": 66,
+        "8": 128
+      },
+      "delta95": [
+        [
+          -5.0,
+          4.12,
+          400
+        ],
+        [
+          0.0,
+          47.62,
+          389
+        ],
+        [
+          0.0,
+          2.77,
+          344
+        ]
+      ],
+      "equalDay": [
+        55.97,
+        89.5,
+        56.66
+      ]
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "all",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        68.82,
+        79.29,
+        77.9
+      ],
+      "greenWeak": 20,
+      "greenFive": 54,
+      "greenAll": 290,
+      "bands": {
+        "4": 1,
+        "5": 4,
+        "6": 21,
+        "7": 112,
+        "8": 259,
+        "9": 31
+      },
+      "genres": {
+        "all": {
+          "n": 429,
+          "likedIn20": 13.29
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 16.5
+        },
+        "sci": {
+          "n": 196,
+          "likedIn20": 13.29
+        },
+        "drama": {
+          "n": 271,
+          "likedIn20": 14.15
+        },
+        "comedy": {
+          "n": 177,
+          "likedIn20": 14.76
+        },
+        "documentary": {
+          "n": 5,
+          "likedIn20": 1.0
+        },
+        "action": {
+          "n": 97,
+          "likedIn20": 16.79
+        }
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        69.94,
+        79.38,
+        79.68
+      ],
+      "greenWeak": 13,
+      "greenFive": 51,
+      "greenAll": 224,
+      "bands": {
+        "5": 11,
+        "6": 60,
+        "7": 134,
+        "8": 224
+      },
+      "delta95": [
+        [
+          -0.57,
+          2.55,
+          400
+        ],
+        [
+          -2.35,
+          2.3,
+          400
+        ],
+        [
+          -2.43,
+          6.17,
+          400
+        ]
+      ],
+      "genres": {
+        "all": {
+          "n": 429,
+          "likedIn20": 14.48
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 18.25
+        },
+        "sci": {
+          "n": 196,
+          "likedIn20": 14.43
+        },
+        "drama": {
+          "n": 271,
+          "likedIn20": 14.28
+        },
+        "comedy": {
+          "n": 177,
+          "likedIn20": 15.43
+        },
+        "documentary": {
+          "n": 5,
+          "likedIn20": 1.0
+        },
+        "action": {
+          "n": 97,
+          "likedIn20": 17.69
+        }
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "0",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.49,
+        66.79,
+        51.37
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 421,
+        "7": 2
+      },
+      "genres": {
+        "all": {
+          "n": 429,
+          "likedIn20": 16.59
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 12.0
+        },
+        "sci": {
+          "n": 196,
+          "likedIn20": 17.74
+        },
+        "drama": {
+          "n": 271,
+          "likedIn20": 17.09
+        },
+        "comedy": {
+          "n": 177,
+          "likedIn20": 14.36
+        },
+        "documentary": {
+          "n": 5,
+          "likedIn20": 1.0
+        },
+        "action": {
+          "n": 97,
+          "likedIn20": 17.82
+        }
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.7,
+        66.95,
+        51.43
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 229,
+        "7": 195
+      },
+      "delta95": [
+        [
+          -1.26,
+          1.62,
+          400
+        ],
+        [
+          -2.41,
+          2.29,
+          400
+        ],
+        [
+          -4.69,
+          4.96,
+          400
+        ]
+      ],
+      "genres": {
+        "all": {
+          "n": 429,
+          "likedIn20": 16.0
+        },
+        "animation": {
+          "n": 60,
+          "likedIn20": 12.5
+        },
+        "sci": {
+          "n": 196,
+          "likedIn20": 18.18
+        },
+        "drama": {
+          "n": 271,
+          "likedIn20": 17.11
+        },
+        "comedy": {
+          "n": 177,
+          "likedIn20": 14.14
+        },
+        "documentary": {
+          "n": 5,
+          "likedIn20": 1.0
+        },
+        "action": {
+          "n": 97,
+          "likedIn20": 17.0
+        }
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#1",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        56.26,
+        64.12,
+        59.37
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 418,
+        "7": 5
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        56.34,
+        64.2,
+        59.37
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 418,
+        "7": 6
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#2",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        59.65,
+        72.9,
+        62.53
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 259,
+        "7": 164
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        59.67,
+        72.94,
+        62.53
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 259,
+        "7": 165
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "2#3",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.92,
+        68.31,
+        51.88
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 309,
+        "7": 114
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.96,
+        68.35,
+        51.88
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 309,
+        "7": 115
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#1",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        59.8,
+        72.03,
+        60.54
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 95,
+        "7": 328
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        60.21,
+        72.03,
+        61.97
+      ],
+      "greenWeak": 1,
+      "greenFive": 0,
+      "greenAll": 1,
+      "bands": {
+        "5": 5,
+        "6": 76,
+        "7": 347,
+        "8": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#2",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        61.38,
+        71.66,
+        65.89
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 48,
+        "7": 375
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        62.48,
+        73.52,
+        66.85
+      ],
+      "greenWeak": 1,
+      "greenFive": 0,
+      "greenAll": 1,
+      "bands": {
+        "5": 5,
+        "6": 35,
+        "7": 388,
+        "8": 1
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "10#3",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.75,
+        67.79,
+        51.48
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 99,
+        "7": 324
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        56.76,
+        70.36,
+        50.71
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 99,
+        "7": 325
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#1",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        63.05,
+        73.82,
+        66.19
+      ],
+      "greenWeak": 8,
+      "greenFive": 25,
+      "greenAll": 135,
+      "bands": {
+        "5": 5,
+        "6": 43,
+        "7": 245,
+        "8": 135
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        62.59,
+        74.61,
+        66.85
+      ],
+      "greenWeak": 7,
+      "greenFive": 12,
+      "greenAll": 67,
+      "bands": {
+        "6": 6,
+        "7": 356,
+        "8": 67
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#2",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        64.22,
+        78.47,
+        68.58
+      ],
+      "greenWeak": 8,
+      "greenFive": 38,
+      "greenAll": 169,
+      "bands": {
+        "5": 5,
+        "6": 23,
+        "7": 231,
+        "8": 169
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        64.04,
+        76.66,
+        70.16
+      ],
+      "greenWeak": 15,
+      "greenFive": 42,
+      "greenAll": 209,
+      "bands": {
+        "6": 4,
+        "7": 216,
+        "8": 209
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "work",
+    "budget": "50#3",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        65.31,
+        76.91,
+        68.84
+      ],
+      "greenWeak": 6,
+      "greenFive": 33,
+      "greenAll": 154,
+      "bands": {
+        "5": 5,
+        "6": 66,
+        "7": 203,
+        "8": 154
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        65.6,
+        77.51,
+        69.09
+      ],
+      "greenWeak": 2,
+      "greenFive": 14,
+      "greenAll": 69,
+      "bands": {
+        "6": 8,
+        "7": 352,
+        "8": 69
+      }
+    }
+  },
+  {
+    "medium": "show",
+    "split": "franchise",
+    "budget": "all",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        68.82,
+        79.29,
+        77.9
+      ],
+      "greenWeak": 20,
+      "greenFive": 54,
+      "greenAll": 290,
+      "bands": {
+        "4": 1,
+        "5": 4,
+        "6": 21,
+        "7": 112,
+        "8": 259,
+        "9": 31
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        69.94,
+        79.38,
+        79.68
+      ],
+      "greenWeak": 13,
+      "greenFive": 51,
+      "greenAll": 224,
+      "bands": {
+        "5": 11,
+        "6": 60,
+        "7": 134,
+        "8": 224
+      },
+      "delta95": [
+        [
+          -0.57,
+          2.55,
+          400
+        ],
+        [
+          -2.35,
+          2.3,
+          400
+        ],
+        [
+          -2.43,
+          6.17,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "show",
+    "split": "franchise",
+    "budget": "0",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.49,
+        66.79,
+        51.37
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 421,
+        "7": 2
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14454,
+        3684,
+        982
+      ],
+      "ranking": [
+        55.7,
+        66.95,
+        51.43
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 229,
+        "7": 195
+      },
+      "delta95": [
+        [
+          -1.26,
+          1.62,
+          400
+        ],
+        [
+          -2.41,
+          2.29,
+          400
+        ],
+        [
+          -4.69,
+          4.96,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "show",
+    "split": "reassigned-franchise",
+    "budget": "all",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14611,
+        3729,
+        930
+      ],
+      "ranking": [
+        67.88,
+        79.22,
+        78.28
+      ],
+      "greenWeak": 22,
+      "greenFive": 53,
+      "greenAll": 289,
+      "bands": {
+        "4": 3,
+        "5": 4,
+        "6": 17,
+        "7": 115,
+        "8": 265,
+        "9": 24
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14611,
+        3729,
+        930
+      ],
+      "ranking": [
+        70.03,
+        80.77,
+        83.06
+      ],
+      "greenWeak": 10,
+      "greenFive": 51,
+      "greenAll": 219,
+      "bands": {
+        "5": 7,
+        "6": 68,
+        "7": 135,
+        "8": 219
+      },
+      "delta95": [
+        [
+          0.53,
+          3.65,
+          400
+        ],
+        [
+          -1.05,
+          4.14,
+          400
+        ],
+        [
+          0.0,
+          9.39,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "show",
+    "split": "reassigned-franchise",
+    "budget": "0",
+    "targets": 429,
+    "v1": {
+      "scored": 428,
+      "common": 428,
+      "ratingPairs": [
+        14611,
+        3729,
+        930
+      ],
+      "ranking": [
+        55.68,
+        61.88,
+        58.71
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "4": 1,
+        "5": 6,
+        "6": 420,
+        "7": 1
+      }
+    },
+    "calibrated": {
+      "scored": 429,
+      "common": 428,
+      "ratingPairs": [
+        14611,
+        3729,
+        930
+      ],
+      "ranking": [
+        55.63,
+        62.4,
+        58.82
+      ],
+      "greenWeak": 0,
+      "greenFive": 0,
+      "greenAll": 0,
+      "bands": {
+        "5": 5,
+        "6": 228,
+        "7": 196
+      },
+      "delta95": [
+        [
+          -1.27,
+          1.1,
+          400
+        ],
+        [
+          -1.74,
+          2.31,
+          400
+        ],
+        [
+          -2.98,
+          3.84,
+          400
+        ]
+      ]
+    }
+  },
+  {
+    "medium": "show",
+    "split": "rolling-day",
+    "budget": "dated ratings only",
+    "targets": 188,
+    "v1": {
+      "scored": 188,
+      "common": 188,
+      "ratingPairs": [
+        3655,
+        599,
+        182
+      ],
+      "ranking": [
+        60.96,
+        65.44,
+        69.78
+      ],
+      "greenWeak": 6,
+      "greenFive": 20,
+      "greenAll": 131,
+      "bands": {
+        "6": 12,
+        "7": 45,
+        "8": 97,
+        "9": 34
+      },
+      "equalDay": [
+        54.91,
+        72.17,
+        72.03
+      ]
+    },
+    "calibrated": {
+      "scored": 188,
+      "common": 188,
+      "ratingPairs": [
+        3655,
+        599,
+        182
+      ],
+      "ranking": [
+        60.47,
+        68.03,
+        65.93
+      ],
+      "greenWeak": 4,
+      "greenFive": 16,
+      "greenAll": 96,
+      "bands": {
+        "5": 10,
+        "6": 31,
+        "7": 51,
+        "8": 96
+      },
+      "delta95": [
+        [
+          -3.9,
+          0.54,
+          395
+        ],
+        [
+          0.0,
+          5.29,
+          389
+        ],
+        [
+          -5.72,
+          2.38,
+          364
+        ]
+      ],
+      "equalDay": [
+        51.25,
+        74.14,
+        70.35
+      ]
+    }
+  }
+]

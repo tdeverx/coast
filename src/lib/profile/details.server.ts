@@ -28,8 +28,8 @@ async function loadTaste(viewerId: string, friendId: string, url: URL, signal?: 
   const { workCards } = await import('#lib/collection/query.server.js');
   const items = await withReadCancellation(signal, () => workCards(viewerId, viewerId, comparison.ids));
   signal?.throwIfAborted();
-  const media = comparison.media.map(({ medium, score, signals, stats, overlapCounts, progressComparisons }) =>
-    ({ medium, score, signals, stats, overlapCounts, progressComparisons }));
+  const media = comparison.media.map(({ medium, score, signals, stats, overlapCounts, progressComparisons, comparison }) =>
+    ({ medium, score, signals, stats, overlapCounts, progressComparisons, comparison }));
   return {
     comparison: { score: comparison.score, sampleLimit: comparison.sampleLimit, total: comparison.total, page: comparison.page, pages: comparison.pages, media },
     items,

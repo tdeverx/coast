@@ -603,6 +603,27 @@
       "when": 1795346161668,
       "tag": "0085_merge_provider_watches",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795384974395,
+      "tag": "0087_taste_shortlist_revision",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795417541464,
+      "tag": "0088_personal_taste_match",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1795418284244,
+      "tag": "0089_taste_synopsis_vectors",
+      "breakpoints": true
     }
   ]
 }

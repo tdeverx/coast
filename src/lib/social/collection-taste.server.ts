@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { getDb } from '#lib/server/db/index.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { requireFeature } from '#lib/server/features.js';
-import { titleTastes, type TasteScoreMode } from './taste-cache.server';
+import type { TasteScoreMode } from './taste-cache.server';
 
 export type TasteGroup = 'collection' | 'reading-group';
 export type CollectionTasteBreakdown = {
@@ -58,7 +58,8 @@ export async function collectionTaste(userId: string, id: string, group: TasteGr
   `);
   if (!sample.length) return null;
   const ids = sample.map(member => member.id);
-  const matches = await titleTastes(userId, ids, config, mode);
+  const {selectedItemMatches}=await import('./taste-personal-match.server');
+  const matches=await selectedItemMatches(userId,ids,false,config);
   const scores = ids.map(id => matches.get(id)?.score).filter((score): score is number => score != null);
   const enough = scores.length >= 2 && scores.length * 2 >= sample.length;
   const { total, watched } = sample[0];

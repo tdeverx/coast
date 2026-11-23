@@ -12,6 +12,8 @@
   import { tick, getContext, onDestroy } from 'svelte';
   import {provideRetention,type Retain} from '#lib/ui/retention.js';
   import type { Snippet } from 'svelte';
+  import {getCardTaste} from '#lib/ui/card-taste-context.js';
+  import {observeVisibility} from '#lib/ui/visibility.js';
   import type {
     MediaView,
     MediaCardPresentation,
@@ -33,7 +35,7 @@
   import ActivityHeader from './ActivityHeader.svelte';
   import SocialControls from './SocialControls.svelte';
   import {detailHref} from '../pages/detail-rows';
-  import {readingVolumeId} from '../pages/detail';
+  import {canShowTaste,detailTaste,readingVolumeId} from '../pages/detail';
   import WorkMenu from './WorkMenu.svelte';
   let {
     item,
@@ -83,6 +85,31 @@
     social?:{friends:{username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus}[];total:number};
   } = $props();
   const retainCard=provideRetention(()=>retain?.()??(()=>{}));
+  const {current:getTasteBatch, explain:explainTaste}=getCardTaste();
+  const tasteId=$derived(!preview && page.data.experimentalCardTasteScores && showCaption && !artworkOnly && !item.captionActor && item.kind!=='collection' &&
+    !('href' in item && item.href===null) && canShowTaste(item,page.data.capabilities) ? detailTaste(item)?.workId : undefined);
+  const tasteBatch=$derived(tasteId ? getTasteBatch() : undefined);
+  let match=$state.raw<{batch:NonNullable<ReturnType<typeof getTasteBatch>>;id:string;score:number}>();
+  const tasteScore=$derived(match && match.batch===tasteBatch && match.id===tasteId ? match.score : tasteId && tasteBatch ? tasteBatch.peek(tasteId) : undefined);
+  function openTasteBreakdown(event: MouseEvent) {
+    event.stopPropagation();
+    if (tasteId && tasteScore !== undefined)
+      explainTaste({ workId: tasteId, title: item.title, kind: item.kind, cardScore: tasteScore });
+  }
+  function watchTaste(node:HTMLElement) {
+    $effect(()=>{
+      const batch=tasteBatch,id=tasteId;
+      if(!id || !batch) return;
+      let release:(()=>void)|undefined;
+      const stop=observeVisibility(node,visible=>{
+        if(visible) release??=batch.watch(id,score=>{
+          if(batch===tasteBatch && id===tasteId) match=score===undefined ? undefined : {batch,id,score};
+        });
+        else {release?.();release=undefined;}
+      });
+      return ()=>{stop();release?.();};
+    });
+  }
   let releaseFocus:(()=>void)|undefined;
   function cardFocus(event:FocusEvent) {
     if(event.type==='focusin'){active=true;releaseFocus??=retainCard();}
@@ -236,6 +263,7 @@
   class="media-card"
   class:loading
   use:cardGesture
+  use:watchTaste
   onpointerenter={() => (active = true)}
   onfocusin={cardFocus}
   onfocusout={cardFocus}
@@ -339,17 +367,23 @@
   {:else}
     <div class="caption">
     <div class="title">{#if item.captionTitleHref ?? href}<TextLink href={(item.captionTitleHref ?? href)!} text={item.captionTitle ?? item.title} onclick={event=>{if(!item.captionTitleHref)select(event);}}/>{:else}{item.captionTitle ?? item.title}{/if}</div>
-    {#if !item.captionActor&&(item.kind!=='person'||item.captionSubtitle)}<div class="meta">
-      {#if item.captionSubtitle}<span class="subtitle">
+    {#if item.kind!=='person'||item.captionSubtitle}<div class="meta" class:taste-eligible={!!tasteId} class:with-match={tasteScore!==undefined}>
+      <span class="meta-content">{#if item.captionSubtitle}<span class="subtitle">
         {#if item.captionCredits?.length && item.captionCredits.map(credit=>credit.name).join(', ')===item.captionSubtitle}
           {#each item.captionCredits as credit,index}{#if index}{', '}{/if}{#if credit.href}<TextLink href={credit.href} text={credit.name}/>{:else}{credit.name}{/if}{/each}
         {:else if item.captionSubtitleHref}<TextLink href={item.captionSubtitleHref} text={item.captionSubtitle}/>
         {:else}{item.captionSubtitle}{/if}
       </span>{:else if item.kind === 'season' && trackedItem?.seasonNumber !== undefined}{item.captionTitle
           ? item.title
-          : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined && href}<TextLink {href} text={`S${String(trackedItem.seasonNumber).padStart(2,'0')}E${String(trackedItem.episodeNumber??0).padStart(2,'0')}`} onclick={select}/>{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{displayLabel(item.kind)}{/if}{#if !item.captionActor && item.rating}<span>·</span><span class="rating"
+          : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined && href}<TextLink {href} text={`S${String(trackedItem.seasonNumber).padStart(2,'0')}E${String(trackedItem.episodeNumber??0).padStart(2,'0')}`} onclick={select}/>{:else}{item.year ?? ''}{#if item.year}<span class="kind-separator">·</span>{/if}{displayLabel(item.kind)}{/if}</span>{#if item.rating}<span>·</span><span class="rating"
           ><Icon name="star" size={14} filled /> {item.rating}</span
         >{/if}
+      {#if tasteScore!==undefined && tasteId}<span class="taste-match">
+        <span class="match-separator" aria-hidden="true">·</span><span data-tone={tasteScore>=80?'positive':tasteScore<50?'negative':undefined}>
+          <TextLink text={`${tasteScore}% match`} label={`Your taste match for ${item.title} is ${tasteScore}%. View breakdown`} dialog
+            onclick={openTasteBreakdown}/>
+        </span>
+      </span>{/if}
     </div>{/if}
   </div>
   {/if}
@@ -587,6 +621,15 @@
     display: flex;
     gap: 8px;
   }
+  .meta-content {display:contents;}
+  .taste-eligible {min-height:1lh; white-space:nowrap;}
+  .with-match .meta-content {display:block; min-width:0; overflow:hidden; text-overflow:ellipsis;}
+  .with-match .kind-separator {margin-inline:8px;}
+  .with-match .meta-content:empty,
+  .meta-content:empty + .taste-match > .match-separator {display:none;}
+  .taste-match {display:inline-flex; flex:none; align-items:baseline; gap:inherit; white-space:nowrap;}
+  .taste-match [data-tone='positive'] {color:var(--success);}
+  .taste-match [data-tone='negative'] {color:var(--danger);}
   .subtitle {
     min-width: 0;
     overflow: hidden;

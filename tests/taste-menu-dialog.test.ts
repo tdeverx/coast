@@ -15,12 +15,13 @@ const {dialog}=await import(moduleUrl(compileRunes(`
  }
 `)));
 
-test('the personal detail button waits for selection; the admin result issues one scoped, cancellable read',()=>{
+test('details wait for selection and both score explanations issue one scoped, cancellable read',()=>{
  const id='00000000-0000-4000-8000-000000000001';
- for(const admin of [false,true]){
+ for(const origin of ['detail','card','admin'] as const){
   const reads:{path:string;method:string;signal:AbortSignal}[]=[];
   let closed=false;
-  const result=dialog({workId:id,group:'collection',adminTitle:admin?'A box set':undefined,onclose:()=>{closed=true;}},
+  const result=dialog({workId:id,group:origin==='card'?undefined:'collection',
+   inspect:origin==='detail'?undefined:{title:'An item',admin:origin==='admin'},onclose:()=>{closed=true;}},
    (path:string,_body:unknown,method:string,options:{signal:AbortSignal})=>{
     reads.push({path,method,signal:options.signal});
     return new Promise(()=>{});
@@ -28,10 +29,10 @@ test('the personal detail button waits for selection; the admin result issues on
   try{
    expect(reads).toHaveLength(0);
    result.mount();
-   if(!admin){expect(reads).toHaveLength(0);result.show();}
+   if(origin==='detail'){expect(reads).toHaveLength(0);result.show();}
    expect(reads).toHaveLength(1);
    expect(reads[0].method).toBe('GET');
-   expect(reads[0].path).toBe(`${admin?'admin/taste-score':'profile/taste-match'}?workId=${id}&group=collection`);
+   expect(reads[0].path).toBe(`${origin==='admin'?'admin/taste-score':'profile/taste-match'}?workId=${id}&${origin==='card'?'breakdown=true':'group=collection'}`);
    expect(reads[0].signal.aborted).toBe(false);
    result.close();
    expect(closed).toBe(true);
@@ -49,21 +50,19 @@ test('the dialog uses the existing title rating separately from a collection com
  }finally{title.dispose();group.dispose();}
 });
 
-const personalScript=(await componentScript('src/lib/profile/PersonalTaste.svelte')).replace('$props()','properties');
+const personalScript=(await componentScript('src/lib/profile/TasteSignals.svelte')).replace('$props()','properties');
 const {personal}=await import(moduleUrl(compileRunes(`
  import {createResource} from ${JSON.stringify(resourceUrl)};
- import {tasteMedia,tasteDimensions} from ${JSON.stringify(import.meta.resolve('../src/lib/social/taste-profile'))};
+ import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  export function personal(transport){
-  const properties={data:[]},useClient=()=>({api:transport}),displayLabel=value=>value;
-  const page=$state({data:{capabilities:{screen:true,book:true}}});
-  let dispose;const onDestroy=callback=>dispose=callback;
+  const properties=$state({medium:'movie'}),useClient=()=>({api:transport});
+  const page=$state({data:{contentRevision:{tracking:'first'}}});
+  let dispose;const onDestroy=cb=>dispose=cb;
   ${personalScript}
-  return {browse,closeBrowser,dispose,disableScreen(){page.data.capabilities.screen=false;},get open(){return open;},
-   get items(){return browser.data.items;}};
+  return {refresh(){page.data.contentRevision.tracking='next';},dispose};
  }
 `)));
-
-test('closing the signal browser or disabling its medium discards an outstanding personal affinity page',async()=>{
+test('the personal signal view cancels superseded and closed reads',async()=>{
  const reads:{path:string;signal:AbortSignal;finish:(value:unknown)=>void}[]=[];
  let view:ReturnType<typeof personal>;
  const release=runtime.effect_root(()=>{
@@ -72,17 +71,10 @@ test('closing the signal browser or disabling its medium discards an outstanding
  });
  try{
   runtime.flush();
-  expect(reads).toHaveLength(0);
-  view.browse('genres');runtime.flush();
-  expect(reads[0].path).toContain('medium=movie');
-  view.closeBrowser();expect(reads[0].signal.aborted).toBe(true);
-  view.browse('cast');runtime.flush();
-  view.disableScreen();runtime.flush();
-  expect(view.open).toBe(false);
-  expect(reads[1].signal.aborted).toBe(true);
-  for(const read of reads)read.finish({items:[{name:'stale'}],pages:1});
+  expect(reads).toHaveLength(1);expect(reads[0].path).toContain('taste-signals?medium=movie');
+  view.refresh();runtime.flush();expect(reads[0].signal.aborted).toBe(true);
+  expect(reads).toHaveLength(2);view.dispose();expect(reads[1].signal.aborted).toBe(true);
+  for(const read of reads)read.finish(null);
   await Promise.resolve();
-  expect(view.items).toEqual([]);
-  expect(reads).toHaveLength(2);
- }finally{view.dispose();release();}
+ }finally{release();}
 });

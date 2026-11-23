@@ -123,7 +123,7 @@ export const handler: RequestHandler = async (event) => {
       uid = user.id;
     const subjectId =
       method === 'GET' &&
-      ['progress', 'profile', 'collection'].includes(path[0]) &&
+      (['progress', 'collection'].includes(path[0]) || (path[0] === 'profile' && ['activity', 'section'].includes(path[1]))) &&
       url.searchParams.has('username')
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
@@ -206,7 +206,10 @@ export const handler: RequestHandler = async (event) => {
         if(action==='reactions')return Response.json(await reactionSummary(uid,v.parse(v.picklist(['work','activity']),url.searchParams.get('targetKind')),(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='works'&&path.length===2)return Response.json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='recommendations')return Response.json(await social.recommendations(uid,page,url.searchParams.get('available')==='true'));
-        if(action==='insights')return Response.json(url.searchParams.has('friendId')?await friendInsights(uid,uuid(url.searchParams.get('friendId'))):await friendDiscovery(uid));
+        if(action==='insights')return Response.json(url.searchParams.has('friendId')
+          ? await friendInsights(uid,uuid(url.searchParams.get('friendId')),{
+            medium:url.searchParams.get('medium')??'all',overlap:v.parse(v.picklist(['shared','onlyYou','onlyFriend']),url.searchParams.get('overlap')??'shared'),page
+          },request.signal) : await friendDiscovery(uid));
         if(action==='checkins'&&id==='episodes'&&path.length===3)return Response.json(await withReadCancellation(request.signal,async()=>
           (await import('#lib/social/checkins-query.server.js')).checkinEpisodes(uid,uuid(url.searchParams.get('workId')),page)));
         if(action==='checkins'&&id==='tracks'&&path.length===3)return Response.json(await withReadCancellation(request.signal,async()=>
