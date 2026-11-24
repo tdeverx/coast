@@ -12,7 +12,8 @@
       "Saving a Movie shape updated existing Library cards and survived a reload on the local fixture.",
       "For You Progress and Search displayed the saved shape.",
       "Reset followed by Save restored each surface’s default shape through reload.",
-      "Desktop and phone widths were used to exercise the editor, dropdowns and carousel."
+      "Desktop and phone widths were used to exercise the editor, dropdowns and carousel.",
+      "A Library-only fixture could open Personalise, save, and reset through HTTP with the feature enabled. The feature regression also verifies the default denial."
     ]
   },
   "files": {
@@ -46,7 +47,7 @@
     },
     "src/lib/server/auth/managed-library.server.ts": {
       "previous": "659dd47f1e289b279226e00982fd97a54492b70797ef494b0e3e113365a7e8b5",
-      "current": "b0e96906fe32dacd44cf864baa8e0cb956ccdb87920fd1d6767bb5c42220208d"
+      "current": "3a75b00dc55f9c385d6bee5fb49599d18080616323558b88b673b3dfd874e6ac"
     },
     "src/lib/server/db/schema.ts": {
       "previous": "b50255e3adbb154348cb454c37f2f583c0ebcaced69b35530bd8ac1db9458a9a",

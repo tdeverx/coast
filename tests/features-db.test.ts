@@ -9,6 +9,7 @@ import {notificationUnread} from '../src/lib/server/notifications/inbox';
 import {heartbeat} from '../src/lib/social/status.server';
 import {interestWorks} from '../src/lib/recommendations/interests.server';
 import { saveCardLayout } from '../src/lib/server/card-layouts';
+import { managedRoute } from '../src/lib/server/auth/managed-library.server';
 import { defaultBadgeSlots, defaultCardLayers } from '../src/lib/ui/cards/layout';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const a=crypto.randomUUID(),b=crypto.randomUUID();let original:unknown;
@@ -53,6 +54,30 @@ run('card layouts require the feature and concurrent saves merge independent car
   expect(Object.keys(reset)).toEqual(['everywhere:show']);
  } finally {
   await db`update users set settings=settings-'cardLayouts' where id=${a}`;
+  await db`update system_settings set value=${config}::jsonb where key='coast'`;
+ }
+});
+run('Library-only accounts can use Personalise only when an administrator enables card layouts', async () => {
+ const db = getSql();
+ const restricted = { ...actor, id: b, role: 'user' as const, access: { libraryOnly: true } };
+ const layout = { settings: { shape: 'square' }, badgeSlots: defaultBadgeSlots, metadataLayers: defaultCardLayers(), metadataValues: {} };
+ await db`update users set access_defaults=${{libraryOnly:true}}::jsonb where id=${b}`;
+ try {
+  expect(managedRoute('/personalise', 'GET')).toBe(true);
+  expect(managedRoute('/personalise', 'HEAD')).toBe(true);
+  expect(managedRoute('/personalise', 'POST')).toBe(false);
+  expect(managedRoute('/api/v1/settings/card-layout', 'POST')).toBe(true);
+  expect(managedRoute('/api/v1/settings/card-layout', 'GET')).toBe(false);
+  expect(managedRoute('/api/v1/settings/card-layout/extra', 'POST')).toBe(false);
+  expect((await getFeatureConfig(b)).features.cardLayouts).toBe(false);
+  await expect(saveCardLayout(restricted, { target: 'movie', layout })).rejects.toMatchObject({ code: 'feature_disabled' });
+  await db`update system_settings set value=${{...config,features:{cardLayouts:true}}}::jsonb where key='coast'`;
+  expect((await getFeatureConfig(b)).features.cardLayouts).toBe(true);
+  const saved = await saveCardLayout(restricted, { target: 'movie', layout });
+  expect(saved['everywhere:movie']?.settings.shape).toBe('square');
+  expect(await saveCardLayout(restricted, { target: 'movie', layout: null })).toEqual({});
+ } finally {
+  await db`update users set access_defaults='{}'::jsonb,settings=settings-'cardLayouts' where id=${b}`;
   await db`update system_settings set value=${config}::jsonb where key='coast'`;
  }
 });

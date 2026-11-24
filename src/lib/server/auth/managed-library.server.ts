@@ -135,6 +135,8 @@ export async function managedDetails(userId:string, workId:string, after:string|
 /** Unknown surfaces stay closed for a restricted viewer, even when addressed directly. */
 export function managedRoute(path:string, method:string) {
   if (['/','/library','/onboarding','/logout','/settings','/settings/account','/settings/appearance'].includes(path)) return true;
+  if (path==='/personalise') return method==='GET' || method==='HEAD';
+  if (path==='/api/v1/settings/card-layout') return method==='POST';
   if (/^\/media\/[0-9a-f-]{36}$/.test(path)) return method==='GET' || method==='HEAD';
   if (!path.startsWith('/api/v1/')) return false;
   if (/^\/api\/v1\/notifications(?:\/(?:seen|toast-hidden|feedback|read-all|[0-9a-f-]{36}))?$/.test(path))
