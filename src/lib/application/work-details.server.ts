@@ -29,7 +29,7 @@ export async function workDetailData(userId:string,id:string,options:{page?:numb
 /** Explicit route dispatch only: never fetch a client-supplied URL. */
 export async function mediaDetailData(userId:string,href:string,signal?:AbortSignal,enhance=false){
  const target=mediaDetailTarget(href,new URL('http://coast.invalid/'));
- if(!target||target.kind==='profile')throw new AppError(400,'Choose a supported media detail link.','invalid_request');
+ if(!target||target.kind==='profile'||target.kind==='personalise')throw new AppError(400,'Choose a supported media detail link.','invalid_request');
  switch(target.kind){
   case 'work':return workDetailData(userId,target.id,{...target,enhance},signal);
   case 'reading-provider':return {kind:'reading' as const,data:await readingRemoteDetail(userId,target.provider==='openlibrary'?'book':'comic',target.id)};

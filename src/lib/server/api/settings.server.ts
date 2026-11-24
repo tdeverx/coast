@@ -16,6 +16,8 @@ export async function handleSettings(context: ApiContext): Promise<Response | un
         else throw new AppError(404,'Action not found.');
       }
       else if (path.length === 1 && method === 'POST') result = await updateUserSettings(user, body);
+      else if (path.length === 2 && path[1] === 'card-layout' && method === 'POST')
+        result = await (await import('#lib/server/card-layouts.js')).saveCardLayout(user, body);
       else if (path[1] === 'reset' && method === 'POST') result = await resetUserSettings(user);
       else if (path[1] === 'password' && method === 'POST')
         result = await updatePassword(user, text(body.currentPassword), body.password);

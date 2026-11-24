@@ -46,6 +46,7 @@ export type UserSettings = {
   action?: import('../../library').LibrarySurface;
   features?: import('../../features').FeatureChoices;
   collection?: import('../../collection/preferences').CollectionPreferences;
+  cardLayouts?: import('../../ui/cards/layout').CardLayouts;
   presenceAudience?: import('../../social/model').Audience;
   activityStatus?: import('../../social/status').StatusPreference;
   social?: import('../../social/model').SocialSettings;

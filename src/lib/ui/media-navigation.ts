@@ -21,7 +21,11 @@ function overlayTarget(href: string, section = false) {
   const target = page.data.user && !page.url.pathname.startsWith('/ui-preview')
     ? mediaDetailTarget(href,page.url) ?? (section || detailPanelHref(panelAddress(page),page.state) ? sectionTarget(href,page.url) : null)
     : inviteProfileTarget(href);
-  return target && 'kind' in target && target.kind === 'profile' && page.data.user?.access?.libraryOnly ? null : target;
+  if (target && 'kind' in target) {
+    if (target.kind === 'profile' && page.data.user?.access?.libraryOnly) return null;
+    if (target.kind === 'personalise' && page.data.capabilities?.cardLayouts !== true) return null;
+  }
+  return target;
 }
 export function openMediaDetails(href:string,section=false,replace=false){
  const target=overlayTarget(href,section);if(!target)return false;

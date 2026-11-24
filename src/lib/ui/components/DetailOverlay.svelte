@@ -4,7 +4,7 @@
  import Button from './Button.svelte';
  import {provideDetailSection} from '#lib/ui/detail-section.svelte.js';
  import SegmentedControl from './SegmentedControl.svelte';
- let {open=$bindable(false),editions=[],editionName=$bindable(),children,onclose,onback,contentKey,sectionPage=false,preserveHero=false}:{open:boolean;editions?:{value:string;label:string}[];editionName?:string;children?:Snippet;onclose?:()=>void;onback?:()=>void;contentKey?:string;sectionPage?:boolean;preserveHero?:boolean}=$props();
+ let {open=$bindable(false),editions=[],editionName=$bindable(),children,onclose,onback,contentKey,sectionPage=false,preserveHero=false,title='Media details',customControls=false}:{open:boolean;editions?:{value:string;label:string}[];editionName?:string;children?:Snippet;onclose?:()=>void;onback?:()=>void;contentKey?:string;sectionPage?:boolean;preserveHero?:boolean;title?:string;customControls?:boolean}=$props();
  const sectionView=$derived(!preserveHero&&(sectionPage||!!contentKey&&new URL(contentKey,'http://coast/').searchParams.has('section')));
  const section=provideDetailSection(()=>sectionView,()=>contentKey,()=>sectionView||preserveHero);
  function requestClose() {
@@ -12,8 +12,8 @@
    else open = false;
  }
 </script>
-<Dialog bind:open title={section.title||"Media details"} wide edgeToEdge expanding onrequestclose={onclose} {contentKey}>
- {#snippet heading()}<div class="overlay-controls" style:--detail-controls={onback?2:1}>
+<Dialog bind:open title={section.title||title} wide edgeToEdge expanding onrequestclose={onclose} {contentKey}>
+ {#snippet heading()}{#if !customControls}<div class="overlay-controls" style:--detail-controls={onback?2:1}>
   {#if onback}<Button icon="left" material="clear" class="detail-back-button" label="Back within media details" onclick={onback}/>{/if}
   {#if !sectionView&&editions.length>1}<SegmentedControl label="Edition" material="clear" presentation="navigation" options={editions} value={editionName??editions[0].value} onchange={value=>editionName=value}/>{/if}
   {#if sectionView&&section.title}<h1 class="section-title">{section.title}</h1>{/if}
@@ -22,7 +22,7 @@
   {/if}
   <div class="section-actions">{#if sectionView}{@render section.controls?.()}{/if}
   <Button icon="close" material="clear" class="detail-close-button" label="Close media details" onclick={requestClose}/></div>
- </div>{/snippet}
+ </div>{/if}{/snippet}
  {#snippet floating()}{#if !preserveHero && section.segments}<nav class="section-navigation" aria-label={`${section.title} selection`}>{@render section.segments()}</nav>{/if}{/snippet}
  {@render children?.()}
 </Dialog>

@@ -267,11 +267,11 @@
     {:else if name==='MediaActivity'}
       <MediaActivity mediaId={id} period="month" />
     {:else if name==='MediaCard'}
-
+      <a href="/ui-preview/media-cards" data-preview-navigation>Open media card playground</a>
       <div class="card-examples">{#each ["poster","square","circle","fanart","banner"] as shape}<div><MediaCard item={movie} shape={shape as MediaCardShape} /><small>{shape}</small></div>{/each}<div><MediaCard item={{...movie,captionActor:{username:"preview"},captionSubtitle:"Watched 3 episodes",captionActivity:{id:movie.id,kind:"watch",dateKnown:true,occurredAt:new Date().toISOString(),action:"Watched",detail:"3 episodes"}}} shape="fanart" /><small>Friend activity · Non-approved</small></div><div><MediaCard item={episode} shape="fanart">
         {#snippet captionAction()}<Button size="icon" icon="check" pressed={checked} label={checked?'Mark unwatched':'Mark watched'} onclick={()=>checked=!checked}/>{/snippet}
         {#snippet body()}<p>{episode.overview}</p>{/snippet}
-        {#snippet footer()}<span>{episode.runtimeMinutes} min</span><time datetime={today}>1 Oct 2026</time>{/snippet}
+        {#snippet footer()}<time datetime={today}>1 Oct 2026</time>{/snippet}
       </MediaCard><small>Episode · body and footer</small></div></div>
 
     {:else if name==='MediaDetailRows'}

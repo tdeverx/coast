@@ -16,13 +16,17 @@ export async function publicMedia(ids?:string[]):Promise<MediaView[]> {
  if(ids?.length===0)return [];
  const config=await getFeatureConfig(null);
  if(!config.features.screen)return [];
+ const db=getSql();
+ const certificate=db`(select ms.certificate from metadata_snapshots ms where ms.media_id=m.id
+   and ms.provider='tmdb' and ms.region='GB' and nullif(btrim(ms.certificate),'') is not null
+   order by ms.updated_at desc,ms.id limit 1) as certificate`;
  const requested=ids?[...new Set(ids)]:undefined;
  const rows:any[]=[];
  // Explicit detail membership remains complete; each metadata read is bounded.
- if(requested){for(let offset=0;offset<requested.length;offset+=500)rows.push(...await getSql()`select m.*,e.show_id,e.season_number,e.episode_number,parent.title as show_title from media m left join episodes e on e.media_id=m.id left join media parent on parent.id=e.show_id where m.id in ${getSql()(requested.slice(offset,offset+500))} limit 500`);}
- else rows.push(...await getSql()`select m.* from media m where kind in ('movie','show','collection') and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by updated_at desc,id limit 150`);
+ if(requested){for(let offset=0;offset<requested.length;offset+=500)rows.push(...await db`select m.*,${certificate},coalesce(e.show_id,s.show_id) as show_id,e.season_id,coalesce(e.season_number,s.season_number) as season_number,e.episode_number,parent.title as show_title from media m left join episodes e on e.media_id=m.id left join seasons s on s.media_id=m.id left join media parent on parent.id=coalesce(e.show_id,s.show_id) where m.id in ${db(requested.slice(offset,offset+500))} limit 500`);}
+ else rows.push(...await db`select m.*,${certificate} from media m where kind in ('movie','show','collection') and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by updated_at desc,id limit 150`);
  const safeArt=(path:string|null)=>path&&/^https:\/\/image\.tmdb\.org\/t\/p\//.test(path)?tmdbArtworkUrl(path,config.cacheTmdbArtwork):null;
- const cards:MediaView[]=rows.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,originalTitle:r.original_title,overview:r.overview,year:r.year,releaseDate:r.release_date,runtimeMinutes:r.runtime_minutes,genres:r.genres,poster:safeArt(r.poster_path),backdrop:safeArt(r.backdrop_path),showId:r.show_id??undefined,showTitle:r.show_title??undefined,seasonNumber:r.season_number??undefined,episodeNumber:r.episode_number??undefined,available:false,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}));
+ const cards:MediaView[]=rows.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,originalTitle:r.original_title,overview:r.overview,year:r.year,releaseDate:r.release_date,runtimeMinutes:r.runtime_minutes,certification:r.certificate,genres:r.genres,poster:safeArt(r.poster_path),backdrop:safeArt(r.backdrop_path),showId:r.show_id??undefined,showTitle:r.show_title??undefined,seasonId:r.season_id??undefined,seasonNumber:r.season_number??undefined,episodeNumber:r.episode_number??undefined,available:false,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}));
  const byId=new Map(cards.map(card=>[card.id,card]));
  return requested?requested.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]):cards;
 }

@@ -1,19 +1,30 @@
 <script lang="ts">
-  let { label, name, checked = $bindable(false), disabled = false }: {
+  import type { Snippet } from 'svelte';
+
+  let { label, name, checked = $bindable(false), disabled = false, class: className, children, onchange }: {
     label: string;
     name?: string;
     checked?: boolean;
     disabled?: boolean;
+    class?: string;
+    children?: Snippet;
+    onchange?: (checked: boolean) => void;
   } = $props();
 </script>
 
-<label class="toggle" class:disabled title={label}>
-  <input type="checkbox" role="switch" aria-label={label} {name} {disabled} bind:checked />
-  <span class="track" aria-hidden="true"></span>
+<label class={['toggle', className]} class:disabled title={label}>
+  {@render children?.()}
+  <span class="switch">
+    <input type="checkbox" role="switch" aria-label={label} {name} {disabled} bind:checked
+      onchange={event => onchange?.(event.currentTarget.checked)} />
+    <span class="track" aria-hidden="true"></span>
+  </span>
 </label>
 
 <style>
-  .toggle {
+  .toggle { cursor: pointer; }
+  .toggle:not(:global(.menu-row)) { display: inline-grid; flex: none; }
+  .switch {
     --toggle-inset: 2px;
     --toggle-thumb-size: var(--icon-control);
     position: relative;
@@ -21,7 +32,6 @@
     flex: none;
     inline-size: calc(2 * var(--toggle-thumb-size));
     block-size: calc(var(--toggle-thumb-size) + 2 * var(--toggle-inset));
-    cursor: pointer;
   }
   .toggle.disabled { cursor: default; opacity: var(--control-disabled-opacity); }
   input {
@@ -36,7 +46,7 @@
   .track {
     position: relative;
     border-radius: 999px;
-    background: var(--control-hover-fill);
+    background: var(--toggle-off-fill, var(--control-hover-fill));
     transition: background var(--fast);
     pointer-events: none;
   }
@@ -48,7 +58,7 @@
     inline-size: var(--toggle-thumb-size);
     block-size: var(--toggle-thumb-size);
     border-radius: 50%;
-    background: var(--ink);
+    background: var(--toggle-thumb-fill, var(--ink));
     transition: inset-inline-start var(--motion) var(--ease);
   }
   input:checked + .track { background: var(--toggle-on-tint, color-mix(in srgb, var(--success) 56%, var(--canvas))); }

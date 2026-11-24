@@ -373,6 +373,7 @@
           "atSign",
           "heart",
           "star",
+          "sparkle",
           "more",
           "info",
           "close",
@@ -397,6 +398,7 @@
           "broadcast",
           "clock",
           "film",
+          "gamepad",
           "arrow",
           "download",
           "copy",
@@ -715,6 +717,7 @@
           "atSign",
           "heart",
           "star",
+          "sparkle",
           "more",
           "info",
           "close",
@@ -739,6 +742,7 @@
           "broadcast",
           "clock",
           "film",
+          "gamepad",
           "arrow",
           "download",
           "copy",
@@ -1120,6 +1124,26 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Media details'",
+        "defaultValue": "Media details"
+      },
+      {
+        "name": "customControls",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -1340,6 +1364,7 @@
           "atSign",
           "heart",
           "star",
+          "sparkle",
           "more",
           "info",
           "close",
@@ -1364,6 +1389,7 @@
           "broadcast",
           "clock",
           "film",
+          "gamepad",
           "arrow",
           "download",
           "copy",
@@ -1814,6 +1840,7 @@
           "atSign",
           "heart",
           "star",
+          "sparkle",
           "more",
           "info",
           "close",
@@ -1838,6 +1865,7 @@
           "broadcast",
           "clock",
           "film",
+          "gamepad",
           "arrow",
           "download",
           "copy",
@@ -2162,6 +2190,14 @@
         "defaultValue": "auto"
       },
       {
+        "name": "monochromeMissing",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
         "name": "overlay",
         "type": "MediaCardOverlay",
         "optional": true,
@@ -2220,14 +2256,14 @@
         "nullable": false
       },
       {
-        "name": "wrapActivity",
+        "name": "showFriends",
         "type": "boolean",
         "optional": true,
         "bindable": false,
         "kind": "boolean",
         "nullable": false,
-        "defaultSource": "false",
-        "defaultValue": false
+        "defaultSource": "true",
+        "defaultValue": true
       },
       {
         "name": "showActivityContext",
@@ -2240,7 +2276,35 @@
         "defaultValue": true
       },
       {
+        "name": "showActivityHeader",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
         "name": "showCaption",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showCaptionStatus",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showWorkMetadata",
         "type": "boolean",
         "optional": true,
         "bindable": false,
@@ -2258,6 +2322,111 @@
         "nullable": false,
         "defaultSource": "true",
         "defaultValue": true
+      },
+      {
+        "name": "showArtworkMenu",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showTimeRemaining",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showProgressBar",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "metric",
+        "type": "'auto' | 'rating' | 'none'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "auto",
+          "rating",
+          "none"
+        ],
+        "defaultSource": "'auto'",
+        "defaultValue": "auto"
+      },
+      {
+        "name": "badgeSlots",
+        "type": "CardBadgeSlots",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "metadataLayers",
+        "type": "readonly CardMetadataLayer[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "metadataValues",
+        "type": "CardMetadataValues",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "previewTasteScore",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "previewArtworkLoading",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "personalise",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "onPreviewMetric",
+        "type": "(kind: 'rating' | 'match', value: number) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       },
       {
         "name": "primaryMenu",
@@ -2309,6 +2478,14 @@
       },
       {
         "name": "cornerMenu",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "header",
         "type": "Snippet",
         "optional": true,
         "bindable": false,
@@ -3723,6 +3900,7 @@
           "atSign",
           "heart",
           "star",
+          "sparkle",
           "more",
           "info",
           "close",
@@ -3747,6 +3925,7 @@
           "broadcast",
           "clock",
           "film",
+          "gamepad",
           "arrow",
           "download",
           "copy",
@@ -4520,7 +4699,7 @@
     "props": [
       {
         "name": "friends",
-        "type": "{username:string;avatar?:string|null;status?:ActivityStatus}[]",
+        "type": "{ username: string; avatar?: string | null; status?: ActivityStatus }[]",
         "optional": false,
         "bindable": false,
         "kind": "data",
@@ -4555,6 +4734,16 @@
         "nullable": false,
         "defaultSource": "32",
         "defaultValue": 32
+      },
+      {
+        "name": "compact",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       },
       {
         "name": "href",
@@ -4892,6 +5081,30 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      },
+      {
+        "name": "class",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "onchange",
+        "type": "(checked: boolean) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },

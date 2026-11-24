@@ -30,7 +30,7 @@ export function journalCards(runs: JournalEntry[][], selectable = false): Journa
     if (selectable || run.length === 1) return run.map(item => ({ key: item.eventId, item, activity: item, note: activityNote(item) }));
     const first = run[0];
     return [{ key: first.eventId, activity: first, note: activityNote(first),
-      item: { ...first, captionSubtitle: `${run.length} episodes · ${first.dateKnown === false ? 'Date unknown' : `${time(run.at(-1)!.watchedAt)}–${time(first.watchedAt)} UTC`}` },
+      item: { ...first, captionEpisodeRun: true, captionSubtitle: `${run.length} episodes · ${first.dateKnown === false ? 'Date unknown' : `${time(run.at(-1)!.watchedAt)}–${time(first.watchedAt)} UTC`}` },
       run: run.map(item => ({ href: `/media/${item.id}`, title: item.captionSubtitle || item.title, note: activityNote(item) })),
     }];
   });

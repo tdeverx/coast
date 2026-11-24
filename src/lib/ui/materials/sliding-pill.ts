@@ -4,7 +4,7 @@ function itemFrom(target: EventTarget | null, root: HTMLElement) {
 }
 
 /** One measured selection surface shared by navigation and segmented controls. */
-export function slidingPill(root: HTMLElement) {
+export function slidingPill(root: HTMLElement, allowPointerPreview?: () => boolean) {
   const indicator = document.createElement('span');
   indicator.className = 'sliding-pill-indicator';
   indicator.setAttribute('aria-hidden', 'true');
@@ -33,7 +33,7 @@ export function slidingPill(root: HTMLElement) {
   }
 
   const pointerOver = (event: PointerEvent) => {
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch' || allowPointerPreview?.() === false) return;
     const item = itemFrom(event.target, root);
     if (item) schedule(item.matches(':disabled') ? undefined : item);
   };

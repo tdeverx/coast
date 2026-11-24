@@ -11,7 +11,7 @@
  <div class="playback-area">
   {#if members.length||actions&&!header}<div class="participants-actions">
    {#if members.length}<div class="avatar-slot"><div class="members" aria-label="Party participants">
-    {#each members as member (member.userId??member.username)}{#snippet memberControl()}{@render memberActions?.(member)}{/snippet}<div class="member" title={member.joined===false?`${member.username} · Pending`:member.username}><div class:pending={member.joined===false}><MediaCard shape="circle" showCaption={false} showPrimaryAction={false} primaryMenu={memberActions?memberControl:undefined} item={{id:member.userId??member.username,kind:'person',title:member.username,poster:member.avatar,href:profilePath(member.username)}}/></div></div>{/each}
+    {#each members as member (member.userId??member.username)}{#snippet memberControl()}{@render memberActions?.(member)}{/snippet}<div class="member" title={member.joined===false?`${member.username} · Pending`:member.username}><div class:pending={member.joined===false}><MediaCard shape="circle" personalise={false} showCaption={false} showPrimaryAction={false} primaryMenu={memberActions?memberControl:undefined} item={{id:member.userId??member.username,kind:'person',title:member.username,poster:member.avatar,href:profilePath(member.username)}}/></div></div>{/each}
    </div></div>{/if}
    {#if actions&&!header}<div class="header-actions">{@render actions()}</div>{/if}
   </div>{/if}

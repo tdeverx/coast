@@ -638,6 +638,13 @@
       "when": 1795435460842,
       "tag": "0091_activity_child_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1795478400000,
+      "tag": "0092_card_layout_feature",
+      "breakpoints": true
     }
   ]
 }

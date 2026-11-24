@@ -370,7 +370,7 @@
   {#if readerAllowed&&Reader}<Reader />{/if}
   {#if canShowDetails&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
-  {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && page.url.pathname !== '/share'}<Header
+  {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && !['/share', '/ui-preview/media-cards'].includes(page.url.pathname)}<Header
       user={data.user}
       publicBrowse={data.publicRead}
       unread={data.unreadNotifications}

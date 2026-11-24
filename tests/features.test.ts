@@ -4,9 +4,15 @@ import {featureValues,resolveFeatures,administratorFeatures} from '../src/lib/fe
 import {categoryEnabled,mediumOptions} from '../src/lib/experimental';
 test('normal defaults preserve behavior and experiments retain independent admission',()=>{
  const values=featureValues(defaultConfig);
- for(const key of administratorFeatures)expect(values[key]).toBe(true);
+ for(const key of administratorFeatures)expect(values[key]).toBe(key !== 'cardLayouts');
  for(const key of ['music','game','book','comic','parties','planning','sharing'] as const)expect(values[key]).toBe(false);
  expect(values.requests).toBe(true);
+});
+test('media card layouts are an opt-in policy with a personal opt-out',()=>{
+ expect(resolveFeatures(defaultConfig,{cardLayouts:true}).cardLayouts.reason).toBe('administrator');
+ const enabled={...defaultConfig,features:{cardLayouts:true}};
+ expect(featureValues(enabled).cardLayouts).toBe(true);
+ expect(resolveFeatures(enabled,{cardLayouts:false}).cardLayouts.reason).toBe('personal');
 });
 test('installation policy wins, opt-outs are remembered and dependent features cannot bypass it',()=>{
  const config={...defaultConfig,experimentalMusic:true,experimentalParties:true,allowPlaybackSharing:true};

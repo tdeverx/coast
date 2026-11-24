@@ -32,6 +32,7 @@ export type MediaDetailTarget={href:string;section:string|null;page:number;playt
  |{kind:'music-source';connectionId:string;id:string}
  |{kind:'person';id:string}
  |{kind:'profile';username:string}
+ |{kind:'personalise'}
 );
 /** Only real detail destinations participate; commands, history and other routes keep navigation. */
 export function mediaDetailTarget(href:string,base:Pick<URL,'href'|'origin'>):MediaDetailTarget|null{
@@ -42,6 +43,7 @@ export function mediaDetailTarget(href:string,base:Pick<URL,'href'|'origin'>):Me
  const page=Number(url.searchParams.get('page')??1),playthrough=url.searchParams.get('playthrough');
  if(!Number.isInteger(page)||page<1||page>42949673||playthrough&&!new RegExp(`^${uuid}$`,'i').test(playthrough))return null;
  const common={href:url.pathname+url.search,section:url.searchParams.get('section'),page,playthrough,edition:url.searchParams.get('edition')};
+ if(url.pathname==='/personalise'&&!url.search)return {...common,kind:'personalise'};
  if(profile&&(!common.section||['insights','lists','activity','progress','list','taste'].includes(common.section)))return {...common,kind:'profile',username:profile[1]};
  let match=url.pathname.match(local);
  if(match)return {...common,kind:'work',id:match[2]};

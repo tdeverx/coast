@@ -36,6 +36,7 @@ beforeAll(async()=>{
     {userId:viewer,mediaId:movie,favourite:true,watched:true,playCount:1},
     ...peers.map(userId=>({userId,mediaId:movie,collected:true,favourite:true,watched:true,playCount:1})),
   ]);
+  await db.insert(s.metadataSnapshots).values({mediaId:movie,provider:'tmdb',region:'GB',certificate:'12'});
   await db.insert(s.ratings).values(peers.map(userId=>({userId,mediaId:movie,value:4})));
   await db.insert(s.mediaRelationships).values([
     {parentId:collection,childId:movie,kind:'collection',position:0},
@@ -104,7 +105,7 @@ run('guest detail membership exceeds 500 without losing seasons, episodes or pub
   expect(data.seasons.every(season=>season.item?.title)).toBe(true);
   const selected=await publicMedia([...episodes.toReversed(),movie,episodes[0]]);
   expect(selected.map(card=>card.id)).toEqual([...episodes.toReversed(),movie]);
-  expect(selected.find(card=>card.id===movie)?.poster).toBeNull();
+  expect(selected.find(card=>card.id===movie)).toMatchObject({poster:null,certification:'12'});
   expect(selected.every(card=>!card.available&&!card.favourite&&!card.watched&&card.rating===null)).toBe(true);
   expect(data.availability).toEqual([]);expect(data.history).toEqual([]);
 });
