@@ -485,7 +485,7 @@
 {#snippet profileAvatar(avatar = data.profile.avatar, avatarMenu?: Snippet)}
   <div class="profile-avatar-card" class:editing={!!avatarMenu}>
     <MediaCard item={{ id: data.username, kind: 'person', title: name, poster: avatar, href: null }}
-      showCaption={false} showPrimaryAction={!!avatarMenu} primaryMenu={avatarMenu}
+      personalise={false} showCaption={false} showPrimaryAction={!!avatarMenu} primaryMenu={avatarMenu}
       primaryMenuLabel="Edit avatar" primaryMenuIcon="image" />
   </div>
 {/snippet}

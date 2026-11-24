@@ -22,7 +22,7 @@ const errorTypes=new Bun.Transpiler({loader:'ts'}).transformSync(client.slice(er
 let script=eraseTypeScript(await componentScript('src/lib/media/DetailPanel.svelte'));
 let presenterImports=0;
 script=script.replace(/import\((['"])#lib\/[^'"]+\.svelte\1\)/g,()=>{presenterImports++;return 'Promise.resolve({default:()=>{}})';});
-if(presenterImports!==9)throw Error('Review the actual presenter import seams before updating this fixture.');
+if(presenterImports!==10)throw Error('Review the actual presenter import seams before updating this fixture.');
 const code=compileRunes(`${errorTypes}
 export function create(boundary){
  const page=$state({state:{mediaDetailHref:undefined,mediaDetailDepth:1},url:new URL('http://fixture/library'),data:{user:{id:'viewer'},revision:0,capabilities:{screen:true,music:true,games:true,reading:true}}});
@@ -30,7 +30,7 @@ export function create(boundary){
  const {api,closeMediaDetails,backMediaDetails,detailPanelHref,mediaDetailTarget,panelAddress,sectionTarget}=boundary;
  const message=error=>error.message,editionChoices=()=>[],namedEdition=value=>({value}),contentRevisionKey=data=>data.revision,reportFailure=()=>{};
  ${script}
- return {navigate(href){page.state.mediaDetailHref=href;},refresh(){page.data.revision++;},viewer(id){page.data.user={id};},foreground(owner,visible){if(owner==='player')player.visible=visible;else reader.visible=visible;},get foregroundState(){return JSON.stringify({player:{visible:player.visible,session:player.session,browsing:player.browsing},reader:{visible:reader.visible}});},get hasNativeCloseOwner(){return typeof (${onclose})==='function';},emitNativeClose(){(${onclose})?.();},get open(){return open;},get resolved(){return resolved;},get error(){return error;}};
+ return {navigate(href){page.state.mediaDetailHref=href;},refresh(){page.data.revision++;},viewer(id){page.data.user={id};},cardLayouts(enabled){page.data.capabilities.cardLayouts=enabled;},foreground(owner,visible){if(owner==='player')player.visible=visible;else reader.visible=visible;},get foregroundState(){return JSON.stringify({player:{visible:player.visible,session:player.session,browsing:player.browsing},reader:{visible:reader.visible}});},get hasNativeCloseOwner(){return typeof (${onclose})==='function';},emitNativeClose(){(${onclose})?.();},get open(){return open;},get resolved(){return resolved;},get error(){return error;}};
 }`);
 const {create,ApiError,isFeatureDisabled}=await import(moduleUrl(code));
 function fixture(){
@@ -43,6 +43,12 @@ function fixture(){
  return {controller,calls,requests,current,drain,navigate(href:string|undefined){controller.navigate(href);runtime.flush();},async answer(){current().resolve({kind:'music',data:{item:{id:'authored',title:'Authored'},availability:[]}});await drain();},async fail(status:number,details?:unknown){current().reject(new ApiError('Controlled request failure',status,details));await drain();},refresh(){controller.refresh();runtime.flush();},foreground(owner:'player'|'reader',visible:boolean){controller.foreground(owner,visible);runtime.flush();},destroy(){dispose();}};
 }
 const href='/media/00000000-0000-4000-8000-000000000001',other='/media/00000000-0000-4000-8000-000000000002';
+test('Personalise opens in a detail panel and closes when its feature is withdrawn',async()=>{
+ const f=fixture();try{f.controller.cardLayouts(true);f.navigate('/personalise');await f.drain();
+ expect(f.controller.resolved?.detail.kind).toBe('personalise');expect(f.controller.open).toBe(true);expect(f.requests).toEqual([]);
+ f.controller.cardLayouts(false);await f.drain();expect(f.controller.resolved).toBeNull();expect(f.calls).toEqual(['close']);
+ }finally{f.destroy();}
+});
 test('initial failure retains one manual close and grants no native close authority without a presenter',async()=>{
  const f=fixture();try{f.navigate(href);expect(f.controller.hasNativeCloseOwner).toBe(false);await f.fail(403);expect(f.calls).toEqual(['close']);expect(f.controller.resolved).toBeNull();f.controller.emitNativeClose();expect(f.calls).toEqual(['close']);}finally{f.destroy();}
 });

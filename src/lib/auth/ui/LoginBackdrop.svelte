@@ -101,10 +101,10 @@
 {/snippet}
 
 {#snippet sample()}
-  <div class="artwork-sample" aria-hidden="true">{@render artworkFrames()}</div>
+  <div class="auth-artwork-sample" aria-hidden="true">{@render artworkFrames()}</div>
 {/snippet}
 
-<div class="backdrop" aria-hidden="true" onanimationend={finishFade}>
+<div class="backdrop auth-artwork-backdrop" aria-hidden="true" onanimationend={finishFade}>
   {@render artworkFrames()}
 </div>
 {@render children(sample)}
@@ -124,32 +124,9 @@
   .frames:empty {
     display: none;
   }
-  .backdrop:has(img)::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      ellipse 60% 75% at top center,
-      color-mix(in srgb, var(--canvas) 40%, transparent),
-      color-mix(in srgb, var(--canvas) 64%, transparent) 50%,
-      var(--canvas)
-    );
-  }
-  .artwork-sample {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    clip-path: inset(2px round var(--artwork-radius, 999px));
-  }
   /* Each clip follows its glass surface. The artwork always uses viewport coordinates. */
-  .artwork-sample .frames {
+  :global(.auth-artwork-sample) .frames {
     position: fixed;
-  }
-  .artwork-sample .frames:has(img)::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: color-mix(in srgb, var(--canvas) 58%, transparent);
   }
   img {
     position: absolute;

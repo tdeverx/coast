@@ -2,6 +2,7 @@
   import { untrack, type Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
   import { blackFadeGradient } from '#lib/ui/materials/black-fade.js';
+  import { cardRuntime } from '#lib/ui/card-caption.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { createHeroPresentation, screenItem, type HeroItem } from '#lib/ui/heroes/presentation.svelte.js';
   import { createHeroPlayback } from '#lib/ui/heroes/playback.svelte.js';
@@ -10,6 +11,7 @@
   import { provideRetention } from '#lib/ui/retention.js';
   import WorkMenu from './WorkMenu.svelte';
   import Button from './Button.svelte';
+  import TextLink from './TextLink.svelte';
 
   const { heroPlayer, preview } = usePlayback();
 
@@ -151,14 +153,15 @@
       {#if identity}
         {#if identity.subtitle}<div class="genres"><span>{identity.subtitle}</span></div>{/if}
       {:else if hero.active && hero.presentation}
+      {@const screen = screenItem(hero.active) ? hero.active : undefined}
+      {@const runtime = screen ? cardRuntime(screen) ?? hero.active.durationLabel : hero.active.durationLabel ?? cardRuntime(hero.active)}
       {#if parents.length}<nav class="genres hero-path" aria-label="Show, season and episode">
-          {#each parents as parent}<a href={`/media/${parent.id}`}
-              >{parent.kind === 'show' ? 'Show' : parent.title}</a
-            ><span aria-hidden="true">›</span>{/each}<span aria-current="page">{hero.active.title}</span>
+          {#each parents as parent (parent.id)}<TextLink href={`/media/${parent.id}`} text={parent.title} />{/each}
+          <span aria-current="page">{hero.active.title}</span>
         </nav>{:else if hero.active.genres?.length}<div class="genres">
-          {#each hero.active.genres.slice(0, 4) as genre}{#if screenItem(hero.active)}<a
-                href={`/library?view=watch&scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
-              >{:else}<span>{genre}</span>{/if}{/each}
+          {#each hero.active.genres.slice(0, 4) as genre}{#if screen}<TextLink
+                href={`/library?view=watch&scope=all&genre=${encodeURIComponent(genre)}`} text={genre} />
+              {:else}<span>{genre}</span>{/if}{/each}
         </div>{/if}
       <div class="metadata">
         {#if hero.active.kind === 'episode'}<span
@@ -168,8 +171,11 @@
           >{/if}
         {#if !screenItem(hero.active)}<span>{hero.active.captionSubtitle}</span>{/if}
         {#if hero.active.year}<span>{hero.active.year}</span>{/if}
-        {#if hero.active.certification}<span>{hero.active.certification}</span>{/if}
-        {#if hero.active.durationLabel}<span>{hero.active.durationLabel}</span>{:else if hero.active.runtimeMinutes}<span>{hero.active.runtimeMinutes} min</span>{/if}
+        {#if hero.active.certification}
+          {#if screen?.certificationHref}<TextLink href={screen.certificationHref} text={hero.active.certification} />
+          {:else}<span>{hero.active.certification}</span>{/if}
+        {/if}
+        {#if runtime}<span>{runtime}</span>{/if}
       </div>
       {/if}
       {#if overviewField}
@@ -330,21 +336,13 @@
   }
   .metadata {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     flex-wrap: wrap;
-    column-gap: 20px;
-    row-gap: 8px;
-    color: color-mix(in srgb, var(--white) 90%, transparent);
+    gap: var(--media-metadata-gap);
+    color: var(--muted);
     font-size: var(--text-md);
-    font-weight: var(--weight-semibold);
+    font-weight: var(--weight-regular);
     margin-top: 10px;
-  }
-  .genres a:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .hero-path {
-    flex-wrap: wrap;
   }
   .title-artwork + h1:not(.sr-only), .title-field, .genres {
     margin-top: 28px;
@@ -355,11 +353,12 @@
   .genres {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 20px;
+    gap: var(--media-metadata-gap);
     font-size: var(--text-md);
     font-weight: var(--weight-semibold);
     color: color-mix(in srgb, var(--white) 90%, transparent);
   }
+  .hero-path { color: var(--muted); font-weight: var(--weight-regular); }
   .overview {
     font-size: var(--text-md);
     line-height: var(--leading-relaxed);

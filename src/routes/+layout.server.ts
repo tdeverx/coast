@@ -34,7 +34,9 @@ export const load = (async ({ locals, depends,params,url }) => {
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
     activeShareUntil,
     allowVrchatHevc:config.allowVrchatHevc,
-    user: locals.user,
+    user: locals.user && !config.features.cardLayouts && locals.user.settings.cardLayouts
+      ? { ...locals.user, settings: { ...locals.user.settings, cardLayouts: undefined } }
+      : locals.user,
     contentRevision: revision,
     expiresAt: locals.expiresAt?.toISOString() ?? null,
     unreadNotifications,

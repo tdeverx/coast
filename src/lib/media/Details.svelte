@@ -68,7 +68,7 @@
 {/snippet}
 {#snippet episodeBody(episode: MediaView)}{#if episode.overview}<p>{episode.overview}</p>{/if}{/snippet}
 {#snippet episodeFooter(episode: MediaView)}
-  {#if episode.runtimeMinutes}<span>{episode.runtimeMinutes} min</span>{/if}{#if episode.releaseDate}<time datetime={episode.releaseDate}>{new Date(episode.releaseDate).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}</time>{/if}
+  {#if episode.releaseDate}<time datetime={episode.releaseDate}>{new Date(episode.releaseDate).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}</time>{/if}
 {/snippet}
 {#snippet progressSegments(style: Pick<ComponentProps<typeof SegmentedControl>,'material'|'presentation'>)}
   <SegmentedControl {...style} label="Show progress" value={progressView} options={[{value:'episodes',label:'Episodes'},{value:'seasons',label:'Seasons'}]} onchange={value=>progressView=value}/>
@@ -113,20 +113,14 @@
           actions={progressView==='episodes'?episodeFilters:undefined}
           filterReset={progressView==='episodes'?{disabled:!showSpecials,run:()=>{showSpecials=false;}}:undefined}
           captionAction={progressView==='episodes'?episodeAction:undefined} body={progressView==='episodes'?episodeBody:undefined} footer={progressView==='episodes'?episodeFooter:undefined}
-        >
-          {#snippet details(entry)}{#if entry.kind==='season'&&entry.totalEpisodes}<p class="small">{entry.totalEpisodes} episodes · {entry.completedEpisodes??0} watched</p>{/if}{/snippet}
-        </Shelf>
+        />
       {:else}<Shelf url={detailUrl}
         title={page.data.user?'Progress':'Seasons'}
         layout={section ? 'grid' : 'row'}
         href={!section ? rowHref('progress')+'&view=seasons' : undefined}
         filterBy="watched"
         items={view.seasons.flatMap((season) => (season.item ? [season.item] : []))}
-      >
-        {#snippet details(season)}{#if 'totalEpisodes' in season && season.totalEpisodes}<p class="small">
-              {season.totalEpisodes} episodes · {season.completedEpisodes ?? 0} watched
-            </p>{/if}{/snippet}
-      </Shelf>
+      />
       {/if}
       {#if progressView==='seasons'&&!view.seasons.length}<EmptyState
           title="No seasons yet"

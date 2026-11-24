@@ -629,8 +629,7 @@ run(
       expect(result.items.map((i) => i.id).sort()).toEqual([seasonId, episodeId, movieId].sort());
       expect(result.total).toBe(3);
       const episode = result.items.find((i) => i.id === episodeId)!;
-      expect(episode.captionTitle).toBe('Dropped series');
-      expect(episode.captionSubtitle).toBe('S02E03 · A named episode');
+      expect(episode).toMatchObject({ showTitle: 'Dropped series', seasonId, seasonNumber: 2, episodeNumber: 3 });
       expect(episode.trackingParents?.map((p) => [p.id, p.dropped])).toEqual([
         [seasonId, true],
         [showId, false],

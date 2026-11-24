@@ -6,6 +6,7 @@ export const featureDefinitions = [
   ['book', 'Books', 'Discover books and track your reading.'],
   ['comic', 'Comics', 'Discover comics and track your reading.'],
   ['personalisation', 'Personalisation', 'Use your activity to build taste profiles and recommendations.'],
+  ['cardLayouts', 'Media card layouts', 'Personalise the artwork, badges, text and controls on your media cards.'],
   ['social', 'Social', 'Use Friends, shared activity, reactions and recommendations. Public profiles keep their own privacy settings.'],
   ['presence', 'Presence & live activity', 'Observe and report your optional online and playing status. Administrator stream inspection is separate.'],
   ['playback', 'Playback', 'Play video and audio in Coast. Manual tracking remains available.'],
@@ -19,9 +20,12 @@ export const featureDefinitions = [
 export type Feature = typeof featureDefinitions[number][0];
 export type PersonalFeature = Exclude<Feature, 'api'>;
 export type FeatureChoices = Partial<Record<PersonalFeature, boolean>>;
-export const administratorFeatures = ['screen','personalisation','social','presence','playback','reader','api'] as const satisfies readonly Feature[];
+export const administratorFeatures = ['screen','personalisation','cardLayouts','social','presence','playback','reader','api'] as const satisfies readonly Feature[];
 export type AdministratorFeature = typeof administratorFeatures[number];
 export type FeaturePolicy = Partial<Record<AdministratorFeature, boolean>>;
+export function featurePolicyEnabled(policy: FeaturePolicy | undefined, key: AdministratorFeature) {
+  return key === 'cardLayouts' ? policy?.[key] === true : policy?.[key] !== false;
+}
 export type FeatureValues = Record<Feature, boolean>;
 export type FeatureConfiguration = {
   features?: FeaturePolicy;
@@ -35,7 +39,7 @@ export type FeatureDecision = { enabled: boolean; reason: 'administrator' | 'exp
 export function resolveFeatures(config: FeatureConfiguration, choices: FeatureChoices = {}): Record<Feature, FeatureDecision> {
   const decisions = Object.fromEntries(featureDefinitions.map(([key]) => {
     const experiment = experimentFields[key as keyof typeof experimentFields];
-    const available = key === 'sharing' ? config.allowPlaybackSharing : key === 'requests' ? config.enableRequests : config.features?.[key as AdministratorFeature] !== false;
+    const available = key === 'sharing' ? config.allowPlaybackSharing : key === 'requests' ? config.enableRequests : featurePolicyEnabled(config.features, key as AdministratorFeature);
     const reason = !available ? 'administrator' : experiment && !config[experiment] ? 'experiment' : key !== 'api' && choices[key] === false ? 'personal' : null;
     return [key, {enabled: reason === null, reason}];
   })) as Record<Feature, FeatureDecision>;
@@ -48,5 +52,6 @@ export function featureValues(config: FeatureConfiguration, choices?: FeatureCho
 }
 
 export function hasWithdrawnFeatures(previous:FeatureValues,next:FeatureValues) {
-  return featureDefinitions.some(([key])=>previous[key]&&!next[key]);
+  // Card layouts have no background work or live sessions to reconcile.
+  return featureDefinitions.some(([key])=>key!=='cardLayouts'&&previous[key]&&!next[key]);
 }

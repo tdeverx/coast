@@ -590,6 +590,7 @@ export async function mediaViews(
       completedEpisodes: state?.completedEpisodes ?? 0,
       totalEpisodes: state?.totalEpisodes ?? 0,
       seasonNumber: episode?.seasonNumber ?? seasonById.get(row.id)?.seasonNumber,
+      seasonId: episode?.seasonId ?? undefined,
       episodeNumber: episode?.episodeNumber,
       showId: episode?.showId ?? seasonById.get(row.id)?.showId,
       showTitle,
@@ -650,6 +651,7 @@ export async function mediaViews(
       if(!visibility.collection){item.watchlist=false;item.collected=false;}
       if(!visibility.favourites)item.favourite=false;if(!visibility.ratings)item.rating=null;
       if(!visibility.activity){item.watched=false;item.playCount=0;item.dropped=false;item.completedEpisodes=0;item.rewatchStartedAt=null;}
+      if(!visibility.activity || !visibility.progress)item.totalEpisodes=undefined;
       if(!visibility.progress){item.progress=0;item.duration=0;item.status=null;item.trackingProgress=undefined;item.trackingParents=[];}
     }
   }

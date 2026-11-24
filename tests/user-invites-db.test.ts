@@ -275,6 +275,7 @@ run('Library-only browse and details admit only verified personal observations a
     values(${member.id},${authority},${generation},'[]',${remote},'complete')`;
   await db`insert into sync_checkpoints(connection_id,kind,cursor,completed_at) values(${conn},'jellyfin-seed',${generation},now())`;
   await db`insert into media(id,kind,title) values(${show},'show','Shared title'),(${allowed},'episode','Visible episode'),(${hidden},'episode','A withheld episode')`;
+  await db`insert into metadata_snapshots(media_id,provider,region,certificate) values(${show},'tmdb','GB','15')`;
   await db`insert into shows(media_id) values(${show})`;
   await db`insert into episodes(media_id,show_id,season_number,episode_number) values(${allowed},${show},1,1),(${hidden},${show},1,2)`;
   await db`insert into provider_items(id,instance_id,media_id,external_id,kind) values
@@ -285,8 +286,12 @@ run('Library-only browse and details admit only verified personal observations a
   expect(reconnected.id).toBe(conn);
   const [reloaded]=await db`select account_generation from provider_connections where id=${conn}`;
   expect(reloaded.account_generation).toBe(generation);
-  expect((await managedLibrary(member.id,new URLSearchParams())).items.map(item=>item.id)).toEqual([show]);
-  expect((await managedDetails(member.id,show,null)).episodes.map(item=>item.id)).toEqual([allowed]);
+  const library=await managedLibrary(member.id,new URLSearchParams());
+  expect(library.items.map(item=>item.id)).toEqual([show]);
+  expect(library.items[0]).toMatchObject({certification:'15'});
+  const details=await managedDetails(member.id,show,null);
+  expect(details.work.certification).toBe('15');
+  expect(details.episodes.map(item=>item.id)).toEqual([allowed]);
   expect((await managedLibrary(member.id,new URLSearchParams({q:'Withheld'}))).items).toEqual([]);
   expect((await managedLibrary(member.id,new URLSearchParams({after:hidden}))).items).toEqual([]);
   await expect(managedDetails(member.id,hidden,null)).rejects.toThrow('unavailable');

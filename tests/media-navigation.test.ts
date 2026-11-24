@@ -72,6 +72,17 @@ test('changing profile sections replaces the current panel entry', async () => {
  await navigation.closeMediaDetails();
  expect(boundary.page.state).toEqual({friendsPopover:true});
 });
+test('Personalise preserves the underlying route only when its policy is enabled', async () => {
+  boundary.reset();
+  boundary.page.data.capabilities = { cardLayouts: false };
+  expect(navigation.openMediaDetails('/personalise')).toBe(false);
+  boundary.page.data.capabilities.cardLayouts = true;
+  await navigation.navigateMedia('/personalise');
+  expect(boundary.page.url.searchParams.get('detail')).toBe('/personalise');
+  expect(detailPanelUrl(boundary.page.url).href).toBe(base.href);
+  await navigation.closeMediaDetails();
+  expect(boundary.page.url.href).toBe(base.href);
+});
 test('repeated close gestures request one traversal while the detail entry is current', async () => {
  boundary.reset();
  await navigation.navigateMedia(`/media/${id}`);

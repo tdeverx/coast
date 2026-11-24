@@ -1,0 +1,136 @@
+{
+  "epoch": "2026-11-24-media-card-personalise",
+  "baseline": "2fd542900e1301f30896290e6ebe9829ceb4cffc",
+  "blanketAcceptance": false,
+  "scope": [
+    "Update the shared media-card design and metadata, and add an opt-in account layout editor.",
+    "Carry forward only the pins affected by this change. Earlier hosted observations stay at their recorded revisions."
+  ],
+  "verification": {
+    "hosted": false,
+    "localBrowser": [
+      "Saving a Movie shape updated existing Library cards and survived a reload on the local fixture.",
+      "For You Progress and Search displayed the saved shape.",
+      "Reset followed by Save restored each surface’s default shape through reload.",
+      "Desktop and phone widths were used to exercise the editor, dropdowns and carousel."
+    ]
+  },
+  "files": {
+    "docs/design.md": {
+      "previous": "285e059a94d74e1e1ab8f844009a6d6dbf4d0fbb336cf35fea9050703824ca40",
+      "current": "2e4424aa1a43aa8ccae5b064441152767b08c5b8b23199039a7f46d5462c14e7"
+    },
+    "drizzle/meta/_journal.json": {
+      "previous": "842ed2c90e72c4f334dfbaf7ef51aec4affc8b3d9995b176a41b4bd69403dce2",
+      "current": "ac2329b96bfc7450f42411dc954bb943b9376bea4a99790c544baff26c7af539"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "2bd0ec8bf0d042826f8817e038ae6a4e97dea7d7f1019fc843fd24296f697ce1",
+      "current": "af99f110b5ee42cbc8abc8363c5259ecb2df9460977bf01dee2372de559c9622"
+    },
+    "src/app.css": {
+      "previous": "916eab30bcca499ff4d639ba9092c15250f5b1459358641a5c49f3270d62dcf7",
+      "current": "e1a0af56b393154998ac315fef928862d626ed3b8680445e44d1e0dc8c719322"
+    },
+    "src/lib/media/DetailPanel.svelte": {
+      "previous": "9bfd273a2f530b00320f78b60abefb0ee6873060c29237b2fee478f784f88807",
+      "current": "b46d7a27fccd90fc7f896b2f3ca962ff178ab77e064dcf6093776279567476f7"
+    },
+    "src/lib/media/Details.svelte": {
+      "previous": "f42b20ccb886b6966010b28200b177eaaf6335502599d3336f3bb63235e4c7da",
+      "current": "18d6a1bdd447b1496cd797bd9fd13731cd467aced6c157e0797ed9e681746561"
+    },
+    "src/lib/profile/Details.svelte": {
+      "previous": "e93fead11a44d46350a807d35d4fb728453b23280bf0a343cb5c6fc25f77d032",
+      "current": "5c359e4f6ae4a8439dfeb35d2d9ed3278b264378834fa9ef83a7864bb29c55b4"
+    },
+    "src/lib/server/auth/managed-library.server.ts": {
+      "previous": "659dd47f1e289b279226e00982fd97a54492b70797ef494b0e3e113365a7e8b5",
+      "current": "b0e96906fe32dacd44cf864baa8e0cb956ccdb87920fd1d6767bb5c42220208d"
+    },
+    "src/lib/server/db/schema.ts": {
+      "previous": "b50255e3adbb154348cb454c37f2f583c0ebcaced69b35530bd8ac1db9458a9a",
+      "current": "c1a8b878f2253e0277bdbb8efe30c5d5bf1ad956f0140124ff5c03fc4ab18ddc"
+    },
+    "src/lib/server/queries/media.ts": {
+      "previous": "8725549ff020dd4666d6462ebaa3b7746ded57d89f5980d255669c7074c186db",
+      "current": "6cca96a12bd81ad8a420145946815ec59d031a0bafc1c43db4c1282efeb28f3b"
+    },
+    "src/lib/server/queries/profile.ts": {
+      "previous": "094cbb908dcae4a057c0875a41251ffdaa76ff5115c79141817236ce1f7e381a",
+      "current": "139812fc3b68d897b092b1243fc3f1394135fe6162244a071d4179f99436f853"
+    },
+    "src/lib/ui/client.ts": {
+      "previous": "ff4c7df045a772c34e8609363cf4c148a683c411dbf3193206ca4a7c7a99715f",
+      "current": "a6ad9d4519dd5a006c68c0b929632df318edd007820fd23b7d3a48b74c4cbef2"
+    },
+    "src/lib/ui/component-manifest.json": {
+      "previous": "cba01011a178e22584c88119d4184dd5dec5979d1037ecb0165be12fe9c3e95c",
+      "current": "7e3fdaf8a0cb6d7800e306e83b639cfd6f466dd9e5a47c790aeaeccf9acb0107"
+    },
+    "src/lib/ui/components/Button.svelte": {
+      "previous": "36b63d534cb59be38c3d6fa09b1eea065d660b8f85e7ba18d967a384ea0c788b",
+      "current": "2b25ca2f6a2ee3524c130727cbadf42dfe8c2d18edd82d8bdb31fb4115498200"
+    },
+    "src/lib/ui/components/Header.svelte": {
+      "previous": "0b0147371fa1b3c10d6e32b34d06bbf72ec0af50e55502c90db83c67d85109b8",
+      "current": "d962e45e23dee0b77ada28090ac3a627e696787e03d6e940bac1afb62145aa51"
+    },
+    "src/lib/ui/components/Icon.svelte": {
+      "previous": "10a4d604f9964ac5ed184fe058f553f153eee8630905a45e4de6eba51be0c897",
+      "current": "38c1967f86f049e2d8afaf87e3819ec4b01d3a407a1d5f71fa9b42bbf82d3cf4"
+    },
+    "src/lib/ui/components/MediaCard.svelte": {
+      "previous": "2adbe22e1a3f5b81bfa0f56e1b5382a0657bdf3e1f0d4c4cec3dd50791725245",
+      "current": "aa57412497713f079370b683d73558890999f5498b3f09182ece0efd5018a554"
+    },
+    "src/lib/ui/components/MediaHero.svelte": {
+      "previous": "302098b8f8ea992e78826e24a85ea9d3051bc1f997336ae728f33025faca88b2",
+      "current": "8d4626aba7ff45ba86fc18b005aa6d710851ebaa52640fef3267cf07397049da"
+    },
+    "src/lib/ui/components/Shelf.svelte": {
+      "previous": "2dd81f4365a1a6761172f0598b773c2013888e80e9adc29a52fdaddd1843713b",
+      "current": "496a65b9c3bb854b7833a4dcb0d1be950b79eaee184d92f0fb6221cd1b382788"
+    },
+    "src/lib/ui/components/StreamsPanel.svelte": {
+      "previous": "c413c925d5dbc962bacfa33911d0bc123e7ecb215c1a4d7b6f760b49e3cf0ac2",
+      "current": "def0f272ca16e2a094250954878e0ae586c16e382f81cd7c71e93870369eebd8"
+    },
+    "src/routes/+layout.server.ts": {
+      "previous": "08f77c1488724dfdfe3a0a0cf1f327d102bff3b15494270777f4a31fd7d152cc",
+      "current": "864cda640a38859aa60355843e46b74369e13aeb8555e20969e0c3668c07a582"
+    },
+    "src/routes/+layout.svelte": {
+      "previous": "249a610a181fe0dbf34bc60f4ca6a86c6041295c4398b041bbb40e484f2325ac",
+      "current": "8ee5286d6b29a31bbe3bdb258f51d9e7da24331d5bec8c6c020a7533b83ab0e1"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "previous": "0139ad35e09564efb6f7cc1d6552085d5d611cf3f847567275e83b3410583962",
+      "current": "29d5e549f5594af58dcf51943282df630205b834057d6abff4851ab5aaa946d0"
+    },
+    "src/routes/ui-preview/Demo.svelte": {
+      "previous": "75a9af4db9fbe4ff05bf6773cc27a084aaa87e4947d172955fbdcb8cfe94a394",
+      "current": "862ff092c284d427c19e7f0563c45aa7b24e50ce9d436f447258c49442df3e66"
+    },
+    "src/routes/ui-preview/prop-manifest.json": {
+      "previous": "76b862eda5e8f8986fade9c7504cea81aa9c4fcafb2151233b23f5499233d646",
+      "current": "ce7c83a7fe2ee019afe57d75cea200b746e6a766576828ceeb3f170582fd5c7e"
+    },
+    "src/routes/ui-preview/reference.ts": {
+      "previous": "bc796bd5dcb537ad528c1b71770f9c6e3af0bedc2d6d5bd744e20482a8a37b64",
+      "current": "079ce357c493fa6f5b4cd451f098a69e3156688c4c6e0b63a88b5f0f57e28541"
+    },
+    "tests/detail-panel-close-owner.test.ts": {
+      "previous": "e002b09ed08abbec5319491131f40297974a3982c0ddcabeff86ee0f528bcc27",
+      "current": "c0f3817d8f8cce119cda82a1822f2b585032e8739d28f8699a8796810fa41f67"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "3054b9f5675292170850f8befe2756d9d8c63d406c9de7a1451f0e2f133cbb2f",
+      "current": "fa5915d0b935a1edf57c026f895c4baa705ef8e0b324ed07bd7b1bbd90625bd6"
+    },
+    "tests/profile-db.test.ts": {
+      "previous": "7aa07989a7d14870affedcea94ad619b0b255562312485c16fdff088e48628bf",
+      "current": "7e580e0124988499ede30f03cc41c57b5ffbdaf426b14acfb0871c731446a067"
+    }
+  }
+}

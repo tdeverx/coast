@@ -5,7 +5,7 @@
   import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import { metadataFamilies, metadataProviders, sourcePreference, type MetadataFamily, type MetadataProviderName } from '#lib/catalogue/metadata/resolve.js';
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
-  import { featureDefinitions, administratorFeatures, type PersonalFeature } from '#lib/features.js';
+  import { featureDefinitions, administratorFeatures, featurePolicyEnabled, type PersonalFeature } from '#lib/features.js';
   import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
   import { collectionCategories, collectionRules } from '#lib/collection/preferences.js';
   import { categoryEnabled } from '#lib/experimental.js';
@@ -266,7 +266,7 @@
                   type="checkbox"
                   aria-label={title}
                   checked={data.section === 'features-policy'
-                    ? policy?.features[key as typeof administratorFeatures[number]] !== false
+                    ? featurePolicyEnabled(policy?.features, key as typeof administratorFeatures[number])
                     : prefs.features?.[key as PersonalFeature] !== false}
                   onchange={(event) => {
                     if (data.section === 'features-policy' && policy) policy.features = { ...policy.features, [key]: event.currentTarget.checked }; else prefs.features = { ...prefs.features, [key]: event.currentTarget.checked };

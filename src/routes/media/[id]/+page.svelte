@@ -1,5 +1,6 @@
 <script lang="ts">
  import Button from '#lib/ui/components/Button.svelte';
+ import TextLink from '#lib/ui/components/TextLink.svelte';
  import { openReading } from '#lib/reading/client.svelte.js';
  import { playMedia } from '#lib/playback/client.svelte.js';
  import { reportFailure } from '#lib/ui/client-context.js';
@@ -14,9 +15,14 @@
 {#if 'scoped' in data && data.scoped}
   {@const model=data.scoped}
   <div class="content page route-content stack">
-    <a href="/library">Library</a>
+    <TextLink href="/library" text="Library" />
     <h1>{model.work.title}</h1>
-    {#if model.work.year}<p>{model.work.year}</p>{/if}
+    {#if model.work.year || model.work.certification}
+      <p class="managed-meta">
+        {#if model.work.year}<span>{model.work.year}</span>{/if}
+        {#if model.work.certification}<span>{model.work.certification}</span>{/if}
+      </p>
+    {/if}
     {#if model.work.overview}<p>{model.work.overview}</p>{/if}
     {#if model.work.kind==='movie'||model.work.kind==='episode'||model.work.kind==='track'}
       <div class="row"><Button icon="play" onclick={()=>{failure='';void playMedia(model.work.id,{mediaType:model.work.kind==='track'?'audio':'video'}).catch(cause=>failure=message(cause));}}>{model.work.position>0?'Resume':'Play'}</Button></div>
@@ -34,3 +40,7 @@
   </div>
 {:else if 'reading' in data && data.reading}<ReadingDetails data={data.reading}/>
 {:else}<Details {data}/>{/if}
+
+<style>
+  .managed-meta { display:flex; flex-wrap:wrap; gap:var(--media-metadata-gap); color:var(--muted); font-size:var(--text-sm); }
+</style>

@@ -18,6 +18,7 @@
       "TextLink"
     ],
     "usedBy": [
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/MediaCard.svelte"
     ],
@@ -92,6 +93,10 @@
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
+      "src/lib/ui/cards/editor/PreviewSelect.svelte",
+      "src/lib/ui/cards/editor/PreviewToggle.svelte",
+      "src/lib/ui/cards/editor/PreviewValueInput.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/CheckInActions.svelte",
       "src/lib/ui/components/ChoiceGroup.svelte",
@@ -255,6 +260,7 @@
       "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/sharing/ShareAction.svelte",
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -451,6 +457,11 @@
       "src/lib/auth/ui/ServiceHeader.svelte",
       "src/lib/providers/trakt/AccessFields.svelte",
       "src/lib/providers/trakt/PairingCode.svelte",
+      "src/lib/ui/cards/MediaCardMetric.svelte",
+      "src/lib/ui/cards/editor/PreviewDisclosure.svelte",
+      "src/lib/ui/cards/editor/PreviewSelect.svelte",
+      "src/lib/ui/cards/editor/PreviewToggle.svelte",
+      "src/lib/ui/cards/editor/PreviewValueInput.svelte",
       "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/Button.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -549,6 +560,7 @@
     ],
     "usedBy": [
       "src/lib/profile/Details.svelte",
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PartyCard.svelte",
@@ -587,7 +599,8 @@
       "src/lib/music/Details.svelte",
       "src/lib/profile/Details.svelte",
       "src/lib/reading/Details.svelte",
-      "src/lib/reading/GroupDetails.svelte"
+      "src/lib/reading/GroupDetails.svelte",
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte"
     ],
     "dynamicComposition": true
   },
@@ -595,6 +608,7 @@
     "path": "src/lib/ui/components/MediaHero.svelte",
     "elements": [
       "Button",
+      "TextLink",
       "WorkMenu"
     ],
     "usedBy": [
@@ -995,9 +1009,12 @@
     ],
     "usedBy": [
       "src/lib/auth/ui/InviterField.svelte",
+      "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/components/ActivityHeader.svelte",
       "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/Shelf.svelte"
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/media/[id]/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -1018,9 +1035,10 @@
     "path": "src/lib/ui/components/Toggle.svelte",
     "elements": [],
     "usedBy": [
-      "src/lib/providers/trakt/AccessFields.svelte"
+      "src/lib/providers/trakt/AccessFields.svelte",
+      "src/lib/ui/cards/editor/PreviewToggle.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "WorkActions": {
     "path": "src/lib/ui/components/WorkActions.svelte",

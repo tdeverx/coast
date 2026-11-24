@@ -17,6 +17,7 @@
  let editionName=$state<string>();
  type Profile=Awaited<ReturnType<typeof import('#lib/profile/details.server.js').loadProfileDetails>>;
  type Detail=Awaited<ReturnType<typeof import('#lib/application/work-details.server.js').mediaDetailData>>
+   |{kind:'personalise'}
    |{kind:'row';data:{href:string;artwork?:string}}
    |{kind:'profile';data:Omit<Profile,'activity'>&{activity:Awaited<Profile['activity']>}};
  type EnhancedDetails=Awaited<Awaited<ReturnType<typeof import('#lib/application/media-details.server.js').loadMediaDetails>>['enhancement']>;
@@ -34,6 +35,7 @@
  let RowDetails=$state<typeof import('#lib/ui/pages/SectionDetails.svelte').default>();
  let PersonDetails=$state<typeof import('#lib/media/PersonDetails.svelte').default>();
  let ProfileDetails=$state<typeof import('#lib/profile/Details.svelte').default>();
+ let PersonaliseEditor=$state<typeof import('#lib/ui/cards/editor/PersonaliseEditor.svelte').default>();
  const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['tracking']),page.data.capabilities]));
  const profileRevision=$derived(contentRevisionKey(page.data,['social']));
  const currentHref=$derived(detailPanelHref(panelAddress(page),page.state));
@@ -53,10 +55,16 @@
     void closeMediaDetails();
     return;
   }
+  if ('kind' in target && target.kind === 'personalise' && page.data.capabilities?.cardLayouts !== true) {
+    open=false;resolved=null;
+    void closeMediaDetails();
+    return;
+  }
   refreshKey;
   const controller=new AbortController();
   if ('kind' in target && target.kind === 'profile') profileRevision;
   const response = !viewer ? publicProfile(target.href) : !('kind' in target) ? Promise.resolve<Detail>({kind:'row',data:{href:target.href}})
+    : target.kind==='personalise' ? Promise.resolve<Detail>({kind:'personalise'})
     : api<Detail>(`${target.kind === 'profile' ? 'profile/presentation' : 'media/details'}?href=${encodeURIComponent(target.href)}`,
       undefined,'GET',{signal:controller.signal});
   void response
@@ -76,6 +84,7 @@
     else if(result.kind==='remote-game')RemoteGameDetails=(await import('#lib/games/RemoteDetails.svelte')).default;
     else if(result.kind==='row')RowDetails=(await import('#lib/ui/pages/SectionDetails.svelte')).default;
     else if(result.kind==='profile')ProfileDetails=(await import('#lib/profile/Details.svelte')).default;
+    else if(result.kind==='personalise')PersonaliseEditor=(await import('#lib/ui/cards/editor/PersonaliseEditor.svelte')).default;
     else PersonDetails=(await import('#lib/media/PersonDetails.svelte')).default;
     if(!controller.signal.aborted){
      if(shownHref!==href)editionName=result.kind==='screen'&&'edition' in target&&target.edition!==null?namedEdition(target.edition,result.data.item.title).value:undefined;
@@ -100,12 +109,13 @@
 
   reportFailure(()=>error);
 </script>
-<DetailOverlay sectionPage={data?.kind==='row'} preserveHero={data?.kind==='profile'} open={open&&!playbackVisible(player)&&!reader.visible} {editions} bind:editionName onclose={data?closed:undefined} onback={(page.state.mediaDetailDepth??1)>1?backMediaDetails:undefined} contentKey={shownHref}>
+<DetailOverlay sectionPage={data?.kind==='row'} preserveHero={data?.kind==='profile'} customControls={data?.kind==='personalise'} title={data?.kind==='personalise'?'Personalise':undefined} open={open&&!playbackVisible(player)&&!reader.visible} {editions} bind:editionName onclose={data?closed:undefined} onback={(page.state.mediaDetailDepth??1)>1?backMediaDetails:undefined} contentKey={shownHref}>
 
  <div class="detail-content" inert={shownHref!==currentHref} aria-busy={shownHref!==currentHref}>
  <!-- Each keyed item owns its payload until disposal, including outgoing section chrome reads. -->
  {#each resolved?[resolved]:[] as view (`${view.href}:${view.detail.kind}`)}
-  {#if view.detail.kind==='row'&&RowDetails}<RowDetails href={view.detail.data.href} artwork={view.detail.data.artwork}/>
+  {#if view.detail.kind==='personalise'&&PersonaliseEditor}<PersonaliseEditor onclose={closed}/>
+  {:else if view.detail.kind==='row'&&RowDetails}<RowDetails href={view.detail.data.href} artwork={view.detail.data.artwork}/>
   {:else if view.detail.kind==='reading'&&ReadingDetails}<ReadingDetails modal detailHref={view.href} data={view.detail.data}/>
   {:else if view.detail.kind==='game'&&GameDetails}<GameDetails modal detailHref={view.href} data={view.detail.data}/>
   {:else if view.detail.kind==='music'&&MusicDetails}<MusicDetails modal detailHref={view.href} data={view.detail.data}/>

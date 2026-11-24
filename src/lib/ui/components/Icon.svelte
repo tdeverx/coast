@@ -27,6 +27,7 @@
     AtSignIcon,
     FavouriteIcon,
     StarIcon,
+    SparkleIcon,
     MoreHorizontalIcon,
     InformationCircleIcon,
     Cancel01Icon,
@@ -50,6 +51,7 @@
     InternetAntenna03Icon,
     Clock01Icon,
     Film01Icon,
+    GameController01Icon,
     ArrowRight02Icon,
     Download01Icon,
     Copy01Icon,
@@ -97,6 +99,7 @@
     atSign: AtSignIcon,
     heart: FavouriteIcon,
     star: StarIcon,
+    sparkle: SparkleIcon,
     more: MoreHorizontalIcon,
     info: InformationCircleIcon,
     close: Cancel01Icon,
@@ -121,6 +124,7 @@
     broadcast: InternetAntenna03Icon,
     clock: Clock01Icon,
     film: Film01Icon,
+    gamepad: GameController01Icon,
     arrow: ArrowRight02Icon,
     download: Download01Icon,
     copy: Copy01Icon,
@@ -142,7 +146,7 @@
   export type IconName = keyof typeof icons | 'trakt' | 'jellyfin';
   // Fill only closed silhouettes; utility and navigation paths stay outlined.
   const transportIcons = new Set<IconName>(['play', 'pause', 'stop']);
-  const fillableIcons = new Set<IconName>([...transportIcons, 'heart', 'star', 'bookmark', 'collection', 'image']);
+  const fillableIcons = new Set<IconName>([...transportIcons, 'heart', 'star', 'sparkle', 'bookmark', 'collection', 'image']);
 </script>
 
 <script lang="ts">

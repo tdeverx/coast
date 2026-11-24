@@ -169,7 +169,7 @@
    <span class="sr-only" role="status">{selectedView==='links'?'Loading shared links…':'Loading server streams…'}</span>
    {#each [0,1] as item (item)}
     <div class="stream-placeholder" aria-hidden="true">
-     <span class="skeleton artwork-placeholder"></span>
+     <span class="skeleton artwork-placeholder media-surface-edge"></span>
      <span class="skeleton skeleton-line title-placeholder"></span>
      <span class="skeleton skeleton-line detail-placeholder"></span>
      <span class="skeleton skeleton-line footer-placeholder"></span>
@@ -178,7 +178,7 @@
   {/if}
   {#if selectedView==='links'}
    {#each links.data as link (link.id)}
-    <MediaCard item={{...link.card,captionTitle:link.title,captionSubtitle:link.target==='vrchat'?'VRChat':'Website',rating:null}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} activityProgress={null}>
+    <MediaCard item={{...link.card,captionTitle:link.title,captionSubtitle:link.target==='vrchat'?'VRChat':'Website',rating:null}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} showWorkMetadata={false} activityProgress={null}>
      {#snippet cornerMenu()}
       <Button item icon="link" disabled={copying||!link.canCopy} disabledReason={!link.canCopy?link.copyUnavailable??'This link has no saved URL.':undefined} onclick={()=>void copyLink(link)}>Copy link</Button>
       <div class="menu-divider" role="separator"></div>
@@ -191,7 +191,7 @@
    {#if links.ready&&!links.busy&&!links.error&&!links.data.length}<div class="full"><EmptyState title="No active links" description="Links appear here until they expire or you revoke them." icon="play"/></div>{/if}
   {:else if streamViewReady}
   {#each visibleStreams as {key,stream,grouped} (key)}
-   <MediaCard item={{...stream.card,captionTitle:stream.title,captionActor:stream.actor,captionActivity:undefined,captionSubtitle:[view==='history'?'Ended':grouped?'Shared stream':stream.mediaType==='Book'?'Reading':stream.paused?'Paused':'Playing',stream.episode].filter(Boolean).join(' · ')}} shape="fanart" artworkStyle="thumb" wrapActivity showPrimaryAction={false} activityProgress={grouped?null:stream.progress} footer={grouped?undefined:position} cornerMenu={view==='now'&&stream.sharing?sharedMenu:undefined}>
+   <MediaCard item={{...stream.card,captionTitle:stream.title,captionActor:stream.actor,captionActivity:undefined,captionSubtitle:[view==='history'?'Ended':grouped?'Shared stream':stream.mediaType==='Book'?'Reading':stream.paused?'Paused':'Playing',stream.episode].filter(Boolean).join(' ')}} shape="fanart" artworkStyle="thumb" showPrimaryAction={false} activityProgress={grouped?null:stream.progress} footer={grouped?undefined:position} cornerMenu={view==='now'&&stream.sharing?sharedMenu:undefined}>
     {#snippet activityTrailing()}{#if view==='history'}<time datetime={stream.lastSeenAt} title={`Last observed ${new Date(stream.lastSeenAt).toLocaleString()}; first observed ${new Date(stream.firstSeenAt).toLocaleString()}`}>{activityDateLabel(stream.lastSeenAt,clock.now)}</time>{/if}{/snippet}
     {#snippet body()}<p>{(grouped?[stream.server,stream.method]:[stream.server,stream.client,stream.device,stream.method]).filter(Boolean).join(' · ')}</p>
       {#if stream.sharing}<p>{[`Shared by ${stream.sharing.creator}`,`${stream.sharing.estimated?'About ':''}${stream.sharing.viewers} ${stream.sharing.viewers===1?'viewer':'viewers'}`,!grouped&&stream.sharing.bitrateMbps?`${stream.sharing.bitrateMbps} Mbps target`:null].filter(Boolean).join(' · ')}</p>{/if}
@@ -225,7 +225,7 @@
  .streams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
  .full{grid-column:1/-1;}
  .stream-placeholder{display:grid;align-content:start;gap:8px;min-width:0;}
- .artwork-placeholder{aspect-ratio:16/9;border-radius:var(--media-card-radius);}
+ .artwork-placeholder{aspect-ratio:16/9;border-radius:var(--media-card-corner-radius);}
  .title-placeholder{width:75%;height:calc(var(--text-md) * var(--leading-normal));}
  .detail-placeholder{width:55%;}
  .footer-placeholder{width:65%;}

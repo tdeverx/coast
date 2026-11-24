@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
   import { mixedCardStyle, cardAspectRatio } from '#lib/ui/mixed-card.js';
+  import { cardLayoutShowsFriends, layoutForCard } from '../cards/layout';
   import type { ReadonlyURL } from '$app/state';
   import { shelfControls } from '#lib/ui/shelves/controls.js';
   import { availabilityControl } from '#lib/ui/controls/actions.js';
@@ -185,7 +186,7 @@
     value => { social = value; },
   );
   $effect(() => {
-    const ids = [...new Set(entries.filter(entry=>visibleSocialKeys.has(entry.key)&&!entry.item.captionActor).map(({item}) => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
+    const ids = [...new Set(entries.filter(entry=>visibleSocialKeys.has(entry.key)).map(({item}) => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
     const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
     const active = displayEnrichSocial && socialActive && !!page.data.user && page.data.capabilities?.social!==false;
     untrack(() => enrichment.update({ ids, scope, active }));
@@ -204,6 +205,7 @@
   const groups = $derived([...headerControls.groups, ...filterGroups.map(group => ({...group, change:(value:string)=>{selected=true;group.change(value);}}))]);
   const resetFilters = $derived(combineFilterResets(filterReset, adapter && filterMode === 'none' ? adapter.filterReset : filterMode !== 'none' ? selection.filterReset : undefined));
   const displayMixed = $derived(adapter?.mixed ?? mixed);
+  const cardLayouts = $derived(page.data.capabilities?.cardLayouts === true ? page.data.user?.settings.cardLayouts : undefined);
   function itemStyle(item: MediaView | MediaCardPresentation, style: MediaRowStyle): MediaRowStyle {
     return displayMixed ? mixedCardStyle(item.kind, style, {shape:rail.overrideShape,artworkStyle:rail.overrideArtwork}) : style;
   }
@@ -275,11 +277,21 @@
 <div data-shelf inert={feedLoad==='queued'} use:observeRefreshDemand use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(!feedLoad&&adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !feedLoad && !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
-    {#each entries as entry (entry.key)}{@const item = entry.item}{@const cardStyle = itemStyle(item, style)}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} style:--mixed-card-ratio={displayMixed ? cardAspectRatio(cardStyle.shape) : undefined} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:displayEnrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
+    {#each entries as entry (entry.key)}
+      {@const item = entry.item}
+      {@const cardStyle = itemStyle(item, style)}
+      {@const personalLayout = layoutForCard(cardLayouts, item.kind)}
+      {@const personalShape = personalLayout?.settings.shape}
+      {@const extra = adapter?.details?.(item)}
+      <div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}
+        style:--mixed-card-ratio={displayMixed ? cardAspectRatio(personalShape && personalShape !== 'auto' ? personalShape : cardStyle.shape) : undefined}
+        data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined}
+        use:observeSocialCard={{key:entry.key,enabled:displayEnrichSocial && !!page.data.user && page.data.capabilities?.social!==false &&
+          (!item.captionActor || !!personalLayout) && cardLayoutShowsFriends(personalLayout)}}>
       {#snippet cardAction()}{@render captionAction?.(item as T)}{/snippet}
       {#snippet cardBody()}{@render body?.(item as T)}{/snippet}
       {#snippet cardFooter()}{@render footer?.(item as T)}{/snippet}
-      <MediaCard {item} {...cardStyle} retain={()=>adapter?.retain?.(entry.key)??(()=>{})} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
+      <MediaCard {item} {...cardStyle} retain={()=>adapter?.retain?.(entry.key)??(()=>{})} social={social['workId' in item?item.workId??item.id:item.id]}
         shape={displayMixed ? cardStyle.shape : !journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape}
         captionAction={captionAction ? cardAction : undefined} body={body ? cardBody : undefined} footer={footer ? cardFooter : undefined} />
       {#if entry.run}<details class="journal-run">
@@ -380,7 +392,7 @@
             <div class="skeleton skeleton-line time-placeholder"></div>
           </div>
         {/if}
-        <div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div>
+        <div class="skeleton artwork-placeholder media-surface-edge" class:round={rail.size === 'circle'}></div>
         {#if rail.size !== 'panel'}
           <div class="placeholder-caption">
             <div class="placeholder-copy">
@@ -426,7 +438,7 @@
   .reaction-placeholder{width:28px;}
   .content-row[hidden] { display:none; }
   .mixed-shell {container-type:inline-size;}
-  .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:var(--media-card-radius); }
+  .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:var(--media-card-corner-radius); }
   .artwork-placeholder.round { border-radius:50%; }
   .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
   .journal { min-width:0; }

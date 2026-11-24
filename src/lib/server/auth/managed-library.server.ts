@@ -9,7 +9,11 @@ const validId = pipe(string(),uuid());
 const pageSize = 60;
 type ScreenKind='movie'|'show'|'season'|'episode';
 type OtherKind='album'|'track'|'book'|'comic';
-type LibraryCard = {id:string;title:string;year:number|null;kind:ScreenKind|OtherKind;poster:string|null;showId:string|null;position:number;duration:number};
+type LibraryCard = {
+  id:string;title:string;year:number|null;kind:ScreenKind|OtherKind;poster:string|null;position:number;duration:number;
+  showId:string|null;showTitle:string|null;seasonId:string|null;seasonNumber:number|null;episodeNumber:number|null;
+  runtimeMinutes:number|null;certification:string|null;watched:boolean;
+};
 const observation = (db:ReturnType<typeof getSql>, userId:string) => db`
   select a.media_id,a.provider_item_id,a.connection_id,p.external_id,p.instance_id,p.kind,a.duration_seconds
   from scope c
@@ -17,6 +21,15 @@ const observation = (db:ReturnType<typeof getSql>, userId:string) => db`
   join provider_items p on p.id=a.provider_item_id and p.instance_id=c.instance_id
   where coast_managed_observation(a.source,a.verified_at,c.access_after)
 `;
+const managedCertificate = (db: ReturnType<typeof getSql>, userId: string) => db`(
+  select ms.certificate from metadata_snapshots ms where ms.media_id=m.id
+    and ms.region=coalesce((select settings->>'region' from users where id=${userId}), 'GB')
+    and nullif(btrim(ms.certificate),'') is not null
+    and (ms.provider='tmdb' or (ms.provider='jellyfin' and ms.instance_id in (
+      select instance_id from coast_managed_catalogue(${userId}::uuid)
+    )))
+  order by (ms.provider='jellyfin') desc,ms.updated_at desc,ms.id limit 1
+) as certification`;
 
 export async function managedLibrary(userId:string, search:URLSearchParams) {
   const db = getSql();
@@ -57,11 +70,15 @@ export async function managedLibrary(userId:string, search:URLSearchParams) {
         )` : db``}
       order by lower(m.title),m.id limit ${pageSize+1}
     )
-    select page.*,e.show_id as "showId",
+    select page.*,e.show_id as "showId",parent.title as "showTitle",e.season_number as "seasonNumber",e.episode_number as "episodeNumber",
+      case when e.season_id is not null and coast_managed_work_visible(${userId}::uuid,e.season_id) then e.season_id end as "seasonId",
+      m.runtime_minutes as "runtimeMinutes",${managedCertificate(db,userId)},coalesce(t.watched,false) as watched,
       coalesce(t.position_seconds,mp.position_seconds,0) as position,coalesce(t.duration_seconds,mp.duration_seconds,0) as duration,
       case when image.external_id is not null then '/api/v1/artwork/'||image.instance_id||'/'||image.external_id||'/primary' end as poster
     from page
+    left join media m on m.id=page.id
     left join episodes e on e.media_id=page.id
+    left join media parent on parent.id=e.show_id
     left join tracking_state t on t.user_id=${userId} and t.media_id=page.id
     left join music_progress mp on mp.user_id=${userId} and mp.track_id=page.id
     left join lateral (
@@ -75,7 +92,9 @@ export async function managedLibrary(userId:string, search:URLSearchParams) {
     const card={id:row.id,title:row.title,year:row.year,poster:row.poster,available:true};
     if(row.kind==='album'||row.kind==='track'||row.kind==='book'||row.kind==='comic')
       return {...card,kind:row.kind,href:'/media/'+row.id};
-    return {...card,kind:row.kind,showId:row.showId??undefined,progress:row.position,duration:row.duration,watched:false,
+    return {...card,kind:row.kind,showId:row.showId??undefined,showTitle:row.showTitle??undefined,seasonId:row.seasonId??undefined,
+      seasonNumber:row.seasonNumber??undefined,episodeNumber:row.episodeNumber??undefined,runtimeMinutes:row.runtimeMinutes,certification:row.certification,
+      progress:row.position,duration:row.duration,watched:row.watched,
       playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null};
   });
   return {items,next:rows.length>pageSize ? rows[pageSize-1].id : null,query:text,continueOnly};
@@ -83,9 +102,9 @@ export async function managedLibrary(userId:string, search:URLSearchParams) {
 
 export async function managedDetails(userId:string, workId:string, after:string|null) {
   const db=getSql();
-  const [work]=await db<{id:string;title:string;year:number|null;kind:ScreenKind|OtherKind;overview:string|null;position:number}[]>`
+  const [work]=await db<{id:string;title:string;year:number|null;kind:ScreenKind|OtherKind;overview:string|null;certification:string|null;position:number}[]>`
     select w.id,w.kind,coalesce(m.title,audio.title,r.title) as title,coalesce(m.year,audio.year,r.published_year) as year,
-      coalesce(m.overview,audio.overview,r.overview) as overview,coalesce(t.position_seconds,mp.position_seconds,0) as position
+      coalesce(m.overview,audio.overview,r.overview) as overview,${managedCertificate(db,userId)},coalesce(t.position_seconds,mp.position_seconds,0) as position
     from works w left join media m on m.id=w.id left join music_works audio on audio.id=w.id left join reading_works r on r.id=w.id
     left join tracking_state t on t.user_id=${userId} and t.media_id=w.id
     left join music_progress mp on mp.user_id=${userId} and mp.track_id=w.id

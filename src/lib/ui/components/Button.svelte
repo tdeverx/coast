@@ -54,7 +54,7 @@
   export function openAt(position: { x: number; y: number }) { controller?.openAt(position); }
   export function focusFirst(last = false) { return controller?.focusFirst(last); }
   const nested = $derived(controller?.nested ?? false);
-  const usesMaterial = $derived(!menu && !item && !compact && size !== 'icon' && emphasis === 'standard');
+  const usesMaterial = $derived(menu ? !!material && !nested : !item && !compact && size !== 'icon' && emphasis === 'standard');
   const controlMaterial = $derived(material ?? (size === 'hero' || size === 'segment' ? 'clear' : 'glassDark'));
   const controlClass = $derived(`${menu ? triggerClass ?? (nested ? 'menu-row' : text ? 'button control-subtle' : 'icon-button')
     : item ? 'menu-row' : size === 'icon' ? `icon-button control-${emphasis}` : compact ? 'availability-toggle' : `button control-${emphasis}${size === 'standard' ? '' : ` ${size}`}`} ${className}`);
@@ -165,13 +165,13 @@
   .button.control-subtle.inset-row-action {
     padding-inline:var(--menu-item-inset, 10px);
     border-radius:var(--menu-row-radius, 8px);
-    background:rgb(0 0 0 / 30%);
+    background:var(--inset-control-fill);
     color:var(--menu-row-ink);
     font-size:var(--text-sm);
     font-weight:var(--weight-semibold);
     cursor:pointer;
   }
-  .button.control-subtle.inset-row-action:hover:not(:disabled, [aria-disabled="true"]) { background:rgb(0 0 0 / 40%); }
+  .button.control-subtle.inset-row-action:hover:not(:disabled, [aria-disabled="true"]) { background:var(--inset-control-hover-fill); }
   .button.control-danger, .button.control-danger:hover, .icon-button.control-danger:not(.control-subtle) {color:var(--danger);}
   .icon-button.control-subtle {
     --icon-control: var(--icon-inline);

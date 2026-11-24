@@ -582,19 +582,9 @@ export async function profileProgress(
       (item) => [item.id, item]
     )
   );
-  if (selected === 'dropped') {
-    for (const item of views.values()) {
-      if (item.kind !== 'season' && item.kind !== 'episode') continue;
-      const show = item.trackingParents?.find((parent) => parent.kind === 'show');
-      const number = String(item.seasonNumber ?? 0).padStart(2, '0');
-      item.captionTitle = show?.title ?? item.title;
-      item.captionSubtitle =
-        item.kind === 'episode'
-          ? `S${number}E${String(item.episodeNumber ?? 0).padStart(2, '0')} · ${item.title}`
-          : item.title;
-    }
-  }
-  const showIds = rows.filter((row) => views.get(row.id)?.kind === 'show').map((row) => row.id);
+  const showIds = [...views.values()]
+    .filter(item => item.kind === 'show' && item.totalEpisodes !== undefined)
+    .map(item => item.id);
   const config = showIds.length ? await getConfig() : undefined;
   const counts = config
     ? await getDb().execute<{
@@ -620,8 +610,7 @@ export async function profileProgress(
     const item = views.get(id)!;
     if (item.rewatchStartedAt) {
       if (selected !== 'watched') {
-        item.captionTitle = item.title;
-        item.captionSubtitle = `Rewatching · ${item.completedEpisodes} / ${item.totalEpisodes} aired`;
+        item.captionSubtitle = 'Rewatching';
       }
       continue;
     }
@@ -633,8 +622,7 @@ export async function profileProgress(
       trackingProgress: { unit: 'percent', value: count.fraction * 100 },
       status:
         selected === 'dropped' ? 'dropped' : selected === 'watched' ? 'completed' : 'in-progress',
-      ...(selected !== 'watched' ? {captionTitle: item.title,
-        captionSubtitle: `${count.completed} / ${count.total} aired${count.partial ? ` · ${count.partial} started` : ''}`} : {}),
+      ...(selected !== 'watched' && count.partial ? {captionSubtitle: `${count.partial} started`} : {}),
     });
   }
   return {

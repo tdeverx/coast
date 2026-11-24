@@ -28,8 +28,13 @@
   --control-hover-opacity: 8%;
   --control-disabled-opacity: .45;
   --control-hover-fill: color-mix(in srgb, var(--white) var(--control-hover-opacity), transparent);
+  --inset-control-fill: rgb(0 0 0 / 30%);
+  --inset-control-hover-fill: rgb(0 0 0 / 40%);
   --media-surface-hover-scale: 1.02;
   --media-card-radius: 12px;
+  --media-card-hover-edge-width: 3px;
+  --media-card-corner-radius: calc(var(--leading-card-metric) / 2 + 6px + 2 * var(--media-card-hover-edge-width));
+  --media-metadata-gap: 8px;
   --media-surface-edge-width: 1.5px;
   --media-surface-edge-opacity: 0.5;
   --icon-inline: 16px;
@@ -70,6 +75,7 @@
   --weight-bold: 800;
   --leading-solid: 1;
   --leading-tight: 1.2;
+  --leading-card-metric: 16px;
   --leading-normal: 1.4;
   --leading-menu: 20px;
   --leading-relaxed: 1.6;
@@ -147,6 +153,8 @@ a {
   color: inherit;
   text-decoration: none;
 }
+.chevron-link { column-gap: 1px; }
+.chevron-link > svg path { stroke-width: 3.5; }
 button:disabled,
 .button[aria-disabled='true'] {
   cursor: not-allowed;
@@ -830,6 +838,27 @@ label.menu-row > .menu-row-note { margin-inline-end: var(--menu-item-inset); }
 .access-shell { position: relative; overflow-x: clip; background: transparent; }
 .access-shell .auth-card { position: relative; }
 .access-shell .auth-card .button.segment { width: auto; }
+.auth-artwork-backdrop:has(img)::after,
+.auth-artwork-sample:has(img)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.auth-artwork-backdrop:has(img)::after {
+  background: radial-gradient(ellipse 60% 75% at top center,
+    color-mix(in srgb, var(--canvas) 40%, transparent),
+    color-mix(in srgb, var(--canvas) 64%, transparent) 50%,
+    var(--canvas));
+}
+.auth-artwork-sample {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(2px round var(--artwork-radius, 999px));
+  pointer-events: none;
+}
+.auth-artwork-sample:has(img)::after {
+  background: color-mix(in srgb, var(--canvas) 58%, transparent);
+}
 .auth-stack { display: grid; gap: var(--auth-gap); max-width: var(--auth-width); margin-inline: auto; }
 .invite-accent { --field-success: var(--invite-gleam); }
 .onboarding-nav {
@@ -1029,6 +1058,7 @@ label.menu-row > .menu-row-note { margin-inline-end: var(--menu-item-inset); }
 
 /* Shared loading treatment for shelves and popovers; geometry belongs to the consumer. */
 .skeleton { background:var(--surface);animation:coast-loading 1.5s ease-in-out infinite alternate; }
+.skeleton.media-surface-edge { position:relative; }
 .skeleton-line { display:block; height:var(--text-sm); border-radius:4px; }
 .skeleton-circle { display:block; flex:none; aspect-ratio:1; border-radius:50%; }
 @keyframes coast-loading { to { opacity:.5; } }
