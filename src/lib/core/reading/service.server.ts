@@ -4,8 +4,11 @@ import * as v from 'valibot';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import { readingProgress, readingWorks, readingSessions, readingHistory, socialActivity, users } from '#lib/server/db/schema.js';
 import { DomainError } from '#lib/core/errors.js';
+import { getConfig } from '#lib/server/config.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { emitWebhook } from '#lib/server/public-api/webhooks.server.js';
-import { initialReadingBookmarkCycle, readingStates } from '#lib/reading/model.js';
+import { initialReadingBookmarkCycle, readingStates, type ReadingKind } from '#lib/reading/model.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 const pages = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1000000));
@@ -32,6 +35,16 @@ v.check((input) => (!input.restart||input.state==='reading'&&input.page===0) && 
 
 /** A full page count alone never marks a read complete; completion is an explicit, idempotent choice. */
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+async function requireReadingMedium(tx: Transaction, userId: string, kind: ReadingKind) {
+  try {
+    await requireFeatureInTransaction(tx, userId, kind);
+  } catch (cause) {
+    // Preserve the API's 404 for media unavailable under the installation defaults.
+    if (cause instanceof AppError && cause.code === 'feature_disabled') requireEnabledCategory(await getConfig(tx), kind);
+    throw cause;
+  }
+}
+
 export async function updateReading(userId: string, id: string, raw: unknown, tx?:Transaction) {
   const input=v.parse(readingProgressInputSchema,raw);
   return tx?writeReadingInTransaction(tx,userId,id,input):writeReading(userId,id,input);
@@ -50,7 +63,7 @@ export async function removeReadingHistory(userId:string,workId:string,entryId:s
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [work]=await tx.select({kind:readingWorks.kind}).from(readingWorks).where(eq(readingWorks.id,workId));
     if(!work)throw new DomainError('Reading work not found.',404);
-    await requireFeatureInTransaction(tx,userId,work.kind);
+    await requireReadingMedium(tx,userId,work.kind);
     const removed=await tx.delete(readingHistory).where(and(eq(readingHistory.id,entryId),eq(readingHistory.userId,userId),eq(readingHistory.workId,workId))).returning({id:readingHistory.id});
     if(removed.length){
       await tx.delete(socialActivity).where(and(eq(socialActivity.userId,userId),eq(socialActivity.workId,workId),eq(socialActivity.sourceKey,`reading:${entryId}`)));
@@ -71,7 +84,7 @@ async function writeReadingInTransaction(tx:Transaction,userId:string,id:string,
     if (!user) throw new DomainError('Sign in to update reading progress.', 401, 'unauthorized');
     const [item] = await tx.select({ id: readingWorks.id, kind: readingWorks.kind }).from(readingWorks).where(eq(readingWorks.id, id));
     if (!item) throw new DomainError('Reading work not found.', 404, 'not_found');
-    await requireFeatureInTransaction(tx,userId,item.kind);
+    await requireReadingMedium(tx,userId,item.kind);
     const key = and(eq(readingProgress.userId, userId), eq(readingProgress.workId, id));
     const [existing] = await tx.select().from(readingProgress).where(key);
     const now = new Date();

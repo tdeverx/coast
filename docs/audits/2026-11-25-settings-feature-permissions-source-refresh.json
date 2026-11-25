@@ -155,7 +155,7 @@
     },
     "src/lib/core/reading/service.server.ts": {
       "previous": "cc612f2f69a70a94ac4271210a72f7113497d61f5d6618b9436d9951ff1367b2",
-      "current": "7de9ae0aa35e855bfd762d51a7ea8f790732d729b17861ea7deb797191f5a6ef"
+      "current": "305bbd183c36f7e112d80addf222085032884abfb41d28501abea68878e7859e"
     },
     "src/lib/features.ts": {
       "previous": "7c60a91b9e5570408fe4fbcf812f7552da4244e030db254a5515ce461813f9c9",
@@ -439,11 +439,15 @@
     },
     "tests/reading-db.test.ts": {
       "previous": "25eef60924a6e9ba5aefbe28b502c71fc585cbbbbc8ce7fa988e06e838d64101",
-      "current": "9e2563d4d88eb0ddbf7d625d9ef25eb17a218a40006c7a9f2a553d7ce41ca4b2"
+      "current": "536402af87633899b6d814649f936ef27c79d7453b4adf080ee2f33541b7f0b3"
     },
     "tests/route-refresh.test.ts": {
       "previous": "4bac98643f4116348f301a631c921c459cc62d10d28f5edf3bc851cace2f9bae",
       "current": "be16ab2eb801f7e2ce616cbc137d6bfb2f4ff6583e90acf2675d4cb110411c60"
+    },
+    "tests/taste-metadata-db.test.ts": {
+      "previous": "b6d61476dc5f24a77559c213776d1fe16fa51501131bb240412f8c62f80c7e6b",
+      "current": "2066d0697818b7d8480a6d98b40993749e519d281d673901b6bc2094141ad41b"
     },
     "tests/ui-discovery-source.test.ts": {
       "previous": "faea732b9703faa9c17763a23126c113eeecea3fa1723de72d11d2c80b8c0d12",

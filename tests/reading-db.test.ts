@@ -261,7 +261,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
     try {
       await expect(importReading(comic)).rejects.toThrow('disabled');
       await expect(readingDetails(owner, comicId)).rejects.toThrow('disabled');
-      await expect(updateReading(owner, comicId, { page: 1 })).rejects.toMatchObject({ code: 'feature_disabled' });
+      await expect(updateReading(owner, comicId, { page: 1 })).rejects.toThrow('disabled');
       await expect(readingCatalogue(owner, { kind: 'comic' })).rejects.toThrow('disabled');
       await expect(loadMediaPage(mediaEvent(comicId))).rejects.toMatchObject({ status: 404, body: { message: 'This medium is disabled.' } });
       await expect(loadMediaPage(mediaEvent(comicId, null))).rejects.toMatchObject({ status: 404, body: { message: 'This medium is disabled.' } });
@@ -288,7 +288,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
         imported.push(item.id);
         expect(item.kind).toBe(externalId === 'OL909090001W' ? 'book' : 'comic');
         expect((await updateReading(owner, item.id, { page: 4 })).page).toBe(4);
-        await expect(updateReading(other, item.id, { page: 1 })).rejects.toMatchObject({ code: 'feature_disabled' });
+        await expect(updateReading(other, item.id, { page: 1 })).rejects.toMatchObject({ code: 'experimental_disabled' });
       }
       await expect(importReading({ ...book, externalId: 'OL909090003W' })).resolves.toMatchObject({ kind: 'book' });
       const [shared] = await db.select({ id: readingWorks.id }).from(readingWorks).where(eq(readingWorks.externalId, 'OL909090003W'));
