@@ -41,6 +41,10 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
   const move = (event: PointerEvent) => {
     if (origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10) cancel();
   };
+  const mouseDown = (event: MouseEvent) => {
+    // A touch hold can release with a compatibility mouse event. Keep focus inside the open menu.
+    if (suppressClick && !insideMenu(event.target)) event.preventDefault();
+  };
   const click = (event: MouseEvent) => {
     if (!suppressClick || insideMenu(event.target)) return;
     event.preventDefault();
@@ -63,6 +67,7 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
   node.addEventListener('pointerup', cancel);
   node.addEventListener('pointercancel', cancel);
   node.addEventListener('pointerleave', cancel);
+  node.addEventListener('mousedown', mouseDown, true);
   node.addEventListener('click', click, true);
   node.addEventListener('keydown', key);
   return {
@@ -77,6 +82,7 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
       node.removeEventListener('pointerup', cancel);
       node.removeEventListener('pointercancel', cancel);
       node.removeEventListener('pointerleave', cancel);
+      node.removeEventListener('mousedown', mouseDown, true);
       node.removeEventListener('click', click, true);
       node.removeEventListener('keydown', key);
       window.removeEventListener('scroll', cancel, true);

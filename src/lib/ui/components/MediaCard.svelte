@@ -705,8 +705,8 @@
   .badge-corner[data-corner$='left'] { inset-inline-start:var(--corner-inset); }
   .badge-corner[data-corner$='right'] { inset-inline-end:calc(var(--corner-inset) + var(--menu-clearance)); }
   .badge-corner[data-corner='top-right'] { transition:inset-inline-end var(--fast) var(--ease); }
-  .has-artwork-menu:is(:hover, :focus-within) .badge-corner[data-corner='top-right'] {
-    --menu-clearance:calc(2 * var(--artwork-badge-radius) + 13px);
+  .has-artwork-menu .badge-corner[data-corner='top-right'] {
+    --menu-clearance:calc((2 * var(--artwork-badge-radius) + 13px) * var(--card-controls-opacity, 0));
   }
   .art.circle .badge-corner { --corner-inset:15%; }
   .slot-badge {
@@ -722,9 +722,6 @@
     white-space:nowrap;
     pointer-events:auto;
     scale:var(--card-glass-scale, 1);
-  }
-  @media (hover: none) {
-    .has-artwork-menu .badge-corner[data-corner='top-right'] { --menu-clearance:calc(2 * var(--artwork-badge-radius) + 13px); }
   }
   .artwork-badge, .artwork-friends { display: flex; pointer-events: auto; }
   .artwork-badge { position: relative; min-inline-size:0; }
@@ -761,7 +758,7 @@
     --artwork-badge-radius:calc(var(--leading-card-metric) / 2 + var(--metric-spacing));
     --media-card-badge-inset:calc(2 * var(--media-card-hover-edge-width));
     --card-control-hover-scale:1.08;
-    --card-elastic-duration:320ms;
+    --card-hover-duration:320ms;
     --card-elastic-easing:linear(0, 0.15 8%, 0.58 20%, 1.17 36%, 1.34 47%, 1.22 57%, 1.04 69%, 0.9 81%, 0.94 90%, 1);
     display:flex;
     flex-direction:column;
@@ -795,8 +792,16 @@
   .art.banner {
     aspect-ratio: 5.4 / 1;
   }
-  .art:is(:hover, :focus-within) {
+  .art:is(:hover, :has(:focus-visible)) {
+    --card-controls-opacity:1;
+    --card-controls-pointer-events:auto;
     transform: scale(1.03);
+  }
+  @media (width < 640px) {
+    .art {
+      --card-controls-opacity:1;
+      --card-controls-pointer-events:auto;
+    }
   }
   .media-card.loading .art {transform:none;}
   .media-card.loading .art::before {display:none;}
@@ -819,7 +824,7 @@
     object-fit: cover;
   }
   .art.unavailable { --media-card-grayscale: 1; }
-  .art.unavailable:is(:hover, :focus-within) { --media-card-grayscale: 0; }
+  .art.unavailable:is(:hover, :has(:focus-visible)) { --media-card-grayscale: 0; }
   .art.unavailable img {
     filter: grayscale(var(--media-card-grayscale));
     transition: filter var(--fast) var(--ease);
@@ -847,7 +852,7 @@
     transition: opacity var(--fast);
     z-index: 1;
   }
-  .art:is(:hover, :focus-within)::before {
+  .art:is(:hover, :has(:focus-visible))::before {
     opacity: 0.4;
   }
   .art::after {
@@ -857,7 +862,7 @@
     box-shadow:inset 0 0 0 var(--card-edge-width) var(--white);
     transition:box-shadow var(--fast), opacity var(--fast);
   }
-  .media-card:not(.loading) .art:is(:hover, :focus-within)::after {
+  .media-card:not(.loading) .art:is(:hover, :has(:focus-visible))::after {
     --card-edge-width:var(--media-card-hover-edge-width);
     opacity: 1;
   }
@@ -868,7 +873,6 @@
     height: var(--card-primary-size);
     z-index: 2;
     border-radius: 50%;
-    pointer-events: auto;
   }
   .card-menu {
     position: absolute;
@@ -884,8 +888,7 @@
   .card-menu.sampled-menu {
     top: var(--media-card-badge-inset, 6px);
     right: var(--media-card-badge-inset, 6px);
-    pointer-events: auto;
-    opacity: 1;
+    pointer-events: none;
   }
   .card-menu.sampled-menu > button, .card-menu :global(.card-menu-pill) {
     /* The visible 18 px icon is 9 px wider than it is tall. */
@@ -894,35 +897,12 @@
     border-radius: var(--artwork-badge-radius, 14px);
     color: var(--white);
   }
-  .play,
-  .card-menu {
-    opacity: 0;
-    transition:
-      opacity var(--fast),
-      transform var(--fast) var(--ease);
-  }
-  .art:hover .play,
-  .art:hover .card-menu,
-  .art:focus-within .play,
-  .art:focus-within .card-menu {
-    opacity: 1;
-  }
   :is(.sampled-primary, .sampled-menu) > :is(button, .artwork-sample, :global(.context)) {
-    opacity: 0;
+    opacity: var(--card-controls-opacity, 0);
     transition: opacity var(--fast);
   }
-  .art:is(:hover, :focus-within) :is(.sampled-primary, .sampled-menu) > :is(button, .artwork-sample, :global(.context)) {
-    opacity: 1;
-  }
-  @media (hover: none) {
-    .art::before {
-      opacity: 0.4;
-    }
-    .play,
-    .card-menu,
-    :is(.sampled-primary, .sampled-menu) > :is(button, .artwork-sample, :global(.context)) {
-      opacity: 1;
-    }
+  :is(.sampled-primary, .sampled-menu) > :is(button, :global(.context)) {
+    pointer-events: var(--card-controls-pointer-events, none);
   }
   .fallback {
     height: 100%;
@@ -959,9 +939,9 @@
   .screen-meta .viewing-detail {flex:none;}
   .screen-note {flex-shrink:2;}
   @media (prefers-reduced-motion: no-preference) {
-    .art {transition-duration:var(--card-elastic-duration);transition-timing-function:var(--card-elastic-easing);}
+    .art {transition:transform var(--card-hover-duration) ease-out;}
     :is(.artwork-badge, .sampled-primary, .sampled-menu) {
-      transition:--card-glass-scale var(--card-elastic-duration) var(--card-elastic-easing);
+      transition:--card-glass-scale var(--card-hover-duration) var(--card-elastic-easing);
     }
     :is(.sampled-primary, .sampled-menu) > button, .sampled-menu :global(.card-menu-pill) {
       scale:var(--card-glass-scale, 1);
@@ -972,7 +952,7 @@
     .sampled-menu:has(:is(button:hover, button:focus-visible)) {
       --card-glass-scale:var(--card-control-hover-scale);
     }
-    .artwork-friends :global(a) {transition:scale var(--card-elastic-duration) var(--card-elastic-easing);}
+    .artwork-friends :global(a) {transition:scale var(--card-hover-duration) var(--card-elastic-easing);}
     .artwork-friends :global(a:is(:hover, :focus-visible)) {scale:var(--card-control-hover-scale);}
   }
   @media (prefers-reduced-motion: reduce) {
@@ -981,11 +961,9 @@
     .art::before,
     .art::after,
     .art.unavailable img,
-    .play,
-    :is(.sampled-primary, .sampled-menu) > :is(button, .artwork-sample),
-    .card-menu {
+    :is(.sampled-primary, .sampled-menu) > :is(button, .artwork-sample, :global(.context)) {
       transition: none;
     }
-    .art:is(:hover, :focus-within) {transform:none;}
+    .art:is(:hover, :has(:focus-visible)) {transform:none;}
   }
 </style>
