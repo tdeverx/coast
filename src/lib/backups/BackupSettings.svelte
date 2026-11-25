@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Toggle from '#lib/ui/components/Toggle.svelte';
   import { onMount, untrack } from 'svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
@@ -81,18 +82,18 @@
 
     <form class="stack" onsubmit={(event) => { event.preventDefault(); void update('PATCH'); }}>
       <SettingsRow title="Automatic backups" description="Capture an encrypted database dump, credential keys and uploaded avatars once a day.">
-        <input type="checkbox" aria-label="Automatic backups" bind:checked={policy.enabled} />
+        <Toggle label="Automatic backups" bind:checked={policy.enabled} disabled={busy} />
       </SettingsRow>
       <SettingsRow title="Daily time" description="Coast catches up after startup if the scheduled time has passed.">
         <input type="time" aria-label="Daily backup time" bind:value={policy.time} required />
       </SettingsRow>
-      <label class="stack">Time zone
+      <label class="field">Time zone
         <input type="text" bind:value={policy.timeZone} placeholder="Europe/London" maxlength="80" required />
       </label>
-      <label class="stack">Snapshots to keep
+      <label class="field">Snapshots to keep
         <input type="number" min="1" max="90" step="1" bind:value={policy.keep} required />
       </label>
-      <label class="stack">Public recovery certificate
+      <label class="field">Public recovery certificate
         <textarea rows="5" maxlength="16384" bind:value={policy.recipient} placeholder="-----BEGIN CERTIFICATE-----"></textarea>
       </label>
       <p class="small">Keep the matching private key outside Coast. Restore the archives offline using that key and the deployment recovery instructions.</p>

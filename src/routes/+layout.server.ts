@@ -31,7 +31,7 @@ export const load = (async ({ locals, depends,params,url }) => {
     experimentalCardTasteScores: config.experimentalCardTasteScores,
     tastePublication,
     experiments:{planning:config.experimentalPlanning},
-    playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
+    playbackSharing:!!locals.user && config.features.sharing,
     activeShareUntil,
     allowVrchatHevc:config.allowVrchatHevc,
     user: locals.user && !config.features.cardLayouts && locals.user.settings.cardLayouts

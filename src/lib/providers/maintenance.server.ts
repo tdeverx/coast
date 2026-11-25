@@ -1,3 +1,4 @@
+import { sharedProviderFeatures } from '#lib/server/features.js';
 import { traktJobAllowed, traktJobDirection, type TraktDirection } from './trakt/access';
 import { pruneUnusedAvatars, stopAvatarSweep } from '#lib/core/profile/avatar-storage.server.js';
 import { expireMemberships } from '#lib/server/auth/account-management.server.js';
@@ -121,8 +122,9 @@ export async function scheduleProviderMaintenance(
     task?: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'streams' | 'catalogue' | 'metadata';
   } = {}
 ) {
-  const config = await getConfig();
-  if(config.developerMode&&!options.force)return {queued:0,active:0,connections:0,busy:false};
+  const installation = await getConfig();
+  if(installation.developerMode&&!options.force)return {queued:0,active:0,connections:0,busy:false};
+  const config = await sharedProviderFeatures(installation);
   return getDb().transaction(async (tx) => {
     // Prevent overlapping timer/manual runs across processes without waiting or duplicating work.
     const [lock] = await tx.execute<{ acquired: boolean }>(

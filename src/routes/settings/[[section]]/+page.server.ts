@@ -1,5 +1,5 @@
 import {listTaskCommands} from '#lib/server/queue/task-commands.server.js';
-import { resolveFeatures } from '#lib/features.js';
+import { featureDefinitions } from '#lib/features.js';
 import {listShares} from '#lib/sharing/service.server.js';
 import {listApiTokens} from '#lib/server/public-api/tokens.server.js';
 import { collectionPreferences } from '#lib/collection/preferences.js';
@@ -22,15 +22,15 @@ import {
 } from '#lib/server/db/schema.js';
 import { and, eq, desc } from 'drizzle-orm';
 import { seerrAllows, SeerrPermission } from '#lib/providers/seerr/adapter.server.js';
-import { getFeatureConfig } from '#lib/server/features.js';
+import { getFeatureConfig, userFeatureGrant } from '#lib/server/features.js';
 import { jobTimings } from '#lib/providers/job-timing.server.js';
 import { adminDemand } from '#lib/collection/demand.server.js';
 import { listBenchmarks } from '#lib/benchmarks/service.server.js';
 export const load = (async ({locals, params, depends, url}) => {
   depends('coast:settings'); depends('coast:providers');
 
-  const section = params.section ?? 'appearance';
-  if (!settingsSections.some(([id]) => id === section)) error(404, 'Settings page not found.');
+  const section = settingsSections.find(([id]) => id === (params.section ?? 'appearance'))?.[0];
+  if (!section) error(404, 'Settings page not found.');
   const admin = administratorSettings.some(([id]) => id === section);
   if (admin) {
     try {
@@ -43,7 +43,7 @@ export const load = (async ({locals, params, depends, url}) => {
   const requestAccess=section==='admin'?await getFeatureConfig(locals.user!.id):null;
   const usersTab: 'users'|'invites'|'defaults'=section==='users' && url.searchParams.get('view')==='invites' ? 'invites' :
     section==='users' && url.searchParams.get('view')==='defaults' ? 'defaults' : 'users';
-  const accounts=section==='users'&&usersTab==='users' ? await listUsers(locals.user,url.searchParams.get('before')) : {items:[],next:null};
+  const accounts=(section==='users'&&usersTab==='users'||section==='features-policy') ? await listUsers(locals.user,url.searchParams.get('before')) : {items:[],next:null};
   const inviteAuthorities=section==='users'&&usersTab!=='users' ? await getSql()<{id:string;name:string}[]>`select i.id,i.name||' · Server API key' as name
     from provider_instances i where i.provider='jellyfin' and i.enabled and i.credentials is not null and i.settings ? 'managementKeyGeneration'
     union all
@@ -58,15 +58,26 @@ export const load = (async ({locals, params, depends, url}) => {
       from users where id=${locals.user!.id}`)[0] : null;
   return {
     section,usersTab,accounts,inviteAuthorities,
-    featureDecisions: resolveFeatures(config),
+    featurePermissions: section === 'features' && locals.user
+      ? Object.fromEntries(featureDefinitions.map(([key]) => [key, userFeatureGrant(config, locals.user!, key)])) : {},
+    installationFeatureDefaults: section === 'users' || section === 'features-policy' ? config : null,
     benchmarks:section==='benchmarks'?await listBenchmarks(locals.user,Number(url.searchParams.get('page'))||1):null,
     backups: section === 'backups' ? await (await import('#lib/backups/service.server.js')).backupStatus(locals.user) : null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
+    apiActivity: section === 'api' ? (await getSql()<{ tokens: number; webhooks: number }[]>`
+      with active_tokens as (
+        select id from api_tokens where user_id = ${locals.user!.id} and revoked_at is null and expires_at > now()
+      )
+      select (select count(*)::int from active_tokens) as tokens,
+        (select count(*)::int from api_webhooks w join active_tokens t on t.id = w.token_id
+          where w.user_id = ${locals.user!.id} and w.enabled) as webhooks
+    `)[0] : null,
     hasLocalPassword:accountState?.hasLocalPassword??false,
     initialImports:accountState?.initialImports??false,
     conflicts: section === 'pending' ? await getPendingConflicts(locals.user!.id) : [],
-    providers:section==='users'?[]:await listProviders(locals.user!.id, admin),
+    providers: ['connections', 'jobs', 'admin', 'integrations'].some(id => id === section)
+      ? await listProviders(locals.user!.id, admin) : [],
     config: admin ? config : null,
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {

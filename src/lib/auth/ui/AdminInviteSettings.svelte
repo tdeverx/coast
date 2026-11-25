@@ -8,10 +8,15 @@
   import Button from '#lib/ui/components/Button.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
+  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
+  import Icon from '#lib/ui/components/Icon.svelte';
+  import AuthSurface from './AuthSurface.svelte';
+  import GlassSeparator from './GlassSeparator.svelte';
+  import ServiceDisclosure from './ServiceDisclosure.svelte';
   import InviteDefaultsFields from './InviteDefaultsFields.svelte';
   import InviteSecret from './InviteSecret.svelte';
 
-  let {view,connections}:{view:'invites'|'defaults';connections:{id:string;name:string}[]}=$props();
+  let {view,connections,inline=false}:{view:'invites'|'defaults';connections:{id:string;name:string}[];inline?:boolean}=$props();
   const presets=createResource<Awaited<ReturnType<typeof listInvitePresets>>>([]);
   const invites=createResource<Awaited<ReturnType<typeof listInvites>>>({items:[],next:null});
   const claims=createResource<Awaited<ReturnType<typeof inviteClaims>>>({items:[],next:null});
@@ -21,6 +26,14 @@
   let label=$state(''),days=$state(7),maxUses=$state(1),count=$state(1),presetId=$state(''),name=$state(''),codes=$state<string[]>([]);
   let expiry=$state(''),status=$state(''),issuer=$state(''),filterPreset=$state(''),before=$state(''),cursorStack=$state<string[]>([]);
   let requestPreset=$state(''),showOverrides=$state(false);
+  let creating = $state(false);
+  const inviteFormId = $props.id();
+  const presetOptions = $derived(presets.data.map(preset => ({ id: preset.id, label: preset.name })));
+  const statuses = [
+    { id: '', label: 'All' }, ...['active', 'claimed', 'setup-failed', 'expired', 'revoked'].map(id => ({
+      id, label: id === 'setup-failed' ? 'Setup failed' : id[0].toUpperCase() + id.slice(1),
+    })),
+  ];
   const loadPresets=()=>presets.load(signal=>api('admin/invites/presets',undefined,'GET',{signal}));
   const loadSummary=()=>summary.load(signal=>api('admin/invites/overview',undefined,'GET',{signal}));
   const loadInvites=()=>invites.load(signal=>api('admin/invites?'+new URLSearchParams({status,issuer,expiry,preset:filterPreset,before}),undefined,'GET',{signal}));
@@ -42,6 +55,9 @@
     catch(cause){actionFeedback.failure(message(cause));}
     finally{busy=false;}
   }
+  function closeClaims() {
+    claimOpen=false; activeClaim=''; claims.cancel();
+  }
   function showClaims(id:string,after=''){
     if(activeClaim!==id)claims.replace({items:[],next:null});
     activeClaim=id;claimOpen=true;
@@ -54,9 +70,7 @@
 {#if view==='defaults'}
   <div class="panel stack form-width">
     <Heading title="Account defaults" description="Save presets for administrators and member-issued invitations." />
-    <label class="field">Preset<select value={presetId} onchange={event=>select(event.currentTarget.value)}>
-      <option value="">New preset</option>{#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}
-    </select></label>
+    <SettingsChoice label="Preset" icon="ticket" value={presetId} onchange={select} options={[{ id: '', label: 'New preset' }, ...presetOptions]} disabled={busy} />
     <form class="stack" onsubmit={event=>{event.preventDefault();void mutate(async()=>{
       const saved=await api<{id:string}>('admin/invites/presets',{id:presetId||undefined,name,defaults:$state.snapshot(defaults)},'POST');
       await loadPresets();select(saved.id);
@@ -67,15 +81,22 @@
     </form>
   </div>
 {:else}
-  <div class="panel stack form-width">
-    <Heading title="Issue invites" />
+  <section class="invite-create form-width">
+    <AuthSurface invite>
+      <button type="button" class="menu-row invite-trigger" aria-controls={inviteFormId} aria-expanded={creating}
+        onclick={() => creating = !creating}>
+        <Icon name="ticket" size={16} />
+        <span>Create invite</span>
+        <span class="menu-chevron" class:expanded={creating}><Icon name="right" size={16} /></span>
+      </button>
+    </AuthSurface>
+    <ServiceDisclosure id={inviteFormId} expanded={creating}>
+      <div class="panel stack">
     <form class="stack" onsubmit={event=>{event.preventDefault();void mutate(async()=>{
       const result=await api<{issued:{code:string}[]}>('admin/invites',{days,count,maxUses,label,presetId:presetId||undefined,defaults:$state.snapshot(defaults)},'POST');
       codes=result.issued.map(item=>item.code);refresh();
     },'Invites created.');}}>
-      <label class="field">Preset<select value={presetId} onchange={event=>select(event.currentTarget.value)}>
-        <option value="">Custom</option>{#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}
-      </select></label>
+      <SettingsChoice label="Preset" icon="ticket" value={presetId} onchange={select} options={[{ id: '', label: 'Custom' }, ...presetOptions]} disabled={busy} />
       <details class="stack" ontoggle={event=>showOverrides=event.currentTarget.open}><summary>Review or override defaults</summary>
         {#if showOverrides}<InviteDefaultsFields bind:defaults {connections} />{/if}
       </details>
@@ -88,14 +109,17 @@
       <div class="row"><Button type="submit" disabled={busy}>Create invites</Button></div>
     </form>
     <InviteSecret {codes} />
-  </div>
+      </div>
+    </ServiceDisclosure>
+  </section>
+  <GlassSeparator />
   <div class="stack">
     <Heading title="Invitations" />
-    <form class="row" onsubmit={event=>{event.preventDefault();before='';cursorStack=[];void loadInvites();}}>
-      <label class="field">Status<select bind:value={status}><option value="">All</option><option value="active">Active</option><option value="claimed">Claimed</option><option value="setup-failed">Setup failed</option><option value="expired">Expired</option><option value="revoked">Revoked</option></select></label>
+    <form class="invite-filters" onsubmit={event=>{event.preventDefault();before='';cursorStack=[];void loadInvites();}}>
+      <SettingsChoice label="Status" icon="checkCircle" bind:value={status} options={statuses} />
       <label class="field">Issuer<input bind:value={issuer} maxlength="60" /></label>
-      <label class="field">Preset<select bind:value={filterPreset}><option value="">All</option>{#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}</select></label>
-      <label class="field">Expiry<select bind:value={expiry}><option value="">Any date</option><option value="week">Next seven days</option></select></label>
+      <SettingsChoice label="Preset" icon="ticket" bind:value={filterPreset} options={[{ id: '', label: 'All' }, ...presetOptions]} />
+      <SettingsChoice label="Expiry" icon="calendar" bind:value={expiry} options={[{ id: '', label: 'Any date' }, { id: 'week', label: 'Next seven days' }]} />
       <Button type="submit" emphasis="subtle" disabled={invites.busy}>Filter</Button>
     </form>
     <div class="overflow"><table class="table">
@@ -104,7 +128,7 @@
         <tr><td>{item.label||item.presetName||'Invitation'}</td><td>{item.issuer??'—'}</td><td>{item.hasSetupFailure?'Setup failed':item.status}</td>
           <td>{item.claimCount} / {item.maxUses}</td><td>{new Date(item.expiresAt).toLocaleDateString()}</td>
           <td>
-            {#if item.claimCount}<Button emphasis="subtle" onclick={()=>showClaims(item.id)}>Claims</Button>{/if}
+            {#if item.claimCount}<Button emphasis="subtle" onclick={()=>{if(inline&&claimOpen&&activeClaim===item.id)closeClaims();else showClaims(item.id);}}>Claims</Button>{/if}
             {#if item.status==='active'}
               <Button emphasis="subtle" disabled={busy} onclick={()=>mutate(async()=>{await api('admin/invites/'+item.id,undefined,'DELETE');refresh();},'Invite revoked.')}>Revoke</Button>
               <Button emphasis="subtle" disabled={busy} onclick={()=>mutate(async()=>{
@@ -112,6 +136,9 @@
               },'Replacement invite created.')}>Regenerate</Button>
             {/if}
           </td></tr>
+        {#if inline && claimOpen && activeClaim === item.id}
+          <tr><td colspan="6"><div class="stack">{@render claimRows()}</div></td></tr>
+        {/if}
       {:else}<tr><td colspan="6">{invites.busy?'Loading invites…':'No invites found.'}</td></tr>{/each}</tbody>
     </table></div>
     {#if before||invites.data.next}<div class="row">
@@ -126,8 +153,8 @@
       <details><summary>Recent changes</summary><ul>{#each summary.data.audit as row (row.id)}<li>{new Date(row.createdAt).toLocaleString()} · {row.actor??'Coast'} · {row.event}{row.subjectName?' · '+row.subjectName:''}
         {#if row.details}<details><summary>Changes</summary><pre class="wrap">{JSON.stringify(row.details,null,2)}</pre></details>{/if}</li>{/each}</ul></details>
       <Heading title="Member invite requests" />
-      {#if summary.data.requests.length}<label class="field">Preset for the approved invite<select bind:value={requestPreset}><option value="">Choose a preset</option>
-        {#each presets.data as preset (preset.id)}<option value={preset.id}>{preset.name}</option>{/each}</select></label>{/if}
+      {#if summary.data.requests.length}<SettingsChoice label="Preset for the approved invite" icon="ticket" bind:value={requestPreset}
+        options={[{ id: '', label: 'Choose a preset' }, ...presetOptions]} disabled={busy} />{/if}
       {#each summary.data.requests as request (request.id)}
         <div class="row"><span>{request.username} {request.note}</span>
           <Button emphasis="subtle" disabled={!requestPreset||busy} onclick={()=>mutate(async()=>{await api('admin/invites/grant/'+request.userId,
@@ -138,8 +165,28 @@
       {:else}<p class="small">No pending requests.</p>{/each}
     </div>
   {/if}
-  <Dialog bind:open={claimOpen} title="Invite claims" onclose={()=>claims.cancel()}>
+  {#if !inline}<Dialog bind:open={claimOpen} title="Invite claims" onclose={closeClaims}>
+    {@render claimRows()}
+  </Dialog>{/if}
+{/if}
+
+{#snippet claimRows()}
+  {#if claims.busy}<p class="small" role="status">Loading claims…</p>{/if}
     <ul>{#each claims.data.items as claim (claim.id)}<li>{claim.username} · {claim.readyAt?'Ready':claim.provisioning==='uncertain'?'Needs review':claim.failed?'Setup failed':claim.userId?'Setting up':'Account removed'}</li>{/each}</ul>
     {#if claims.data.next}<Button emphasis="subtle" onclick={()=>showClaims(activeClaim,claims.data.next??'')}>Next</Button>{/if}
-  </Dialog>
-{/if}
+  {#if inline}<Button size="segment" emphasis="subtle" onclick={closeClaims}>Close claims</Button>{/if}
+{/snippet}
+
+<style>
+  .invite-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 208px), 1fr));
+    align-items: end;
+    gap: var(--auth-action-gap);
+  }
+  .invite-filters > :global(button) { justify-self: start; }
+  .invite-trigger { min-block-size: calc(var(--leading-menu) + 20px); }
+  .invite-trigger > .menu-chevron { transition: transform var(--motion) var(--ease); }
+  .invite-trigger > .menu-chevron.expanded { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { .invite-trigger > .menu-chevron { transition: none; } }
+</style>

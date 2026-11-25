@@ -3,7 +3,6 @@ import { useShelfLocation } from '#lib/ui/detail-section.svelte.js';
 import type { BrowseVariant, GenreReason, DynamicKind } from '#lib/recommendations/model.js';
 import { browseRowTitle, catalogueRowTitle, genreRowTitle, recommendationRowTitle } from '#lib/recommendations/row-titles.js';
 import { categoryEnabled, mediumOptions } from '#lib/experimental.js';
-import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { onDestroy, untrack } from 'svelte';
 import { useClient } from '#lib/ui/client-context.js';
@@ -111,7 +110,7 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
     if (selectedKind !== 'all') url.searchParams.set('rowKind', selectedKind);
     else url.searchParams.delete('rowKind');
     url.searchParams.set('page', String(number));
-    void goto(url, { shallow: true, replace: true, reset: false, state: page.state });
+    void location.replace(url);
   }
   const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number?: number, append = false) {
@@ -171,7 +170,7 @@ export function createRecommendationSource(get: () => RecommendationOptions, ref
       const url = new URL(location.url.href);
 
       url.searchParams.set('page', String(result.page));
-      goto(url, { shallow: true, replace: true, reset: false, state: page.state });
+      location.replace(url);
     }
 
     return result;

@@ -17,7 +17,7 @@ export const referenceSections = [
 // Small controls, content primitives and charts used to compose larger components.
 export const elements = [
   'Avatar', 'ChoiceGroup', 'Field', 'FormActions', 'Brand', 'Button',
-  'ActivityHeader', 'ProgressBar', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
+  'ActivityHeader', 'ProgressBar', 'ProgressiveBlur', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
   'MetricGrid', 'Toast', 'OperationProgress', 'SettingsRow',
   'Pagination', 'PlaybackTimeline', 'Rating', 'TextLink',
   'SegmentedControl', 'Toggle',

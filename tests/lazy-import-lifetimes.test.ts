@@ -22,6 +22,7 @@ const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  import {detailPanelHref, detailPanelUrl, panelAddress} from ${JSON.stringify(new URL('../src/lib/media/detail-target.ts',import.meta.url).href)};
+ import {settingsTarget} from ${JSON.stringify(new URL('../src/lib/settings/navigation.ts',import.meta.url).href)};
  export function createRoot(initial,transport,inPreview=false){
   let data=$state(initial);const reader=$state({visible:false,session:null}),page=$state({state:{},url:new URL('https://example.invalid/library')});
   const cleanups=[],onDestroy=callback=>cleanups.push(callback),feedback=[],reportFailure=(read,retry)=>feedback.push({read,retry});
@@ -32,7 +33,7 @@ const {createRoot,createFeed,createStartup}=await import(moduleUrl(compileRunes(
   const provideCardTaste=()=>{};
   const inviteProfileTarget=()=>null;
   ${imports(rootScript)}
-  return {feedback,get reloads(){return reloads;},get components(){return {Reader,StreamsPanel,MediaDetailPanel,NotificationInbox,FriendsPanel};},
+  return {feedback,get reloads(){return reloads;},get components(){return {Reader,StreamsPanel,MediaDetailPanel,NotificationInbox,FriendsPanel};},get settingsComponent(){return SettingsPanel;},
    setReader(value){reader.visible=value;},setReadingSession(value){reader.session=value;},setState(next){page.state=next;},setData(next){data=next;},dispose(){cleanups.forEach(cleanup=>cleanup());}};
  }
  export function createFeed(initial,transport,inPreview=false){
@@ -80,7 +81,7 @@ test('all five root import failures offer explicit document reload without repea
  try{runtime.flush();expect(requests).toHaveLength(0);controller.setReader(true);controller.setState({streamsPopover:true,notificationPopover:true,friendsPopover:true,mediaDetailHref:'/media/current'});runtime.flush();
   expect(requests).toHaveLength(5);requests.forEach(request=>request.wait.reject(Error('controlled chunk failure')));await settle();
   expect(controller.feedback.filter((entry:any)=>failureText(entry))).toHaveLength(5);expect(controller.reloads).toBe(0);await settle();expect(requests).toHaveLength(5);
-  for(const entry of controller.feedback){expect(failureText(entry)).toContain('Reload the page to try again.');expect(entry.read().actionLabel).toBe('Reload page');recover(entry);}
+  for(const entry of controller.feedback.filter((entry:any)=>failureText(entry))){expect(failureText(entry)).toContain('Reload the page to try again.');expect(entry.read().actionLabel).toBe('Reload page');recover(entry);}
   expect(controller.reloads).toBe(5);expect(requests).toHaveLength(5);
  }finally{controller.dispose();dispose();}
 });
@@ -105,6 +106,21 @@ test('root demand/viewer cleanup fences late imports, errors and reload admissio
   controller.setReader(true);runtime.flush();controller.setData(user('second'));runtime.flush();expect(requests).toHaveLength(4);
   requests[2].wait.reject(Error('old viewer failure'));requests[3].wait.resolve(moduleFor('current reader'));await settle();expect(controller.components.Reader.displayName).toBe('current reader');expect(controller.feedback.every((entry:any)=>!failureText(entry))).toBe(true);
   controller.setState({friendsPopover:true});runtime.flush();controller.setData({user:null,capabilities:{social:false}});runtime.flush();requests[4].wait.reject(Error('signed out'));await settle();expect(controller.feedback.every((entry:any)=>!failureText(entry))).toBe(true);
+ }finally{controller.dispose();dispose();}
+});
+
+test('Settings overlay imports on first demand and reuses its module on reopening',async()=>{
+ const requests:string[]=[];let controller:any;
+ const dispose=runtime.effect_root(()=>controller=createRoot(user(),async(path:string)=>{requests.push(path);return moduleFor(path);}));
+ try{
+  await settle();expect(requests).toEqual([]);
+  controller.setState({mediaDetailHref:'/settings/appearance'});await settle();
+  expect(requests).toEqual(['#lib/settings/SettingsPanel.svelte']);
+  expect(controller.settingsComponent).toBeDefined();
+  expect(controller.components.MediaDetailPanel).toBeUndefined();
+  controller.setState({});await settle();
+  controller.setState({mediaDetailHref:'/settings?area=admin'});await settle();
+  expect(requests).toHaveLength(1);
  }finally{controller.dispose();dispose();}
 });
 

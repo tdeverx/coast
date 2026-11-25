@@ -1,7 +1,8 @@
+import {getConfig} from '#lib/server/config.js';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDb} from '#lib/server/db/index.js';
 import {workEditions,readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
-import {getFeatureConfig} from '#lib/server/features.js';
+import {getFeatureConfig,sharedProviderFeatures} from '#lib/server/features.js';
 import type {JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
 import {readingProviderDetails} from '#lib/providers/reading.server.js';
 import {importReading} from '#lib/catalogue/reading.server.js';
@@ -16,7 +17,7 @@ import {jobExecution} from '#lib/server/queue/execution.js';
 type Context=Awaited<ReturnType<typeof import('#lib/providers/jellyfin/connection.server.js').getJellyfin>>;
 /** Exact plugin identifiers or the user's explicit file link; never a title/filename guess. */
 export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){
- const config=await getFeatureConfig(options.access?context.connection.userId:null);let imported=0;
+ const config=options.access ? await getFeatureConfig(context.connection.userId) : await sharedProviderFeatures(await getConfig());let imported=0;
  async function importBook(book:JellyfinBook):Promise<number>{
   book={...book,Id:jellyfinItemKey(book.Id)};
   const reference=await readingFileReference(book);

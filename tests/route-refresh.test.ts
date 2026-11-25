@@ -17,15 +17,28 @@ const {create,deferred,turn:runtimeTurn}=await import('./fixtures/navigation-run
 /** Use the installed Kit 3 refresh owner with controlled render/load boundaries. */
 function navigation(){
  const h=create(kit).value;
- const refreshRouteDependencies=new Function('page','refreshAll','invalidate','detailPanelHref','panelAddress',functionSource(client,'refreshRouteDependencies')+';return refreshRouteDependencies;')(
-  h.page,()=>h.invalidate('refresh'),()=>h.invalidate('invalidate',{resetState:true}),detailPanelHref,panelAddress);
- return {...h,refreshRouteDependencies};
+ const settingsRefreshes: unknown[]=[];
+ const refreshRouteDependencies=new Function('page','refreshAll','invalidate','detailPanelHref','panelAddress','refreshSettingsOverlay',functionSource(client,'refreshRouteDependencies')+';return refreshRouteDependencies;')(
+  h.page,()=>h.invalidate('refresh'),()=>h.invalidate('invalidate',{resetState:true}),detailPanelHref,panelAddress,async()=>{settingsRefreshes.push(h.page.state);});
+ return {...h,refreshRouteDependencies,settingsRefreshes};
 }
 
 test('shared overlay refresh preserves native shallow state while direct reset remains explicit',async()=>{
  const h=navigation();await h.shallow('initial',{friendsPopover:true});
  await h.refreshRouteDependencies(['settings']);expect(h.page.state.friendsPopover).toBe(true);
+ expect(h.settingsRefreshes).toEqual([]);
  await h.invalidate('reset',{resetState:true});expect(h.page.state.friendsPopover).toBeUndefined();
+});
+
+test('notification refreshes preserve Settings without requesting its data again',async()=>{
+ const h=navigation();
+ const state={mediaDetailHref:'/settings/appearance'};
+ await h.shallow('initial',state);
+ await h.refreshRouteDependencies(['notifications']);
+ expect(h.settingsRefreshes).toEqual([]);
+ await h.refreshRouteDependencies(['session','settings']);
+ expect(h.settingsRefreshes).toEqual([state]);
+ expect(h.page.state.mediaDetailHref).toBe(state.mediaDetailHref);
 });
 
 test('a shallow close during pending refresh supersedes its captured state',async()=>{

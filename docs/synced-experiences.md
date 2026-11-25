@@ -1,6 +1,6 @@
 # Synced experiences and invitation onboarding
 
-Synced playback is experimental. Enable the existing Experimental features policy, play a movie, episode or music queue, and choose **Start synced session…** from the existing playback menu. The session starts paused. Invite accepted friends; their notification opens the join page. Use the existing media controller to play, pause, seek or change items.
+Synced playback is experimental. Enable Parties in Settings → Features after an administrator grants access, play a movie, episode or music queue, and choose **Start synced session…** from the existing playback menu. The session starts paused. Invite accepted friends; their notification opens the join page. Use the existing media controller to play, pause, seek or change items.
 
 Each participant prepares their own authenticated source. A source must match the exact leaf title, medium, edition label and duration (within two seconds). No server URL, provider token or host stream is shared. Friendship removal, disabled accounts, disconnected sources and provider account changes revoke participation. A user joins one room at a time; hosting another ends their previous room. Sessions last at most 24 hours, with up to 16 participants and 200 music queue entries.
 

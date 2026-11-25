@@ -17,16 +17,17 @@ export const administratorSettings = [
   ['benchmarks', 'Benchmarking'],
   ['backups', 'Backups'],
   ['users', 'Accounts'],
-  ['features-policy', 'Feature availability'],
+  ['features-policy', 'Feature permissions'],
   ['policies', 'Policies'],
   ['activity', 'Activity & diagnostics'],
 ] as const;
 export const settingsSections = [...personalSettings, ...administratorSettings];
 export const settingsTitles: Record<string, string> = Object.fromEntries(settingsSections);
+export type SettingsSection = (typeof settingsSections)[number][0];
 
 export const settingsDescriptions: Record<string, string> = {
   features: 'Choose the optional features you use. Turning one off preserves your data and stops affected use at the next safe boundary.',
-  'features-policy': 'Set which normal features are available to everyone. Experimental features remain in Policies.',
+  'features-policy': 'Choose which features each account can use and manage their current preferences.',
   appearance: 'Choose how Coast displays your library and optional notifications.',
   collection: 'Choose what automatically appears in your Collection for each medium. History and relationships are preserved.',
   playback: 'Set subtitle and music listening preferences for your next playback session.',
@@ -54,36 +55,21 @@ export const preferenceFields = {
   connections: ['syncConflictWinner'],
 } as const;
 
-export const policyGroups = [
-  ['development', 'Development'],
-  ['access', 'Access & registration'],
-  ['features', 'Experimental features'],
-  ['sessions', 'Sessions'],
-  ['playback-policy', 'Playback'],
-  ['metadata', 'Metadata'],
-  ['network', 'Integrations & network'],
-  ['notifications', 'Notifications'],
+export const policySegments = [
+  { value: 'access', label: 'Access', groups: ['access', 'sessions'] },
+  { value: 'media', label: 'Media', groups: ['playback-policy', 'metadata'] },
+  { value: 'system', label: 'System', groups: ['development', 'network', 'notifications'] },
 ] as const;
 
-export const experimentalPolicies = [
-  ['experimentalMusic', 'Music', 'Browse albums and tracks, track listens and play music from connected libraries.'],
-  ['experimentalGaming', 'Gaming', 'Track playthroughs and sessions, discover games and connect Steam.'],
-  ['experimentalBooks', 'Books', 'Find books with Open Library and track reading progress in Coast. No media server required.'],
-  ['experimentalComics', 'Comics', 'Find comic issues with Comic Vine and track reading progress in Coast. Requires a Comic Vine API key for non-commercial use.'],
-  ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
-  ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
-  ['experimentalRichToasts', 'Rich toasts', 'Show one toast at a time with stacked edges, glass, and artwork or avatars when available.'],
-  ['experimentalCardTasteScores', 'Taste matches on cards', 'Show a personal match percentage in media card subtitles for viewers who have Personalisation enabled.'],
-] as const;
+export function policySegmentForGroup(group: string) {
+  return policySegments.find(segment => (segment.groups as readonly string[]).includes(group))?.value ?? 'access';
+}
 
 export const policyFields = [
   'developerMode',
   'siteAccess',
   'registrationMode',
   'registrationProvider',
-  'experimentalMusic','experimentalGaming','experimentalParties',
-  'experimentalBooks','experimentalComics',
-  'experimentalPlanning','experimentalRichToasts','experimentalCardTasteScores','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',
   'maxBitrateMbps',
@@ -96,7 +82,6 @@ export const policyFields = [
   'cacheTmdbArtwork',
   'cacheServerArtwork',
   'enableTrakt',
-  'enableRequests',
   'allowedProviderPorts',
   'serverAllowlist',
   'notificationLevel',

@@ -19,7 +19,7 @@
   import MediaDetails from '#lib/ui/components/MediaDetails.svelte';
   import TextLink from '#lib/ui/components/TextLink.svelte';
   import { displayLabel } from '#lib/ui/labels.js';
-  import { liquidGlass } from '#lib/ui/materials/glass.js';
+  import GlassSeparator from '#lib/auth/ui/GlassSeparator.svelte';
   import type { ApiTransport } from '#lib/ui/client.js';
   import {
     cardArtworkPriorities, cardImageTypes, cardLayoutDefaults as defaults, cardLayoutKey, cardLayoutNumber as numericValue,
@@ -439,14 +439,6 @@
   </AuthSurface>
 {/snippet}
 
-{#snippet glassSeparator()}
-  <div class="glass-separator" aria-hidden="true">
-    <AuthSurface anchor>
-      <div class="glass separator-pill" use:liquidGlass={{ variant: 'clear' }}></div>
-    </AuthSurface>
-  </div>
-{/snippet}
-
 <MediaDetails view={{ hero: false, page: false, class: 'media-card-editor-detail' }} artwork={[backdrop]}>
 <div class="content page card-preview" class:in-overlay={inOverlay}>
   <div class="preview-backdrop" aria-hidden="true">{@render backdropArtwork()}</div>
@@ -586,7 +578,7 @@
                       <PreviewSelect label="Preview item" options={previewOptions} value={previewItem} onchange={selectPreviewItem} />
                     {/if}
                   </div>
-                  {@render glassSeparator()}
+                  <GlassSeparator />
                   <fieldset class="slot-settings">
                     <legend>Preview conditions</legend>
                     <AuthSurface>
@@ -626,7 +618,7 @@
                     <PreviewSelect label="Right field" options={headerOptions} bind:value={settings.headerTrailing} defaultValue={targetDefaults.settings.headerTrailing}
                       valueEditor={metadataEditor(settings.headerTrailing)} />
                   </PreviewDisclosure>
-                  {@render glassSeparator()}
+                  <GlassSeparator />
                   <fieldset class="slot-settings">
                     <legend>Caption layers</legend>
                     <AuthSurface sideActions>
@@ -675,7 +667,7 @@
                     <PreviewSelect label="Card shape" options={shapeOptions} bind:value={settings.shape} defaultValue={targetDefaults.settings.shape} />
                     <PreviewSelect label="Image type" options={artworkSourceOptions} bind:value={settings.artworkStyle} defaultValue={targetDefaults.settings.artworkStyle} />
                   </PreviewDisclosure>
-                  {@render glassSeparator()}
+                  <GlassSeparator />
                   <PreviewDisclosure label="Overlays and fallbacks" icon="layers">
                     <PreviewSelect label="Overlay" options={overlayOptions} bind:value={settings.overlay} defaultValue={targetDefaults.settings.overlay} />
                     <PreviewSelect label="Fallback order" options={priorityOptions} bind:value={settings.artworkPriority}
@@ -683,7 +675,7 @@
                   </PreviewDisclosure>
                 {:else if panel === 'features'}
                   {#each featureGroups as group, index (group.label)}
-                    {#if index > 0}{@render glassSeparator()}{/if}
+                    {#if index > 0}<GlassSeparator />{/if}
                     <PreviewDisclosure label={group.label} icon={group.icon}>
                       <AuthSurface sideActions>
                         {#each group.controls as feature (feature.key)}
@@ -915,6 +907,4 @@
   .layer-field > :global(.select-field) { flex:1; }
   .layer-field > :global(.icon-button) { block-size:var(--editor-row-height); margin-block-start:var(--editor-menu-frame); }
   .layer-field > :global(.icon-button > svg) { inline-size:var(--icon-inline); block-size:var(--icon-inline); }
-  .glass-separator { display:flex; justify-content:center; }
-  .separator-pill { inline-size:32px; block-size:var(--editor-action-gap); border-radius:var(--editor-menu-radius); }
 </style>

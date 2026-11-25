@@ -30,7 +30,7 @@ const code=(await compile('../src/lib/ui/shelves/progress.svelte.ts'))
  .replaceAll('#lib/ui/client.js',clientUrl)
  .replaceAll('#lib/ui/resource.svelte.js',resourceUrl)
  .replaceAll('#lib/ui/content-revision.svelte.js',revisionUrl)
- .replaceAll('$app/navigation',navigationUrl).replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('$app/navigation',navigationUrl).replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';import {goto} from '${navigationUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;},replace:href=>goto(href,{shallow:true,replace:true,reset:false,state:page.state})});`))
  .replaceAll('$app/state',routeUrl);
 const {createProgressSource}:typeof import('../src/lib/ui/shelves/progress.svelte')=await import(moduleUrl(code));
 const item={id:'work',title:'Visible profile card',kind:'movie'} as MediaView;

@@ -92,6 +92,8 @@
       "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
+      "src/lib/settings/MemberFeaturePermissions.svelte",
+      "src/lib/settings/SettingsOverview.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/cards/editor/PreviewSelect.svelte",
@@ -213,7 +215,7 @@
     "usedBy": [
       "src/routes/settings/[[section]]/+page.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "DetailCard": {
     "path": "src/lib/ui/components/DetailCard.svelte",
@@ -348,7 +350,8 @@
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
-      "src/routes/onboarding/Services.svelte"
+      "src/routes/onboarding/Services.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -450,6 +453,7 @@
     "path": "src/lib/ui/components/Icon.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/auth/ui/AdminInviteSettings.svelte",
       "src/lib/auth/ui/ImportRow.svelte",
       "src/lib/auth/ui/InviteCodeField.svelte",
       "src/lib/auth/ui/JellyfinFields.svelte",
@@ -457,6 +461,8 @@
       "src/lib/auth/ui/ServiceHeader.svelte",
       "src/lib/providers/trakt/AccessFields.svelte",
       "src/lib/providers/trakt/PairingCode.svelte",
+      "src/lib/settings/MemberFeaturePermissions.svelte",
+      "src/lib/settings/SettingsOverview.svelte",
       "src/lib/ui/cards/MediaCardMetric.svelte",
       "src/lib/ui/cards/editor/PreviewDisclosure.svelte",
       "src/lib/ui/cards/editor/PreviewSelect.svelte",
@@ -468,6 +474,7 @@
       "src/lib/ui/components/EmptyState.svelte",
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/Heading.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
@@ -502,12 +509,13 @@
       "Dialog",
       "Field",
       "Heading",
+      "Icon",
       "ProviderAutomation"
     ],
     "usedBy": [
       "src/routes/settings/[[section]]/+page.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "JobSchedule": {
     "path": "src/lib/ui/components/JobSchedule.svelte",
@@ -608,6 +616,7 @@
     "path": "src/lib/ui/components/MediaHero.svelte",
     "elements": [
       "Button",
+      "ProgressiveBlur",
       "TextLink",
       "WorkMenu"
     ],
@@ -792,6 +801,15 @@
     ],
     "dynamicComposition": false
   },
+  "ProgressiveBlur": {
+    "path": "src/lib/ui/components/ProgressiveBlur.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/settings/SettingsSidebar.svelte",
+      "src/lib/ui/components/MediaHero.svelte"
+    ],
+    "dynamicComposition": false
+  },
   "ProviderAutomation": {
     "path": "src/lib/ui/components/ProviderAutomation.svelte",
     "elements": [
@@ -900,6 +918,7 @@
       "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/profile/Details.svelte",
+      "src/lib/settings/SettingsOverview.svelte",
       "src/lib/ui/components/DetailOverlay.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/Heading.svelte",
@@ -911,8 +930,7 @@
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/onboarding/+page.svelte",
-      "src/routes/planning/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/planning/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -1035,8 +1053,11 @@
     "path": "src/lib/ui/components/Toggle.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/backups/BackupSettings.svelte",
       "src/lib/providers/trakt/AccessFields.svelte",
-      "src/lib/ui/cards/editor/PreviewToggle.svelte"
+      "src/lib/settings/SettingsSwitch.svelte",
+      "src/lib/ui/cards/editor/PreviewToggle.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": true
   },

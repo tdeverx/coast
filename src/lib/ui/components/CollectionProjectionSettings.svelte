@@ -1,4 +1,6 @@
 <script lang="ts">
+  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
+  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import { untrack } from 'svelte';
   import { message } from '#lib/ui/client.js';
@@ -26,11 +28,14 @@
 </script>
 <div class="stack">
   <h3>Export Trakt Collection</h3>
-  <label class="check"><input type="checkbox" bind:checked={config.enabled} disabled={busy} />Export selected items to Trakt Collection</label>
-  <label class="field">Export source<select bind:value={config.source} disabled={busy}><option value="collected">Collected items</option><option value="personal">All items in my Collection</option><option value="server">All server items</option></select></label>
-  {#if config.source!=='server'}<label class="check"><input type="checkbox" bind:checked={config.availableOnly} disabled={busy} />Only export available items</label>{/if}
+  <SettingsSwitch label="Export selected items to Trakt Collection" bind:checked={config.enabled} disabled={busy} />
+  <SettingsChoice label="Export source" icon="collection" bind:value={config.source} disabled={busy}
+    options={[{ id: 'collected', label: 'Collected items' }, { id: 'personal', label: 'All items in my Collection' },
+      { id: 'server', label: 'All server items' }]} />
+  {#if config.source!=='server'}<SettingsSwitch label="Only export available items" bind:checked={config.availableOnly} disabled={busy} />{/if}
   {#if config.source==='server'||config.availableOnly}
-    <label class="field">Servers<select bind:value={config.scope} disabled={busy}><option value="dynamic">All eligible linked servers</option><option value="fixed">Selected servers</option></select></label>
+    <SettingsChoice label="Servers" icon="server" bind:value={config.scope} disabled={busy}
+      options={[{ id: 'dynamic', label: 'All eligible linked servers' }, { id: 'fixed', label: 'Selected servers' }]} />
     {#if config.scope==='fixed'}{#each sources as source}<label class="check"><input type="checkbox" bind:group={config.sourceIds} value={source.id} disabled={busy} />{source.name}</label>{/each}{/if}
   {/if}
   <p class="small">Personal Collection and server availability are separate. This export does not change history, ratings, watchlist or lists.</p>

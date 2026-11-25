@@ -1,10 +1,10 @@
 import { getSql } from '#lib/server/db/index.js';
-import { featureValues, type FeatureConfiguration } from '#lib/features.js';
+import { featureValues, type FeatureConfiguration, type FeatureValues } from '#lib/features.js';
 import { assertJobLease, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 import type { OutboxAction } from '#lib/server/queue/index.js';
 
 /** Durable, bounded local withdrawal; no provider I/O in the settings transaction. */
-export async function queueFeatureTransition(db: ReturnType<typeof getSql>, actorId: string, config: FeatureConfiguration, subjectId?: string, choices?:import('#lib/features.js').FeatureChoices) {
+export async function queueFeatureTransition(db: ReturnType<typeof getSql>, actorId: string, config: FeatureConfiguration, subjectId?: string, choices?:import('#lib/features.js').FeatureChoices, effective?: FeatureValues) {
   const [work]=await db`select exists(select 1 from playback_sessions where state<>'stopped' and (${subjectId??null}::uuid is null or user_id=${subjectId??null}::uuid))
     or exists(select 1 from reading_sessions where closed_at is null and (${subjectId??null}::uuid is null or user_id=${subjectId??null}::uuid))
     or exists(select 1 from synced_rooms where ended_at is null and (${subjectId??null}::uuid is null or host_id=${subjectId??null}::uuid))
@@ -15,7 +15,7 @@ export async function queueFeatureTransition(db: ReturnType<typeof getSql>, acto
     or exists(select 1 from outbox_actions where state in ('pending','running','failed') and kind in ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','taste.refresh') and (${subjectId??null}::uuid is null or user_id=${subjectId??null}::uuid)) as needed`;
   if(!work.needed)return;
   config={features:config.features,experimentalMusic:config.experimentalMusic,experimentalGaming:config.experimentalGaming,experimentalBooks:config.experimentalBooks,experimentalComics:config.experimentalComics,experimentalParties:config.experimentalParties,experimentalPlanning:config.experimentalPlanning,allowPlaybackSharing:config.allowPlaybackSharing,enableRequests:config.enableRequests};
-  await db`insert into outbox_actions(user_id,kind,payload) values(${actorId},'feature.reconcile',${{config,subjectId,choices,_jobPurpose:'interactive'}}::jsonb||jsonb_build_object('cutoff',clock_timestamp()))`;
+  await db`insert into outbox_actions(user_id,kind,payload) values(${actorId},'feature.reconcile',${{config,subjectId,choices,effective,_jobPurpose:'interactive'}}::jsonb||jsonb_build_object('cutoff',clock_timestamp()))`;
 }
 export async function reconcileFeatures(action: OutboxAction) {
   const config=action.payload.config as FeatureConfiguration, cutoff=String(action.payload.cutoff);
@@ -24,10 +24,12 @@ export async function reconcileFeatures(action: OutboxAction) {
   let after=typeof checkpoint?.after==='string'?checkpoint.after:null, checked=Number(checkpoint?.checked??0);
   while(true){
     const db=getSql();
-    const users=await db<{id:string;settings:{features?:import('#lib/features.js').FeatureChoices}}[]>`select id,settings from users where (${subjectId}::uuid is null or id=${subjectId}::uuid) and (${after}::uuid is null or id>${after}::uuid) order by id limit 40`;
+    const users=await db<{id:string;role:string;settings:import('#lib/server/db/schema.js').UserSettings}[]>`select id,settings,role from users where (${subjectId}::uuid is null or id=${subjectId}::uuid) and (${after}::uuid is null or id>${after}::uuid) order by id limit 40`;
     if(!users.length)return {checked};
     for(const user of users){
-      const features=featureValues(config,subjectId?action.payload.choices as import('#lib/features.js').FeatureChoices:user.settings.features);
+      const features = (action.payload.effective as FeatureValues | undefined) ?? featureValues(config,
+        subjectId ? action.payload.choices as import('#lib/features.js').FeatureChoices : user.settings.features,
+        user.settings.featurePermissions ?? {}, user.role === 'admin' || user.settings.allowPlaybackSharing === true);
       let more:boolean;do{
       more=await db.begin(async tx=>{
         await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
@@ -58,7 +60,7 @@ export async function reconcileFeatures(action: OutboxAction) {
         const stopped=await tx`update playback_sessions set state='stopped',updated_at=now(),cleanup_pending=(share_id is not null) where id in(select id from playback_sessions where user_id=${user.id} and state<>'stopped' and created_at<=${cutoff}::timestamptz and (not ${features.playback} or media_type='audio' and not ${features.music} or media_type<>'audio' and not ${features.screen} or share_id is not null and not ${features.sharing}) order by id limit 100) returning *`;
         for(const session of stopped)if(!session.share_id)await tx`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload) values(${user.id},${session.connection_id},${session.account_generation},'jellyfin.scrobble',${{sessionId:session.id,event:'stop',positionSeconds:session.position_seconds,paused:true,_jobPurpose:'playback'}}::jsonb)`;
         // Withdraw unsent work, preserving its durable history and checkpoint. A reenabling cannot replay it.
-        const kinds=[...(!features.api?['webhook.deliver']:[]),...(!features.planning?['planning.reminder']:[]),...(!features.presence?['jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete']:[]),...(!features.screen?['seerr.request','catalogue.user-scan','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review']:[]),...(!features.game?['steam.sync','steam.achievements']:[]),...(!features.personalisation?['trakt.recommendations']:[]),...(config.features?.screen===false?['tmdb.refresh','tmdb.recommendations']:[]),...(config.experimentalGaming===false?['igdb.steam-metadata']:[]),...(config.features?.personalisation===false?['tmdb.recommendations','igdb.recommendations','taste.refresh']:[]),...(!features.requests?['seerr.request','seerr.sync']:[])];
+        const kinds=[...(!features.api?['webhook.deliver']:[]),...(!features.planning?['planning.reminder']:[]),...(!features.presence?['jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete']:[]),...(!features.screen?['seerr.request','catalogue.user-scan','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review']:[]),...(!features.game?['steam.sync','steam.achievements']:[]),...(!features.personalisation?['trakt.recommendations']:[]),...(!subjectId&&config.features?.screen===false?['tmdb.refresh','tmdb.recommendations']:[]),...(!subjectId&&config.experimentalGaming===false?['igdb.steam-metadata']:[]),...(!subjectId&&config.features?.personalisation===false?['tmdb.recommendations','igdb.recommendations','taste.refresh']:[]),...(!features.requests?['seerr.request','seerr.sync']:[])];
         const cancelled=kinds.length?await tx`update outbox_actions set state='cancelled',locked_at=null,last_error='Disabled in feature settings.',updated_at=now() where id in(select id from outbox_actions where user_id=${user.id} and kind in ${tx(kinds)} and state in ('pending','failed') and not (kind='trakt.checkin' and exists(select 1 from social_checkins c where c.user_id=${user.id} and c.id::text=outbox_actions.payload->>'checkinId' and c.state<>'active')) and created_at<=${cutoff}::timestamptz order by id limit 100) returning id`:[];
         return Math.max(readers.length,stopped.length,cancelled.length,roomChanges,participantChanges,checkinChanges)>=100;
       });

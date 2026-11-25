@@ -15,7 +15,8 @@
     detail?: string;
     textSize?: 'small' | 'medium' | 'large';
   };
-  let { label, options, value = $bindable(), defaultValue, onchange, valueEditor, presentation = 'pinned' }: {
+  let { label, options, value = $bindable(), defaultValue, onchange, valueEditor, presentation = 'pinned',
+    disabled = false, topLayer = false, icon, hint }: {
     label: string;
     options: readonly Option[];
     value: Value;
@@ -23,12 +24,17 @@
     onchange?: (value: Value) => void;
     valueEditor?: PreviewValueEditor;
     presentation?: 'centered' | 'pinned';
+    disabled?: boolean;
+    topLayer?: boolean;
+    icon?: IconName;
+    hint?: string;
   } = $props();
   const id = $props.id();
   let open = $state(false);
   let revealed = $state(false);
   let root: HTMLDivElement;
   let anchor: HTMLDivElement;
+  let panel: HTMLDivElement;
   let trigger: HTMLButtonElement;
   let menu: HTMLDivElement;
   let choices = $state<HTMLDivElement>();
@@ -51,6 +57,7 @@
 
   $effect(() => {
     if (!open) return;
+    if (disabled) { open = false; return; }
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !root.contains(event.target)) open = false;
     };
@@ -78,8 +85,18 @@
     };
   });
 
+  $effect(() => {
+    if (!topLayer || !panel) return;
+    if (open && !panel.matches(':popover-open')) panel.showPopover();
+    else if (!open && panel.matches(':popover-open')) panel.hidePopover();
+  });
+
+  function viewport() {
+    return root.closest<HTMLElement>(topLayer ? '[data-select-viewport], dialog' : '.editor');
+  }
+
   function fit(bounds = anchor.getBoundingClientRect()) {
-    const editor = root.closest('.editor')?.getBoundingClientRect();
+    const editor = viewport()?.getBoundingClientRect();
     const viewportInset = 8;
     const top = Math.max(viewportInset, editor?.top ?? 0);
     const bottom = Math.min(innerHeight - viewportInset, editor?.bottom ?? innerHeight);
@@ -107,12 +124,13 @@
     open = true;
     await tick();
     if (!open) return;
+    if (topLayer) fit();
     const extraHeight = Math.max(0, Math.min(320, innerHeight * 0.55) - space.height);
     if (pinned && choices) {
       const gap = parseFloat(getComputedStyle(choices).marginBlockStart);
       belowSize = options.length ? Math.min(extraHeight, choices.scrollHeight + gap) : 0;
       const needed = Math.min(belowSize, 2 * space.row + gap) - space.below;
-      const scroller = root.closest<HTMLElement>('.settings-scroll');
+      const scroller = topLayer ? viewport() : root.closest<HTMLElement>('.settings-scroll');
       // Make room below low fields before revealing the choices.
       if (needed > 0 && scroller) {
         scroller.scrollTop += needed;
@@ -230,18 +248,19 @@
 <div class="select-field" class:editable={!!valueEditor} bind:this={root}
   onfocusout={event => { if (event.relatedTarget instanceof Node && !root.contains(event.relatedTarget)) open = false; }}>
   <div class="select-anchor" class:expanded={open} bind:this={anchor}>
-    <div class="select-panel" class:revealed={open && revealed}
+    <div class="select-panel" class:revealed={open && revealed} bind:this={panel} popover={topLayer && open ? 'manual' : undefined}
       style:--above={open ? `${aboveSize}px` : '0px'} style:--below={open ? `${visibleBelow}px` : '0px'}
       style:--anchor-top={`${space.top}px`} style:--anchor-left={`${space.left}px`} style:--anchor-width={`${space.width}px`}>
       <AuthSurface resizable>
         <div id={pinned ? undefined : `${id}-choices`} class="menu-content options" class:pinned
           role="group" aria-label={`${label} options`} bind:this={menu}>
           {#if open && !pinned}{@render optionRows(aboveChoices)}{/if}
-          <button type="button" class="menu-row current" bind:this={trigger}
+          <button type="button" class="menu-row current" bind:this={trigger} {disabled}
             aria-expanded={open} aria-controls={`${id}-choices`} aria-labelledby={`${id}-label`}
-            aria-describedby={`${id}-value`}
+            aria-describedby={hint ? `${id}-value ${id}-hint` : `${id}-value`}
             onclick={() => open ? open = false : expand()} onkeydown={navigate}>
-            {@render optionVisual(selected, true)}
+            {#if icon}<span class="option-icon"><Icon name={icon} size={16} /></span>
+            {:else}{@render optionVisual(selected, true)}{/if}
             <span id={`${id}-label`} class="field-label">{label}</span>
             <span id={`${id}-value`} class="field-value menu-row-note"
               title={selected?.label}>{selected?.label ?? 'None'}</span>
@@ -262,6 +281,7 @@
       </AuthSurface>
     </div>
   </div>
+  {#if hint}<span id={`${id}-hint`} class="sr-only">{hint}</span>{/if}
   {#if selectionChanged}
     <div class="reset-action">
       <Button size="icon" emphasis="subtle" icon="retry" danger
@@ -304,6 +324,7 @@
     inset:calc(var(--anchor-top) - var(--above)) auto auto var(--anchor-left);
     inline-size:var(--anchor-width);
   }
+  .select-panel[popover] { margin: 0; padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; }
   .select-panel.revealed { animation:reveal-select var(--fast) var(--ease); }
   @keyframes reveal-select {
     from { clip-path:inset(var(--above) 0 var(--below) round var(--editor-menu-radius)); }

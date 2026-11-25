@@ -4,6 +4,7 @@ import {parse} from 'svelte/compiler';
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,eraseTypeScript,moduleUrl} from './fixtures/ui-script';
 import {detailPanelHref,mediaDetailTarget,panelAddress} from '../src/lib/media/detail-target';
+import {settingsTarget} from '../src/lib/settings/navigation';
 import {sectionTarget} from '../src/lib/ui/section-target';
 
 // Authored controller/prop-boundary controls only. These execute the actual
@@ -27,7 +28,7 @@ const code=compileRunes(`${errorTypes}
 export function create(boundary){
  const page=$state({state:{mediaDetailHref:undefined,mediaDetailDepth:1},url:new URL('http://fixture/library'),data:{user:{id:'viewer'},revision:0,capabilities:{screen:true,music:true,games:true,reading:true}}});
  const player=$state({visible:false,session:null,browsing:false}),reader=$state({visible:false}),playbackVisible=value=>value.visible;
- const {api,closeMediaDetails,backMediaDetails,detailPanelHref,mediaDetailTarget,panelAddress,sectionTarget}=boundary;
+ const {api,closeMediaDetails,backMediaDetails,detailPanelHref,mediaDetailTarget,panelAddress,settingsTarget,sectionTarget}=boundary;
  const message=error=>error.message,editionChoices=()=>[],namedEdition=value=>({value}),contentRevisionKey=data=>data.revision,reportFailure=()=>{};
  ${script}
  return {navigate(href){page.state.mediaDetailHref=href;},refresh(){page.data.revision++;},viewer(id){page.data.user={id};},cardLayouts(enabled){page.data.capabilities.cardLayouts=enabled;},foreground(owner,visible){if(owner==='player')player.visible=visible;else reader.visible=visible;},get foregroundState(){return JSON.stringify({player:{visible:player.visible,session:player.session,browsing:player.browsing},reader:{visible:reader.visible}});},get hasNativeCloseOwner(){return typeof (${onclose})==='function';},emitNativeClose(){(${onclose})?.();},get open(){return open;},get resolved(){return resolved;},get error(){return error;}};
@@ -36,7 +37,7 @@ const {create,ApiError,isFeatureDisabled}=await import(moduleUrl(code));
 function fixture(){
  const requests:{signal:AbortSignal;resolve:(value:unknown)=>void;reject:(error:unknown)=>void;answered?:boolean}[]=[],calls:string[]=[];
  let controller:any;
- const dispose=runtime.effect_root(()=>controller=create({detailPanelHref,mediaDetailTarget,panelAddress,sectionTarget,closeMediaDetails:()=>calls.push('close'),backMediaDetails:()=>calls.push('back'),api(_path:string,_body:unknown,_method:unknown,{signal}:{signal:AbortSignal}){return new Promise((resolve,reject)=>requests.push({signal,resolve,reject}));}}));
+ const dispose=runtime.effect_root(()=>controller=create({detailPanelHref,mediaDetailTarget,panelAddress,settingsTarget,sectionTarget,closeMediaDetails:()=>calls.push('close'),backMediaDetails:()=>calls.push('back'),api(_path:string,_body:unknown,_method:unknown,{signal}:{signal:AbortSignal}){return new Promise((resolve,reject)=>requests.push({signal,resolve,reject}));}}));
  runtime.flush();
  const drain=async()=>{for(let i=0;i<8;i++){await Promise.resolve();runtime.flush();}};
  const current=()=>{const request=requests.find(r=>!r.answered&&!r.signal.aborted);if(!request)throw Error('Controlled current base request missing');request.answered=true;return request;};

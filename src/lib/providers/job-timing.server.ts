@@ -1,3 +1,4 @@
+import { sharedProviderFeatures } from '#lib/server/features.js';
 import { getSql } from '#lib/server/db/index.js';
 import { getConfig } from '#lib/server/config.js';
 import { providerSchedule } from './schedule';
@@ -14,7 +15,7 @@ export type JobTiming = {lastRun?:LastJobRun|null; completed?:number; instanceId
 /** Scheduling evidence is read independently of the bounded recent-run display. */
 export async function jobTimings(): Promise<JobTiming[]> {
   const sql = getSql();
-  const config = await getConfig();
+  const config = await sharedProviderFeatures(await getConfig());
   const [instances, accounts, evidence, metadataDue, lastRuns] = await Promise.all([
     sql<Instance[]>`select id,provider,enabled,settings,credentials is not null as configured from provider_instances`,
     sql<Account[]>`select c.id,c.instance_id,c.account_generation,c.external_user_id,c.settings,u.role,c.credentials is not null as configured,

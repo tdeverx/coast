@@ -6,6 +6,7 @@
  import { page } from '$app/state';
  import { preloadData } from '$app/navigation';
  import {backMediaDetails,closeMediaDetails,inviteProfileTarget,navigateMedia} from '#lib/ui/media-navigation.js';
+ import {settingsTarget} from '#lib/settings/navigation.js';
  import {sectionTarget} from '#lib/ui/section-target.js';
  import {detailPanelHref,mediaDetailTarget,panelAddress} from '#lib/media/detail-target.js';
  import DetailOverlay from '#lib/ui/components/DetailOverlay.svelte';
@@ -47,8 +48,11 @@
  }
  function closed(){if(playbackVisible(player)||reader.visible)return;closeMediaDetails();}
  $effect(()=>{
-  const href=currentHref,depth=page.state.mediaDetailDepth??1,viewer=page.data.user?.id,target=href?mediaDetailTarget(href,page.url)??sectionTarget(href,page.url):null;
-  if(!href||viewer!==loadedViewer){open=false;resolved=null;editionName=undefined;}
+  const href=currentHref,depth=page.state.mediaDetailDepth??1,viewer=page.data.user?.id;
+  const settings=href&&settingsTarget(href,page.url);
+  if(!href||viewer!==loadedViewer||settings){open=false;resolved=null;editionName=undefined;}
+  if(settings)return;
+  const target=href?mediaDetailTarget(href,page.url)??sectionTarget(href,page.url):null;
   loadedViewer=viewer;error='';
   if(!href||!viewer&&!inviteProfileTarget(href))return;
   if(!target||'kind' in target&&target.kind==='profile'&&page.data.user?.access?.libraryOnly){

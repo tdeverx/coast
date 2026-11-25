@@ -29,7 +29,7 @@ const fixture=compileRunes(`
   let navigating=$state.raw({to:null}),route=$state.raw({data,state:{},url:new URL('http://fixture/library?view=watch')}),options=$state.raw({surface:'watch',layout:'grid',...input.options});
   const cleanups=[],resources=[],navigation=[];
   const createResource=(...args)=>{const r=nativeResource(...args);resources.push(r);return r;};
-  const useShelfLocation=()=>({embedded:input.embedded??true}),useClient=()=>({api:transport,preview:false});
+  const useShelfLocation=()=>({embedded:input.embedded??true,replace:href=>goto(href,{state:route.state})}),useClient=()=>({api:transport,preview:false});
   const goto=(href,options)=>{if(input.embedded!==false)throw Error('embedded_must_not_rewrite_route');navigation.push({href,state:options.state});route={...route,url:new URL(href,route.url)};},onDestroy=fn=>cleanups.push(fn);
   ${owner}
   const source=createLibrarySource(()=>options);

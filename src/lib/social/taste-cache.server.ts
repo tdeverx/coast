@@ -37,7 +37,7 @@ export async function cardTastePublication(userId:string) {
 export const tasteRevisionSql=query`${tastePolicySql}||':'||md5(concat_ws(':',coalesce(u.settings->>'region','GB'),
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='tracking'),'0'),
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='social'),'0'),
- coalesce((select (value-'experimentalCardTasteScores')::text from system_settings where key='coast'),'{}'),coalesce(u.settings->'features','{}'::jsonb)::text))||':'||${shortlistScoreFormat}::text`;
+ coalesce((select (value-'experimentalCardTasteScores')::text from system_settings where key='coast'),'{}'),coalesce(u.settings->'features','{}'::jsonb)::text,coalesce(u.settings->'featurePermissions','{}'::jsonb)::text))||':'||${shortlistScoreFormat}::text`;
 // A provider list changes which titles need a warm score, independently of the viewer's evidence.
 const shortlistRevisionSql=query`coalesce((select max(s.updated_at)::text from recommendation_sets s
  left join provider_connections c on c.id=s.connection_id where s.connection_id is null or c.user_id=u.id),'')`;

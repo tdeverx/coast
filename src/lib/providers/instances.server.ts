@@ -17,7 +17,7 @@ import {
   validateProviderUrl,
 } from '#lib/server/security/provider-fetch.js';
 import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
-import { requireExperimentalFeature } from '#lib/server/experimental.js';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { getConfig } from '#lib/server/config.js';
 import { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
 import { COMIC_VINE_BASE_URL, ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
@@ -52,8 +52,6 @@ export async function configureInstance(adminId: string, input: unknown, signal?
   await requireProviderAdmin(adminId);
   const data = v.parse(configureSchema, input);
   const config = await getConfig();
-  if (['igdb','steam'].includes(data.provider)) requireExperimentalFeature(config, 'gaming');
-  if (data.provider === 'comic-vine') requireExperimentalFeature(config, 'comics');
   const baseUrl =
     data.provider === 'comic-vine' ? COMIC_VINE_BASE_URL : data.provider === 'tmdb'
       ? 'https://api.themoviedb.org'
@@ -239,7 +237,7 @@ export async function configureInstance(adminId: string, input: unknown, signal?
 
 export async function listProviders(userId: string, includeDisabled = false) {
   if (includeDisabled) await requireProviderAdmin(userId);
-  const config = await getConfig();
+  const config = includeDisabled ? undefined : await getFeatureConfig(userId);
   const instances = await getDb()
     .select()
     .from(providerInstances)
@@ -254,8 +252,8 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
     .orderBy(providerConnections.createdAt, providerConnections.id) : [];
   return instances
-    .filter((instance) => config.experimentalGaming || !['igdb','steam'].includes(instance.provider))
-    .filter((instance) => config.experimentalComics || instance.provider !== 'comic-vine')
+    .filter((instance) => (!config || config.experimentalGaming) || !['igdb','steam'].includes(instance.provider))
+    .filter((instance) => (!config || config.experimentalComics) || instance.provider !== 'comic-vine')
     .map((instance) => {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
@@ -322,8 +320,6 @@ export async function instanceFetchConfig(
   instance: typeof providerInstances.$inferSelect
 ): Promise<ProviderFetchConfig> {
   const config = await getConfig();
-  if (['igdb','steam'].includes(instance.provider)) requireExperimentalFeature(config, 'gaming');
-  if (instance.provider === 'comic-vine') requireExperimentalFeature(config, 'comics');
   const fixed = ['tmdb', 'trakt', 'igdb', 'steam', 'comic-vine'].includes(instance.provider);
   if (
     fixed &&

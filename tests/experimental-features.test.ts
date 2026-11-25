@@ -3,12 +3,17 @@ import { defaultConfig, parseConfig } from '../src/lib/server/config';
 import { categoryEnabled, mediumOptions, surfaceEnabled, type ExperimentalFeature } from '../src/lib/experimental';
 import { experimentalPathFeature, requireExperimentalFeature } from '../src/lib/server/experimental';
 import { mediaTypeOptions } from '../src/lib/ui/filter-options';
-import {experimentalPolicies,policyFields} from '../src/lib/settings/sections';
+import {experimentalFeatures, featureGranted, resolveFeatures} from '../src/lib/features';
 
-test('the card taste experiment defaults off and can be saved from admin policies',()=>{
+test('appearance experiments default off and explicit user grants override installation defaults',()=>{
   expect(parseConfig({}).experimentalCardTasteScores).toBe(false);
-  expect(experimentalPolicies.map(([key])=>key)).toContain('experimentalCardTasteScores');
-  expect(policyFields).toContain('experimentalCardTasteScores');
+  expect(experimentalFeatures).toContain('cardTasteScores');
+  expect(experimentalFeatures).toContain('settingsSidebar');
+  const config = parseConfig({experimentalCardTasteScores:true});
+  expect(featureGranted(config, 'cardTasteScores', {})).toBe(true);
+  expect(featureGranted(config, 'cardTasteScores', {cardTasteScores:false})).toBe(false);
+  expect(resolveFeatures(config, {}, {settingsSidebar:true}).settingsSidebar.enabled).toBe(true);
+  expect(resolveFeatures(config, {settingsSidebar:false}, {settingsSidebar:true}).settingsSidebar.enabled).toBe(false);
   expect(parseConfig({experimentalCardTasteScores:true}).experimentalCardTasteScores).toBe(true);
 });
 

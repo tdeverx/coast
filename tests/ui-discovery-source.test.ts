@@ -21,7 +21,7 @@ const { page } = await import(routeUrl);
 const { navigation } = await import(navigationUrl);
 const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
   .replaceAll('from "svelte"', `from ${JSON.stringify(lifecycleUrl)}`)
-  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+  .replaceAll('#lib/ui/detail-section.svelte.js',moduleUrl(`import {page} from '${routeUrl}';import {goto} from '${navigationUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;},replace:href=>goto(href,{shallow:true,replace:true,reset:false,state:page.state})});`))
  .replaceAll('$app/state', routeUrl).replaceAll('$app/navigation', navigationUrl)
   .replaceAll('#lib/ui/client-context.js', clientUrl).replaceAll('#lib/ui/resource.svelte.js', resourceUrl)
   .replaceAll('#lib/ui/content-revision.svelte.js', revisionUrl)

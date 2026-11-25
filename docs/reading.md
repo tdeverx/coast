@@ -1,6 +1,6 @@
 # Books and comics
 
-Books and Comics are independent, disabled-by-default experiments in **Settings → Policies → Experimental features**. Open Library supplies books and comics, including graphic novels; Comic Vine supplies comic issues. Neither requires Jellyfin. Reading uses Coast's existing media experience, with an optional lazy file reader for PDF, EPUB and CBZ/CBR/CB7/CBT comics (including ZIP/RAR/7z aliases).
+Books and Comics are independent, disabled-by-default experiments in **Settings → Features** for members with a corresponding grant. Open Library supplies books and comics, including graphic novels; Comic Vine supplies comic issues. Neither requires Jellyfin. Reading uses Coast's existing media experience, with an optional lazy file reader for PDF, EPUB and CBZ/CBR/CB7/CBT comics (including ZIP/RAR/7z aliases).
 
 ## Browse and track
 

@@ -22,7 +22,7 @@ export async function completeShare(ownerId: string, shareId: string, playbackId
         and p.duration_seconds>0 and p.played_seconds>=p.duration_seconds*${completionFraction}
         and coast_feature_enabled(s.owner_id,'sharing')
         and (not s.together or coast_feature_enabled(s.owner_id,'parties'))
-        and (owner.role='admin' or owner.settings->>'allowPlaybackSharing'='true')
+        and coast_feature_enabled(owner.id,'sharing')
         and c.status='connected' and c.account_generation=s.account_generation and i.enabled
         and exists(select 1 from availability a where a.user_id=s.owner_id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available')
       returning s.work_id,s.track_progress,p.media_type`);

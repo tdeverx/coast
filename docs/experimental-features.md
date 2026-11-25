@@ -1,6 +1,8 @@
 # Experimental features
 
-Administrators manage independent feature switches in Settings → Policies → Experimental features. All experiments default to Off. Music, Gaming and Parties each have their own switch; existing installations migrate the previous shared switch to all three without changing its enabled state.
+Administrators manage feature permissions per account in **Settings → Feature permissions**, or from a member’s details in **Accounts**. **Allow** exposes the feature in the member’s **Settings → Features**. **Enabled** is the member’s current preference. Either the member or an administrator can change it. Revoking access hides the toggle and preserves the saved choice.
+
+Experiments default off on new installations. The migration retains existing grants and choices. The **Settings sidebar** experiment is off by default for every account. It opens Settings over the current page and uses the same settings data as the original page.
 
 - **Music:** album/track browsing, listen tracking, audio playback and Jellyfin music imports.
 - **Gaming:** game discovery, playthroughs/sessions, IGDB and Steam integrations and Steam jobs.
@@ -15,7 +17,7 @@ Dynamic For You, personalised recommendations and media detail panels are standa
 
 Disabled media are hidden from rows, search, social activity and public API results before pagination. Direct pages and APIs are gated independently. Disabling a feature preserves saved relationships, history, games, connections and sessions. Film/TV and ordinary Jellyfin connections remain available.
 
-Policies use the existing database-backed configuration and apply to subsequent requests without a restart. Saving refreshes the current tab; other tabs update through navigation or session polling. Site access, registration and disposable playback links live separately under Access & registration.
+Feature grants and preferences apply to subsequent requests without a restart. Saving refreshes the current tab; other tabs update through navigation or session polling. Site access, registration and disposable playback links live separately under Access & registration.
 
 ## Performance and verification
 

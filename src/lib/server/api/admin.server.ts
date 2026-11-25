@@ -1,5 +1,6 @@
 
-import { requireAdmin, createUser, deleteUser, updateUser } from '#lib/server/auth/index.js';
+import { requireAdmin, createUser, deleteUser, updateUser, updateMemberFeatures } from '#lib/server/auth/index.js';
+import { getSql } from '#lib/server/db/index.js';
 import { AppError } from '#lib/server/security/errors.js';
 import { systemHealth } from '#lib/server/notifications/index.js';
 import { uuid, type ApiContext } from './context.server';
@@ -17,6 +18,14 @@ export async function handleAdmin(context: ApiContext): Promise<Response | undef
         result=await (await import('#lib/application/featured-hero.server.js')).updateFeaturedHero(user,body);
       else if (path[1] === 'users' && path.length === 2 && method === 'POST')
         result = await createUser(user, body);
+      else if (path[1] === 'users' && path.length === 4 && path[3] === 'features' && method === 'GET') {
+        const [member] = await getSql()<Pick<import('#lib/server/db/schema.js').UserSettings,'featurePermissions'|'features'>[]>`select
+          settings->'featurePermissions' as "featurePermissions", settings->'features' as features from users where id=${uuid(path[2])}`;
+        if (!member) throw new AppError(404, 'Account not found.');
+        result = { permissions: member.featurePermissions ?? {}, preferences: member.features ?? {} };
+      }
+      else if (path[1] === 'users' && path.length === 4 && path[3] === 'features' && method === 'PATCH')
+        result = await updateMemberFeatures(user, uuid(path[2]), body);
       else if (path[1] === 'users' && path.length === 3 && method === 'DELETE')
         result = await deleteUser(user, uuid(path[2]));
       else if (path[1] === 'users' && path.length === 3 && method === 'PATCH')

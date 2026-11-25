@@ -34,7 +34,7 @@ for(const stage of ['mapped-user','permissions','options']){
   return queueProviderRequest(origin,0,async()=>{cancelledProviderExecutions++;throw Error('Cancelled request reached provider');},init?.signal??undefined);
  };
  const instanceTransport=load(transportCode,'instanceTransport',{instanceFetchConfig,createProviderTransport});
- const base={...tables,v,getDb,eq:()=>{},and:()=>{},sql:()=>{},getConfig:async()=>({enableRequests:true}),getInstance:async()=>instance,decryptCredential:async()=>'{"apiKey":"inert"}',SeerrAdapter,instanceTransport,saveConnection:async()=>{throw Error('Existing fixture account must not remap');},assertSeerrAccount:async()=>{},PermanentActionError:Error};
+ const base={...tables,v,getDb,eq:()=>{},and:()=>{},sql:()=>{},getFeatureConfig:async()=>({enableRequests:true}),getInstance:async()=>instance,decryptCredential:async()=>'{"apiKey":"inert"}',SeerrAdapter,instanceTransport,saveConnection:async()=>{throw Error('Existing fixture account must not remap');},assertSeerrAccount:async()=>{},PermanentActionError:Error};
  const getSeerr=load(connectionCode,'getSeerr',base);
  const requestOptions=load(optionsCode,'requestOptions',{...base,getSeerr,getFeatureConfig:async()=>({features:{screen:true,requests:true}}),requestIdentity:async()=>({id:1,kind:'movie',season:null}),ProviderActionError,instanceFetchConfig});
  const handle=load(handlerCode,'handleRequests',{requestOptions,uuid:(value:string)=>value,json:(value:unknown)=>value});

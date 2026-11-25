@@ -34,7 +34,7 @@ const boundaryUrl=moduleUrl(`
  export const page={data:{user:{id:'viewer'}},url:new URL('https://coast.invalid/for-you?friends=true'),state:{friendsPopover:true}};
  export const player={session:null,browsing:false,paused:false};export const calls=[];
  let entries=[],position=0;
- export function reset(){page.data.user={id:'viewer'};page.url=new URL('https://coast.invalid/for-you?friends=true');page.state={friendsPopover:true};player.session=null;player.browsing=false;player.paused=false;calls.length=0;entries=[{url:page.url,state:page.state}];position=0;}
+ export function reset(){page.data.capabilities={};page.data.user={id:'viewer'};page.url=new URL('https://coast.invalid/for-you?friends=true');page.state={friendsPopover:true};player.session=null;player.browsing=false;player.paused=false;calls.length=0;entries=[{url:page.url,state:page.state}];position=0;}
  export function pushState(url,state){entries=entries.slice(0,position+1);entries.push({url,state});position++;page.url=url;page.state=state;calls.push(['push',url.href,state]);}
  export function replaceState(url,state){entries[position]={url,state};page.url=url;page.state=state;calls.push(['replace',url.href,state]);}
  export const document={querySelectorAll:()=>[]};
@@ -63,6 +63,27 @@ test('nested detail links keep underlying route and filter values in their URL, 
  await navigation.backMediaDetails();expect(boundary.page.state.mediaDetailHref).toBe(`/media/${id}`);
  boundary.history.go(1);expect(boundary.page.state.mediaDetailHref).toBe(`/media/${other}?section=credits`);
  await navigation.closeMediaDetails();expect(boundary.page.state).toEqual({friendsPopover:true});
+});
+test('settings deep links honor permissions and close back to the original detail', async () => {
+ boundary.reset();
+ expect(navigation.openMediaDetails('/settings')).toBe(false);
+ boundary.page.data.capabilities={settingsSidebar:true};
+ expect(navigation.openMediaDetails('/settings/users')).toBe(false);
+ expect(navigation.openMediaDetails('https://outside.invalid/settings')).toBe(false);
+ boundary.page.data.user={id:'viewer',access:{libraryOnly:true}};
+ expect(navigation.openMediaDetails('/settings/connections')).toBe(false);
+ expect(navigation.openMediaDetails('/settings/appearance')).toBe(true);
+ await navigation.navigateMedia('/settings/appearance');
+ await navigation.closeMediaDetails();
+ boundary.page.data.user={id:'viewer',role:'admin'};
+ await navigation.navigateMedia('/profile/alice');
+ await navigation.navigateMedia('/settings/policies#features');
+ expect(boundary.page.url.searchParams.get('detail')).toBe('/settings/policies#features');
+ await navigation.navigateMedia('/settings/users?view=invites');
+ await navigation.closeMediaDetails();
+ expect(boundary.page.url.searchParams.get('detail')).toBe('/profile/alice');
+ await navigation.closeMediaDetails();
+ expect(boundary.page.url.href).toBe(base.href);
 });
 test('changing profile sections replaces the current panel entry', async () => {
  boundary.reset();

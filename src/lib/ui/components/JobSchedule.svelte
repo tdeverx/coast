@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import {runTaskControl,taskControlMessage} from '#lib/ui/task-control.svelte.js';
   import type {TaskControlCommand} from '#lib/providers/task-control.js';
   import FormActions from '#lib/ui/components/FormActions.svelte';
@@ -396,7 +397,7 @@
       void save();
     }}
   >
-    {#if local}<label class="check"><input type="checkbox" bind:checked={draft.enabled} disabled={busy}/>Automatic runs</label>{:else}<p class="small">
+    {#if local}<SettingsSwitch label="Automatic runs" bind:checked={draft.enabled} disabled={busy} />{:else}<p class="small">
       {automatic ? 'Automatic runs are enabled.' : 'Automatic runs are paused.'} Manage automatic-run
       toggles in <a class="text-accent" href="/settings/integrations">Integrations</a>.
     </p>{/if}

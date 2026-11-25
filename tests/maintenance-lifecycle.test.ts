@@ -18,6 +18,7 @@ mock.module(lib+'core/profile/avatar-storage.server.ts',()=>({pruneUnusedAvatars
 mock.module(lib+'sharing/leases.server.ts',()=>({expireSharedViewers:()=>{cleanup++;return cleanupResult();}}));
 mock.module(lib+'server/storage/retention.server.ts',()=>({pruneTransientRecords:async()=>{retention++;return {busy:false,removed:0,expired:0,more:false};}}));
 mock.module(lib+'server/auth/account-management.server.ts',()=>({expireMemberships:async()=>{memberships++;}}));
+mock.module(lib+'server/features.ts',()=>({sharedProviderFeatures:async config=>config}));
 mock.module(lib+'server/config.ts',()=>({getConfig:async()=>({developerMode})}));
 mock.module(lib+'server/diagnostics/runtime.ts',()=>({runtimeEvidence:{track:(_stage,operation)=>operation()}}));
 mock.module(lib+'server/diagnostics/index.ts',()=>({context:{getStore:()=>null},classifyFailure:()=> 'unexpected',

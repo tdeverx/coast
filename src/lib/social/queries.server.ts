@@ -73,7 +73,6 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
    ${workScope}
    ${artistScope}
    ${readingGroupScope}
-   and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  ), deduplicated as (
  select *,row_number() over(partition by user_id,case when source='jellyfin' and event_kind='watch' and date_known then work_id::text||':'||occurred_at::text else id::text end order by created_at,id) as observation_rank from visible_raw
  ), visible as (select *,sum(case when event_kind='listen' and date_known then 1 else 0 end) over(partition by user_id,work_id order by occurred_at,id) as listen_number,lag(occurred_at) over(partition by user_id,root_id order by occurred_at,id) as previous_date from deduplicated where observation_rank=1), numbered as (
@@ -148,7 +147,7 @@ export async function workSocial(userId:string,ids:string[]) {
  case when social_visible(u.id,${userId}::uuid,'progress',w.category) then case when w.category in ('book','comic') then coalesce(rp.page,0) else coalesce(t.position_seconds,0) end else 0 end as progress
  from descendants d join reasons r on r.id=d.id join works w on w.id=d.id join users u on u.id=r.user_id and coast_feature_enabled(u.id,'social')
  left join ratings rating on rating.user_id=u.id and rating.media_id=d.root left join tracking_state t on t.user_id=u.id and t.media_id=d.root left join reading_progress rp on rp.user_id=u.id and rp.work_id=d.root
- where (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
+ where exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
  ), ranked_friends as (
  select *,count(*) over(partition by "workId")::int as total,
  row_number() over(partition by "workId" order by username,"userId") as ordinal from visible_friends
@@ -180,7 +179,6 @@ export async function reactionSummary(userId:string,targetKind:'work'|'activity'
  where coast_feature_enabled(r.user_id,'social') and coast_category_enabled(${userId}::uuid,w.category) and r.target_kind=${targetKind} and r.target_id in (${targets})
  and (r.target_kind='work' or social_visible(a.user_id,${userId}::uuid,a.section,w.category))
  and social_visible(r.user_id,${userId}::uuid,'reactions',w.category)
- and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  group by r.target_id,r.emoji`);
  return Object.fromEntries(ids.map(id=>[id,Array.from(rows).filter(row=>row.targetId===id)]));
 }

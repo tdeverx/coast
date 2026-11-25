@@ -45,6 +45,7 @@ export type ProfileSettings = {
 export type UserSettings = {
   action?: import('../../library').LibrarySurface;
   features?: import('../../features').FeatureChoices;
+  featurePermissions?: import('../../features').FeaturePermissions;
   collection?: import('../../collection/preferences').CollectionPreferences;
   cardLayouts?: import('../../ui/cards/layout').CardLayouts;
   presenceAudience?: import('../../social/model').Audience;

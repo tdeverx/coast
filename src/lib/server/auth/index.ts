@@ -1,9 +1,9 @@
 import { pruneAvatars } from '#lib/core/profile/avatar-storage.server.js';
 import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
-import { featureValues, hasWithdrawnFeatures } from '#lib/features.js';
+import { hasWithdrawnFeatures, type Feature } from '#lib/features.js';
 import { invalidateFeatureSubject } from '#lib/server/config.js';
 import { queueFeatureTransition } from '#lib/application/feature-transition.server.js';
-import { featureChoicesSchema } from '#lib/server/features.js';
+import { featureChoicesSchema, getFeatureConfig, userFeatureGrant } from '#lib/server/features.js';
 import type { CoastAccess } from '#lib/auth/invites.js';
 import { usernameSchema, passwordSchema } from '#lib/auth/registration.js';
 import { collectionPreferencesSchema } from '#lib/collection/preferences.js';
@@ -243,7 +243,14 @@ export async function listUsers(actor: SessionUser | null, before:string|null = 
   const rows=await getSql()<{
     id:string;username:string;email:string|null;role:SessionUser['role'];settings:UserSettings;
     disabled:boolean;expired:boolean;hasLocalPassword:boolean;createdAt:Date;
-  }[]>`select u.id,u.username,u.email,u.role,u.settings,u.disabled,coalesce(u.membership_expires_at<=now(),false) as expired,
+  }[]>`select u.id,u.username,u.email,u.role,
+    jsonb_strip_nulls(jsonb_build_object(
+      'profile',jsonb_build_object('displayName',u.settings#>'{profile,displayName}','avatar',u.settings#>'{profile,avatar}'),
+      'features',u.settings->'features','featurePermissions',u.settings->'featurePermissions',
+      'allowPlaybackSharing',u.settings->'allowPlaybackSharing',
+      'personalBitrateMbps',u.settings->'personalBitrateMbps','sharedBitrateMbps',u.settings->'sharedBitrateMbps'
+    )) as settings,
+    u.disabled,coalesce(u.membership_expires_at<=now(),false) as expired,
     (u.password_hash is not null) as "hasLocalPassword",u.created_at as "createdAt"
     from users u where (${cursor}::uuid is null or (u.created_at,u.id)<(select created_at,id from users where id=${cursor}))
     order by u.created_at desc,u.id desc limit 31`;
@@ -315,7 +322,8 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
       if (!count.total) throw new AppError(409, 'Keep at least one active administrator account.');
     }
     const [row] =
-      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing}),...(patch.personalBitrateMbps===undefined?{}:{personalBitrateMbps:patch.personalBitrateMbps}),...(patch.sharedBitrateMbps===undefined?{}:{sharedBitrateMbps:patch.sharedBitrateMbps})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
+      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing,
+        featurePermissions:{...target.settings.featurePermissions,sharing:patch.allowPlaybackSharing}}),...(patch.personalBitrateMbps===undefined?{}:{personalBitrateMbps:patch.personalBitrateMbps}),...(patch.sharedBitrateMbps===undefined?{}:{sharedBitrateMbps:patch.sharedBitrateMbps})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
     if (role === 'admin' && target.membership_expires_at)
       throw new AppError(409,'Clear membership expiry before granting administrator access.');
     if(disabled && !target.disabled){
@@ -333,38 +341,35 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
   });
 }
 
+const userSettingsPatchSchema = v.partial(v.object({
+  syncConflictWinner: v.union([
+    v.literal('manual'),
+    v.literal('coast'),
+    v.pipe(v.string(), v.uuid()),
+  ]),
+  features: featureChoicesSchema,
+  social: socialSettingsSchema,
+  collection: collectionPreferencesSchema,
+  action: v.picklist(['watch','listen','play','read']),
+  shareDemand: v.boolean(),
+  listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
+  fullWidth: v.boolean(),
+  liquidGlass: v.boolean(),
+  originalTitles: v.boolean(),
+  monochromeMissing: v.boolean(),
+  sanitizeOddReadingPages: v.boolean(),
+  region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
+  theme: v.optional(v.picklist(['dark', 'light', 'system'])),
+  notificationLevel: v.nullable(v.picklist(['normal', 'persistent'])),
+  notificationsSilenced: v.boolean(),
+  subtitleLanguages: v.array(v.string()),
+  subtitlesAlways: v.boolean(),
+  subtitlePrompt: v.boolean(),
+}));
+
 export async function updateUserSettings(actor: SessionUser | null, input: unknown) {
   const user = requireUser(actor);
-  const settings = v.parse(
-    v.partial(
-      v.object({
-        syncConflictWinner: v.union([
-          v.literal('manual'),
-          v.literal('coast'),
-          v.pipe(v.string(), v.uuid()),
-        ]),
-        features: featureChoicesSchema,
-        social: socialSettingsSchema,
-        collection: collectionPreferencesSchema,
-        action: v.picklist(['watch','listen','play','read']),
-        shareDemand: v.boolean(),
-        listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
-        fullWidth: v.boolean(),
-        liquidGlass: v.boolean(),
-        originalTitles: v.boolean(),
-        monochromeMissing: v.boolean(),
-        sanitizeOddReadingPages: v.boolean(),
-        region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
-        theme: v.optional(v.picklist(['dark', 'light', 'system'])),
-        notificationLevel: v.nullable(v.picklist(['normal', 'persistent'])),
-        notificationsSilenced: v.boolean(),
-        subtitleLanguages: v.array(v.string()),
-        subtitlesAlways: v.boolean(),
-        subtitlePrompt: v.boolean(),
-      })
-    ),
-    input
-  );
+  const settings = v.parse(userSettingsPatchSchema, input);
   if (
     settings.syncConflictWinner !== undefined &&
     !['manual', 'coast'].includes(settings.syncConflictWinner) &&
@@ -384,25 +389,75 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
       );
     if (!connection) throw new AppError(400, 'Choose one of your connected accounts.');
   }
-  // Merge against the locked current row: a partial feature patch cannot erase other choices.
+  // Both the administrator and member write the same preference under the same lock.
   await getSql().begin(async tx => {
-    // Same global-first order as admitted commands; the user update is exclusive.
     await tx`select pg_advisory_xact_lock_shared(hashtextextended('coast:configuration',0))`;
-    const [current] = await tx`select settings from users where id=${user.id} for update`;
+    const [current] = await tx<{role:SessionUser['role'];settings:UserSettings;access:CoastAccess}[]>`select role,settings,access_defaults as access from users where id=${user.id} for update`;
+    if (!current) throw new AppError(404, 'Account not found.');
+    const before = settings.features ? await getFeatureConfig(user.id, tx) : undefined;
+    const config = before ? await getConfig(tx) : undefined;
+    if (config && Object.keys(settings.features ?? {}).some(key => !userFeatureGrant(config, current, key as Feature)))
+      throw new AppError(403, 'One of these features is unavailable to your account.', 'feature_disabled');
     const patch = {...settings, ...(settings.features ? {features:{...current.settings.features,...settings.features}} : {})};
     await tx`update users set settings=settings||${patch}::jsonb where id=${user.id}`;
-    if(settings.features){
-      const config=await getConfig(tx);
-      if(hasWithdrawnFeatures(featureValues(config,current.settings.features),featureValues(config,patch.features)))await queueFeatureTransition(tx,user.id,config,user.id,patch.features);
+    if (before) {
+      const next = await getFeatureConfig(user.id, tx);
+      if (hasWithdrawnFeatures(before.features, next.features)) await queueFeatureTransition(tx,user.id,next,user.id,patch.features,next.features);
     }
   });
   invalidateFeatureSubject(user.id);
   return settings;
 }
 
+const memberFeaturesSchema = v.strictObject({
+  permissions: v.optional(featureChoicesSchema, {}),
+  preferences: v.optional(featureChoicesSchema, {}),
+});
+
+export async function updateMemberFeatures(actor: SessionUser | null, userId: string, input: unknown) {
+  const admin = requireAdmin(actor);
+  const { permissions, preferences } = v.parse(memberFeaturesSchema, input);
+  const result = await getSql().begin(async tx => {
+    await tx`select pg_advisory_xact_lock_shared(hashtextextended('coast:configuration',0))`;
+    const [current] = await tx<{role:SessionUser['role'];settings:UserSettings;access:CoastAccess}[]>`select role,settings,access_defaults as access from users where id=${userId} for update`;
+    if (!current) throw new AppError(404, 'Account not found.');
+    const before = await getFeatureConfig(userId, tx);
+    const config = await getConfig(tx);
+    const featurePermissions = { ...current.settings.featurePermissions, ...permissions };
+    const features = { ...current.settings.features, ...preferences };
+    for (const key of Object.keys(permissions) as Feature[]) {
+      if (permissions[key] === true && features[key] === undefined && !userFeatureGrant(config, current, key)) features[key] = false;
+    }
+    await tx`update users set settings=settings||${{ featurePermissions, features }}::jsonb where id=${userId}`;
+    const next = await getFeatureConfig(userId, tx);
+    if (hasWithdrawnFeatures(before.features, next.features)) await queueFeatureTransition(tx,admin.id,next,userId,features,next.features);
+    return { permissions: featurePermissions, preferences: features };
+  });
+  invalidateFeatureSubject(userId);
+  return result;
+}
+
+const resettablePreferences = ['action','syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass',
+  'originalTitles','monochromeMissing','sanitizeOddReadingPages','region','theme','notificationLevel','notificationsSilenced',
+  'subtitleLanguages','subtitlesAlways','subtitlePrompt'] as const;
+
 export async function resetUserSettings(actor: SessionUser | null) {
   const user = requireUser(actor);
-  const preferences = ['action','syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','sanitizeOddReadingPages','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
-  // Profile, privacy choices and administrator-owned limits/grants are not personal defaults.
-  await getSql()`UPDATE users SET settings = settings - ${getSql().array(preferences,'TEXT')}::text[] WHERE id = ${user.id}`;
+  return getSql().begin(async tx => {
+    const [current] = await tx<{settings:UserSettings}[]>`select settings from users where id=${user.id} for update`;
+    if (!current) throw new AppError(404, 'Account not found.');
+    const preferences = Object.fromEntries(resettablePreferences.filter(key => Object.hasOwn(current.settings, key))
+      .map(key => [key, current.settings[key]]));
+    await tx`update users set settings=settings-${tx.array([...resettablePreferences], 'TEXT')}::text[] where id=${user.id}`;
+    invalidateFeatureSubject(user.id);
+    return { preferences };
+  });
+}
+
+export async function undoSettingsReset(actor: SessionUser | null, input: unknown) {
+  const user = requireUser(actor);
+  const previous = v.parse(v.pick(userSettingsPatchSchema, resettablePreferences), input);
+  // Settings written since the reset take precedence over the undo.
+  await getSql()`update users set settings=${previous}::jsonb||settings where id=${user.id}`;
+  invalidateFeatureSubject(user.id);
 }
