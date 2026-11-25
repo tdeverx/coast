@@ -9,7 +9,6 @@ import { useShelfLocation } from '#lib/ui/detail-section.svelte.js';
 import { surfaceEnabled, categoryEnabled } from '#lib/experimental.js';
 import { onDestroy, untrack } from 'svelte';
 import { page as route, navigating } from '$app/state';
-import { goto } from '$app/navigation';
 import type { PresentationRow } from '#lib/server/queries/media-rows.js';
 import { useClient } from '#lib/ui/client-context.js';
 import { createResource } from '#lib/ui/resource.svelte.js';
@@ -309,7 +308,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     if (result && current() && !location.embedded && !preview && !isolatedPreview && layout === 'grid') {
       const committed = retainedInterval(result);
 
-      goto(paths(committed.lastPage, committed.firstPage).href, { shallow: true, replace: true, reset: false, state: route.state });
+      location.replace(paths(committed.lastPage, committed.firstPage).href);
     }
   }
 

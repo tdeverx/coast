@@ -1,3 +1,4 @@
+import { sharedProviderFeatures } from '#lib/server/features.js';
 import { traktFeatureAllowed } from '#lib/providers/trakt/access.server.js';
 import { traktAllows } from '#lib/providers/trakt/access.js';
 import {eq,sql} from 'drizzle-orm';
@@ -25,7 +26,7 @@ type RecommendationAccount={id:string;user_id:string|undefined;account_generatio
 type Options={instanceId?:string;adminId?:string;kind?:string;task?:string;force?:boolean};
 /** Existing maintenance transaction/queue owns deduplication, pauses, service pacing and retries. */
 export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
- const config=await getConfig();
+ const config=await sharedProviderFeatures(await getConfig());
  if(config.features.personalisation===false)return {queued:0,active:0};
  if(options.task&&!['all','metadata','tracking'].includes(options.task))return {queued:0,active:0};
  const instances=await tx.execute<{id:string;provider:string;settings:Record<string,unknown>}>(sql`select id,provider,settings from provider_instances where enabled and credentials is not null and provider in ('tmdb','igdb','trakt') and (${options.instanceId??null}::uuid is null or id=${options.instanceId??null}::uuid) order by id`);
@@ -103,7 +104,7 @@ async function saveSet(instanceId:string,key:string,ids:string[],seedId:string|n
  });
 }
 export async function refreshProviderRecommendations(action:OutboxAction){
- const config=await getConfig();
+ const config=await sharedProviderFeatures(await getConfig());
  const db=getSql();const [instance]=await db`select * from provider_instances where id=${String(action.payload.instanceId)} and enabled and credentials is not null`;
  if(!instance||action.kind!==`${instance.provider}.recommendations`)throw new PermanentActionError('The recommendation service is unavailable.');
  if(instance.provider==='igdb'&&!config.experimentalGaming)throw new PermanentActionError('Gaming is disabled.');

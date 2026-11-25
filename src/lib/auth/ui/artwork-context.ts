@@ -1,2 +1,5 @@
-import { createContext, type Snippet } from 'svelte';
-export const [getArtworkSample, setArtworkSample] = createContext<Snippet>();
+import { getContext, setContext, type Snippet } from 'svelte';
+
+const artwork = Symbol('Coast artwork sample');
+export const getArtworkSample = () => getContext<Snippet | undefined>(artwork);
+export const setArtworkSample = (sample: Snippet) => setContext(artwork, sample);

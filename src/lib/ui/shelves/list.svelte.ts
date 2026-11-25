@@ -85,7 +85,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
       })
     });
 
-    if (result && !location.embedded && !preview && layout === 'grid') goto(href(result.page), { shallow: true, replace: true, reset: false, state: page.state });
+    if (result && !location.embedded && !preview && layout === 'grid') location.replace(href(result.page));
   }
   const refreshKey = $derived(contentRevisionKey(page.data, ['tracking', 'social']));
   let previousRefresh = untrack(() => refreshKey);

@@ -15,10 +15,14 @@ export const featureDefinitions = [
   ['planning', 'Planning & Upcoming', 'Plan media and receive reminders.'],
   ['sharing', 'Playback sharing', 'Create stream links when your administrator has granted permission.'],
   ['requests', 'Media requests', 'Request new media from connected services.'],
+  ['richToasts', 'Rich toasts', 'Show notifications with glass, artwork and stacked edges.'],
+  ['cardTasteScores', 'Taste matches on cards', 'Show personal match scores on media cards. Requires Personalisation.'],
+  ['settingsSidebar', 'Settings sidebar', 'Open the redesigned Settings over the current page.'],
   ['api', 'Application API', 'Allow scoped application tokens and webhook delivery.'],
 ] as const;
 export type Feature = typeof featureDefinitions[number][0];
-export type PersonalFeature = Exclude<Feature, 'api'>;
+export type PersonalFeature = Feature;
+export type FeaturePermissions = Partial<Record<Feature, boolean>>;
 export type FeatureChoices = Partial<Record<PersonalFeature, boolean>>;
 export const administratorFeatures = ['screen','personalisation','cardLayouts','social','presence','playback','reader','api'] as const satisfies readonly Feature[];
 export type AdministratorFeature = typeof administratorFeatures[number];
@@ -32,26 +36,44 @@ export type FeatureConfiguration = {
   experimentalMusic: boolean; experimentalGaming: boolean;
   experimentalBooks: boolean; experimentalComics: boolean;
   experimentalParties: boolean; experimentalPlanning: boolean;
+  experimentalRichToasts?: boolean; experimentalCardTasteScores?: boolean;
   allowPlaybackSharing: boolean; enableRequests: boolean;
 };
-const experimentFields = {music:'experimentalMusic',game:'experimentalGaming',book:'experimentalBooks',comic:'experimentalComics',parties:'experimentalParties',planning:'experimentalPlanning'} as const;
-export type FeatureDecision = { enabled: boolean; reason: 'administrator' | 'experiment' | 'personal' | 'social' | 'playback' | null };
-export function resolveFeatures(config: FeatureConfiguration, choices: FeatureChoices = {}): Record<Feature, FeatureDecision> {
+const experimentFields = {
+  music: 'experimentalMusic', game: 'experimentalGaming', book: 'experimentalBooks', comic: 'experimentalComics',
+  parties: 'experimentalParties', planning: 'experimentalPlanning',
+  richToasts: 'experimentalRichToasts', cardTasteScores: 'experimentalCardTasteScores',
+} as const;
+export const experimentalFeatures = [...Object.keys(experimentFields), 'settingsSidebar'] as readonly Feature[];
+
+export function featureGranted(config: FeatureConfiguration, key: Feature, permissions?: FeaturePermissions, legacySharing = true) {
+  if (permissions?.[key] !== undefined) return permissions[key];
+  if (key === 'settingsSidebar') return false;
+  const experiment = experimentFields[key as keyof typeof experimentFields];
+  if (experiment) return config[experiment] === true;
+  if (key === 'sharing') return config.allowPlaybackSharing && legacySharing;
+  if (key === 'requests') return config.enableRequests;
+  return featurePolicyEnabled(config.features, key as AdministratorFeature);
+}
+
+export type FeatureDecision = { enabled: boolean; reason: 'administrator' | 'experiment' | 'personal' | 'social' | 'playback' | 'personalisation' | null };
+export function resolveFeatures(config: FeatureConfiguration, choices: FeatureChoices = {}, permissions?: FeaturePermissions, legacySharing = true): Record<Feature, FeatureDecision> {
   const decisions = Object.fromEntries(featureDefinitions.map(([key]) => {
-    const experiment = experimentFields[key as keyof typeof experimentFields];
-    const available = key === 'sharing' ? config.allowPlaybackSharing : key === 'requests' ? config.enableRequests : featurePolicyEnabled(config.features, key as AdministratorFeature);
-    const reason = !available ? 'administrator' : experiment && !config[experiment] ? 'experiment' : key !== 'api' && choices[key] === false ? 'personal' : null;
+    const granted = featureGranted(config, key, permissions, legacySharing);
+    const reason = !granted ? (experimentalFeatures.includes(key) ? 'experiment' : 'administrator')
+      : choices[key] === false ? 'personal' : null;
     return [key, {enabled: reason === null, reason}];
   })) as Record<Feature, FeatureDecision>;
   for (const key of ['presence','parties'] as const) if (decisions[key].enabled && !decisions.social.enabled) decisions[key] = {enabled:false, reason:'social'};
   if (decisions.sharing.enabled && !decisions.playback.enabled) decisions.sharing = {enabled:false, reason:'playback'};
+  if (decisions.cardTasteScores.enabled && !decisions.personalisation.enabled) decisions.cardTasteScores = {enabled:false, reason:'personalisation'};
   return decisions;
 }
-export function featureValues(config: FeatureConfiguration, choices?: FeatureChoices): FeatureValues {
-  return Object.fromEntries(Object.entries(resolveFeatures(config, choices)).map(([key, value]) => [key, value.enabled])) as FeatureValues;
+export function featureValues(config: FeatureConfiguration, choices?: FeatureChoices, permissions?: FeaturePermissions, legacySharing?: boolean): FeatureValues {
+  return Object.fromEntries(Object.entries(resolveFeatures(config, choices, permissions, legacySharing)).map(([key, value]) => [key, value.enabled])) as FeatureValues;
 }
 
 export function hasWithdrawnFeatures(previous:FeatureValues,next:FeatureValues) {
   // Card layouts have no background work or live sessions to reconcile.
-  return featureDefinitions.some(([key])=>key!=='cardLayouts'&&previous[key]&&!next[key]);
+  return featureDefinitions.some(([key])=>!['cardLayouts','settingsSidebar','richToasts','cardTasteScores'].includes(key)&&previous[key]&&!next[key]);
 }

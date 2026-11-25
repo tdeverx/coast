@@ -32,6 +32,7 @@
   import { inviteProfileTarget, mediaDetailLinks } from '#lib/ui/media-navigation.js';
   import { detailPanelHref, detailPanelUrl, panelAddress } from '#lib/media/detail-target.js';
   import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
+  import { settingsTarget } from '#lib/settings/navigation.js';
   import Header from '#lib/ui/components/Header.svelte';
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
@@ -71,6 +72,8 @@
   const friendsView = $derived(linkedPanelView(activePanelUrl, data.experimentalParties ? friendViews : ['accepted','pending','invites'] as const));
   const streamsView = $derived(linkedPanelView(activePanelUrl, streamViews));
   const detailsHref = $derived(detailPanelHref(activePanelUrl, page.state));
+  const settings = $derived(detailsHref ? settingsTarget(detailsHref, page.url) : null);
+  const settingsHref = $derived(settings?.href);
 
   const notificationImport = createResource<
     typeof import('#lib/ui/components/NotificationInbox.svelte').default |
@@ -149,6 +152,20 @@
     ? 'Stream activity could not load. Reload the page to try again.'
     : '', 'current-viewer');
 
+  const settingsImport = createResource<typeof import('#lib/settings/SettingsPanel.svelte').default | undefined>(undefined);
+  const SettingsPanel = $derived(settingsImport.data);
+
+  $effect(() => {
+    if (!data.user?.id || !settingsHref) return;
+    untrack(() => {
+      if (!settingsImport.data) void settingsImport.load(async () => (await import('#lib/settings/SettingsPanel.svelte')).default);
+    });
+    return () => settingsImport.cancel();
+  });
+
+  reportImportFailure(() => !!data.user && settingsHref && settingsImport.error
+    ? 'Settings could not load. Reload the page to try again.' : '', 'current-viewer');
+
   const detailImport = createResource<
     typeof import('#lib/media/DetailPanel.svelte').default |
     undefined>(undefined);
@@ -158,7 +175,7 @@
   const canShowDetails = $derived(!!data.user || !!inviteProfileTarget(detailsHref));
 
   function loadDetails() {
-    if (canShowDetails && detailsHref && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
+    if (canShowDetails && detailsHref && !settings && !detailImport.busy) return detailImport.load(async () => (await import('#lib/media/DetailPanel.svelte')).default);
   }
 
   $effect(() => {
@@ -169,6 +186,7 @@
         ...page.state,
         mediaDetailHref: undefined,
         mediaDetailDepth: undefined,
+        settingsParentDepth: undefined,
         mediaDetailFromLink: undefined,
         mediaDetailShelf: undefined
       }
@@ -177,7 +195,7 @@
 
   $effect(() => {
     const viewer = data.user?.id;
-    if (!detailsHref || (!viewer && !inviteProfileTarget(detailsHref))) return;
+    if (!detailsHref || settings || (!viewer && !inviteProfileTarget(detailsHref))) return;
 
     untrack(() => {
       if (!detailImport.data) void loadDetails();
@@ -186,7 +204,7 @@
     return () => detailImport.cancel();
   });
 
-  reportImportFailure(() => canShowDetails && detailsHref && detailImport.error
+  reportImportFailure(() => canShowDetails && detailsHref && !settings && detailImport.error
     ? 'Title details could not load. Reload the page to try again.'
     : '', 'current-viewer');
 
@@ -369,6 +387,7 @@
 >
   {#if readerAllowed&&Reader}<Reader />{/if}
   {#if canShowDetails&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
+  {#if data.user && SettingsPanel}<SettingsPanel target={settings} />{/if}
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && !['/share', '/ui-preview/media-cards'].includes(page.url.pathname)}<Header
       user={data.user}
@@ -377,7 +396,7 @@
       friendRequests={data.friendRequestCount}
       hasActiveLinks={!!activeShareUntil}
     />{/if}
-  <div class="page-shell" class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
+  <div class="page-shell" class:settings-route={data.capabilities?.settingsSidebar === true && page.route.id === '/settings/[[section]]'} class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
     <main bind:this={content} id="main-content" tabindex="-1">
       {#if page.data.authArtwork}
         <LoginBackdrop artwork={page.data.authArtwork}>
@@ -408,6 +427,7 @@
     min-height: 100svh;
     display: flow-root;
   }
+  .page-shell.settings-route { z-index: auto; }
   .page-shell.watching {
     /* Descendant image visibility cannot override a composited hidden page. */
     opacity: 0;

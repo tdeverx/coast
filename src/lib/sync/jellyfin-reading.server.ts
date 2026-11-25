@@ -1,7 +1,8 @@
+import {getConfig} from '#lib/server/config.js';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDb} from '#lib/server/db/index.js';
 import {workEditions,readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
-import {getFeatureConfig} from '#lib/server/features.js';
+import {getFeatureConfig,sharedProviderFeatures} from '#lib/server/features.js';
 import type {JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
 import {readingProviderDetails} from '#lib/providers/reading.server.js';
 import {importReading} from '#lib/catalogue/reading.server.js';
@@ -16,7 +17,8 @@ import {jobExecution} from '#lib/server/queue/execution.js';
 type Context=Awaited<ReturnType<typeof import('#lib/providers/jellyfin/connection.server.js').getJellyfin>>;
 /** Exact plugin identifiers or the user's explicit file link; never a title/filename guess. */
 export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){
- const config=await getFeatureConfig(options.access?context.connection.userId:null);let imported=0;
+ const userId=options.access ? context.connection.userId : null;
+ const config=userId ? await getFeatureConfig(userId) : await sharedProviderFeatures(await getConfig());let imported=0;
  async function importBook(book:JellyfinBook):Promise<number>{
   book={...book,Id:jellyfinItemKey(book.Id)};
   const reference=await readingFileReference(book);
@@ -26,11 +28,16 @@ export async function importJellyfinReading(context:Context,books:JellyfinBook[]
    if(!reference)return 0;
    const {provider,externalId}=reference;
    const kind=provider==='comic-vine'?'comic':'book';
-   if(kind==='comic'&&!config.experimentalComics)return 0;
+   if(kind==='comic'&&!config.experimentalComics||kind==='book'&&!config.experimentalBooks&&!config.experimentalComics)return 0;
    const [saved]=await getDb().select({work:readingWorks}).from(workIdentifiers)
      .innerJoin(readingWorks,eq(readingWorks.id,workIdentifiers.workId))
      .where(and(eq(workIdentifiers.provider,provider),eq(workIdentifiers.externalId,externalId)));
-   work=saved?.work??await importReading(await readingProviderDetails(kind,externalId));
+   work=saved?.work;
+   if(!work){
+    const metadata=await readingProviderDetails(kind,externalId);
+    if(metadata.kind==='book'&&!config.experimentalBooks||metadata.kind==='comic'&&!config.experimentalComics)return 0;
+    work=await importReading(metadata,userId);
+   }
   }
   if(work.kind==='book'&&!config.experimentalBooks||work.kind==='comic'&&!config.experimentalComics)return 0;
   await observeReadingFile({userId:context.connection.userId,connectionId:context.connection.id,instanceId:context.instance.id,generation:context.connection.accountGeneration,workId:work.id,book,reference,edition:sourceEdition(context.instance.serverIdentity??context.instance.id,book),access:options.access,scanId:options.scanId,expectedResetId:options.expectedResetId});return 1;

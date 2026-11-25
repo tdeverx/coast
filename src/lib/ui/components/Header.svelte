@@ -132,6 +132,7 @@
   reportFailure(()=>status.error);
 </script>
 
+<div class="header-gradient" class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible} aria-hidden="true"></div>
 <header
   class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
@@ -230,7 +231,7 @@
             <Button item icon="settings05" href="/personalise">Personalise</Button>
           {/if}
           <Button item icon="settings" href="/settings">Settings</Button>
-          {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"
+          {#if user.role === 'admin'}<Button item icon="shield" href={page.data.capabilities?.settingsSidebar ? '/settings?area=admin' : '/settings/admin'}
               >Admin</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <form method="POST" action="/logout" onsubmit={event=>{if(preview)event.preventDefault();}}>
@@ -250,11 +251,18 @@
     position: fixed;
     inset: 0 0 auto;
     z-index: 80;
+    pointer-events: none;
+  }
+  .header-gradient {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 78;
+    height: var(--app-header-height, 64px);
     background: linear-gradient(color-mix(in srgb, var(--canvas) calc(119 / 255 * 100%), transparent), transparent);
     pointer-events: none;
   }
   .header-inner {
-    height: 64px;
+    height: var(--app-header-height, 64px);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -279,7 +287,7 @@
       opacity var(--motion) var(--ease),
       visibility var(--motion);
   }
-  header.chrome-hidden {
+  .chrome-hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;

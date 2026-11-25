@@ -41,7 +41,8 @@ const friendsCode=compileRunes(`import {untrack} from ${JSON.stringify(import.me
 const {create:createFriends}=await import(moduleUrl(friendsCode));
 
 const connectionScript=(await componentScript('src/lib/ui/components/ConnectionCard.svelte'))
-  .replace(/let \{[\s\S]+?\} = \$props\(\);/, 'let provider=$state(initial);');
+  .replace(/let \{[\s\S]+?\} = \$props\(\);/, 'let provider=$state(initial);')
+  .replace('const serviceId = $props.id();', 'const serviceId = "connection-fixture";');
 const connectionCode=compileRunes(`import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  import {traktPreferences,initialTraktSync} from ${JSON.stringify(import.meta.resolve('../src/lib/providers/trakt/access'))};

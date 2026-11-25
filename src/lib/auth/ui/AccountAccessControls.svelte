@@ -1,22 +1,24 @@
 <script lang="ts">
+  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
   import {onDestroy} from 'svelte';
   import {api,message} from '#lib/ui/client.js';
   import {actionFeedback} from '#lib/ui/action-feedback.svelte.js';
   import {createResource} from '#lib/ui/resource.svelte.js';
   import type {accountDetails,changeMemberAccess} from '#lib/server/auth/account-management.server.js';
   import type {listInvitePresets} from '#lib/server/auth/invites.server.js';
-  import Button from '#lib/ui/components/Button.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
   import {emptyInviteDefaults,type InviteDefaults} from '#lib/auth/invites.js';
   import InviteDefaultsFields from './InviteDefaultsFields.svelte';
 
-  let {userId,selection=[],onclose,onchange}:{userId?:string;selection?:string[];onclose:()=>void;onchange:()=>void}=$props();
+  let {userId,selection=[],inline=false,onclose,onchange}:{userId?:string;selection?:string[];inline?:boolean;onclose:()=>void;onchange:()=>void}=$props();
   const detail=createResource<Awaited<ReturnType<typeof accountDetails>>|null>(null);
   const presets=createResource<Awaited<ReturnType<typeof listInvitePresets>>>([]);
   type Preview=Extract<Awaited<ReturnType<typeof changeMemberAccess>>,{versions:unknown}>;
   let preview=$state<Preview|null>(null);
-  let opened=$state(true),busy=$state(false),expiry=$state(''),remoteId=$state(''),preset=$state(''),memberPreset=$state(''),quota=$state(3);
+  let opened=true;
+  let busy=$state(false),expiry=$state(''),remoteId=$state(''),preset=$state(''),memberPreset=$state(''),quota=$state(3);
   const target=$derived(detail.data);
   let draft=$state<InviteDefaults>(structuredClone(emptyInviteDefaults));
   let custom=$state(false);
@@ -58,7 +60,7 @@
     void presets.load(signal=>api('admin/invites/presets',undefined,'GET',{signal}));
     return ()=>{detail.cancel();presets.cancel();};
   });
-  onDestroy(()=>{detail.dispose();presets.dispose();});
+  onDestroy(()=>{opened=false;detail.dispose();presets.dispose();});
   async function mutate(work:()=>Promise<unknown>,text:string,refresh=true) {
     if(busy)return;
     busy=true;
@@ -85,7 +87,18 @@
   }
 </script>
 
-<Dialog bind:open={opened} title={userId ? target?.username??'Account details' : 'Apply access preset'} {onclose}>
+{#if inline}
+  <section class="stack" aria-label={userId ? 'Account details' : 'Apply access preset'}>
+    {@render accessEditor()}
+    {#if !userId}<Button size="segment" emphasis="subtle" onclick={onclose}>Close access review</Button>{/if}
+  </section>
+{:else}
+  <Dialog open={true} title={userId ? target?.username ?? 'Account details' : 'Apply access preset'} {onclose}>
+    {@render accessEditor()}
+  </Dialog>
+{/if}
+
+{#snippet accessEditor()}
   {#if target}
     <div class="stack">
       <p>{target.source}{target.inviter? ' · Invited by '+target.inviter : ''} · {target.role} · {target.disabled?'Suspended':target.expired?'Expired':'Active'}</p>
@@ -128,9 +141,8 @@
         {/if}
         <Heading title="Member invites" />
         <form class="row" onsubmit={event=>{event.preventDefault();void mutate(()=>api('admin/invites/grant/'+userId,{presetId:memberPreset||null,limit:quota},'POST'),'Invite grant updated.');}}>
-          <label class="field">Preset<select bind:value={memberPreset}>
-            <option value="">Member invites disabled</option>{#each presets.data as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
-          </select></label>
+          <SettingsChoice label="Preset" icon="ticket" bind:value={memberPreset}
+            options={[{ id: '', label: 'Member invites disabled' }, ...presets.data.map(item => ({ id: item.id, label: item.name }))]} disabled={busy} />
           <label class="field">Quota per 30 days<input type="number" min="1" max="50" bind:value={quota} required /></label>
           <Button type="submit" disabled={busy}>Save grant</Button>
         </form>
@@ -153,9 +165,8 @@
         {#if custom}
           <InviteDefaultsFields bind:defaults={draft} accessOnly />
         {:else}
-          <label class="field">Preset<select bind:value={preset} onchange={()=>preview=null} required>
-            <option value="">Choose a preset</option>{#each presets.data as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
-          </select></label>
+          <SettingsChoice label="Preset" icon="ticket" bind:value={preset} onchange={()=>preview=null}
+            options={[{ id: '', label: 'Choose a preset' }, ...presets.data.map(item => ({ id: item.id, label: item.name }))]} disabled={busy} />
         {/if}
         <div class="row"><Button type="submit" disabled={busy||!custom&&!preset}>Preview changes</Button></div>
       </form>
@@ -180,7 +191,7 @@
       {/if}
     </div>
   {/if}
-</Dialog>
+{/snippet}
 
 
 {#snippet changesList(before:Record<string,unknown>,after:Record<string,unknown>)}

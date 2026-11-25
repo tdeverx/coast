@@ -978,6 +978,14 @@
         "kind": "data",
         "nullable": false,
         "defaultSource": "[]"
+      },
+      {
+        "name": "settingsGroup",
+        "type": "Snippet<[Snippet]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
       }
     ]
   },
@@ -2008,6 +2016,24 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      },
+      {
+        "name": "editId",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "inline",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -2780,6 +2806,14 @@
       },
       {
         "name": "segments",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "backdropFade",
         "type": "Snippet",
         "optional": true,
         "bindable": false,
@@ -3611,6 +3645,83 @@
         "nullable": false,
         "defaultSource": "'Playback progress'",
         "defaultValue": "Playback progress"
+      }
+    ]
+  },
+  "ProgressiveBlur": {
+    "path": "src/lib/ui/components/ProgressiveBlur.svelte",
+    "props": [
+      {
+        "name": "edge",
+        "type": "'top' | 'right' | 'bottom' | 'left'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "top",
+          "right",
+          "bottom",
+          "left"
+        ],
+        "defaultSource": "'bottom'",
+        "defaultValue": "bottom"
+      },
+      {
+        "name": "size",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'45%'",
+        "defaultValue": "45%"
+      },
+      {
+        "name": "radius",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "28",
+        "defaultValue": 28
+      },
+      {
+        "name": "steps",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "progressiveBlurSteps.default"
+      },
+      {
+        "name": "tint",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "tintOpacity",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "0.75",
+        "defaultValue": 0.75
+      },
+      {
+        "name": "tintSteps",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "progressiveTintSteps.default"
       }
     ]
   },

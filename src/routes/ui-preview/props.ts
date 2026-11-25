@@ -4,6 +4,7 @@ import {serviceTasks} from '#lib/providers/tasks.js';
 import {providerSchedule} from '#lib/providers/schedule.js';
 import {defaultNotificationFilters} from '#lib/notifications/model.js';
 import {defaultPartySettings} from '#lib/playback/synced/model.js';
+import {progressiveBlurSteps,progressiveTintSteps} from '#lib/ui/materials/progressive-blur.js';
 import {id,today,movie,show,items,facts,provider,job} from './demo/fixtures';
 
 export type PropContract={name:string;type:string;optional:boolean;bindable:boolean;kind:'text'|'number'|'boolean'|'select'|'data'|'snippet'|'callback';nullable:boolean;choices?:Array<string|number>;defaultSource?:string;defaultValue?:unknown};
@@ -54,6 +55,7 @@ const examples:Record<string,Record<string,unknown>>={
   RequestDialog:{open:false,item:movie,initial4k:false,options:[{id,name:'Preview request server',variants:{standard:{serverId:1,requestable:true,available:false,requested:false,seasons:[]},fourK:{serverId:2,requestable:true,available:false,requested:false,seasons:[]}}}]},
   RowFilter:{label:'Filters',selection:false,submenus:false,icon:'filter',groups:[{label:'Selection',value:'all',options:choices}]},RowStyleMenu:{title:'Preview row',artworkOptions:true,mediaKind:'screen',overridePriority:null,overrideShape:null,overrideArtwork:null,overrideOverlay:null},
   SegmentedControl:{label:'Preview segments',options:choices,value:'all'},SettingsRow:{title:'Social',description:'Friends, recommendations and shared activities.'},
+  ProgressiveBlur:{size:'78%',steps:progressiveBlurSteps.default,tintSteps:progressiveTintSteps.default},
   Toggle:{label:'Preview switch',checked:true},
   Shelf:{title:'Your next favourites',items,shape:'poster',layout:'row',artworkOptions:true,hideEmpty:false,enrichSocial:false},SocialControls:{friends:[{username:'Alice',status:'online'},{username:'Sam',status:'away'},{username:'Taylor',status:'busy'}],total:7,showOverflow:true,size:32},
   StreamsPanel:{open:false,initialView:'now'},SyncedControls:{embedded:false},Toast:{text:'Changes saved.',description:'Preview only',kind:'info',busy:false,actionLabel:'Undo'},

@@ -63,6 +63,7 @@ export const componentScenarios: Record<string, string[]> = {
   RequestDialog: ['empty', 'movie', 'show', 'four-k'],
   Toast: ['success','error'],
   OperationProgress: ['known','unknown','complete','zero'],
+  ProgressiveBlur: ['neutral', 'tinted', 'gradient-only'],
   SettingsRow: ['normal','unavailable'],
 };
 

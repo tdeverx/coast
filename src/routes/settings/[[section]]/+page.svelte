@@ -2,24 +2,39 @@
   import { reportFailure } from '#lib/ui/client-context.js';
   import AdminInviteSettings from '#lib/auth/ui/AdminInviteSettings.svelte';
   import AccountAccessControls from '#lib/auth/ui/AccountAccessControls.svelte';
-  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import { metadataFamilies, metadataProviders, sourcePreference, type MetadataFamily, type MetadataProviderName } from '#lib/catalogue/metadata/resolve.js';
+  import type { Snippet } from 'svelte';
+  import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
+  import GlassSeparator from '#lib/auth/ui/GlassSeparator.svelte';
+  import AccountIdentity from '#lib/auth/ui/AccountIdentity.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
+  import { profilePath } from '#lib/profile/url.js';
+  import { diagnosticLevels } from '#lib/diagnostics.js';
+  import PreviewSelect from '#lib/ui/cards/editor/PreviewSelect.svelte';
+  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
+  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
+  import SettingsOverview from '#lib/settings/SettingsOverview.svelte';
+  import MemberFeaturePermissions from '#lib/settings/MemberFeaturePermissions.svelte';
+  import SettingsSidebar from '#lib/settings/SettingsSidebar.svelte';
+  import { detailPanelHref } from '#lib/media/detail-target.js';
+  import type { PageData } from './$types';
+  import Toggle from '#lib/ui/components/Toggle.svelte';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
-  import { featureDefinitions, administratorFeatures, featurePolicyEnabled, type PersonalFeature } from '#lib/features.js';
+  import { featureDefinitions, type Feature, type FeatureChoices } from '#lib/features.js';
   import {apiScopes,apiScopeLabels,type ApiScope} from '#lib/public-api.js';
   import { collectionCategories, collectionRules } from '#lib/collection/preferences.js';
   import { categoryEnabled } from '#lib/experimental.js';
   import { traktPreferences } from '#lib/providers/trakt/access.js';
-  import {audiences,socialSections,socialCategories,type Audience} from '#lib/social/model.js';
+  import {audiences,socialSections,socialCategories} from '#lib/social/model.js';
   import {
-    personalSettings as links,
-    administratorSettings as adminLinks,
     settingsTitles as titles,
     settingsDescriptions as descriptions,
     preferenceFields,
     policyFields,
-    policyGroups,
-    experimentalPolicies,
+    policySegments,
+    policySegmentForGroup,
+    personalSettings, administratorSettings,
     selectSettings,
   } from '#lib/settings/sections.js';
   import Heading from '#lib/ui/components/Heading.svelte';
@@ -30,21 +45,127 @@
   import IntegrationSettings from '#lib/ui/components/IntegrationSettings.svelte';
   import ConflictList from '#lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
+  import { navigateMedia } from '#lib/ui/media-navigation.js';
 
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { change, message, refreshRouteDependencies } from '#lib/ui/client.js';
   import Button from '#lib/ui/components/Button.svelte';
-  import Icon from '#lib/ui/components/Icon.svelte';
+  import Icon, { type IconName } from '#lib/ui/components/Icon.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import ConnectionCard from '#lib/ui/components/ConnectionCard.svelte';
   import QueueList from '#lib/ui/components/QueueList.svelte';
   import EmptyState from '#lib/ui/components/EmptyState.svelte';
-  let { data } = $props();
+  let { data, target, open = true, onclose, onclosed }: {
+    data: PageData; target?: string; open?: boolean; onclose?: () => void; onclosed?: () => void;
+  } = $props();
+  const settingsUrl = $derived(target ? new URL(target, page.url.href) : page.url);
+  const redesigned = $derived(target ? data.capabilities?.settingsSidebar === true : page.data.capabilities?.settingsSidebar === true);
+  const activeSection = $derived(redesigned && settingsUrl.pathname === '/settings' ? undefined : data.section);
+  const viewer = $derived(target ? data.user : page.data.user);
+  const identity = $derived({
+    name: viewer?.settings.profile?.displayName || viewer?.username || 'Account',
+    avatar: viewer?.settings.profile?.avatar,
+  });
+  let undoReset = $state<Record<string, unknown>>();
+  const draftForm = 'coast-settings-draft';
+  const accountSegments = [
+    { id: 'users', label: 'Members', icon: 'friends', href: '/settings/users' },
+    { id: 'invites', label: 'Invitations', icon: 'ticket', href: '/settings/users?view=invites' },
+    { id: 'defaults', label: 'Invitation defaults', icon: 'sliders', href: '/settings/users?view=defaults' },
+  ] as const;
+  const policyOptions = policySegments.map(({ value: id, label }) => ({ id, label }));
+  const privacyOptions = [{ id: 'audience', label: 'Audience' }, { id: 'notifications', label: 'Notifications' }];
+  const diagnosticOptions = [{ id: 'logging', label: 'Logging' }, { id: 'events', label: 'Events' }];
+  let policyPanel = $state<ReturnType<typeof policySegmentForGroup>>('access');
+  let privacyPanel = $state('audience');
+  let diagnosticPanel = $state('logging');
+  const panelKey = $derived(activeSection === 'policies' ? policyPanel : activeSection === 'privacy' ? privacyPanel
+    : activeSection === 'activity' ? diagnosticPanel : activeSection === 'users' ? data.usersTab : undefined);
 
-  let accountDetail=$state(''),bulkAccess=$state(false),selectedAccounts=$state<string[]>([]);
-  $effect(()=>{data.accounts;selectedAccounts=[];});
+  $effect(() => {
+    if (activeSection === 'policies') {
+      const group = settingsUrl.hash.slice(1);
+      policyPanel = policySegmentForGroup(group);
+      if (group && policySegments.some(segment => (segment.groups as readonly string[]).includes(group))) {
+        void tick().then(() => document.getElementById(group)?.scrollIntoView({ block: 'start' }));
+      }
+    }
+  });
+
+  let revealingInvalid = false;
+  function revealInvalid(event: Event) {
+    if (revealingInvalid) { event.preventDefault(); return; }
+    const field = event.target;
+    if (!(field instanceof HTMLInputElement)) return;
+    if (activeSection === 'activity' && diagnosticPanel === 'events') {
+      diagnosticPanel = 'logging';
+    } else if (activeSection === 'policies') {
+      const segment = policySegmentForGroup(field.closest('fieldset[id]')?.id ?? '');
+      if (segment === policyPanel) return;
+      policyPanel = segment;
+    } else return;
+    event.preventDefault();
+    revealingInvalid = true;
+    void tick().then(() => {
+      revealingInvalid = false;
+      field.reportValidity();
+    });
+  }
+  const canEditName = $derived(activeSection === 'account' && !!viewer && !viewer.access?.libraryOnly);
+  let displayName = $state(untrack(() => viewer?.settings.profile?.displayName ?? ''));
+  const choices = <const Value extends string>(pairs: readonly (readonly [Value, string])[], icon?: IconName) =>
+    pairs.map(([id, label]) => ({ id, label, icon }));
+  const regions = choices([
+    ['GB', 'United Kingdom'], ['US', 'United States'], ['CA', 'Canada'], ['AU', 'Australia'],
+    ['DE', 'Germany'], ['FR', 'France'], ['JP', 'Japan'], ['IN', 'India'],
+  ], 'discover');
+  const audiencesOptions = audiences.map(id => ({ id, label: id[0].toUpperCase() + id.slice(1), icon: 'shield' as const }));
+  const profileAudiences = [{ id: 'default', label: 'Use profile audience', icon: 'user' }, ...audiencesOptions] as const;
+  const categoryAudiences = audiencesOptions.map(option => option.id === 'public' ? { ...option, label: 'Use section audience' } : option);
+  const socialNotificationOptions = [
+    ['friend-accepted', 'Friend requests accepted'],
+    ['recommendation', 'Recommendations'],
+    ['reaction', 'Reactions'],
+    ['synced-invite', 'Synced session invitations'],
+  ] as const;
+  const notificationOptions = choices([
+    ['normal', 'Dismiss automatically'], ['persistent', 'Keep until dismissed'],
+  ], 'bell');
+  const personalNotifications = [{ id: 'default', label: 'Use installation default', icon: 'bell' }, ...notificationOptions] as const;
+  const roles = choices([['user', 'User'], ['admin', 'Administrator']], 'user');
+  let newAccountRole = $state<'user' | 'admin'>('user');
+  let noticePresentation = $state<'normal' | 'persistent'>('normal');
+  const diagnosticsOptions = diagnosticLevels.map(id => ({ id, label: id[0].toUpperCase() + id.slice(1), icon: 'list' as const }));
+  const siteAccessOptions = choices([
+    ['private', 'Private · sign-in required'], ['public-profiles', 'Private site · public profiles only'],
+    ['public-read-only', 'Public read-only · profiles, Discover and media details'],
+  ], 'shield');
+  const registrationOptions = choices([['invite', 'Invite code required'], ['open', 'Open sign-ups']], 'ticket');
+  const providerOptions = [
+    { id: 'jellyfin', label: 'Jellyfin', icon: 'jellyfin' },
+    { id: 'trakt', label: 'Trakt', icon: 'trakt' },
+    { id: 'either', label: 'Jellyfin or Trakt', icon: 'link' },
+    { id: 'none', label: 'None', icon: 'link' },
+  ] as const;
+  const deliveryOptions = choices([
+    ['direct-and-relay', 'Direct and relayed/transcoded playback'], ['relay-only', 'Relay/transcode only'],
+  ], 'play');
+  const subtitleOptions = choices([['off', 'Off'], ['preferred', 'Preferred languages'], ['always', 'Always enable']], 'subtitles');
+
+
+  let accountDetail=$state(''),bulkAccess=$state(false),selectingAccounts=$state(false),selectedAccounts=$state<string[]>([]);
+  const membersPage = $derived(settingsUrl.searchParams.get('before'));
+  $effect(() => {
+    // Route changes drop the previous list's selection, while a data refresh preserves it.
+    data.usersTab;
+    membersPage;
+    selectedAccounts = [];
+    bulkAccess = false;
+    accountDetail = '';
+    editing = null;
+  });
 
   let apiToken = $state(''),
     apiName = $state(''),
@@ -73,22 +194,21 @@
     role: 'admin' | 'user';
     disabled: boolean;
     password: string;
-    allowPlaybackSharing: boolean;
     personalBitrateMbps: number;
     sharedBitrateMbps: number;
   } | null>(null);
-  let initializedSection = untrack(() => data.section);
+  let initializedSection = untrack(() => activeSection);
   const fields = $derived(
-    data.section === 'features-policy' ? ['features'] : data.section === 'policies'
+    data.section === 'policies'
       ? policyFields
       : data.section === 'activity'
         ? ['diagnosticLevel', 'diagnosticMaxSizeMiB', 'diagnosticMaxAgeDays']
         : preferenceFields[data.section as keyof typeof preferenceFields] ?? []);
 
-  let saved = $state(untrack(() => JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields))));
+  let saved = $state(untrack(() => JSON.stringify(selectSettings(['policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields))));
 
   const draft = $derived({
-    ...selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields),
+    ...selectSettings(['policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields),
     ...data.section === 'playback'
       ? { subtitleLanguages: splitValues(subtitleLanguagesText, ',') }
       : {},
@@ -100,15 +220,21 @@
       }
       : {}
   });
-  const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
+  const dirty = $derived(canEditName ? displayName.trim() !== (viewer?.settings.profile?.displayName ?? '')
+    : fields.length > 0 && JSON.stringify(draft) !== saved);
   function readPreferences() {
     const defaults = data.defaults;
-    const settings = page.data.user?.settings;
+    const settings = viewer?.settings;
     const preferences = structuredClone({
       ...defaults, ...settings,
       subtitleLanguages: settings?.subtitleLanguages ?? defaults.subtitleLanguages,
     });
     if (preferences.notificationLevel === 'silent') preferences.notificationLevel = null;
+    if (data.section === 'privacy') {
+      const notifications = { ...preferences.social.notifications };
+      for (const [kind] of socialNotificationOptions) notifications[kind] ??= true;
+      preferences.social.notifications = notifications;
+    }
     return preferences;
   }
   function readPolicy() {
@@ -120,6 +246,10 @@
   const sourceOrders = metadataProviders.flatMap(first =>
     metadataProviders.filter(second => second !== first).map(second => [first, second,
       metadataProviders.find(third => third !== first && third !== second)!] satisfies [MetadataProviderName, MetadataProviderName, MetadataProviderName]));
+  const metadataOptions = choices<string>([
+    ['local-preferred', 'Coast default'], ['tmdb-only', 'TMDB snapshots only'],
+    ...sourceOrders.map(order => [order.join(','), order.map(source => sourceLabels[source]).join(' → ')] as const),
+  ], 'layers');
   const familyLabels = { details: 'Details and genres', artwork: 'Artwork', release: 'Release dates and airtimes' };
   function chooseSourceOrder(family: MetadataFamily, value: string) {
     if (!policy) return;
@@ -131,39 +261,68 @@
     policy.metadataSource = {...settings,[family]:order};
   }
   function restoreDraft() {
+    displayName = viewer?.settings.profile?.displayName ?? '';
     prefs = readPreferences();
     policy = readPolicy();
     subtitleLanguagesText = prefs.subtitleLanguages.join(', ');
     policyLanguagesText = policy?.subtitleLanguages.join(', ') ?? '';
     portsText = policy?.allowedProviderPorts.join(', ') ?? '';
     allowlistText = policy?.serverAllowlist.join('\n') ?? '';
-    saved = JSON.stringify(selectSettings(['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields));
+    saved = JSON.stringify(selectSettings(['policies', 'activity', 'users'].includes(data.section) ? policy ?? {} : prefs, fields));
     error = '';
     apiToken = '';
   }
 
-  beforeNavigate(({ cancel, to, shallow }) => {
-    if (shallow) return;
-    if (to?.url.pathname === page.url.pathname) return;
-    if (busy || dirty && !window.confirm('Discard unsaved settings?')) cancel();
+  function canLeave() {
+    return !busy && (!dirty || window.confirm('Discard unsaved settings?'));
+  }
+
+  function closeSettings() {
+    if (onclose) {
+      if (canLeave()) onclose();
+    } else {
+      void goto('/library');
+    }
+  }
+
+  beforeNavigate(({ cancel, to, shallow, willUnload }) => {
+    if (!open || !busy && !dirty) return;
+    if (willUnload) { cancel(); return; }
+    if (target && shallow) {
+      const next = to && detailPanelHref(to.url, {});
+      if (!next || new URL(next, page.url.href).pathname === settingsUrl.pathname) return;
+    } else if (to?.url.pathname === settingsUrl.pathname) return;
+    if (!canLeave()) cancel();
   });
-  const conflictServices = $derived(
-    data.providers.filter(
-      (p) =>
-        p.enabled && !['tmdb', 'igdb'].includes(p.provider) && p.connection?.status === 'connected'
-    )
-  );
+  const conflictOptions = $derived.by(() => {
+    const options = choices<string>([['manual', 'Manual · review every conflict'], ['coast', 'Coast wins automatically']], 'refresh');
+    for (const provider of data.providers) {
+      if (!provider.enabled || ['tmdb', 'igdb'].includes(provider.provider) || provider.connection?.status !== 'connected') continue;
+      const account = provider.connection.username ? ` · ${provider.connection.username}` : '';
+      options.push({ id: provider.connection.id, label: `${provider.name}${account} wins automatically`, icon: 'link' });
+    }
+    if (!options.some(option => option.id === prefs.syncConflictWinner)) {
+      options.push({ id: prefs.syncConflictWinner, label: 'Preferred account unavailable · manual review', icon: 'info' });
+    }
+    return options;
+  });
   $effect(() => {
     // Background refreshes must not erase unsaved edits on the current page.
-    if (data.section === initializedSection) return;
-    initializedSection = data.section;
+    if (activeSection === initializedSection) return;
+    initializedSection = activeSection;
+    resetOpen = false;
     untrack(restoreDraft);
   });
   async function saveDraft() {
-    const submitted = $state.snapshot(draft);
+    const submitted: Record<string, unknown> = $state.snapshot(draft);
+    if (data.section === 'features') {
+      const previous = JSON.parse(saved).features as FeatureChoices | undefined;
+      submitted.features = Object.fromEntries(Object.entries(prefs.features ?? {}).filter(([key, value]) =>
+        data.featurePermissions[key] && value !== previous?.[key as Feature]));
+    }
     if (
       await save(
-        ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? 'settings/system' : 'settings',
+        ['policies', 'activity', 'users'].includes(data.section) ? 'settings/system' : 'settings',
         submitted,
         data.section === 'activity'
           ? 'Diagnostic logging updated. Changes are active now.'
@@ -191,6 +350,19 @@
       busy = false;
     }
   }
+  async function resetPreferences() {
+    if (busy) return;
+    busy = true;
+    try {
+      const result = await change<{preferences: Record<string, unknown>}>('settings/reset', {});
+      undoReset = Object.keys(result.preferences).length ? result.preferences : undefined;
+      restoreDraft();
+      resetOpen = false;
+      notifyAction('Personal preferences restored to installation defaults.');
+    } catch (cause) { error = message(cause); }
+    finally { busy = false; }
+  }
+
   const values = (form: HTMLFormElement) => Object.fromEntries(new FormData(form));
   reportFailure(()=>error);
   let demandError=$state('');
@@ -198,88 +370,150 @@
   reportFailure(()=>data.section==='admin' ? demandError : '');
 </script>
 
-{#snippet saveControls(label: string)}
-  <div class="save-controls">
-    <div class="row">
-      <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : label}</Button>
-      <Button emphasis="subtle" disabled={busy || !dirty} onclick={restoreDraft}
-        >Discard changes</Button
-      >
-    </div>
-    {#if dirty && !busy}<p class="small" role="status">Unsaved changes</p>{/if}
-  </div>
+{#snippet settingsGroup(rows: Snippet)}
+  <AuthSurface>{@render rows()}</AuthSurface>
 {/snippet}
 
-<svelte:head><title>{titles[data.section]} · Coast</title></svelte:head>
-<div class="content page">
-  <Heading variant="page" title="Settings" description="Manage your preferences, connections and account." />
-  <div class="settings-grid">
-    <nav class="settings-nav" aria-label="Settings">
-      <span class="group">You</span>{#each links as [key, label]}<a
-          class:active={data.section === key}
-          aria-current={data.section === key ? 'page' : undefined}
-          href={key === 'appearance' ? '/settings' : `/settings/${key}`}>{label}</a
-        >{/each}{#if page.data.user?.role === 'admin'}<span class="group">Administration</span
-        >{#each adminLinks as [key, label]}<a
-            class:active={data.section === key}
-            aria-current={data.section === key ? 'page' : undefined}
-            href="/settings/{key}">{label}</a
-          >{/each}<a href="/ui-preview">UI reference</a>{/if}
-    </nav>
-    <section class="settings-main" aria-label={titles[data.section]}>
-      <Heading title={titles[data.section]} />
+{#snippet saveControls()}
+  {#if dirty}
+    <div class="save-controls">
+      <div class="row">
+        <Button size="segment" emphasis="subtle" disabled={busy} onclick={restoreDraft}>Discard changes</Button>
+      </div>
+      {#if !busy}<p class="small" role="status">Unsaved changes</p>{/if}
+    </div>
+  {/if}
+{/snippet}
 
-      <p class="section-description small">{descriptions[data.section]}</p>
+{#snippet editMember(showTitle = true)}
+  {#if editing}
+    <form class="stack" aria-label={`Edit ${editing.username}`} onsubmit={async (event) => {
+      event.preventDefault();
+      if (!editing) return;
+      const { email, role, disabled, password, id, personalBitrateMbps, sharedBitrateMbps } = editing;
+      const patch = { email, role, disabled, personalBitrateMbps, sharedBitrateMbps,
+        ...(password ? { password } : {}) };
+      if (await save(`admin/users/${id}`, patch, 'Account updated.', 'PATCH')) editing = null;
+    }}>
+      {#if showTitle}<h3>Edit {editing.username}</h3>{/if}
+      <label class="field">
+        Email <small>Optional</small>
+        <input type="email" bind:value={editing.email} maxlength="254" disabled={busy} />
+      </label>
+      <SettingsChoice label="Role" options={roles} bind:value={editing.role} disabled={busy || editing.id === viewer?.id} />
+      <SettingsSwitch label="Disable Coast account" bind:checked={editing.disabled} disabled={busy || editing.id === viewer?.id} />
+      <label class="field">
+        Personal stream limit (Mbps)
+        <input type="number" min="1" max="1000" bind:value={editing.personalBitrateMbps} disabled={busy} />
+      </label>
+      <label class="field">
+        Shared links budget (Mbps)
+        <input type="number" min="1" max="1000" bind:value={editing.sharedBitrateMbps} disabled={busy} />
+        <small>Shared across this account’s active link viewers. Each targets the personal stream limit; headroom is reserved for transport and bitrate bursts.</small>
+      </label>
+      <p class="small">
+        Role, access and password changes sign this account out on every device. Jellyfin role sync
+        applies again at its next Jellyfin sign-in.
+      </p>
+      {#if editing.id !== viewer?.id}
+        <label class="field">
+          New Coast password <small>Optional · 8+ characters, uppercase, lowercase and special character</small>
+          <input type="password" autocomplete="new-password" bind:value={editing.password}
+            minlength="8" maxlength="128" disabled={busy} />
+          <small>Leave blank to keep the current sign-in method. This does not change the Jellyfin password.</small>
+        </label>
+      {/if}
+      <div class="row">
+        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button>
+        <Button disabled={busy} onclick={() => editing = null}>Cancel</Button>
+      </div>
+    </form>
+  {/if}
+{/snippet}
 
-      {#if data.section === 'features' || data.section === 'features-policy'}
-        <form
-          class="stack form-width"
-          onsubmit={(event) => {
-            event.preventDefault();
-            void saveDraft();
-          }}
-        >
-          <fieldset class="panel stack" disabled={busy}>
-            {#each featureDefinitions.filter(([key]) => data.section === 'features-policy'
-              ? administratorFeatures.includes(key as typeof administratorFeatures[number])
-              : key !== 'api') as [key, title, description]}
-              {@const reason = (key === 'presence' || key === 'parties') && prefs.features?.social === false
-                ? 'social'
-                : key === 'sharing' && prefs.features?.playback === false
-                  ? 'playback'
-                  : data.featureDecisions[key].reason === 'personal' ? null : data.featureDecisions[key].reason}
+<svelte:head>{#if !target}<title>{activeSection ? titles[activeSection] : 'Settings'} · Coast</title>{/if}</svelte:head>
+{#if redesigned}
+  <SettingsSidebar {open} onclose={closeSettings} {onclosed}>
+    <SettingsOverview section={activeSection} requestedArea={settingsUrl.searchParams.get('area')} requestedGroup={settingsUrl.searchParams.get('group')} {panelKey} onclose={closeSettings}
+      appearanceNote={viewer?.settings.liquidGlass === false ? 'Standard' : 'Liquid glass'}
+      privacyNote={audiencesOptions.find(option => option.id === (viewer?.settings.social?.audience ?? 'friends'))?.label ?? 'Friends'}
+      {identity} admin={viewer?.role === 'admin'} libraryOnly={viewer?.access?.libraryOnly === true}
+      saveForm={activeSection && (fields.length || canEditName) ? draftForm : undefined} {busy} {dirty}
+      {subnavigation} {dialogs}>
+      {@render settingsContent()}
+    </SettingsOverview>
+  </SettingsSidebar>
+{:else if !target}
+  <div class="content page legacy-settings">
+    <Heading variant="page" title="Settings" description="Manage your preferences, connections and account." />
+    <div class="settings-grid">
+      <nav class="settings-nav" aria-label="Settings">
+        <span class="group">You</span>
+        {#each personalSettings.filter(([key]) => !viewer?.access?.libraryOnly || ['account','appearance','features'].includes(key)) as [key, label]}
+          <a class:active={data.section === key} aria-current={data.section === key ? 'page' : undefined}
+            href={key === 'appearance' ? '/settings' : `/settings/${key}`}>{label}</a>
+        {/each}
+        {#if viewer?.role === 'admin'}
+          <span class="group">Administration</span>
+          {#each administratorSettings as [key, label]}
+            <a class:active={data.section === key} aria-current={data.section === key ? 'page' : undefined}
+              href={`/settings/${key}`}>{label}</a>
+          {/each}
+          <a href="/ui-preview">UI reference</a>
+        {/if}
+      </nav>
+      <div class="legacy-settings-content">
+        <Heading title={titles[data.section]} />
+        {@render subnavigation()}
+        {@render settingsContent()}
+        {#if fields.length || canEditName}
+          <Button type="submit" form={draftForm} disabled={busy || !dirty}>{busy ? 'Saving…' : 'Save'}</Button>
+        {/if}
+      </div>
+    </div>
+    {@render dialogs()}
+  </div>
+{/if}
 
-              <SettingsRow
-                title={title}
-                description={description}
-                reason={data.section === 'features' && reason
-                  ? `${reason === 'experiment'
-                    ? 'Requires its experiment in Policies.'
-                    : reason === 'social'
-                      ? 'Requires Social.'
-                      : reason === 'playback'
-                        ? 'Requires Playback.'
-                        : 'Unavailable in installation settings.'} Your choice is remembered.`
-                  : undefined}
-              >
-                <input
-                  type="checkbox"
-                  aria-label={title}
-                  checked={data.section === 'features-policy'
-                    ? featurePolicyEnabled(policy?.features, key as typeof administratorFeatures[number])
-                    : prefs.features?.[key as PersonalFeature] !== false}
-                  onchange={(event) => {
-                    if (data.section === 'features-policy' && policy) policy.features = { ...policy.features, [key]: event.currentTarget.checked }; else prefs.features = { ...prefs.features, [key]: event.currentTarget.checked };
-                  }}
-                />
-              </SettingsRow>
-            {/each}
-          </fieldset>
-          <p class="small muted">Privacy, connection sync choices, playback limits and sharing permissions remain in their existing settings. Stored history and saved preferences are preserved.</p>
-          {@render saveControls('Save features')}
+  {#snippet subnavigation()}
+    {#if activeSection === 'users'}
+      <SettingsChoice label="Accounts" options={accountSegments} value={data.usersTab}
+        onchange={value => { const destination = accountSegments.find(option => option.id === value); if (destination) void navigateMedia(destination.href); }} />
+    {:else if activeSection === 'policies'}
+      <SettingsChoice label="Policy group" options={policyOptions} bind:value={policyPanel} />
+    {:else if activeSection === 'privacy'}
+      <SettingsChoice label="Privacy settings" options={privacyOptions} bind:value={privacyPanel} />
+    {:else if activeSection === 'activity'}
+      <SettingsChoice label="Diagnostic settings" options={diagnosticOptions} bind:value={diagnosticPanel} />
+    {/if}
+  {/snippet}
+{#snippet settingsContent()}
+  <section class="settings-main" aria-label={titles[data.section]}>
+    <p class="section-description small">{descriptions[data.section]}</p>
+
+      {#if data.section === 'features'}
+        <form id={draftForm} class="stack form-width" onsubmit={event => { event.preventDefault(); void saveDraft(); }}>
+          {#if featureDefinitions.some(([key]) => data.featurePermissions[key])}
+            <AuthSurface>
+              {#each featureDefinitions.filter(([key]) => data.featurePermissions[key]) as [key, title, description] (key)}
+                <SettingsSwitch label={title} {description} checked={prefs.features?.[key] !== false}
+                  onchange={checked => { prefs.features = { ...prefs.features, [key]: checked }; }} />
+              {/each}
+            </AuthSurface>
+            {@render saveControls()}
+          {:else}
+            <p class="small">There are no optional features available for your account.</p>
+          {/if}
         </form>
+      {:else if data.section === 'features-policy' && data.installationFeatureDefaults}
+        <div class="stack">
+          {#each data.accounts.items as member (member.id)}
+            <MemberFeaturePermissions account={member} config={data.installationFeatureDefaults} />
+          {/each}
+          {#if data.accounts.next}<Button href={`/settings/features-policy?before=${data.accounts.next}`}>Next page</Button>{/if}
+        </div>
       {:else if data.section === 'collection'}
-        <form
+        <form id={draftForm}
           class="stack form-width"
           onsubmit={(event) => {
             event.preventDefault();
@@ -288,135 +522,79 @@
         >
           <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
           {#each collectionCategories.filter((category) => categoryEnabled({ ...data, features: page.data.capabilities }, category.value)) as category}
-            <fieldset class="panel stack" disabled={busy}>
+            <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
               <legend class="sr-only">{category.label}</legend>
               <h3>{category.label}</h3>
 
               {#each collectionRules.filter((rule) => !['book', 'comic'].includes(category.value) || rule.value !== 'queue') as rule}
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    bind:checked={prefs.collection[category.value][rule.value]}
-                  />
-
-                  {rule.label}
-                </label>
+                <SettingsSwitch label={rule.label}
+                  bind:checked={prefs.collection[category.value][rule.value]} />
               {/each}
             </fieldset>
           {/each}
-          {@render saveControls('Save Collection preferences')}
+          {@render saveControls()}
         </form>
       {:else if data.section === 'privacy'}
-        <form
+        <form id={draftForm}
           class="stack form-width"
           onsubmit={(event) => {
             event.preventDefault();
             void saveDraft();
           }}
         >
-          <fieldset class="panel stack" disabled={busy}>
-            <legend class="sr-only">Privacy & social</legend>
+          <fieldset data-settings-panel hidden={privacyPanel !== 'audience'} class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
+            <legend class="sr-only">Audience</legend>
 
-            <label class="field">
-              Profile audience
-
-              <select bind:value={prefs.social.audience}>
-                {#each audiences as audience}
-                  <option value={audience}>{audience}</option>
-                {/each}
-              </select>
-            </label>
-
+            <PreviewSelect topLayer disabled={busy} label="Profile audience" options={audiencesOptions} bind:value={prefs.social.audience} />
             <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
 
-            {#each socialSections as section}
-              <label class="field">
-                {section}
-
-                <select
-                  value={prefs.social.sections?.[section] ?? 'default'}
-                  onchange={(event) => {
-                    const value = event.currentTarget.value;
-
-                    prefs.social = {
-                      ...prefs.social,
-                      sections: {
-                        ...prefs.social.sections,
-                        [section]: value === 'default' ? undefined : value as Audience
-                      }
-                    };
-                  }}
-                >
-                  <option value="default">Use profile audience</option>
-
-                  {#each audiences as audience}
-                    <option value={audience}>{audience}</option>
-                  {/each}
-                </select>
-              </label>
+            {#each socialSections as section (section)}
+              <PreviewSelect topLayer disabled={busy} label={section} options={profileAudiences}
+                value={prefs.social.sections?.[section] ?? 'default'}
+                onchange={value => {
+                  prefs.social = {
+                    ...prefs.social,
+                    sections: { ...prefs.social.sections, [section]: value === 'default' ? undefined : value },
+                  };
+                }} />
             {/each}
 
-            {#each socialCategories.filter((category) => categoryEnabled({ ...data, features: page.data.capabilities }, category)) as category}
-              <label class="field">
-                {category} sharing
-
-                <select
-                  value={prefs.social.categories?.[category] ?? 'public'}
-                  onchange={(event) => {
-                    prefs.social = {
-                      ...prefs.social,
-                      categories: {
-                        ...prefs.social.categories,
-                        [category]: event.currentTarget.value as Audience
-                      }
-                    };
-                  }}
-                >
-                  {#each audiences as audience}
-                    <option value={audience}>{audience === 'public' ? 'Use section audience' : audience}</option>
-                  {/each}
-                </select>
-              </label>
+            {#each socialCategories.filter(category => categoryEnabled({ ...data, features: page.data.capabilities }, category)) as category (category)}
+              <PreviewSelect topLayer disabled={busy} label={`${category} sharing`} options={categoryAudiences}
+                value={prefs.social.categories?.[category] ?? 'public'}
+                onchange={value => {
+                  prefs.social = { ...prefs.social, categories: { ...prefs.social.categories, [category]: value } };
+                }} />
             {/each}
 
-            <Heading title="Social notifications" />
+          </fieldset>
+          <fieldset data-settings-panel hidden={privacyPanel !== 'notifications'} class="panel stack glass settings-glass"
+            use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
+            <legend class="sr-only">Notifications</legend>
 
-            {#each [
-              'friend-accepted',
-              'recommendation',
-              'reaction',
-              'synced-invite'
-            ] as const as kind}
-              <label class="check">
-                <input
-                  type="checkbox"
-                  checked={prefs.social.notifications?.[kind] !== false}
-                  onchange={(event) => {
-                    prefs.social = {
-                      ...prefs.social,
-                      notifications: {
-                        ...prefs.social.notifications,
-                        [kind]: event.currentTarget.checked
-                      }
-                    };
-                  }}
-                />
-
-                {kind === 'synced-invite' ? 'Synced session invitations' : kind}
-              </label>
+            {#each socialNotificationOptions as [kind, label]}
+              <SettingsSwitch {label}
+                checked={prefs.social.notifications?.[kind] !== false}
+                onchange={checked => {
+                  prefs.social = {
+                    ...prefs.social,
+                    notifications: { ...prefs.social.notifications, [kind]: checked },
+                  };
+                }} />
             {/each}
 
             <p class="small">Incoming friend requests appear in Friends.</p>
-            {@render saveControls('Save privacy preferences')}
-  </fieldset></form>
-{:else if data.section === 'appearance'}<form
+          </fieldset>
+          {@render saveControls()}
+        </form>
+      {:else if data.section === 'appearance'}<form id={draftForm}
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
             void saveDraft();
           }}
         >
-          <fieldset class="panel stack" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
             <legend class="sr-only">Display</legend>
             <h3>Display</h3>
 
@@ -424,9 +602,7 @@
               title="Liquid glass"
               description="Use glass effects where supported. Turn off to use the blur fallback."
             >
-              <input
-                type="checkbox"
-                aria-label="Liquid glass"
+              <Toggle label="Liquid glass"
                 bind:checked={prefs.liquidGlass}
               />
             </SettingsRow>
@@ -435,60 +611,46 @@
               title="Full-width content"
               description="Let your library make the most of the screen. Heroes always stay edge-to-edge."
             >
-              <input
-                type="checkbox"
-                aria-label="Full-width content"
+              <Toggle label="Full-width content"
                 bind:checked={prefs.fullWidth}
               /></SettingsRow>
-            <SettingsRow title="Prefer original titles" description="Use a title’s original language where it is available."><input
-                type="checkbox"
-                aria-label="Prefer original titles"
+            <SettingsRow title="Prefer original titles" description="Use a title’s original language where it is available."><Toggle label="Prefer original titles"
                 bind:checked={prefs.originalTitles}
               /></SettingsRow>
-          <SettingsRow title="Black and white missing artwork" description="Show unavailable media in black and white."><input type="checkbox" aria-label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></SettingsRow>
-          <SettingsRow title="Sanitize odd page counts" description="Remove an unmatched final comic face after splitting spreads. Turn off to keep every face and add unprinted binding pages. Applies the next time you open the reader."><input type="checkbox" aria-label="Sanitize odd page counts" bind:checked={prefs.sanitizeOddReadingPages}/></SettingsRow>
+          <SettingsRow title="Black and white missing artwork" description="Show unavailable media in black and white."><Toggle label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></SettingsRow>
+          <SettingsRow title="Sanitize odd page counts" description="Remove an unmatched final comic face after splitting spreads. Turn off to keep every face and add unprinted binding pages. Applies the next time you open the reader."><Toggle label="Sanitize odd page counts" bind:checked={prefs.sanitizeOddReadingPages}/></SettingsRow>
           </fieldset>
-          <fieldset class="panel stack" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
             <legend class="sr-only">Regional metadata</legend>
             <h3>Regional metadata</h3>
-            <label class="field"
-              >Region<select bind:value={prefs.region}
-                ><option value="GB">United Kingdom</option><option value="US">United States</option
-                ><option value="CA">Canada</option><option value="AU">Australia</option><option
-                  value="DE">Germany</option
-                ><option value="FR">France</option><option value="JP">Japan</option><option
-                  value="IN">India</option
-                ></select
-              ><small>Used for age certificates and regional metadata.</small></label
-            >
+            <PreviewSelect topLayer disabled={busy} label="Region" options={regions.some(option => option.id === prefs.region)
+              ? regions : [...regions, { id: prefs.region, label: prefs.region, icon: 'discover' }]} bind:value={prefs.region} />
+            <p class="small">Used for age certificates and regional metadata.</p>
           </fieldset>
-          <fieldset class="panel stack" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
             <legend class="sr-only">Notifications</legend>
             <h3>Notifications</h3>
-            <label class="check"><input type="checkbox" bind:checked={prefs.shareDemand} />Share missing demand with administrators</label>
+            <SettingsSwitch label="Share missing demand with administrators" bind:checked={prefs.shareDemand} />
             <p class="small">Administrators can see your needed titles and request status. This does not change profile visibility.</p>
-            <SettingsRow title="Toast duration" description="Important notices stay visible until dismissed."><select
-                aria-label="Toast duration"
-                disabled={!data.allowNotificationSilencing}
-                bind:value={prefs.notificationLevel}
-              ><option value={null}>Use installation default</option><option value="normal">Dismiss automatically</option><option value="persistent">Keep until dismissed</option></select></SettingsRow>
+            <PreviewSelect topLayer disabled={busy || !data.allowNotificationSilencing} label="Toast duration"
+              options={personalNotifications} value={prefs.notificationLevel ?? 'default'}
+              onchange={value => prefs.notificationLevel = value === 'default' ? null : value} />
+            <p class="small">Important notices stay visible until dismissed.</p>
           </fieldset>
-          {@render saveControls('Save preferences')}
+          {@render saveControls()}
         </form>
-      {:else if data.section === 'playback'}<form
+      {:else if data.section === 'playback'}<form id={draftForm}
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
             void saveDraft();
           }}
         >
-          <fieldset class="panel stack" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} disabled={busy}>
             <legend class="sr-only">Subtitles</legend>
             <h3>Subtitles</h3>
             {#if data.experimentalMusic}<label class="field">Listen threshold (%)<input type="number" min="1" max="100" step="1" bind:value={prefs.listenThreshold} /><small>Count a listen after this percentage is actually played. Captured when playback starts.</small></label>{/if}
-            <SettingsRow title="Always enable subtitles" description="Enable your preferred track, or the first available track if no language matches."><input
-                type="checkbox"
-                aria-label="Always enable subtitles"
+            <SettingsRow title="Always enable subtitles" description="Enable your preferred track, or the first available track if no language matches."><Toggle label="Always enable subtitles"
                 bind:checked={prefs.subtitlesAlways}
               /></SettingsRow>
             <label class="field"
@@ -504,9 +666,7 @@
               title="Ask before playback"
               description="Choose subtitle preferences before starting a title."
             >
-              <input
-                type="checkbox"
-                aria-label="Ask before playback"
+              <Toggle label="Ask before playback"
                 bind:checked={prefs.subtitlePrompt}
               /></SettingsRow>
             <p class="small">
@@ -517,7 +677,7 @@
             Quality and delivery follow the administrator’s server policy. You can choose an
             available edition on a title’s details page.
           </p>
-          {@render saveControls('Save playback preferences')}
+          {@render saveControls()}
         </form>
 
         {#if data.playbackLinks.length}
@@ -559,6 +719,12 @@
         {/if}
       {:else if data.section === 'api'}
         <div class="stack form-width">
+          <AuthSurface>
+            <div class="menu-row"><Icon name="key" size={16} /><span>Active tokens</span>
+              <span class="menu-row-note account-note">{data.apiActivity?.tokens ?? 0}</span></div>
+            <div class="menu-row"><Icon name="link" size={16} /><span>Active webhooks</span>
+              <span class="menu-row-note account-note">{data.apiActivity?.webhooks ?? 0}</span></div>
+          </AuthSurface>
           <form
             class="panel stack"
             onsubmit={async (event) => {
@@ -685,15 +851,40 @@
         </div>
       {:else if data.section === 'account'}
         <div class="stack form-width">
-          <div class="panel">
-            <h3>{page.data.user?.username}</h3>
-            <p class="small">
-              {page.data.user?.email ?? 'No email address'} · {page.data.user?.role === 'admin'
-                ? 'Administrator'
-                : 'Coast account'}
-            </p>
-            {#if data.initialImports}<Button href="/onboarding?step=imports" emphasis="subtle">Initial imports</Button>{/if}
-          </div>
+          <AuthSurface>
+            <div class="menu-row">
+              <AccountIdentity {...identity} detail={viewer?.role === 'admin' ? 'Administrator' : 'Coast account'} />
+            </div>
+            <div class="menu-row"><Icon name="atSign" size={16} /><span>Username</span>
+              <span class="menu-row-note account-note">{viewer?.username}</span></div>
+            <div class="menu-row"><Icon name="user" size={16} /><span>Email</span>
+              <span class="menu-row-note account-note">{viewer?.email ?? 'No email address'}</span></div>
+            {#if viewer && !viewer.access?.libraryOnly}
+              <a class="menu-row" href={profilePath(viewer.username)}>
+                <Icon name="userCheck" size={16} /><span>Profile</span><span class="menu-chevron"><Icon name="right" size={16} /></span>
+              </a>
+            {/if}
+            {#if data.initialImports}
+              <a class="menu-row" href="/onboarding?step=imports">
+                <Icon name="history" size={16} /><span>Initial imports</span><span class="menu-chevron"><Icon name="right" size={16} /></span>
+              </a>
+            {/if}
+          </AuthSurface>
+          {#if canEditName}
+            <form id={draftForm} class="stack" onsubmit={async event=>{
+              event.preventDefault();
+              if (await save('profile', { action: 'display-name', displayName }, 'Display name saved.')) restoreDraft();
+            }}>
+              <AuthSurface>
+                <Field label="Display name" class="menu-row" hideLabel>
+                  <Icon name="user" size={16} />
+                  <input aria-label="Display name" bind:value={displayName} placeholder="Display name"
+                    maxlength="60" autocomplete="nickname" disabled={busy} />
+                </Field>
+              </AuthSurface>
+              {#if dirty}{@render saveControls()}{/if}
+            </form>
+          {/if}
           <div class="panel stack">
             {#if data.hasLocalPassword}<h3>Change password</h3>
               <p class="small">
@@ -757,7 +948,14 @@
                   resetOpen = true;
                 }}>Restore defaults…</Button
               >
+              {#if redesigned && undoReset}<Button disabled={busy} onclick={async () => {
+                if (await save('settings/undo-reset', undoReset, 'Preference restore undone.')) {
+                  undoReset = undefined;
+                  restoreDraft();
+                }
+              }}>Undo restore</Button>{/if}
             </div>
+            {#if redesigned && resetOpen}{@render resetConfirmation()}{/if}
           </div>
           <div class="panel stack">
             <h3>About Coast</h3>
@@ -772,43 +970,10 @@
           </div>
         </div>
       {:else if data.section === 'connections'}<div class="stack form-width">
-          <p class="small">
-            Your tracking stays in Coast when you disconnect. <a
-              class="text-accent"
-              href="/settings/pending">Review sync conflicts</a
-            >
-          </p>
-          <form
-            class="panel stack"
-            onsubmit={(event) => {
-              event.preventDefault();
-              void saveDraft();
-            }}
-          >
-            <h3>Conflict resolution</h3>
-            <label class="field"
-              >Preferred winner
-              <select bind:value={prefs.syncConflictWinner} disabled={busy}>
-                <option value="manual">Manual — review every conflict</option>
-                <option value="coast">Coast wins automatically</option>
-                {#each conflictServices as service}
-                  <option value={(service.connection!).id}>{service.name}{(service.connection!).username ? ` · ${(service.connection!).username}` : ''} wins automatically</option>
-                {/each}
-
-                {#if !['manual', 'coast'].includes(prefs.syncConflictWinner) && !conflictServices.some((p) => (p.connection!).id === prefs.syncConflictWinner)}
-                  <option value={prefs.syncConflictWinner}>Preferred account unavailable — manual review</option>
-                {/if}
-              </select>
-            </label>
-            <p class="small">
-              The winner replaces conflicting values in Coast and other enabled sync destinations.
-              Your choice applies when syncing; conflicts the preferred account cannot resolve stay
-              in Sync conflicts. Sync permissions and enabled categories still apply.
-            </p>
-            {@render saveControls('Save conflict preference')}
-          </form>
+          <h2 class="section-label">Linked services</h2>
           {#each data.providers.filter((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider)) as p (p.id)}<ConnectionCard
               provider={p}
+              {settingsGroup}
               dynamicCollectionExports={data.providers.filter((source) => source.provider === 'trakt' && source.connection?.status === 'connected' && traktPreferences(source.connection.settings).export.collection && (source.connection.settings.collectionProjection as {
                 enabled?: boolean;
                 scope?: string;
@@ -826,6 +991,29 @@
                   >Add an integration</Button
                 >{/if}</EmptyState
             >{/if}
+          <GlassSeparator />
+          <AuthSurface>
+            <a class="menu-row" href="/settings/pending">
+              <Icon name="refresh" size={16} /><span>Sync conflicts</span><span class="menu-chevron"><Icon name="right" size={16} /></span>
+            </a>
+          </AuthSurface>
+          <p class="small">Your tracking stays in Coast when you disconnect.</p>
+          <form id={draftForm}
+            class="panel stack"
+            onsubmit={(event) => {
+              event.preventDefault();
+              void saveDraft();
+            }}
+          >
+            <h3>Conflict resolution</h3>
+            <PreviewSelect topLayer disabled={busy} label="Preferred winner" options={conflictOptions} bind:value={prefs.syncConflictWinner} />
+            <p class="small">
+              The winner replaces conflicting values in Coast and other enabled sync destinations.
+              Your choice applies when syncing; conflicts the preferred account cannot resolve stay
+              in Sync conflicts. Sync permissions and enabled categories still apply.
+            </p>
+            {@render saveControls()}
+          </form>
         </div>
       {:else if data.section === 'jobs'}<JobsSettings commands={data.taskCommands}
           tasteJob={data.tasteJob}
@@ -835,11 +1023,18 @@
         />
       {:else if data.section === 'backups' && data.backups}<BackupSettings initial={data.backups} />
       {:else if data.section === 'benchmarks' && data.benchmarks}<BenchmarkSettings history={data.benchmarks} />
-      {:else if data.section === 'pending'}<p class="small" style="margin-bottom:20px">
-          Choose which service should win when saved changes disagree. Background sync is managed by
-          your administrator.
-        </p>
-        <ConflictList conflicts={data.conflicts} />
+      {:else if data.section === 'pending'}
+        <div class="stack">
+          <AuthSurface>
+            <div class="menu-row"><Icon name="refresh" size={16} /><span>Pending conflicts</span>
+              <span class="menu-row-note account-note">{data.conflicts.length}</span></div>
+            <a href="/settings/connections" class="menu-row">
+              <Icon name="sliders" size={16} /><span>Change preferred winner</span>
+              <span class="menu-chevron"><Icon name="right" size={16} /></span>
+            </a>
+          </AuthSurface>
+          <ConflictList conflicts={data.conflicts} />
+        </div>
       {:else if data.section === 'admin'}<div class="stack">
           <div class="health-grid">
             <div class="panel">
@@ -1020,71 +1215,111 @@
               if (
                 await save(
                   'notifications/broadcast',
-                  { ...body, locked: body.locked === 'on' },
+                  { ...body, level: noticePresentation, locked: body.locked === 'on' },
                   'Notice delivered.'
                 )
-              )
+              ) {
                 form.reset();
+                noticePresentation = 'normal';
+              }
             }}
           >
             <label class="field">Title<input name="title" required maxlength="160" /></label><label
               class="field"
               >Message<textarea name="body" rows="3" maxlength="2000"></textarea></label
-            ><label class="field"
-              >Presentation<select name="level"
-                ><option value="normal">Dismiss automatically</option><option value="persistent"
-                  >Keep until dismissed</option></select
-              ></label
-            ><label class="check"
-              ><input type="checkbox" name="locked" />Mark as important</label
-            ><Button type="submit" disabled={busy}>Send notice</Button>
+            >
+            <SettingsChoice label="Presentation" options={notificationOptions} bind:value={noticePresentation} />
+            <SettingsSwitch name="locked" label="Mark as important" /><Button type="submit" disabled={busy}>Send notice</Button>
           </form>
         </div>
-      {:else if data.section === 'integrations'}<IntegrationSettings
+      {:else if data.section === 'integrations'}<IntegrationSettings inline={redesigned}
+            editId={settingsUrl.searchParams.get('integration') ?? undefined}
           providers={data.providers}
-          experimentalGaming={data.config?.experimentalGaming ?? false}
-          experimentalComics={data.config?.experimentalComics ?? false}
+          experimentalGaming
+          experimentalComics
         />
       {:else if data.section === 'users'}<div class="stack">
-
-          <SegmentedControl label="User management" value={data.usersTab} options={[{value:'users',label:'Users'},{value:'invites',label:'Invites'},{value:'defaults',label:'Defaults'}]}
-            onchange={view=>void goto(view==='users'?'/settings/users':'/settings/users?view='+view)} />
           {#if data.usersTab!=='users'}
-            {#key data.usersTab}<AdminInviteSettings view={data.usersTab} connections={data.inviteAuthorities} />{/key}
+            {#key data.usersTab}<AdminInviteSettings inline={redesigned} view={data.usersTab} connections={data.inviteAuthorities} />{/key}
           {:else}
-          {#if selectedAccounts.length}<div class="row"><Button emphasis="subtle" onclick={()=>bulkAccess=true}>Apply access to {selectedAccounts.length} selected</Button></div>{/if}
-          <div class="overflow">
-            <table class="table">
-              <thead><tr><th>Select</th><th>Username</th><th>Role</th><th>Status</th><th>Email</th><th>Actions</th></tr></thead>
-              <tbody>
-                {#each data.accounts.items as user (user.id)}
-                  <tr>
-                    <td>{#if user.role==='user'}<input type="checkbox" bind:group={selectedAccounts} value={user.id} aria-label={'Select '+user.username} disabled={selectedAccounts.length>=20&&!selectedAccounts.includes(user.id)} />{/if}</td>
-                    <td>{user.username}</td><td>{user.role}</td><td>{user.disabled?'Suspended':user.expired?'Expired':'Active'}</td><td>{user.email??'—'}</td>
-                    <td>
-                      <Button emphasis="subtle" onclick={()=>accountDetail=user.id}>Details</Button>
-                      <Button emphasis="subtle" disabled={busy} onclick={()=>{
-                        error='';
-                        editing={id:user.id,username:user.username,email:user.email??'',role:user.role,disabled:user.disabled,password:'',
-                          allowPlaybackSharing:user.settings.allowPlaybackSharing===true,
-                          personalBitrateMbps:user.settings.personalBitrateMbps??data.config?.maxBitrateMbps??120,
-                          sharedBitrateMbps:user.settings.sharedBitrateMbps??20};
-                      }}>Edit</Button>
-                      {#if user.id!==page.data.user?.id}<Button emphasis="subtle" onclick={()=>{error='';deleteId=user.id;}}>Delete</Button>{/if}
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
+          <div class="row">
+            <Button size="segment" emphasis="subtle" pressed={selectingAccounts} onclick={() => {
+              selectingAccounts = !selectingAccounts;
+              if (!selectingAccounts) { selectedAccounts = []; bulkAccess = false; }
+            }}>{selectingAccounts ? 'Done selecting' : 'Select members'}</Button>
+            {#if selectedAccounts.length}
+              <Button size="segment" emphasis="subtle" onclick={() => { bulkAccess = !bulkAccess; accountDetail = ''; editing = null; }}>
+                Apply access to {selectedAccounts.length} selected
+              </Button>
+            {/if}
           </div>
-          {#if data.accounts.next}<div class="row"><Button emphasis="subtle" href={'/settings/users?before='+data.accounts.next}>Next page</Button></div>{/if}
-          {#if page.url.searchParams.has('before')}<div class="row"><Button emphasis="subtle" href="/settings/users">First page</Button></div>{/if}
-          {#if accountDetail||bulkAccess}
-            <AccountAccessControls userId={accountDetail||undefined} selection={selectedAccounts}
-              onclose={()=>{accountDetail='';bulkAccess=false;}} onchange={()=>void refreshRouteDependencies(['settings'])} />
+          {#if bulkAccess}
+            <AccountAccessControls inline={redesigned} selection={selectedAccounts} onclose={() => { bulkAccess = false; }}
+              onchange={() => void refreshRouteDependencies(['settings'])} />
           {/if}
-          <div class="panel stack form-width">
-            <h3>Create a Coast account</h3>
+          {#each data.accounts.items as user (user.id)}
+            {@const role = user.role === 'admin' ? 'Administrator' : 'Member'}
+            {@const status = user.disabled ? 'Suspended' : user.expired ? 'Expired' : 'Active'}
+            {@const name = user.settings.profile?.displayName || user.username}
+            {@const opened = accountDetail === user.id || editing?.id === user.id}
+            <div class="stack member">
+              <AuthSurface>
+                {#if selectingAccounts && user.role === 'user'}
+                  <label class="menu-row member-identity">
+                    <AccountIdentity {name} avatar={user.settings.profile?.avatar} detail={`${role} · ${status}`} />
+                    <input type="checkbox" bind:group={selectedAccounts} value={user.id} aria-label={`Select ${user.username}`}
+                      disabled={selectedAccounts.length >= 20 && !selectedAccounts.includes(user.id)} />
+                  </label>
+                {:else}
+                  <button type="button" class="menu-row member-identity" aria-expanded={opened}
+                    onclick={() => {
+                      if (busy) return;
+                      editing = null;
+                      bulkAccess = false;
+                      accountDetail = opened ? '' : user.id;
+                    }}>
+                    <AccountIdentity {name} avatar={user.settings.profile?.avatar} detail={`${role} · ${status}`} />
+                    <span class="menu-chevron member-chevron" class:expanded={opened}><Icon name="right" size={16} /></span>
+                  </button>
+                {/if}
+              </AuthSurface>
+              {#if opened}
+                <p class="small member-summary">{user.username}{user.email ? ` · ${user.email}` : ''}</p>
+                <div class="row">
+                  <Button size="segment" emphasis="subtle" disabled={busy} onclick={() => {
+                    error = '';
+                    accountDetail = '';
+                    editing = { id: user.id, username: user.username, email: user.email ?? '', role: user.role,
+                      disabled: user.disabled, password: '',
+                      personalBitrateMbps: user.settings.personalBitrateMbps ?? data.config?.maxBitrateMbps ?? 120,
+                      sharedBitrateMbps: user.settings.sharedBitrateMbps ?? 20 };
+                  }}>Edit</Button>
+                  {#if user.id !== viewer?.id}
+                    <Button size="segment" emphasis="subtle" onclick={() => { error = ''; deleteId = user.id; }}>Delete</Button>
+                  {/if}
+                </div>
+                {#if editing?.id === user.id}
+                  {#if redesigned}
+                    {@render editMember()}
+                  {:else}
+                    <Dialog open={true} title={`Edit ${user.username}`} onclose={() => { if (!busy) editing = null; }}>
+                      {@render editMember(false)}
+                    </Dialog>
+                  {/if}
+                {:else if accountDetail === user.id}
+                  {#if data.installationFeatureDefaults}
+                    <MemberFeaturePermissions account={user} config={data.installationFeatureDefaults} />
+                  {/if}
+                  <AccountAccessControls inline={redesigned} userId={user.id} onclose={() => { accountDetail = ''; }}
+                    onchange={() => void refreshRouteDependencies(['settings'])} />
+                {/if}
+              {/if}
+            </div>
+          {/each}
+          {#if data.accounts.next}<div class="row"><Button emphasis="subtle" href={'/settings/users?before='+data.accounts.next}>Next page</Button></div>{/if}
+          {#if settingsUrl.searchParams.has('before')}<div class="row"><Button emphasis="subtle" href="/settings/users">First page</Button></div>{/if}
+          <details class="member-create">
+            <summary>Create a Coast account</summary>
             <p class="small">
               Users can manage their own tracking and connections. Administrators can also change
               installation policies and manage every account.
@@ -1098,11 +1333,13 @@
                 if (
                   await save(
                     'admin/users',
-                    { ...body, email: body.email || undefined },
+                    { ...body, role: newAccountRole, email: body.email || undefined },
                     'Account created.'
                   )
-                )
+                ) {
                   form.reset();
+                  newAccountRole = 'user';
+                }
               }}
             >
               <label class="field">
@@ -1128,53 +1365,34 @@
                 /></label
               ><label class="field"
                 >Email <small>Optional</small><input name="email" type="email" /></label
-              ><label class="field"
-                >Role<select name="role"
-                  ><option value="user">User</option><option value="admin">Administrator</option
-                  ></select
-                ></label
-              ><Button type="submit" disabled={busy}>Create account</Button>
+              >
+              <SettingsChoice label="Role" options={roles} bind:value={newAccountRole} />
+              <Button type="submit" disabled={busy}>Create account</Button>
             </form>
-          </div>
+          </details>
         {/if}
         </div>
-      {:else if data.section === 'policies' && policy}<form
-          class="stack form-width"
+      {:else if data.section === 'policies' && policy}<form id={draftForm}
+          class="stack form-width" oninvalidcapture={revealInvalid}
           onsubmit={(e) => {
             e.preventDefault();
             void saveDraft();
           }}
         >
-          <nav class="policy-links" aria-label="Policy groups">
-            {#each policyGroups as [key, label]}<a class="badge" href="#{key}">{label}</a>{/each}
-          </nav>
-          <fieldset class="panel stack" id="development" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="development" data-settings-panel hidden={policyPanel !== 'system'} disabled={busy}>
             <legend class="sr-only">Development</legend>
-            <SettingsRow title="Developer mode" description="Pause automatic jobs, queued background work and retention cleanup. Run and Retry remain available, as do actions you explicitly take. Running jobs finish their current run."><input type="checkbox" aria-label="Developer mode" bind:checked={policy.developerMode}/></SettingsRow>
+            <SettingsRow title="Developer mode" description="Pause automatic jobs, queued background work and retention cleanup. Run and Retry remain available, as do actions you explicitly take. Running jobs finish their current run."><Toggle label="Developer mode" bind:checked={policy.developerMode}/></SettingsRow>
           </fieldset>
-          <fieldset class="panel stack" id="access" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="access" data-settings-panel hidden={policyPanel !== 'access'} disabled={busy}>
             <legend class="sr-only">Access & registration</legend>
             <h3>Access & registration</h3>
-            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select><small>Public profiles respect each user’s privacy settings.</small></label>
-            <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
-            <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select><small>New accounts complete their selected imports before entering Coast. Manage providers in Integrations.</small></label>
-            <SettingsRow title="Playback sharing" description="Administrators can share one accessible item. Other accounts require a sharing grant."><input type="checkbox" aria-label="Playback sharing" bind:checked={policy.allowPlaybackSharing}/></SettingsRow>
+            <PreviewSelect topLayer disabled={busy} label="Website access" options={siteAccessOptions} bind:value={policy.siteAccess} />
+            <p class="small">Public profiles respect each user’s privacy settings.</p>
+            <PreviewSelect topLayer disabled={busy} label="Registration" options={registrationOptions} bind:value={policy.registrationMode} />
+            <PreviewSelect topLayer disabled={busy} label="Required connection" options={providerOptions} bind:value={policy.registrationProvider} />
+            <p class="small">New accounts complete their selected imports before entering Coast. Manage providers in Integrations.</p>
           </fieldset>
-          <fieldset class="panel stack" id="features" disabled={busy}>
-            <legend class="sr-only">Experimental features</legend>
-            <h3>Experimental features</h3>
-            <p class="small">Enable each feature separately. Turning one off hides its controls and blocks access without deleting saved data.</p>
-            {#each experimentalPolicies as [field, title, description]}
-              <SettingsRow title={title} description={description}>
-                <input
-                  type="checkbox"
-                  aria-label={title}
-                  bind:checked={policy[field]}
-                />
-              </SettingsRow>
-            {/each}
-          </fieldset>
-          <fieldset class="panel stack" id="sessions" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="sessions" data-settings-panel hidden={policyPanel !== 'access'} disabled={busy}>
             <legend class="sr-only">Sessions</legend>
             <h3>Sessions</h3>
             <label class="field"
@@ -1191,16 +1409,11 @@
               ></label
             >
           </fieldset>
-          <fieldset class="panel stack" id="playback-policy" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="playback-policy" data-settings-panel hidden={policyPanel !== 'media'} disabled={busy}>
             <legend class="sr-only">Playback</legend>
             <h3>Playback</h3>
+            <PreviewSelect topLayer disabled={busy} label="Delivery policy" options={deliveryOptions} bind:value={policy.playbackDelivery} />
             <label class="field"
-              >Delivery policy<select bind:value={policy.playbackDelivery}
-                ><option value="direct-and-relay"
-                  >Allow direct and relayed/transcoded playback</option
-                ><option value="relay-only">Relay/transcode only</option></select
-              ></label
-            ><label class="field"
               >Maximum bitrate (Mbps)<input
                 type="number"
                 min="1"
@@ -1208,10 +1421,7 @@
                 bind:value={policy.maxBitrateMbps}
                 required
               /><small>Per-stream ceiling for normal playback and shared viewers. Shared links have a separate aggregate budget.</small></label
-            ><label class="check"
-              ><input type="checkbox" bind:checked={policy.allowTranscoding} />Allow Jellyfin
-              transcoding</label
-            ><SettingsRow title="H.265 VRChat sharing" description="Allow an experimental H.265 / AAC fMP4 HLS option. H.264 remains the default; support depends on the world player and device."><input type="checkbox" aria-label="H.265 VRChat sharing" bind:checked={policy.allowVrchatHevc}/></SettingsRow
+            ><SettingsSwitch label="Allow Jellyfin transcoding" bind:checked={policy.allowTranscoding} /><SettingsRow title="H.265 VRChat sharing" description="Allow an experimental H.265 / AAC fMP4 HLS option. H.264 remains the default; support depends on the world player and device."><Toggle label="H.265 VRChat sharing" bind:checked={policy.allowVrchatHevc}/></SettingsRow
             ><label class="field"
               >VRChat idle timeout (minutes)<input
                 type="number"
@@ -1222,51 +1432,32 @@
                 required
               /><small>How long an idle VRChat viewer keeps its stream and bandwidth reservation. Link expiration and auto-revoke can end it sooner.</small>
             </label
-            ><label class="field"
-              >Default subtitle mode<select bind:value={policy.subtitleDefault}
-                ><option value="off">Off</option><option value="preferred"
-                  >Preferred languages</option
-                ><option value="always">Always enable</option></select
-              ></label
-            ><label class="field"
+            >
+            <PreviewSelect topLayer disabled={busy} label="Default subtitle mode" options={subtitleOptions} bind:value={policy.subtitleDefault} />
+            <label class="field"
               >Default subtitle languages<input
                 bind:value={policyLanguagesText}
                 placeholder="en, fr"
               /></label
             >
           </fieldset>
-          <fieldset class="panel stack" id="metadata" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="metadata" data-settings-panel hidden={policyPanel !== 'media'} disabled={busy}>
             <legend class="sr-only">Metadata</legend>
             <h3>Metadata</h3>
             <p class="small muted">Film and TV sources are checked in order for each field. Personal choices and admin overrides still apply. Jellyfin artwork requires server access.</p>
             {#each metadataFamilies as family (family)}
               {@const preference = sourcePreference(policy.metadataSource, family)}
-              <SettingsRow title={familyLabels[family]}>
-                <select aria-label={familyLabels[family]} value={Array.isArray(preference) ? preference.join(',') : preference}
-                  onchange={event => chooseSourceOrder(family, event.currentTarget.value)}>
-                  <option value="local-preferred">Coast default</option>
-                  <option value="tmdb-only">TMDB snapshots only</option>
-                  {#each sourceOrders as order (order[0] + order[1])}
-                    <option value={order.join(',')}>{order.map(source => sourceLabels[source]).join(' → ')}</option>
-                  {/each}
-                </select>
-              </SettingsRow>
+              <PreviewSelect topLayer disabled={busy} label={familyLabels[family]} options={metadataOptions}
+                value={Array.isArray(preference) ? preference.join(',') : preference}
+                onchange={value => chooseSourceOrder(family, value)} />
             {/each}
-            <label class="check"
-              ><input type="checkbox" bind:checked={policy.cacheTmdbArtwork} />Cache TMDB artwork on
-              this server</label
-            >
-            <label class="check"><input type="checkbox" bind:checked={policy.cacheServerArtwork}/>Cache media server artwork on this server</label><p class="small muted">Save local copies when viewed. Media server images remain permission checked and served through Coast. Turning either cache off bypasses saved copies and stops new disk writes.</p>
+            <SettingsSwitch label="Cache TMDB artwork on this server" bind:checked={policy.cacheTmdbArtwork} />
+            <SettingsSwitch label="Cache media server artwork on this server" bind:checked={policy.cacheServerArtwork} /><p class="small muted">Save local copies when viewed. Media server images remain permission checked and served through Coast. Turning either cache off bypasses saved copies and stops new disk writes.</p>
           </fieldset>
-          <fieldset class="panel stack" id="network" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="network" data-settings-panel hidden={policyPanel !== 'system'} disabled={busy}>
             <legend class="sr-only">Integrations & network</legend>
             <h3>Integrations & network</h3>
-            <label class="check"
-              ><input type="checkbox" bind:checked={policy.enableTrakt} />Allow Trakt
-              synchronisation</label
-            ><label class="check"
-              ><input type="checkbox" bind:checked={policy.enableRequests} />Allow media requests</label
-            ><label class="field"
+            <SettingsSwitch label="Allow Trakt synchronisation" bind:checked={policy.enableTrakt} /><label class="field"
               >Allowed provider ports<input bind:value={portsText} /><small
                 >Comma-separated ports (1–65535). Checked when connecting to services; changing this
                 does not stop active playback.</small
@@ -1277,38 +1468,26 @@
               ></label
             >
           </fieldset>
-          <fieldset class="panel stack" id="notifications" disabled={busy}>
+          <fieldset class="panel stack glass settings-glass" use:liquidGlass={{ variant: 'clear', renderer: 'css' }} id="notifications" data-settings-panel hidden={policyPanel !== 'system'} disabled={busy}>
             <legend class="sr-only">Notifications</legend>
             <h3>Notifications</h3>
-            <label class="field"
-              >Default presentation<select bind:value={policy.notificationLevel}
-                ><option value="normal">Dismiss automatically</option
-                ><option value="persistent">Keep until dismissed</option></select
-              ></label
-            ><label class="check"
-              ><input type="checkbox" bind:checked={policy.allowNotificationSilencing} />Allow personal toast duration preferences</label
-            >
+            <PreviewSelect topLayer disabled={busy} label="Default presentation" options={notificationOptions}
+              value={policy.notificationLevel === 'silent' ? 'normal' : policy.notificationLevel}
+              onchange={value => policy && (policy.notificationLevel = value)} />
+            <SettingsSwitch label="Allow personal toast duration preferences" bind:checked={policy.allowNotificationSilencing} />
           </fieldset>
-          {@render saveControls('Save system policies')}
+          {@render saveControls()}
         </form>
       {:else if data.section === 'activity'}
-        {#if policy}<form
-            class="panel stack form-width"
-            style="margin-bottom:24px"
+        {#if policy}<form id={draftForm}
+            class="panel stack form-width" data-settings-panel hidden={diagnosticPanel !== 'logging'}
+            oninvalidcapture={revealInvalid}
             onsubmit={(e) => {
               e.preventDefault();
               void saveDraft();
             }}
           >
-            <label class="field"
-              >Diagnostic logging<select disabled={busy} bind:value={policy.diagnosticLevel}>
-                <option value="off">Off</option><option value="error">Error</option><option
-                  value="warn">Warn</option
-                ><option value="info">Info</option><option value="debug">Debug</option><option
-                  value="trace">Trace</option
-                >
-              </select></label
-            >
+            <PreviewSelect topLayer disabled={busy} label="Diagnostic logging" options={diagnosticsOptions} bind:value={policy.diagnosticLevel} />
             <label class="field">Maximum diagnostic log size (MiB)
               <input type="number" min="4" max="4096" step="1" required disabled={busy} bind:value={policy.diagnosticMaxSizeMiB} />
             </label>
@@ -1324,16 +1503,21 @@
               a limit removes older logs on the next read or write. Resource history, security
               and audit records are kept separately.
             </p>
-            {@render saveControls('Save diagnostic logging')}
-            <a href="/api/v1/diagnostics?download">Download recent diagnostics</a>
+            {@render saveControls()}
           </form>{/if}
-        <p class="small" style="margin-bottom:24px">
+        <div class="stack" data-settings-panel hidden={diagnosticPanel !== 'events'}>
+        <AuthSurface>
+          <a class="menu-row" href="/api/v1/diagnostics?download">
+            <Icon name="download" size={16} /><span>Download recent diagnostics</span>
+            <span class="menu-chevron"><Icon name="right" size={16} /></span>
+          </a>
+        </AuthSurface>
+        <p class="small">
           Administrator diagnostics include application and playback failures. Sensitive credentials
           and personal data are excluded.
         </p>
         {#if data.loggingAudit.length || data.metadataAudit.length}<details
             class="panel"
-            style="margin-bottom:24px"
           >
             <summary>Audit activity</summary>
             <div class="stack">
@@ -1368,11 +1552,12 @@
             title="No diagnostics to review."
             description="Application and playback errors will appear here when they need your attention."
             icon="shield"
-          />{/if}{/if}
-    </section>
-  </div>
-</div>
-<Dialog bind:open={resetOpen} title="Restore all personal preferences?">
+          />{/if}
+        </div>
+      {/if}
+  </section>
+{/snippet}
+{#snippet resetConfirmation()}
   <div class="stack">
     <p>
       This resets appearance, notification, playback and conflict resolution preferences. Subtitle
@@ -1384,24 +1569,19 @@
     <div class="row">
       <Button
         disabled={busy}
-        onclick={async () => {
-          if (
-            await save(
-              'settings/reset',
-              {},
-              'Personal preferences restored to installation defaults.'
-            )
-          ) {
-            restoreDraft();
-            resetOpen = false;
-          }
-        }}
+        onclick={resetPreferences}
       >{busy ? 'Restoring…' : 'Restore all preferences'}</Button>
 
       <Button disabled={busy} onclick={() => resetOpen = false}>Keep preferences</Button>
     </div>
   </div>
-</Dialog>
+{/snippet}
+{#snippet dialogs()}
+  <div class="settings-dialog">
+  {#if !redesigned}<Dialog bind:open={resetOpen} title="Restore all personal preferences?">
+    {@render resetConfirmation()}
+  </Dialog>{/if}
+
 
 <Dialog
   onclose={() => deleteId = ''}
@@ -1427,92 +1607,19 @@
   </div></Dialog
 >
 
-<Dialog
-  open={!!editing}
-  title={editing ? `Edit ${editing.username}` : 'Edit account'}
-  onclose={() => {
-    if (!busy) editing = null;
-  }}
->
-  {#if editing}<form
-      class="stack"
-      onsubmit={async (event) => {
-        event.preventDefault();
-        if (!editing) return;
-        const { email, role, disabled, password, id, allowPlaybackSharing, personalBitrateMbps, sharedBitrateMbps } = editing;
-        if (
-          await save(
-          `admin/users/${id}`,
-          {
-            email,
-            role,
-            disabled,
-            allowPlaybackSharing,
-            personalBitrateMbps,
-            sharedBitrateMbps,
-            ...password ? { password } : {}
-          },
-          'Account updated.',
-          'PATCH'
-          )
-        )
-          editing = null;
-      }}
-    >
-      <label class="field">
-        Email
-        <small>Optional</small>
 
-        <input
-          type="email"
-          bind:value={editing.email}
-          maxlength="254"
-          disabled={busy}
-        /></label
-      >
-      <label class="field"
-        >Role<select bind:value={editing.role} disabled={busy || editing.id === page.data.user?.id}
-          ><option value="user">User</option><option value="admin">Administrator</option></select
-        ></label
-      >
-      <label class="check"
-        ><input
-          type="checkbox"
-          bind:checked={editing.disabled}
-          disabled={busy || editing.id === page.data.user?.id}
-        />Disable Coast account</label
-      >
-      <label class="check"><input type="checkbox" bind:checked={editing.allowPlaybackSharing} disabled={busy}/>Allow playback sharing</label>
-      <label class="field">Personal stream limit (Mbps)<input type="number" min="1" max="1000" bind:value={editing.personalBitrateMbps} disabled={busy}/></label>
-      <label class="field">Shared links budget (Mbps)<input type="number" min="1" max="1000" bind:value={editing.sharedBitrateMbps} disabled={busy}/><small>Shared across this account’s active link viewers. Each targets the personal stream limit; headroom is reserved for transport and bitrate bursts.</small></label>
-      <p class="small">
-        Role, access and password changes sign this account out on every device. Jellyfin role sync
-        applies again at its next Jellyfin sign-in.
-      </p>
-      {#if editing.id !== page.data.user?.id}<label class="field"
-          >New Coast password <small>Optional · 8+ characters, uppercase, lowercase and special character</small><input
-            type="password"
-            autocomplete="new-password"
-            bind:value={editing.password}
-            minlength="8"
-            maxlength="128"
-            disabled={busy}
-          />
 
-          <small>Leave blank to keep the current sign-in method. This does not change the Jellyfin password.</small>
-        </label>
-      {/if}
+  </div>
+{/snippet}
 
-      <div class="row">
-        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button>
-        <Button disabled={busy} onclick={() => editing = null}>Cancel</Button>
-      </div>
-    </form>{/if}
-</Dialog>
 
 <style>
+  .legacy-settings-content { display: grid; align-content: start; gap: var(--auth-gap); min-inline-size: 0; }
+  .legacy-settings-content > :global(.button) { justify-self: start; }
+
   .section-description {
-    margin: -8px 0 24px;
+    margin: 0 0 var(--auth-gap);
+    color: var(--muted);
   }
   fieldset {
     min-width: 0;
@@ -1521,24 +1628,35 @@
   fieldset:disabled {
     opacity: 0.75;
   }
+  .member-identity { min-block-size: 60px; text-align: start; }
+  .member-identity input { margin-inline-start: auto; flex: none; }
+  .member-chevron.expanded { transform: rotate(90deg); }
+  .member-summary { overflow-wrap: anywhere; }
+  .member-create > .small { margin-block-end: var(--auth-gap); }
   .save-controls {
     display: grid;
-    gap: 12px;
-  }
-  .policy-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .policy-links a:hover {
-    color: var(--ink);
+    gap: var(--auth-action-gap);
   }
   fieldset[id] {
-    scroll-margin-top: 100px;
+    scroll-margin-block-start: var(--auth-gap);
   }
   .settings-main {
     min-width: 0;
-    max-width: 1100px;
+  }
+  .section-label { margin: 0; padding-inline: var(--auth-gap); color: var(--muted); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .account-note { margin-inline-start: auto; overflow-wrap: anywhere; text-align: end; }
+  .settings-main .settings-glass {
+    background: var(--coast-glass-fill);
+    border: 0;
+  }
+  .settings-main .settings-glass > h3 {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+  }
+  .settings-main .settings-glass :global(.setting) {
+    padding: 0;
+    border: 0;
+    gap: var(--auth-gap);
   }
   .health-grid {
     display: grid;

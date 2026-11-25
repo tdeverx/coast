@@ -141,14 +141,35 @@ try {
   console.log('PASS administrator title lock overrides personal presentation');
 
   step = 'preferences';
+  await page.goto(`${origin}/settings/features-policy`);
+  await expect(page.getByRole('navigation', { name: 'Settings', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: `Feature permissions for ${username}`, exact: true }).click();
+  const allowSidebar = page.getByRole('checkbox', { name: 'Allow Settings sidebar', exact: true });
+  const enableSidebar = page.getByRole('checkbox', { name: 'Enable Settings sidebar', exact: true });
+  if (!await enableSidebar.isChecked()) {
+    await allowSidebar.check();
+    await enableSidebar.check();
+    const applied = page.waitForResponse(response => response.url().endsWith('/features') && response.request().method() === 'PATCH');
+    await page.getByRole('button', { name: 'Save feature permissions', exact: true }).click();
+    expect((await applied).ok()).toBe(true);
+  }
+  await page.goto(`${origin}/library`);
+  const settingsBackground = new URL(page.url()).pathname;
   await accountNavigate('Settings');
+  const settingsSidebar = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await expect(settingsSidebar).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe(settingsBackground);
+  await expect(page.locator('.sidebar-effect .blur-band')).toHaveCount(4);
+  await settingsSidebar.getByRole('link', { name: 'Appearance', exact: true }).click();
   await page.getByLabel('Full-width content', { exact: true }).uncheck();
-  await page.getByLabel('Region', { exact: false }).selectOption('US');
-  await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Saved.');
+  const regionPicker = page.getByRole('button', { name: 'Region', exact: true });
+  await regionPicker.click();
+  await page.getByRole('button', { name: 'United States', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Preferences saved.', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Full-width content', { exact: true })).not.toBeChecked();
-  await expect(page.getByLabel('Region', { exact: false })).toHaveValue('US');
+  await expect(regionPicker).toHaveAccessibleDescription('United States');
   await screenshot('settings-desktop');
   console.log('PASS preferences persisted after reload');
 
@@ -165,9 +186,9 @@ try {
   await expect(page.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
   await screenshot('account-menu-mobile');
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-  await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await checkPage();
+  await expect(settingsSidebar).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('detail')).toBe('/settings');
+  await expect(settingsSidebar.getByRole('heading', { name: 'Settings', exact: true })).toBeAttached();
   await screenshot('settings-mobile');
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -175,6 +196,8 @@ try {
   console.log('PASS mobile layout and pointer menu');
 
   step = 'logout and login';
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);

@@ -1,6 +1,5 @@
-import { getFeatureConfig } from '#lib/server/features.js';
-import { featureValues, type FeatureConfiguration } from '#lib/features.js';
-import { defaultConfig } from '#lib/server/config.js';
+import { getFeatureConfig, sharedProviderFeatures } from '#lib/server/features.js';
+import { getConfig } from '#lib/server/config.js';
 import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
 import {saveJellyfinAddedDates} from '#lib/providers/jellyfin/added-date.server.js';
 import {importJellyfinReading} from './jellyfin-reading.server';
@@ -174,9 +173,11 @@ async function runJellyfinScan(
   const db = getDb(),
     kind = scope === 'personal' ? 'jellyfin-personal' : scope === 'user' ? 'jellyfin-user' : full ? 'jellyfin-full' : 'jellyfin-recent';
   const userScope = scope !== 'library';
-  const featureConfig=userScope?await getFeatureConfig(userId):await getFeatureConfig(null);
-  const signatureOf=(values:ReturnType<typeof featureValues>)=>['screen','music','book','comic'].map(key=>Number(values[key as keyof typeof values])).join('');
-  const featureSignature=signatureOf(featureConfig.features);
+  const featureConfig = userScope ? await getFeatureConfig(userId) : await sharedProviderFeatures(await getConfig());
+  const featureSignature = [featureConfig.features?.screen !== false, featureConfig.experimentalMusic,
+    featureConfig.experimentalBooks, featureConfig.experimentalComics].map(Number).join('');
+  const signature = sql<string>`concat(${sql.join(['screen','music','book','comic'].map(key => userScope
+    ? sql`coast_feature_enabled(${userId}::uuid,${key})::int` : sql`coast_shared_feature_enabled(${key})::int`), sql`,`)})`;
   const progressKey = scope === 'personal' ? 'initialSync' : 'userSync';
   const filters = ['IsPlayed', 'IsResumable', 'IsFavorite'] as const;
   const filterPhases = ['watched', 'resume', 'favourites'] as const;
@@ -282,7 +283,7 @@ async function runJellyfinScan(
   const expectedMembers = new Map<string, number>();
   async function ensureConnected(store: Pick<Database, 'select'> = db, lock = false) {
     const query = store
-      .select({ settings: providerConnections.settings, featureChoices:users.settings, featurePolicy:sql<FeatureConfiguration>`(select value from system_settings where key='coast')` })
+      .select({ settings: providerConnections.settings, signature })
       .from(providerConnections)
       .innerJoin(users, eq(users.id, providerConnections.userId))
       .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
@@ -302,7 +303,7 @@ async function runJellyfinScan(
     // finalization waiting on that writer's intent row.
     const [current] = await (lock ? query.for('no key update', {of: providerConnections}) : query);
     if (!current) throw new PermanentActionError('The connected account changed during this task.');
-    if(signatureOf(featureValues({...defaultConfig,...current.featurePolicy},userScope?current.featureChoices.features:undefined))!==featureSignature)throw new JobYield();
+    if(current.signature!==featureSignature)throw new JobYield();
     if(scope==='user'&&!changes&&current.settings.userSyncResetId!==resetId)throw new JobYield();
     await assertJobLease(store,lock);
     return current;

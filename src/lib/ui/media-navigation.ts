@@ -1,6 +1,7 @@
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
 import { detailPanelHref, detailPanelUrl, mediaDetailTarget, panelAddress } from '#lib/media/detail-target.js';
+import { settingsTarget } from '#lib/settings/navigation.js';
 import { sectionTarget } from '#lib/ui/section-target.js';
 import { player } from '#lib/playback/client.svelte.js';
 import { captureShelfPosition } from './shelf-position';
@@ -19,9 +20,12 @@ export function inviteProfileTarget(href: string | undefined) {
 
 function overlayTarget(href: string, section = false) {
   const target = page.data.user && !page.url.pathname.startsWith('/ui-preview')
-    ? mediaDetailTarget(href,page.url) ?? (section || detailPanelHref(panelAddress(page),page.state) ? sectionTarget(href,page.url) : null)
+    ? (page.data.capabilities?.settingsSidebar === true && !settingsTarget(page.url.href, page.url) ? settingsTarget(href, page.url) : null)
+      ?? mediaDetailTarget(href,page.url) ?? (section || detailPanelHref(panelAddress(page),page.state) ? sectionTarget(href,page.url) : null)
     : inviteProfileTarget(href);
   if (target && 'kind' in target) {
+    if (target.kind === 'settings' && (target.admin && page.data.user?.role !== 'admin'
+      || page.data.user?.access?.libraryOnly && target.section && !['account', 'appearance', 'features'].includes(target.section))) return null;
     if (target.kind === 'profile' && page.data.user?.access?.libraryOnly) return null;
     if (target.kind === 'personalise' && page.data.capabilities?.cardLayouts !== true) return null;
   }
@@ -64,6 +68,9 @@ export function openMediaDetails(href:string,section=false,replace=false){
     }
 
     if (!isCurrent()) return;
+    const settingsParentDepth = 'kind' in target && target.kind === 'settings' && parentHref
+      ? settingsTarget(parentHref, page.url) ? parent.settingsParentDepth : (parent.mediaDetailDepth ?? 1)
+      : undefined;
     await goto(detailPanelUrl(panelAddress(page), target.href), {
       shallow: true, reset: false, replace: replaceCurrent,
       state: {
@@ -71,6 +78,7 @@ export function openMediaDetails(href:string,section=false,replace=false){
         mediaDetailShelf: undefined,
         mediaDetailHref: target.href,
         mediaDetailFromLink: fromLink,
+        settingsParentDepth,
         mediaDetailDepth: replaceCurrent ? parent.mediaDetailDepth ?? 1 : parentHref ? (parent.mediaDetailDepth ?? 1) + 1 : 1
       }
     });
@@ -88,11 +96,13 @@ export async function closeMediaDetails() {
   // The dialog remains modal until the history entry changes. Several close
   // gestures during that traversal still belong to the same entry.
   closingState = state;
-  if (state.mediaDetailDepth && !state.mediaDetailFromLink) history.go(-state.mediaDetailDepth);
+  if (state.mediaDetailDepth && state.settingsParentDepth && state.mediaDetailDepth > state.settingsParentDepth)
+    history.go(state.settingsParentDepth - state.mediaDetailDepth);
+  else if (state.mediaDetailDepth && !state.mediaDetailFromLink) history.go(-state.mediaDetailDepth);
   else await goto(detailPanelUrl(panelAddress(page)), {
     shallow: true, reset: false, replace: true,
     state: { ...state, mediaDetailHref: undefined, mediaDetailDepth: undefined,
-      mediaDetailFromLink: undefined, mediaDetailShelf: undefined },
+      mediaDetailFromLink: undefined, settingsParentDepth: undefined, mediaDetailShelf: undefined },
   });
 }
 /** One delegated listener covers anchors, Buttons, menus, heroes and future detail links. */

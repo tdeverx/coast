@@ -56,7 +56,6 @@ export async function listActiveShares(actor: SessionUser | null) {
   return rows.map(({workId,kind,category,expiresAt,accessible,together,codec,canCopy,...link}) => {
     const fallback: MediaCardDisplay = { id: workId, kind, title: link.title, href: null };
     const unavailable=!config.features.sharing?featureDenialMessage(config.featureDenials.sharing)
-      :user.role!=='admin'&&user.settings.allowPlaybackSharing!==true?'A Coast admin needs to grant playback sharing.'
       :!categoryEnabled(config,category)?'This medium is disabled.'
       :!accessible?'The shared Jellyfin source is no longer accessible.'
       :together&&!config.features.parties?'This link requires Parties.'

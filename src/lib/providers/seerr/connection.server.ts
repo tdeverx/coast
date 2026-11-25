@@ -1,10 +1,9 @@
 import * as v from 'valibot';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
+import { getFeatureConfig, lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import { providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
 import { decryptCredential } from '#lib/server/security/credentials.js';
-import { getConfig } from '#lib/server/config.js';
 import { SeerrAdapter } from '#lib/providers/seerr/adapter.server.js';
 import { getInstance, instanceTransport } from '#lib/providers/instances.server.js';
 import { saveConnection } from '#lib/providers/connections.server.js';
@@ -36,7 +35,7 @@ export async function assertSeerrAccount(tx:Tx,scope:SeerrAccountScope) {
 
 export async function getSeerr(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string},signal?:AbortSignal) {
   signal?.throwIfAborted();
-  if (!(await getConfig()).enableRequests)
+  if (!(await getFeatureConfig(userId)).enableRequests)
     throw new Error('Requests are disabled by the administrator.');
   signal?.throwIfAborted();
   const instance = await getInstance(instanceId, 'seerr');

@@ -19,7 +19,6 @@ export const shareCookie='coast_share_viewer';
 export async function createShare(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),config=await getFeatureConfig(user.id);
  if(!config.allowPlaybackSharing)throw new AppError(403,featureDenialMessage(config.featureDenials.sharing),'feature_disabled');
- if(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true)throw new AppError(403,'A Coast admin needs to grant playback sharing.','sharing_grant_required');
  const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false),target:v.optional(v.picklist(['website','vrchat']),'website'),videoCodec:v.optional(v.picklist(['h264','hevc']),'h264'),autoRevoke:v.optional(v.boolean(),false),trackProgress:v.optional(v.boolean(),false)}),input);
  if(data.target==='vrchat'&&!config.allowTranscoding)throw new AppError(400,'VRChat sharing requires Jellyfin transcoding.');
  if(data.target==='website'&&data.videoCodec!=='h264'||data.target==='vrchat'&&data.together)throw new AppError(400,'Choose a valid sharing destination.');
@@ -54,7 +53,7 @@ export async function createShare(actor:SessionUser|null,input:unknown){
   if(readingSource){
    const [current]=await tx`select c.id from provider_connections c join users u on u.id=c.user_id join provider_instances i on i.id=c.instance_id
     where c.id=${data.connectionId} and c.user_id=${user.id} and c.account_generation=${readingSource.connection.accountGeneration}
-      and c.status='connected' and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true')
+      and c.status='connected' and i.enabled and not u.disabled and coast_feature_enabled(u.id,'sharing')
       and coast_feature_enabled(u.id,'sharing') and coast_feature_enabled(u.id,'reader') and coast_category_enabled(u.id,${sources[0].kind}) for share of c,u,i`;
    if(!current)throw new AppError(410,'The shared reading source changed.');
   }
@@ -91,7 +90,7 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
 }
 export async function assertShare(share:Record<string,any>,db=getSql()){
  const [current]=await db`select s.owner_id,s.source_id,s.edition,s.revoked_at,s.expires_at,s.together,s.target,s.video_codec,w.category,w.kind,
- c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a join provider_items pi on pi.id=a.provider_item_id where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available' and (w.kind not in ('book','comic') or replace(lower(pi.external_id),'-','')=replace(lower(s.source_id),'-',''))) as accessible
+ c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and coast_feature_enabled(u.id,'sharing') and exists(select 1 from availability a join provider_items pi on pi.id=a.provider_item_id where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available' and (w.kind not in ('book','comic') or replace(lower(pi.external_id),'-','')=replace(lower(s.source_id),'-',''))) as accessible
  from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;
  if(!current)throw new AppError(410,'This invitation is unavailable.');
  const config=await getFeatureConfig(current.owner_id,db);

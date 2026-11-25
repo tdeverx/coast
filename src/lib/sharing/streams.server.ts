@@ -4,7 +4,7 @@ type SharedStreamRow={id:string;share_id:string;owner_id:string;username:string;
 /** Same stable keyset cursor as server session history; no tokens or addresses enter this read model. */
 export async function sharedStreamRows(view:'now'|'history',before?:string) {
  const db=getSql(),[date,id]=before?.split('|')??[];
- const active=db`i.enabled and c.status='connected' and c.account_generation=s.account_generation and not u.disabled and (u.role='admin' or coalesce(u.settings->>'allowPlaybackSharing'='true',false)) and coalesce((select (value->>'allowPlaybackSharing')::boolean from system_settings where key='coast'),false) and v.playback_id=p.id and v.ended_at is null and v.last_seen_at>now()-interval '90 seconds' and s.revoked_at is null and s.expires_at>now() and p.state<>'stopped'`;
+ const active=db`i.enabled and c.status='connected' and c.account_generation=s.account_generation and not u.disabled and coast_feature_enabled(u.id,'sharing') and v.playback_id=p.id and v.ended_at is null and v.last_seen_at>now()-interval '90 seconds' and s.revoked_at is null and s.expires_at>now() and p.state<>'stopped'`;
  const last=view==='history'?db`p.updated_at`:db`v.last_seen_at`;
  const order=view==='now'?db`p.created_at`:last;
  return db<SharedStreamRow[]>`select p.id,s.id as share_id,s.owner_id,u.username,v.client,p.created_at as first_seen_at,${last} as last_seen_at,
@@ -22,7 +22,7 @@ export async function sharedStreamRows(view:'now'|'history',before?:string) {
  order by ${order} desc,p.id desc limit 21`;
 }
 export async function sharedStreamCount(){
- const [row]=await getSql()`select count(*)::int as total from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id join users u on u.id=s.owner_id join provider_connections c on c.id=s.connection_id join provider_instances i on i.id=c.instance_id where i.enabled and c.status='connected' and c.account_generation=s.account_generation and not u.disabled and (u.role='admin' or coalesce(u.settings->>'allowPlaybackSharing'='true',false)) and coalesce((select (value->>'allowPlaybackSharing')::boolean from system_settings where key='coast'),false) and v.ended_at is null and v.last_seen_at>now()-interval '90 seconds' and s.revoked_at is null and s.expires_at>now() and p.state<>'stopped'`;
+ const [row]=await getSql()`select count(*)::int as total from share_viewers v join playback_shares s on s.id=v.share_id join playback_sessions p on p.id=v.playback_id join users u on u.id=s.owner_id join provider_connections c on c.id=s.connection_id join provider_instances i on i.id=c.instance_id where i.enabled and c.status='connected' and c.account_generation=s.account_generation and not u.disabled and coast_feature_enabled(u.id,'sharing') and v.ended_at is null and v.last_seen_at>now()-interval '90 seconds' and s.revoked_at is null and s.expires_at>now() and p.state<>'stopped'`;
  return row.total as number;
 }
 /** Exclude any server observation already represented by a Coast viewer lease. */

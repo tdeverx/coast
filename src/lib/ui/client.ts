@@ -1,3 +1,4 @@
+import { refreshSettingsOverlay } from '#lib/settings/overlay-refresh.js';
 import { browserDiagnostic, diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
@@ -179,11 +180,16 @@ export async function refreshRouteDependencies(dependencies: readonly string[] |
   if (dependencies !== 'all' && !dependencies.length) return;
   const { state } = page;
   const url = panelAddress(page);
-  if (detailPanelHref(url, state)
+  const detail = detailPanelHref(url, state);
+  if (detail
     || (state.friendsPopover ?? url.searchParams.get('friends') === 'true')
     || (state.notificationPopover ?? url.searchParams.get('notifications') === 'true')
     || (state.streamsPopover ?? url.searchParams.get('streams') === 'true'))
+  {
     await refreshAll();
+    if (detail && (dependencies === 'all' || dependencies.some(key => ['settings', 'session', 'providers', 'sharing'].includes(key))))
+      await refreshSettingsOverlay();
+  }
   else if (dependencies === 'all') await refreshAll();
   else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
 }

@@ -1,3 +1,4 @@
+import { sharedProviderFeatures } from '#lib/server/features.js';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDb,type Database} from '#lib/server/db/index.js';
 import {providerConnections,providerInstances,users,outboxActions,socialLiveState} from '#lib/server/db/schema.js';
@@ -41,7 +42,7 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
     await recordServerStreams({connectionId:context.connection.id,generation:context.connection.accountGeneration,checkedAt,action},
       page.sessions.flatMap(session=>{const stream=streamPresentation(session);return stream?[stream]:[];}));
   }
-  const config=await getConfig();
+  const config=await sharedProviderFeatures(await getConfig());
   return getDb().transaction(async tx=>{
     const current=await lockSource(tx,context);
     const saved=current.settings.companion as State|undefined;

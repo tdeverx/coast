@@ -21,7 +21,7 @@ async function groupsForReading(userId:string,workId:string){
  if(!groups.length&&item.kind==='comic'){
   const [identity]=await db.select({id:workIdentifiers.externalId}).from(workIdentifiers)
    .where(and(eq(workIdentifiers.workId,workId),eq(workIdentifiers.provider,'comic-vine'))).limit(1);
-  if(identity){await importReading(await readingProviderDetails('comic',identity.id));groups=await lookup();}
+  if(identity){await importReading(await readingProviderDetails('comic',identity.id),userId);groups=await lookup();}
  }
  return groups;
 }

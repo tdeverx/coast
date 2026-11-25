@@ -1,4 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+  import JellyfinFields from '#lib/auth/ui/JellyfinFields.svelte';
+  import ServiceDisclosure from '#lib/auth/ui/ServiceDisclosure.svelte';
+  import ServiceHeader from '#lib/auth/ui/ServiceHeader.svelte';
+  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import OperationProgress from './OperationProgress.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
@@ -22,9 +27,11 @@
     provider,
     sources = [],
     dynamicCollectionExports = [],
+    settingsGroup,
   }: {
     sources?: {id:string;name:string}[];
     dynamicCollectionExports?: string[];
+    settingsGroup?: Snippet<[Snippet]>;
     provider: {
       id: string;
       name: string;
@@ -39,6 +46,18 @@
       } | null;
     };
   } = $props();
+  const serviceId = $props.id();
+  let expanded = $state(false);
+  let visited = $state(false);
+  const service = $derived(provider.provider === 'jellyfin' || provider.provider === 'trakt' ? provider.provider : undefined);
+  const serviceIcon = $derived(provider.provider === 'steam' ? 'gamepad' : 'request');
+  const connectionNote = $derived(provider.connection?.status === 'connected' ? 'Connected' : 'Not connected');
+
+  function toggleService() {
+    expanded = !expanded;
+    if (expanded) visited = true;
+  }
+
   let error = $state(''),
     busy = $state(false),
     username = $state(''),
@@ -180,41 +199,12 @@
   reportFailure(()=>scanStatus.error ? `Could not refresh scan progress: ${scanStatus.error}` : scan?.state === 'failed' ? scan.error : '');
 </script>
 
-<section class="panel stack">
-  <div class="spread">
-    <div class="row">
-      <span class="provider-icon"
-        ><Icon
-          name={provider.provider === 'jellyfin'
-            ? 'play'
-            : provider.provider === 'trakt'
-              ? 'check'
-              : 'request'}
-        /></span
-      >
-      <div class="row-text-stack">
-        <h3>{provider.name}</h3>
-        <p class="small">
-          {provider.provider === 'jellyfin'
-            ? 'Your media server'
-            : provider.provider === 'trakt'
-              ? 'Optional tracking sync'
-              : provider.provider === 'steam' ? 'Owned games, playtime and achievements' : 'Media requests'}
-        </p>
-      </div>
-    </div>
-    <span class="badge" class:available={provider.connection?.status === 'connected'}
-      >{provider.connection?.status === 'connected' ? 'Connected' : 'Not connected'}</span
-    >
-  </div>
+{#snippet controls()}
   {#if provider.connection?.status === 'connected'}<p class="small">
       Connected as {provider.connection.username}
     </p>
     {#if provider.provider === 'jellyfin'}<div class="stack">
-        <label class="check"
-          ><input type="checkbox" bind:checked={importPlayback} disabled={busy} />Import watched
-          status, resume progress and favourites from Jellyfin</label
-        >
+        <SettingsSwitch label="Import watched status, resume progress and favourites from Jellyfin" bind:checked={importPlayback} disabled={busy} />
         <p class="small">
           Enabled by default. User activity syncs import playback state from this Jellyfin account when
           enabled. Turning it off keeps previously imported activity.
@@ -237,20 +227,20 @@
           Your administrator’s next scheduled user sync will import existing playback state. Conflicts
           follow your conflict resolution preference; unresolved changes appear in Sync conflicts.
         </p>
-        <label class="check"><input type="checkbox" bind:checked={reconcileTracking} disabled={busy} />Apply Coast tracking when items become available</label>
+        <SettingsSwitch label="Apply Coast tracking when items become available" bind:checked={reconcileTracking} disabled={busy} />
         <p class="small">Fill empty supported fields. Divergent server state follows your conflict preference. This setting is independent of imports.</p>
         <div><Button  disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
       </div>{/if}
-    {#if ['jellyfin','steam'].includes(provider.provider)}<div class="stack"><label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy} />Read live activity</label><div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/live-read`,{enabled:liveRead},'Live activity preference saved.')}>Save live activity preference</Button></div></div>{/if}
+    {#if ['jellyfin','steam'].includes(provider.provider)}<div class="stack"><SettingsSwitch label="Read live activity" bind:checked={liveRead} disabled={busy} /><div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/live-read`,{enabled:liveRead},'Live activity preference saved.')}>Save live activity preference</Button></div></div>{/if}
     {#if provider.provider === 'steam'}<div class="stack">
-      <label class="check"><input type="checkbox" bind:checked={steamImports.importOwned} disabled={busy} />Add newly imported owned games to Collection</label>
-      <label class="check"><input type="checkbox" bind:checked={steamImports.importPlaytime} disabled={busy} />Import Steam playtime totals</label>
-      <label class="check"><input type="checkbox" bind:checked={steamImports.importAchievements} disabled={busy} />Import achievement progress</label>
+      <SettingsSwitch label="Add newly imported owned games to Collection" bind:checked={steamImports.importOwned} disabled={busy} />
+      <SettingsSwitch label="Import Steam playtime totals" bind:checked={steamImports.importPlaytime} disabled={busy} />
+      <SettingsSwitch label="Import achievement progress" bind:checked={steamImports.importAchievements} disabled={busy} />
       <p class="small">Ownership availability is read from Steam. It does not establish installation. Turning imports off retains previous data; Coast never writes achievements or creates sessions from playtime totals.</p>
       <div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/steam-imports`,steamImports,'Steam import preferences saved.')}>Save import preferences</Button></div>
     </div>{/if}
     {#if provider.provider === 'trakt'}
-      <AccessFields bind:sync={traktSync} disabled={busy} />
+      <AccessFields bind:sync={traktSync} disabled={busy} group={settingsGroup} />
       <div class="row">
         <Button disabled={busy} onclick={saveTraktSync}>Save sync preferences</Button>
       </div>
@@ -306,6 +296,12 @@
       }}
     >
       {#if dynamicCollectionExports.length}<p class="small">Collection export impact: {dynamicCollectionExports.join(', ')} will include this linked source after your access is assessed. Additions and unavailable identities are unresolved until user sync completes. Existing Trakt entries stay until cleanup is reviewed.</p>{/if}
+      {#if settingsGroup}
+        {#snippet credentials()}
+          <JellyfinFields mode="credentials" bind:jellyfinName={username} bind:jellyfinPassword={password} />
+        {/snippet}
+        {@render settingsGroup(credentials)}
+      {:else}
       <label class="field"
         >Jellyfin username<input bind:value={username} autocomplete="username" required /></label
       ><label class="field"
@@ -315,7 +311,9 @@
           autocomplete="current-password"
           maxlength="4096"
         /></label
-      ><Button  type="submit" disabled={busy}
+      >
+      {/if}
+      <Button type="submit" size="segment" disabled={busy}
         >{busy ? 'Connecting…' : 'Connect Jellyfin'}</Button
       >
     </form>{:else if provider.provider === 'steam'}<p class="small">Link your Steam account using Steam’s sign-in page. Game details must be readable for imports; signing in does not override Steam privacy.</p><Button disabled={busy||!provider.configured} onclick={startSteam}>Connect Steam</Button>{:else if provider.provider === 'trakt'}{#if device}<div>
@@ -331,13 +329,67 @@
         </p>{/if}<Button  disabled={busy} onclick={finish}
         >I’ve authorised Coast</Button
       ><Button emphasis="subtle" disabled={busy} onclick={() => { device = null; pending = false; }}>Start again</Button>
-      {:else}<AccessFields bind:sync={linkSync} disabled={busy || !provider.configured} /><Button disabled={busy || !provider.configured} onclick={start}
+      {:else}<AccessFields bind:sync={linkSync} disabled={busy || !provider.configured} group={settingsGroup} /><Button disabled={busy || !provider.configured} onclick={start}
         >Connect Trakt</Button
       >{/if}{:else}<p class="small">
       Your account is linked through the associated Jellyfin server. Connect Jellyfin to request
       titles.
     </p>{/if}
-</section>
+{/snippet}
+
+{#if settingsGroup}
+  <section class="connection-service">
+    {#if service}
+      <ServiceHeader provider={service} activateLabel={provider.name} id={`${serviceId}-label`} note={connectionNote}
+        username={provider.connection?.username ?? ''} expanded={expanded} controls={serviceId}
+        onactivate={toggleService} />
+    {:else}
+      {#snippet serviceRow()}
+        <button type="button" class="menu-row service-trigger" aria-expanded={expanded} aria-controls={serviceId}
+          onclick={toggleService}>
+          <Icon name={serviceIcon} size={16} />
+          <span class="service-name">{provider.name}</span>
+          <span class="menu-row-note">{connectionNote}</span>
+          <span class="service-chevron" class:expanded><Icon name="right" size={16} /></span>
+        </button>
+      {/snippet}
+      {@render settingsGroup(serviceRow)}
+    {/if}
+    <ServiceDisclosure id={serviceId} {expanded}>
+      {#if visited}<div class="panel stack">{@render controls()}</div>{/if}
+    </ServiceDisclosure>
+  </section>
+{:else}
+  <section class="panel stack">
+  <div class="spread">
+    <div class="row">
+      <span class="provider-icon"
+        ><Icon
+          name={provider.provider === 'jellyfin'
+            ? 'play'
+            : provider.provider === 'trakt'
+              ? 'check'
+              : 'request'}
+        /></span
+      >
+      <div class="row-text-stack">
+        <h3>{provider.name}</h3>
+        <p class="small">
+          {provider.provider === 'jellyfin'
+            ? 'Your media server'
+            : provider.provider === 'trakt'
+              ? 'Optional tracking sync'
+              : provider.provider === 'steam' ? 'Owned games, playtime and achievements' : 'Media requests'}
+        </p>
+      </div>
+    </div>
+    <span class="badge" class:available={provider.connection?.status === 'connected'}
+      >{provider.connection?.status === 'connected' ? 'Connected' : 'Not connected'}</span
+    >
+  </div>
+    {@render controls()}
+  </section>
+{/if}
 <Dialog bind:open={disconnect} title="Disconnect this account?"
   ><div class="stack">
     <p>
@@ -365,6 +417,11 @@
 >
 
 <style>
+  .connection-service, .service-name { min-inline-size: 0; }
+  .service-name { flex: 1; }
+  .service-chevron { display: flex; flex: none; transition: transform var(--motion) var(--ease); }
+  .service-chevron.expanded { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { .service-chevron { transition: none; } }
   .scan-status {
     display: grid;
     gap: 10px;

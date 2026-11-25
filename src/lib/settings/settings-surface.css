@@ -1,0 +1,203 @@
+.settings-frame,
+.settings-choice {
+  --editor-menu-radius: var(--glass-surface-radius);
+  --editor-menu-row-gap: round(nearest, 2px, var(--menu-device-pixel, 1px));
+  --editor-menu-frame: calc(var(--editor-menu-row-gap) + round(nearest, 1px, var(--menu-device-pixel, 1px)));
+  --editor-row-height: max(var(--control-height), calc(var(--leading-menu) + 2 * round(nearest, 10px, var(--menu-device-pixel, 1px))));
+  --editor-row-highlight: var(--control-hover-fill);
+  --editor-row-text-gap: var(--row-text-gap);
+  --toggle-off-fill: var(--inset-control-fill);
+  --toggle-on-tint: color-mix(in srgb, var(--white) 26%, var(--inset-control-fill));
+  --toggle-thumb-fill: var(--white);
+}
+
+.settings-frame {
+  --settings-panel-inset: clamp(var(--auth-gap), 2.4vw, 18px);
+  --settings-panel-line: color-mix(in srgb, var(--white) 10%, transparent);
+}
+
+.settings-frame [data-settings-panel][hidden] { display: none; }
+
+.settings-frame :is(.settings-main, .settings-dialog) .stack {
+  gap: var(--auth-gap);
+  min-inline-size: 0;
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .panel {
+  min-inline-size: 0;
+  padding: var(--settings-panel-inset);
+  border-radius: var(--glass-surface-radius);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .panel:not(.settings-glass) {
+  background: color-mix(in srgb, var(--canvas) 52%, transparent);
+  border-color: var(--settings-panel-line);
+  box-shadow:
+    inset 0 6px 8px -7px color-mix(in srgb, var(--white) 21%, transparent),
+    inset 0 -6px 8px -7px color-mix(in srgb, var(--white) 15%, transparent);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .setting {
+  min-block-size: var(--control-height);
+  gap: var(--auth-gap);
+  padding: 0;
+  border: 0;
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .setting-copy h3 {
+  color: var(--menu-row-ink);
+  font-weight: var(--weight-semibold);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) :is(label.field, [data-field]) {
+  min-inline-size: 0;
+  gap: var(--auth-action-gap);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) :where(label.field, .menu-row-copy) {
+  line-height: var(--leading-normal);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) :where(label.field, .setting-copy, .menu-row-copy) :where(small, p) {
+  color: var(--muted);
+  line-height: var(--leading-normal);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .button:not(.segment, .hero) {
+  min-block-size: var(--control-height);
+  border-radius: 999px;
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) :where(label.field, [data-field]) :is(input, select, textarea) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .row > .settings-choice {
+  flex: 1 1 208px;
+}
+
+.settings-frame dialog:has(.select-anchor.expanded) {
+  padding-block-end: calc(3 * var(--editor-row-height));
+}
+
+.settings-frame dialog {
+  border-radius: calc(var(--glass-surface-radius) + var(--segment-inset));
+  border-color: var(--settings-panel-line);
+  background: color-mix(in srgb, var(--surface) 62%, var(--canvas));
+}
+
+.settings-frame dialog .heading {
+  margin-block-end: var(--auth-gap);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) :is(.panel, fieldset, details) > legend {
+  padding-inline: var(--segment-inset);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) details > summary {
+  position: relative;
+  display: block;
+  padding: var(--auth-action-gap) calc(var(--icon-inline) + 2 * var(--auth-action-gap)) var(--auth-action-gap) var(--auth-action-gap);
+  border-radius: var(--glass-surface-radius);
+  color: var(--menu-row-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-menu);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) details > summary::-webkit-details-marker { display: none; }
+
+.settings-frame :is(.settings-main, .settings-dialog) details > summary::after {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(var(--auth-action-gap) + 7px);
+  inset-inline-end: var(--auth-gap);
+  inline-size: 6px;
+  block-size: 6px;
+  border-block-start: 1.5px solid currentColor;
+  border-inline-end: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) details[open] > summary::after {
+  transform: rotate(135deg);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) details > summary:is(:hover, :focus-visible) {
+  background: var(--control-hover-fill);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) details[open] > summary {
+  margin-block-end: var(--auth-gap);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .overflow:has(> .table) {
+  border: 1px solid var(--settings-panel-line);
+  border-radius: var(--glass-surface-radius);
+  background: var(--inset-control-fill);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .table :is(th, td) {
+  padding-inline: var(--auth-gap);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .table th {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) input[type='checkbox']:not([role='switch']) {
+  accent-color: var(--accent);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .row-header {
+  margin-block-end: var(--auth-action-gap);
+  gap: var(--auth-action-gap) var(--auth-gap);
+}
+
+.settings-frame :is(.settings-main, .settings-dialog) .row-header h2 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .settings-frame .select-panel[popover].revealed {
+    animation: settings-expand-dropdown var(--fast) var(--ease);
+  }
+}
+
+@keyframes settings-expand-dropdown {
+  from { block-size: calc(var(--field-content-height) + 2 * var(--editor-menu-frame)); }
+}
+
+.settings-frame .select-panel .current .field-label { overflow-wrap: anywhere; }
+
+.settings-frame .select-panel .current .field-value {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: end;
+  line-height: var(--leading-tight);
+}
+
+.settings-frame :is(.credential-fields, .settings-glass) .select-anchor:not(.expanded) > .select-panel > .credential-group > .credential-fields {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.settings-frame :is(.credential-fields, .settings-glass) .select-anchor:not(.expanded) > .select-panel > .credential-group > .credential-fields::before,
+.settings-frame :is(.credential-fields, .settings-glass) .select-anchor:not(.expanded) > .select-panel > .credential-group > .credential-fields::after {
+  content: none;
+}
+
+.settings-frame :is(.credential-fields, .settings-glass) .select-anchor:not(.expanded) > .select-panel > .credential-group > .credential-fields > .coast-glass-grain {
+  display: none;
+}

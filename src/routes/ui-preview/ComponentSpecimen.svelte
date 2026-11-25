@@ -8,6 +8,7 @@
  import {usePlayback} from '#lib/playback/context.svelte.js';
  import {contracts,defaultSlot,handlerMode,specimenDefaults,type Customisation,type SlotChoice} from './props';
  import {id,movie} from './demo/fixtures';
+ import BlurBackdrop from './BlurBackdrop.svelte';
  let {name,custom,change,onevent}:{name:string;custom:Customisation;change:(key:string,value:unknown)=>void;onevent:(name:string,args:unknown[])=>void}=$props();
  const loaders=import.meta.glob<{default:Component<any>}>('/src/lib/ui/components/*.svelte');
  let Current=$state<Component<any>>(),failure=$state(''),instance=$state<any>();
@@ -83,6 +84,7 @@
   {#key structure}<svelte:boundary>
    {#if ['ChoiceGroup','WorkActions','WorkListActions','RecommendAction'].includes(name)}<Button menu label={`Preview ${name} menu`}>{@render component()}</Button>
    {:else if name==='ProgressBar'}<div class="passive-bar">{@render component()}</div>
+   {:else if name==='ProgressiveBlur'}<BlurBackdrop>{@render component()}</BlurBackdrop>
    {:else if name==='MediaCard'}<div class="specimen-card">{@render component()}</div>
    {:else}{@render component()}{/if}
    {#snippet failed(error,reset)}<div class="stack"><p role="alert">This combination cannot render: {error instanceof Error?error.message:'Check the prop data.'}</p><p class="small quiet">Correct the props in the Customiser, then retry. The rest of the playground remains available.</p><Button emphasis="subtle" onclick={reset}>Retry preview</Button></div>{/snippet}

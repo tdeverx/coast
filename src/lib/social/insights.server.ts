@@ -242,7 +242,6 @@ export async function friendDiscovery(viewerId:string,category:'all'|'screen'|'g
  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on w.category='music'
  where coast_feature_enabled(a.user_id,'social') and a.event_kind<>'reading-dropped' and a.occurred_at>=now()-interval '30 days' and a.date_known and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
  and (${category}='all' or w.category=${category} or ${category}='reading' and w.category in ('book','comic'))
- and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(a.user_id,${viewerId}::uuid) and f.user_b=greatest(a.user_id,${viewerId}::uuid))
  ) select root_id as "workId",count(distinct user_id)::int as friends,max(occurred_at) as "discoveredAt"
  from visible group by root_id order by count(distinct user_id) desc,max(occurred_at) desc,root_id limit 60`;

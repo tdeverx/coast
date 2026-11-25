@@ -24,23 +24,18 @@ try {
   await page.locator('input[name="password"]').fill('Diagnostic-test-passphrase-2026!');
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page).toHaveURL(/\/for-you$/);
-  await page.goto(`${origin}/settings/policies`);
-  const toggles = ['Music','Gaming','Parties'].map(name=>page.getByRole('checkbox',{name,exact:true}));
-  const toggle=toggles[0];
-  await expect(toggle).not.toBeChecked();
   const setEnabled = async (enabled: boolean) => {
-    await page.goto(`${origin}/settings/policies`);
-    for(const control of toggles)await control.setChecked(enabled);
-    const saved = page.waitForResponse(
-      (response) =>
-        response.url().endsWith('/api/v1/settings/system') && response.request().method() === 'POST'
-    );
-    await page.getByRole('button', { name: 'Save system policies' }).click();
+    await page.goto(`${origin}/settings/features-policy`);
+    await page.getByRole('button', { name: 'Feature permissions for diagnostic-browser-admin', exact: true }).click();
+    for (const name of ['Music', 'Gaming', 'Parties']) {
+      await page.getByRole('checkbox', { name: `Allow ${name}`, exact: true }).check();
+      await page.getByRole('checkbox', { name: `Enable ${name}`, exact: true }).setChecked(enabled);
+    }
+    const saved = page.waitForResponse(response => response.url().endsWith('/features') && response.request().method() === 'PATCH');
+    await page.getByRole('button', { name: 'Save feature permissions', exact: true }).click();
     const response = await saved;
     expect(response.ok()).toBe(true);
-    const config=await response.json();
-    for(const field of ['experimentalMusic','experimentalGaming','experimentalParties'])expect(config[field]).toBe(enabled);
-    await expect(page.getByRole('status')).toHaveText('Saved.');
+    expect((await response.json()).preferences).toMatchObject({music:enabled,game:enabled,parties:enabled});
   };
   for (const path of gatedPaths)
     expect((await page.request.get(`${origin}${path}`)).status()).toBe(404);
@@ -49,19 +44,6 @@ try {
       await page.request.post(`${origin}/api/v1/games`, {
         headers: { origin },
         data: { title: 'Disabled write' },
-      })
-    ).status()
-  ).toBe(404);
-  expect(
-    (
-      await page.request.post(`${origin}/api/v1/providers`, {
-        headers: { origin },
-        data: {
-          provider: 'igdb',
-          name: 'Disabled IGDB',
-          clientId: 'fixture',
-          clientSecret: 'fixture',
-        },
       })
     ).status()
   ).toBe(404);
@@ -80,16 +62,15 @@ try {
   });
   expect(gameResponse.ok()).toBe(true);
   const game = await gameResponse.json();
-  // Members can use enabled features but cannot change the global policy.
+  // A grant to one user leaves every other user's feature access unchanged.
   const memberName = `experiment-${Date.now()}`;
-  expect(
-    (
-      await page.request.post(`${origin}/api/v1/admin/users`, {
-        headers: { origin },
-        data: { username: memberName, password: 'Experiment-member-passphrase-2026!' },
-      })
-    ).ok()
-  ).toBe(true);
+  const created = await page.request.post(`${origin}/api/v1/admin/users`, {
+    headers: { origin },
+    data: { username: memberName, password: 'Experiment-member-passphrase-2026!' },
+  });
+  expect(created.ok()).toBe(true);
+  const { id: memberId } = await created.json();
+  const memberFeatures = `${origin}/api/v1/admin/users/${memberId}/features`;
   const memberContext = await browser.newContext();
   const member = await memberContext.newPage();
   await member.goto(`${origin}/login`);
@@ -97,16 +78,19 @@ try {
   await member.locator('input[name="password"]').fill('Experiment-member-passphrase-2026!');
   await member.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(member).toHaveURL(/\/for-you$/);
+  expect((await memberContext.request.get(`${origin}/games`)).status()).toBe(404);
+  expect((await memberContext.request.patch(memberFeatures, {
+    headers: { origin }, data: { permissions: { game: true }, preferences: { game: true } },
+  })).status()).toBe(403);
+  expect((await page.request.patch(memberFeatures, {
+    headers: { origin }, data: { permissions: { game: true }, preferences: { game: true } },
+  })).ok()).toBe(true);
   expect((await memberContext.request.get(`${origin}/games`)).status()).toBe(200);
-  expect((await memberContext.request.get(`${origin}/settings/policies`)).status()).toBe(403);
-  expect(
-    (
-      await memberContext.request.post(`${origin}/api/v1/settings/system`, {
-        headers: { origin },
-        data: { experimentalGaming: false },
-      })
-    ).status()
-  ).toBe(403);
+  expect((await memberContext.request.post(`${origin}/api/v1/settings`, {
+    headers: { origin }, data: { features: { game: false } },
+  })).ok()).toBe(true);
+  expect((await page.request.get(memberFeatures)).ok()).toBe(true);
+  expect((await (await page.request.get(memberFeatures)).json()).preferences.game).toBe(false);
   await setEnabled(false);
   expect((await memberContext.request.get(`${origin}/api/v1/games`)).status()).toBe(404);
   for (const path of gatedPaths)
@@ -117,11 +101,12 @@ try {
   expect((await preserved.json()).title).toBe('Experimental gate preservation fixture');
   await setEnabled(false);
   await page.reload();
-  await expect(toggle).not.toBeChecked();
+  await page.getByRole('button', { name: 'Feature permissions for diagnostic-browser-admin', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'Enable Music', exact: true })).not.toBeChecked();
   await page.screenshot({ path: '/tmp/coast-consolidated-experimental-settings.png' });
   expect(issues).toEqual([]);
   console.log(
-    'PASS experimental toggle: default Off, admin-only control, navigation, direct page/API gates, runtime changes, preserved game data, no browser errors'
+    'PASS experimental toggle: default Off, per-user grants and preferences, navigation, direct page/API gates, runtime changes, preserved game data, no browser errors'
   );
 } finally {
   await browser.close();

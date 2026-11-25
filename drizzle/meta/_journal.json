@@ -645,6 +645,13 @@
       "when": 1795478400000,
       "tag": "0092_card_layout_feature",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795564800000,
+      "tag": "0093_user_feature_permissions",
+      "breakpoints": true
     }
   ]
 }

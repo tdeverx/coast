@@ -1,12 +1,17 @@
 <script lang="ts">
  import Button from '#lib/ui/components/Button.svelte';
  import Field from '#lib/ui/components/Field.svelte';
+ import {progressiveBlurSteps,progressiveTintSteps} from '#lib/ui/materials/progressive-blur.js';
  import {contracts,dataSample,handlerMode,parseData,propLabel,specimenDefaults,type Customisation,type PropContract,type SlotChoice} from './props';
  let {name,custom,change}:{name:string;custom:Customisation;change:(value:Customisation)=>void}=$props();
  let search=$state(''),drafts=$state<Record<string,string>>({}),errors=$state<Record<string,string>>({});
  const contract=$derived(contracts[name]);
  const defaults=$derived(specimenDefaults(name));
  const fields=$derived(contract.props.filter(prop=>`${prop.name} ${prop.type}`.toLowerCase().includes(search.toLowerCase())));
+ const blurStepRanges: Partial<Record<string,{label:string;min:number;max:number;default:number}>> = {
+  steps: {label:'Blur steps',...progressiveBlurSteps},
+  tintSteps: {label:'Tint steps',...progressiveTintSteps},
+ };
  $effect(()=>{name;search='';drafts={};errors={};});
  function value(prop:PropContract) {return Object.hasOwn(custom.props,prop.name)?custom.props[prop.name]:Object.hasOwn(defaults,prop.name)?defaults[prop.name]:prop.defaultValue;}
  function set(key:string,value:unknown) {
@@ -35,6 +40,7 @@
  <p class="small quiet">{contract.props.length} source-defined props. Controls edit the real component. Data uses synthetic fixtures; callbacks stay local.</p>
  {#if !contract.props.length}<p class="small quiet">This component has no public props. Its application-owned state is demonstrated in the example states.</p>{/if}
  {#each fields as prop (prop.name)}
+  {@const range = name==='ProgressiveBlur' ? blurStepRanges[prop.name] : undefined}
   <div class="prop-control">
    <div class="prop-title"><code>{prop.name}</code><div class="prop-actions">{#if prop.optional}<Button emphasis="subtle" compact onclick={()=>omit(prop)} label={`Omit ${prop.name}`}>Omit</Button>{/if}{#if Object.hasOwn(custom.props,prop.name)||custom.slots[prop.name]||custom.callbacks[prop.name]}<Button emphasis="subtle" compact onclick={()=>reset(prop.name)} label={`Reset ${prop.name}`}>Reset</Button>{/if}</div></div>
    {#if Object.hasOwn(custom.props,prop.name)&&custom.props[prop.name]===undefined}<p class="small quiet">Not supplied; the component chooses its default.</p>{/if}
@@ -45,6 +51,11 @@
      <option value="@default">Example default</option>{#if prop.nullable}<option value="@null">None (null)</option>{/if}
      {#each prop.choices??[] as choice}<option value={String(choice)}>{String(choice)}</option>{/each}
     </select></Field>
+   {:else if range}
+    {@const steps = (value(prop) as number | undefined) ?? range.default}
+    <Field label={range.label} hint={String(steps)}>
+     <input type="range" min={range.min} max={range.max} value={steps} oninput={event=>set(prop.name,event.currentTarget.valueAsNumber)} />
+    </Field>
    {:else if prop.kind==='number'}
     <Field label={propLabel(prop.name)}><input type="number" step="any" value={value(prop)===null?'':value(prop) as number??''} placeholder={prop.nullable?'None (null)':'Example default'} onchange={event=>{if(event.currentTarget.value===''){if(prop.nullable)set(prop.name,null);else reset(prop.name);}else if(Number.isFinite(event.currentTarget.valueAsNumber))set(prop.name,event.currentTarget.valueAsNumber);}} /></Field>
    {:else if prop.kind==='text'}

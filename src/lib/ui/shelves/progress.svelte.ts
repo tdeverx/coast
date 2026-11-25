@@ -2,7 +2,6 @@ import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
 import { mediumOptions, categoryEnabled } from '#lib/experimental.js';
 
 import { onDestroy, untrack } from 'svelte';
-import { goto } from '$app/navigation';
 import { page as route } from '$app/state';
 import {
   progressTabs,
@@ -151,7 +150,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     if(layout==='grid'&&!location.embedded&&!preview&&settled?.availableViews){
       untrack(()=>{
         if(settled.view!==(route.url.searchParams.get('view')??'watching'))
-          void goto(href(settled.page),{shallow:true,replace:true,reset:false,state:route.state});
+          void location.replace(href(settled.page));
       });
     }
   });
@@ -205,7 +204,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       }
     );
 
-    if (result && !location.embedded && !preview && layout === 'grid') goto(href(result.page), { shallow: true, replace: true, reset: false, state: route.state });
+    if (result && !location.embedded && !preview && layout === 'grid') location.replace(href(result.page));
   }
 
   function update(patch: Partial<Filters>) {

@@ -44,7 +44,9 @@ async function queueRemote(tx:Tx,target:Remote,operation:RemoteOperation,reason:
 function writeAccess(tx:Tx,userId:string,access:CoastAccess,sharingGrant:boolean|null) {
   return tx.execute(sql`update users set access_defaults=${access}::jsonb,settings=case
     when ${sharingGrant}::boolean is null then settings
-    else jsonb_set(settings,'{allowPlaybackSharing}',to_jsonb(${sharingGrant}::boolean)) end where id=${userId}`);
+    else settings || jsonb_build_object('allowPlaybackSharing', ${sharingGrant}::boolean,
+      'featurePermissions',coalesce(settings->'featurePermissions','{}'::jsonb)||jsonb_build_object('sharing',${sharingGrant}::boolean))
+    end where id=${userId}`);
 }
 
 function shareGrant(defaults:InviteDefaults) {
@@ -60,7 +62,7 @@ export async function accountDetails(actor:SessionUser|null,userId:string) {
     remote:string|null;remoteState:string|null;setupStarted:Date|null;readyAt:Date|null;inviter:string|null;lastActiveAt:Date|null;
     memberPreset:string|null;quota:number|null;remoteFailure:boolean;source:string;defaults:InviteDefaults|null;authority:string|null;authorityName:string|null;presetName:string|null;sharingGranted:boolean;
   }[]>`select u.id,u.username,u.role,u.disabled,u.access_defaults as access,u.membership_expires_at as "expiresAt",
-    coalesce(u.settings->>'allowPlaybackSharing'='true',false) as "sharingGranted",
+    coalesce(u.settings#>>'{featurePermissions,sharing}',u.settings->>'allowPlaybackSharing','false')='true' as "sharingGranted",
     coalesce(u.membership_expires_at<=now(),false) as expired,
     p.state as provisioning,p.remote_id as remote,p.lifecycle as "remoteState",p.active_defaults as defaults,coalesce(p.authority_instance_id,p.connection_id) as authority,server.name as "authorityName",i.preset_name as "presetName",o.requested_at as "setupStarted",o.completed_at as "readyAt",
     issuer.username as inviter,seen.active_at as "lastActiveAt",g.preset_id as "memberPreset",g.quota,
@@ -271,7 +273,7 @@ export async function changeMemberAccess(actor:SessionUser|null,raw:unknown) {
     const revision=draftVersion??preset.version;
     const targets=await tx.execute<{id:string;username:string;access:CoastAccess;version:string;authority:string|null;managed:boolean;current:InviteDefaults|null;lifecycle:string|null;sharing_granted:boolean}>(sql`
       select u.id,u.username,u.access_defaults as access,concat(u.xmin::text,'/',p.xmin::text,'/',${revision}::text) as version,
-       coalesce(p.authority_instance_id,p.connection_id) as authority,p.lifecycle,coalesce(u.settings->>'allowPlaybackSharing'='true',false) as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
+       coalesce(p.authority_instance_id,p.connection_id) as authority,p.lifecycle,coalesce(u.settings#>>'{featurePermissions,sharing}',u.settings->>'allowPlaybackSharing','false')='true' as sharing_granted,coalesce(p.state='complete',false) as managed,p.active_defaults as current
       from users u left join onboarding_provisioning p on p.user_id=u.id
       where u.id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) and u.role='user'
       order by u.id ${input.confirm ? sql`for no key update of u` : sql``}`);

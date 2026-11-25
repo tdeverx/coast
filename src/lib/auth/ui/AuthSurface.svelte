@@ -13,12 +13,12 @@
 </script>
 
 {#if anchor}
-  <div class="auth-anchor">{@render sample()}{@render children()}</div>
+  <div class="auth-anchor">{@render sample?.()}{@render children()}</div>
 {:else if expanded !== undefined}
   <div class="menu-surface credential-fields expandable" class:expanded>
     {#if expanded}
       <div class="expansion-glass" transition:fadeFrame aria-hidden="true">
-        {@render sample()}
+        {@render sample?.()}
         <div class="glass" use:liquidGlass={{variant: 'clear'}}></div>
       </div>
     {/if}
@@ -26,7 +26,7 @@
   </div>
 {:else}
   <div class="credential-group" class:resizable>
-    {@render sample()}
+    {@render sample?.()}
     <div class="menu-surface glass credential-fields" class:invite class:side-actions={sideActions}
       use:liquidGlass={{ variant: 'clear', renderer: resizable ? 'css' : 'auto' }}>
       {#if resizable}

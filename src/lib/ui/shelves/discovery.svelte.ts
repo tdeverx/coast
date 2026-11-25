@@ -73,7 +73,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions, refreshVisibl
   }
   function updateGridLocation() {
     if (!location.embedded && !preview && get().layout === 'grid')
-      void goto(pageUrl(currentPage), { shallow: true, replace: true, reset: false, state: page.state });
+      void location.replace(pageUrl(currentPage));
   }
   const refresh = createShelfRefresh(() => load(), refreshVisible);
   async function load(number=get().layout==='grid'?currentPage:1,append=false) {

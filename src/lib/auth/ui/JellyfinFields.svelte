@@ -1,8 +1,8 @@
 <script lang="ts">
   import Field, { type FieldValidation } from '#lib/ui/components/Field.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
-  let { mode, serverUrl = $bindable(''), jellyfinName = $bindable('') }: {
-    mode: 'server' | 'credentials'; serverUrl?: string; jellyfinName?: string;
+  let { mode, serverUrl = $bindable(''), jellyfinName = $bindable(''), jellyfinPassword = $bindable('') }: {
+    mode: 'server' | 'credentials'; serverUrl?: string; jellyfinName?: string; jellyfinPassword?: string;
   } = $props();
   const validServer = $derived(URL.canParse(serverUrl) && /^https?:\/\//i.test(serverUrl));
   const urlStatus = $derived.by<FieldValidation>(() => {
@@ -26,6 +26,7 @@
   </Field>
   <Field label="Jellyfin password" hideLabel class="menu-row" validation={{ state: 'info', message: passwordHint }}
     requirements={[{ icon: 'key', label: 'Account password', detail: passwordHint, met: undefined }]}>
-    <Icon name="key" /><input name="password" type="password" placeholder="Password" maxlength="4096" autocomplete="section-jellyfin current-password" />
+    <Icon name="key" /><input name="password" type="password" placeholder="Password" maxlength="4096"
+      autocomplete="section-jellyfin current-password" bind:value={jellyfinPassword} />
   </Field>
 {/if}

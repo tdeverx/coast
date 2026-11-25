@@ -3,7 +3,7 @@ import {getSql} from '../src/lib/server/db';
 import {defaultConfig} from '../src/lib/server/config';
 import {featureDefinitions,featureValues} from '../src/lib/features';
 import {getFeatureConfig,requireFeature} from '../src/lib/server/features';
-import {updateUserSettings,resetUserSettings,type SessionUser} from '../src/lib/server/auth';
+import {updateUserSettings,resetUserSettings,undoSettingsReset,updateMemberFeatures,type SessionUser} from '../src/lib/server/auth';
 import {notify,inbox} from '../src/lib/server/notifications';
 import {notificationUnread} from '../src/lib/server/notifications/inbox';
 import {heartbeat} from '../src/lib/social/status.server';
@@ -15,18 +15,46 @@ const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const a=crypto.randomUUID(),b=crypto.randomUUID();let original:unknown;
 const actor={id:a,username:'feature-fixture-a',role:'admin',settings:{}} as SessionUser;
 const config={...defaultConfig,experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,experimentalParties:true,experimentalPlanning:true,allowPlaybackSharing:true};
-beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();original=(await db`select value from system_settings where key='coast'`)[0]?.value;await db`insert into users(id,username,role) values(${a},${actor.username},'admin'),(${b},'feature-fixture-b','user')`;await db`insert into system_settings(key,value) values('coast',${config}::jsonb) on conflict(key) do update set value=excluded.value`;});
+const grants = { music:true,game:true,book:true,comic:true,parties:true,planning:true } as const;
+const member = {id:b,username:'feature-fixture-b',role:'user',settings:{}} as SessionUser;
+beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();original=(await db`select value from system_settings where key='coast'`)[0]?.value;await db`insert into users(id,username,role) values(${a},${actor.username},'admin'),(${b},'feature-fixture-b','user')`;await db`update users set settings=${{featurePermissions:grants}}::jsonb where id in (${a},${b})`;await db`insert into system_settings(key,value) values('coast',${config}::jsonb) on conflict(key) do update set value=excluded.value`;});
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();await db`delete from users where id in (${a},${b})`;if(original)await db`update system_settings set value=${original}::jsonb where key='coast'`;else await db`delete from system_settings where key='coast'`;});
 run('SQL and application policies agree for two users, guest, all gates and prerequisites',async()=>{
  const db=getSql();
  for(const choices of [{},{social:false},{screen:false,music:false},{playback:false},{personalisation:false,reader:false,planning:false}]){
-  await db`update users set settings=${{features:choices}}::jsonb where id=${a}`;
-  const expected=featureValues(config,choices);
+  await db`update users set settings=${{featurePermissions:grants,features:choices}}::jsonb where id=${a}`;
+  const expected=featureValues(config,choices,grants);
   for(const [key] of featureDefinitions){const [row]=await db`select coast_feature_enabled(${a}::uuid,${key}) as enabled`;expect(row.enabled).toBe(expected[key]);}
   expect((await getFeatureConfig(a)).features).toEqual(expected);
-  expect((await getFeatureConfig(b)).features).toEqual(featureValues(config));
+  expect((await getFeatureConfig(b)).features).toEqual(featureValues(config,{},grants,false));
  }
- await db`update users set settings='{}'::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants}}::jsonb where id=${a}`;
+});
+run('per-user grants and member preferences share one value without granting other accounts', async () => {
+ const feature = 'settingsSidebar';
+ const db = getSql();
+ expect((await getFeatureConfig(b)).features[feature]).toBe(false);
+ await expect(updateMemberFeatures(member,b,{permissions:{[feature]:true}})).rejects.toMatchObject({status:403});
+ await expect(updateUserSettings(member,{features:{[feature]:true}})).rejects.toMatchObject({code:'feature_disabled'});
+ expect(await updateMemberFeatures(actor,b,{permissions:{[feature]:true}}))
+   .toMatchObject({permissions:{[feature]:true},preferences:{[feature]:false}});
+ await updateUserSettings(member,{features:{[feature]:true}});
+ expect((await getFeatureConfig(b)).features[feature]).toBe(true);
+ expect((await getFeatureConfig(a)).features[feature]).toBe(false);
+ expect((await db`select coast_feature_enabled(${b}::uuid,${feature}) as enabled`)[0].enabled).toBe(true);
+ expect(await updateMemberFeatures(actor,b,{preferences:{[feature]:false}})).toMatchObject({preferences:{[feature]:false}});
+ await updateUserSettings(member,{features:{[feature]:true}});
+ expect(await updateMemberFeatures(actor,b,{permissions:{[feature]:false}})).toMatchObject({preferences:{[feature]:true}});
+ await expect(requireFeature(b,feature)).rejects.toMatchObject({code:'feature_disabled'});
+ await db`update users set settings=${{featurePermissions:grants}}::jsonb where id=${b}`;
+});
+run('undo restore preserves preferences edited after the reset', async () => {
+ await updateUserSettings(actor, {region:'US',fullWidth:false});
+ const before = await resetUserSettings(actor);
+ await updateUserSettings(actor, {region:'GB'});
+ await undoSettingsReset(actor,before.preferences);
+ const [row] = await getSql()`select settings from users where id=${a}`;
+ expect(row.settings).toMatchObject({region:'GB',fullWidth:false});
 });
 run('partial feature saves retain other choices and appearance reset preserves opt-outs',async()=>{
  await updateUserSettings(actor,{features:{music:false,social:false}});
@@ -43,7 +71,7 @@ run('card layouts require the feature and concurrent saves merge independent car
  const db = getSql();
  const layout = { settings: { shape: 'square' }, badgeSlots: defaultBadgeSlots, metadataLayers: defaultCardLayers(), metadataValues: {} };
  await expect(saveCardLayout(actor, { target: 'movie', layout })).rejects.toMatchObject({ code: 'feature_disabled' });
- await db`update system_settings set value=${{...config,features:{cardLayouts:true}}}::jsonb where key='coast'`;
+ await updateMemberFeatures(actor, a, {permissions:{cardLayouts:true},preferences:{cardLayouts:true}});
  try {
   const [enabled] = await db`select coast_feature_enabled(${a}::uuid,'cardLayouts') as enabled`;
   expect(enabled.enabled).toBe(true);
@@ -53,7 +81,7 @@ run('card layouts require the feature and concurrent saves merge independent car
   const reset = await saveCardLayout(actor, { target: 'movie', layout: null });
   expect(Object.keys(reset)).toEqual(['everywhere:show']);
  } finally {
-  await db`update users set settings=settings-'cardLayouts' where id=${a}`;
+  await db`update users set settings=${{featurePermissions:grants}}::jsonb where id=${a}`;
   await db`update system_settings set value=${config}::jsonb where key='coast'`;
  }
 });
@@ -71,13 +99,13 @@ run('Library-only accounts can use Personalise only when an administrator enable
   expect(managedRoute('/api/v1/settings/card-layout/extra', 'POST')).toBe(false);
   expect((await getFeatureConfig(b)).features.cardLayouts).toBe(false);
   await expect(saveCardLayout(restricted, { target: 'movie', layout })).rejects.toMatchObject({ code: 'feature_disabled' });
-  await db`update system_settings set value=${{...config,features:{cardLayouts:true}}}::jsonb where key='coast'`;
+  await updateMemberFeatures(actor, b, {permissions:{cardLayouts:true},preferences:{cardLayouts:true}});
   expect((await getFeatureConfig(b)).features.cardLayouts).toBe(true);
   const saved = await saveCardLayout(restricted, { target: 'movie', layout });
   expect(saved['everywhere:movie']?.settings.shape).toBe('square');
   expect(await saveCardLayout(restricted, { target: 'movie', layout: null })).toEqual({});
  } finally {
-  await db`update users set access_defaults='{}'::jsonb,settings=settings-'cardLayouts' where id=${b}`;
+  await db`update users set access_defaults='{}'::jsonb,settings=${{featurePermissions:grants}}::jsonb where id=${b}`;
   await db`update system_settings set value=${config}::jsonb where key='coast'`;
  }
 });
@@ -98,10 +126,10 @@ run('opted-out users contribute no shared recommendation seeds',async()=>{
 });
 run('Social opt-out leaves public profile privacy independent, while withdrawn media stays hidden',async()=>{
  const db=getSql();
- await db`update users set settings=${{features:{social:false},social:{audience:'public'}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{social:false},social:{audience:'public'}}}::jsonb where id=${a}`;
  const [row]=await db`select social_visible(${a}::uuid,null,'details') as profile, social_visible(${a}::uuid,${b}::uuid,'presence') as presence`;
  expect(row.profile).toBe(true);expect(row.presence).toBe(false);
- await db`update users set settings=${{features:{social:false,screen:false},social:{audience:'public'}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{social:false,screen:false},social:{audience:'public'}}}::jsonb where id=${a}`;
  const [media]=await db`select social_visible(${a}::uuid,null,'activity','screen') as allowed`;
  expect(media.allowed).toBe(false);
 });
@@ -122,7 +150,7 @@ run('withdrawal drains more than one reader/job batch without erasing data or re
 });
 run('administrator ceilings retain personal choices and reject role bypass without queuing empty cleanup',async()=>{
  const db=getSql(),{updateConfig}=await import('../src/lib/application/configuration.server');
- await db`update users set settings=${{features:{music:false}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{music:false}}}::jsonb where id=${a}`;
  const originalCount=(await db`select count(*)::int as count from outbox_actions where kind='feature.reconcile'`)[0].count;
  await updateConfig(actor,{features:{social:false,playback:false}});
  expect((await getFeatureConfig(a)).features.social).toBe(false);
@@ -136,11 +164,11 @@ run('administrator ceilings retain personal choices and reject role bypass witho
 run('an already-open local reader rejects page writes after withdrawal but still closes safely',async()=>{
  const db=getSql(),{importReading}=await import('../src/lib/catalogue/reading.server');
  const {prepareReading,moveReading,closeReading}=await import('../src/lib/reading/sessions.server');
- await db`update users set settings='{}'::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants}}::jsonb where id=${a}`;
  const book=await importReading({provider:'openlibrary',externalId:'OL900000010W',kind:'book',title:'Reader withdrawal',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL900000010W'});
  try{
   const session=await prepareReading(a,book.id,{source:'local',format:'pdf',edition:'a'.repeat(64)});
-  await db`update users set settings=${{features:{reader:false}}}::jsonb where id=${a}`;
+  await db`update users set settings=${{featurePermissions:grants,features:{reader:false}}}::jsonb where id=${a}`;
   await expect(moveReading(a,session.id,{format:'pdf',page:5,total:100})).rejects.toMatchObject({code:'feature_disabled'});
   expect(await closeReading(a,session.id)).toEqual({closed:true});
   const [state]=await db`select closed_at,location from reading_sessions where id=${session.id}`;
@@ -163,11 +191,11 @@ run('API withdrawal rejects existing tokens and new issuance while owner revocat
 });
 run('Reader withdrawal retains manual book tracking and book withdrawal rejects it',async()=>{
  const db=getSql(),{importReading}=await import('../src/lib/catalogue/reading.server'),{updateReading}=await import('../src/lib/core/reading/service.server');
- await db`update users set settings=${{features:{reader:false}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{reader:false}}}::jsonb where id=${a}`;
  const book=await importReading({provider:'openlibrary',externalId:'OL900000011W',kind:'book',title:'Manual reading remains',authors:[],subjects:[],sourceUrl:'https://openlibrary.org/works/OL900000011W'});
  try{
   expect((await updateReading(a,book.id,{state:'reading',page:2,totalPages:100})).page).toBe(2);
-  await db`update users set settings=${{features:{reader:false,book:false}}}::jsonb where id=${a}`;
+  await db`update users set settings=${{featurePermissions:grants,features:{reader:false,book:false}}}::jsonb where id=${a}`;
   await expect(updateReading(a,book.id,{page:3})).rejects.toMatchObject({code:'feature_disabled'});
   expect((await db`select page from reading_progress where user_id=${a} and work_id=${book.id}`)[0].page).toBe(2);
  }finally{await db`delete from works where id=${book.id}`;}
@@ -175,9 +203,9 @@ run('Reader withdrawal retains manual book tracking and book withdrawal rejects 
 
 run('an idle party does not need Playback, and party withdrawal still permits leaving',async()=>{
  const db=getSql(),{createRoom,listRooms,leaveRoom}=await import('../src/lib/playback/synced/service.server');
- await db`update users set settings=${{features:{playback:false}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{playback:false}}}::jsonb where id=${a}`;
  const room=await createRoom(a,{});expect(room.id).toBeTruthy();
- await db`update users set settings=${{features:{playback:false,parties:false}}}::jsonb where id=${a}`;
+ await db`update users set settings=${{featurePermissions:grants,features:{playback:false,parties:false}}}::jsonb where id=${a}`;
  await expect(listRooms(a)).rejects.toMatchObject({code:'feature_disabled'});
  expect(await leaveRoom(a,room.id)).toEqual({left:true});
  expect((await db`select joined from synced_participants where room_id=${room.id} and user_id=${a}`)[0].joined).toBe(false);

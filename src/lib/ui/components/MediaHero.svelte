@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { blackFadeGradient } from '#lib/ui/materials/black-fade.js';
+  import ProgressiveBlur from './ProgressiveBlur.svelte';
   import { untrack, type Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { blackFadeGradient } from '#lib/ui/materials/black-fade.js';
   import { cardRuntime } from '#lib/ui/card-caption.js';
   import type { MediaView } from '#lib/ui/types.js';
   import { createHeroPresentation, screenItem, type HeroItem } from '#lib/ui/heroes/presentation.svelte.js';
@@ -24,7 +25,7 @@
     next = null,
     requestable = false,
     actions,editionName,alignment='left',
-    identity, logoCard, titleField, overviewField, moveBackground, segments, size = 'standard',
+    identity, logoCard, titleField, overviewField, moveBackground, segments, backdropFade, size = 'standard',
   }: {
     editionName?:string;alignment?:'left'|'center'|'adaptive';
     item?: HeroItem;
@@ -34,6 +35,7 @@
     overviewField?: Snippet;
     moveBackground?: (position: { x: number; y: number }) => void;
     segments?: Snippet;
+    backdropFade?: Snippet;
     size?: 'standard' | 'compact';
     collection?: { items: HeroItem[]; selection: string; busy?: boolean };
     actions?: Snippet;
@@ -51,6 +53,7 @@
   const titleLogo = $derived(identity || logoCard || hero.logoFailed ? undefined : hero.titleLogo);
   const overview = $derived(identity ? identity.description : hero.active?.overview);
   let backdropFailed = $state(false), posterFailed = $state(false);
+  const hasBackdrop = $derived(!!(backdrop && !backdropFailed || poster && !posterFailed || playback.visible));
   $effect(() => { backdrop; backdropFailed = false; });
   $effect(() => { poster; posterFailed = false; });
   let backgroundImage = $state<HTMLImageElement>();
@@ -105,7 +108,6 @@
       hero.noteActivity();
     }
   }}
-  style:--hero-fade={blackFadeGradient('bottom','var(--detail-background, #000)')}
 >
   {#if !identity}<div class="hero-video" class:visible={playback.visible && heroPlayer.ready} aria-hidden="true">
     <video bind:this={playback.video} data-player="hero" muted={heroPlayer.muted} playsinline preload="auto" tabindex="-1"
@@ -135,7 +137,19 @@
           onerror={() => (posterFailed = true)}
         />{/if}</div>{/key}
   </div>
-  <div class="gradient" class:dimmed={hero.chromeDimmed} aria-hidden="true"></div>
+  {#if backdropFade || hasBackdrop}
+    <div class="gradient" aria-hidden="true">
+      {#if backdropFade}
+        {@render backdropFade()}
+      {:else}
+        <ProgressiveBlur edge="bottom" size={hero.chromeDimmed ? 'var(--hero-dim-fade-size)' : '70%'}
+          radius={5} steps={4} tint="var(--detail-background, var(--canvas))" tintOpacity={1} tintSteps={4} />
+      {/if}
+    </div>
+  {:else}
+    <div class="gradient plain" class:dimmed={hero.chromeDimmed}
+      style:--hero-fade={blackFadeGradient('bottom', 'var(--detail-background, var(--canvas))')} aria-hidden="true"></div>
+  {/if}
   {#if canDrag}<div class="background-drag" class:grabbing={!!drag} aria-hidden="true"
     onpointerdown={startDrag} onpointermove={dragBackground} onlostpointercapture={() => drag = undefined}></div>{/if}
   <div class="content hero-inner" class:dimmed={hero.chromeDimmed}>
@@ -286,26 +300,19 @@
     position: absolute;
     inset: 0;
     z-index: -1;
+    --hero-dim-fade-size: 144px;
   }
-  .gradient::before {
+  .gradient.plain::before, .gradient.plain::after {
     content: '';
     position: absolute;
     inset: 0;
     background: var(--hero-fade);
-    transition: opacity var(--cinematic) var(--ease);
   }
-  .gradient.dimmed::before {
-    opacity: 0;
-  }
+  .gradient.plain::before { transition: opacity var(--cinematic) var(--ease); }
+  .gradient.plain.dimmed::before { opacity: 0; }
+  .gradient.plain::after { inset-block-start: auto; block-size: var(--hero-dim-fade-size); }
   .hero-inner.dimmed {
     opacity: 0.5;
-  }
-  .gradient::after {
-    content: '';
-    position: absolute;
-    inset: auto 0 0;
-    height: 144px;
-    background: var(--hero-fade);
   }
   .hero-inner {
     transition: opacity var(--cinematic) var(--ease);
@@ -408,7 +415,7 @@
     .hero-copy,
     .hero-item-actions,
     .hero-inner,
-    .gradient::before,
+    .gradient.plain::before,
     .art {
       transition: none;
     }
@@ -430,9 +437,7 @@
     .hero h1 {
       font-size: var(--text-hero-mobile);
     }
-    .gradient::after {
-      height: 112px;
-    }
+    .gradient { --hero-dim-fade-size: 112px; }
     .metadata,
     .genres {
       font-size: var(--text-md);

@@ -13,8 +13,7 @@ export async function addReading(userId: string, raw: unknown) {
   const config=await getFeatureConfig(userId);
   requireEnabledCategory(config,input.kind==='comic'?'comic':'reading');
   const metadata = await readingProviderDetails(input.kind, input.externalId);
-  requireEnabledCategory(await getFeatureConfig(userId),metadata.kind);
-  const item = await importReading(metadata);
+  const item = await importReading(metadata, userId);
   await ensureReadingSaved(userId, item.id);
   return item;
 }

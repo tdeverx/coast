@@ -1,4 +1,4 @@
-import {expect,test} from 'bun:test';
+import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import {childTasteCredits,workTasteFeatures} from '../src/lib/social/work-features.server';
 import type {TasteAudienceRating} from '../src/lib/social/taste-rating-model';
@@ -13,6 +13,15 @@ import {TmdbAdapter} from '../src/lib/providers/tmdb/adapter.server';
 import {ingestMetadata} from '../src/lib/catalogue/service.server';
 
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
+const reader=crypto.randomUUID();
+
+beforeAll(async()=>{
+ if(process.env.COAST_DB_TEST!=='1')return;
+ await getSql()`insert into users(id,username,settings) values(${reader},${'metadata-reader-'+reader},'{"featurePermissions":{"book":true,"comic":true}}')`;
+});
+afterAll(async()=>{
+ if(process.env.COAST_DB_TEST==='1')await getSql()`delete from users where id=${reader}`;
+});
 
 run('a detail refresh replaces newest-season crew with roles verified across the series',async()=>{
  const db=getSql(),externalId='920001';
@@ -143,7 +152,6 @@ run('a reading subject stored under multiple labels contributes once and keeps u
 
 run('a fresh reading import saves each subject only under tags',async()=>{
  const db=getSql();
- await db`insert into system_settings(key,value) values('coast','{"experimentalBooks":true}') on conflict(key) do update set value=excluded.value`;
  const book=await importReading({provider:'openlibrary',externalId:'OL944114017W',kind:'book',title:'Subject fixture',
   sourceUrl:'https://openlibrary.org/works/OL944114017W',authors:[],subjects:['First contact']});
  try{
@@ -157,7 +165,7 @@ run('a fresh reading import saves each subject only under tags',async()=>{
 
 run('medium-specific provider metadata survives validation, persistence and the shared Taste read',async()=>{
  const db=getSql(),instance=crypto.randomUUID(),items:string[]=[];
- await db`insert into system_settings(key,value) values('coast','{"experimentalBooks":true,"experimentalComics":true,"experimentalGaming":true,"experimentalMusic":true}')
+ await db`insert into system_settings(key,value) values('coast','{"experimentalGaming":true,"experimentalMusic":true}')
   on conflict(key) do update set value=excluded.value`;
  try{
   const openLibrary=new OpenLibraryAdapter(async path=>path.startsWith('/works/')?

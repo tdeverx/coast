@@ -374,6 +374,9 @@ run(
     await updateProfile(owner, { action: 'move', mediaId: ids[2], beforeId: ids[1] });
     const view = await profileData(owner);
     expect(view.profile.displayName).toBe('Cinema lover');
+    expect(await updateProfile(owner, { action: 'display-name', displayName: '  Film lover  ' }))
+      .toMatchObject({ displayName: 'Film lover', bio: 'Stories', avatar: null, backgroundMediaId: ids[0] });
+    expect((await profileData(owner)).profile.displayName).toBe('Film lover');
     expect(view.background?.id).toBe(ids[0]);
     expect(view.favourites.slice(0, 2).map((i) => i.id)).toEqual([ids[2], ids[1]]);
     const [saved] = await getDb().select().from(users).where(eq(users.id, owner));

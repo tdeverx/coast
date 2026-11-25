@@ -1,3 +1,5 @@
+import { goto } from '$app/navigation';
+import { detailPanelHref, detailPanelUrl, panelAddress } from '#lib/media/detail-target.js';
 import {page} from '$app/state';
 import {getContext,setContext,type Snippet} from 'svelte';
 type Presentation={title:string;segments?:Snippet;controls?:Snippet};
@@ -16,4 +18,19 @@ export function provideDetailSection(active:()=>boolean,href:()=>string|undefine
 export function useDetailSection(){return getContext<SectionHost|undefined>(key);}
 
 /** Sources retain their own controls, while embedded views never rewrite the underlying route. */
-export function useShelfLocation(){const host=useDetailSection();return {get url(){return host?.embedded?host.url:page.url;},get embedded(){return !!host?.embedded;}};}
+export function useShelfLocation() {
+  const host = useDetailSection();
+  return {
+    get url() {
+      if (host?.embedded) return host.url;
+      return page.url.searchParams.has('detail') ? detailPanelUrl(page.url) : page.url;
+    },
+    get embedded() { return !!host?.embedded; },
+    replace(href: string | URL) {
+      // A grid can finish refreshing underneath a modal. Keep its deep link in the browser address.
+      const url = new URL(href, page.url.href);
+      const detail = detailPanelHref(panelAddress(page), page.state);
+      return goto(detailPanelUrl(url, detail), { shallow: true, replace: true, reset: false, state: page.state });
+    }
+  };
+}
