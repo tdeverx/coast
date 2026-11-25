@@ -10,7 +10,6 @@ import { getDb } from '#lib/server/db/index.js';
 import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '#lib/server/db/schema.js';
 import { DomainError } from '#lib/core/errors.js';
 import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '#lib/server/queries/pagination.js';
-import { getConfig } from '#lib/server/config.js';
 import { enabledCategories, requireEnabledCategory } from '#lib/server/experimental.js';
 import type { ReadingMetadata } from './model';
 import { readingStates, readingReferenceSchema, readingProviderForId, type ReadingKind } from './model';
@@ -27,14 +26,11 @@ const uuid = v.pipe(v.string(), v.uuid());
 /** Resolve exact identity before fetching a preview; saved metadata survives source outages. */
 export async function readingStoredWorkId(kind: ReadingKind, externalId: string) {
   v.parse(readingReferenceSchema, { kind, externalId });
-  const config = await getConfig();
-  requireEnabledCategory(config, 'reading');
-  const [item] = await getDb().select({ id: readingWorks.id, kind: readingWorks.kind }).from(workIdentifiers)
+  const [item] = await getDb().select({ id: readingWorks.id }).from(workIdentifiers)
     .innerJoin(readingWorks, eq(readingWorks.id, workIdentifiers.workId)).where(and(
       sql`${workIdentifiers.kind} in ('book','comic')`, eq(workIdentifiers.provider, readingProviderForId(externalId)),
       eq(workIdentifiers.externalId, externalId),
     )).limit(1);
-  if (item) requireEnabledCategory(config, item.kind);
   return item?.id;
 }
 export const readingCatalogueSchema = v.object({
@@ -166,7 +162,7 @@ export async function readingHistoryData(userId:string,id:string,requested=1){
 }
 
 export async function readingRemoteDetail(userId:string,kind:ReadingKind,id:string):Promise<ReadingDetailData>{
- requireEnabledCategory(await getFeatureConfig(userId),'reading');
+ requireEnabledCategory(await getFeatureConfig(userId),readingProviderForId(id)==='comic-vine'?'comic':'reading');
  const storedId=await readingStoredWorkId(kind,id);
  if(storedId){const detail=await readingDetails(userId,storedId);return {...detail,kind:detail.item.kind,remote:false};}
  const item=await readingProviderDetails(kind,id);

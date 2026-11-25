@@ -6,7 +6,8 @@
   "scope": [
     "Reviewed the opt-in Settings sidebar, the default Settings layout and the separation of member grants from their saved preferences.",
     "Reviewed shared provider scheduling and request checks, membership, sharing revocation, and account-specific feature projections.",
-    "Bound the sidebar module to its first open, released closed panels, skipped unrelated Settings reloads and reduced Settings query projections."
+    "Bound the sidebar module to its first open, released closed panels, skipped unrelated Settings reloads and reduced Settings query projections.",
+    "Verified that member reading grants admit provider lookup, catalogue imports and progress while the installation defaults are off. Shared imports use shared feature admission."
   ],
   "verification": {
     "hosted": false,
@@ -136,13 +137,25 @@
       "previous": "f0e7e4164f06d51d1cb901a14b46541f6cd94d65205bce7b13772e69b159a05e",
       "current": "3656100a18f1c269de5c651ab4f3f8f79b0fd7c5366bbc1834a54e76931d495f"
     },
+    "src/lib/application/reading.server.ts": {
+      "previous": "d5b42b488df3f528eb28907c6de9d8d0296fbc556e4be0f5b0084053b5539f02",
+      "current": "41077655aec1903ca50c427957a14a32704a8546b7569946e165d54ef82e2773"
+    },
     "src/lib/auth/ui/InviteDefaultsFields.svelte": {
       "previous": "fed82c8d314bf18135eaf61982381ce3e042caa20fa95269c14ca14f5aeac54f",
       "current": "68c66fbfb6af3f0ea64cf597048f098ca3ca7ca53ddb6ab57756a21afc8b452b"
     },
+    "src/lib/catalogue/reading.server.ts": {
+      "previous": "05009ae28cacd4ac70c8d049d84b4e78ef3ee3a9a3330478ba81f2e06ef068a2",
+      "current": "6f665e078bfbff21d8d5e1f0c8920d1ec32d4b0c8bf9b1bd7768d2693199275c"
+    },
     "src/lib/core/profile/service.server.ts": {
       "previous": "361000e1143b15d802aca1f271f015b8a651b73c8df00b68c8879b0df414c8f8",
       "current": "58983360116d3245659af2573b0c38db083ca5665c3cb08a60b378521231b22f"
+    },
+    "src/lib/core/reading/service.server.ts": {
+      "previous": "cc612f2f69a70a94ac4271210a72f7113497d61f5d6618b9436d9951ff1367b2",
+      "current": "7de9ae0aa35e855bfd762d51a7ea8f790732d729b17861ea7deb797191f5a6ef"
     },
     "src/lib/features.ts": {
       "previous": "7c60a91b9e5570408fe4fbcf812f7552da4244e030db254a5515ce461813f9c9",
@@ -172,9 +185,21 @@
       "previous": "26f97891bec4b374a1952e6a3f53c41525d05f05d968a8e0e4e6adb5f701caa1",
       "current": "20eb6c5abb8152d960ef80601bdf7291787ad469fce206187546b0164d60c55b"
     },
+    "src/lib/providers/reading.server.ts": {
+      "previous": "0c0b9e88f10dc356c72a6ee5917732777d340ebc88f341c1daa264eb1d92ece2",
+      "current": "4ecabe4e77ec4855c8668ffa8da290ddbb61038af204a0e7c40f348da2efc3c9"
+    },
     "src/lib/providers/seerr/connection.server.ts": {
       "previous": "d80592216275a31129481650aa06f5150db498869e1c1af900f70a4ded353c6a",
       "current": "01c554fcd67501bdd77e147811bb1470849f557cddb71ba8f03e030ee832f332"
+    },
+    "src/lib/reading/groups.server.ts": {
+      "previous": "1db39df727e5f0c4ac6d442093733a2d5c5b1c2f6b29cd85e78ec24f17a130c3",
+      "current": "ce5fa6b6b515a400341b97e8f4e529d433a4683770f2ade6e360a7169c7e2bf5"
+    },
+    "src/lib/reading/query.server.ts": {
+      "previous": "d933613a2c1d010ac1fba1a60278bab35b29b7a58e08b834b25470897570d901",
+      "current": "4540a5e0b7c775cd4bb8d1b5d279597699765f63304fe6ab27a41027a0b1053f"
     },
     "src/lib/recommendations/providers.server.ts": {
       "previous": "8f92a0f9ec99a71e2d25059ee2439d950cbfe9c8d8ebe1b759621dbae1bbec17",
@@ -258,7 +283,7 @@
     },
     "src/lib/sync/jellyfin-reading.server.ts": {
       "previous": "9a6c0e810ebfe48228ace7ec79e519f30ec73bd0e370600726d16f60f4efc3ab",
-      "current": "094dc3d505dbd43a13391f4fb8dca1f8fc21162b1ffac65e33495fd287da31ef"
+      "current": "698386d1b7129d4926f477a3513fa1aaa4dd17bfc572f0971b05a55e6e121555"
     },
     "src/lib/sync/jellyfin.server.ts": {
       "previous": "04aa70d1da28d7b8ac008861c7f594f2a73afbde14b61b4eaca0e6bb14ab0f85",
@@ -411,6 +436,10 @@
     "tests/profile-db.test.ts": {
       "previous": "7e580e0124988499ede30f03cc41c57b5ffbdaf426b14acfb0871c731446a067",
       "current": "1f1a157a47f0739b55991bd4d7bbd0d0b7e2c9df33d1226036fb4a6baf893d69"
+    },
+    "tests/reading-db.test.ts": {
+      "previous": "25eef60924a6e9ba5aefbe28b502c71fc585cbbbbc8ce7fa988e06e838d64101",
+      "current": "9e2563d4d88eb0ddbf7d625d9ef25eb17a218a40006c7a9f2a553d7ce41ca4b2"
     },
     "tests/route-refresh.test.ts": {
       "previous": "4bac98643f4116348f301a631c921c459cc62d10d28f5edf3bc851cace2f9bae",

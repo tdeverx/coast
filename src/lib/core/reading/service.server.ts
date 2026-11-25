@@ -4,8 +4,6 @@ import * as v from 'valibot';
 import { getDb, type Database } from '#lib/server/db/index.js';
 import { readingProgress, readingWorks, readingSessions, readingHistory, socialActivity, users } from '#lib/server/db/schema.js';
 import { DomainError } from '#lib/core/errors.js';
-import { getConfig } from '#lib/server/config.js';
-import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { emitWebhook } from '#lib/server/public-api/webhooks.server.js';
 import { initialReadingBookmarkCycle, readingStates } from '#lib/reading/model.js';
 
@@ -52,7 +50,6 @@ export async function removeReadingHistory(userId:string,workId:string,entryId:s
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [work]=await tx.select({kind:readingWorks.kind}).from(readingWorks).where(eq(readingWorks.id,workId));
     if(!work)throw new DomainError('Reading work not found.',404);
-    requireEnabledCategory(await getConfig(tx),work.kind);
     await requireFeatureInTransaction(tx,userId,work.kind);
     const removed=await tx.delete(readingHistory).where(and(eq(readingHistory.id,entryId),eq(readingHistory.userId,userId),eq(readingHistory.workId,workId))).returning({id:readingHistory.id});
     if(removed.length){
@@ -69,13 +66,11 @@ async function writeReading(userId:string,id:string,input:v.InferOutput<typeof r
 async function writeReadingInTransaction(tx:Transaction,userId:string,id:string,input:v.InferOutput<typeof readingProgressInputSchema>,initializeOnly=false){
     v.parse(uuid, userId); v.parse(uuid, id);
     await lockFeaturePolicyInTransaction(tx,userId);
-    const config = await getConfig(tx);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [user] = await tx.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.disabled, false)));
     if (!user) throw new DomainError('Sign in to update reading progress.', 401, 'unauthorized');
     const [item] = await tx.select({ id: readingWorks.id, kind: readingWorks.kind }).from(readingWorks).where(eq(readingWorks.id, id));
     if (!item) throw new DomainError('Reading work not found.', 404, 'not_found');
-    requireEnabledCategory(config, item.kind);
     await requireFeatureInTransaction(tx,userId,item.kind);
     const key = and(eq(readingProgress.userId, userId), eq(readingProgress.workId, id));
     const [existing] = await tx.select().from(readingProgress).where(key);

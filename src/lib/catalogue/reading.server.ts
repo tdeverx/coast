@@ -5,8 +5,8 @@ import { readingWorks, readingGroups, readingGroupMembers, workIdentifiers, work
 import {namedFeatures} from '#lib/social/taste-profile.js';
 import { DomainError } from '#lib/core/errors.js';
 import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata, type ReadingCatalogueFacts } from '#lib/reading/model.js';
-import { getConfig } from '#lib/server/config.js';
-import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { requireFeatureInTransaction } from '#lib/server/features.js';
+import { AppError } from '#lib/server/security/errors.js';
 
 const label = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(500));
 const optionalText = v.optional(v.pipe(v.string(), v.maxLength(20000)));
@@ -52,9 +52,8 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   && (item.kind === 'comic' || !(item.identities ?? []).some(identity => identity.provider === 'comic-vine')),  'Choose a valid provider work identity.'));
 
 /** Provider details arrive before this transaction; verified IDs never merge through a title match. */
-export async function importReading(metadata: ReadingMetadata) {
+export async function importReading(metadata: ReadingMetadata, userId: string | null = null) {
   const input = v.parse(readingMetadataSchema, metadata);
-  requireEnabledCategory(await getConfig(), input.kind);
   const { identities: aliases = [], group, credits, facts, ...metadataValues } = input;
   const identities = [...new Map([{ provider: input.provider, externalId: input.externalId }, ...aliases]
     .map(identity => [`${identity.provider}:${identity.externalId}`, identity])).values()]
@@ -75,6 +74,11 @@ export async function importReading(metadata: ReadingMetadata) {
     issueNumber: input.issueNumber ?? null,
   };
   return getDb().transaction(async (tx) => {
+    if (userId) await requireFeatureInTransaction(tx, userId, input.kind);
+    else {
+      const [admission] = await tx.execute<{ enabled: boolean }>(sql`select coast_shared_feature_enabled(${input.kind}) as enabled`);
+      if (!admission.enabled) throw new AppError(404, 'This medium is disabled.', 'experimental_disabled');
+    }
     // Every identity is locked in the same order, including aliases, before writing.
     for (const identity of identities) {
       const key = `reading:${identity.provider}:${identity.externalId}`;

@@ -3,8 +3,6 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { getDb } from '#lib/server/db/index.js';
 import { providerInstances } from '#lib/server/db/schema.js';
-import { getConfig } from '#lib/server/config.js';
-import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { decryptCredential } from '#lib/server/security/credentials.js';
 import { createProviderTransport } from '#lib/server/security/provider-fetch.js';
 import { AppError } from '#lib/server/security/errors.js';
@@ -28,7 +26,6 @@ const comicVineSourceFilter = and(eq(providerInstances.provider, 'comic-vine'), 
 /** The same deterministic source selection as metadata reads, without account/schedule hydration. */
 export async function readingProviderConfigured(kind: ReadingKind) {
   v.parse(kindSchema, kind);
-  requireEnabledCategory(await getConfig(), kind === 'book' ? 'reading' : kind);
   if (kind === 'book') return true;
   const [instance] = await getDb().select({ configured: sql<boolean>`coalesce(${providerInstances.credentials},'')<>''` })
     .from(providerInstances).where(comicVineSourceFilter)
@@ -36,9 +33,8 @@ export async function readingProviderConfigured(kind: ReadingKind) {
   return instance?.configured ?? false;
 }
 
-/** Metadata connections are administrator-owned; credentials never reach pages. */
+/** Callers admit the account and medium before using the shared metadata source. */
 async function source(kind: ReadingKind, provider = kind === 'book' ? 'openlibrary' : 'comic-vine') {
-  requireEnabledCategory(await getConfig(), provider === 'openlibrary' ? 'reading' : kind);
   if (provider === 'openlibrary') {
     const adapter = new OpenLibraryAdapter(createProviderTransport({
       provider: 'openlibrary', baseUrl: OPEN_LIBRARY_BASE_URL, approved: true,
@@ -106,9 +102,7 @@ export async function readingProviderDetails(kind: ReadingKind, externalId: stri
   v.parse(readingReferenceSchema, { kind, externalId });
   const { key, adapter } = await source(kind, readingProviderForId(externalId));
   const identity = JSON.stringify([key, externalId]);
-  const item = await detailFlight(identity, () => details(identity, () => adapter.details(externalId)));
-  requireEnabledCategory(await getConfig(), item.kind);
-  return item;
+  return detailFlight(identity, () => details(identity, () => adapter.details(externalId)));
 }
 
 const editionCache=providerCache<string|null>(200,24*60*60_000);

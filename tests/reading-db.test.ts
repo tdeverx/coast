@@ -17,6 +17,7 @@ import { progressData } from '../src/lib/server/queries/progress';
 import { libraryContent } from '../src/lib/server/queries/library-content';
 import { collectionData, workAssessments } from '../src/lib/collection/query.server';
 import { readingProviderConfigured } from '../src/lib/providers/reading.server';
+import { OpenLibraryAdapter } from '../src/lib/providers/openlibrary/adapter.server';
 import { addReading } from '../src/lib/application/reading.server';
 import { load as loadMediaPage } from '../src/routes/media/[id]/+page.server';
 import { readingSearch, readingSearchInitial, type ReadingSearchContent } from '../src/lib/server/queries/search';
@@ -260,7 +261,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
     try {
       await expect(importReading(comic)).rejects.toThrow('disabled');
       await expect(readingDetails(owner, comicId)).rejects.toThrow('disabled');
-      await expect(updateReading(owner, comicId, { page: 1 })).rejects.toThrow('disabled');
+      await expect(updateReading(owner, comicId, { page: 1 })).rejects.toMatchObject({ code: 'feature_disabled' });
       await expect(readingCatalogue(owner, { kind: 'comic' })).rejects.toThrow('disabled');
       await expect(loadMediaPage(mediaEvent(comicId))).rejects.toMatchObject({ status: 404, body: { message: 'This medium is disabled.' } });
       await expect(loadMediaPage(mediaEvent(comicId, null))).rejects.toMatchObject({ status: 404, body: { message: 'This medium is disabled.' } });
@@ -268,6 +269,36 @@ suite('experimental reading identity, private state and bounded local reads', ()
       expect(all.total).toBe(69); expect(all.items.every(item => item.kind === 'book')).toBe(true);
       expect(await getDb().select().from(readingProgress).where(eq(readingProgress.workId, comicId))).toHaveLength(1);
     } finally { await saveConfig({ ...config, experimentalBooks: true, experimentalComics: true }); }
+  });
+
+  test('per-account book and comic grants admit provider lookup, import and progress with installation defaults off', async () => {
+    await saveConfig({ ...config, experimentalBooks: false, experimentalComics: false });
+    const db = getDb();
+    await db.update(users).set({ settings: { featurePermissions: { book: true, comic: true } } }).where(eq(users.id, owner));
+    const details = spyOn(OpenLibraryAdapter.prototype, 'details').mockImplementation(async externalId => ({
+      ...book, externalId, kind: externalId === 'OL909090001W' ? 'book' : 'comic',
+      sourceUrl: `https://openlibrary.org/works/${externalId}`,
+    }));
+    const imported: string[] = [];
+    try {
+      for (const externalId of ['OL909090001W', 'OL909090002W']) {
+        const input = { kind: 'book', externalId };
+        await expect(addReading(other, input)).rejects.toMatchObject({ code: 'experimental_disabled' });
+        const item = await addReading(owner, input);
+        imported.push(item.id);
+        expect(item.kind).toBe(externalId === 'OL909090001W' ? 'book' : 'comic');
+        expect((await updateReading(owner, item.id, { page: 4 })).page).toBe(4);
+        await expect(updateReading(other, item.id, { page: 1 })).rejects.toMatchObject({ code: 'feature_disabled' });
+      }
+      await expect(importReading({ ...book, externalId: 'OL909090003W' })).resolves.toMatchObject({ kind: 'book' });
+      const [shared] = await db.select({ id: readingWorks.id }).from(readingWorks).where(eq(readingWorks.externalId, 'OL909090003W'));
+      imported.push(shared.id);
+    } finally {
+      details.mockRestore();
+      await db.update(users).set({ settings: {} }).where(eq(users.id, owner));
+      if (imported.length) await db.delete(works).where(inArray(works.id, imported));
+      await saveConfig({ ...config, experimentalBooks: true, experimentalComics: true });
+    }
   });
 
   test('unified Search merges providers, deduplicates saved works and hydrates only the current user', async () => {
