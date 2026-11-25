@@ -1,0 +1,27 @@
+{
+  "epoch": "2026-11-25-card-hover",
+  "baseline": "a75dbb47ccf0f1e0777f8e965fd447f5d5258497",
+  "blanketAcceptance": false,
+  "scope": [
+    "Use the compact layout breakpoint for persistent media card controls and badge clearance.",
+    "Remove overshoot from card motion and keep the touch context menu open after release."
+  ],
+  "verification": {
+    "hosted": false,
+    "localBrowser": [
+      "Checked 1904 px mouse hover under touch-only media queries in Chromium and desktop hover in Firefox.",
+      "Verified card, controls and badges scale together, along with keyboard focus and reduced motion.",
+      "Exercised compact touch controls and wide touch long-press menu selection."
+    ]
+  },
+  "files": {
+    "src/lib/ui/components/MediaCard.svelte": {
+      "previous": "aa57412497713f079370b683d73558890999f5498b3f09182ece0efd5018a554",
+      "current": "e2894bde7e106a96b9a961c094773ef370c39e58787236a630a35b651436837a"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "fa5915d0b935a1edf57c026f895c4baa705ef8e0b324ed07bd7b1bbd90625bd6",
+      "current": "b557921cca327849f0df009237f94334aa8c7f52becded7b6c2d65e23fc1755a"
+    }
+  }
+}

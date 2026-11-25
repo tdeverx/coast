@@ -41,7 +41,10 @@ test('global scroll cancellation exists only during a hold and preserves context
     expect(opened).toHaveLength(0); expect(windowTarget.count('scroll')).toBe(0);
     node.dispatch('pointerdown', { pointerType: 'touch' }); fire();
     expect(opened).toEqual([{ x: 10, y: 20 }]); expect(windowTarget.count('scroll')).toBe(0);
+    node.dispatch('pointerup', { pointerType: 'touch' });
+    expect(node.dispatch('mousedown').prevented).toBe(true);
     expect(node.dispatch('click').prevented).toBe(true);
+    expect(node.dispatch('mousedown').prevented).toBe(false);
     expect(node.dispatch('click').prevented).toBe(false);
     node.dispatch('contextmenu'); expect(opened).toHaveLength(2);
     node.dispatch('keydown', { key: 'F10', shiftKey: true }); expect(opened.at(-1)).toEqual({ x: 52, y: 63 });
