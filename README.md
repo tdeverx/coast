@@ -71,7 +71,7 @@ Media details open in a rounded panel that expands as you scroll. Follow seasons
 
 ## Experiments
 
-Administrators grant access per account in **Settings → Feature permissions**. Available experiments appear in **Settings → Features**. Administrators and members can edit the same enabled preference, and disabling a feature preserves saved data.
+Administrators grant access per account in **Settings → Feature availability**. Available experiments appear in **Settings → Features**. Administrators and members can edit the same enabled preference, and disabling a feature preserves saved data.
 
 Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
 

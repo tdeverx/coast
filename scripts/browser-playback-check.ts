@@ -109,7 +109,7 @@ try {
   await page.goto(`${origin}/settings/playback`);
   await page.waitForLoadState('domcontentloaded');
   const ask=page.getByLabel('Ask before playback', { exact: true });
-  if(!await ask.isChecked()){await ask.check();await page.getByRole('button', { name: 'Save', exact: true }).click();await expect(page.getByRole('status')).toHaveText('Preferences saved.');}
+  if(!await ask.isChecked()){await ask.check();await page.getByRole('button', { name: 'Save playback preferences', exact: true }).click();await expect(page.getByRole('status')).toHaveText('Preferences saved.');}
   await page.goto(`${origin}/media/${mediaId}`);
   await hydrated();
   await expect(

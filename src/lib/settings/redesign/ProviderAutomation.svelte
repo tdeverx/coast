@@ -1,0 +1,91 @@
+<script lang="ts">
+  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { tick } from 'svelte';
+  import type { ProviderSchedule } from '#lib/providers/schedule.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import Heading from '#lib/ui/components/Heading.svelte';
+
+  const { change, feedback } = useClient();
+
+  let {
+    instance,
+  }: { instance: { id: string; provider: string; enabled: boolean; schedule: ProviderSchedule } } =
+    $props();
+  let busy = $state(false),
+    error = $state('');
+  let pending = $state<Partial<ProviderSchedule>>({});
+  const schedule = $derived({ ...instance.schedule, ...pending });
+  const choices = $derived(
+    instance.provider === 'jellyfin'
+      ? [
+          {key:'liveEnabled' as const,label:'Live activity checks'},
+          {key:'streamsEnabled' as const,label:'Record server streams'},
+          { key: 'libraryEnabled' as const, label: 'Shared library scans' },
+          { key: 'userSyncEnabled' as const, label: 'User activity imports' },
+          { key: 'catalogueEnabled' as const, label: 'Discover user-linked titles' },
+        ]
+      : instance.provider === 'trakt'
+        ? [
+            {key:'liveEnabled' as const,label:'Live activity checks'},
+            { key: 'trackingEnabled' as const, label: 'Tracking imports' },
+            { key: 'listsEnabled' as const, label: 'List imports' },
+            { key: 'catalogueEnabled' as const, label: 'Discover user-linked titles' },
+          ]
+        : []
+  );
+  async function toggle(key: keyof ProviderSchedule, checked: boolean) {
+    if (busy) return;
+    busy = true;
+    error = '';
+    pending = { [key]: checked };
+    try {
+      await change(`providers/${instance.id}/schedule`, { [key]: checked });
+      feedback.notify(checked ? 'Automatic work enabled.' : 'Automatic work paused.');
+    } catch (cause) {
+      error = message(cause);
+    } finally {
+      await tick();
+      pending = {};
+      busy = false;
+    }
+  }
+
+  reportFailure(()=>error);
+</script>
+
+{#if ['jellyfin', 'trakt', 'seerr', 'tmdb', 'steam'].includes(instance.provider)}
+  <div class="automation stack">
+    <Heading title="Automatic work"
+      >{#snippet actions()}<a class="small text-accent" href="/settings/jobs"
+          >View tasks & schedules</a
+        >{/snippet}</Heading
+    >
+    <SettingsSwitch label="Run background jobs automatically" checked={schedule.enabled}
+      disabled={busy || !instance.enabled} onchange={checked => void toggle('enabled', checked)} />
+    {#each choices as choice (choice.key)}
+      <SettingsSwitch label={choice.label} checked={!!schedule[choice.key]}
+        disabled={busy || !instance.enabled} onchange={checked => void toggle(choice.key, checked)} />
+    {/each}
+    <p class="small">
+      {!instance.enabled
+        ? 'Enable this integration to run background work.'
+        : !instance.schedule.enabled
+          ? 'Automatic work is paused. Your task settings are saved.'
+          : 'Selected tasks run on their schedules.'} Already queued jobs remain available in Jobs.
+    </p>
+
+  </div>
+{/if}
+
+<style>
+  .automation {
+    border-top: 1px solid var(--line);
+    padding-top: var(--auth-gap);
+    gap: var(--auth-action-gap);
+  }
+  .automation :global(.row-header) {
+    margin-bottom: 0;
+  }
+</style>

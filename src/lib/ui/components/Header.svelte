@@ -132,8 +132,11 @@
   reportFailure(()=>status.error);
 </script>
 
-<div class="header-gradient" class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible} aria-hidden="true"></div>
+{#if page.data.capabilities?.settingsSidebar}
+  <div class="header-gradient" class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible} aria-hidden="true"></div>
+{/if}
 <header
+  class:settings-redesign={page.data.capabilities?.settingsSidebar}
   class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
 >
@@ -252,6 +255,9 @@
     inset: 0 0 auto;
     z-index: 80;
     pointer-events: none;
+  }
+  header:not(.settings-redesign) {
+    background: linear-gradient(color-mix(in srgb, var(--canvas) calc(119 / 255 * 100%), transparent), transparent);
   }
   .header-gradient {
     position: fixed;

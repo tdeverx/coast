@@ -34,6 +34,7 @@
     timing,
     local=false,
     showSource=false,
+    redesigned=false,
   }: {
     provider: {
       id: string;
@@ -51,6 +52,7 @@
     timing?: JobTiming;
     local?:boolean;
     showSource?:boolean;
+    redesigned?:boolean;
    } = $props();
 
   const clock = useClock('second', () => !preview);
@@ -397,7 +399,13 @@
       void save();
     }}
   >
-    {#if local}<SettingsSwitch label="Automatic runs" bind:checked={draft.enabled} disabled={busy} />{:else}<p class="small">
+    {#if local}
+      {#if redesigned}
+        <SettingsSwitch label="Automatic runs" bind:checked={draft.enabled} disabled={busy} />
+      {:else}
+        <label class="check"><input type="checkbox" bind:checked={draft.enabled} disabled={busy} />Automatic runs</label>
+      {/if}
+    {:else}<p class="small">
       {automatic ? 'Automatic runs are enabled.' : 'Automatic runs are paused.'} Manage automatic-run
       toggles in <a class="text-accent" href="/settings/integrations">Integrations</a>.
     </p>{/if}

@@ -1,8 +1,8 @@
 # Experimental features
 
-Administrators manage feature permissions per account in **Settings → Feature permissions**, or from a member’s details in **Accounts**. **Allow** exposes the feature in the member’s **Settings → Features**. **Enabled** is the member’s current preference. Either the member or an administrator can change it. Revoking access hides the toggle and preserves the saved choice.
+Administrators manage feature permissions per account in **Settings → Feature availability**. In the redesign, use **Feature permissions** or open the member’s details in **Accounts**. **Allow** exposes the feature in the member’s **Settings → Features**. **Enabled** is the member’s current preference. Either the member or an administrator can change it. Revoking access hides the toggle and preserves the saved choice.
 
-Experiments default off on new installations. The migration retains existing grants and choices. The **Settings sidebar** experiment is off by default for every account. It opens Settings over the current page and uses the same settings data as the original page.
+Experiments default off on new installations. The migration retains existing grants and choices. The **Settings redesign** experiment is off by default. Enabling it replaces the classic Settings menu and forms with the redesigned sidebar and inline editors. Both layouts use the same saved preferences.
 
 - **Music:** album/track browsing, listen tracking, audio playback and Jellyfin music imports.
 - **Gaming:** game discovery, playthroughs/sessions, IGDB and Steam integrations and Steam jobs.

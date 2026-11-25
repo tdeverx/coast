@@ -978,14 +978,6 @@
         "kind": "data",
         "nullable": false,
         "defaultSource": "[]"
-      },
-      {
-        "name": "settingsGroup",
-        "type": "Snippet<[Snippet]>",
-        "optional": true,
-        "bindable": false,
-        "kind": "snippet",
-        "nullable": false
       }
     ]
   },
@@ -2016,24 +2008,6 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
-      },
-      {
-        "name": "editId",
-        "type": "string",
-        "optional": true,
-        "bindable": false,
-        "kind": "text",
-        "nullable": false
-      },
-      {
-        "name": "inline",
-        "type": "boolean",
-        "optional": true,
-        "bindable": false,
-        "kind": "boolean",
-        "nullable": false,
-        "defaultSource": "false",
-        "defaultValue": false
       }
     ]
   },
@@ -2091,6 +2065,16 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      },
+      {
+        "name": "redesigned",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },
@@ -2140,6 +2124,16 @@
         "kind": "data",
         "nullable": false,
         "defaultSource": "{items:[],more:false}"
+      },
+      {
+        "name": "redesigned",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       }
     ]
   },

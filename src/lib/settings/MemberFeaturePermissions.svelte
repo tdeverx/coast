@@ -8,7 +8,9 @@
   import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
 
   type Snapshot = { permissions: FeaturePermissions; preferences: FeatureChoices };
-  let { account, config }: { account: {id: string; username: string; role: string; settings: UserSettings}; config: FeatureConfiguration } = $props();
+  let { account, config, classic = false }: {
+    account: {id: string; username: string; role: string; settings: UserSettings}; config: FeatureConfiguration; classic?: boolean;
+  } = $props();
   let expanded = $state(false);
   let pending = $state(false);
   let error = $state('');
@@ -72,16 +74,20 @@
 </script>
 
 <div class="permission-editor">
-  <AuthSurface>
+  {#if classic}
+    <button type="button" class="button control-subtle" aria-expanded={expanded} aria-controls={expanded ? id : undefined} disabled={pending} onclick={toggle}>
+      Feature permissions for {account.username}
+    </button>
+  {:else}<AuthSurface>
     <button type="button" class="menu-row" aria-expanded={expanded} aria-controls={expanded ? id : undefined} disabled={pending} onclick={toggle}>
       <Icon name="shield" size={16} />
       <span class="permission-name">Feature permissions for {account.username}</span>
       <span class="menu-chevron" class:expanded><Icon name="right" size={16} /></span>
     </button>
-  </AuthSurface>
+  </AuthSurface>{/if}
   {#if error}<p class="small" role="alert">{error}</p>{/if}
   {#if expanded}
-    <form id={id} class="permission-editor" onsubmit={save}>
+    <form id={id} class="permission-editor" class:panel={classic} onsubmit={save}>
       <p class="small">Allow makes the feature available in the member’s Settings. Enabled sets the member’s current preference. Members can change it themselves.</p>
       <fieldset disabled={pending} class="permission-editor">
         {#each [false, true] as experimental}
