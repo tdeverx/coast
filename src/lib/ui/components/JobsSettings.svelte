@@ -23,6 +23,7 @@
     timing = [],
     tasteJob=null,
     commands={items:[],more:false},
+    redesigned = false,
   }: {
     providers: {
       id: string;
@@ -38,6 +39,7 @@
     actions: QueueAction[];
     commands?:TaskControlListing;
     timing?: import('#lib/providers/job-timing.server.js').JobTiming[];
+    redesigned?: boolean;
   } = $props();
   let filter = $state('all'),
     service = $state('all'),
@@ -130,7 +132,7 @@
     <section class="service stack" aria-label={`${group.title} tasks`}>
       <Heading title={group.title} description={group.description} />
       <div class="task-list">{#each group.entries as entry (`${entry.provider.id}:${entry.task.id}`)}
-        <JobSchedule provider={entry.provider} task={entry.task} jobs={entry.jobs} timing={entry.timing} local={entry.local} showSource />
+        <JobSchedule provider={entry.provider} task={entry.task} jobs={entry.jobs} timing={entry.timing} local={entry.local} showSource {redesigned} />
       {/each}</div>
     </section>
   {:else}<EmptyState title="No matching tasks" description="Choose another filter to see active work, upcoming schedules or manual tasks." icon="clock" />{/each}

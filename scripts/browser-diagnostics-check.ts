@@ -24,16 +24,9 @@ try {
   step = 'settings';
   await page.goto(`${origin}/settings/activity`);
   await page.waitForTimeout(1000);
-  const selector = page.getByRole('button', { name: 'Diagnostic logging', exact: true });
-  const options = page.getByRole('group', { name: 'Diagnostic logging options', exact: true });
-  const label = (level: string) => level[0].toUpperCase() + level.slice(1);
-  const selectLevel = async (level: string) => {
-    await selector.click();
-    await options.getByRole('button', { name: label(level), exact: true }).click();
-  };
-  await expect(selector).toHaveAccessibleDescription('Info');
-  await selector.click();
-  expect(await options.getByRole('button').allTextContents().then(rows => rows.slice(1).map(text => text.trim()))).toEqual([
+  const selector = page.getByRole('combobox', { name: 'Diagnostic logging', exact: true });
+  await expect(selector).toHaveValue('info');
+  expect(await selector.locator('option').allTextContents()).toEqual([
     'Off',
     'Error',
     'Warn',
@@ -41,15 +34,14 @@ try {
     'Debug',
     'Trace',
   ]);
-  await selector.press('Escape');
   for (const level of ['trace', 'off', 'info']) {
     step = `save ${level}`;
-    await selectLevel(level);
+    await selector.selectOption(level);
     const saved = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/v1/settings/system') && response.request().method() === 'POST'
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
     expect((await saved).ok()).toBe(true);
     await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
     expect((await (await page.request.get(`${origin}/api/v1/diagnostics`)).json()).level).toBe(
@@ -57,10 +49,10 @@ try {
     );
     await page.reload();
     await page.waitForTimeout(1000);
-    await expect(selector).toHaveAccessibleDescription(label(level));
+    await expect(selector).toHaveValue(level);
   }
-  await selectLevel('trace');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await selector.selectOption('trace');
+  await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
   await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
   const id = crypto.randomUUID();
   const spoofedRequestId = crypto.randomUUID();
@@ -93,8 +85,6 @@ try {
   });
   expect((await browserReport).status()).toBe(204);
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Diagnostic settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Events', exact: true }).click();
   await page.getByRole('link', { name: 'Download recent diagnostics' }).click();
   const file = await download;
   expect(file.suggestedFilename()).toBe('coast-diagnostics.jsonl');
@@ -110,10 +100,8 @@ try {
     detail: expect.objectContaining({ requestAction: 'health', status: 200 }),
   }));
   expect(content).not.toContain(spoofedRequestId);
-  await page.getByRole('button', { name: 'Diagnostic settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Logging', exact: true }).click();
-  await selectLevel('info');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await selector.selectOption('info');
+  await page.getByRole('button', { name: 'Save diagnostic logging' }).click();
   await expect(page.getByRole('status')).toContainText('Diagnostic logging updated.');
   await mkdir('/tmp/coast-diagnostic-evidence', { recursive: true });
   await page.screenshot({ path: '/tmp/coast-diagnostic-evidence/settings.png', fullPage: true });
@@ -145,7 +133,7 @@ try {
   ).toBe(403);
   await memberPage.goto(`${origin}/settings`);
   await expect(
-    memberPage.getByRole('button', { name: 'Diagnostic logging', exact: true })
+    memberPage.getByRole('combobox', { name: 'Diagnostic logging', exact: true })
   ).toHaveCount(0);
   expect(issues).toEqual([]);
   console.log(

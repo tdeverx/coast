@@ -8,7 +8,7 @@
   import type { BackupStatus } from './model';
 
   const { api, preview, feedback } = useClient();
-  let { initial }: { initial: BackupStatus } = $props();
+  let { initial, redesigned = false }: { initial: BackupStatus; redesigned?: boolean } = $props();
   let current = $state(untrack(() => initial));
   let policy = $state(untrack(() => ({ ...initial.policy })));
   let busy = $state(false);
@@ -82,18 +82,22 @@
 
     <form class="stack" onsubmit={(event) => { event.preventDefault(); void update('PATCH'); }}>
       <SettingsRow title="Automatic backups" description="Capture an encrypted database dump, credential keys and uploaded avatars once a day.">
-        <Toggle label="Automatic backups" bind:checked={policy.enabled} disabled={busy} />
+        {#if redesigned}
+          <Toggle label="Automatic backups" bind:checked={policy.enabled} disabled={busy} />
+        {:else}
+          <input type="checkbox" aria-label="Automatic backups" bind:checked={policy.enabled} />
+        {/if}
       </SettingsRow>
       <SettingsRow title="Daily time" description="Coast catches up after startup if the scheduled time has passed.">
         <input type="time" aria-label="Daily backup time" bind:value={policy.time} required />
       </SettingsRow>
-      <label class="field">Time zone
+      <label class={redesigned ? 'field' : 'stack'}>Time zone
         <input type="text" bind:value={policy.timeZone} placeholder="Europe/London" maxlength="80" required />
       </label>
-      <label class="field">Snapshots to keep
+      <label class={redesigned ? 'field' : 'stack'}>Snapshots to keep
         <input type="number" min="1" max="90" step="1" bind:value={policy.keep} required />
       </label>
-      <label class="field">Public recovery certificate
+      <label class={redesigned ? 'field' : 'stack'}>Public recovery certificate
         <textarea rows="5" maxlength="16384" bind:value={policy.recipient} placeholder="-----BEGIN CERTIFICATE-----"></textarea>
       </label>
       <p class="small">Keep the matching private key outside Coast. Restore the archives offline using that key and the deployment recovery instructions.</p>

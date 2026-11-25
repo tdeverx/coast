@@ -48,7 +48,7 @@ test('a shallow close during pending refresh supersedes its captured state',asyn
  expect(h.page.state.friendsPopover).toBe(false);
 });
 
-const [jobsComponent,settingsComponent,...libraryComponents]=await Promise.all(['src/lib/ui/components/JobsSettings.svelte','src/routes/settings/[[section]]/+page.svelte','src/routes/music/+page.svelte','src/routes/games/+page.svelte'].map(read));
+const [jobsComponent,classicSettings,redesignedSettings,...libraryComponents]=await Promise.all(['src/lib/ui/components/JobsSettings.svelte','src/lib/settings/ClassicSettings.svelte','src/lib/settings/redesign/SettingsEditor.svelte','src/routes/music/+page.svelte','src/routes/games/+page.svelte'].map(read));
 const jobsScript=jobsComponent.match(/<script[^>]*>([\s\S]*?)<\/script>/u)![1];
 const jobsTree=ts.createSourceFile('jobs.ts',jobsScript,ts.ScriptTarget.Latest,true);
 const mount=(jobsTree.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.expression.getText(jobsTree)==='onMount') as ts.ExpressionStatement).expression as ts.CallExpression;
@@ -84,9 +84,11 @@ test('actual Music and Games Retry callbacks retain full refresh admission',asyn
   const requests:unknown[]=[];await new Function('refreshRouteDependencies','return ('+attribute(component,'retry')+')();')((keys:unknown)=>requests.push(keys));expect(requests).toEqual(['all']);
  }
 });
-test('actual invitation revoke callback refreshes settings only after its acknowledged command',async()=>{
- const source=attribute(settingsComponent,'onclick','sharing/'),events:unknown[]=[];let release!:()=>void;
- const invoke=new Function('change','refreshRouteDependencies','message',`let busy=false,error='';const link={id:'diagnostic-link'};return {run:${source},get error(){return error;}};`)(
-  async(path:string,body:unknown,method:string)=>{events.push({path,body,method});await new Promise<void>(resolve=>release=resolve);},async(keys:string[])=>{events.push(keys);},(error:Error)=>error.message);
- const pending=invoke.run();await invoke.run();expect(events).toEqual([{path:'sharing/diagnostic-link',body:undefined,method:'DELETE'}]);release();await pending;expect(events[1]).toEqual(['settings']);expect(invoke.error).toBe('');
+test('both Settings layouts refresh after the playback link revoke is acknowledged',async()=>{
+ for (const component of [classicSettings,redesignedSettings]) {
+  const source=attribute(component,'onclick','sharing/'),events:unknown[]=[];let release!:()=>void;
+  const invoke=new Function('change','refreshRouteDependencies','message',`let busy=false,error='';const link={id:'diagnostic-link'};return {run:${source},get error(){return error;}};`)(
+   async(path:string,body:unknown,method:string)=>{events.push({path,body,method});await new Promise<void>(resolve=>release=resolve);},async(keys:string[])=>{events.push(keys);},(error:Error)=>error.message);
+  const pending=invoke.run();await invoke.run();expect(events).toEqual([{path:'sharing/diagnostic-link',body:undefined,method:'DELETE'}]);release();await pending;expect(events[1]).toEqual(['settings']);expect(invoke.error).toBe('');
+ }
 });

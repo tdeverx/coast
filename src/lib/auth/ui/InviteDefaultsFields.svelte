@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
-  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import { emptyInviteDefaults, scheduleDays, type InviteDefaults, type JellyfinSettings } from '#lib/auth/invites.js';
   import { jellyfinHasFamilyLimits, jellyfinPermissionFlags, jellyfinPlaybackFlags, jellyfinPreferenceFlags, subtitleModes, syncPlayOptions, unratedItems, type JellyfinConfiguration } from '#lib/auth/jellyfin-preset.js';
   import { audiences } from '#lib/social/model.js';
@@ -25,17 +23,6 @@
     ['LatestItemsExcludes','Exclude library IDs from Latest'],['MyMediaExcludes','Exclude library IDs from My Media']] as const;
   const configurationText=[['AudioLanguagePreference','Preferred audio language'],['SubtitleLanguagePreference','Preferred subtitle language'],
     ['CastReceiverId','Cast receiver ID']] as const;
-  const accountTypes = [
-    { id: 'coast', label: 'Coast account', icon: 'user' },
-    { id: 'managed', label: 'Create a managed Jellyfin account', icon: 'jellyfin' },
-    { id: 'choice', label: 'Create or connect a Jellyfin account', icon: 'jellyfin' },
-  ] as const;
-  const inheritedSwitches = [{ id: '', label: 'Use default' }, { id: 'true', label: 'On' }, { id: 'false', label: 'Off' }];
-  const dayOptions = scheduleDays.map(id => ({ id, label: id }));
-  const subtitleOptions = [{ id: '', label: 'Use default' },
-    ...subtitleModes.map(id => ({ id, label: id === 'OnlyForced' ? 'Only forced' : id }))] as const;
-  const audienceOptions = [{ id: '', label: 'Use Coast default' },
-    ...audiences.map(id => ({ id, label: id[0].toUpperCase() + id.slice(1) }))] as const;
   const configuration=$derived(defaults.jellyfinConfiguration??{});
   const list=(value:string)=>value.split(',').map(item=>item.trim()).filter(Boolean);
   const checkboxValue=(value:string)=>value===''?undefined:value==='true';
@@ -73,21 +60,23 @@
   }
 </script>
 
-{#if !accessOnly}
-  <SettingsChoice label="Account type" bind:value={defaults.account} options={accountTypes}
-    onchange={account=>{if(account!=='managed')delete defaults.access.libraryOnly;}} />
-{/if}
+{#if !accessOnly}<label class="field">Account type
+  <select bind:value={defaults.account} onchange={()=>{if(defaults.account!=='managed')delete defaults.access.libraryOnly;}}>
+    <option value="coast">Coast account</option><option value="managed">Create a managed Jellyfin account</option><option value="choice">Create or connect a Jellyfin account</option>
+  </select>
+</label>{/if}
 {#if defaults.account!=='coast'}
-  {#if !accessOnly}
-    <SettingsChoice label="Jellyfin management access" icon="jellyfin" value={defaults.connectionId??''}
-      options={[{ id: '', label: 'Choose a server API key or Jellyfin admin account' }, ...connections.map(item=>({ id: item.id, label: item.name }))]}
-      onchange={id=>{defaults.connectionId=id||undefined;defaults.folders=[];}} />
-  {/if}
+  {#if !accessOnly}<label class="field">Jellyfin management access
+    <select value={defaults.connectionId??''} onchange={event=>{defaults.connectionId=event.currentTarget.value||undefined;defaults.folders=[];}}>
+      <option value="">Choose a server API key or Jellyfin admin account</option>
+      {#each connections as item (item.id)}<option value={item.id}>{item.name}</option>{/each}
+    </select>
+  </label>{/if}
   {#if defaults.connectionId}
     <fieldset class="stack">
       <legend>Jellyfin libraries</legend>
-      <SettingsSwitch label="All libraries" checked={defaults.jellyfin.EnableAllFolders===true&&!restricted} disabled={restricted}
-        onchange={checked=>{set('EnableAllFolders',checked||undefined);if(checked)defaults.folders=[];}} />
+      <label class="row"><input type="checkbox" checked={defaults.jellyfin.EnableAllFolders===true&&!restricted} disabled={restricted}
+        onchange={event=>{set('EnableAllFolders',event.currentTarget.checked||undefined);if(event.currentTarget.checked)defaults.folders=[];}} /> All libraries</label>
       {#if libraries.busy}<p role="status">Loading libraries…</p>{/if}
       {#if libraries.error}<p role="status">{libraries.error}</p>{/if}
       {#each libraries.data as library (library.ItemId)}
@@ -95,8 +84,7 @@
       {/each}
     </fieldset>
     {#if defaults.account==='managed'}
-      <SettingsSwitch label="Library-only access in Coast" bind:checked={defaults.access.libraryOnly}
-        onchange={checked=>{if(checked)set('EnableAllFolders',undefined);}} />
+      <label class="row"><input type="checkbox" bind:checked={defaults.access.libraryOnly} onchange={()=>{if(defaults.access.libraryOnly)set('EnableAllFolders',undefined);}} /> Library-only access in Coast</label>
     {/if}
     <details class="stack">
       <summary>Jellyfin playback and family access</summary>
@@ -125,7 +113,7 @@
           oninput={event=>defaults.jellyfinTimeZone=event.currentTarget.value||undefined} /></label>{/if}
         {#each schedule as window,index}
           <div class="row">
-            <SettingsChoice label="Day" icon="calendar" bind:value={window.DayOfWeek} options={dayOptions} />
+            <label class="field">Day<select bind:value={window.DayOfWeek}>{#each scheduleDays as day}<option value={day}>{day}</option>{/each}</select></label>
             <label class="field">Start hour<input type="number" min="0" max="24" step="0.25" bind:value={window.StartHour} /></label>
             <label class="field">End hour<input type="number" min="0" max="24" step="0.25" bind:value={window.EndHour} /></label>
             <Button emphasis="subtle" onclick={()=>set('AccessSchedules',schedule.filter((_,i)=>i!==index))}>Remove</Button>
@@ -147,10 +135,9 @@
         <label class="field">{label}<input value={defaults.jellyfin[key]?.join(', ')??''}
           onchange={event=>set(key,list(event.currentTarget.value))} /></label>
       {/each}
-      <SettingsChoice label="SyncPlay access" icon="party" value={defaults.jellyfin.SyncPlayAccess??''}
-        options={[{ id: '', label: 'Use default' }, { id: syncPlayOptions[0], label: 'Disabled' },
-          { id: syncPlayOptions[1], label: 'Join groups' }, { id: syncPlayOptions[2], label: 'Create and join groups' }]}
-        onchange={value=>set('SyncPlayAccess',value||undefined)} />
+      <label class="field">SyncPlay access<select value={defaults.jellyfin.SyncPlayAccess??''} onchange={event=>set('SyncPlayAccess',(event.currentTarget.value||undefined) as JellyfinSettings['SyncPlayAccess'])}>
+        <option value="">Use default</option><option value={syncPlayOptions[0]}>Disabled</option><option value={syncPlayOptions[1]}>Join groups</option><option value={syncPlayOptions[2]}>Create and join groups</option>
+      </select></label>
       <label class="field">Failed attempts before lockout<input type="number" min="-1" placeholder="Use default" value={defaults.jellyfin.LoginAttemptsBeforeLockout??''}
         oninput={event=>set('LoginAttemptsBeforeLockout',event.currentTarget.value?event.currentTarget.valueAsNumber:undefined)} /></label>
       <label class="field">Maximum active sessions<input type="number" min="0" placeholder="Use default" value={defaults.jellyfin.MaxActiveSessions??''}
@@ -162,15 +149,18 @@
     <details class="stack">
       <summary>Jellyfin starting preferences</summary>
       {#each preferenceFlags as [key,label] (key)}
-        <SettingsChoice {label} value={String(configuration[key]??'')} options={inheritedSwitches}
-          onchange={value=>setConfiguration(key,checkboxValue(value))} />
+        <label class="field">{label}<select value={String(configuration[key]??'')} onchange={event=>setConfiguration(key,checkboxValue(event.currentTarget.value))}>
+          <option value="">Use default</option><option value="true">On</option><option value="false">Off</option>
+        </select></label>
       {/each}
       {#each configurationText as [key,label] (key)}
         <label class="field">{label}<input maxlength="200" value={configuration[key]??''}
           onchange={event=>setConfiguration(key,event.currentTarget.value.trim()||null)} /></label>
       {/each}
-      <SettingsChoice label="Subtitle mode" icon="subtitles" value={configuration.SubtitleMode??''} options={subtitleOptions}
-        onchange={value=>setConfiguration('SubtitleMode',value||undefined)} />
+      <label class="field">Subtitle mode<select value={configuration.SubtitleMode??''}
+        onchange={event=>setConfiguration('SubtitleMode',(event.currentTarget.value||undefined) as JellyfinConfiguration['SubtitleMode'])}>
+        <option value="">Use default</option>{#each subtitleModes as mode}<option value={mode}>{mode==='OnlyForced'?'Only forced':mode}</option>{/each}
+      </select></label>
       {#each configurationLists as [key,label] (key)}
         <label class="field">{label}<input value={configuration[key]?.join(', ')??''} onchange={event=>setConfiguration(key,list(event.currentTarget.value))} /></label>
       {/each}
@@ -183,41 +173,45 @@
 {/if}
 <fieldset class="stack">
   <legend>Coast permissions</legend>
-  <SettingsChoice label="Coast playback sharing" icon="share" disabled={restricted}
-    value={defaults.access.sharing===false?'block':defaults.sharingGrant?'grant':''}
-    options={[{ id: '', label: 'Use account permission' }, { id: 'grant', label: 'Grant sharing' }, { id: 'block', label: 'Block sharing' }]}
-    onchange={choice=>{
+  <label class="field">Coast playback sharing<select disabled={restricted} value={defaults.access.sharing===false?'block':defaults.sharingGrant?'grant':''}
+    onchange={event=>{
+      const choice=event.currentTarget.value;
       if(choice==='block')defaults.access.sharing=false;
       else delete defaults.access.sharing;
       if(choice==='grant')defaults.sharingGrant=true;
       else delete defaults.sharingGrant;
-    }} />
+    }}>
+    <option value="">Use account permission</option><option value="grant">Grant sharing</option><option value="block">Block sharing</option>
+  </select></label>
   {#each capabilities as [key,label] (key)}
-    <SettingsSwitch label={`Block ${label.toLowerCase()}`} checked={defaults.access[key]===false} disabled={restricted && key!=='social'}
-      onchange={checked=>{if(checked)defaults.access[key]=false;else delete defaults.access[key];}} />
+    <label class="row"><input type="checkbox" checked={defaults.access[key]===false} disabled={restricted && key!=='social'}
+      onchange={event=>{if(event.currentTarget.checked)defaults.access[key]=false;else delete defaults.access[key];}} /> Block {label.toLowerCase()}</label>
   {/each}
 </fieldset>
 {#if !accessOnly}<fieldset class="stack">
   <legend>Starting preferences</legend>
-  <SettingsChoice label="Theme" icon="layers" value={defaults.preferences.theme??''}
-    options={[{ id: '', label: 'Use Coast default' }, { id: 'system', label: 'System' }, { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }]}
-    onchange={value=>defaults.preferences.theme=value||undefined} />
-  <SettingsSwitch label="Prefer original titles" bind:checked={defaults.preferences.originalTitles} />
-  <SettingsChoice label="Notifications" icon="bell" value={defaults.preferences.notificationLevel??''}
-    options={[{ id: '', label: 'Use Coast default' }, { id: 'normal', label: 'Normal' }, { id: 'persistent', label: 'Persistent' }]}
-    onchange={value=>defaults.preferences.notificationLevel=value||undefined} />
-  <SettingsChoice label="Profile audience" icon="shield" value={defaults.preferences.social?.audience??''}
-    options={audienceOptions} onchange={audience=>defaults.preferences.social=audience?{audience}:undefined} />
+  <label class="field">Theme<select value={defaults.preferences.theme??''} onchange={event=>defaults.preferences.theme=(event.currentTarget.value||undefined) as InviteDefaults['preferences']['theme']}>
+    <option value="">Use Coast default</option><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
+  </select></label>
+  <label class="row"><input type="checkbox" bind:checked={defaults.preferences.originalTitles} /> Prefer original titles</label>
+  <label class="field">Notifications<select value={defaults.preferences.notificationLevel??''} onchange={event=>defaults.preferences.notificationLevel=(event.currentTarget.value||undefined) as InviteDefaults['preferences']['notificationLevel']}>
+    <option value="">Use Coast default</option><option value="normal">Normal</option><option value="persistent">Persistent</option>
+  </select></label>
+  <label class="field">Profile audience<select value={defaults.preferences.social?.audience??''} onchange={event=>{
+    const audience=event.currentTarget.value as typeof audiences[number];
+    defaults.preferences.social=audience?{audience}:undefined;
+  }}><option value="">Use Coast default</option>{#each audiences as audience}<option value={audience}>{audience[0].toUpperCase()+audience.slice(1)}</option>{/each}</select></label>
   <label class="field">Preferred subtitle languages (comma-separated)<input value={defaults.preferences.subtitleLanguages?.join(', ')??''}
     onchange={event=>defaults.preferences.subtitleLanguages=list(event.currentTarget.value)} /></label>
-  <SettingsSwitch label="Always show subtitles" bind:checked={defaults.preferences.subtitlesAlways} />
-  <SettingsSwitch label="Prompt for subtitles when available" bind:checked={defaults.preferences.subtitlePrompt} />
+  <label class="row"><input type="checkbox" bind:checked={defaults.preferences.subtitlesAlways} /> Always show subtitles</label>
+  <label class="row"><input type="checkbox" bind:checked={defaults.preferences.subtitlePrompt} /> Prompt for subtitles when available</label>
 </fieldset>
 <label class="field">Membership length (days)<input type="number" min="1" max="3650" placeholder="No expiry"
   value={defaults.membershipDays??''} oninput={event=>defaults.membershipDays=event.currentTarget.value?event.currentTarget.valueAsNumber:emptyInviteDefaults.membershipDays} /></label>{/if}
 
 
 {#snippet policyToggle(key: keyof typeof jellyfinPlaybackFlags | keyof typeof jellyfinPermissionFlags | 'EnableAllDevices' | 'EnableAllChannels' | 'EnableContentDeletion',label:string)}
-  <SettingsChoice {label} value={String(defaults.jellyfin[key]??'')} options={inheritedSwitches}
-    onchange={value=>set(key,checkboxValue(value))} />
+  <label class="field">{label}<select value={String(defaults.jellyfin[key]??'')} onchange={event=>set(key,checkboxValue(event.currentTarget.value))}>
+    <option value="">Use default</option><option value="true">On</option><option value="false">Off</option>
+  </select></label>
 {/snippet}

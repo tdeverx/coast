@@ -17,7 +17,7 @@ export const featureDefinitions = [
   ['requests', 'Media requests', 'Request new media from connected services.'],
   ['richToasts', 'Rich toasts', 'Show notifications with glass, artwork and stacked edges.'],
   ['cardTasteScores', 'Taste matches on cards', 'Show personal match scores on media cards. Requires Personalisation.'],
-  ['settingsSidebar', 'Settings sidebar', 'Open the redesigned Settings over the current page.'],
+  ['settingsSidebar', 'Settings redesign', 'Use the redesigned Settings, including inline editors and a sidebar over the current page.'],
   ['api', 'Application API', 'Allow scoped application tokens and webhook delivery.'],
 ] as const;
 export type Feature = typeof featureDefinitions[number][0];

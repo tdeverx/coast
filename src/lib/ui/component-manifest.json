@@ -92,8 +92,16 @@
       "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
       "src/lib/settings/MemberFeaturePermissions.svelte",
       "src/lib/settings/SettingsOverview.svelte",
+      "src/lib/settings/redesign/AccountAccessControls.svelte",
+      "src/lib/settings/redesign/AdminInviteSettings.svelte",
+      "src/lib/settings/redesign/CollectionProjectionSettings.svelte",
+      "src/lib/settings/redesign/ConnectionCard.svelte",
+      "src/lib/settings/redesign/IntegrationSettings.svelte",
+      "src/lib/settings/redesign/InviteDefaultsFields.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/cards/editor/PreviewSelect.svelte",
@@ -163,7 +171,6 @@
       "src/routes/planning/+page.svelte",
       "src/routes/progress/+page.svelte",
       "src/routes/search/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/setup/+page.svelte",
       "src/routes/share/+page.svelte",
       "src/routes/synced/[id]/+page.svelte"
@@ -199,7 +206,8 @@
       "Dialog"
     ],
     "usedBy": [
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte"
     ],
     "dynamicComposition": false
   },
@@ -213,9 +221,9 @@
       "OperationProgress"
     ],
     "usedBy": [
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte"
     ],
-    "dynamicComposition": true
+    "dynamicComposition": false
   },
   "DetailCard": {
     "path": "src/lib/ui/components/DetailCard.svelte",
@@ -261,6 +269,13 @@
       "src/lib/profile/TasteInspection.svelte",
       "src/lib/profile/TasteMatch.svelte",
       "src/lib/reading/Reader.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/AccountAccessControls.svelte",
+      "src/lib/settings/redesign/AdminInviteSettings.svelte",
+      "src/lib/settings/redesign/CollectionProjectionSettings.svelte",
+      "src/lib/settings/redesign/ConnectionCard.svelte",
+      "src/lib/settings/redesign/IntegrationSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/cards/editor/CardLayoutEditor.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
@@ -288,8 +303,7 @@
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/lib/ui/work-menu/WorkHistory.svelte",
       "src/routes/lists/+page.svelte",
-      "src/routes/media/[id]/history/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/media/[id]/history/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -305,6 +319,8 @@
       "src/lib/media/Details.svelte",
       "src/lib/profile/Details.svelte",
       "src/lib/reading/Details.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaPage.svelte",
@@ -316,8 +332,7 @@
       "src/routes/games/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/music/+page.svelte",
-      "src/routes/search/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/search/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -340,6 +355,8 @@
       "src/lib/auth/ui/JellyfinFields.svelte",
       "src/lib/auth/ui/ProfileFields.svelte",
       "src/lib/experiments/PlanAction.svelte",
+      "src/lib/settings/redesign/IntegrationSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
@@ -350,8 +367,7 @@
       "src/lib/ui/work-menu/GameCommands.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/lib/ui/work-menu/ReadingCommands.svelte",
-      "src/routes/onboarding/Services.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/onboarding/Services.svelte"
     ],
     "dynamicComposition": true
   },
@@ -428,6 +444,12 @@
       "src/lib/profile/Details.svelte",
       "src/lib/profile/PersonalTaste.svelte",
       "src/lib/profile/TasteComparison.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/AccountAccessControls.svelte",
+      "src/lib/settings/redesign/AdminInviteSettings.svelte",
+      "src/lib/settings/redesign/IntegrationSettings.svelte",
+      "src/lib/settings/redesign/ProviderAutomation.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
@@ -443,7 +465,6 @@
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
       "src/routes/search/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/share/+page.svelte",
       "src/routes/synced/[id]/+page.svelte"
     ],
@@ -453,7 +474,6 @@
     "path": "src/lib/ui/components/Icon.svelte",
     "elements": [],
     "usedBy": [
-      "src/lib/auth/ui/AdminInviteSettings.svelte",
       "src/lib/auth/ui/ImportRow.svelte",
       "src/lib/auth/ui/InviteCodeField.svelte",
       "src/lib/auth/ui/JellyfinFields.svelte",
@@ -461,8 +481,13 @@
       "src/lib/auth/ui/ServiceHeader.svelte",
       "src/lib/providers/trakt/AccessFields.svelte",
       "src/lib/providers/trakt/PairingCode.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
       "src/lib/settings/MemberFeaturePermissions.svelte",
       "src/lib/settings/SettingsOverview.svelte",
+      "src/lib/settings/redesign/AdminInviteSettings.svelte",
+      "src/lib/settings/redesign/ConnectionCard.svelte",
+      "src/lib/settings/redesign/IntegrationSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/ui/cards/MediaCardMetric.svelte",
       "src/lib/ui/cards/editor/PreviewDisclosure.svelte",
       "src/lib/ui/cards/editor/PreviewSelect.svelte",
@@ -474,7 +499,6 @@
       "src/lib/ui/components/EmptyState.svelte",
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/Heading.svelte",
-      "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
@@ -487,8 +511,7 @@
       "src/lib/ui/components/WorkActions.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/onboarding/Services.svelte",
-      "src/routes/search/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/search/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -509,13 +532,12 @@
       "Dialog",
       "Field",
       "Heading",
-      "Icon",
       "ProviderAutomation"
     ],
     "usedBy": [
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte"
     ],
-    "dynamicComposition": true
+    "dynamicComposition": false
   },
   "JobSchedule": {
     "path": "src/lib/ui/components/JobSchedule.svelte",
@@ -540,7 +562,8 @@
       "RowFilter"
     ],
     "usedBy": [
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte"
     ],
     "dynamicComposition": false
   },
@@ -703,6 +726,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/reading/Reader.svelte",
+      "src/lib/settings/redesign/ConnectionCard.svelte",
       "src/lib/ui/components/ConnectionCard.svelte"
     ],
     "dynamicComposition": false
@@ -716,10 +740,11 @@
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/profile/Details.svelte",
       "src/lib/profile/TasteSignals.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/work-menu/WorkHistory.svelte",
-      "src/routes/library/+page.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/routes/library/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -827,7 +852,8 @@
       "EmptyState"
     ],
     "usedBy": [
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte"
     ],
     "dynamicComposition": false
   },
@@ -918,6 +944,7 @@
       "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/profile/Details.svelte",
+      "src/lib/settings/ClassicSettings.svelte",
       "src/lib/settings/SettingsOverview.svelte",
       "src/lib/ui/components/DetailOverlay.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
@@ -939,7 +966,8 @@
     "elements": [],
     "usedBy": [
       "src/lib/backups/BackupSettings.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/ClassicSettings.svelte",
+      "src/lib/settings/redesign/SettingsEditor.svelte"
     ],
     "dynamicComposition": true
   },
@@ -1056,8 +1084,8 @@
       "src/lib/backups/BackupSettings.svelte",
       "src/lib/providers/trakt/AccessFields.svelte",
       "src/lib/settings/SettingsSwitch.svelte",
-      "src/lib/ui/cards/editor/PreviewToggle.svelte",
-      "src/routes/settings/[[section]]/+page.svelte"
+      "src/lib/settings/redesign/SettingsEditor.svelte",
+      "src/lib/ui/cards/editor/PreviewToggle.svelte"
     ],
     "dynamicComposition": true
   },

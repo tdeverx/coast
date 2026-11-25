@@ -10,7 +10,7 @@
   import type { settingsTarget } from './navigation.js';
 
   let { target }: { target: ReturnType<typeof settingsTarget> } = $props();
-  let SettingsPage = $state<typeof import('../../routes/settings/[[section]]/+page.svelte').default>();
+  let SettingsPage = $state<typeof import('./redesign/SettingsEditor.svelte').default>();
   let view = $state.raw<{ href: string; viewer: string; data: PageData }>();
   let error = $state('');
   let request = 0;
@@ -25,7 +25,7 @@
     const id = ++request;
     try {
       const [component, result] = await Promise.all([
-        SettingsPage ?? import('../../routes/settings/[[section]]/+page.svelte').then(module => module.default),
+        SettingsPage ?? import('./redesign/SettingsEditor.svelte').then(module => module.default),
         preloadData(href),
       ]);
       if (id !== request) return;

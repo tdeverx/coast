@@ -141,11 +141,17 @@ try {
   console.log('PASS administrator title lock overrides personal presentation');
 
   step = 'preferences';
+  await page.goto(`${origin}/settings`);
+  await expect(page.getByRole('navigation', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: /^Region/ })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Privacy & social', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: /^Profile audience/ })).toBeVisible();
   await page.goto(`${origin}/settings/features-policy`);
   await expect(page.getByRole('navigation', { name: 'Settings', exact: true })).toBeVisible();
   await page.getByRole('button', { name: `Feature permissions for ${username}`, exact: true }).click();
-  const allowSidebar = page.getByRole('checkbox', { name: 'Allow Settings sidebar', exact: true });
-  const enableSidebar = page.getByRole('checkbox', { name: 'Enable Settings sidebar', exact: true });
+  const allowSidebar = page.getByRole('checkbox', { name: 'Allow Settings redesign', exact: true });
+  const enableSidebar = page.getByRole('checkbox', { name: 'Enable Settings redesign', exact: true });
   if (!await enableSidebar.isChecked()) {
     await allowSidebar.check();
     await enableSidebar.check();
@@ -158,6 +164,7 @@ try {
   await accountNavigate('Settings');
   const settingsSidebar = page.getByRole('dialog', { name: 'Settings', exact: true });
   await expect(settingsSidebar).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Settings', exact: true })).toHaveCount(0);
   expect(new URL(page.url()).pathname).toBe(settingsBackground);
   await expect(page.locator('.sidebar-effect .blur-band')).toHaveCount(4);
   await settingsSidebar.getByRole('link', { name: 'Appearance', exact: true }).click();
@@ -195,9 +202,19 @@ try {
   ).toBeLessThanOrEqual(1);
   console.log('PASS mobile layout and pointer menu');
 
-  step = 'logout and login';
+  step = 'restore classic settings';
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).not.toBeVisible();
+  await expect(settingsSidebar).not.toBeVisible();
+  await accountNavigate('Settings');
+  await settingsSidebar.getByRole('link', { name: 'Features', exact: true }).click();
+  await settingsSidebar.getByRole('switch', { name: 'Settings redesign', exact: true }).uncheck();
+  await settingsSidebar.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(settingsSidebar).toHaveCount(0);
+  await page.goto(`${origin}/settings/features`);
+  await expect(page.getByRole('navigation', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Settings redesign', exact: true })).not.toBeChecked();
+
+  step = 'logout and login';
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);

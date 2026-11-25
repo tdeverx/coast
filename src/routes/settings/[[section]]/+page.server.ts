@@ -22,7 +22,7 @@ import {
 } from '#lib/server/db/schema.js';
 import { and, eq, desc } from 'drizzle-orm';
 import { seerrAllows, SeerrPermission } from '#lib/providers/seerr/adapter.server.js';
-import { getFeatureConfig, userFeatureGrant } from '#lib/server/features.js';
+import { getFeatureConfig, sharedProviderFeatures, userFeatureGrant } from '#lib/server/features.js';
 import { jobTimings } from '#lib/providers/job-timing.server.js';
 import { adminDemand } from '#lib/collection/demand.server.js';
 import { listBenchmarks } from '#lib/benchmarks/service.server.js';
@@ -41,6 +41,7 @@ export const load = (async ({locals, params, depends, url}) => {
   }
   const config = await getConfig();
   const requestAccess=section==='admin'?await getFeatureConfig(locals.user!.id):null;
+  const integrationAccess = section === 'integrations' ? await sharedProviderFeatures(config) : undefined;
   const usersTab: 'users'|'invites'|'defaults'=section==='users' && url.searchParams.get('view')==='invites' ? 'invites' :
     section==='users' && url.searchParams.get('view')==='defaults' ? 'defaults' : 'users';
   const accounts=(section==='users'&&usersTab==='users'||section==='features-policy') ? await listUsers(locals.user,url.searchParams.get('before')) : {items:[],next:null};
@@ -79,6 +80,10 @@ export const load = (async ({locals, params, depends, url}) => {
     providers: ['connections', 'jobs', 'admin', 'integrations'].some(id => id === section)
       ? await listProviders(locals.user!.id, admin) : [],
     config: admin ? config : null,
+    classicIntegrationMedia: {
+      gaming: integrationAccess?.experimentalGaming ?? false,
+      comics: integrationAccess?.experimentalComics ?? false,
+    },
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
       features: {},

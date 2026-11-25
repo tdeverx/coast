@@ -1,0 +1,131 @@
+{
+  "epoch": "settings-redesign-gate-2026-11-25",
+  "baseline": "5f1e7004f4f34c443128244531f1ebf88460726a",
+  "blanketAcceptance": false,
+  "scope": [
+    "Restore the pre-merge Settings page and controls for accounts with the redesign off.",
+    "Load the redesigned page and inline controls only when the existing account experiment is enabled.",
+    "Retain the shared per-account administrator grant and member preference."
+  ],
+  "verification": {
+    "hosted": false,
+    "devicePerformanceAcceptance": false,
+    "chromium": {
+      "viewport": [
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 390,
+          "height": 844
+        }
+      ],
+      "baselineMatches": [
+        "/settings",
+        "/settings/playback",
+        "/settings/privacy",
+        "/settings/connections",
+        "/settings/users",
+        "/settings/users?view=defaults",
+        "/settings/integrations",
+        "/settings/backups"
+      ],
+      "classicLoadsRedesign": false,
+      "reloadPersistsOptOut": true,
+      "errors": [],
+      "reference": "d77278cb642e9cc66f15b193ab65dcf4e7df8ece",
+      "syntheticDatabase": true
+    }
+  },
+  "files": {
+    "README.md": {
+      "previous": "88e6a31338ae22af3807994666c618125385f0f541c278d64db60741068676e9",
+      "current": "794a9ea506914960eed9dcaedb11b4e01068173b510e82c4de064fe5a06a59ac"
+    },
+    "docs/experimental-features.md": {
+      "previous": "ac0dbec78f41704d996dfbc2012d00ea397f89357851a38d13c6b97a97305212",
+      "current": "b61887b20106f387afcda3de1ec315d817bc77380bf068d35248f678779ce567"
+    },
+    "scripts/browser-check.ts": {
+      "previous": "de4e17b6815ad8e15a29c57e0561851452e03c3232189ef8fc3725b04704d9b2",
+      "current": "f6e05f51a1d241979059476ddac58f78fe232aad6bb6fc1d14263a443e708e5e"
+    },
+    "scripts/browser-diagnostics-check.ts": {
+      "previous": "fc1adf9fc80ae1876727dae6a04e72f83e5ed503aa5767ffdf830c75c32c9170",
+      "current": "7a25abc3ed204a27805c9a6196e9136fd64fdc9776fca2efcbe2747590d8b034"
+    },
+    "scripts/browser-playback-check.ts": {
+      "previous": "fd01249a416afc1dea558bbea13a0ec69214fec23596285fbd94bfc8867da406",
+      "current": "90bac61792df377042ad7c1d8bc9da3e2ecbc052dbb2ff2273a07f6e06eeb752"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "a8ac40380f1f5cc170c2bf8cef20b610166afebc36545721a20becb27c5104d7",
+      "current": "325fec0bc22da6335226ba97fe6009adeae2e7bf4960a0c1c81548381a4172a2"
+    },
+    "src/lib/auth/ui/InviteDefaultsFields.svelte": {
+      "previous": "68c66fbfb6af3f0ea64cf597048f098ca3ca7ca53ddb6ab57756a21afc8b452b",
+      "current": "fed82c8d314bf18135eaf61982381ce3e042caa20fa95269c14ca14f5aeac54f"
+    },
+    "src/lib/features.ts": {
+      "previous": "67e4bf7856d1cc591db1b09a3dc2a042c47308dea7010e3221f01f2aa8db20e2",
+      "current": "d88a97e70b224e0af1967a1784943b841ba2af9d8e1a469d4b1d5604d225542f"
+    },
+    "src/lib/ui/component-manifest.json": {
+      "previous": "997940e84a2f5b8e6e19f20a46efa2866e929574ac0101a2a5507911b68f77cc",
+      "current": "befc3ef3aae6a0abb7f7fb4690f92db11cc72c981c06747c76b3eedb3f692322"
+    },
+    "src/lib/ui/components/CollectionProjectionSettings.svelte": {
+      "previous": "9c6cb37195da98d6e498feec06b442117ce790b6da4fc61773ed0b1a5811c05b",
+      "current": "9eebdc884d99e8fe037971ba1f936855668caf50464210c2ccfa9d45d4c99bb7"
+    },
+    "src/lib/ui/components/ConnectionCard.svelte": {
+      "previous": "d53927d468f963cc1826dbfdceeea3f179d78922093ed3073c130855ad588510",
+      "current": "8a84ce6578b3e54951d05e0871040d9216a966ff6eab4c03a529093f79bb0cc1"
+    },
+    "src/lib/ui/components/Header.svelte": {
+      "previous": "4a243d9ace1a0b1fc83505f8c8e59635fddffdbbe11997ef2e3b2b3dc2d031b0",
+      "current": "9e5ce776fa5ab46eb3686f0de5badd08d4aff0a2b3be68f987c761addec1b035"
+    },
+    "src/lib/ui/components/IntegrationSettings.svelte": {
+      "previous": "1b048c5cbef56d054cca86f2b374911d92c51551de6f998215105a7530e345d0",
+      "current": "1d369207a0631725399cbd60801cb32a9deaa667e3d1374f8b5d9d80d518b8c3"
+    },
+    "src/lib/ui/components/JobSchedule.svelte": {
+      "previous": "15d9337a3cd555963489614a1aa4698fd1afc264ec907796040afa0f43fcede4",
+      "current": "fe6fbc0b9f23d632d73b2defc806de9ee0c28ef0f7a616dfa78cc094ff473aba"
+    },
+    "src/lib/ui/components/JobsSettings.svelte": {
+      "previous": "8a74b8c05ac6aa2eb4df7699620f52a7ec5585e8b7777cd8e4db3cd19b7afee0",
+      "current": "ba52f995d4843bbffcf1cb32b7603c6d527756dc6ac21b17d1fb3047e3e78fc5"
+    },
+    "src/lib/ui/components/ProviderAutomation.svelte": {
+      "previous": "d0f5f8d1d73ab08ed7a75038478a714d3c8d008e1ddb8563a128a9c54d6a1435",
+      "current": "412157a935bba8ae61ab09aac3841603603a4f4193215ce09b64fbccbfb30a1a"
+    },
+    "src/routes/settings/[[section]]/+page.server.ts": {
+      "previous": "3ef496553e3e9031423058bdbfe416d0696a46b177b060d771c6e0863c0d07f0",
+      "current": "3445bc9faef50dea99fcc66c411bf98ae73007f2d4f60885cbbb0c3a96e5c5b9"
+    },
+    "src/routes/settings/[[section]]/+page.svelte": {
+      "previous": "2fc3bc11df87788f7c73fbf9fc165f467edb55976e90fa03e654115308879768",
+      "current": "2fef2cba2d418ed6f8b424999607b6d98bfc8f20eba36a4b4f83a7650e1a9b49"
+    },
+    "src/routes/ui-preview/prop-manifest.json": {
+      "previous": "4240a0b1221f7877b2c606c1a5ac34dbbb9644443f4818c68439906f0234356a",
+      "current": "926a7125fa23d6421cdae0a23f6ae75ee1c441593b504eff3c6dc7896aa4c645"
+    },
+    "src/routes/ui-preview/reference.ts": {
+      "previous": "c450ec2f6203b679750a3005a9c936398d2ad00f2d4adacfa25d9f5ac70c751f",
+      "current": "52ebd81a6b71be09b72866bed98a9fdec1506319c0ea808da64d5c8c7978c640"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "5d48307d890a6eb7f4e6c724ce9e16befaeb9b7fb7882c5296b1838706850baa",
+      "current": "58a22aa9d20d114a4a75a406f20fe08dee6e4de08d770e8c15f21ec1ff7f16c2"
+    },
+    "tests/route-refresh.test.ts": {
+      "previous": "be16ab2eb801f7e2ce616cbc137d6bfb2f4ff6583e90acf2675d4cb110411c60",
+      "current": "19983b53f5652572e937599ba87d04eccb201c9bec24d8cd04212420f1c3b996"
+    }
+  }
+}

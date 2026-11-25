@@ -1,5 +1,4 @@
 <script lang="ts">
-  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import { tick } from 'svelte';
   import type { ProviderSchedule } from '#lib/providers/schedule.js';
@@ -62,12 +61,22 @@
           >View tasks & schedules</a
         >{/snippet}</Heading
     >
-    <SettingsSwitch label="Run background jobs automatically" checked={schedule.enabled}
-      disabled={busy || !instance.enabled} onchange={checked => void toggle('enabled', checked)} />
-    {#each choices as choice (choice.key)}
-      <SettingsSwitch label={choice.label} checked={!!schedule[choice.key]}
-        disabled={busy || !instance.enabled} onchange={checked => void toggle(choice.key, checked)} />
-    {/each}
+    <label class="check"
+      ><input
+        type="checkbox"
+        checked={schedule.enabled}
+        disabled={busy || !instance.enabled}
+        onchange={(event) => void toggle('enabled', event.currentTarget.checked)}
+      />Run background jobs automatically</label
+    >
+    {#each choices as choice (choice.key)}<label class="check"
+        ><input
+          type="checkbox"
+          checked={!!schedule[choice.key]}
+          disabled={busy || !instance.enabled}
+          onchange={(event) => void toggle(choice.key, event.currentTarget.checked)}
+        />{choice.label}</label
+      >{/each}
     <p class="small">
       {!instance.enabled
         ? 'Enable this integration to run background work.'
@@ -82,8 +91,8 @@
 <style>
   .automation {
     border-top: 1px solid var(--line);
-    padding-top: var(--auth-gap);
-    gap: var(--auth-action-gap);
+    padding-top: 20px;
+    gap: 12px;
   }
   .automation :global(.row-header) {
     margin-bottom: 0;

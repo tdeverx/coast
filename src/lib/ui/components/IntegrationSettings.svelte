@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SettingsChoice from '#lib/settings/SettingsChoice.svelte';
-  import SettingsSwitch from '#lib/settings/SettingsSwitch.svelte';
   import { reportFailure } from '#lib/ui/client-context.js';
   import Field from './Field.svelte';
   import { displayLabel } from '#lib/ui/labels.js';
@@ -10,9 +8,8 @@
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import Heading from './Heading.svelte';
-  import Icon from './Icon.svelte';
   import { createResource } from '#lib/ui/resource.svelte.js';
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy } from 'svelte';
 
   import ProviderAutomation from './ProviderAutomation.svelte';
   import type { ProviderSchedule } from '#lib/providers/schedule.js';
@@ -27,7 +24,6 @@
     baseUrl: string;
     lanUrl?: string | null;
     managementKeyConfigured?:boolean;
-    configured?: boolean;
     subtitleAuthority?:'viewer'|'server';
     enabled: boolean;
     allowPrivateNetwork: boolean;
@@ -38,8 +34,7 @@
     providers,
     experimentalGaming = false,
     experimentalComics = false,
-    editId, inline = false,
-  }: { providers: Instance[]; experimentalGaming?: boolean; experimentalComics?: boolean; editId?: string; inline?: boolean } = $props();
+  }: { providers: Instance[]; experimentalGaming?: boolean; experimentalComics?: boolean } = $props();
   let open = $state(false),
     editing = $state<Instance | null>(null),
     provider = $state('tmdb'),
@@ -52,29 +47,6 @@
     privateNetwork = $state(false),
     busy = $state(false),
     error = $state('');
-  const providerChoices = $derived([
-    { id: 'tmdb', label: 'TMDB', icon: 'film' },
-    { id: 'jellyfin', label: 'Jellyfin', icon: 'jellyfin' },
-    { id: 'trakt', label: 'Trakt', icon: 'trakt' },
-    { id: 'seerr', label: 'Seerr', icon: 'request' },
-    ...(experimentalGaming ? [{ id: 'igdb', label: 'IGDB', icon: 'gamepad' }, { id: 'steam', label: 'Steam', icon: 'gamepad' }] as const : []),
-    ...(experimentalComics ? [{ id: 'comic-vine', label: 'Comic Vine', icon: 'library' }] as const : []),
-  ] as const);
-  const subtitleChoices = [
-    { id: 'viewer', label: 'Use the viewer’s Jellyfin permissions' },
-    { id: 'server', label: 'Use the Jellyfin server API key' },
-  ] as const;
-  let replaceCredentials = $state(false);
-  let openedEditId: string | undefined;
-  const hasCredentials = $derived(editing?.provider === 'jellyfin' ? !!editing.managementKeyConfigured : !!editing?.configured);
-  $effect(() => {
-    if (!editId) { openedEditId = undefined; return; }
-    if (editId === openedEditId) return;
-    const instance = providers.find(item => item.id === editId);
-    if (!instance) return;
-    openedEditId = editId;
-    untrack(() => edit(instance));
-  });
   let changing=$state<Instance|null>(null),impact=$state<SourceImpact|null>(null);
   let deleting = $state<Instance | null>(null);
   type SubtitleReview={itemId:string;sourceId:string;fingerprint:string;label:string;title:string};
@@ -101,7 +73,6 @@
   }
   function edit(instance: Instance | null) {
     editing = instance;
-    replaceCredentials = false;
     provider = instance?.provider ?? 'tmdb';
     name = instance?.name ?? '';
     baseUrl = instance?.baseUrl ?? '';
@@ -115,10 +86,6 @@
   }
   async function save(form: HTMLFormElement) {
     if (busy) return;
-    if (provider === 'seerr' && !linked) {
-      error = 'Choose the Jellyfin server associated with Seerr.';
-      return;
-    }
     busy = true;
     error = '';
     try {
@@ -193,7 +160,7 @@
 </script>
 
 <div class="stack form-width">
-  <Heading title="Configured services"
+  <Heading title="Integrations"
     >{#snippet actions()}<Button
         emphasis="subtle"
         disabled={busy}
@@ -201,9 +168,6 @@
         onclick={() => edit(null)}>Add integration</Button
       >{/snippet}</Heading
   >
-  {#if inline && open && !editing}
-    <section class="stack" aria-label="Add an integration">{@render editor()}</section>
-  {/if}
   <p class="small">
     <a class="text-accent" href="/settings/connections">Link your account in Connections</a>
     · <a class="text-accent" href="/settings/jobs">Manage schedules</a>
@@ -241,22 +205,10 @@
           : 'Hidden from personal connections. Existing tracking data is retained.'}
         {#if instance.provider !== 'comic-vine'}Disabling stops new provider actions; queued work may fail until enabled again.{/if}
       </p>
-      {#if inline && open && editing?.id === instance.id}
-        <section class="stack" aria-label="Edit integration">{@render editor()}</section>
-      {/if}
-      {#if inline && reviewInstance?.id === instance.id}
-        <section class="stack" aria-label="Subtitle downloads">{@render subtitleDownloads()}</section>
-      {/if}
       <ProviderAutomation {instance} />
     </div>{/each}
 </div>
-{#if !inline}
 <Dialog open={!!reviewInstance} onclose={()=>{if(!busy){reviewInstance=null;removingSubtitle=null;subtitleReview.cancel();}}} title="Subtitle downloads">
-    {@render subtitleDownloads()}
-  </Dialog>
-{/if}
-
-{#snippet subtitleDownloads()}
   <div class="stack">
     {#if removingSubtitle}
       <p>Remove {removingSubtitle.label} for {removingSubtitle.title} from Jellyfin? This removes the subtitle for every viewer. Confirm it is broken before removing it.</p>
@@ -277,9 +229,7 @@
       <p>No subtitle downloads need review.</p>
     {/if}
   </div>
-  {#if inline}<Button size="segment" emphasis="subtle" disabled={busy}
-    onclick={() => { reviewInstance=null; removingSubtitle=null; subtitleReview.cancel(); }}>Close subtitle downloads</Button>{/if}
-{/snippet}
+</Dialog>
 <Dialog open={!!changing} onclose={()=>changing=null} title="Disable this Collection source?">
   <div class="stack"><p>Existing tracking stays in Coast. Remote Trakt entries stay until their owner approves cleanup.</p>
 
@@ -306,10 +256,7 @@
     </div>
   </div>
 </Dialog>
-{#if !inline}
-  <Dialog bind:open title={editing ? 'Edit integration' : 'Add an integration'}>{@render editor()}</Dialog>
-{/if}
-{#snippet editor()}
+<Dialog bind:open title={editing ? 'Edit integration' : 'Add an integration'}>
   {#key `${open}:${editing?.id ?? 'new'}:${provider}`}
     <form
       class="stack"
@@ -319,7 +266,13 @@
       }}
     >
 
-      <SettingsChoice label="Provider" options={providerChoices} bind:value={provider} disabled={!!editing || busy} />
+      <Field label="Provider"><select bind:value={provider} disabled={!!editing}
+          ><option value="tmdb">TMDB</option><option value="jellyfin">Jellyfin</option><option
+            value="trakt">Trakt</option
+          ><option value="seerr">Seerr</option>{#if experimentalGaming}<option value="igdb"
+              >IGDB</option
+            ><option value="steam">Steam</option>{/if}{#if experimentalComics}<option value="comic-vine">Comic Vine</option>{/if}</select
+        ></Field>
       <Field label="Display name"><input
           bind:value={name}
           required
@@ -333,40 +286,33 @@
             placeholder={provider === 'jellyfin' ? 'http://jellyfin:8096' : 'http://seerr:5055'}
             required
           />{#if editing}<small>Add a new integration to connect a different server.</small
-            >{/if}</Field><SettingsSwitch label="Allow this server’s private network address" bind:checked={privateNetwork} />{/if}
+            >{/if}</Field><label class="check"
+          ><input bind:checked={privateNetwork} type="checkbox" />Allow this server’s private
+          network address</label
+        >{/if}
       {#if provider === 'jellyfin'}<Field label="LAN URL (optional)"><input
           bind:value={lanUrl}
           type="url"
           placeholder="http://192.168.0.18:8096"
         /><small>Used by the Coast server for this Jellyfin instance. Keep the public URL above. Playback quality limits still apply to every viewer.</small></Field>
-      {/if}
-      {#if hasCredentials && !replaceCredentials}
-        <div class="credential-state">
-          <Icon name="key" size={16} />
-          <span>Configured</span>
-          <Button size="segment" emphasis="subtle" disabled={busy || removeJellyfinKey} onclick={() => replaceCredentials = true}>
-            {provider === 'trakt' || provider === 'igdb' ? 'Replace credentials' : 'Replace key'}
-          </Button>
-        </div>
-      {/if}
-      {#if provider === 'jellyfin'}
-        {#if !hasCredentials || replaceCredentials}
         <Field label="Jellyfin server API key"><input name="apiKey" type="password" autocomplete="off" disabled={removeJellyfinKey} />
           <small>{editing?.managementKeyConfigured?'Leave blank to keep the current key. ':'Optional. '}Create a key in Jellyfin Dashboard → API Keys. The key has server-wide admin access. Coast verifies it when you save.</small>
         </Field>
-        {/if}
         {#if editing?.managementKeyConfigured}
           <p class="small">Replacing this key requires new codes for unclaimed managed invites. Existing accounts keep their personal connections.</p>
         {/if}
-        {#if editing?.managementKeyConfigured}<SettingsSwitch label="Remove the current key" bind:checked={removeJellyfinKey} />{/if}
-        <SettingsChoice label="Subtitle search and downloads" icon="subtitles" options={subtitleChoices}
-          bind:value={subtitleAuthority} disabled={removeJellyfinKey || busy}
-          hint="Viewers can search or download subtitles for media they can play. Jellyfin needs a configured subtitle provider." />
+        {#if editing?.managementKeyConfigured}<label class="check"><input type="checkbox" bind:checked={removeJellyfinKey} />Remove the current key</label>{/if}
+        <Field label="Subtitle search and downloads">
+          <select bind:value={subtitleAuthority} disabled={removeJellyfinKey}>
+            <option value="viewer">Use the viewer’s Jellyfin permissions</option>
+            <option value="server">Use the Jellyfin server API key</option>
+          </select>
+          <small>Viewers can only search or download subtitles for media they can play. Jellyfin needs a configured subtitle provider.</small>
+        </Field>
       {/if}
-      {#if editing && replaceCredentials && provider !== 'jellyfin'}<p class="small">
+      {#if editing && provider !== 'jellyfin'}<p class="small">
           Leave credential fields empty to keep the current credentials.
         </p>{/if}
-      {#if !hasCredentials || replaceCredentials}
       {#if provider === 'tmdb'}<Field label="TMDB API key or read access token"><input
             name="tmdbCredential"
             type="password"
@@ -398,32 +344,15 @@
             type="password"
             autocomplete="off"
             required={!editing}
-          /></Field>{/if}
-      {/if}
-      {#if provider === 'seerr'}
-        <SettingsChoice label="Associated Jellyfin server" icon="jellyfin" bind:value={linked}
-          options={[{ id: '', label: 'Choose a server' }, ...providers.filter(instance => instance.provider === 'jellyfin')
-            .map(instance => ({ id: instance.id, label: instance.name }))]} disabled={busy} />
-      {/if}
-      <Button type="submit" disabled={busy || provider === 'seerr' && !linked}
+          /></Field><Field label="Associated Jellyfin server"><select bind:value={linked} required
+            ><option value="">Choose a server</option
+            >{#each providers.filter((p) => p.provider === 'jellyfin') as instance}<option
+                value={instance.id}>{instance.name}</option
+              >{/each}</select
+          ></Field>{/if}
+      <Button type="submit" disabled={busy}
         >{busy ? 'Saving…' : editing ? 'Save integration' : 'Add integration'}</Button
       >
     </form>
   {/key}
-{#if inline}<Button size="segment" emphasis="subtle" disabled={busy} onclick={() => { open = false; }}>Cancel</Button>{/if}
-{/snippet}
-
-<style>
-  .credential-state {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--auth-action-gap);
-    min-block-size: var(--segment-height);
-    padding-inline: var(--auth-action-gap);
-    border-radius: var(--glass-surface-radius);
-    background: var(--inset-control-fill);
-    color: var(--menu-row-ink);
-    font-size: var(--text-sm);
-  }
-</style>
+</Dialog>
