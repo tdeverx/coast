@@ -440,7 +440,7 @@
 {/snippet}
 
 <MediaDetails view={{ hero: false, page: false, class: 'media-card-editor-detail' }} artwork={[backdrop]}>
-<div class="content page card-preview" class:in-overlay={inOverlay}>
+<div class="page card-preview" class:in-overlay={inOverlay}>
   <div class="preview-backdrop" aria-hidden="true">{@render backdropArtwork()}</div>
   <header class="editor-header" aria-label="Card editor">
     <div class="editor-back">
@@ -720,7 +720,7 @@
   onclose={() => { metricDetail = undefined; }} />
 
 <style>
-  :global(.details.media-card-editor-detail) { padding:0; max-inline-size:none; }
+  :global(.content.details.media-card-editor-detail) { padding:0; max-width:none; }
   .card-preview {
     --editor-top-inset:max(16px, env(safe-area-inset-top, 0px));
     --editor-auth-width:var(--auth-width);
@@ -743,8 +743,8 @@
     gap:var(--editor-auth-gap);
     block-size:100svh;
     min-block-size:360px;
-    max-inline-size:1160px;
     padding-block:var(--editor-top-inset) max(14px, env(safe-area-inset-bottom, 0px));
+    padding-inline:var(--gutter);
   }
   .card-preview.in-overlay {block-size:var(--detail-viewport-height, 100svh);min-block-size:0;}
   .in-overlay .preview-backdrop {position:absolute;clip-path:inset(0);}
