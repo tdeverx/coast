@@ -16,14 +16,16 @@ Keep code beside the feature that owns it. Share a helper when it has a concrete
 | `src/lib/playback` | Playback planning, browser controller, authorised server sessions and party synchronisation. |
 | `src/lib/media`, `games`, `music`, `reading`, `profile`, `social` | The named feature's contracts, rules, presentation and services. Shared media artwork selection lives in `media/artwork.ts`. |
 | `src/lib/recommendations` | Interest evidence, provider suggestion caches, candidate queries and dynamic feed composition. |
-| `src/lib/experiments` | Gated planning and media-detail modal exploration. Move graduated features to their owning domain. |
+| `src/lib/planning` | Plans, release eligibility, reminders and the shared Plan dialog. Feature access lives in the central feature policy. |
+| `src/lib/settings` | Settings section contracts, the classic UI and the separately gated redesign. |
+| `src/lib/ui/cards` | Media card layout presets and slots, with the account editor under `editor/`. |
 | `src/lib/server` | Database, authentication, security, diagnostics, storage and queue infrastructure; API dispatch and read models have dedicated subfolders. |
 | `src/lib/ui/components` | Shared rendered components. Keep this flat for the component viewer and its generated inventory. |
 | `src/lib/ui/shelves` | Cancellable client data sources for the shared Shelf renderer. |
 | `src/lib/ui/work-menu` | Medium-specific action composition and stable game, reading and music command dialogs, behind the shared `WorkMenu` component. |
 | `src/lib/ui/panels` | Browser navigation and URL state for Friends, Notifications and Streams. |
-| `src/routes/ui-preview`, `src/lib/ui/charts` | Preview recipes, fictional chart data and unused chart explorations. |
-| `tests`, `scripts`, `migrations`, `docs` | Verification, operational tooling, immutable schema history and source-of-truth guidance. |
+| `src/routes/ui-preview`, `src/lib/ui/charts` | Preview recipes, fictional chart data and experimental chart examples. |
+| `tests`, `scripts`, `drizzle`, `docs` | Verification, operational tooling, immutable schema history and source-of-truth guidance. |
 
 The physical reader lives under `src/lib/reading/reader/physical/`: `book-model` and `page-geometry` own the binding and leaf shapes, `turn-gesture`/`turn-cascade` own interactive timelines, and `view` owns pure framing math. `physical-reader.ts` adapts Coast locations, `physical-pages.ts` uses the existing archive owner, and `physical-pdf.ts` rasterizes PDF.js pages. The local-only isolated lab imports this core while retaining its own host and server; the lab and its checkpoints are excluded from Git and container build context.
 
@@ -36,9 +38,9 @@ Small root modules such as `artwork.ts`, `library.ts` and `progress.ts` are shar
 - Provider adapters translate remote data and make requests. They do not own canonical writes or cross-domain cleanup. Synchronisation owns reconciliation; `application` owns multi-domain workflows.
 - Routes handle routing and compose existing services. Keep provider requests, database writes and reconciliation out of components. UI data sources own cancellation, pagination and content revisions; renderers own presentation.
 - Keep preview fixtures separate from production data. Use the injected API/playback contexts rather than replacing global fetch or the real controller.
-- Reuse the established UUIDs, account generations, API paths, queue keys and database names. Folder cleanup must not silently change a stored or external contract.
+- Reuse the established UUIDs, account generations, API paths, queue keys and database names. Name TypeScript types for the data a consumer actually reads. Folder cleanup must not silently change a stored or external contract.
 
-The recommendation endpoints retain their existing `/api/v1/experiments/*` paths. Their implementation is now in `recommendations`; an organisational pass does not rename HTTP contracts.
+Keep gated features in their owning domain and point their central permission at that domain. The recommendation endpoints retain their existing `/api/v1/experiments/*` paths. Their implementation is now in `recommendations`; an organisational pass does not rename HTTP contracts.
 
 ## Authoring convention
 
@@ -58,7 +60,7 @@ Current guides should name the current tree. Dated audits retain their original 
 
 ## Boundaries to handle in separate passes
 
-The Settings page, `ui/work-menu/ScreenActions`, persistent player, Jellyfin synchronisation and database schema remain large. Split them around a concrete responsibility when working on that feature, preserving the approved UI and transactional boundaries; line count alone is not a reason to extract code.
+The classic Settings renderer, gated Settings editor, `ui/work-menu/ScreenActions`, persistent player, Jellyfin synchronisation and database schema remain large. Split them around a concrete responsibility when working on that feature, preserving the approved UI and transactional boundaries; line count alone is not a reason to extract code.
 
 Catalogue cards, heroes and embedded items enter through `ui/components/WorkMenu`; do not add another medium switch at each consumer. Its explicit kind/work/source/occurrence identity selects screen or catalogue composition. `controls/work.svelte.ts` owns local personal action state; `controls/menu-resource.svelte.ts` owns optional menu-read lifetimes. Game, reading and music command components reuse domain endpoints and retain their dialogs outside submenu children. Source/admin metadata fields remain in their domains; shared private title/artwork reads live in `catalogue/overrides/presentation.server.ts` and reference canonical works.
 

@@ -2,6 +2,8 @@
   import { useRetention } from '#lib/ui/retention.js';
   import Field from '#lib/ui/components/Field.svelte';
   import Button from '#lib/ui/components/Button.svelte';
+  import FormActions from '#lib/ui/components/FormActions.svelte';
+  import Toggle from '#lib/ui/components/Toggle.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
   import { message } from '#lib/ui/client.js';
   import { useClient, reportFailure } from '#lib/ui/client-context.js';
@@ -45,15 +47,19 @@
 <Dialog bind:open title={`Plan · ${title}`}>
   <form class="stack" onsubmit={save}>
     <Field label="Date and time"><input type="datetime-local" bind:value={date} required /></Field>
-    {#if partyAllowed}<label class="check"><input type="checkbox" bind:checked={party} />Plan a party</label>{/if}
-    {#if party}
-      <fieldset class="stack">
+    {#if partyAllowed}
+      <Toggle label="Plan a party" class="menu-row" bind:checked={party}>
+        <span class="menu-action-label">Plan a party</span>
+      </Toggle>
+    {/if}
+    {#if partyAllowed && party}
+      <fieldset>
         <legend>Friends</legend>
-        {#each friends as friend}<label class="check"><input type="checkbox" bind:group={selected} value={friend.userId} />{friend.username}</label>{/each}
+        {#each friends as friend (friend.userId)}<label class="check"><input type="checkbox" bind:group={selected} value={friend.userId} />{friend.username}</label>{/each}
       </fieldset>
 
     {/if}
 
-    <Button type="submit" disabled={operation.busy}>Save</Button>
+    <FormActions><Button type="submit" disabled={operation.busy}>Save</Button></FormActions>
   </form>
 </Dialog>

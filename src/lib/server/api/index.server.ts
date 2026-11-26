@@ -12,7 +12,7 @@ import { providerApiError } from '#lib/server/security/provider-api-error.js';
 import { createShare,listShares,revokeShare } from '#lib/sharing/service.server.js';
 import { activeShareExpiry, copySharePath, listActiveShares } from '#lib/sharing/links.server.js';
 import { stopSharedLinkPlayback } from '#lib/sharing/leases.server.js';
-import { planningData,createPlan,cancelPlan,completePlan } from '#lib/experiments/planning.server.js';
+import { planningData,createPlan,cancelPlan,completePlan } from '#lib/planning/service.server.js';
 import { browseRows, genericFeed, genericRecommendationRows } from '#lib/recommendations/generic.server.js';
 import { dynamicFeed } from '#lib/recommendations/feed.server.js';
 import { recommendationRows } from '#lib/recommendations/query.server.js';
@@ -253,7 +253,7 @@ export const handler: RequestHandler = async (event) => {
       });
     }
     if (path[0] === 'missing' && method === 'GET') return Response.json(await missingDemand(uid,url));
-    if (path[0] === 'admin' && path[1] === 'demand' && method === 'GET') { requireAdmin(user); return Response.json(await adminDemand(url)); }
+    if (path[0] === 'admin' && path[1] === 'demand' && method === 'GET') { requireAdmin(user); return Response.json(await adminDemand(url, request.signal)); }
     if(path[0]==='providers'&&path[2]==='source-preview'&&method==='GET')return Response.json(await previewSourceChange(uid,uuid(path[1]),'connection'));
     if(path[0]==='providers'&&path[2]==='instance-source-preview'&&method==='GET'){requireAdmin(user);return Response.json(await previewSourceChange(uid,uuid(path[1]),'instance'));}
     if (path[0] === 'heroes' && path.length === 1 && method === 'GET') {

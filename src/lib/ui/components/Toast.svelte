@@ -157,7 +157,7 @@
   .toast {
     --toast-accent: var(--accent);
     min-inline-size: 0;
-    border-radius: var(--toast-radius, 18px);
+    border-radius: var(--glass-surface-radius);
     padding: 16px;
     animation: toast-arrive var(--motion) var(--ease) both;
     pointer-events: auto;

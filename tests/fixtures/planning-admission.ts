@@ -36,7 +36,7 @@ const module=async(source:string)=>{
  let code=new Bun.Transpiler({loader:'ts'}).transformSync(source);code=code.replace(/(^\s*import[^\n]*\bfrom\s+)(['"])([^'"\n]+)\2/gm,(_m:string,lead:string,_quote:string,spec:string)=>lead+JSON.stringify(spec.startsWith('#lib/')?resolve(root,'src/lib',spec.slice(5)):Bun.resolveSync(spec,root)));return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 };
 try{
- const source=await Bun.file(resolve(root,'src/lib/experiments/planning.server.ts')).text(),candidate=await module(source);
+ const source=await Bun.file(resolve(root,'src/lib/planning/service.server.ts')).text(),candidate=await module(source);
  const cases=[
   {kind:'ordered-deduplicated-store',friends:[b,a,b]},
   {kind:'case-sensitive-string-set',friends:[a.toUpperCase(),a,b,a.toUpperCase()]},

@@ -4,7 +4,6 @@
   import ReadingLaunch from '#lib/reading/ReadingLaunch.svelte';
   import { goto } from '$app/navigation';
   import { mediumOptions } from '#lib/experimental.js';
-  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
   import { page } from '$app/state';
   import Heading from '#lib/ui/components/Heading.svelte';
   import Shelf from '#lib/ui/components/Shelf.svelte';
@@ -36,6 +35,13 @@
       else await change(`planning/${id}/complete`, {});
     });
   }
+  function selectCategory(category: string) {
+    const url = new URL(page.url.href);
+    url.searchParams.set('category', category);
+    url.searchParams.delete('page');
+    void goto(url, { reset: false });
+  }
+
   function pageUrl(number: number) {
     const url = new URL(page.url.href);
     url.searchParams.set('page', String(number));
@@ -47,9 +53,12 @@
 
 <svelte:head><title>Planning · Coast</title></svelte:head>
 <div class="content page">
-  <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
-    {#snippet segments()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url.href);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{reset: false,});}} />{/snippet}
-  </Heading>
+  <Heading title="Planning" variant="page" selection={{
+    label: 'Planning medium',
+    value: data.category,
+    options: mediumOptions({ ...page.data, features: page.data.capabilities }, ['screen', 'game', 'music', 'reading']),
+    change: selectCategory,
+  }} />
 
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet details(item)}

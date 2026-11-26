@@ -8,8 +8,10 @@
   reportFailure(()=>failure);
 </script>
 <svelte:head><title>Synced session · Coast</title></svelte:head>
-<Heading title="Synced session" variant="page" />
-<div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p>
-  {#if data.room.ended}<p>This session has ended.</p>{:else}<Button disabled={syncedPlayer.busy} onclick={join}>{syncedPlayer.busy?'Preparing your source…':'Join session'}</Button>{/if}
-
+<div class="content page">
+  <Heading title="Synced session" variant="page"
+    description={data.room.ended ? 'This session has ended.' : 'Join with your own Jellyfin source. Playback follows the host.'} />
+  {#if !data.room.ended}
+    <Button disabled={syncedPlayer.busy} onclick={join}>{syncedPlayer.busy ? 'Preparing your source…' : 'Join session'}</Button>
+  {/if}
 </div>

@@ -24,7 +24,6 @@ import { and, eq, desc } from 'drizzle-orm';
 import { seerrAllows, SeerrPermission } from '#lib/providers/seerr/adapter.server.js';
 import { getFeatureConfig, sharedProviderFeatures, userFeatureGrant } from '#lib/server/features.js';
 import { jobTimings } from '#lib/providers/job-timing.server.js';
-import { adminDemand } from '#lib/collection/demand.server.js';
 import { listBenchmarks } from '#lib/benchmarks/service.server.js';
 export const load = (async ({locals, params, depends, url}) => {
   depends('coast:settings'); depends('coast:providers');
@@ -39,6 +38,7 @@ export const load = (async ({locals, params, depends, url}) => {
       error(403, 'This page requires Coast admin access.');
     }
   }
+  const showDemand = section === 'admin' && ['demand', 'page', 'userId', 'itemsPage'].some(key => url.searchParams.has(key));
   const config = await getConfig();
   const requestAccess=section==='admin'?await getFeatureConfig(locals.user!.id):null;
   const integrationAccess = section === 'integrations' ? await sharedProviderFeatures(config) : undefined;
@@ -104,7 +104,7 @@ export const load = (async ({locals, params, depends, url}) => {
       notificationLevel: null,
     },
     health: section === 'admin' ? await systemHealth(locals.user) : null,
-    demand: section === 'admin' ? adminDemand(url) : null,
+    demandQuery: showDemand ? url.search : null,
     tasteJob:section==='jobs'?await (await import('#lib/social/taste-cache.server.js')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
     taskCommands:section==='jobs'?await listTaskCommands(locals.user):{items:[],more:false},

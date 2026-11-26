@@ -16,7 +16,7 @@ import {searchMedia,discoverMedia,ensureDetails} from '../src/lib/catalogue/serv
 import {friendDiscovery} from '../src/lib/social/insights.server';
 import {recommendations} from '../src/lib/social/service.server';
 import {requestOptions,requestMedia} from '../src/lib/providers/seerr/requests.server';
-import {createPlan,remindPlan} from '../src/lib/experiments/planning.server';
+import {createPlan,remindPlan} from '../src/lib/planning/service.server';
 import {setStatus} from '../src/lib/social/status.server';
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const a=crypto.randomUUID(),b=crypto.randomUUID(),movie=crypto.randomUUID(),show=crypto.randomUUID();let previous:unknown;

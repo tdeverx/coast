@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { sql } from 'drizzle-orm';
-import { getConfig, parseConfig, featureSubject, type CoastConfig } from './config';
+import { getConfig, parseConfig, featureSubject, type CoastConfig, type FeatureSubject } from './config';
 import { getSql, type Database } from './db';
 import { AppError } from './security/errors';
 import { featureDefinitions, featureGranted, resolveFeatures, type Feature, type FeatureChoices, type FeatureDecision, type FeatureValues } from '#lib/features.js';
@@ -27,13 +27,19 @@ export function featureDenialMessage(reason?:Denial) {
 /** An explicit subject: never project one request actor's choices onto another owner or a shared job. */
 export async function getFeatureConfig(userId: string | null, database?: ReturnType<typeof getSql>): Promise<FeatureConfig> {
   // Fresh command checks use one statement/snapshot, not two pool round trips.
-  const [snapshot]=database?await database`select (select value from system_settings where key='coast') as config,u.id,u.role,u.settings,u.access_defaults,
-    nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id),'0')::integer as managed_bitrate,
-    u.disabled or not coalesce(u.membership_expires_at>now(),true) as disabled from (select ${userId}::uuid as id) subject left join users u on u.id=subject.id`:[];
-  const config = database?parseConfig(snapshot.config):await getConfig();
-  const user = database?(snapshot.id?snapshot:undefined):userId?await featureSubject(userId):undefined;
-  const decisions = resolveFeatures(config, user?.settings?.features, userId ? user?.settings.featurePermissions ?? {} : undefined,
-    user?.role === 'admin' || user?.settings.allowPlaybackSharing === true || !userId);
+  const [snapshot] = database ? await database<(FeatureSubject & { config: unknown; id: string | null })[]>`
+    select (select value from system_settings where key = 'coast') as config,
+      u.id, u.role, u.settings->'features' as feature_choices,
+      u.settings->'featurePermissions' as feature_permissions,
+      (u.settings->'allowPlaybackSharing') is not distinct from 'true'::jsonb as playback_sharing,
+      u.access_defaults,
+      nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id), '0')::integer as managed_bitrate,
+      u.disabled or not coalesce(u.membership_expires_at > now(), true) as disabled
+    from (select ${userId}::uuid as id) subject left join users u on u.id = subject.id` : [];
+  const config = database ? parseConfig(snapshot.config) : await getConfig();
+  const user = database ? (snapshot.id ? snapshot : undefined) : userId ? await featureSubject(userId) : undefined;
+  const decisions = resolveFeatures(config, user?.feature_choices ?? undefined, userId ? user?.feature_permissions ?? {} : undefined,
+    user?.role === 'admin' || user?.playback_sharing === true || !userId);
   const features = {} as FeatureValues;
   const featureDenials: Partial<Record<Feature, Denial>> = {};
   for (const [key] of featureDefinitions) {

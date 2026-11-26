@@ -36,7 +36,8 @@
 
 ## Evidence and roadmap
 
-- [Current app-wide performance pass](audits/2026-10-17-app-performance/README.md): applied shared repairs, verified results, retained tradeoffs and closeout.
+- [26 November app housekeeping](audits/2026-11-26-app-housekeeping.md) records the latest local snapshot, measurements and verification.
+- [October app-wide performance pass](audits/2026-10-17-app-performance/README.md): applied shared repairs, verified results, retained tradeoffs and closeout.
 - [Next performance investigation checklist](audits/2026-10-17-app-performance/next-investigation-checklist.md): unchecked areas, unresolved observations, failed methods and acceptance gates.
 
 - [Performance implementation — 3 October](audits/2026-10-03-performance-implementation.md): controlled query/revision measurements, client work and benchmark verification.

@@ -31,7 +31,6 @@
   --inset-control-fill: rgb(0 0 0 / 30%);
   --inset-control-hover-fill: rgb(0 0 0 / 40%);
   --media-surface-hover-scale: 1.02;
-  --media-card-radius: 12px;
   --media-card-hover-edge-width: 3px;
   --media-card-corner-radius: calc(var(--leading-card-metric) / 2 + 6px + 2 * var(--media-card-hover-edge-width));
   --media-metadata-gap: 8px;
@@ -675,7 +674,6 @@ label.menu-row > .menu-row-note { margin-inline-end: var(--menu-item-inset); }
 }
 .toasts {
   --toast-bottom: 24px;
-  --toast-radius: 18px;
   position: fixed;
   inset: auto;
   margin: 0;
@@ -1027,12 +1025,11 @@ label.menu-row > .menu-row-note { margin-inline-end: var(--menu-item-inset); }
 
 @media (pointer: coarse) {
   :root {
-    --row-text-gap: 2px;
-  --control-height: 44px;
+    --control-height: 44px;
     --control-compact-height: 44px;
   }
   .menu-row { min-height: round(up, var(--control-height), var(--menu-device-pixel, 1px)); }
-  label.check { min-height: 44px; }
+  label.check { min-height: var(--control-height); }
 }
 
 /* Action menus fit their content while retaining room for labels and rating controls. */

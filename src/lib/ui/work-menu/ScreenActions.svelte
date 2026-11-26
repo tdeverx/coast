@@ -35,7 +35,7 @@
   import SubtitleSearchDialog from '../components/SubtitleSearchDialog.svelte';
   import { usePlayback } from '#lib/playback/context.svelte.js';
   import ShareAction from '#lib/sharing/ShareAction.svelte';
-  import PlanAction from '#lib/experiments/PlanAction.svelte';
+  import PlanAction from '#lib/planning/PlanAction.svelte';
   import Button from '../components/Button.svelte';
   import Icon from '../components/Icon.svelte';
   import CheckInActions from '../components/CheckInActions.svelte';

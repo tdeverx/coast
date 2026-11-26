@@ -1,6 +1,6 @@
 # App follow-up roadmap
 
-Reviewed 23 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
+Reviewed 26 November 2026 against the current source and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
 
 ## Performance and stability — deferred audit coverage
 
@@ -44,9 +44,9 @@ Playback Stop semantics are selected and implemented: close immediately, wait fo
 - Continue measured production performance work: investigate remaining CPU/RAM spikes and long-running heap behavior, browser rendering and decoding, cold-cache/network behavior and background contention. Use the existing benchmark history and [performance methods](performance.md); the local benchmark does not cover these workloads.
 - Revisit reviewed transitive dependency advisories when compatible parent upgrades are available; confirm current lockfile paths and reachability before changing dependencies.
 
-## Selected next app work — plans ready for review
+## Feature permission acceptance
 
-- Feature controls: audit normal administrator Features settings and user opt-outs separately from Experiments. Define effective policy, dependencies, existing-data preservation and enforcement across navigation, menus, APIs, provider jobs, active sessions and public/share access. See the [feature-gating audit and implementation plan](audits/2026-10-15-feature-gating.md). Normal administrator/user feature toggles remain planning work; the unified menus consume the current role, experiment, read-only and provider rules.
+- Verify per-account grants and preferences on the intended deployment, including direct routes, in-flight provider jobs, active sessions and public/share access. Exercise Personalise and the separately gated Settings redesign with the granted, disabled and revoked states. See [Experimental features](experimental-features.md) for the implemented controls.
 
 ## Account and invitation follow-ups
 
@@ -57,7 +57,6 @@ Playback Stop semantics are selected and implemented: close immediately, wait fo
 ## Product and metadata follow-ups
 
 - New-user Library experience: explain connected libraries versus personal Collection, guide users during initial imports, and make an empty Collection useful without hiding the server catalogue.
-- Activity feed card lookup: a page can reference 60 activities plus parent shows, while `workCards` still caps screen hydration at 60 total. Fetch explicit IDs in bounded batches and investigate refresh omissions. Feed/row-section pagination remains parked until this is resolved.
 - Dynamic For You: refine exact-next-item prioritisation and evaluate relevance, diversity and repetition with real user data. Extend the existing lazy rows and cached provider/taste ranking rather than rebuilding the feed.
 - Media detail panels: preserve loaded rows and horizontal/vertical scroll when navigating back. The panel presentation is now standard signed-in navigation, with no experimental or personal toggle.
 - Adaptive detail hero alignment: currently left-aligned. Retain the existing center-to-left capability, but revisit the transition's layout and scroll behavior before enabling it again.

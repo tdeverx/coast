@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { metadataSourceSchema } from '#lib/catalogue/metadata/resolve.js';
-import { administratorFeatures } from '#lib/features.js';
+import type { CoastAccess } from '#lib/auth/invites.js';
+import { administratorFeatures, type FeatureChoices, type FeaturePermissions } from '#lib/features.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { diagnosticLevels } from '../diagnostics';
 import { diagnosticStore } from './diagnostics';
@@ -84,7 +85,21 @@ export const defaultConfig: CoastConfig = {
 };
 
 type ConfigDatabase = ReturnType<typeof getSql> | Pick<Database, 'execute'>;
-const requestConfig = new AsyncLocalStorage<{ active: boolean; pending?: Promise<CoastConfig>; subjects?: Map<string, Promise<{settings:import('./db/schema').UserSettings;disabled:boolean}|undefined>> }>();
+export type FeatureSubject = {
+  role: string;
+  feature_choices: FeatureChoices | null;
+  feature_permissions: FeaturePermissions | null;
+  playback_sharing: boolean;
+  access_defaults: CoastAccess;
+  disabled: boolean;
+  managed_bitrate: number | null;
+};
+
+const requestConfig = new AsyncLocalStorage<{
+  active: boolean;
+  pending?: Promise<CoastConfig>;
+  subjects?: Map<string, Promise<FeatureSubject | undefined>>;
+}>();
 
 /** Share only one HTTP request's policy snapshot, never authorization between requests. */
 export function withRequestConfig<T>(work: () => T | Promise<T>): Promise<T> {
@@ -144,18 +159,30 @@ export async function refreshDiagnosticConfig() {
 }
 
 /** Read-model snapshots are shared only inside this request; transactions bypass them. */
-export function featureSubject(userId:string) {
-  const read=async()=>{const [user]=await getSql()`select u.role,u.settings,u.access_defaults,u.disabled or not coalesce(u.membership_expires_at>now(),true) as disabled,
-    nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id),'0')::integer as managed_bitrate
-    from users u where u.id=${userId}`;return user as {role:string;settings:import('./db/schema').UserSettings;access_defaults:import('../auth/invites').CoastAccess;disabled:boolean;managed_bitrate:number|null}|undefined;};
-  const current=requestConfig.getStore();
-  if(!current?.active)return read();
-  current.subjects??=new Map();
-  const existing=current.subjects.get(userId);if(existing)return existing;
-  const pending=read();if(current.subjects.size<40)current.subjects.set(userId,pending);
+export function featureSubject(userId: string) {
+  async function read() {
+    const [user] = await getSql()<FeatureSubject[]>`
+      select u.role, u.settings->'features' as feature_choices,
+        u.settings->'featurePermissions' as feature_permissions,
+        (u.settings->'allowPlaybackSharing') is not distinct from 'true'::jsonb as playback_sharing,
+        u.access_defaults, u.disabled or not coalesce(u.membership_expires_at > now(), true) as disabled,
+        nullif((select active_defaults#>>'{jellyfin,RemoteClientBitrateLimit}' from onboarding_provisioning p where p.user_id=u.id), '0')::integer as managed_bitrate
+      from users u where u.id = ${userId}`;
+    return user as FeatureSubject | undefined;
+  }
+  const current = requestConfig.getStore();
+  if (!current?.active) return read();
+  current.subjects ??= new Map();
+  const existing = current.subjects.get(userId);
+  if (existing) return existing;
+  const pending = read();
+  if (current.subjects.size < 40) current.subjects.set(userId, pending);
   return pending;
 }
-export function invalidateFeatureSubject(userId:string) {requestConfig.getStore()?.subjects?.delete(userId);}
+
+export function invalidateFeatureSubject(userId: string) {
+  requestConfig.getStore()?.subjects?.delete(userId);
+}
 
 export function parseConfig(value:unknown):CoastConfig {
   return v.parse(configSchema,{...defaultConfig,...(value&&typeof value==='object'?value:{})});

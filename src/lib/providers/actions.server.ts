@@ -36,7 +36,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     });
   register('taste.refresh',async()=> (await import('#lib/social/taste-cache.server.js')).refreshTasteCaches());
   register('jellyfin.member-policy',async action=>(await import('#lib/server/auth/account-management.server.js')).executeMemberPolicy(action));
-  register('planning.reminder',async action=>(await import('#lib/experiments/planning.server.js')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
+  register('planning.reminder',async action=>(await import('#lib/planning/service.server.js')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
   register('webhook.deliver', async action => (await import('#lib/server/public-api/webhooks.server.js')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
   register('jellyfin.updates',async action=>(await import('#lib/providers/jellyfin/updates.server.js')).pollCompanion(action));

@@ -20,7 +20,7 @@
   import TasteComparison from '#lib/profile/TasteComparison.svelte';
   import { comparisonMedia } from '#lib/social/taste.js';
   import DetailCard from '#lib/ui/components/DetailCard.svelte';
-  import PlanAction from '#lib/experiments/PlanAction.svelte';
+  import PlanAction from '#lib/planning/PlanAction.svelte';
   import ShareAction from '#lib/sharing/ShareAction.svelte';
   import { profileActivityPanels, profileBreakdownPanels } from '#lib/ui/insights/profile.js';
   import { mediaOverviewPanels } from '#lib/ui/insights/media.js';
@@ -130,7 +130,7 @@
     {:else if scenario === 'lists'}<Heading variant="page" title="Your lists">{#snippet actions()}<Button icon="plus" onclick={() => delivery.notify('Preview list creation requested.')}>Create list</Button>{/snippet}</Heading><Shelf source={{ type: 'list', view: 'watchlist', title: 'Watchlist' }} /><Shelf source={{ type: 'list', view: 'favourites', title: 'Favourites' }} />
     {:else if scenario === 'music'}<Heading variant="page" title="Music" /><Shelf title="Albums and tracks" items={musicItems} shape="square" layout="grid" />
     {:else if scenario === 'games'}<Heading variant="page" title="Games" /><Shelf title="Your games" items={[game]} shape="poster" layout="grid" />
-    {:else if scenario === 'planning'}<Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved." /><Shelf title="Your plans" items={[movie, readingCard(reading)]} layout="grid" availability={false}>{#snippet details()}<div class="row"><Button compact onclick={() => delivery.notify('Preview start requested.')}>Start</Button><Button compact emphasis="subtle" onclick={() => delivery.notify('Preview cancellation requested.')}>Cancel</Button></div>{/snippet}</Shelf>{/if}
+    {:else if scenario === 'planning'}<Heading title="Planning" variant="page" /><Shelf title="Your plans" items={[movie, readingCard(reading)]} layout="grid" availability={false}>{#snippet details()}<div class="row"><Button compact onclick={() => delivery.notify('Preview start requested.')}>Start</Button><Button compact emphasis="subtle" onclick={() => delivery.notify('Preview cancellation requested.')}>Cancel</Button></div>{/snippet}</Shelf>{/if}
 
   {:else if name === 'recommendations.dynamic'}
     <p class="small quiet">The production dynamic feed uses a finite synthetic definition set. Scroll to its bottom to reveal one row at a time.</p>
@@ -140,8 +140,8 @@
   {:else if name === 'sharing.action'}
     <Button onclick={() => opened = true}>Open sharing dialog</Button><ShareAction workId={id} title={scenario==='reading'?reading.title:movie.title} reading={scenario==='reading'} bind:open={opened} />
   {:else if name === 'sharing.landing'}
-    {#if scenario === 'party'}<Heading title="Synced session" variant="page" /><div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p><Button onclick={() => delivery.notify('Preview join requested. No party is joined.')}>Join session</Button></div>
-    {:else}<Heading title="Playback invitation" /><p>Play this shared item. You control your own playback.</p>{#if scenario === 'expired'}<p>This preview invitation has expired.</p>{:else}<Button onclick={() => delivery.notify('Preview invitation requested. No playback starts.')}>Open invitation</Button>{/if}{#if scenario === 'error'}<Toast kind="error" text="This preview invitation could not be opened." />{/if}{/if}
+    {#if scenario === 'party'}<Heading title="Synced session" variant="page" description="Join with your own Jellyfin source. Playback follows the host." /><Button onclick={() => delivery.notify('Preview join requested. No party is joined.')}>Join session</Button>
+    {:else}<Heading title="Shared invitation" variant="page" description="Play this shared item. You control your own playback." />{#if scenario === 'expired'}<p>This preview invitation has expired.</p>{:else}<Button onclick={() => delivery.notify('Preview invitation requested. No playback starts.')}>Open invitation</Button>{/if}{#if scenario === 'error'}<Toast kind="error" text="This preview invitation could not be opened." />{/if}{/if}
   {:else if name === 'media.details'}
     <Button onclick={() => {detailStep=0;opened=true;}}>Open media details</Button><DetailOverlay bind:open={opened} sectionPage={scenario==='row'} contentKey={scenario==='row'?'/progress?view=watching':scenario==='section'?`/media/${id}?section=related`:String(detailStep)} onback={detailStep?()=>detailStep=0:undefined} editions={scenario==='editions'?[{value:'theatrical',label:'Theatrical'},{value:'extended',label:'Extended Edition'}]:[]}>{#if scenario==='row'}<SectionDetails href="/progress?view=watching" />{:else if scenario === 'error'}<Toast kind="error" text={'These preview details could not be loaded.'} />{:else}<MediaDetails detailHref={scenario==='section'?`/media/${id}?section=related`:undefined} view={{hero:scenario!=='section',item:scenario==='reading'?readingHero(reading):detailStep?show:movie}} model={scenario==='section'?undefined:{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:scenario==='reading'?overviewPanels(reading.overview,readingFacts(reading)):mediaOverviewPanels(movie)}]}}}>{#if scenario==='nested'}<Button onclick={()=>detailStep=1}>Open related preview</Button>{/if}<Shelf title="Related titles" items={items} layout={scenario==='section'?'grid':'row'} filterBy={scenario==='section'?'watched':'none'} /></MediaDetails>{/if}</DetailOverlay>
   {:else if name === 'app.shell'}
