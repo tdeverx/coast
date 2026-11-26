@@ -9,7 +9,7 @@ describe('material drafts', () => {
     expect(Object.keys(glassPresets.materials)).toEqual(Object.keys(glassPresets.fallbacks));
     for (const entry of materialNames) {
       expect(glassPresets.fallbacks[entry.value]).toEqual({ ...glassPresets.materials[entry.value], refraction: 0 });
-      expect(approvalStatus(entry.value)).toBe('approved');
+      expect(approvalStatus(entry.value)).toBe('unapproved');
     }
     expect(approvalStatus('temporary')).toBe('unapproved');
     const { clear, glassLight, glassDark, glassProminent } = glassPresets.materials;

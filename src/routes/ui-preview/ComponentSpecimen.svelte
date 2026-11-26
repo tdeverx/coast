@@ -1,6 +1,8 @@
 <script lang="ts">
   import { reportFailure } from '#lib/ui/client-context.js';
  import {createRawSnippet,untrack,type Component,type Snippet} from 'svelte';
+ import type {ProfileEditFields} from '#lib/ui/components/ProfileEditor.svelte';
+ import MenuPreviewScope from './MenuPreviewScope.svelte';
  import Button from '#lib/ui/components/Button.svelte';
  import Avatar from '#lib/ui/components/Avatar.svelte';
  import Field from '#lib/ui/components/Field.svelte';
@@ -47,6 +49,7 @@
  })));
  const resolvedProps=$derived.by(()=>{
   const values={...defaults,...custom.props,...slotProps,...callbackProps};
+  if (name === 'ProfileEditor' && (!customSlots.children || customSlots.children.kind === 'example')) values.children = profileFields;
   // Structured callback contracts retain their presenter, with local updates.
   for(const key of ['groups','filterGroups'])if(Array.isArray(values[key]))values[key]=values[key].map((group:any,index:number)=>({...group,change:(value:string)=>{onevent(`${key}[${index}].change`,[value]);change(key,(values[key] as any[]).map((entry,i)=>i===index?{...entry,value}:entry));}}));
   if(values.selection&&typeof values.selection==='object')values.selection={...values.selection,change:(value:string)=>{onevent('selection.change',[value]);change('selection',{...values.selection as object,value});}};
@@ -63,6 +66,18 @@
 {#snippet avatarSlot()}<Avatar name="Alice" size={48} status="online" />{/snippet}
 {#snippet fieldSlot()}{#if name==='SettingsRow'}<input type="checkbox" aria-label="Preview enabled" />{:else if name==='Field'}<input placeholder="Your display name" oninput={event=>onevent('slot.input',[event.currentTarget.value])} />{:else}<Field label="Preview input"><input placeholder="Your display name" oninput={event=>onevent('slot.input',[event.currentTarget.value])} /></Field>{/if}{/snippet}
 {#snippet timelineSlot()}<PlaybackTimeline mediaId={movie.id} title={movie.title} detail="2026 · Movie" artwork={movie.poster} current={1800} duration={6600} />{/snippet}
+
+{#snippet profileFields(fields?: ProfileEditFields)}
+ <div class="stack">
+  {#if fields}
+   {@render fields.avatar()}{@render fields.title()}{@render fields.bio()}
+   <div class="row">{@render fields.actions()}</div>
+  {:else}
+   <strong>{(resolvedProps.profile as {displayName?:string}).displayName || resolvedProps.username}</strong>
+   <p>{(resolvedProps.profile as {bio?:string}).bio}</p>
+  {/if}
+ </div>
+{/snippet}
 
 {#snippet component()}
  {#if Current}
@@ -82,21 +97,28 @@
  {:else if !Current}<p class="quiet" role="status">Loading component…</p>
  {:else}
   {#key structure}<svelte:boundary>
-   {#if ['ChoiceGroup','WorkActions','WorkListActions','RecommendAction'].includes(name)}<Button menu label={`Preview ${name} menu`}>{@render component()}</Button>
+   {#if defaults.open === false && !resolvedProps.open}
+    <Button onclick={() => update('open', true)}>Open {name.replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase()}</Button>
+   {/if}
+   {#if ['ChoiceGroup','WorkActions','WorkListActions','RecommendAction'].includes(name)}
+    <MenuPreviewScope inline={`Preview ${name} menu`} conditions={{}}>
+     <Button menu label={`Preview ${name} menu`}>{@render component()}</Button>
+    </MenuPreviewScope>
    {:else if name==='ProgressBar'}<div class="passive-bar">{@render component()}</div>
    {:else if name==='ProgressiveBlur'}<BlurBackdrop>{@render component()}</BlurBackdrop>
+   {:else if ['PlaybackTimeline','PartyCard'].includes(name)}<div class="panel-specimen">{@render component()}</div>
    {:else if name==='MediaCard'}<div class="specimen-card">{@render component()}</div>
    {:else}{@render component()}{/if}
-   {#snippet failed(error,reset)}<div class="stack"><p role="alert">This combination cannot render: {error instanceof Error?error.message:'Check the prop data.'}</p><p class="small quiet">Correct the props in the Customiser, then retry. The rest of the playground remains available.</p><Button emphasis="subtle" onclick={reset}>Retry preview</Button></div>{/snippet}
+   {#snippet failed(error,reset)}<div class="stack"><p role="alert">This combination cannot render: {error instanceof Error?error.message:'Check the prop data.'}</p><p class="small quiet">Adjust the props in Controls, then retry.</p><Button emphasis="subtle" onclick={reset}>Retry preview</Button></div>{/snippet}
   </svelte:boundary>{/key}
   {#if name==='RowStyleMenu'}<Button onclick={()=>instance?.openAt?.({x:48,y:160})}>Open style menu</Button>{/if}
-  {#if name==='SyncedControls'}<p class="small quiet">This controller has no attached live party in isolation. Explore PartyCard and PartyMenu to change their presentation.</p>{/if}
  {/if}
 </div>
 <style>
-  .component-specimen {position:relative;contain:layout;min-width:0;min-height:320px;display:grid;align-content:safe center;justify-items:center;gap:16px;width:100%;}
+  .component-specimen {position:relative;contain:layout;min-width:0;min-height:min(320px,32dvh);display:grid;grid-template-columns:minmax(0,1fr);align-content:safe center;justify-items:center;gap:16px;width:100%;}
  .component-specimen.wide {justify-items:stretch;}
  .component-specimen > :global(*) {max-width:100%;min-width:0;}
+ .panel-specimen {width:min(100%,480px);}
  .specimen-card {width:min(300px,100%);}
  .passive-bar {width:min(360px,100%);height:6px;}
 </style>

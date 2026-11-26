@@ -34,6 +34,7 @@ const friendsCode=compileRunes(`import {untrack} from ${JSON.stringify(import.me
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(transport){
   const callbacks=[],reportFailure=()=>{},useClient=()=>({api:transport}),onDestroy=fn=>callbacks.push(fn);
+  const usePlayback=()=>({preview:false});
   const page={data:{user:{id:'viewer'}}},useClock=()=>({now:0}),syncedPlayer={},message=error=>error.message;
   ${friendsScript}
   return {choose(next){segment=next;},close(){open=false;},get roster(){return roster.data;},cleanup(){callbacks.forEach(fn=>fn());}};

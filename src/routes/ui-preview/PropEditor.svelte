@@ -1,4 +1,7 @@
 <script lang="ts">
+ import PreviewSelect from '#lib/ui/cards/editor/PreviewSelect.svelte';
+ import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
+ import PreviewToggle from '#lib/ui/cards/editor/PreviewToggle.svelte';
  import Button from '#lib/ui/components/Button.svelte';
  import Field from '#lib/ui/components/Field.svelte';
  import {progressiveBlurSteps,progressiveTintSteps} from '#lib/ui/materials/progressive-blur.js';
@@ -37,7 +40,7 @@
 </script>
 <div class="prop-editor stack">
  <Field label="Find a prop"><input type="search" bind:value={search} placeholder="Name or type" /></Field>
- <p class="small quiet">{contract.props.length} source-defined props. Controls edit the real component. Data uses synthetic fixtures; callbacks stay local.</p>
+ <p class="small quiet">{contract.props.length} source-defined props. Edits and callback events stay in this preview.</p>
  {#if !contract.props.length}<p class="small quiet">This component has no public props. Its application-owned state is demonstrated in the example states.</p>{/if}
  {#each fields as prop (prop.name)}
   {@const range = name==='ProgressiveBlur' ? blurStepRanges[prop.name] : undefined}
@@ -45,12 +48,11 @@
    <div class="prop-title"><code>{prop.name}</code><div class="prop-actions">{#if prop.optional}<Button emphasis="subtle" compact onclick={()=>omit(prop)} label={`Omit ${prop.name}`}>Omit</Button>{/if}{#if Object.hasOwn(custom.props,prop.name)||custom.slots[prop.name]||custom.callbacks[prop.name]}<Button emphasis="subtle" compact onclick={()=>reset(prop.name)} label={`Reset ${prop.name}`}>Reset</Button>{/if}</div></div>
    {#if Object.hasOwn(custom.props,prop.name)&&custom.props[prop.name]===undefined}<p class="small quiet">Not supplied; the component chooses its default.</p>{/if}
    {#if prop.kind==='boolean'}
-    <label class="check"><input type="checkbox" checked={value(prop)===true} onchange={event=>set(prop.name,event.currentTarget.checked)} />{propLabel(prop.name)}</label>
+    <AuthSurface><PreviewToggle label={propLabel(prop.name)} icon="sliders" checked={value(prop)===true} onchange={checked=>set(prop.name,checked)} /></AuthSurface>
    {:else if prop.kind==='select'}
-    <Field label={propLabel(prop.name)}><select value={value(prop)===null?'@null':value(prop)===undefined?'@default':String(value(prop))} onchange={event=>{const selected=event.currentTarget.value;if(selected==='@default')reset(prop.name);else set(prop.name,selected==='@null'?null:prop.choices?.find(value=>String(value)===selected));}}>
-     <option value="@default">Example default</option>{#if prop.nullable}<option value="@null">None (null)</option>{/if}
-     {#each prop.choices??[] as choice}<option value={String(choice)}>{String(choice)}</option>{/each}
-    </select></Field>
+    <PreviewSelect topLayer label={propLabel(prop.name)} value={value(prop)===null?'@null':value(prop)===undefined?'@default':String(value(prop))}
+      options={[{id:'@default',label:'Example default'},...(prop.nullable?[{id:'@null',label:'None (null)'}]:[]),...(prop.choices??[]).map(choice=>({id:String(choice),label:String(choice)}))]}
+      onchange={selected=>{if(selected==='@default')reset(prop.name);else set(prop.name,selected==='@null'?null:prop.choices?.find(choice=>String(choice)===selected));}} />
    {:else if range}
     {@const steps = (value(prop) as number | undefined) ?? range.default}
     <Field label={range.label} hint={String(steps)}>
@@ -60,14 +62,17 @@
     <Field label={propLabel(prop.name)}><input type="number" step="any" value={value(prop)===null?'':value(prop) as number??''} placeholder={prop.nullable?'None (null)':'Example default'} onchange={event=>{if(event.currentTarget.value===''){if(prop.nullable)set(prop.name,null);else reset(prop.name);}else if(Number.isFinite(event.currentTarget.valueAsNumber))set(prop.name,event.currentTarget.valueAsNumber);}} /></Field>
    {:else if prop.kind==='text'}
     <Field label={propLabel(prop.name)}><input value={value(prop) as string??''} oninput={event=>set(prop.name,event.currentTarget.value)} /></Field>
-    {#if prop.nullable}<label class="check"><input type="checkbox" checked={value(prop)===null} onchange={event=>set(prop.name,event.currentTarget.checked?null:'')} />No value (null)</label>{/if}
+    {#if prop.nullable}<AuthSurface><PreviewToggle label="No value (null)" icon="sliders" checked={value(prop)===null} onchange={checked=>set(prop.name,checked?null:'')} /></AuthSurface>{/if}
    {:else if prop.kind==='snippet'}
-    <Field label={`${propLabel(prop.name)} slot`}><select value={custom.slots[prop.name]?.kind??'example'} onchange={event=>slot(prop,event.currentTarget.value as SlotChoice['kind'])}>
-     <option value="example">Example content</option>{#if prop.optional}<option value="hidden">Hidden</option>{/if}<option value="text">Text</option><option value="actions">Buttons / menu</option><option value="avatar">Avatar</option><option value="field">Input field</option><option value="timeline">Playback timeline</option>
-    </select></Field>
+    <PreviewSelect topLayer label={`${propLabel(prop.name)} slot`} value={custom.slots[prop.name]?.kind??'example'}
+      options={[{id:'example',label:'Example content'},...(prop.optional?[{id:'hidden',label:'Hidden'}]:[]),
+        {id:'text',label:'Text'},{id:'actions',label:'Buttons / menu'},{id:'avatar',label:'Avatar'},{id:'field',label:'Input field'},{id:'timeline',label:'Playback timeline'}]}
+      onchange={selected=>slot(prop,selected as SlotChoice['kind'])} />
     {#if custom.slots[prop.name]?.kind==='text'}<Field label={`${propLabel(prop.name)} content`}><textarea rows="2" value={custom.slots[prop.name].text} oninput={event=>slot(prop,'text',event.currentTarget.value)}></textarea></Field>{/if}
    {:else if prop.kind==='callback'}
-    <Field label={`${propLabel(prop.name)} handler`}><select value={handlerMode(name,prop,custom)} onchange={event=>change({...custom,callbacks:{...custom.callbacks,[prop.name]:event.currentTarget.value as 'example'|'record'|'off'}})}><option value="example">Example behavior + record events</option><option value="record">Record events only</option>{#if prop.optional}<option value="off">Not supplied</option>{/if}</select></Field>
+    <PreviewSelect topLayer label={`${propLabel(prop.name)} handler`} value={handlerMode(name,prop,custom)}
+      options={[{id:'example',label:'Example behavior + record events'},{id:'record',label:'Record events only'},...(prop.optional?[{id:'off',label:'Not supplied'}]:[])]}
+      onchange={mode=>change({...custom,callbacks:{...custom.callbacks,[prop.name]:mode as 'example'|'record'|'off'}})} />
    {:else}
     <details><summary>{propLabel(prop.name)} data</summary>
      <div class="stack data-editor"><Field label={`${propLabel(prop.name)} JSON`}><textarea rows="6" spellcheck="false" value={drafts[prop.name]??JSON.stringify(dataValue(prop),null,2)} oninput={event=>drafts[prop.name]=event.currentTarget.value}></textarea></Field>

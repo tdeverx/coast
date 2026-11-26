@@ -21,7 +21,7 @@ test('menu selection stays flat and approval belongs only to the reviewed episod
  expect(new Set(menuEntries.map(entry=>entry.value)).size).toBe(menuEntries.length);
  expect(menuEntries.filter(entry=>entry.value==='media')).toHaveLength(1);
  expect(menuEntries.filter(entry=>entry.value==='filter')).toHaveLength(1);
- expect(menuEntries.flatMap(entry=>entry.examples.filter(example=>example.approval==='approved').map(example=>`${entry.value}:${example.value}`))).toEqual(['media:episode']);
+ expect(menuEntries.flatMap(entry=>entry.examples.filter(example=>example.approval==='approved').map(example=>`${entry.value}:${example.value}`))).toEqual([]);
  expect(menuEntries.some(entry=>entry.value==='party-member')).toBe(true);
  expect(menuEntries.some(entry=>entry.value==='profile-background')).toBe(true);
  for(const entry of menuEntries)for(const example of entry.examples){

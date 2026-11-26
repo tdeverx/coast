@@ -1,12 +1,14 @@
 import { getContext, setContext } from 'svelte';
+import type {RoomState} from './synced/model';
 import { player, heroPlayer } from './client.svelte';
 const key = Symbol('Playback preview');
-type Playback = { player: typeof player; heroPlayer: typeof heroPlayer; preview: boolean };
+type Playback = { player: typeof player; heroPlayer: typeof heroPlayer; preview: boolean; party?: {room:RoomState|null; userId:string} };
 export function usePlayback(): Playback { return getContext<Playback>(key) ?? { player, heroPlayer, preview: false }; }
 export function providePreviewPlayback() {
  const local = $state<typeof player>({ session: null, audioQueue: [], audioIndex: -1, role: 'idle', paused: true, controlsVisible: true, browsing: false, subtitlePrompt: false, continuationId: '', muted: true, loading: false, preparationMediaType: 'video', preparationStartedAt: 0 });
  const hero = $state<typeof heroPlayer>({ outcome:'idle',generation:0,crop:null, id: '', url: '', visible: false, paused: true, ready: false, playing: false, muted: true });
- const value = { player: local, heroPlayer: hero, preview: true };
+ const party = $state<{room:RoomState|null; userId:string}>({room:null,userId:''});
+ const value = { player: local, heroPlayer: hero, preview: true, party };
  setContext<Playback>(key, value);
  return value;
 }

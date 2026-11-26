@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TasteInspection from '#lib/profile/TasteInspection.svelte';
+  import MediaCard from '#lib/ui/components/MediaCard.svelte';
   import {useClient} from '#lib/ui/client-context.js';
   import { requestFeedCard } from '#lib/library-feed.js';
   const delivery=useClient().feedback;
@@ -28,7 +30,7 @@
   import type { MediaView, MediaCardPresentation, MediaCardShape } from '#lib/ui/types.js';
   import { movie, show, episode, music, track, id } from './demo/fixtures';
 
-  let { name, scenario }: { name: string; scenario: string } = $props();
+  let { name, scenario, options = {} }: { name: string; scenario: string; options?:Record<string,unknown> } = $props();
   providePreviewPlayback();
   const artwork = '/coast-mark.png';
   const season: MediaView = { ...show, id: '00000000-0000-4000-8000-000000000077', kind: 'season', title: 'Season one', seasonNumber: 1 };
@@ -44,6 +46,7 @@
     artist: musicCard({ ...music, kind: 'artist', workId: undefined, title: 'Preview artist' }, id),
     book: readingCard(book), comic: readingCard(comic), person,
   };
+  let scoreDialog = $state(false);
   const chosen = $derived(allCards[scenario] ?? movie);
   const shape = (kind: string): MediaCardShape => ['album', 'track', 'game'].includes(kind) ? 'square' : ['artist', 'person'].includes(kind) ? 'circle' : kind === 'episode' ? 'fanart' : 'poster';
   const rowItems = Object.values(allCards).slice(0, 8);
@@ -53,26 +56,29 @@
   const detailPanels = overviewPanels(movie.overview,[{label:'Released',value:'2026'},{label:'Duration',value:'1h 50m'}]);
 </script>
 
-<div class="catalogue-examples" class:progress-preview={name==='catalogue.progress'} onclickcapture={event => { if ((event.target as Element).closest('a')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
+<div class="catalogue-examples" class:full-width={!['reading.reader', 'reading.launch'].includes(name)} onclickcapture={event => { if ((event.target as Element).closest('a')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
   {#if name === 'catalogue.cards'}
-    {#if ['available', 'unavailable', 'missing-art', 'long-copy', 'broken-art'].includes(scenario)}
-      <Shelf title="Media card states" hideEmpty={false} items={rowItems.map((item, index) => ({ ...item, id: `${item.id}-${index}`, available: scenario === 'available', ...(scenario === 'missing-art' ? { poster: null, backdrop: null } : {}), ...(scenario === 'broken-art' ? { poster: 'data:image/png;base64,AA==', backdrop: null } : {}), ...(scenario === 'long-copy' ? { title: 'A deliberately long title that wraps across the shared caption without hiding the actions', captionSubtitle: 'Long artist, author or collection information remains part of the existing card caption.' } : {}) }))} />
+    {#if ['rating','match','for-you','collection-match'].includes(scenario)}
+      <div style="width:min(100%,180px)"><MediaCard item={{...(scenario==='collection-match'?allCards.collection:movie),rating:scenario==='rating'?4:null}} previewTasteScore={scenario==='for-you'?86:72} {...options}
+        onPreviewMetric={scenario==='rating'?undefined:()=>scoreDialog=true}/></div>
+      {#if scoreDialog}<TasteInspection workId={scenario==='collection-match'?allCards.collection.id:id} kind="movie" group={scenario==='collection-match'?'collection':undefined} inspect={{title:scenario==='collection-match'?allCards.collection.title:movie.title,cardScore:scenario==='for-you'?86:72}} onclose={()=>scoreDialog=false}/>{/if}
+    {:else if ['available', 'unavailable', 'missing-art', 'long-copy', 'broken-art'].includes(scenario)}
+      <Shelf {...options} title="Media card states" hideEmpty={false} items={rowItems.map((item, index) => ({ ...item, id: `${item.id}-${index}`, available: scenario === 'available', ...(scenario === 'missing-art' ? { poster: null, backdrop: null } : {}), ...(scenario === 'broken-art' ? { poster: 'data:image/png;base64,AA==', backdrop: null } : {}), ...(scenario === 'long-copy' ? { title: 'A deliberately long title that wraps across the shared caption without hiding the actions', captionSubtitle: 'Long artist, author or collection information remains part of the existing card caption.' } : {}) }))} />
     {:else}
-      <Shelf title={`${chosen.kind} presentation`} items={[chosen]} shape={shape(chosen.kind)} hideEmpty={false} />
+      <Shelf title={`${chosen.kind} presentation`} items={[chosen]} {...options} shape={(options.shape as MediaCardShape|undefined)??shape(chosen.kind)} hideEmpty={false} />
     {/if}
   {:else if name === 'catalogue.progress'}
-    <p class="small quiet">Non-approved · Mixed-media Progress sizing experiment.</p>
-    <Shelf title="Progress" mixed hideEmpty={false} enrichSocial={false} busy={scenario==='loading'||scenario==='refresh'} items={scenario==='loading'||scenario==='empty'?[]:[allCards.episode,allCards.movie,allCards.game,allCards.book,allCards.comic,allCards.season,allCards.show]} />
+    <Shelf {...options} title="Progress" mixed hideEmpty={false} enrichSocial={false} busy={scenario==='loading'||scenario==='refresh'} items={scenario==='loading'||scenario==='empty'?[]:[allCards.episode,allCards.movie,allCards.game,allCards.book,allCards.comic,allCards.season,allCards.show]} />
 
   {:else if name === 'catalogue.rows'}
-    <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => delivery.notify('Preview retry requested.')} />
+    <Shelf {...options} title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => delivery.notify('Preview retry requested.')} />
 
   {:else if name === 'catalogue.details'}
     <p class="small quiet">Composition reference using the production MediaDetails, presentation adapters and Shelf. Commands are preview-only.</p>
     {#if scenario === 'music'}<MusicDetails data={{item:{...music,workId:id},connectionId:id,children:{items:[],total:0,nextOffset:null},failure:'',page:1,pages:1}} />
     {:else if scenario==='reading-collection'}<GroupDetails data={{group:{id,title:'Preview comic volume'},cover:artwork,statistics:{issues:12,reading:2,completed:5,available:8}}} />
     {:else if ['book','comic','remote-reading'].includes(scenario)}<ReadingDetails data={{item:scenario==='comic'?comic:book,kind:scenario==='comic'?'comic':'book',remote:scenario==='remote-reading',progress:null,relationships:{favourite:false,watchlist:false,collected:false},rating:null}} />
-    {:else if scenario==='game'}<GameDetails data={{item:{...game,catalogueFacts:{},category:'game',identities:[],steam:[],playthroughs:[],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:null,sources:[]}} />
+    {:else if scenario==='game'}<GameDetails modal data={{item:{...game,catalogueFacts:{},category:'game',identities:[],steam:[],playthroughs:[],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:null,sources:[]}} />
     {:else if scenario==='game-remote'}<RemoteGameDetails data={{item:{...game,externalId:'123'},instanceId:id}} />
     {:else}<MediaDetails view={{item:detailItem}} model={{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:detailPanels}]}}}>
       {#snippet heroActions()}<Button size="hero" icon="play" onclick={()=>delivery.notify('Preview action acknowledged.')}>Play</Button>{/snippet}
@@ -90,7 +96,7 @@
     </MediaDetails>{/if}
   {:else if name === 'reading.launch'}
     <p class="small quiet">Read opens an available linked file directly. This reference disables the action and never opens a file or session.</p>
-    <ReadingLaunch workId={book.id} />
+    <ReadingLaunch compact={options.compact===true} workId={book.id} />
   {:else if name === 'reading.reader'}
     <Reader example={{ title: book.title, state: (scenario === 'loading' ? 'opening' : ['opening','error','unsaved','follower'].includes(scenario) ? scenario : 'ready') as 'ready'|'opening'|'error'|'unsaved'|'follower' }} />
   {:else if name === 'people.intro'}
@@ -112,7 +118,7 @@
     })]} />{/if}
 
   {:else if name === 'catalogue.history'}
-    {#if scenario === 'game-table'}<GameDetails data={gameData} />
+    {#if scenario === 'game-table'}<GameDetails modal detailHref={`/games/${game.id}?section=insights&insight=progress`} data={gameData} />
     {:else if scenario === 'selection'}<Heading title="Preview title · History" /><div class="stack"><p>Select the entries you want to remove.</p><div class="row"><Button emphasis="subtle" onclick={() => selected = true}>Select shown</Button><Button emphasis="subtle" onclick={() => selected = false}>Clear selection</Button><Button danger disabled={!selected} onclick={() => confirming = true}>Remove entry…</Button></div><Field label="Select preview watch"><input type="checkbox" bind:checked={selected} /></Field></div><Shelf title="1 October 2026" items={[episode]} shape="fanart" />
     {:else}<Shelf title="Activity" shape="poster" artworkOptions={false} availability={false} enrichSocial={false} items={[
       {...readingCard(book),entryId:'reading-progress',captionActor:{username:'alex',avatar:artwork,status:'offline'},captionActivity:{id,occurredAt:'2026-10-01T18:00:00Z',dateKnown:true,kind:'reading-reading',action:'Reading',detail:'80 of 320 pages',myReaction:null},captionSubtitle:'Reading · 80 of 320 pages'},
@@ -130,8 +136,8 @@
 </div>
 
 <style>
-  .catalogue-examples { min-width: 0; }
-  .progress-preview {width:100%;}
+  .catalogue-examples { min-width:0; max-width:100%; }
+  .full-width {width:100%;}
   .edition-details { padding: 24px 0; }
 
 </style>

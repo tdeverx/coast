@@ -1,4 +1,6 @@
 <script lang="ts">
+ import {usePlayback} from '#lib/playback/context.svelte.js';
+ const playback=usePlayback();
  import {onDestroy,untrack} from 'svelte';
  import {page} from '$app/state';
  import Dialog from './Dialog.svelte';
@@ -40,7 +42,7 @@
   onselectView?.(value);
  }
  // Preview panels never observe the signed-in user's party or call its controller.
- const activeRoom=$derived(preview?null:syncedPlayer.room);
+ const activeRoom=$derived(preview?playback.party?.room??null:syncedPlayer.room);
  const partyBusy=$derived(!preview&&syncedPlayer.busy);
  const partyId=$derived(activeRoom?.id);
  async function inviteFriend(friendId:string){if(preview){failure='Party invitations are disabled in this panel example. Use the Party card examples to inspect their states.';return;}if(busy||syncedPlayer.busy)return;busy=true;failure='';try{if(!syncedPlayer.room)await startSynced();if(!syncedPlayer.room)throw new Error(syncedPlayer.notice||'Could not create a party.');await change(`synced/${syncedPlayer.room.id}/invite`,{friendId});if(segment==='party')await loadParties();else selectView('party');}catch(error){failure=message(error);}finally{busy=false;}}

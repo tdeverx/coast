@@ -293,7 +293,7 @@
     {#each model.rows as row, index}
       {#if row.value !== null}
         <button type="button" class="bubble-tile chart-mark" aria-label={label(row)} aria-pressed={selected === index} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>
-          <svg viewBox="0 0 160 160" aria-hidden="true">
+          <svg class="compact" viewBox="0 0 160 160" aria-hidden="true">
             <circle class="chart-shape" cx="80" cy="80" r={68 * Math.sqrt(Math.max(0, row.value) / bubbleMaximum)} fill={chartFill(colour(index))} />
           </svg>
           <span>{row.label}</span><strong>{formatValue(row.value)}</strong>

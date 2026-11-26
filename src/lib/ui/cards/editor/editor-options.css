@@ -1,0 +1,54 @@
+.editor-options {
+  --editor-options-inset:var(--segment-inset);
+  --editor-arrow-width:calc(var(--icon-inline) + 2 * (var(--segment-padding-inline) + var(--segment-inset)));
+  --editor-arrow-space:calc(2 * (var(--editor-arrow-width) + var(--editor-action-gap)));
+  --editor-arrow-bleed:calc(var(--gutter) - var(--editor-options-inset));
+  --editor-segments-width:min(calc(100% + 2 * var(--editor-arrow-bleed)),
+    calc(var(--editor-auth-width) + var(--editor-arrow-space)));
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  grid-template-rows:minmax(0, 1fr);
+  min-block-size:0;
+  min-inline-size:0;
+  justify-items:center;
+}
+.editor-options-viewport { grid-area:1 / 1; display:grid; inline-size:100%; min-block-size:0; }
+.editor-options-footer {
+  grid-area:1 / 1;
+  inline-size:var(--editor-segments-width);
+  z-index:1;
+  display:grid;
+  grid-template-columns:var(--editor-arrow-width) minmax(0, 1fr) var(--editor-arrow-width);
+  align-self:end;
+  align-items:center;
+  gap:var(--editor-action-gap);
+  min-inline-size:0;
+  padding-inline:var(--editor-options-inset);
+  pointer-events:none;
+}
+.editor-options-footer > * { pointer-events:auto; }
+.editor-options-rail { --auth-anchor-width:100%; display:grid; grid-template-columns:minmax(0, 1fr); min-inline-size:0; }
+.editor-options-scroll {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  justify-items:center;
+  align-content:safe center;
+  min-block-size:0;
+  padding-block-end:calc(var(--segment-height) + var(--editor-auth-gap));
+  overflow:hidden auto;
+  overscroll-behavior-y:contain;
+  scrollbar-width:thin;
+}
+.editor-options-body {
+  display:grid;
+  inline-size:calc(var(--editor-segments-width) - var(--editor-arrow-space));
+  gap:var(--editor-auth-gap);
+  padding:var(--segment-inset) var(--editor-options-inset) var(--editor-action-gap);
+}
+@media (max-width:767px) {
+  .editor-options-viewport { inline-size:calc(100% + 2 * var(--gutter)); }
+  .editor-options-body {
+    /* Keep the rows centered and reserve room for reset controls outside the glass. */
+    inline-size:min(var(--editor-auth-width), calc(100% - 2 * (var(--control-height) + var(--segment-inset))));
+  }
+}

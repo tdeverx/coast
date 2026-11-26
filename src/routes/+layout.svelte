@@ -389,7 +389,7 @@
   {#if canShowDetails&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
   {#if data.user && SettingsPanel}<SettingsPanel target={settings} />{/if}
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
-  {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && !['/share', '/ui-preview/media-cards'].includes(page.url.pathname)}<Header
+  {#if (data.user || data.publicRead || data.publicProfiles) && !page.data.authArtwork && !['/share', '/ui-preview/media-cards'].includes(page.url.pathname) && page.route.id !== '/ui-preview'}<Header
       user={data.user}
       publicBrowse={data.publicRead}
       unread={data.unreadNotifications}

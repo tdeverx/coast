@@ -2,7 +2,7 @@
 
   import {onDestroy,untrack} from 'svelte';
   import {createResource} from '#lib/ui/resource.svelte.js';
-  import {reportImportFailure} from '#lib/ui/client-context.js';
+  import {reportImportFailure, useClient} from '#lib/ui/client-context.js';
   const dynamicImport=createResource<typeof import('#lib/recommendations/DynamicFeed.svelte').default|undefined>(undefined);
   const DynamicFeed=$derived(dynamicImport.data);
   import {recommendationSectionSource} from '#lib/recommendations/section.js';
@@ -13,11 +13,13 @@
   import {actionCategories,actionHref} from '#lib/actions.js';
   import {surfaceEnabled} from '#lib/experimental.js';
   import Button from '#lib/ui/components/Button.svelte';
-  let { data } = $props();
+  import type { PageData } from './$types';
+  let { data }: { data:Pick<PageData,'action'|'heroes'|'heroNext'|'activityFilters'> } = $props();
   const category=$derived(actionCategories[data.action]);
   const progressCategory=$derived(data.action==='watch'?'screen':data.action==='play'?'game':'reading');
   const enabled=$derived(surfaceEnabled({...page.data,features:page.data.capabilities},data.action));
-  const section = $derived(page.url.searchParams.get('section'));
+  const {preview} = useClient();
+  const section = $derived(preview ? null : page.url.searchParams.get('section'));
   const recommendation = $derived(recommendationSectionSource(page.url,category,'personal'));
   const dynamicWanted=$derived(!!page.data.user&&page.data.capabilities?.personalisation&&!section);
   function loadDynamic(){if(dynamicWanted&&!dynamicImport.busy)return dynamicImport.load(async()=> (await import('#lib/recommendations/DynamicFeed.svelte')).default);}

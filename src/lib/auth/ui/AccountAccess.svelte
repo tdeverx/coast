@@ -6,7 +6,7 @@
   import { safeParse } from 'valibot';
   import { inviteCode } from '#lib/auth/invites.js';
   import type { previewInvite } from '#lib/server/auth/invites.server.js';
-  import { reportFailure } from '#lib/ui/client-context.js';
+  import { reportFailure, useClient } from '#lib/ui/client-context.js';
   import AccountFields from '#lib/ui/components/AccountFields.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import type {FieldValidation} from '#lib/ui/components/Field.svelte';
@@ -17,6 +17,7 @@
   let { registering = false, gated = false, verified, error }: {
     registering?: boolean; gated?: boolean; verified?: Invite; error?: string;
   } = $props();
+  const {preview} = useClient();
   let code = $state(''), checked = $state<Invite>(), failure = $state('');
   let hydrated = $state(false), busy = $state(false), signInReady = $state(false), registerReady = $state(false);
   let pointerField = $state<HTMLInputElement>();
@@ -37,6 +38,7 @@
   ].filter(Boolean).join(' · ') : '');
 
   onMount(() => {
+    if (preview) { code = verified?.code ?? ''; hydrated = true; return; }
     const url = new URL(location.href);
     const linked = new URLSearchParams(url.hash.slice(1)).get('invite');
     if (linked) { url.hash = ''; void goto(url,{shallow:true,replace:true,state:page.state}); }
@@ -46,7 +48,7 @@
   $effect(() => {
     const candidate = code;
     checked = undefined; failure = '';
-    if (!hydrated || !needsInvite || verified?.code === candidate || !safeParse(inviteCode,candidate).success) return;
+    if (preview || !hydrated || !needsInvite || verified?.code === candidate || !safeParse(inviteCode,candidate).success) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
@@ -73,7 +75,7 @@
     onpointerdown={event => {pointerField = event.target instanceof Element ? event.target.closest('label.menu-row')?.querySelector('input') ?? undefined : undefined;}}
     onfocusout={() => pointerField = undefined}
     use:enhance={({cancel}) => {
-      if (busy || (registering ? locked || !registerReady : !signInReady)) {cancel();return;}
+      if (preview || busy || (registering ? locked || !registerReady : !signInReady)) {cancel();return;}
       busy = true;
       return async ({result,update}) => {
         try {

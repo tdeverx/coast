@@ -133,6 +133,7 @@ export function createPreviewTransport(name: string, scenario: string, condition
   let dismissed = new Set<string>();
   const revokedLinks = new Set<string>();
   const stoppedShares = new Set<string>();
+  const featurePermissions = {permissions:{},preferences:{}};
   let sharingCreated = false;
   let benchmarkQueued = false;
   const activeCheckin = conditions.checkIn ? {id:show.id,workId:episode.id,mode:conditions.manualCheckIn ? 'manual' as const : 'timed' as const,expiresAt:today+'T22:00:00Z'} : null;
@@ -318,6 +319,15 @@ export function createPreviewTransport(name: string, scenario: string, condition
         return body.entryId === episode.id ? Response.json({ ok: true }) : Response.json({ error: 'Unexpected entry.' }, {status:422});
       }
     }
+    if (path === 'admin/users/'+id+'/features') {
+      if (method==='PATCH') {
+        const updates=JSON.parse(String(init?.body ?? '{}'));
+        Object.assign(featurePermissions.permissions,updates.permissions);
+        Object.assign(featurePermissions.preferences,updates.preferences);
+      }
+      return Response.json(featurePermissions);
+    }
+    if (method==='POST' && path==='member-invites') return Response.json({code:'COAST-PREVIEW'});
     if (method !== 'GET') {
       if (name === 'ProfileEditor' && path === 'profile' && method === 'POST') return Response.json({ ok: true });
       if (name === 'StreamsPanel' && path.startsWith('sharing/')) {
@@ -364,9 +374,32 @@ export function createPreviewTransport(name: string, scenario: string, condition
     if (/^reading\/[^/]+\/editions$/.test(path)) return Response.json({items:[{id:'edition:OL456M',kind:'book',title:'Preview edition',href:'#',poster:'/coast-mark.png',captionSubtitle:'2026 · Preview publisher'}],page:1,pages:1,total:1});
     if (/^reading\/[^/]+\/linked$/.test(path)) return Response.json([]);
     if (/^game-playthroughs\/[^/]+$/.test(path)) return Response.json({sessions:[30,90,125].map((minutes,index)=>({id:`preview-session-${index}`,playedAt:`2026-10-0${index+1}T18:00:00Z`,minutesPlayed:minutes,note:'Preview play session'})),page:1,pages:1,total:3});
+    if (path === 'member-invites') return Response.json({items:[],next:null,grant:{remaining:2,quota:3},request:null});
+    if (path === 'admin/invites/presets') return Response.json([]);
+    if (path === 'admin/invites/overview') return Response.json({funnel:[],audit:[],requests:[]});
+    if (path === 'admin/invites') return Response.json({items:[],next:null});
+    if (path === 'admin/members/'+id) return Response.json({id,username:'Alex',role:'user',source:'Invitation',connections:[],audit:[],access:{},expiresAt:null});
+    if (path === 'admin/demand') return Response.json({page:1,pages:1,users:scenario==='empty'?[]:[{username:'Alex',page:1,pages:1,items:[{href:'#',neededTitle:movie.title,reason:'Watchlist',availability:'missing',sources:[],requests:[]}]}]});
+    if (path === 'synced/preview-party/media') return Response.json(episode);
+    if (path === 'profile/taste-match' || path === 'admin/taste-score') {
+      const score=scenario==='for-you'?86:72;
+      const match=url.searchParams.has('group')
+        ? {score,members:{total:2,sampled:2,matched:2},breakdown:{average:score-2,bonus:2,watched:1,titles:items.map(item=>({id:item.id,title:item.title,confidence:70,score:score-2}))}}
+        : {score,native:score,rule:'personal',confidence:70,withheld:false,base:65,reason:'Similar genres',signals:[{dimension:'genres',name:'Drama',contribution:score-65,works:8,rated:5,affinity:80}]};
+      return Response.json({match});
+    }
+    if (name==='pages.browse' && scenario==='empty' && ['library/recent','requests','social/feed','progress','planning','progress/experiment'].includes(path))
+      return Response.json({items:[],page:1,pages:1,total:0,next:null,view:url.searchParams.get('view')??'watching',kind:'all',scope:'all'});
+    if (path === 'profile/taste-signals') return Response.json({
+      works:12,ratings:6,pages:1,dimensions:[{key:'genres',count:1}],uses:{},examples:{},
+      items:[{id:'drama',name:'Drama',affinity:84,works:8,rated:5,confidence:72,supporting:[],contradicting:[]}],
+    });
+    if (['library/recent','requests','lists/content','social/feed','progress/recommendations','experiments/upcoming'].includes(path) && method==='GET')
+      return Response.json({...content,next:null,hasMore:false});
+    if (path === 'progress/experiment') return Response.json({...content,items:[episode,movie],view:url.searchParams.get('view')??'continue',kind:'all',scope:'all'});
     if (path === 'synced') return Response.json(scenario==='parties'?[{id,createdAt:today+'T18:00:00Z',host:'Alice',hostId:id,joined:true,mediaType:'video',progress:.3,durationSeconds:2700,positionSeconds:810,paused:true,bufferingPaused:false,updatedAt:today+'T18:00:00Z',playingItem:episode,nowPlaying:episode.title,backgroundArtwork:movie.backdrop,friend:null,participants:[{userId:id,username:'Alice',avatar:null,joined:true}]}]:[]);
-    if (path === 'experiments/feed') return Response.json({rows: scenario === 'empty' ? [] : [{key:'preview-row', title:'More stories to discover', category:'screen', surface:'genre', genre:'Drama', kind:'movie', reason:'liked'}]});
-    if (path === 'experiments/row' || path === 'experiments/recommendations') return Response.json({...content, title:'More stories to discover'});
+    if (path === 'experiments/feed' || path === 'discover/feed') return Response.json({rows: scenario === 'empty' ? [] : [{key:'preview-row', title:'More stories to discover', category:'screen', surface:'genre', genre:'Drama', kind:'movie', reason:'liked'}]});
+    if (path === 'discover/row' || path === 'experiments/row' || path === 'experiments/recommendations') return Response.json({...content, title:'More stories to discover'});
     const response = await fixtureFetch(input, init);
     if (!response.ok) return response;
     const result = await response.json();

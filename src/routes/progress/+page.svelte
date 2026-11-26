@@ -6,7 +6,8 @@
   import { progressTitles } from '#lib/progress.js';
   import { profilePath } from '#lib/profile/url.js';
   import MediaPage from '#lib/ui/components/MediaPage.svelte';
-  let { data } = $props();
+  import type { PageData } from './$types';
+  let { data }: { data:Pick<PageData,'surface'|'username'|'isOwner'|'progress'|'actionScoped'|'profileContext'> } = $props();
   setContext('profile-read-only', () => !data.isOwner);
   let items = $state(untrack(() => data.progress.items));
   let selection = $state('');
