@@ -4,6 +4,7 @@ import { getContext, setContext } from 'svelte';
 /** Reference-only layout slots. Editors retain ownership of their drafts. */
 export type WorkspaceParts = {
   title: string;
+  specimenKey?: string;
   canvas: Snippet;
   inspector: Snippet;
   browser: Snippet<[{heading:Snippet}]>;

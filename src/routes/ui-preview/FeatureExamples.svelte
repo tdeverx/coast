@@ -9,7 +9,9 @@
   import Header from '#lib/ui/components/Header.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
   import Shelf from '#lib/ui/components/Shelf.svelte';
-  import MediaPage from '#lib/ui/components/MediaPage.svelte';
+  import Discover from '../discover/+page.svelte';
+  import Progress from '../progress/+page.svelte';
+  import Lists from '../lists/+page.svelte';
   import MediaDetails from '#lib/ui/components/MediaDetails.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import Field from '#lib/ui/components/Field.svelte';
@@ -17,6 +19,9 @@
   import DetailOverlay from '#lib/ui/components/DetailOverlay.svelte';
   import EmptyState from '#lib/ui/components/EmptyState.svelte';
   import Toast from '#lib/ui/components/Toast.svelte';
+  import PersonalTaste from '#lib/profile/PersonalTaste.svelte';
+  import ListOverview from '#lib/ui/components/ListOverview.svelte';
+  import ForYou from '../for-you/+page.svelte';
   import TasteComparison from '#lib/profile/TasteComparison.svelte';
   import { comparisonMedia } from '#lib/social/taste.js';
   import DetailCard from '#lib/ui/components/DetailCard.svelte';
@@ -63,6 +68,7 @@
   let opened = $state(false), range = $state(50), enabled = $state(true), title = $state(''), selected = $state('one');
   let detailStep=$state(0);
   let profileSection = $state('overview');
+  $effect(() => {profileSection = scenario==='lists'||scenario==='taste' ? scenario : 'overview';});
   const profileSections = [
     { value: 'overview', label: 'Overview' },
     { value: 'insights', label: 'Statistics' },
@@ -87,7 +93,7 @@
   {#if name === 'profile.identity'}
     {#if scenario === 'private'}<p class="small quiet">The profile visibility decision omits identity details in this scenario. No private profile data is supplied.</p>
     {:else}
-      {@const own = scenario === 'self'}
+      {@const own = ['self','taste','lists'].includes(scenario)}
       <MediaHero size="compact" identity={{
         id: 'preview-profile', title: displayName, subtitle: '@preview', backdrop: background,
         description: scenario === 'long'
@@ -101,7 +107,7 @@
         {/snippet}
         {#snippet segments()}
           <SegmentedControl material="clear" presentation="navigation" label="Profile sections"
-            options={own ? [...profileSections, { value: 'lists', label: 'Lists' }] : profileSections}
+            options={own ? [...profileSections, {value:'taste', label:'Taste'}, { value: 'lists', label: 'Lists' }] : profileSections}
             value={profileSection} onchange={value => profileSection = value} />
         {/snippet}
         {#snippet actions()}
@@ -111,7 +117,8 @@
           </div>
         {/snippet}
       </MediaHero>
-      {#if profileSection === 'lists' && own}<Shelf title="Watchlist" {items} />
+      {#if profileSection === 'lists' && own}<ListOverview lists={[{id,name:'Weekend films'}]} username="preview" />
+      {:else if profileSection === 'taste'}<PersonalTaste data={[{medium:'movie',works:12,worksWithSignals:9,consumedWorks:12,repeatedWorks:2,explicitWorks:6,inferredWorks:3,ratings:6,medianRating:4,updatedAt:new Date(today),signals:{}}]} />
       {:else if profileSection === 'insights'}<Shelf title="Statistics" size="panel" panels={progressPanels} />
       {:else}<Shelf title="Watching" {items} /><Shelf title="Activity" {items} />{/if}
     {/if}
@@ -121,13 +128,12 @@
     {:else}<TasteComparison data={tasteExample} href="/profile/alex-example?section=taste" navigate={() => {}} />
     {/if}
   {:else if name === 'pages.browse'}
-    {#if scenario === 'empty'}<Heading variant="page" title="For You" description="Your stories, all together." /><EmptyState title="Your next story starts here." description="Build a watchlist, remember what you’ve seen, and pick up wherever you left off. Coast keeps it all together." icon="home"><Button href="/discover">Find something to watch</Button></EmptyState>
-    {:else if scenario === 'for-you'}<Heading variant="page" title="For You" /><Shelf source={{ type: 'progress', mediums: true }} /><Shelf source={{ type: 'progress', surface: 'next', mediums: true }} /><Shelf source={{ type: 'progress', surface: 'favourites', mediums: true }} />
-    {:else if scenario === 'discover'}<Heading variant="page" title="Discover" description="Find your next story." /><Shelf title="Trending" href="/discover?section=trending" items={items} filterBy="type" /><Shelf title="Recently added" href="/discover?section=recent" items={[show, movie]} filterBy="type" />
+    {#if scenario === 'for-you'||scenario === 'empty'}<ForYou data={{action:'watch', heroes:scenario==='empty'?[]:[movie], heroNext:null, activityFilters:{audience:'all',period:'all',mediaKind:'all',activityType:'all'}}} />
+    {:else if scenario === 'discover'}<Discover data={{selection:{surface:'watch',section:'trending',kind:'all',page:1},featured:[movie],selected:undefined,configured:true,tmdb:true}}/>
     {:else if scenario === 'search'}<Heading variant="page" title="Search" /><Shelf title="Available" items={[{ ...movie, available: true }]} /><Shelf title="Unavailable" items={[readingCard(reading), game]} />
     {:else if scenario === 'library'}<Heading variant="page" title="Library" /><Shelf source={{ type: 'library', surface: 'watch', collection: false }} />
-    {:else if scenario === 'progress'}<MediaPage collection={{ items, selection: 'preview' }} context="home"><Shelf source={{ type: 'progress', initial: { items, page: 1, pages: 1, total: 2, view: 'watching', category: 'screen', kind: 'all', scope: 'all' }, layout: 'grid' }} /></MediaPage>
-    {:else if scenario === 'lists'}<Heading variant="page" title="Your lists">{#snippet actions()}<Button icon="plus" onclick={() => delivery.notify('Preview list creation requested.')}>Create list</Button>{/snippet}</Heading><Shelf source={{ type: 'list', view: 'watchlist', title: 'Watchlist' }} /><Shelf source={{ type: 'list', view: 'favourites', title: 'Favourites' }} />
+    {:else if scenario === 'progress'}<Progress data={{surface:'continue',username:'preview',isOwner:true,actionScoped:false,profileContext:false,progress:{items,page:1,pages:1,total:2,view:'watching',category:'screen',kind:'all',scope:'all'}}}/>
+    {:else if scenario === 'lists'}<Lists data={{overviewHref:'/profile/preview?section=lists',detail:{lists:[],selected:null,items,total:2,page:1,pages:1,pageSize:24,view:'watchlist',filter:'all',kind:'all',scope:'all'}}}/>
     {:else if scenario === 'music'}<Heading variant="page" title="Music" /><Shelf title="Albums and tracks" items={musicItems} shape="square" layout="grid" />
     {:else if scenario === 'games'}<Heading variant="page" title="Games" /><Shelf title="Your games" items={[game]} shape="poster" layout="grid" />
     {:else if scenario === 'planning'}<Heading title="Planning" variant="page" /><Shelf title="Your plans" items={[movie, readingCard(reading)]} layout="grid" availability={false}>{#snippet details()}<div class="row"><Button compact onclick={() => delivery.notify('Preview start requested.')}>Start</Button><Button compact emphasis="subtle" onclick={() => delivery.notify('Preview cancellation requested.')}>Cancel</Button></div>{/snippet}</Shelf>{/if}
@@ -152,7 +158,7 @@
     {:else if scenario === 'notices'}<div class="stack"><Toast text="An informational notice." /><Toast text="The preview operation completed." /><Toast kind="error" text="The preview operation could not complete." /></div>
     {:else if scenario === 'badges'}<div class="row"><span class="badge">Pending approval</span><span class="badge available">Available</span></div>
     {:else if scenario === 'disclosure'}<details><summary>Read more</summary><p>Existing native disclosure with keyboard and browser behavior.</p></details><div class="overflow"><table class="table"><thead><tr><th scope="col">Item</th><th scope="col">State</th></tr></thead><tbody><tr><td>Preview title</td><td>Available</td></tr></tbody></table></div>
-    {:else if scenario === 'skeletons'}<Shelf title="Loading titles" items={[]} busy hideEmpty={false} />{/if}
+    {/if}
   {:else if name === 'foundation.controls'}
     {#if scenario === 'sizes'}<div class="row"><Button compact>Compact</Button><Button>Standard</Button><Button size="segment">Segment</Button><Button size="hero">Hero</Button><Button size="icon" icon="play" label="Icon control" /></div><p class="small quiet">Shared compact, ordinary, segment and hero control tokens. Coarse-pointer targets follow the existing media query.</p>
     {:else if scenario === 'focus'}<div class="row"><Button>Focus with Tab</Button><Button disabled>Disabled</Button><Button pressed>Pressed</Button><Button menu text="Actions" label="Actions"><Button item>Preview action</Button><Button item disabled disabledReason="This preview choice is unavailable">Unavailable</Button></Button></div>
@@ -163,7 +169,8 @@
 
 <style>
 
-  .feature-examples { min-width: 0; }
+  .feature-examples { min-width: 0; max-width:100%; }
+  .feature-examples:has(.shell-example) { width:100%; }
   .profile-avatar-card { height: 100%; aspect-ratio: 1; }
   .shell-example { position: relative; contain: layout paint; min-height: 180px; }
 

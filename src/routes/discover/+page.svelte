@@ -11,9 +11,12 @@
   import MediaHero from '#lib/ui/components/MediaHero.svelte';
   import Shelf from '#lib/ui/components/Shelf.svelte';
 
-  let { data } = $props();
+  import type { PageData } from './$types';
+  let { data }: { data:Pick<PageData,'selection'|'featured'|'selected'|'tmdb'|'configured'> } = $props();
   setContext('profile-read-only', () => !page.data.user);
-  const section = $derived(page.url.searchParams.get('section'));
+  import { useClient } from '#lib/ui/client-context.js';
+  const {preview} = useClient();
+  const section = $derived(preview ? null : page.url.searchParams.get('section'));
   const category = $derived(actionCategories[data.selection.surface]);
   const recommendation = $derived(recommendationSectionSource(page.url,category,'generic'));
   const mediums = $derived({...page.data, features:page.data.capabilities});

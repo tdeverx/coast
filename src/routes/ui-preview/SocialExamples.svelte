@@ -22,7 +22,7 @@
   let { name, scenario = 'default' }: { name: string; scenario: string } = $props();
   let open = $state(false);
   let position = $state(945);
-  const {player} = usePlayback();
+  const {player, party} = usePlayback();
   const videoQuality: PlaybackQualityInfo = {
     selection: {}, mode: 'transcode', height: 2160, bitrate: 36_000_000, bitrateLimit: 20_000_000, allowTranscode: true,
     videoCodecs: ['h264', 'hevc'], audioCodecs: ['aac', 'ac3'],
@@ -44,12 +44,12 @@
   const audioMode = $derived(conditions.partyAudio ?? (scenario === 'music' || scenario.startsWith('audio') || scenario === 'queue'));
   const follower = $derived(scenario === 'follower');
   const room = $derived<RoomState>({
-    id: 'preview-party', createdAt: `${today}T18:00:00Z`, hostId: id,
+    id: 'preview-party', createdAt: new Date(Date.now()-20*60_000).toISOString(), hostId: id,
     mediaId: idle ? null : movie.id,
     mediaType: readingMode ? 'reading' : audioMode ? 'audio' : 'video',
     reading: readingMode ? reading : null, readingFormat: readingMode ? 'cbz' : null,
     edition: '', durationSeconds: 2700, positionSeconds: position,
-    paused: scenario === 'paused', bufferingPaused: scenario === 'buffering',
+    paused: scenario === 'paused' || scenario === 'active-party', bufferingPaused: scenario === 'buffering',
     bufferingPolicy: 'together', queue: audioMode ? ['preview-track-one','preview-track-two'] : [], queueItems: audioMode ? [{id:'preview-track-one',title:'Preview track one',availability:'available'},{id:'preview-track-two',title:'Preview track two',availability:'unavailable'}] : [], queueIndex: 0,
     revision: 1, updatedAt: `${today}T18:15:45Z`, serverTime: `${today}T18:15:45Z`, ended: false,
     settings: { ...defaultPartySettings, readyCheck: conditions.readyCheck ?? scenario === 'buffering', playback:conditions.selectedControllers?'selected':conditions.controlPlayback?'everyone':'host',controllers:conditions.selectedControllers?['preview-member-1']:[],queue:conditions.editQueue?'everyone':'host',acceptInvites:conditions.acceptInvites ?? true },
@@ -90,7 +90,7 @@
     scenario;
     let disposed = false;
     untrack(() => { open = false;  position = 945; });
-    if (menuFixture) untrack(() => { open = true; });
+    if (menuFixture || selected === 'FriendsPanel' && scenario === 'active-party') untrack(() => { open = true; });
     if (selected === 'FriendsPanel') void import('#lib/ui/components/FriendsPanel.svelte').then(module => { if (!disposed) FriendsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
     if (selected === 'NotificationInbox') void import('#lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
     if (selected === 'StreamsPanel') void import('#lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
@@ -109,24 +109,27 @@
     }
     return () => { disposed = true; if(selected==='PersistentPlayer'){player.session=null;player.role='idle';} };
   });
+  $effect(() => {
+    if (!party) return;
+    party.room = name === 'FriendsPanel' && scenario === 'active-party' ? room : null;
+    party.userId = id;
+  });
   function action(label: string) { delivery.notify(`${label} · Preview only; nothing was saved.`); }
 </script>
 
 {#key `${name}:${scenario}`}
   {#if name === 'FriendsPanel'}
     {#if !menuFixture}<Button onclick={() => open = true}>Open friends example</Button>{/if}
-    <p class="small quiet">Party commands are disabled here. Use the Party card examples for joined and invited states.</p>
-    {#if FriendsPanel}<FriendsPanel bind:open initialView={scenario === 'requests' ? 'pending' : scenario === 'parties' ? 'party' : 'accepted'} />{/if}
+
+    {#if FriendsPanel}<FriendsPanel bind:open initialView={scenario === 'requests' ? 'pending' : ['parties','active-party'].includes(scenario) ? 'party' : 'accepted'} />{/if}
   {:else if name === 'NotificationInbox'}
     {#if !menuFixture}<Button onclick={() => open = true}>Open notification example</Button>{/if}
     {#if NotificationInbox}<NotificationInbox bind:open initialFilters={{ segment: 'all', kind: 'all', unread: scenario === 'unread', category: 'all', period: 'all' }} />{/if}
   {:else if name === 'StreamsPanel'}
-    <p class="small quiet" data-design-status="non-approved">Non-approved · Stream card arrangement</p>
     {#if !menuFixture}<Button onclick={() => open = true}>Open streams example</Button>{/if}
     {#if StreamsPanel}<StreamsPanel bind:open initialView={scenario === 'history' ? 'history' : ['links', 'older-link'].includes(scenario) ? 'links' : 'now'} />{/if}
   {:else if name === 'NotificationToasts'}
     {#if NotificationToasts}<NotificationToasts notifications={toastNotices} rich />{/if}
-    <p class="small quiet">Notifications appear in their normal fixed position. Dismissal uses the isolated preview transport.</p>
   {:else if name === 'FriendRoster'}
     <div class="panel-example">
       {#if scenario === 'empty'}<EmptyState title="Add your first friend" description="Exchange usernames in Requests to connect." icon="user" />
@@ -134,8 +137,6 @@
     </div>
   {:else if name === 'PartyMenu'}
     <PartyMenu demoRoom={room} demoUserId={scenario.endsWith('member') ? participants[1].userId : id} />
-  {:else if name === 'SyncedControls'}
-    <p class="small quiet">SyncedControls owns party playback synchronization. Its presentation is represented by PartyCard.</p><a href="/ui-preview?section=components&component=PartyCard" data-preview-navigation>Explore party states</a>
   {:else if name === 'PartyCard'}
     <div class="panel-example party-example">
       {#snippet timeline()}<PlaybackTimeline mediaId={movie.id} href="#" audio={audioMode} title={readingMode ? 'Preview comic' : audioMode ? 'Preview track' : 'Preview series'} detail={readingMode ? 'Reading together' : audioMode ? 'Preview artist · Preview album' : 'S01E03 · Preview episode'} artwork={movie.poster} current={position} duration={2700} readingActive={readingMode} reading={readingMode ? reading : null} />{/snippet}

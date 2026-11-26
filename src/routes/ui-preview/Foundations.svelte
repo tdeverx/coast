@@ -3,6 +3,7 @@
   const delivery=useClient().feedback;
   import { onMount, untrack, type Snippet } from 'svelte';
   import Button from '#lib/ui/components/Button.svelte';
+  import PreviewSelect from '#lib/ui/cards/editor/PreviewSelect.svelte';
   import Field from '#lib/ui/components/Field.svelte';
   import Heading from '#lib/ui/components/Heading.svelte';
   import Browser from './Browser.svelte';
@@ -40,7 +41,7 @@
   }
 </script>
 
-{@render layout({title:section==='typography'?'Typography':'Colors',canvas,inspector,browser})}
+{@render layout({title:section==='typography'?'Typography':'Colors',specimenKey:selected,canvas,inspector,browser})}
 {#snippet canvas()}
   <div class="foundation-stage">
     {#if section === 'typography'}
@@ -56,7 +57,7 @@
 {/snippet}
 {#snippet inspector()}
   <div class="stack">
-    <Field label="Token"><select value={selected} onchange={event=>change(event.currentTarget.value)}>{#each options as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
+    <PreviewSelect topLayer label="Token" value={selected} options={options.map(option => ({id:option.value,label:option.label}))} onchange={change} />
     {#if section === 'typography'}<Field label="Sample text"><textarea rows="3" bind:value={text}></textarea></Field>
     {:else}<Field label="Try a colour"><input type="color" value={colorDraft || pickerValues[selected] || '#000000'} oninput={event=>colorDraft=event.currentTarget.value} /></Field>{/if}
     <p class="small quiet">Source: <code>src/app.css</code></p>

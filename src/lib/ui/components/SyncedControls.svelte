@@ -1,4 +1,6 @@
 <script lang="ts">
+ import {usePlayback} from '#lib/playback/context.svelte.js';
+ const playback=usePlayback();
   import {syncedPlayer,joinSynced,isSyncHost,syncedCommand,leaveSynced} from '#lib/playback/synced/client.svelte.js';
   import { useClient } from '#lib/ui/client-context.js';
   import {timelinePosition} from '#lib/playback/synced/model.js';
@@ -19,8 +21,8 @@
   const clock=useClock('second',()=>!preview&&!!room);
 
   const media=createResource<MediaCardPresentation|null>(null);
-  // Rich party examples use PartyCard props; never borrow a live party for preview.
-  const room=$derived(preview?null:syncedPlayer.room);
+  // Preview playback belongs to the mounted specimen.
+  const room=$derived(preview?playback.party?.room??null:syncedPlayer.room);
   const unavailableMediaId=$derived(preview?null:syncedPlayer.unavailableMediaId);
   const busy=$derived(!preview&&syncedPlayer.busy);
   const members=$derived(room?.participants??[]);
@@ -43,10 +45,10 @@
       {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if !preview&&isSyncHost()&&member.userId!==room?.hostId}<Button item disabled={busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
       {#snippet actions()}
         <span class="small quiet" aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(room?.createdAt??''))/1000))}</span>
-        {#if !isSyncHost()}
+        {#if preview ? room.hostId !== playback.party?.userId : !isSyncHost()}
           <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={busy} onclick={()=>{if(!preview)void leaveSynced();}}/>
         {/if}
-        <PartyMenu />
+        <PartyMenu demoRoom={preview ? room : undefined} demoUserId={playback.party?.userId} />
       {/snippet}
     </PartyCard>
   {/if}

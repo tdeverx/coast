@@ -1,7 +1,8 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import { api, message } from '#lib/ui/client.js';
-  import { actionFeedback } from '#lib/ui/action-feedback.svelte.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  const { api, feedback:actionFeedback } = useClient('current-viewer');
   import { createResource } from '#lib/ui/resource.svelte.js';
   import { emptyInviteDefaults, inviteBatchLimit, type InviteDefaults } from '#lib/auth/invites.js';
   import type { inviteClaims, inviteOverview, listInvitePresets, listInvites } from '#lib/server/auth/invites.server.js';

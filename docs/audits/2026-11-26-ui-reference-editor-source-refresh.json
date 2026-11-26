@@ -1,0 +1,232 @@
+{
+  "epoch": "2026-11-26-ui-reference-editor",
+  "baseline": "dee7fc8326528ead18e57edf6a2f8efb8dfde7b1",
+  "blanketAcceptance": false,
+  "scope": [
+    "Use the Personalise split workspace and controls for the administrator UI reference.",
+    "Hide application navigation only on the reference route and keep the existing fixture boundary.",
+    "Match the Personalise options layout and pinned picker behavior. Expose menu primitives individually alongside their existing contextual examples.",
+    "Verify each reference canvas, including viewport-sized owners, inline menus, notification delivery, and chart fit at mobile and desktop widths.",
+    "Classify all public and feature-owned specimens by their UI role, and route item links and dependency links through that classification.",
+    "Consolidate duplicate specimens in the owning item\u2019s Example state control, retaining source coverage and existing example links.",
+    "Represent the production account, onboarding, Personalise, settings, taste, profile and party controls. Generate production usage counts and start every reference item unapproved.",
+    "Simplify Controls for Elements, Components and Compositions with per-item choices, switches and sliders. Keep advanced inspection and direct example links."
+  ],
+  "verification": {
+    "hosted": false,
+    "localBrowser": [
+      "Checked admin access, anonymous login redirect and member rejection on the isolated database.",
+      "Exercised the original eight collections, 66 public components, 29 compositions and 20 menu groups.",
+      "Compared Personalise with the reference at 1440px and 390px. Verified selected-item scrolling, dialog launch and dismissal, rating edits, chart dataset selection and collection navigation.",
+      "Rendered all named example states (297), menu variants (51), and chart fixtures (256) in Chromium. Checked the selected mobile benchmark radar and its data-point control.",
+      "Opened all 95 specimens from their assigned Browse lists in Chromium: 14 elements, 35 components and 46 compositions.",
+      "Selected all 64 folded states in the Controls picker across 86 browse entries. Checked standalone example URLs, previous item links, overlapping state names and the shared Shelf loading fixture.",
+      "Rendered all 348 named states across 98 Browse owners in Chromium. Checked production-use counts and Unapproved on the three component collections, and trailing labels and overflow in all eight collections at 390 px. Exercised the rating menu, individual and collection taste score dialogs, active party, picker, member permission editor, profile sections and settings sidebar.",
+      "Checked switches, selected Button variants and resets, carousel selection, MediaCard badge captions, and independent invitation view/layout controls against the local admin editor in Chromium at 1200 and 390 px."
+    ]
+  },
+  "files": {
+    "docs/design.md": {
+      "previous": "6f1fc2ed47512e3db97744f9148c8da2296410e52caeaa2a85fdb02063880d89",
+      "current": "69e96392affbbc53973732581acecb79f0e14a97258c9e7102f6a465d456c660"
+    },
+    "scripts/ui-inventory.ts": {
+      "previous": "325fec0bc22da6335226ba97fe6009adeae2e7bf4960a0c1c81548381a4172a2",
+      "current": "feb3227e02ce5b402bfe7edc2f48c8f9f08f4cb335acb108a49885ba543602bd"
+    },
+    "src/lib/auth/ui/AccountAccess.svelte": {
+      "previous": "f2bb7000ffd081584c0a24ed542409b18e60be660e4c475bd98f64ac2dae8629",
+      "current": "7fe57164625d761e61419c661dfadde2a6975c9fb943e34e1a309f41c7d84adf"
+    },
+    "src/lib/auth/ui/AccountAccessControls.svelte": {
+      "previous": "9f3cb583d0877bb7ba8706d9ada9766263e7071feeb4bcbdbe677d9937459104",
+      "current": "1faf0cd996c162eda8d21fbeb297ef80e722fe33cdae0796556547a6751a79e0"
+    },
+    "src/lib/auth/ui/AdminInviteSettings.svelte": {
+      "previous": "f3b7849d129e9916166deb4a813dc945fbf30d73235e380eadea2e52c4793eab",
+      "current": "0ed97bfbbd404efa0bdb7d276d854517bc147c44355e79e157785f946e5e249b"
+    },
+    "src/lib/auth/ui/InviteDefaultsFields.svelte": {
+      "previous": "fed82c8d314bf18135eaf61982381ce3e042caa20fa95269c14ca14f5aeac54f",
+      "current": "cd8ff18013834bb2c4c5fc9b77249f5e39e16363e7ca1c9bc0b7265e8959a4a2"
+    },
+    "src/lib/playback/context.svelte.ts": {
+      "previous": "77b3258a6455a65b1e752ee59176fe54a050507830af341d79192bd070c844b3",
+      "current": "c0fb3d7b75fc360c1ad17535c5520e585624bc28246202da0af6296a6506c422"
+    },
+    "src/lib/settings/MemberFeaturePermissions.svelte": {
+      "previous": "eb2d8de608aa905924c0b113c9783815147e941c7a7bea0a49d02099440ed7b8",
+      "current": "4f102c815b4719a960356f07f3807dfb02a00def96c280b1ee6f217531b33bc3"
+    },
+    "src/lib/settings/redesign/AccountAccessControls.svelte": {
+      "previous": "4d7bbdbd0075c5e9aed26b9bc48a059f957919cfead391487072919a94f58069",
+      "current": "a072657670ceebf2480588bc57c4b0b1444ed984283070b770f0b080734ad19a"
+    },
+    "src/lib/settings/redesign/AdminInviteSettings.svelte": {
+      "previous": "b1be7aea1668b425ad9be4b95ca36aa202758894766403d3dab73ca33d7e7683",
+      "current": "00a31383b7b731b8963937d164920929909fdf71518947b543acdf4771c26964"
+    },
+    "src/lib/settings/redesign/InviteDefaultsFields.svelte": {
+      "previous": "68c66fbfb6af3f0ea64cf597048f098ca3ca7ca53ddb6ab57756a21afc8b452b",
+      "current": "9bf2b11d9aed35b74629090a44bfe460372fea8b3601d562f0d8a7491b64c89d"
+    },
+    "src/lib/ui/cards/editor/CardLayoutEditor.svelte": {
+      "previous": "bec865d4b82630a14772bcf1fa19e4c512536f9e910df03cf000db092b887341",
+      "current": "0acc53c10f722ff4184c9935555a6eb3381e1bca97ac9763ef486b25d3e274fb"
+    },
+    "src/lib/ui/charts/ExtendedChart.svelte": {
+      "previous": "76819152e17e61d80d240c945650a53a0f814e23ea0f76cd973d3734c1432903",
+      "current": "76831f481db43d79422bb2bfe7addc5f0ee694946542253928d5de16530e9533"
+    },
+    "src/lib/ui/components/FriendsPanel.svelte": {
+      "previous": "c37267a862fcce3637687f4202abb944012b10d6ee0b6b0122f3aa77ded8e48f",
+      "current": "0b71edcc04d816fe740c189e20451e0aadbca19bc6aa067a59d21ea89d9cbe23"
+    },
+    "src/lib/ui/components/SyncedControls.svelte": {
+      "previous": "9791b6822ac0d077761ee6dd5e02402113d045580dcd04d4d9ae69c55c4b3f1a",
+      "current": "49691273ad8d535cbede1126eeb0b1a1c2cf06147358b95077bdca671560ac50"
+    },
+    "src/lib/ui/materials/MaterialTweaker.svelte": {
+      "previous": "201e218bb5dc84c10d99343db4ea27901311561cd6d5b0ed266179eb46aa80f8",
+      "current": "5d39c9e865790c010ab5e3c33d002ae8e26b7eaed98b58de77f03b531ad31b5c"
+    },
+    "src/routes/+layout.svelte": {
+      "previous": "739a7750ceff06ae43e3d1d27d0400db1ec7cc7940c6bf666a0f002f929b1c31",
+      "current": "d484ab188ffd91b7a51603e690f3034b6b607980ab46a80f33bb6c37be3629fd"
+    },
+    "src/routes/discover/+page.svelte": {
+      "previous": "5c9f867cee2405ae8ca6d06ac06cfcb6abdd2c2c77ec6f2c4a85b3f56d3259b4",
+      "current": "ba85bf39c7099775f328a5c007295585c35f7bab02be2b4e1e4e11b0040c27e5"
+    },
+    "src/routes/for-you/+page.svelte": {
+      "previous": "3ffbd474c43cbf7728d2d17ae5fb3b1a265338c78244f02ab1207a41e0d0e286",
+      "current": "1bad3d5c517cefc4191b8637df1e35aa60b26d0ae98c3fc25820cb0bd3d7c7ed"
+    },
+    "src/routes/lists/+page.svelte": {
+      "previous": "320a60140c3eb11803162ca56861d0b4122ae4cdec9a454fa19c7eca934cc6f6",
+      "current": "737b7eb105f7b5b0f5e0a3d2b93b69927499d40087ef9c26415b7338d10331df"
+    },
+    "src/routes/progress/+page.svelte": {
+      "previous": "11df9c2a5a1ff9b4749cb9f517ad3887dff2bd7b24ce7d349eee9018ef3e9195",
+      "current": "a888ae3af0b31149a013f52396187b2e3cd29ca208301d211812598fd3329147"
+    },
+    "src/routes/ui-preview/+page.svelte": {
+      "previous": "7b8f27582ab3c036bdeb5b0a9aca1bf38203c12f3201deb6354c5de324835cf5",
+      "current": "317daf9c0721422945e41d7c8962722171143b974423e840106956027525e049"
+    },
+    "src/routes/ui-preview/AdminExamples.svelte": {
+      "previous": "4bc82c8a98d4f5593206a0a35b06e94b992bfac1967076b4901c19a48accc01e",
+      "current": "62db5aae0692205b82df129ed2271a31cc4becd4d1178a9d8ea6141bcf6679c1"
+    },
+    "src/routes/ui-preview/Browser.svelte": {
+      "previous": "9f488d811a3a25b3043c87e9ca161f0e690c01671456f569f9902285f6254d76",
+      "current": "6b912fe50202540b452d00c98df60790ec998cbffb3b22012cd938f51e44ef74"
+    },
+    "src/routes/ui-preview/CatalogueExamples.svelte": {
+      "previous": "46ef07c4c03ec32a20f00bb613517d6846466b00246eb931c1a4423a038fda75",
+      "current": "24485227d3e54fc303f27e9d7a9655e2f5f0b2965657b6039d498c25278d34b7"
+    },
+    "src/routes/ui-preview/ComponentPlayground.svelte": {
+      "previous": "94a3c5f7ad64163356db328682bec25c0fc022191fe67d92bc44d7946c4f52ad",
+      "current": "ed934e89c0afd0d8e29cb7bf249eb4a891b5fa8c44855b4a2e9e8a4be3c6fcc7"
+    },
+    "src/routes/ui-preview/ComponentSpecimen.svelte": {
+      "previous": "84aec0d27038da9c683bca9660fe3d346c472e002edad48670d268ea05fd77dc",
+      "current": "94eaf59cce201ccdf38cf1471bfaea49243268eb61276af55733d366199defe7"
+    },
+    "src/routes/ui-preview/FeatureExamples.svelte": {
+      "previous": "053995ba44cb4968883d2ee3a7b1c0c6f6fde43b500b67ac8d5059ee7d0ee0fd",
+      "current": "3623ae946df57f713c1221ae5a83bae70354dc2e3d546a81a5347d0cee127f83"
+    },
+    "src/routes/ui-preview/Foundations.svelte": {
+      "previous": "db6b2ed68874886007bd9fbf922652c584e60a5559e06c89db024f3c464a38af",
+      "current": "e06d860e0915653618454e206580f0ac3e912f233546b16ffc8d8a4ea3781f41"
+    },
+    "src/routes/ui-preview/MenuPreviewScope.svelte": {
+      "previous": "9c7cad7f12e182d3ce8d7f19deb4b054392890cfe9ee9bad1a4665f8649a5fd6",
+      "current": "1830ca064469686ce76d7183a3ccb5418ff3c3532bbecd4df6a7e17c2f745992"
+    },
+    "src/routes/ui-preview/MenusPreview.svelte": {
+      "previous": "0bda0ab114ad90a14b0a1de36284288f7fcaeb7c792764a6c8eff0c40bd57daa",
+      "current": "617fc332ec389ff7cc6605c66592b208ef886ace2f1ac78e9b9cc39a82350dbe"
+    },
+    "src/routes/ui-preview/PreviewExample.svelte": {
+      "previous": "50d0243e7dc458578aad43f4a27a3930f161e29ca3e745bdae46e34868227e10",
+      "current": "e7ae22ca954eb2da1e3217fd9af2beb439021c77e6da6ea04157701f5ec62e24"
+    },
+    "src/routes/ui-preview/PropEditor.svelte": {
+      "previous": "c093e2186741d124a95814bb159fa447ec54a7e8d137c8ba0b391ae8147af2ab",
+      "current": "7ecc9f503176a6490b8c617e21a594455e57aa89e4102b7c652e77a8bc3570e1"
+    },
+    "src/routes/ui-preview/SocialExamples.svelte": {
+      "previous": "5f620055a8e47dad7ed8fbf08507edea04e4c6ab52c17cf7f93e21c303c47028",
+      "current": "b54988bf6658516aef5b4775266b2bd2271e5d160b5c93a716215b4481972629"
+    },
+    "src/routes/ui-preview/Workspace.svelte": {
+      "previous": "08f445029a9830f3672bfa1b7b399c81722cf1286d304961753c5eed1327d08f",
+      "current": "405deb6985c3b6d5bedb84adf41eadbd6deae260441f7d557f98e414c490c14c"
+    },
+    "src/routes/ui-preview/catalog.ts": {
+      "previous": "12f49b6e6bcee5f5591f0f4a00c9db1d8d0cee06a9eb446ae092ea771a185d74",
+      "current": "a79e6e6806a978b2cc622393fd60ac72096a67d33c7a46704bfb4820c36dfb6a"
+    },
+    "src/routes/ui-preview/charts/ChartGallery.svelte": {
+      "previous": "b2b057ed475d9282c97e7bd0f70920592931fe5681611eb1a950b5599143dc34",
+      "current": "68d6da0401a8faf48fc2a3aeee3d295ebce643a6217b9453e14be8429173c147"
+    },
+    "src/routes/ui-preview/demo/+page.svelte": {
+      "previous": "891b09f39121dff95cae1ff2ab3125a51386b66d96284e5ec6414548769adebc",
+      "current": "0d6d7aa226fff08ff79fa0e86ccc831c0d6e272fc00347f9a29fc56f9b3ac70f"
+    },
+    "src/routes/ui-preview/demo/fixtures.ts": {
+      "previous": "f5b92f9af0a460900e83fd310549d1768f6c1f2f0ae26ceabb15d6e7ec90cfa7",
+      "current": "a5922e41a34dfd42f45349897886b2569bbfb36e8b4ec3327bd63c03c150e0f5"
+    },
+    "src/routes/ui-preview/menu-examples.ts": {
+      "previous": "2c35a00f164c43b28406fa1a371fa02f80b8824a859c6083c257535d81f498de",
+      "current": "953d22b3a9d74dc6d78fc370beb44ec2802692c39c1deba0d266e2eb499744e9"
+    },
+    "src/routes/ui-preview/reference.ts": {
+      "previous": "5c11273bc7149de938b5393db38892b9c704a0ed0276ef98d0ff1adf3d3a9017",
+      "current": "159b57411dda4dfb5e035951f1574a3bae602b0b6daa634798572ec77e302c78"
+    },
+    "src/routes/ui-preview/workspace.ts": {
+      "previous": "80fb4f5b70e0c738a424a2529304512ce3934d47e27816d3bb2079407dbc7199",
+      "current": "6d0750b2513866d5e106a987860f9105c77f8f91fe2dc54285d6abb38590355b"
+    },
+    "tests/material-tuning.test.ts": {
+      "previous": "dbf4078ae31df1ef9f6db1725a125a4b21e5ba4090ca8284ee8d8df69b84d306",
+      "current": "890ac629bdb81e6be7acc264268ddecb4fd6628b4c0871e57df543d4f2290db1"
+    },
+    "tests/performance-audit-register.test.ts": {
+      "previous": "24c367f10077a00683825831b2433890e16ef17b86b3137048973fd34b6be7b0",
+      "current": "faba6e663aef660a2d47ed29e07b04bfb0545c4d3d92e62f301cf1fd65c5378b"
+    },
+    "tests/ui-menu-preview.test.ts": {
+      "previous": "606af553314eeecfdad2e0625aabdb5e016c37eb5b6b296f85ee937553298067",
+      "current": "fbb00dfdc1b02bc48179fe2e1d11ecfb4687523fa587678122936a086e8311f7"
+    },
+    "tests/ui-reference.test.ts": {
+      "previous": "c67918d59efd27b43c9bdc17eb69e9d580881bf0f0b922931f1948c9c68110f6",
+      "current": "c1cecf99763335856d03d86ff19a63fe9fc37ea85d04e6050ecbea6b3aa67fac"
+    },
+    "tests/ui-panel-lifecycle.test.ts": {
+      "previous": "123be1abc5494f671a327ab141b431e1c8cfbae6070d2edf2e767a73d41f9f9f",
+      "current": "afc8de6af54552f179c873c409a49dcc2bcea165610ee43b3e8d190f83f7855d"
+    },
+    "tests/lazy-import-lifetimes.test.ts": {
+      "previous": "b6d52ba9034e244ced4b93ac0187d27352ab03f73652667ccee684643b6baf90",
+      "current": "dbeaa04526d8204a31eea24f8a2613af6fcae47d04843cf89a60df1f2a11c1e3"
+    }
+  },
+  "addedFiles": {
+    "src/lib/ui/cards/editor/editor-options.css": "4382526bf9d1d7de71ecce0bebc1373f22e0a3af2af362bc043158017504a1e7",
+    "src/routes/ui-preview/ProductionExamples.svelte": "53f274b318ebeaad6b3e4a86df2f9d56d776a0c25dd200883f93059e92795b2b",
+    "src/routes/ui-preview/SettingsExamples.svelte": "022a04b646fbc4e0f21267dcdaf0f95bb6c381476dbdf79910ff3feb22c1a3ba",
+    "src/routes/ui-preview/usage.json": "52db698f9876e491528851bbdcbc7e0109a30f18a0fdbe81e37404ab87c66ce9",
+    "src/routes/ui-preview/ControlChoice.svelte": "4049711776a08c94de6b2b4b5e1f87a6244c15471ce20dd09d4ae8efc36a68dd",
+    "src/routes/ui-preview/ItemOptions.svelte": "6bf88ac55a43cb1421d851dc34661399154b8fe8e41d54f084749d3f9727a86b",
+    "src/routes/ui-preview/VariantControls.svelte": "04a62cea8af468b4b07cd5eb00817beb5ba283e08645594925edf3ba7b485101",
+    "src/routes/ui-preview/item-controls.ts": "7ead60350564ef70e997408b4668beec8e7ef3f4583d91077aae93da0048c8ec"
+  }
+}

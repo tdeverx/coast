@@ -1,7 +1,7 @@
 import { parse } from 'svelte/compiler';
 import { readdir } from 'node:fs/promises';
 import { resolve, relative, dirname } from 'node:path';
-import { compositions, componentScenarios, dynamicOwners, type ReferenceRecipe, type ReferenceFamily } from '../src/routes/ui-preview/reference';
+import { referenceRecipes, componentScenarios, dynamicOwners, type ReferenceRecipe, type ReferenceFamily } from '../src/routes/ui-preview/reference';
 import {previewProps,type PreviewProp} from './ui-props';
 
 const root = process.cwd(), folder = 'src/lib/ui/components';
@@ -11,6 +11,8 @@ export const referenceRenderers: Record<ReferenceFamily, string> = {
   catalogue: 'src/routes/ui-preview/CatalogueExamples.svelte',
   social: 'src/routes/ui-preview/SocialExamples.svelte',
   admin: 'src/routes/ui-preview/AdminExamples.svelte',
+  settings: 'src/routes/ui-preview/SettingsExamples.svelte',
+  production: 'src/routes/ui-preview/ProductionExamples.svelte',
   feature: 'src/routes/ui-preview/FeatureExamples.svelte',
 };
 
@@ -129,11 +131,16 @@ export function renderedComponents(path: string, source: string) {
     for (const specifier of node.specifiers) imports.set(specifier.local.name, target);
   }
   const rendered = new Set<string>();
+  const renderSites: string[] = [];
   let dynamic = false;
   function visit(value: unknown) {
     if (!value || typeof value !== 'object') return;
     const node = value as Record<string, unknown>;
-    if (node.type === 'Component' && typeof node.name === 'string' && imports.has(node.name)) rendered.add(imports.get(node.name)!);
+    if (node.type === 'Component' && typeof node.name === 'string' && imports.has(node.name)) {
+      const target = imports.get(node.name)!;
+      rendered.add(target);
+      renderSites.push(target);
+    }
     if (node.type === 'RenderTag' || node.type === 'SvelteComponent') dynamic = true;
     for (const child of Object.values(node)) {
       if (Array.isArray(child)) child.forEach(visit);
@@ -141,15 +148,15 @@ export function renderedComponents(path: string, source: string) {
     }
   }
   visit(ast.fragment);
-  const dynamicImports = new Set<string>();
-  visitAst(ast.instance?.content, node => {
+  const dynamicSites: string[] = [];
+  visitAst([ast.instance?.content, ast.fragment], node => {
     if (node.type !== 'ImportExpression') return;
     const imported = node.source as Record<string, unknown>;
     if (imported?.type !== 'Literal' || typeof imported.value !== 'string' || !imported.value.endsWith('.svelte')) return;
     const value = imported.value;
-    dynamicImports.add(relative(root, resolve(value.startsWith('#lib/') ? 'src/lib' : dirname(path), value.startsWith('#lib/') ? value.slice(5) : value)));
+    dynamicSites.push(relative(root, resolve(value.startsWith('#lib/') ? 'src/lib' : dirname(path), value.startsWith('#lib/') ? value.slice(5) : value)));
   });
-  return { rendered: [...rendered].sort(), dynamic, dynamicImports: [...dynamicImports].sort() };
+  return { renderSites, dynamicSites, rendered: [...rendered].sort(), dynamic, dynamicImports: [...new Set(dynamicSites)].sort() };
 }
 
 export function validateReferenceCoverage(options: {
@@ -207,8 +214,27 @@ export function validateReferenceCoverage(options: {
   }
   const unaccounted = options.sources.filter(path => path.endsWith('.svelte') && !path.startsWith('src/routes/ui-preview/') && !represented.has(path));
   if (unaccounted.length) throw new Error(`User-facing Svelte owners missing reference coverage:\n${unaccounted.sort().join('\n')}`);
-  return { compositions: options.recipes.length, owners: represented.size, internal: Object.keys(internalReferenceOwners).length, delegated: Object.keys(delegatedReferenceRoutes).length };
+  return { recipes: options.recipes.length, owners: represented.size, internal: Object.keys(internalReferenceOwners).length, delegated: Object.keys(delegatedReferenceRoutes).length };
 }
+
+// Count contextual menu declarations where the host supplies them. Shared menu components
+// (WorkMenu, RowFilter, PartyMenu and RowStyleMenu) use their ordinary mount counts.
+const menuTriggers: [string, string, RegExp][] = [
+  ['list-entry','WorkMenu', /\{#snippet entryMenu\(/g],
+  ['quality','PersistentPlayer', /<Button\s+menu\s+label="Quality"/g],
+  ['volume','PersistentPlayer', /<Button\s+menu\s+label="Volume"/g],
+  ['active-shared','StreamsPanel', /cornerMenu=\{[^}]*sharedMenu/g],
+  ['shared-link','StreamsPanel', /\{#snippet cornerMenu\(/g],
+  ['friend','FriendRoster', /<Button\s+menu\s+label=/g],
+  ['party-member','PartyCard', /primaryMenu=\{memberActions/g],
+  ['friend-options','FriendsPanel', /label="Friend options"/g],
+  ['notifications','NotificationInbox', /<RowFilter\s+label="Notification options"/g],
+  ['account','Header', /<Button\s+menu\s+label="Account menu"/g],
+  ['navigation','Header', /label="Choose action"/g],
+  ['integration','IntegrationSettings', /<Button\s+menu\b/g],
+  ['task','JobSchedule', /<Button\s+menu\b/g],
+  ['job','QueueList', /<Button\s+menu\b/g],
+];
 
 async function main() {
   const paths = (await readdir(folder)).filter(name => name.endsWith('.svelte')).map(name => `${folder}/${name}`).sort();
@@ -223,9 +249,18 @@ async function main() {
   const files = await walk('src');
   const rendered: Record<string, string[]> = {};
   const dynamicImports: Record<string, string[]> = {};
+  const mounts: Record<string, number> = {};
+  const menus: Record<string, number> = {};
+  let nativeExamples = 0;
+  const tokens: Record<string, number> = {}, materials: Record<string, number> = {}, charts: Record<string, number> = {};
+  function count(bucket: Record<string, number>, key: string) { bucket[key] = (bucket[key] ?? 0) + 1; }
   const names = new Map(Object.entries(manifest).map(([name, component]) => [component.path, name]));
   for (const path of files.filter(path => path.endsWith('.svelte') && !path.includes('/ui-preview/'))) {
     const result = renderedComponents(path, await Bun.file(path).text());
+    if (!path.endsWith('/MaterialTweaker.svelte')) {
+      for (const target of [...result.renderSites, ...result.dynamicSites]) count(mounts, target);
+      if (/\/\+(?:page|layout|error)\.svelte$/.test(path)) count(mounts, path);
+    }
     rendered[path] = result.rendered;
     dynamicImports[path] = result.dynamicImports;
     const used = result.rendered.map(target => names.get(target)).filter((name): name is string => !!name);
@@ -236,6 +271,26 @@ async function main() {
     }
     for (const name of used) if (manifest[name].path !== path) manifest[name].usedBy.push(path);
   }
+  for (const path of files.filter(path => !path.includes('/ui-preview/') && !path.endsWith('/MaterialTweaker.svelte') && /\.(?:svelte|ts|css)$/.test(path))) {
+    const source = await Bun.file(path).text();
+    for (const match of source.matchAll(/var\(\s*(--[\w-]+)/g)) count(tokens, match[1]);
+    if (path.endsWith('.svelte')) {
+      nativeExamples += [...source.matchAll(/<details\b|<table\s+class="table"|<span\s+class="badge\b/g)].length;
+      for (const [id, owner, trigger] of menuTriggers) {
+        if (path.endsWith('/'+owner+'.svelte'))
+          menus[id] = (menus[id] ?? 0) + [...source.matchAll(trigger)].length;
+      }
+      for (const match of source.matchAll(/(?:material\s*=|variant\s*:)\s*['"](clear|glassLight|glassDark|glassProminent)['"]/g)) count(materials, match[1]);
+    }
+    if (path === 'src/lib/ui/charts/insights.ts')
+      for (const match of source.matchAll(/['"](\d+[A-Z])['"]/g)) count(charts, match[1]);
+  }
+  const ordered = (counts: Record<string, number>) => Object.fromEntries(Object.entries(counts).sort(([a], [b]) => a.localeCompare(b, 'en')));
+  const usageFile = 'src/routes/ui-preview/usage.json';
+  const usage = JSON.stringify({ mounts:ordered(mounts), nativeExamples, menus:ordered(menus), tokens:ordered(tokens), materials:ordered(materials), charts:ordered(charts) }, null, 2) + '\n';
+  if (process.argv.includes('--check')) {
+    if (await Bun.file(usageFile).text() !== usage) throw new Error('UI usage counts are stale. Run bun run ui:inventory.');
+  } else await Bun.write(usageFile, usage);
   for (const item of Object.values(manifest)) item.usedBy = [...new Set(item.usedBy)].sort();
   const demo = await Bun.file('src/routes/ui-preview/Demo.svelte').text();
   const recipeSource = demo.match(/const recipes: Record<string,string\[\]> = (\{[^\n]*\});/);
@@ -246,8 +301,8 @@ async function main() {
     for (const dependency of recipes[name]) if (!manifest[dependency]) throw new Error(`Unknown preview dependency: ${name} → ${dependency}`);
   }
   const dispatches = Object.fromEntries(await Promise.all(Object.values(referenceRenderers).map(async path => [path, referenceDispatches(await Bun.file(path).text())])));
-  validateRecipeDispatches(compositions, dispatches);
-  const coverage = validateReferenceCoverage({ sources: files, components: manifest, recipes: compositions, componentScenarios, dynamicOwners, rendered, dynamicImports });
+  validateRecipeDispatches(referenceRecipes, dispatches);
+  const coverage = validateReferenceCoverage({ sources: files, components: manifest, recipes: referenceRecipes, componentScenarios, dynamicOwners, rendered, dynamicImports });
   const content = JSON.stringify(manifest, null, 2) + '\n', file = 'src/lib/ui/component-manifest.json';
   if (process.argv.includes('--check')) {
     if (await Bun.file(file).text() !== content) throw new Error('UI composition inventory is stale. Run bun run ui:inventory.');
@@ -256,6 +311,6 @@ async function main() {
   if(process.argv.includes('--check')) {
     if(await Bun.file(propFile).text()!==propContent)throw new Error('UI prop inventory is stale. Run bun run ui:inventory.');
   }else await Bun.write(propFile,propContent);
-  console.log(`UI inventory: ${Object.keys(manifest).length} components, ${coverage.compositions} explicit compositions, ${coverage.internal} internal renderers and ${coverage.delegated} delegated routes verified.`);
+  console.log(`UI inventory: ${Object.keys(manifest).length} components, ${coverage.recipes} reference recipes, ${coverage.internal} internal renderers and ${coverage.delegated} delegated routes verified.`);
 }
 if (import.meta.main) await main();

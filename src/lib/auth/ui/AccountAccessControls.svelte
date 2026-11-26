@@ -1,7 +1,8 @@
 <script lang="ts">
   import {onDestroy} from 'svelte';
-  import {api,message} from '#lib/ui/client.js';
-  import {actionFeedback} from '#lib/ui/action-feedback.svelte.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  const { api, feedback:actionFeedback } = useClient('current-viewer');
   import {createResource} from '#lib/ui/resource.svelte.js';
   import type {accountDetails,changeMemberAccess} from '#lib/server/auth/account-management.server.js';
   import type {listInvitePresets} from '#lib/server/auth/invites.server.js';

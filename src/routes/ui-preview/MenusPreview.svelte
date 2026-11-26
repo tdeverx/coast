@@ -1,6 +1,12 @@
 <script lang="ts">
+  import usage from './usage.json';
+  const sharedMenus: Record<string,string> = {media:'WorkMenu',filter:'RowFilter',party:'PartyMenu',subtitles:'SubtitleMenu','profile-background':'ProfileBackgroundMenu','row-appearance':'RowStyleMenu'};
+  const mounts: Record<string,number> = usage.mounts;
+  const contextualMenus: Record<string,number> = usage.menus;
   import type { Snippet } from 'svelte';
-  import Field from '#lib/ui/components/Field.svelte';
+  import PreviewSelect from '#lib/ui/cards/editor/PreviewSelect.svelte';
+  import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
+  import PreviewToggle from '#lib/ui/cards/editor/PreviewToggle.svelte';
   import Browser from './Browser.svelte';
   import PreviewExample from './PreviewExample.svelte';
   import MenuPreviewScope from './MenuPreviewScope.svelte';
@@ -29,7 +35,7 @@
   const fixtureKey = $derived(`${scope}:${JSON.stringify(values)}`);
 </script>
 
-{@render layout({ title: example.label, canvas, inspector, browser })}
+{@render layout({ title: example.label, specimenKey:scope, canvas, inspector, browser })}
 
 {#snippet canvas()}
   <div class="menu-example">
@@ -39,7 +45,7 @@
         {#if 'filters' in example}
           <MenuFilterExample filters={example.filters} medium={example.medium} {values} context={effectiveContext} />
         {:else}
-          <PreviewExample name={example.component} scenarioValue={example.scenario} initialOpen />
+          <PreviewExample name={example.component} scenario={example.scenario} initialOpen />
         {/if}
       </MenuPreviewScope>
     {/key}
@@ -48,40 +54,35 @@
 
 {#snippet inspector()}
   {#if 'filters' in example && example.filters==='rows'}
-    <Field label="Row context"><select value={effectiveContext} onchange={event=>rowContext=event.currentTarget.value}>
-      {#each rowContexts as context}
-        <option value={context}>{context.replace('-', ' ').replace(/^./,letter=>letter.toUpperCase())}</option>
-      {/each}
-    </select></Field>
+    <PreviewSelect topLayer label="Row context" value={effectiveContext}
+      options={rowContexts.map(id => ({id, label:id.replace('-', ' ').replace(/^./,letter=>letter.toUpperCase())}))}
+      onchange={value => rowContext = value} />
   {/if}
   {#if current.examples.length > 1}
-    <Field label={`${current.label} example`}>
-      <select value={example.value} onchange={event => select(current.value, event.currentTarget.value)}>
-        {#each current.examples as option (option.value)}
-          <option value={option.value}>{option.label} · {option.approval === 'approved' ? 'Approved' : 'Unapproved'}</option>
-        {/each}
-      </select>
-    </Field>
+    <PreviewSelect topLayer label={`${current.label} example`} value={example.value}
+      options={current.examples.map(option => ({id:option.value,label:option.label,detail:option.approval === 'approved' ? 'Approved' : 'Unapproved'}))}
+      onchange={value => select(current.value,value)} />
   {/if}
   {#if controls.length}
     <fieldset class="condition-options">
       <legend>Conditions</legend>
-      {#each controls as control (control.id)}
-        <label class="check"><input type="checkbox" checked={values[control.id]}
-          onchange={event => { overrides[scope] = { ...overrides[scope], [control.id]: event.currentTarget.checked }; }} />
-          {control.label}</label>
-      {/each}
+      <AuthSurface>
+        {#each controls as control (control.id)}
+          <PreviewToggle label={control.label} icon="sliders" checked={values[control.id] === true}
+            onchange={checked => { overrides[scope] = { ...overrides[scope], [control.id]: checked }; }} />
+        {/each}
+      </AuthSurface>
     </fieldset>
   {/if}
 {/snippet}
 
 {#snippet browser({ heading }: { heading: Snippet })}
-  <Browser title="Browse menus" {heading} options={menuEntries} value={current.value} showApproval={false}
+  <Browser title="Browse menus" {heading} options={menuEntries.map(item => ({...item,uses:contextualMenus[item.value] ?? mounts['src/lib/ui/components/'+sharedMenus[item.value]+'.svelte'] ?? 0}))} value={current.value}
     change={value => select(value, null)} />
 {/snippet}
 
 <style>
-  .menu-example { display: grid; justify-items: center; gap: var(--preview-control-gap); }
+  .menu-example { position: relative; display: grid; justify-items: center; gap: var(--preview-control-gap); }
   .condition-options { display: grid; gap: 4px; border: 0; padding: 0; margin: 16px 0 0; }
   .condition-options legend { font-weight: var(--weight-semibold); margin-bottom: 4px; }
   .menu-example p { margin: 0; }

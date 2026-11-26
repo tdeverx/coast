@@ -2,6 +2,9 @@
   import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
   import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
   import AccountFields from '#lib/ui/components/AccountFields.svelte';
+  import AccountAccess from '#lib/auth/ui/AccountAccess.svelte';
+  import LoginBackdrop from '#lib/auth/ui/LoginBackdrop.svelte';
+  import InviteSecret from '#lib/auth/ui/InviteSecret.svelte';
   import Brand from '#lib/ui/components/Brand.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import EmptyState from '#lib/ui/components/EmptyState.svelte';
@@ -56,27 +59,22 @@
 {#if name === 'auth'}
   {#if scenario === 'password'}
     <div class="panel stack form-width"><h3>Change password</h3><p class="small">Use at least 8 characters with uppercase, lowercase and a special character. Changing your password signs you out on every device and revokes your API tokens.</p><form class="stack" onsubmit={submit}><Field label="Current password"><input type="password" autocomplete="current-password" required /></Field><Field label="New password"><input type="password" autocomplete="new-password" minlength="8" required /></Field><Button type="submit">Update password</Button>{#if saved}<p class="small quiet" role="status">{saved}</p>{/if}</form></div>
+  {:else if scenario !== 'setup'}
+    <div class="account-preview"><LoginBackdrop artwork={['/coast-mark.png']}>
+      <div class="auth-page access-shell"><div class="auth-card"><AccountAccess registering={['register','invite','verified-invite'].includes(scenario)} gated={scenario.endsWith('invite')}
+        verified={scenario==='verified-invite'?{code:'COASTPREVIEW',inviter:'Alex',inviterProfile:null,inviterAvatar:null,server:'Home',preset:'Member',account:'coast',membershipDays:null,libraryOnly:false}:undefined} error={failure?'The username or password could not be verified.':undefined} /></div></div>
+    </LoginBackdrop></div>
   {:else}
   <div class="auth-page"><div class="auth-card">
     <div class="row brand"><Brand /></div>
-    <h1>{scenario === 'register' ? 'Join Coast.' : scenario === 'setup' ? 'A home for your stories.' : scenario === 'password' ? 'Change password' : 'Welcome back.'}</h1>
-    <p>{scenario === 'register' ? 'Create your account, then connect your services to import your progress.' : scenario === 'setup' ? 'Create your administrator account to start tracking what you love. Your data stays with you.' : scenario === 'password' ? 'Use at least 8 characters with uppercase, lowercase and a special character.' : 'Pick up where you left off.'}</p>
-    <form class="stack" onsubmit={submit}>
-      {#if failure}<Toast kind="error" text={'The username or password could not be verified.'} />{/if}
-      {#if scenario === 'register' || scenario === 'setup'}
-        <AccountFields />
-        {#if scenario === 'setup'}<Field label="Email" hint="Optional"><input type="email" autocomplete="email" /></Field>{/if}
-      {:else if scenario === 'password'}
-        <Field label="Current password"><input type="password" autocomplete="current-password" required /></Field>
-        <Field label="New password"><input type="password" autocomplete="new-password" minlength="8" required /></Field>
-      {:else}
-        <Field label="Username"><input autocomplete="username" required maxlength="32" /></Field>
-        <Field label="Password"><input type="password" autocomplete="current-password" required maxlength="128" /></Field>
-      {/if}
-      <Button type="submit" disabled={busy}>{busy ? 'Working…' : scenario === 'setup' ? 'Create your Coast' : 'Continue'}</Button>
+    <h1>A home for your stories.</h1>
+    <p>Create your administrator account to start tracking what you love. Your data stays with you.</p>
+    <form class="stack" onsubmit={submit}><AccountFields />
+        <Field label="Email" hint="Optional"><input type="email" autocomplete="email" /></Field>
+      <Button type="submit">Continue</Button>
       {#if saved}<p class="small quiet" role="status">{saved}</p>{/if}
     </form>
-    <div class="auth-footer">{#if scenario === 'setup'}Self-hosted. No telemetry. Yours to keep.{:else}<a href={scenario === 'register' ? '/login' : '/register'} onclick={event => event.preventDefault()}>{scenario === 'register' ? 'Sign in' : 'Sign up'}</a>{/if}</div>
+    <div class="auth-footer">Self-hosted. No telemetry. Yours to keep.</div>
   </div></div>
   {/if}
 {:else if name === 'settings'}
@@ -115,7 +113,8 @@
   {/if}
 {:else if name === 'secret-output'}
   <div class="panel stack form-width">
-    {#if revealed}<p role="status">{scenario === 'invite' ? 'Copy this code — shown once' : 'Copy this token now. It will not be shown again.'}</p><Field label={scenario === 'invite' ? 'Invite link' : 'API token'}><input readonly autocomplete="off" spellcheck={false} value={scenario === 'invite' ? 'https://coast.example/invite#invite=synthetic-invite' : 'coast_preview_only_not_a_real_token'} onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
+    {#if scenario === 'invite'}<InviteSecret codes={['COAST-PREVIEW']}/>
+    {:else if revealed}<p role="status">Copy this token now. It will not be shown again.</p><Field label="API token"><input readonly autocomplete="off" spellcheck={false} value="coast_preview_only_not_a_real_token"  onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
   </div>
 {:else if name === 'backups'}
   {#await import('#lib/backups/BackupSettings.svelte') then { default: BackupSettings }}
@@ -137,6 +136,7 @@
 {:else}<EmptyState title="No example available" description="Choose a registered example from the UI reference." />{/if}
 
 <style>
+  .account-preview {position:relative; contain:layout paint; width:100%;}
   .save-controls { display:grid; gap:12px; }
   fieldset { min-width:0; border:1px solid var(--line); }
   fieldset:disabled { opacity:0.75; }

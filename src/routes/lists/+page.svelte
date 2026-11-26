@@ -1,14 +1,16 @@
 <script lang="ts">
-  import { reportFailure } from '#lib/ui/client-context.js';
+  import { reportFailure, useClient } from '#lib/ui/client-context.js';
   import Shelf from '#lib/ui/components/Shelf.svelte';
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
-  import { change, message } from '#lib/ui/client.js';
+  const {change, preview} = useClient();
+  import { message } from '#lib/ui/client.js';
   import type { MediaView } from '#lib/ui/types.js';
   import MediaPage from '#lib/ui/components/MediaPage.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import Dialog from '#lib/ui/components/Dialog.svelte';
-  let { data } = $props();
+  import type { PageData } from './$types';
+  let { data }: { data:Pick<PageData,'detail'|'overviewHref'> } = $props();
   let error = $state(''), deleteId = $state('');
   let heroItems = $state<MediaView[]>(untrack(() => data.detail.items.filter((item):item is MediaView=>!('href' in item))));
   let selection = $state('');
@@ -47,7 +49,7 @@
           try {
             await change(`lists/${deleteId}`, {}, 'DELETE');
             deleteId = '';
-            await goto(data.overviewHref, { refreshAll: true });
+            if (!preview) await goto(data.overviewHref, { refreshAll: true });
           } catch (cause) {
             error = message(cause);
             deleteId = '';

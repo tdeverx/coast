@@ -13,6 +13,6 @@
 <div class="menu-fixture">{@render children()}</div>
 <style>
   .menu-target { display: grid; justify-content: center; min-width: 0; }
-  .menu-fixture { position: absolute; visibility: hidden; pointer-events: none; height: 0; overflow: visible; }
+  .menu-fixture { position: fixed; inset: 0 auto auto 0; visibility: hidden; pointer-events: none; width: min(100%, 480px); }
   .menu-fixture :global(dialog[open]) { visibility: visible; pointer-events: auto; }
 </style>

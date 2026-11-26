@@ -1,63 +1,72 @@
 <script lang="ts">
-  import {tick,type Snippet} from 'svelte';
-  import Button from '#lib/ui/components/Button.svelte';
-  import Heading from '#lib/ui/components/Heading.svelte';
+  import { tick, type Snippet } from 'svelte';
+  import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
+  import usage from './usage.json';
+  const sourceCounts: Readonly<Record<string, number>> = {...usage.tokens,...usage.materials,...usage.charts};
   import {approvalStatus} from './reference';
-  let { title, options, value, change, heading: sectionHeading, thumbnail, thumbnailHeight = 44, disabled = false, showApproval = true, search = $bindable('') }: {
-    title: string; options: {value:string;label:string;detail?:string}[]; value:string; change:(value:string)=>void;
-    heading?:Snippet; thumbnail?:Snippet<[{value:string;label:string;detail?:string}]>; thumbnailHeight?:number; disabled?:boolean; showApproval?:boolean; search?:string;
+  let { title, options, value, change, heading: sectionHeading, thumbnail, thumbnailHeight = 44, disabled = false, search = $bindable('') }: {
+    title: string; options: {value:string;label:string;uses?:number;detail?:string}[]; value:string; change:(value:string)=>void;
+    heading?:Snippet; thumbnail?:Snippet<[{value:string;label:string;uses?:number;detail?:string}]>; thumbnailHeight?:number; disabled?:boolean; search?:string;
   } = $props();
+  function uses(option: {value:string; uses?:number}) { return option.uses ?? sourceCounts[option.value] ?? 0; }
   const filtered = $derived(options.filter(option => `${option.label} ${option.detail ?? ''}`.toLowerCase().includes(search.trim().toLowerCase())));
-  let scroller=$state<HTMLDivElement>();
-  $effect(()=>{
-    value;search;
-    const viewport=scroller;
-    let cancelled=false;
-    if(viewport)void tick().then(()=>{
-      if(cancelled)return;
-      const selected=viewport.querySelector<HTMLElement>('[aria-pressed=true]');
-      if(!selected){viewport.scrollLeft=0;return;}
-      const bounds=viewport.getBoundingClientRect(),item=selected.getBoundingClientRect();
-      if(item.left<bounds.left)viewport.scrollLeft-=bounds.left-item.left;
-      else if(item.right>bounds.right)viewport.scrollLeft+=item.right-bounds.right;
-    });
-    return()=>{cancelled=true;};
+  let list = $state<HTMLDivElement>();
+  $effect(() => {
+    const viewport = list;
+    value; filtered;
+    if (!viewport) return;
+    let active = true;
+    function revealSelection() {
+      if (!active || !viewport) return;
+      const selected = viewport.querySelector<HTMLElement>('[aria-pressed=true]');
+      if (!selected) { viewport.scrollTop = 0; return; }
+      const bounds = viewport.getBoundingClientRect(), row = selected.getBoundingClientRect();
+      if (row.top < bounds.top) viewport.scrollTop += row.top - bounds.top;
+      else if (row.bottom > bounds.bottom) viewport.scrollTop += row.bottom - bounds.bottom;
+    }
+    const resize = new ResizeObserver(revealSelection);
+    resize.observe(viewport);
+    void tick().then(revealSelection);
+    return () => { active = false; resize.disconnect(); };
   });
 </script>
-<div class="browser-heading"><Heading {title} level={3}>
-  {#snippet heading()}<div class="picker-heading">{#if sectionHeading}{@render sectionHeading()}{:else}<h3>{title}</h3>{/if}<span class="small quiet picker-count" role="status">{filtered.length} / {options.length}</span></div>{/snippet}
-  {#snippet actions()}<label class="find"><span class="sr-only">Find {title.toLowerCase()}</span><input type="search" bind:value={search} placeholder="Find an item" /></label>{/snippet}
-</Heading></div>
-<!-- svelte-ignore a11y_no_noninteractive_tabindex (The overflow rail must remain keyboard-scrollable.) -->
-<div class="picker-rail" bind:this={scroller} role="region" aria-label={title} tabindex="0">
-  {#each filtered as option (option.value)}
-    <Button emphasis="subtle" class="picker-option" title={option.label} {disabled} pressed={option.value === value} onclick={() => change(option.value)}>
-      {#if thumbnail}<span class="picker-thumbnail" style:height={`${thumbnailHeight}px`} aria-hidden="true">{@render thumbnail(option)}</span>{/if}
-      <span class="picker-label">{option.label}</span>{#if option.detail}<small class="quiet picker-detail" title={option.detail}>{option.detail}</small>{/if}
-      {#if showApproval}
-        {@const approval = approvalStatus(option.value)}
-        <span class="approval" data-approval={approval} role="img" aria-label={`Approval ${approval}`}
-          title={`Approval: ${approval}`}><Icon name="check" size={14} /></span>
-      {/if}
-    </Button>
-  {/each}
+
+<div class="browser-heading">
+  {#if sectionHeading}{@render sectionHeading()}{:else}<h2>{title}</h2>{/if}
+  <span class="small quiet" role="status">{filtered.length} / {options.length}</span>
 </div>
+<AuthSurface><label class="menu-row search">
+  <Icon name="search" /><span class="sr-only">Search {title.toLowerCase()}</span>
+  <input type="search" bind:value={search} placeholder="Search" />
+</label></AuthSurface>
+{#if filtered.length}
+  <div class="item-list" role="group" aria-label={title}>
+    <AuthSurface resizable>
+      <div class="menu-content item-choices" bind:this={list}>
+      {#each filtered as option (option.value)}
+        {@const count = uses(option)}
+        <button type="button" class="menu-row item" aria-pressed={option.value === value} {disabled} onclick={() => change(option.value)}>
+          {#if thumbnail}<span class="thumbnail" style:height={`${thumbnailHeight}px`} aria-hidden="true">{@render thumbnail(option)}</span>{/if}
+          <span class="menu-row-copy">{option.label}{#if option.detail}<small>{option.detail}</small>{/if}</span>
+          <small class="trailing"><span title={option.uses === undefined ? 'Explicit references in production source' : 'Production render sites for this owner'}>{count} {count === 1 ? 'use' : 'uses'}</span><span>{approvalStatus(option.value) === 'approved' ? 'Approved' : 'Unapproved'}</span></small>
+          {#if option.value === value}<Icon name="check" />{/if}
+        </button>
+      {/each}
+      </div>
+    </AuthSurface>
+  </div>
+{:else}<p class="small quiet" role="status">No matching items.</p>{/if}
+
 <style>
-  .browser-heading :global(.row-header) {margin-bottom:12px;gap:8px;}
-  .browser-heading :global(h3) {font-size:var(--text-md);}
-  .find input {width:160px;max-width:100%;}
-  .picker-rail {display:grid;grid-auto-flow:column;grid-auto-columns:144px;gap:12px;overflow-x:auto;padding:4px 2px;scrollbar-width:thin;scroll-snap-type:x proximity;overscroll-behavior-x:contain;min-width:0;}
-  .picker-rail :global(.picker-option) {position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:var(--preview-control-gap);width:100%;height:100%;white-space:normal;text-align:left;min-width:0;min-height:58px;padding:12px 28px 12px 12px;border:1px solid var(--line);border-radius:12px;scroll-snap-align:start;}
-  .approval {position:absolute;top:8px;right:8px;display:grid;place-items:center;color:var(--quiet);}
-  .approval[data-approval=unapproved] {color:var(--rating);}
-  .approval[data-approval=approved] {color:var(--success);}
-  .picker-rail :global(.picker-option[aria-pressed=true]) {border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface));}
-  .picker-thumbnail {display:grid;place-items:center;width:100%;height:44px;overflow:hidden;}
-  .picker-label {font-size:var(--text-sm);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;overflow-wrap:anywhere;}
-  .picker-detail {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-  .picker-count {white-space:nowrap;}
-  .picker-heading {display:flex;align-items:center;gap:12px;min-width:0;max-width:100%;}
-  .picker-heading > :global(.picker-container) {flex:1;min-width:0;}
-  @media(max-width:600px) {.picker-rail {grid-auto-columns:124px;}.find input {width:120px;}}
+  .browser-heading {display:flex;align-items:baseline;justify-content:space-between;gap:var(--auth-gap);}
+  .browser-heading h2 {font-size:var(--text-xl);}
+  .search {width:100%;}
+  .item-list {min-width:0;min-height:0;}
+  .item-choices {max-height:none;grid-auto-rows:max-content;scrollbar-width:thin;}
+  .item {width:100%;text-align:start;}
+  .item[aria-pressed=true] {background:var(--control-hover-fill);}
+  .menu-row-copy {flex:1;overflow-wrap:anywhere;}
+  .thumbnail {width:54px;flex:none;display:grid;align-items:center;overflow:hidden;}
+  .trailing {display:grid; justify-items:end; gap:2px; margin-inline-start:auto; font-size:var(--text-sm); font-weight:var(--weight-regular); color:var(--muted); line-height:var(--leading-tight);}
 </style>

@@ -35,7 +35,7 @@ function menu(value: string, label: string, component: string, inline: string, v
 export const menuEntries: MenuEntry[] = [
   { value: 'media', label: 'Media', inline: 'Actions for ', examples: mediaExamples.map(([scenario, label]) => ({
     value: scenario, label, component: 'WorkMenu', scenario,
-    approval: scenario === 'episode' ? 'approved' : 'unapproved',
+    approval: 'unapproved',
   })) },
   { value: 'filter', label: 'Filter', inline: 'Filters', examples: filterExamples },
   menu('list-entry', 'List entry', 'WorkMenu', 'Actions for ', [['list-entry', 'List entry']]),
@@ -47,7 +47,7 @@ export const menuEntries: MenuEntry[] = [
   menu('shared-link', 'Shared link', 'StreamsPanel', 'Actions for The Expanse', [['links', 'Current link'], ['older-link', 'Older link']]),
   menu('friend', 'Friend', 'FriendRoster', 'Actions for ', [['accepted', 'Friend']]),
   menu('party-member', 'Party member', 'FriendsPanel', 'Actions for ', [['parties', 'Party member']]),
-  menu('profile-background', 'Profile background', 'profile.identity', 'Profile background', [['self', 'Profile background']]),
+  menu('profile-background', 'Profile actions', 'profile.identity', 'Profile actions', [['self', 'Profile actions']]),
   menu('friend-options', 'Friend options', 'FriendsPanel', 'Friend options', [['friends', 'Friend options']]),
   menu('notifications', 'Notification options', 'NotificationInbox', 'Notification options', [['all', 'Notification options']]),
   menu('account', 'Account', 'Header', 'Account menu'),

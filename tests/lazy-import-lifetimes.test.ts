@@ -8,7 +8,7 @@ const feedbackPaths=['src/lib/ui/components/Dialog.svelte','src/lib/ui/component
 const feedbackComponents=await Promise.all(feedbackPaths.map(path=>Bun.file(new URL('../'+path,import.meta.url)).text()));
 const rootScript=(await componentScript(paths[0])).split('const watching =')[0].replace('let { data, children } = $props();','');
 // Vite supplies this constant in the app; the standalone development fixture has no Vite environment.
-const feedScript=(await componentScript(paths[1])).replace('let { data } = $props();','').replaceAll('import.meta.env.DEV','true');
+const feedScript=eraseTypeScript(await componentScript(paths[1])).replace('let { data } = $props();','').replaceAll('import.meta.env.DEV','true');
 const playerScript=await componentScript(paths[2]);
 const startupStart=playerScript.indexOf('$effect(() => {\n    if (preview) return;\n    const url = src,');
 const startup=playerScript.slice(startupStart,playerScript.indexOf('\n  $effect(',startupStart + 1));

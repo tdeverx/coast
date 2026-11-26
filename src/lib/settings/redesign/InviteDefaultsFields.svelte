@@ -4,8 +4,8 @@
   import { emptyInviteDefaults, scheduleDays, type InviteDefaults, type JellyfinSettings } from '#lib/auth/invites.js';
   import { jellyfinHasFamilyLimits, jellyfinPermissionFlags, jellyfinPlaybackFlags, jellyfinPreferenceFlags, subtitleModes, syncPlayOptions, unratedItems, type JellyfinConfiguration } from '#lib/auth/jellyfin-preset.js';
   import { audiences } from '#lib/social/model.js';
-  import { api } from '#lib/ui/client.js';
-  import { actionFeedback } from '#lib/ui/action-feedback.svelte.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  const { api, feedback:actionFeedback } = useClient('current-viewer');
   import { createResource } from '#lib/ui/resource.svelte.js';
   import { onDestroy } from 'svelte';
   import Button from '#lib/ui/components/Button.svelte';

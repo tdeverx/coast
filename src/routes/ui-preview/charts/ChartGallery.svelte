@@ -3,7 +3,9 @@
   import type { Snippet } from 'svelte';
   import type { WorkspaceParts } from '../workspace';
   import Browser from '../Browser.svelte';
-  import Field from '#lib/ui/components/Field.svelte';
+  import PreviewSelect from '#lib/ui/cards/editor/PreviewSelect.svelte';
+  import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
+  import PreviewToggle from '#lib/ui/cards/editor/PreviewToggle.svelte';
   let {layout}: {layout:Snippet<[WorkspaceParts]>} = $props();
   import { goto } from '$app/navigation';
   import Heading from '#lib/ui/components/Heading.svelte';
@@ -32,6 +34,7 @@
   const rows = $derived(dataRows(model));
   let selected = $state(0);
   let compact = $state(false);
+  let fitPlot = $state(true);
   let navigating = $state(false);
   let familyFilter = $state('all');
   const families = $derived([...new Set(available.map(item=>item.family))]);
@@ -84,14 +87,14 @@
   }
 </script>
 
-{@render layout({title:style.name,canvas,inspector,browser})}
+{@render layout({title:style.name,specimenKey:`${fixture.id}:${medium}`,canvas,inspector,browser})}
 {#snippet canvas()}
   <section class="chart-specimen" aria-labelledby="chart-title" data-chart-style={style.id} data-chart-fixture={fixture.id} data-chart-medium={medium}>
     <div class="stage-title"><Heading title={model.title}>
       {#snippet heading()}<h3 id="chart-title">{model.title}</h3>{/snippet}
     </Heading><p class="small quiet chart-meta">{model.unit}{#if period} · {period}{/if}</p></div>
     <div class="chart-stage">
-      <div class="chart-surface" class:glass style:--plot-width={`${plotWidth}px`} use:chartMaterial={material}>
+      <div class="chart-surface" class:fit-plot={fitPlot && !compact} class:glass style:--plot-width={`${plotWidth}px`} use:chartMaterial={material}>
         <ChartView {model} {selected} onselect={select} {compact} />
       </div>
     </div>
@@ -106,11 +109,17 @@
 {/snippet}
 {#snippet inspector()}
   <div class="stack">
-    <label class="check"><input type="checkbox" bind:checked={compact} />Compact presentation</label>
-    <Field label="Context"><select disabled={navigating} value={context} onchange={event => changeContext(event.currentTarget.value)}>{#each contextOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
-    {#if mediumOptions.length > 1}<Field label="Medium"><select disabled={navigating} value={medium} onchange={event => void change({medium:event.currentTarget.value})}>{#each mediumOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>{/if}
-    <Field label="Dataset"><select disabled={navigating} value={dataset} onchange={event => void change({dataset:event.currentTarget.value})}>{#each datasetOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
-    <Field label="Style family"><select value={activeFamily} onchange={event=>familyFilter=event.currentTarget.value}><option value="all">All families</option>{#each families as family}<option value={family}>{family}</option>{/each}</select></Field>
+    <AuthSurface>{#if !compact}<PreviewToggle label="Fit plot to canvas" icon="sliders" checked={fitPlot} onchange={value => fitPlot = value} />{/if}<PreviewToggle label="Compact presentation" icon="sliders" checked={compact} onchange={value => compact = value} /></AuthSurface>
+    <PreviewSelect topLayer label="Context" disabled={navigating} value={context}
+      options={contextOptions.map(option => ({id:option.value,label:option.label}))} onchange={changeContext} />
+    {#if mediumOptions.length > 1}
+      <PreviewSelect topLayer label="Medium" disabled={navigating} value={medium}
+        options={mediumOptions.map(option => ({id:option.value,label:option.label}))} onchange={value => void change({medium:value})} />
+    {/if}
+    <PreviewSelect topLayer label="Dataset" disabled={navigating} value={dataset}
+      options={datasetOptions.map(option => ({id:option.value,label:option.label}))} onchange={value => void change({dataset:value})} />
+    <PreviewSelect topLayer label="Style family" value={activeFamily}
+      options={[{id:'all',label:'All families'},...families.map(id => ({id,label:id}))]} onchange={value => familyFilter = value} />
     <p class="small quiet">{style.id} · {style.family} · Fictional preview data</p>
     <div class="chart-details">
     <details class="small chart-notes"><summary>Data meaning and limits</summary><p>{model.subtitle}</p>{#each model.notes as note}<p>{note}</p>{/each}</details>
@@ -147,6 +156,8 @@
   .chart-meta { overflow-wrap:anywhere; }
   .chart-stage { display:flex; align-items:center; min-height:360px; }
   .chart-surface { width:100%; min-width:0; max-width:calc(var(--plot-width) + var(--chart-inset) * 2 + var(--chart-frame-padding) * 2); padding:var(--chart-frame-padding); margin:0 auto; position:relative; isolation:isolate; }
+  /* Scale vector plots as a whole. Tables keep their readable, scrollable columns. */
+  .chart-surface.fit-plot :global(.chart-scroll svg[viewBox]:not(.sparkline)) {min-width:0;}
   .chart-surface.glass { border-radius:var(--chart-frame-radius); }
   .chart-inspect { max-width:760px; margin:16px auto 0; gap:12px; flex-wrap:nowrap; }
   .selected-value { flex:1; min-width:0; overflow-wrap:anywhere; text-align:center; font-variant-numeric:tabular-nums; }

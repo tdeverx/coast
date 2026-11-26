@@ -1,4 +1,5 @@
 <script lang="ts">
+  import './editor-options.css';
   import { onMount, untrack } from 'svelte';
   import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
   import { setArtworkSample } from '#lib/auth/ui/artwork-context.js';
@@ -564,13 +565,13 @@
       {#if notice}<p class="preview-notice" role="status">{notice}</p>{/if}
     </section>
 
-    <section class="settings" aria-label="Preview settings">
-      <div class="settings-viewport">
+    <section class="settings editor-options" aria-label="Preview settings">
+      <div class="settings-viewport editor-options-viewport">
         <SettingsPanels section={settingsSection} direction={sectionDirection}>
           {#snippet children(panel)}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex (The options pane needs keyboard scrolling.) -->
-            <div class="settings-scroll" role="region" aria-label={`${settingsSections.find(section => section.value === panel)?.label ?? 'Card'} options`} tabindex="0">
-              <div class="settings-body">
+            <div class="settings-scroll editor-options-scroll" role="region" aria-label={`${settingsSections.find(section => section.value === panel)?.label ?? 'Card'} options`} tabindex="0">
+              <div class="settings-body editor-options-body">
                 {#if panel === 'sample'}
                   <div class="sample-controls">
                     <PreviewSelect label="Preview state" options={previewStates} value={previewState} onchange={selectPreviewState} />
@@ -697,11 +698,11 @@
           {/snippet}
         </SettingsPanels>
       </div>
-      <div class="settings-segments">
+      <div class="settings-segments editor-options-footer">
         {@render arrowControl({
           icon: 'arrowLeft', label: 'Previous section', onclick: () => sectionCarousel.step(-1),
         })}
-        <div class="section-rail">
+        <div class="section-rail editor-options-rail">
           <AuthSurface anchor>
             <SettingsCarousel bind:this={sectionCarousel} value={settingsSection}
               options={settingsSections} onchange={selectSettingsSection} />
@@ -839,62 +840,11 @@
   .metadata-header > span { min-inline-size:0; overflow-wrap:anywhere; }
   .metadata-header-label { color:var(--ink); font-weight:var(--weight-semibold); }
   .metadata-header-note { margin-inline-start:auto; color:var(--quiet); font-size:var(--text-sm); }
-  .settings {
-    --editor-options-inset:var(--segment-inset);
-    --editor-arrow-width:calc(var(--icon-inline) + 2 * (var(--segment-padding-inline) + var(--segment-inset)));
-    --editor-arrow-space:calc(2 * (var(--editor-arrow-width) + var(--editor-action-gap)));
-    --editor-arrow-bleed:calc(var(--gutter) - var(--editor-options-inset));
-    --editor-segments-width:min(calc(100% + 2 * var(--editor-arrow-bleed)),
-      calc(var(--editor-auth-width) + var(--editor-arrow-space)));
-    display:grid;
-    grid-template-columns:minmax(0, 1fr);
-    grid-template-rows:minmax(0, 1fr);
-    min-block-size:0;
-    min-inline-size:0;
-    justify-items:center;
-  }
-  .settings-viewport { grid-area:1 / 1; display:grid; inline-size:100%; min-block-size:0; }
-  .settings-segments {
-    grid-area:1 / 1;
-    inline-size:var(--editor-segments-width);
-    z-index:1;
-    display:grid;
-    grid-template-columns:var(--editor-arrow-width) minmax(0, 1fr) var(--editor-arrow-width);
-    align-self:end;
-    align-items:center;
-    gap:var(--editor-action-gap);
-    min-inline-size:0;
-    padding-inline:var(--editor-options-inset);
-    pointer-events:none;
-  }
-  .settings-segments > :global(*) { pointer-events:auto; }
-  .section-rail { --auth-anchor-width:100%; display:grid; grid-template-columns:minmax(0, 1fr); min-inline-size:0; }
-  .settings-scroll {
-    display:grid;
-    grid-template-columns:minmax(0, 1fr);
-    justify-items:center;
-    align-content:safe center;
-    min-block-size:0;
-    padding-block-end:calc(var(--segment-height) + var(--editor-auth-gap));
-    overflow:hidden auto;
-    overscroll-behavior-y:contain;
-    scrollbar-width:thin;
-  }
-  .settings-body {
-    display:grid;
-    inline-size:calc(var(--editor-segments-width) - var(--editor-arrow-space));
-    gap:var(--editor-auth-gap);
-    padding:var(--segment-inset) var(--editor-options-inset) var(--editor-action-gap);
-  }
   @media (max-width:767px) {
     .editor { grid-template-columns:minmax(0, 1fr); grid-template-rows:repeat(2, minmax(0, 1fr)); }
     .preview-stage { align-content:start; }
     .preview-card { --preview-art-height:clamp(80px, calc(100cqh - 58px), 300px); }
-    .settings-viewport { inline-size:calc(100% + 2 * var(--gutter)); }
-    .settings-body {
-      /* Keep the rows centered and reserve room for reset controls outside the glass. */
-      inline-size:min(var(--editor-auth-width), calc(100% - 2 * (var(--control-height) + var(--segment-inset))));
-    }
+
   }
   @media (max-width:500px) { .preview-card { --preview-shelf-width:145px; } }
   .sample-controls { display:grid; gap:var(--editor-auth-gap); min-inline-size:0; }

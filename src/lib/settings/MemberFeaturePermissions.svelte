@@ -4,8 +4,9 @@
   import AuthSurface from '#lib/auth/ui/AuthSurface.svelte';
   import Button from '#lib/ui/components/Button.svelte';
   import Icon from '#lib/ui/components/Icon.svelte';
-  import { api, change, message } from '#lib/ui/client.js';
-  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  const { api, change, feedback } = useClient('current-viewer');
 
   type Snapshot = { permissions: FeaturePermissions; preferences: FeatureChoices };
   let { account, config, classic = false }: {
@@ -67,7 +68,7 @@
       snapshot = await change<Snapshot>(endpoint, { permissions: $state.snapshot(permissions), preferences: $state.snapshot(preferences) }, 'PATCH');
       permissions = {};
       preferences = {};
-      notifyAction('Feature permissions saved.');
+      feedback.notify('Feature permissions saved.');
     } catch (cause) { error = message(cause); }
     finally { pending = false; }
   }
