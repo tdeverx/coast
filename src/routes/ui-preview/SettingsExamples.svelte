@@ -34,7 +34,7 @@
     {/if}
   {:else if name === 'admin.permissions'}
     <Permissions account={{id,username:'Alex',role:'user',settings:{}}} {config} classic={scenario==='classic'}/>
-  {:else if name === 'admin.demand'}<Demand query={null}/>
+  {:else if name === 'admin.demand'}<Demand query=""/>
   {:else if name === 'account.invites'}<MemberInvites/>
   {:else if name === 'settings.connection'}<Connection provider={{...provider,configured:true,connection:{id,username:'Alex',status:'connected',settings:{}}}}/>
   {:else if name === 'settings.projection'}<Projection connectionId={id} settings={{}} {sources}/>

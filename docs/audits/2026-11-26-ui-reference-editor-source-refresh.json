@@ -22,7 +22,8 @@
       "Opened all 95 specimens from their assigned Browse lists in Chromium: 14 elements, 35 components and 46 compositions.",
       "Selected all 64 folded states in the Controls picker across 86 browse entries. Checked standalone example URLs, previous item links, overlapping state names and the shared Shelf loading fixture.",
       "Rendered all 348 named states across 98 Browse owners in Chromium. Checked production-use counts and Unapproved on the three component collections, and trailing labels and overflow in all eight collections at 390 px. Exercised the rating menu, individual and collection taste score dialogs, active party, picker, member permission editor, profile sections and settings sidebar.",
-      "Checked switches, selected Button variants and resets, carousel selection, MediaCard badge captions, and independent invitation view/layout controls against the local admin editor in Chromium at 1200 and 390 px."
+      "Checked switches, selected Button variants and resets, carousel selection, MediaCard badge captions, and independent invitation view/layout controls against the local admin editor in Chromium at 1200 and 390 px.",
+      "Toggled Missing demand between its populated table and empty state in Chromium at 390 and 1200 px, then restored the populated table."
     ]
   },
   "files": {
@@ -222,7 +223,7 @@
   "addedFiles": {
     "src/lib/ui/cards/editor/editor-options.css": "4382526bf9d1d7de71ecce0bebc1373f22e0a3af2af362bc043158017504a1e7",
     "src/routes/ui-preview/ProductionExamples.svelte": "53f274b318ebeaad6b3e4a86df2f9d56d776a0c25dd200883f93059e92795b2b",
-    "src/routes/ui-preview/SettingsExamples.svelte": "022a04b646fbc4e0f21267dcdaf0f95bb6c381476dbdf79910ff3feb22c1a3ba",
+    "src/routes/ui-preview/SettingsExamples.svelte": "1b38b410ae82a3f93d2325f29e104ef34fe303b3aa6f009fde9b2d1aafb88067",
     "src/routes/ui-preview/usage.json": "52db698f9876e491528851bbdcbc7e0109a30f18a0fdbe81e37404ab87c66ce9",
     "src/routes/ui-preview/ControlChoice.svelte": "4049711776a08c94de6b2b4b5e1f87a6244c15471ce20dd09d4ae8efc36a68dd",
     "src/routes/ui-preview/ItemOptions.svelte": "6bf88ac55a43cb1421d851dc34661399154b8fe8e41d54f084749d3f9727a86b",
