@@ -4,7 +4,7 @@
   import { reportFailure } from '#lib/ui/client-context.js';
   import { page } from '$app/state';
   import { onDestroy, untrack, type Snippet } from 'svelte';
-  import PlanAction from '#lib/experiments/PlanAction.svelte';
+  import PlanAction from '#lib/planning/PlanAction.svelte';
   import ShareAction from '#lib/sharing/ShareAction.svelte';
   import MetadataEditor from '../components/MetadataEditor.svelte';
   import ReadingLaunch from '#lib/reading/ReadingLaunch.svelte';

@@ -44,7 +44,7 @@ const configureSchema = v.object({
 });
 
 export async function requireProviderAdmin(userId: string) {
-  const [user] = await getDb().select().from(users).where(eq(users.id, userId));
+  const [user] = await getDb().select({ role: users.role, disabled: users.disabled }).from(users).where(eq(users.id, userId));
   if (user?.role !== 'admin' || user.disabled) throw new Error('Administrator access is required.');
 }
 
@@ -238,27 +238,49 @@ export async function configureInstance(adminId: string, input: unknown, signal?
 export async function listProviders(userId: string, includeDisabled = false) {
   if (includeDisabled) await requireProviderAdmin(userId);
   const config = includeDisabled ? undefined : await getFeatureConfig(userId);
-  const instances = await getDb()
-    .select()
-    .from(providerInstances)
-    .where(includeDisabled ? undefined : eq(providerInstances.enabled, true));
-  const connections = await getDb()
-    .select()
-    .from(providerConnections)
-    .where(eq(providerConnections.userId, userId));
-  const accounts = includeDisabled ? await getDb()
-    .select({ id: providerConnections.id, instanceId: providerConnections.instanceId, username: users.username, role:users.role })
-    .from(providerConnections).innerJoin(users, eq(users.id, providerConnections.userId))
-    .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
-    .orderBy(providerConnections.createdAt, providerConnections.id) : [];
+  const db = getDb();
+  const [instances, connections, accounts] = await Promise.all([
+    db.select({
+      id: providerInstances.id,
+      provider: providerInstances.provider,
+      name: providerInstances.name,
+      baseUrl: providerInstances.baseUrl,
+      settings: providerInstances.settings,
+      enabled: providerInstances.enabled,
+      linkedMediaInstanceId: providerInstances.linkedMediaInstanceId,
+      hasCredentials: sql<boolean>`coalesce(${providerInstances.credentials}, '') <> ''`,
+    }).from(providerInstances).where(includeDisabled ? undefined : eq(providerInstances.enabled, true)),
+    db.select({
+      id: providerConnections.id,
+      instanceId: providerConnections.instanceId,
+      accountGeneration: providerConnections.accountGeneration,
+      username: providerConnections.username,
+      status: providerConnections.status,
+      settings: providerConnections.settings,
+      updatedAt: providerConnections.updatedAt,
+    }).from(providerConnections).where(eq(providerConnections.userId, userId)),
+    includeDisabled ? db.select({
+      id: providerConnections.id, instanceId: providerConnections.instanceId, username: users.username, role: users.role,
+    }).from(providerConnections).innerJoin(users, eq(users.id, providerConnections.userId))
+      .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
+      .orderBy(providerConnections.createdAt, providerConnections.id) : [],
+  ]);
+  const connectionByInstance = new Map(connections.map(connection => [connection.instanceId, connection]));
+  const accountsByInstance = new Map<string, Omit<(typeof accounts)[number], 'instanceId'>[]>();
+  for (const { instanceId, ...account } of accounts) {
+    const linked = accountsByInstance.get(instanceId);
+    if (linked) linked.push(account);
+    else accountsByInstance.set(instanceId, [account]);
+  }
   return instances
     .filter((instance) => (!config || config.experimentalGaming) || !['igdb','steam'].includes(instance.provider))
     .filter((instance) => (!config || config.experimentalComics) || instance.provider !== 'comic-vine')
     .map((instance) => {
-      const connection = connections.find((connection) => connection.instanceId === instance.id);
+      const connection = connectionByInstance.get(instance.id);
+      const linkedAccounts = accountsByInstance.get(instance.id) ?? [];
       return {
-        connectedAccounts: accounts.filter(row => row.instanceId === instance.id).length,
-        accounts: accounts.filter(row => row.instanceId === instance.id).map(({ id, username, role }) => ({ id, username, role })),
+        connectedAccounts: linkedAccounts.length,
+        accounts: linkedAccounts,
         libraryScan: includeDisabled ? instance.settings.libraryScan : undefined,
         companion: includeDisabled && instance.provider==='jellyfin' ? instance.settings.companion : undefined,
         id: instance.id,
@@ -267,14 +289,14 @@ export async function listProviders(userId: string, includeDisabled = false) {
         baseUrl: instance.baseUrl,
         ...(includeDisabled && instance.provider === 'jellyfin' ? {
           lanUrl:typeof instance.settings.lanUrl === 'string' ? instance.settings.lanUrl : null,
-          managementKeyConfigured:!!instance.settings.managementKeyGeneration && !!instance.credentials,
+          managementKeyConfigured:!!instance.settings.managementKeyGeneration && instance.hasCredentials,
           subtitleAuthority:instance.settings.subtitleAuthority==='server'?'server' as const:'viewer' as const
         } : {}),
         enabled: instance.enabled,
         schedule: providerSchedule(instance.provider, instance.settings.schedule),
         allowPrivateNetwork: instance.settings.allowPrivateNetwork === true,
         linkedMediaInstanceId: instance.linkedMediaInstanceId,
-        configured: !!instance.credentials || instance.provider === 'jellyfin',
+        configured: instance.hasCredentials || instance.provider === 'jellyfin',
         connection: connection
           ? {
               id: connection.id,

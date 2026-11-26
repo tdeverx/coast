@@ -603,10 +603,11 @@ async function seerrDiscovery(userId: string, signal?: AbortSignal) {
     } catch { signal?.throwIfAborted(); }
   return null;
 }
-export async function searchMedia(userId: string, query: string) {
+export async function searchMedia(userId: string, query: string, initial?: Awaited<ReturnType<typeof mediaViews>>) {
   const needle = query.trim().slice(0, 200);
   if (!needle || !(await getFeatureConfig(userId)).features.screen) return { items: [], providerUnavailable: false, truncated: false };
   let providerUnavailable = false;
+  let attemptedImport = false;
   try {
     const adapter = (await getTmdb()) || (await seerrDiscovery(userId));
     if (adapter) {
@@ -614,14 +615,18 @@ export async function searchMedia(userId: string, query: string) {
       const fallback = searchFallback(needle);
       if (!found.length && fallback)
         found = (await adapter.search(fallback)).filter(item => searchScore(needle, item) >= 550);
-      await mapConcurrent(found, 4, (item) => ingestMetadata(item));
+      if (found.length) {
+        attemptedImport = true;
+        await mapConcurrent(found, 4, (item) => ingestMetadata(item));
+      }
     }
   } catch {
     providerUnavailable = true;
   }
   // Shared resolution includes the user's chosen title, administrator overrides and original titles.
   // Availability is ranked in PostgreSQL before the limit, including a show's permitted episodes.
-  const items = await mediaViews(userId, { query: needle, availableFirst: true, limit: 101 });
+  // An interrupted batch can still have committed titles, so refresh after any attempted import.
+  const items = !attemptedImport && initial ? initial : await mediaViews(userId, { query: needle, availableFirst: true, limit: 101 });
   return { items: items.slice(0, 100), providerUnavailable, truncated: items.length > 100 };
 }
 const importListing = providerSingleFlight<string>('screen-discovery-import');

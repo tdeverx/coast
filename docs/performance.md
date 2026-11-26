@@ -8,7 +8,7 @@ The [21 October stable dependency pass](audits/2026-10-21-stable-dependencies.md
 
 ## Contents
 
-- [Current evidence — 21 October 2026](#current-evidence--21-october-2026)
+- [Current and historical evidence](#current-and-historical-evidence)
 - [Acceptance and measurement](#acceptance-and-measurement)
 - [Shared-owner map](#shared-owner-map)
 - [Query scope, projection and exact reuse](#query-scope-projection-and-exact-reuse)
@@ -18,7 +18,9 @@ The [21 October stable dependency pass](audits/2026-10-21-stable-dependencies.md
 - [Verification and runtime diagnosis](#verification-and-runtime-diagnosis)
 - [Audit maintenance and deferred work](#audit-maintenance-and-deferred-work)
 
-## Current evidence — 21 October 2026
+## Current and historical evidence
+
+The [26 November housekeeping pass](audits/2026-11-26-app-housekeeping.md) uses a local restore of the live catalogue and account database. It measures policy and provider projections, Search result reuse and signed-in browser coverage with all experiments enabled except the Settings redesign.
 
 The [physical reader rendering pass](audits/2026-10-21-threejs-reader.md) reduces redundant draws, geometry work and shadow regeneration while preserving actual comic raster bytes and visible geometry. Optional textures use a 192 MiB target with active faces pinned; decoded dimensions and current demand are checked before speculative uploads. Pixel, shadow and model equivalence, texture races and software-renderer measurements are recorded with hardware/mobile and memory limits.
 
@@ -109,13 +111,17 @@ Exercise competing commands on independent native sessions rather than assuming 
 
 ### Whole-application baselines and comparison boundaries
 
+A live snapshot used in local verification should be restored to an isolated database with its own data directory and no copied workers or backup scheduler running. Keep reproducible before/after workloads on that snapshot. Keep raw dumps and result payloads private and publish only the aggregate evidence required to support the finding. Use authored fixtures for remote side effects and exercise provider compatibility separately.
+
 A passing test suite proves its behavior checks, not faster execution. For a final comparison, freeze the original audited Git tree and the entire current application separately, install each exact frozen lockfile (including the current registered patch), and import native owners only from their own root. Admit actual admin/catalogue inputs once, keep complete ordered DTOs private, and compare their hashes without removing changed values or dates. Use matched disposable copies, verify read-only settings, serialize alternating trials, and retain every timing/error/adverse result. Record database object epoch, pool/instrumentation differences and migration boundaries; do not call native-owner timings authenticated HTTP or browser performance.
 
 The [19 October original-versus-current check](audits/2026-10-17-app-performance/final-original-comparison.md) retains 52 complete output pairs across 13 actual scenarios. It predates the subsequent Activity policy-key repair; do not relabel its original/current timings as original/policy measurements. Library gains, adverse small-read observations and slightly larger generated output remain historical evidence. The dated overview above links the subsequent matched Activity and Tasks attribution. Four samples, lower query counts or an arbitrary summed workload cannot establish production p95, a memory plateau or universal improvement.
 
 ### Administrator benchmark
 
-Open **Settings → Benchmarks** and select **Run benchmark**. Runs use `benchmark.run` in the existing outbox; an execution advisory lock prevents overlapping benchmark execution. History is retained for comparisons.
+Overview loads the cross-account missing-demand report on request. Its shared report keeps direct pagination links working and passes the request abort signal to the database read. Include document completion as well as the first response byte when verifying changes to streamed reports.
+
+Open **Settings → Benchmarking** and select **Run benchmark**. Runs use `benchmark.run` in the existing outbox; an execution advisory lock prevents overlapping benchmark execution. History is retained for comparisons.
 
 The workload uses a read-only transaction for local probes, with one untimed warm-up and five timed samples per probe; database round trips use ten samples. It measures Collection membership/page reads, availability assessment and a fixed journal workload. SQL statements have a five-second timeout. A thirty-second workload deadline is checked between operations; it is not a strict end-to-end termination timer.
 
@@ -221,6 +227,10 @@ Narrow the projection before a materialization boundary, while retaining every f
 The [actual Profile projection proof](audits/2026-10-17-app-performance/implementation-found-13.md) preserves 36 complete outputs/privacy errors and all query counts. All 12 plans remove an unused WindowAgg stage and change estimated materialized width 176→32. Buffers stay equal and neither plan spills; 11/12 warm medians improve, with the adverse case retained. This does not measure heap/RSS, CPU or whole-endpoint tails. Preserve the complete consumer contract and refresh the actual comparisons/plans when adding a required field or changing the canonical history calculation.
 
 The [Taste measurement](audits/2026-10-17-app-performance/taste-query-measurement.md) demonstrates the opposite outcome for another reuse proposal: splitting a global/personal revision maximum adds read work in all six tested families, so it is rejected. Native ranking plans identify broader candidate/metadata admission work as the next investigation; no ranking, cache, freshness or worker-publication change is inferred from those read-only plans.
+
+Eventual catalogue enrichment in Search can reuse its initial viewer-scoped result if the provider returns no candidates or fails before imports start. Re-read after any attempted import because a partial failure can still have committed titles. Keep result membership, ordering and truncation identical, and measure the warm local read separately from remote provider latency.
+
+Feature-policy reads project the stored grants, choices and playback sharing bit required to resolve the subject. An explicit command transaction reads its current policy and subject in one statement. Integration listings similarly project connection metadata and credential presence for display. Keep the encrypted credential lookup in its transport owner.
 
 ### Period boundaries
 

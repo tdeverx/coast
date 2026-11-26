@@ -24,7 +24,7 @@
   import JobsSettings from '#lib/ui/components/JobsSettings.svelte';
   import BackupSettings from '#lib/backups/BackupSettings.svelte';
   import BenchmarkSettings from '#lib/benchmarks/BenchmarkSettings.svelte';
-  import Pagination from '#lib/ui/components/Pagination.svelte';
+  import AdminDemand from '#lib/settings/AdminDemand.svelte';
   import IntegrationSettings from '#lib/ui/components/IntegrationSettings.svelte';
   import ConflictList from '#lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
@@ -211,9 +211,6 @@
   }
   const values = (form: HTMLFormElement) => Object.fromEntries(new FormData(form));
   reportFailure(()=>error);
-  let demandError=$state('');
-  $effect(()=>{const pending=data.demand;demandError='';let current=true;void pending?.catch(()=>{if(current)demandError='Demand could not be loaded. Try again.';});return()=>{current=false;};});
-  reportFailure(()=>data.section==='admin' ? demandError : '');
 </script>
 
 {#snippet saveControls(label: string)}
@@ -873,80 +870,7 @@
             </div>{:else}<p class="small">
               No services are connected yet. You can still track titles in Coast.
             </p>{/if}
-          <Heading title="Missing demand" />
-          <p class="small">Released next-needed items and saved titles that are missing or uncertain for each account. Users who opt out are excluded.</p>
-
-          {#await data.demand}
-            <p class="small" role="status">Checking personal demand…</p>
-          {:then demand}
-            {#if demand?.users.length}
-              <div class="overflow">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Needed title</th>
-                      <th>Reason</th>
-                      <th>Availability</th>
-                      <th>Source coverage</th>
-                      <th>Request</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {#each demand.users as person}
-                      {#each person.items as item}
-                        <tr>
-                          <td>
-                            <a
-                              href={`/library?collection=true&username=${encodeURIComponent(person.username)}`}
-                            >{person.username}</a>
-                          </td>
-
-                          <td>
-                            <a href={item.href}>{item.neededTitle}</a>
-
-                            {#if item.dateUnknown}
-                              <small>· Release date unknown</small>
-                            {/if}
-                          </td>
-
-                          <td>{item.reason}</td>
-                          <td>{item.availability === 'unknown' ? 'Uncertain' : 'Missing for this user'}</td>
-                          <td>{item.sources.map((source: { name: string; fresh: boolean }) => `${source.name}: ${source.fresh ? 'current' : 'not current'}`).join(', ') || 'No applicable sources'}</td>
-                          <td>{item.requests.map((request: { state: string }) => request.state).join(', ') || 'No request'}</td>
-                        </tr>
-                      {/each}{#if person.pages > 1}
-                        <tr>
-                          <td colspan="6">
-                            <Pagination
-                              page={person.page}
-                              pages={person.pages}
-                              pageUrl={(number) => `/settings/admin?userId=${person.userId}&itemsPage=${number}`}
-                              label={`${person.username} demand pages`}
-                            />
-                          </td>
-                        </tr>
-                      {/if}
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            {:else}
-              <p class="small">No missing demand on this page.</p>
-            {/if}
-
-            {#if demand}
-              <Pagination
-                page={demand.page}
-                pages={demand.pages}
-                pageUrl={(number) => `/settings/admin?page=${number}`}
-                label="Demand pages"
-              />
-            {/if}
-          {:catch}
-            <!-- Failure is delivered by the scoped toast. -->
-          {/await}
+          <AdminDemand query={data.demandQuery} />
 
           <h3>Requests needing attention</h3>
           {#if data.requests.filter((r) => r.request.state === 'pending').length}<div

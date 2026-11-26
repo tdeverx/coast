@@ -3,6 +3,7 @@ import { collectionCTE, collectionRead } from './query.server';
 import { pagination, PAGE_SIZE } from '#lib/server/queries/pagination.js';
 import * as v from 'valibot';
 import { getConfig, type CoastConfig } from '#lib/server/config.js';
+import { withReadCancellation } from '#lib/server/db/read-cancellation.js';
 
 /** A read projection: relationship/activity and access changes are immediately reflected. */
 export async function missingDemand(userId:string,url:URL) {
@@ -34,12 +35,12 @@ function demandResult(result:Record<string,any>|undefined,requested:number){
   return {items:Array.from(rows).map(r=>({workId:r.id,title:r.title,neededWorkId:r.next_id,neededTitle:r.needed_title,href:`/${r.needed_category==='music'?'music/work':r.needed_category==='game'?'games':'media'}/${r.next_id}`,reason:r.reason,availability:r.needed_availability,dateUnknown:r.needed_release_date===null,sources:r.sources??[],requests:r.requests??[],meaning:'Not available to you from these sources'})),total,page,pages};
 }
 
-export async function adminDemand(url:URL){
+export async function adminDemand(url: URL, signal?: AbortSignal) {
   const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1)),Number(url.searchParams.get('page')??1));
   const userId=url.searchParams.get('userId'); if(userId)v.parse(v.pipe(v.string(),v.uuid()),userId);
   const itemsPage=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1)),Number(url.searchParams.get('itemsPage')??1));
   const {metadataSource}=await getConfig();
-  const [result]=await collectionRead(sql`with demand_users as materialized (
+  const [result]=await withReadCancellation(signal, () => collectionRead(sql`with demand_users as materialized (
     select u.id,u.username,d.total,d.items from users u
     cross join lateral (${demandStatement(sql`u.id`,itemsPage,'all','all',metadataSource)}) d
     where not u.disabled and coalesce((u.settings->>'shareDemand')::boolean,true)
@@ -48,7 +49,7 @@ export async function adminDemand(url:URL){
   select totals.total,coalesce((select jsonb_agg(selected order by selected.username,selected.id) from (
     select * from demand_users order by username,id limit ${PAGE_SIZE}
     offset (least(${requested},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}
-  ) selected),'[]'::jsonb) as users from totals`);
+  ) selected),'[]'::jsonb) as users from totals`));
   const {page,pages}=pagination(Number(result?.total??0),requested);
   return {users:((result?.users??[]) as Record<string,any>[]).map(u=>({userId:String(u.id),username:String(u.username),...demandResult(u,itemsPage)})),page,pages,pageSize:PAGE_SIZE};
 }

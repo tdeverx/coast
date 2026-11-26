@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
   signal?.throwIfAborted();
   const readingEmpty: ReadingSearchContent = { items: [], failure: '', notice: '', truncated: false, page: readingFilters.page, pages: 1, total: 0 };
   if (!locals.user) {
-    if ((await getFeatureConfig(null)).siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
+    if (config.siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
     const items = query ? await publicSearch(query) : [];
     const initial = {items:items.slice(0,100),providerUnavailable:false,truncated:items.length>100};
     const empty = {items:[],discover:[],failure:'',truncated:false};
@@ -70,7 +70,7 @@ export const load: PageServerLoad = async ({locals, url, depends,request}) => {
     readingFilters,
     watch:
       query && demand.watch && !signal?.aborted
-        ? searchMedia(locals.user.id, query).catch(() => ({
+        ? searchMedia(locals.user.id, query, items).catch(() => ({
             ...initial,
             providerUnavailable: !signal?.aborted,
           }))

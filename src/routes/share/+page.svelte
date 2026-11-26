@@ -87,6 +87,11 @@
   reportFailure(()=>error);
 </script>
 <svelte:head><title>{shared?.mediaType==='reading'?'Reading invitation':'Playback invitation'} — Coast</title><meta name="referrer" content="no-referrer" /></svelte:head>
-<Heading title={shared?.title??'Shared invitation'} />
-<p>{shared?.mediaType==='reading'?'Read this shared item. Your reading position stays separate from its owner.':shared?.together?'Watch or listen together.':'Play this shared item. You control your own playback.'}</p>
-<Button onclick={open} disabled={busy}>{busy?'Preparing…':shared?shared.mediaType==='reading'?'Read':'Play':'Open invitation'}</Button>
+<div class="content page">
+  <Heading title={shared?.title ?? 'Shared invitation'} variant="page"
+    description={shared?.mediaType === 'reading' ? 'Read this shared item. Your reading position stays separate from its owner.'
+      : shared?.together ? 'Watch or listen together.' : 'Play this shared item. You control your own playback.'} />
+  <Button onclick={open} disabled={busy}>
+    {busy ? 'Preparing…' : shared ? shared.mediaType === 'reading' ? 'Read' : 'Play' : 'Open invitation'}
+  </Button>
+</div>

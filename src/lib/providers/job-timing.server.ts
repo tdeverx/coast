@@ -36,7 +36,8 @@ export async function jobTimings(): Promise<JobTiming[]> {
       exists(select 1 from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
       from provider_instances i cross join lateral unnest(case i.provider when 'tmdb' then ARRAY['tmdb.refresh','tmdb.recommendations']
         when 'trakt' then ARRAY['trakt.air-schedule'] else ARRAY['igdb.recommendations'] end) as k(kind) where i.provider in ('tmdb','trakt','igdb')`,
-    sql<{ instance_id: string; due: Date | null }[]>`with pool as materialized (
+    // Developer mode hides every due date, but still shows the existing job history.
+    config.developerMode ? [] : sql<{ instance_id: string; due: Date | null }[]>`with pool as materialized (
       select e.media_id,coalesce(s.region,'GB') as region,
         max(s.updated_at) filter(where s.raw->>'detailLoaded'='true') as refreshed,
         max(s.raw->>'maintenanceRetryAt') as retry_at

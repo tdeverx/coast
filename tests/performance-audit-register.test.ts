@@ -58,18 +58,26 @@ import mediaCardPersonaliseSourceRefresh from '../docs/audits/2026-11-24-media-c
 import cardHoverSourceRefresh from '../docs/audits/2026-11-25-card-hover-source-refresh.json';
 import settingsSourceRefresh from '../docs/audits/2026-11-25-settings-feature-permissions-source-refresh.json';
 import settingsRedesignGateRefresh from '../docs/audits/2026-11-25-settings-redesign-gate-source-refresh.json';
+import appHousekeepingRefresh from '../docs/audits/2026-11-26-app-housekeeping-source-refresh.json';
 
 type SourceRefresh = {previous: string; current: string};
 const sourceReceipts = [accountSourceRefresh, inviteFollowupSourceRefresh, housekeepingSourceRefresh, recommendationSourceRefresh, providerRowsSourceRefresh, viewportSourceRefresh, pausedTrackingSourceRefresh, progressFollowupSourceRefresh, menuReadRetrySourceRefresh, menuTrackingSourceRefresh, menuRolloutSourceRefresh, menuRolloutFollowupSourceRefresh, menuPlaybackEligibilitySourceRefresh, menuResolvedArtistSourceRefresh, menuStatusFeedbackSourceRefresh, subtitlePlaybackSourceRefresh, diagnosticsFollowupSourceRefresh, shelfSegmentsSourceRefresh, accessNotificationsSourceRefresh, legacyIntegritySourceRefresh, progressSegmentsSourceRefresh, unifiedProgressSourceRefresh, metadataPrioritySourceRefresh, tasteProfileEntrySourceRefresh, liveErrorSourceRefresh, clearGlassSourceRefresh, fullHistoryTasteSourceRefresh, providerDeliverySourceRefresh, traktFeatureSourceRefresh, tmdbOrderSetupSourceRefresh, playbackViewportCropSourceRefresh, playbackSystemMediaSourceRefresh, automaticAnthologiesSourceRefresh, anthologyReplaySourceRefresh, tasteWeightsSourceRefresh, tasteComparisonsSourceRefresh, tasteRatingClaritySourceRefresh, adminTasteBreakdownSourceRefresh, fixedTasteScaleSourceRefresh, tasteRatingInfluenceSourceRefresh, lightDarkGlassSourceRefresh];
-const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh, loginReworkSourceRefresh, mainFollowupSourceRefresh, traktAncestorStatusRefresh, readerLibraryReviewRefresh, mergedReviewSourceRefresh, mediaCardPersonaliseSourceRefresh, cardHoverSourceRefresh, settingsSourceRefresh, settingsRedesignGateRefresh].map(receipt => receipt.files);
+const sourceRefreshes: readonly Readonly<Record<string, SourceRefresh>>[] = [...sourceReceipts, personalMatchSourceRefresh, loginReworkSourceRefresh, mainFollowupSourceRefresh, traktAncestorStatusRefresh, readerLibraryReviewRefresh, mergedReviewSourceRefresh, mediaCardPersonaliseSourceRefresh, cardHoverSourceRefresh, settingsSourceRefresh, settingsRedesignGateRefresh, appHousekeepingRefresh].map(receipt => receipt.files);
 
-async function expectCurrentSource(path: string, historicalHash: string, detail: string) {
+const movedSources: Readonly<Record<string, SourceRefresh & { path: string }>> = appHousekeepingRefresh.movedFiles;
+
+async function expectCurrentSource(path: string, historicalHash: string, detail: string): Promise<void> {
   // Walk only exact predecessor pins. Dated hosted receipts keep their own epoch.
   const expected = sourceRefreshes.reduce((hash, files) => files[path]?.previous === hash ? files[path].current : hash, historicalHash);
   const retired: Readonly<Record<string, string>> = {...tasteProfileEntrySourceRefresh.retiredFiles, ...personalMatchSourceRefresh.retiredFiles};
   if (retired[path] === expected) {
     expect(await Bun.file(path).exists(), `${path}: covered by a reviewed source retirement`).toBe(false);
     return;
+  }
+  const moved = movedSources[path];
+  if (moved?.previous === expected) {
+    expect(await Bun.file(path).exists(), `${path}: covered by a reviewed source move`).toBe(false);
+    return expectCurrentSource(moved.path, moved.current, detail);
   }
   const actual = createHash('sha256').update(await Bun.file(path).bytes()).digest('hex');
   expect(actual, `${path}: ${detail}`).toBe(expected);

@@ -73,7 +73,9 @@ Media details open in a rounded panel that expands as you scroll. Follow seasons
 
 Administrators grant access per account in **Settings → Feature availability**. Available experiments appear in **Settings → Features**. Administrators and members can edit the same enabled preference, and disabling a feature preserves saved data.
 
-Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
+Dynamic For You and personalised recommendations are standard features. The Settings redesign is a separate, off-by-default experiment. The [experiment guide](docs/experimental-features.md) explains each feature’s behaviour and limits.
+
+**Personalise** opens the card layout editor from the account menu. It requires an administrator grant for **Media card layouts**, which defaults to off. Saved layouts follow the account across devices. Choose a card type, adjust its metadata or badges, and select **Save** to apply the layout.
 
 ### Music
 
@@ -122,7 +124,7 @@ These are roadmap ideas, not available features or promises of a release date.
 - Profile comparison charts.
 - Collaborative lists, groups, shared queues and polls.
 - Chat or reaction overlays during parties.
-- Ebook readers, verified book editions and book/comic server imports.
+- More verified book editions and book-series relationships.
 - More Library, search and playback conveniences.
 
 The chart gallery in the UI preview explores designs with fictional data. The full [roadmap](docs/roadmap.md) records priorities, parked proposals, open questions and the privacy and provider requirements for future work.
@@ -231,7 +233,7 @@ Create scoped, expiring tokens in **Settings → API access** for catalogue, Col
 
 ## Develop Coast
 
-Development requires **Bun 1.4.3**, PostgreSQL, a C++17 compiler and libarchive headers (`g++ libarchive-dev` on Debian; libarchive with Homebrew on macOS). Create a development database, then run:
+Development uses the **Bun 1.4.4 canary** pinned in `package.json` and CI, PostgreSQL 17, a C++17 compiler and libarchive headers (`g++ libarchive-dev` on Debian; libarchive with Homebrew on macOS). Create a development database, then run:
 
 ```sh
 bun install --frozen-lockfile
@@ -246,6 +248,7 @@ Open the URL printed by Vite, usually <http://localhost:5173>. The server also l
 Run the local checks with:
 
 ```sh
+bun run code:style
 bun run code:inventory
 bun run ui:inventory:check
 bun run check

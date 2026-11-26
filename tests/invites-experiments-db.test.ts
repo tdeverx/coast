@@ -7,7 +7,7 @@ import {claimShare,sharedState,sharedProgress,revokeShare} from '../src/lib/shar
 import {progressPlayback} from '../src/lib/playback/service.server';
 import {dynamicFeed} from '../src/lib/recommendations/feed.server';
 import {recommendationRows} from '../src/lib/recommendations/query.server';
-import {createPlan,planningData,cancelPlan,completePlan} from '../src/lib/experiments/planning.server';
+import {createPlan,planningData,cancelPlan,completePlan} from '../src/lib/planning/service.server';
 import {provisionPolicy} from '../src/lib/providers/jellyfin/provisioning.server';
 import {refreshProviderRecommendations} from '../src/lib/recommendations/providers.server';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
